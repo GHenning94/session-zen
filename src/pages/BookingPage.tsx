@@ -31,19 +31,24 @@ const BookingPage = () => {
     }
     setIsLoading(true)
     try {
-      const { data: configData, error: configError } = await supabase.from('configuracoes').select('*').eq('slug', slug).single()
-      if (configError || !configData) {
-        throw new Error(`Configuração não encontrada para o slug: ${slug}. Verifique se o slug está salvo corretamente.`)
-      }
-      setConfig(configData)
+      console.log('BookingPage: Chamando função RPC com slug:', slug);
+      const { data, error } = await supabase.rpc('get_public_profile_by_slug', { page_slug: slug });
+      
+      console.log('BookingPage: Resposta da função RPC:', { data, error });
 
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('user_id', configData.user_id).single()
-      if (profileError || !profileData) {
-        throw new Error(`Perfil não encontrado para o user_id associado ao slug: ${slug}`)
+      if (error || !data) {
+        console.error('BookingPage: Erro ou dados vazios:', error);
+        throw new Error(`Configuração não encontrada para o slug: ${slug}`);
       }
-      setProfile(profileData)
+
+      const jsonData = data as any;
+      setConfig(jsonData.config);
+      setProfile(jsonData.profile);
+      
+      console.log('BookingPage: Config carregado:', jsonData.config);
+      console.log('BookingPage: Profile carregado:', jsonData.profile);
     } catch (error) {
-      console.error('Erro ao buscar terapeuta:', error)
+      console.error('BookingPage: Erro geral ao buscar terapeuta:', error)
       setConfig(null)
       setProfile(null)
       toast({ title: "Erro", description: `Perfil não encontrado. Certifique-se de que o slug '${slug}' está correto e salvo na tabela 'configuracoes'.`, variant: "destructive" })
@@ -213,7 +218,7 @@ const BookingPage = () => {
                 </div>
               )}
               {selectedDate && selectedTime && (
-                <div className="space-y-4pt-4 border-t">
+                <div className="space-y-4 pt-4 border-t">
                   <Button onClick={handleBooking} disabled={isBooking} className="w-full bg-gradient-primary hover:opacity-90 h-12">
                     {isBooking ? "Agendando..." : "Confirmar Agendamento"}
                   </Button>
