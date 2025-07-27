@@ -16,6 +16,7 @@ import SharingSettings from "@/components/sharing/SharingSettings"
 import GoogleCalendarIntegration from "@/components/google/GoogleCalendarIntegration"
 
 type AllSettings = Record<string, any>;
+type ScheduleUI = Record<string, { ativo: boolean, inicio: string, fim: string }>;
 
 const Configuracoes = () => {
   const { toast } = useToast()
@@ -23,91 +24,82 @@ const Configuracoes = () => {
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
-
-  const getDefaultSchedule = () => ({
-    segunda: { ativo: true, inicio: '08:00', fim: '18:00' },
-    terca: { ativo: true, inicio: '08:00', fim: '18:00' },
-    quarta: { ativo: true, inicio: '08:00', fim: '18:00' },
-    quinta: { ativo: true, inicio: '08:00', fim: '18:00' },
-    sexta: { ativo: true, inicio: '08:00', fim: '18:00' },
-    sabado: { ativo: false, inicio: '08:00', fim: '18:00' },
-    domingo: { ativo: false, inicio: '08:00', fim: '18:00' }
-  });
+  const [scheduleUi, setScheduleUi] = useState<ScheduleUI>({});
 
   const loadData = useCallback(async () => {
-    if (!user) return
-    setIsLoading(true)
+    if (!user) return;
+    setIsLoading(true);
     try {
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('user_id', user.id).single()
-      if (profileError) throw profileError
+      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+      if (profileError) throw profileError;
 
-      const { data: configData, error: configError } = await supabase
-        .from('configuracoes')
-        .select('*, slug, booking_enabled, page_title, page_description, show_price, show_duration')
-        .eq('user_id', user.id)
-        .single()
+      const { data: configData, error: configError } = await supabase.from('configuracoes').select('*').eq('user_id', user.id).single();
+      if (configError && configError.code !== 'PGRST116') throw configError;
       
-      if (configError && configError.code !== 'PGRST116') throw configError
-      
-      setSettings({ ...profileData, ...(configData || {}), email: user.email || '', dias_atendimento: configData?.dias_atendimento || getDefaultSchedule() })
+      const allSettings = { ...profileData, ...(configData || {}), email: user.email || '' };
+      setSettings(allSettings);
+
+      const scheduleFromDb = configData?.dias_atendimento_array || ['segunda', 'terca', 'quarta', 'quinta', 'sexta'];
+      const initialScheduleUi: ScheduleUI = {};
+      const diasSemanaKeys = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
+      diasSemanaKeys.forEach(day => {
+        initialScheduleUi[day] = {
+          ativo: scheduleFromDb.includes(day),
+          inicio: allSettings.horario_inicio || '08:00',
+          fim: allSettings.horario_fim || '18:00'
+        };
+      });
+      setScheduleUi(initialScheduleUi);
+
     } catch (error) {
-      console.error("Erro ao carregar dados:", error)
-      toast({ title: "Erro ao carregar dados.", variant: "destructive" })
+      console.error("Erro ao carregar dados:", error);
+      toast({ title: "Erro ao carregar dados.", variant: "destructive" });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }, [user, toast])
+  }, [user, toast]);
 
-  useEffect(() => { loadData() }, [loadData])
+  useEffect(() => { loadData() }, [loadData]);
 
   const handleSettingsChange = (field: string, value: any) => {
-    setSettings(prev => ({ ...prev, [field]: value }))
-  }
+    setSettings(prev => ({ ...prev, [field]: value }));
+  };
 
-  const handleScheduleChange = (day: string, field: string, value: any) => {
-    setSettings(prev => ({
-      ...prev,
-      dias_atendimento: {
-        ...prev.dias_atendimento,
-        [day]: { ...prev.dias_atendimento[day], [field]: value }
-      }
-    }))
-  }
+  const handleScheduleChange = (day: string, field: 'ativo' | 'inicio' | 'fim', value: any) => {
+    setScheduleUi(prev => ({ ...prev, [day]: { ...prev[day], [field]: value }}));
+  };
 
   const handleSave = async () => {
-    if (!user) return
-    setIsLoading(true)
+    if (!user) return;
+    setIsLoading(true);
     try {
+      const diasAtendimentoArray = Object.entries(scheduleUi).filter(([, value]) => value.ativo).map(([key]) => key);
+
       const profileFields = ['nome', 'profissao', 'telefone', 'crp', 'especialidade', 'bio'];
-      const configFields = [
-        'dias_atendimento', 'duracao_sessao', 'intervalo_sessoes', 'valor_padrao', 'valor_primeira_consulta',
-        'aceita_pix', 'aceita_cartao', 'aceita_transferencia', 'aceita_dinheiro', 'chave_pix', 'dados_bancarios',
-        'notificacao_email', 'notificacao_whatsapp', 'lembrete_24h', 'relatorio_semanal', 'email_contato_pacientes',
-        'whatsapp_contato_pacientes', 'slug', 'booking_enabled', 'page_title', 'page_description', 'show_price', 'show_duration'
-      ];
+      const configFields = ['duracao_sessao', 'intervalo_sessoes', 'valor_padrao', 'valor_primeira_consulta', 'aceita_pix', 'aceita_cartao', 'aceita_transferencia', 'aceita_dinheiro', 'chave_pix', 'dados_bancarios', 'notificacao_email', 'notificacao_whatsapp', 'lembrete_24h', 'relatorio_semanal', 'email_contato_pacientes', 'whatsapp_contato_pacientes'];
       
       const profileData: Record<string, any> = {};
-      const configData: Record<string, any> = {};
+      const configData: Record<string, any> = { dias_atendimento_array: diasAtendimentoArray };
       
       for (const key in settings) {
         if (profileFields.includes(key)) profileData[key] = settings[key];
         if (configFields.includes(key)) configData[key] = settings[key];
       }
       
-      const { error: profileError } = await supabase.from('profiles').update(profileData).eq('user_id', user.id)
-      if (profileError) throw profileError
+      const { error: profileError } = await supabase.from('profiles').update(profileData).eq('user_id', user.id);
+      if (profileError) throw profileError;
       
-      const { error: configError } = await supabase.from('configuracoes').upsert({ user_id: user.id, ...configData })
-      if (configError) throw configError
+      const { error: configError } = await supabase.from('configuracoes').upsert({ user_id: user.id, ...configData });
+      if (configError) throw configError;
       
-      toast({ title: "Configurações salvas com sucesso!" })
+      toast({ title: "Configurações salvas com sucesso!" });
     } catch (error) {
-      console.error("Erro ao salvar:", error)
-      toast({ title: "Erro ao salvar configurações.", variant: "destructive" })
+      console.error("Erro ao salvar:", error);
+      toast({ title: "Erro ao salvar configurações.", description: (error as any).message, variant: "destructive" });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const timeOptions = Array.from({ length: 48 }, (_, i) => {
     const hour = Math.floor(i / 2).toString().padStart(2, '0');
@@ -115,13 +107,7 @@ const Configuracoes = () => {
     return `${hour}:${minute}`;
   });
 
-  if (isLoading) {
-    return (
-      <Layout>
-        <p className="p-4">Carregando configurações...</p>
-      </Layout>
-    );
-  }
+  if (isLoading) return <Layout><p className="p-4">Carregando configurações...</p></Layout>;
 
   const diasSemana = [
     { key: 'segunda', label: 'Segunda' }, { key: 'terca', label: 'Terça' }, { key: 'quarta', label: 'Quarta' },
@@ -173,17 +159,17 @@ const Configuracoes = () => {
                   {diasSemana.map(({ key, label }) => (
                     <div key={key} className="flex items-center justify-between p-4 border rounded-lg">
                       <div className="flex items-center gap-4">
-                        <Switch checked={settings.dias_atendimento?.[key]?.ativo ?? false} onCheckedChange={(c) => handleScheduleChange(key, 'ativo', c)} />
+                        <Switch checked={scheduleUi[key]?.ativo ?? false} onCheckedChange={(c) => handleScheduleChange(key, 'ativo', c)} />
                         <span className="font-medium w-20">{label}</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Select value={settings.dias_atendimento?.[key]?.inicio || '08:00'} onValueChange={(v) => handleScheduleChange(key, 'inicio', v)}><SelectTrigger className="w-28"><SelectValue/></SelectTrigger>
+                        <Select value={scheduleUi[key]?.inicio || '08:00'} onValueChange={(v) => handleScheduleChange(key, 'inicio', v)}><SelectTrigger className="w-28"><SelectValue/></SelectTrigger>
                           <SelectContent>
                             {timeOptions.map(time => <SelectItem key={`start-${key}-${time}`} value={time}>{time}</SelectItem>)}
                           </SelectContent>
                         </Select>
                         <span className="text-muted-foreground">até</span>
-                        <Select value={settings.dias_atendimento?.[key]?.fim || '18:00'} onValueChange={(v) => handleScheduleChange(key, 'fim', v)}><SelectTrigger className="w-28"><SelectValue/></SelectTrigger>
+                        <Select value={scheduleUi[key]?.fim || '18:00'} onValueChange={(v) => handleScheduleChange(key, 'fim', v)}><SelectTrigger className="w-28"><SelectValue/></SelectTrigger>
                           <SelectContent>
                             {timeOptions.map(time => <SelectItem key={`end-${key}-${time}`} value={time}>{time}</SelectItem>)}
                           </SelectContent>
@@ -234,8 +220,8 @@ const Configuracoes = () => {
           </TabsContent>
 
           <TabsContent value="sharing">
-            <SharingSettings 
-              settings={settings} 
+            <SharingSettings
+              settings={settings}
               onSettingsChange={handleSettingsChange}
               onSave={handleSave}
               isLoading={isLoading}

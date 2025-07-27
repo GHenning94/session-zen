@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,22 +9,18 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
 import { Link, Copy, Eye, Palette, Settings, Crown } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { useState } from "react"
 
-// Interface para definir as props que o componente receberá
 interface SharingSettingsProps {
-  settings: Record<string, any>; // Recebe todas as configurações
-  onSettingsChange: (field: string, value: any) => void; // Recebe a função para notificar mudanças
-  onSave: () => void; // Recebe a função para salvar
-  isLoading: boolean; // Recebe o estado de carregamento
+  settings: Record<string, any>;
+  onSettingsChange: (field: string, value: any) => void;
+  onSave: () => void;
+  isLoading: boolean;
 }
 
 const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: SharingSettingsProps) => {
   const { hasFeature } = useSubscription()
   const { toast } = useToast()
   const [linkCopied, setLinkCopied] = useState(false)
-
-  // O link agora é gerado a partir das props 'settings'
   const bookingLink = `https://therapypro.app.br/agendar/slug/${settings.slug || ''}`
 
   const generateSlug = (name: string) => {
@@ -53,25 +50,16 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
           </div>
           <div className="flex items-center justify-between">
             <div><Label>Agendamento Online Ativo</Label><p className="text-sm text-muted-foreground">Permite que clientes agendem através do link</p></div>
-            {/* Todos os inputs agora usam onSettingsChange e 'settings' das props */}
             <Switch checked={settings.booking_enabled ?? true} onCheckedChange={(checked) => onSettingsChange('booking_enabled', checked)} />
           </div>
         </CardContent>
       </Card>
-
       <Tabs defaultValue="basic" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic">Básico</TabsTrigger>
-          <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>
-            Design
-            {!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-yellow-500" />}
-          </TabsTrigger>
-          <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>
-            Avançado
-            {!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-yellow-500" />}
-          </TabsTrigger>
+          <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>Design{!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-yellow-500" />}</TabsTrigger>
+          <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>Avançado{!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-yellow-500" />}</TabsTrigger>
         </TabsList>
-
         <TabsContent value="basic" className="space-y-4">
           <Card className="shadow-soft">
             <CardHeader><CardTitle className="text-lg">Configurações Básicas</CardTitle></CardHeader>
@@ -94,38 +82,11 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="design">
-          <PlanProtection feature="Personalização de Design" requiresPro>
-            <Card className="shadow-soft">
-              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Palette/>Design e Aparência</CardTitle></CardHeader>
-              <CardContent>
-                <p>Aqui entrarão os campos de personalização de design para planos Pro e Premium.</p>
-              </CardContent>
-            </Card>
-          </PlanProtection>
-        </TabsContent>
-
-        <TabsContent value="advanced">
-          <PlanProtection feature="Configurações Avançadas" requiresPremium>
-            <Card className="shadow-soft">
-              <CardHeader><CardTitle className="text-lg flex items-center gap-2"><Settings/>Configurações Avançadas</CardTitle></CardHeader>
-              <CardContent>
-                <p>Aqui entrarão os campos de configurações avançadas para o plano Premium.</p>
-              </CardContent>
-            </Card>
-          </PlanProtection>
-        </TabsContent>
       </Tabs>
-      
       <div className="flex justify-end">
-        {/* O botão de salvar agora chama a função onSave recebida via props */}
-        <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
-          {isLoading ? "Salvando..." : "Salvar Configurações"}
-        </Button>
+        <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">{isLoading ? "Salvando..." : "Salvar Configurações"}</Button>
       </div>
     </div>
   )
 }
-
 export default SharingSettings;
