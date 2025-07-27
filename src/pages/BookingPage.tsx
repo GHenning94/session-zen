@@ -141,20 +141,32 @@ const BookingPage = () => {
   const paymentMethods = [{ key: 'aceita_pix', label: 'Pix' }, { key: 'aceita_cartao', label: 'Cartão de Crédito' }, { key: 'aceita_transferencia', label: 'Transferência' }, { key: 'aceita_dinheiro', label: 'Dinheiro' }].filter(method => config[method.key])
 
   return (
-    <div className="min-h-screen bg-muted/40">
+    <div className="min-h-screen bg-muted/40" style={{
+      backgroundColor: config.background_color || undefined,
+      backgroundImage: config.background_image ? `url(${config.background_image})` : undefined,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      color: config.brand_color || undefined
+    }}>
+      {config.custom_css && <style>{config.custom_css}</style>}
       <header className="bg-background/80 backdrop-blur-sm border-b">
         <div className="container mx-auto px-4 py-8">
           <div className="text-center space-y-4">
+            {config.logo_url && <img src={config.logo_url} alt="Logo" className="h-16 mx-auto mb-4" />}
             <h1 className="text-4xl font-bold">{config.page_title || 'Agendar Consulta'}</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">{config.page_description || `Agende sua consulta com ${profile.nome}`}</p>
-            <div className="flex items-center justify-center gap-4 pt-4">
-              <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center"><User className="w-10 h-10 text-white" /></div>
-              <div className="text-left">
-                <h2 className="text-2xl font-semibold">{profile.nome}</h2>
-                <p className="text-muted-foreground capitalize">{profile.profissao}{profile.especialidade ? ` - ${profile.especialidade}` : ''}</p>
-                <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">{config.show_duration && <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" /><span>{config.duracao_sessao || '50'} minutos</span></div>}</div>
+              <div className="flex items-center justify-center gap-4 pt-4">
+                {profile.avatar_url ? (
+                  <img src={profile.avatar_url} alt={profile.nome} className="w-20 h-20 rounded-full object-cover" />
+                ) : (
+                  <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center"><User className="w-10 h-10 text-white" /></div>
+                )}
+                <div className="text-left">
+                  <h2 className="text-2xl font-semibold">{profile.nome}</h2>
+                  <p className="text-muted-foreground capitalize">{profile.profissao}{profile.especialidade ? ` - ${profile.especialidade}` : ''}</p>
+                  <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">{config.show_duration && <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" /><span>{config.duracao_sessao || '50'} minutos</span></div>}</div>
+                </div>
               </div>
-            </div>
           </div>
         </div>
       </header>
@@ -224,10 +236,35 @@ const BookingPage = () => {
                   </Button>
                 </div>
               )}
+              
+              {config.chave_pix && (
+                <div className="space-y-2 pt-4 border-t">
+                  <h4 className="font-semibold">Informações de Pagamento</h4>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm"><strong>Chave PIX:</strong> {config.chave_pix}</p>
+                  </div>
+                </div>
+              )}
+              
+              {config.dados_bancarios && (
+                <div className="space-y-2">
+                  <h4 className="font-semibold">Dados Bancários</h4>
+                  <div className="bg-muted/50 p-4 rounded-lg">
+                    <p className="text-sm whitespace-pre-wrap">{config.dados_bancarios}</p>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
       </main>
+      {config.custom_footer && (
+        <footer className="bg-background/80 backdrop-blur-sm border-t">
+          <div className="container mx-auto px-4 py-4 text-center">
+            <p className="text-sm text-muted-foreground">{config.custom_footer}</p>
+          </div>
+        </footer>
+      )}
     </div>
   )
 }

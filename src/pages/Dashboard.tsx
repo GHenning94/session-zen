@@ -261,10 +261,8 @@ const Dashboard = () => {
   }
 
   const handlePeriodChange = async (period: '3' | '6' | '12') => {
+    console.log('📊 Mudando período para:', period)
     setChartPeriod(period)
-    if (user) {
-      await loadDashboardData()
-    }
   }
 
   const handleNewSession = () => {

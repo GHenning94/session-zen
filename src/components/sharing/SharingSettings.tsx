@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
@@ -75,12 +76,84 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                 <div className="space-y-2"><Label>Título da Página</Label><Input value={settings.page_title || ''} onChange={(e) => onSettingsChange('page_title', e.target.value)} placeholder="Agendar Consulta" /></div>
                 <div className="space-y-2"><Label>Descrição</Label><Input value={settings.page_description || ''} onChange={(e) => onSettingsChange('page_description', e.target.value)} placeholder="Psicoterapia online" /></div>
               </div>
+              <div className="space-y-2">
+                <Label>Foto de Perfil</Label>
+                <Input type="file" accept="image/*" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (ev) => {
+                      onSettingsChange('avatar_url', ev.target?.result);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }} />
+                {settings.avatar_url && (
+                  <div className="mt-2">
+                    <img src={settings.avatar_url} alt="Foto de perfil" className="w-20 h-20 rounded-full object-cover" />
+                  </div>
+                )}
+              </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between"><div><Label>Mostrar Preço</Label></div><Switch checked={settings.show_price ?? true} onCheckedChange={(checked) => onSettingsChange('show_price', checked)} /></div>
                 <div className="flex items-center justify-between"><div><Label>Mostrar Duração</Label></div><Switch checked={settings.show_duration ?? true} onCheckedChange={(checked) => onSettingsChange('show_duration', checked)} /></div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="design" className="space-y-4">
+          <PlanProtection requiredFeature="hasDesignCustomization">
+            <Card className="shadow-soft">
+              <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5 text-primary" />Personalização Visual</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Cor Principal</Label>
+                    <Input type="color" value={settings.brand_color || '#3b82f6'} onChange={(e) => onSettingsChange('brand_color', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cor de Fundo</Label>
+                    <Input type="color" value={settings.background_color || '#ffffff'} onChange={(e) => onSettingsChange('background_color', e.target.value)} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Logo (URL)</Label>
+                  <Input value={settings.logo_url || ''} onChange={(e) => onSettingsChange('logo_url', e.target.value)} placeholder="https://exemplo.com/logo.png" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Imagem de Fundo (URL)</Label>
+                  <Input value={settings.background_image || ''} onChange={(e) => onSettingsChange('background_image', e.target.value)} placeholder="https://exemplo.com/background.jpg" />
+                </div>
+                <div className="space-y-2">
+                  <Label>CSS Personalizado</Label>
+                  <Textarea value={settings.custom_css || ''} onChange={(e) => onSettingsChange('custom_css', e.target.value)} placeholder="/* Seu CSS personalizado */" rows={4} />
+                </div>
+              </CardContent>
+            </Card>
+          </PlanProtection>
+        </TabsContent>
+        
+        <TabsContent value="advanced" className="space-y-4">
+          <PlanProtection requiredFeature="hasAdvancedSettings">
+            <Card className="shadow-soft">
+              <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5 text-primary" />Configurações Avançadas</CardTitle></CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Domínio Personalizado</Label>
+                  <Input value={settings.custom_domain || ''} onChange={(e) => onSettingsChange('custom_domain', e.target.value)} placeholder="meusite.com.br" />
+                </div>
+                <div className="space-y-2">
+                  <Label>Rodapé Personalizado</Label>
+                  <Textarea value={settings.custom_footer || ''} onChange={(e) => onSettingsChange('custom_footer', e.target.value)} placeholder="© 2024 Minha Clínica. Todos os direitos reservados." rows={3} />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div><Label>Modo Manutenção</Label><p className="text-sm text-muted-foreground">Desabilita temporariamente o agendamento</p></div>
+                  <Switch checked={!settings.booking_enabled} onCheckedChange={(checked) => onSettingsChange('booking_enabled', !checked)} />
+                </div>
+              </CardContent>
+            </Card>
+          </PlanProtection>
         </TabsContent>
       </Tabs>
       <div className="flex justify-end">
