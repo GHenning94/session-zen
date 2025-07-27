@@ -39,7 +39,7 @@ const Configuracoes = () => {
       const allSettings = { ...profileData, ...(configData || {}), email: user.email || '' };
       setSettings(allSettings);
 
-      const scheduleFromDb = configData?.dias_atendimento_array || ['segunda', 'terca', 'quarta', 'quinta', 'sexta'];
+      const scheduleFromDb = (configData as any)?.dias_atendimento_array || ['segunda', 'terca', 'quarta', 'quinta', 'sexta'];
       const initialScheduleUi: ScheduleUI = {};
       const diasSemanaKeys = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
       diasSemanaKeys.forEach(day => {

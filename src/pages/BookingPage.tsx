@@ -12,7 +12,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 
 const BookingPage = () => {
-  const { slug } = useParams<{ slug: string }>()
+  const { slug } = useParams<{ slug?: string }>()
   const { toast } = useToast()
   const [profile, setProfile] = useState<any>(null)
   const [config, setConfig] = useState<any>(null)
@@ -32,16 +32,16 @@ const BookingPage = () => {
     setIsLoading(true)
     try {
       console.log('BookingPage: Chamando função RPC com slug:', slug);
-      const { data, error } = await supabase.rpc('get_public_profile_by_slug', { page_slug: slug });
+      const result: any = await (supabase as any).rpc('get_public_profile_by_slug', { page_slug: slug });
       
-      console.log('BookingPage: Resposta da função RPC:', { data, error });
+      console.log('BookingPage: Resposta da função RPC:', result);
 
-      if (error || !data) {
-        console.error('BookingPage: Erro ou dados vazios:', error);
+      if (result.error || !result.data) {
+        console.error('BookingPage: Erro ou dados vazios:', result.error);
         throw new Error(`Configuração não encontrada para o slug: ${slug}`);
       }
 
-      const jsonData = data as any;
+      const jsonData = result.data as any;
       setConfig(jsonData.config);
       setProfile(jsonData.profile);
       

@@ -10,6 +10,8 @@ interface PlanLimits {
   hasHistory: boolean
   hasPDFReports: boolean
   hasWhatsAppIntegration: boolean
+  hasDesignCustomization: boolean
+  hasAdvancedSettings: boolean
 }
 
 const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
@@ -18,21 +20,27 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     maxSessionsPerClient: 4,
     hasHistory: false,
     hasPDFReports: false,
-    hasWhatsAppIntegration: false
+    hasWhatsAppIntegration: false,
+    hasDesignCustomization: false,
+    hasAdvancedSettings: false
   },
   pro: {
     maxClients: 20,
     maxSessionsPerClient: Infinity,
     hasHistory: true,
     hasPDFReports: false,
-    hasWhatsAppIntegration: false
+    hasWhatsAppIntegration: false,
+    hasDesignCustomization: true,
+    hasAdvancedSettings: false
   },
   premium: {
     maxClients: Infinity,
     maxSessionsPerClient: Infinity,
     hasHistory: true,
     hasPDFReports: true,
-    hasWhatsAppIntegration: true
+    hasWhatsAppIntegration: true,
+    hasDesignCustomization: true,
+    hasAdvancedSettings: true
   }
 }
 
