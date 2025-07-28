@@ -168,7 +168,7 @@ const GoogleCalendarIntegration = () => {
   }
 
   return (
-    <PlanProtection feature="Integração Google Agenda" requiresPro>
+    <PlanProtection feature="hasAdvancedSettings">
       <div className="space-y-6">
         {/* Status da Conexão */}
         <Card className="shadow-soft">

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
 
 interface GoogleEvent {
   id: string
@@ -23,10 +24,9 @@ interface GoogleEvent {
   htmlLink: string
 }
 
-const GOOGLE_CLIENT_ID = "your-google-client-id" // Configurar no .env
-const GOOGLE_API_KEY = "your-google-api-key" // Configurar no .env
+const GOOGLE_CLIENT_ID = "1093962604103-jcv6t51dj03gk3n8s8rub9d8t3fhubfo.apps.googleusercontent.com"
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
-const SCOPES = 'https://www.googleapis.com/auth/calendar.readonly'
+const SCOPES = 'https://www.googleapis.com/auth/calendar'
 
 export const useGoogleCalendar = () => {
   const { user } = useAuth()
@@ -36,56 +36,33 @@ export const useGoogleCalendar = () => {
   const [events, setEvents] = useState<GoogleEvent[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Inicializar Google API
-  useEffect(() => {
-    const initializeGapi = async () => {
-      try {
-        // @ts-ignore - Google API types
-        await (window as any).gapi.load('auth2', () => {
-          // @ts-ignore
-          (window as any).gapi.auth2.init({
-            client_id: GOOGLE_CLIENT_ID,
-          })
-        })
-
-        // @ts-ignore - Google API types
-        await (window as any).gapi.load('client', async () => {
-          // @ts-ignore
-          await (window as any).gapi.client.init({
-            apiKey: GOOGLE_API_KEY,
-            clientId: GOOGLE_CLIENT_ID,
-            discoveryDocs: [DISCOVERY_DOC],
-            scope: SCOPES
-          })
-
-          setIsInitialized(true)
-          
-          // @ts-ignore
-          const authInstance = (window as any).gapi.auth2.getAuthInstance()
-          setIsSignedIn(authInstance.isSignedIn.get())
-        })
-      } catch (error) {
-        console.error('Erro ao inicializar Google API:', error)
-        toast({
-          title: "Erro",
-          description: "Não foi possível conectar com o Google.",
-          variant: "destructive"
-        })
-      }
-    }
-
-    // Carregar Google API script se não estiver carregado
-    if (!(window as any).gapi) {
+  // Inicializar Google API usando a edge function
+  const initializeGoogleAPI = async () => {
+    try {
+      setLoading(true)
       const script = document.createElement('script')
-      script.src = 'https://apis.google.com/js/api.js'
-      script.onload = initializeGapi
-      document.body.appendChild(script)
-    } else {
-      initializeGapi()
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.onload = () => {
+        setIsInitialized(true)
+      }
+      document.head.appendChild(script)
+    } catch (error) {
+      console.error('Erro ao inicializar Google API:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível conectar com o Google.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
     }
+  }
+
+  useEffect(() => {
+    initializeGoogleAPI()
   }, [])
 
-  // Conectar com Google
+  // Conectar com Google usando OAuth2
   const connectToGoogle = async () => {
     if (!isInitialized) {
       toast({
@@ -98,19 +75,24 @@ export const useGoogleCalendar = () => {
     try {
       setLoading(true)
       
-      // @ts-ignore - Google API types
-      const authInstance = (window as any).gapi.auth2.getAuthInstance()
-      await authInstance.signIn()
-      
-      setIsSignedIn(true)
-      
-      toast({
-        title: "Conectado!",
-        description: "Google Calendar conectado com sucesso.",
+      // Usar Google Identity Services para autenticação
+      const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: SCOPES,
+        callback: async (response: any) => {
+          if (response.access_token) {
+            localStorage.setItem('google_access_token', response.access_token)
+            setIsSignedIn(true)
+            toast({
+              title: "Conectado!",
+              description: "Google Calendar conectado com sucesso.",
+            })
+            await loadEvents()
+          }
+        },
       })
-
-      // Carregar eventos após conectar
-      await loadEvents()
+      
+      tokenClient.requestAccessToken()
     } catch (error) {
       console.error('Erro ao conectar:', error)
       toast({
@@ -126,10 +108,7 @@ export const useGoogleCalendar = () => {
   // Desconectar do Google
   const disconnectFromGoogle = async () => {
     try {
-      // @ts-ignore - Google API types
-      const authInstance = (window as any).gapi.auth2.getAuthInstance()
-      await authInstance.signOut()
-      
+      localStorage.removeItem('google_access_token')
       setIsSignedIn(false)
       setEvents([])
       
@@ -142,28 +121,23 @@ export const useGoogleCalendar = () => {
     }
   }
 
-  // Carregar eventos do Google Calendar
+  // Carregar eventos do Google Calendar via edge function
   const loadEvents = async () => {
-    if (!isSignedIn) return
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken) return
 
     setLoading(true)
     try {
-      const now = new Date()
-      const timeMin = now.toISOString()
-      const timeMax = new Date(now.getTime() + (30 * 24 * 60 * 60 * 1000)).toISOString() // 30 dias
-
-      // @ts-ignore - Google API types
-      const response = await (window as any).gapi.client.calendar.events.list({
-        calendarId: 'primary',
-        timeMin: timeMin,
-        timeMax: timeMax,
-        showDeleted: false,
-        singleEvents: true,
-        orderBy: 'startTime'
+      const { data, error } = await supabase.functions.invoke('google-calendar-api', {
+        body: {
+          action: 'listEvents',
+          accessToken: accessToken,
+          calendarId: 'primary'
+        }
       })
 
-      const events = response.result.items || []
-      setEvents(events)
+      if (error) throw error
+      setEvents(data.items || [])
     } catch (error) {
       console.error('Erro ao carregar eventos:', error)
       toast({
@@ -176,7 +150,7 @@ export const useGoogleCalendar = () => {
     }
   }
 
-  // Criar evento no Google Calendar
+  // Criar evento no Google Calendar via edge function
   const createGoogleEvent = async (eventData: {
     summary: string
     description?: string
@@ -185,7 +159,8 @@ export const useGoogleCalendar = () => {
     location?: string
     attendees?: string[]
   }) => {
-    if (!isSignedIn) return false
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken) return false
 
     try {
       const event = {
@@ -203,20 +178,23 @@ export const useGoogleCalendar = () => {
         attendees: eventData.attendees?.map(email => ({ email })),
       }
 
-      // @ts-ignore - Google API types
-      const response = await (window as any).gapi.client.calendar.events.insert({
-        calendarId: 'primary',
-        resource: event
+      const { data, error } = await supabase.functions.invoke('google-calendar-api', {
+        body: {
+          action: 'createEvent',
+          accessToken: accessToken,
+          calendarId: 'primary',
+          eventData: event
+        }
       })
 
-      if (response.status === 200) {
-        toast({
-          title: "Evento criado!",
-          description: "Evento adicionado ao Google Calendar.",
-        })
-        await loadEvents() // Recarregar eventos
-        return true
-      }
+      if (error) throw error
+
+      toast({
+        title: "Evento criado!",
+        description: "Evento adicionado ao Google Calendar.",
+      })
+      await loadEvents()
+      return true
     } catch (error) {
       console.error('Erro ao criar evento:', error)
       toast({
@@ -228,6 +206,15 @@ export const useGoogleCalendar = () => {
 
     return false
   }
+
+  // Verificar se já está conectado ao carregar
+  useEffect(() => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (accessToken) {
+      setIsSignedIn(true)
+      loadEvents()
+    }
+  }, [isInitialized])
 
   return {
     isInitialized,
