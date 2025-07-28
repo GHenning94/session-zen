@@ -166,31 +166,37 @@ const Dashboard = () => {
       const periodMonths = parseInt(chartPeriod)
       console.log('📊 Período do gráfico:', periodMonths, 'meses')
       const chartData = []
+      
       for (let i = periodMonths - 1; i >= 0; i--) {
         const date = new Date()
         date.setMonth(date.getMonth() - i)
-        const monthStr = date.toISOString().slice(0, 7)
-        console.log('📅 Processando mês:', monthStr)
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
         
-        // Calcular primeiro dia do próximo mês para este mês específico
-        const nextMonthDate = new Date(date.getFullYear(), date.getMonth() + 1, 1)
-        const nextMonthStr = nextMonthDate.toISOString().slice(0, 10)
+        const monthStartStr = monthStart.toISOString().split('T')[0]
+        const monthEndStr = monthEnd.toISOString().split('T')[0]
+        
+        console.log('📅 Processando mês:', monthStartStr, 'até', monthEndStr)
         
         const { data: monthSessions } = await supabase
           .from('sessions')
           .select('valor')
           .eq('user_id', user?.id)
           .eq('status', 'realizada')
-          .gte('data', `${monthStr}-01`)
-          .lt('data', nextMonthStr)
+          .gte('data', monthStartStr)
+          .lte('data', monthEndStr)
         
-        console.log(`💰 Sessões do mês ${monthStr}:`, monthSessions)
+        console.log(`💰 Sessões do mês ${date.getMonth() + 1}/${date.getFullYear()}:`, monthSessions)
         const revenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-        console.log(`💰 Receita do mês ${monthStr}:`, revenue)
+        console.log(`💰 Receita calculada:`, revenue)
+        
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+        
         chartData.push({
-          mes: date.toLocaleDateString('pt-BR', { month: 'short' }),
+          mes: monthNames[date.getMonth()],
           receita: revenue,
-          fullMonth: date.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+          fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
       }
       console.log('📊 Dados finais do gráfico:', chartData)

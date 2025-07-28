@@ -66,7 +66,7 @@ export type Database = {
           custom_domain: string | null
           custom_footer: string | null
           dados_bancarios: string | null
-          dias_atendimento: string[] | null
+          dias_atendimento_array: string[] | null
           duracao_sessao: number | null
           email_contato_pacientes: string | null
           horario_fim: string | null
@@ -105,7 +105,7 @@ export type Database = {
           custom_domain?: string | null
           custom_footer?: string | null
           dados_bancarios?: string | null
-          dias_atendimento?: string[] | null
+          dias_atendimento_array?: string[] | null
           duracao_sessao?: number | null
           email_contato_pacientes?: string | null
           horario_fim?: string | null
@@ -144,7 +144,7 @@ export type Database = {
           custom_domain?: string | null
           custom_footer?: string | null
           dados_bancarios?: string | null
-          dias_atendimento?: string[] | null
+          dias_atendimento_array?: string[] | null
           duracao_sessao?: number | null
           email_contato_pacientes?: string | null
           horario_fim?: string | null
@@ -398,7 +398,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_public_profile_by_slug: {
+        Args: { page_slug: string }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

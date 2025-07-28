@@ -71,7 +71,16 @@ const BookingPage = () => {
         setAvailableSlots([])
         return
       }
-      const { data: bookedSessions } = await supabase.from('sessions').select('horario').eq('user_id', profile.user_id).eq('data', selectedDate)
+      
+      // Buscar sessões já agendadas para este dia
+      const { data: bookedSessions } = await supabase
+        .from('sessions')
+        .select('horario')
+        .eq('user_id', profile.user_id)
+        .eq('data', selectedDate)
+      
+      const bookedTimes = bookedSessions?.map(s => s.horario) || []
+      
       const startTime = config.horario_inicio || '08:00'
       const endTime = config.horario_fim || '18:00'
       const sessionDuration = parseInt(config.duracao_sessao || '50')
@@ -82,8 +91,9 @@ const BookingPage = () => {
       while (true) {
         const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`
         if (currentTimeStr >= endTime) break
-        const isBooked = bookedSessions?.some(session => session.horario === currentTimeStr)
-        if (!isBooked) slots.push(currentTimeStr)
+        if (!bookedTimes.includes(currentTimeStr)) {
+          slots.push(currentTimeStr)
+        }
         const totalMinutes = (currentHour * 60) + currentMinute + totalSlotTime
         currentHour = Math.floor(totalMinutes / 60)
         currentMinute = totalMinutes % 60
@@ -148,66 +158,139 @@ const BookingPage = () => {
       backgroundPosition: 'center',
       color: config.brand_color || undefined
     }}>
-      {config.custom_css && <style>{config.custom_css}</style>}
-      <header className="bg-background/80 backdrop-blur-sm border-b">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center space-y-4">
-            {config.logo_url && <img src={config.logo_url} alt="Logo" className="h-16 mx-auto mb-4" />}
-            <h1 className="text-4xl font-bold">{config.page_title || 'Agendar Consulta'}</h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">{config.page_description || `Agende sua consulta com ${profile.nome}`}</p>
-              <div className="flex items-center justify-center gap-4 pt-4">
-                {profile.avatar_url ? (
-                  <img src={profile.avatar_url} alt={profile.nome} className="w-20 h-20 rounded-full object-cover" />
-                ) : (
-                  <div className="w-20 h-20 bg-gradient-primary rounded-full flex items-center justify-center"><User className="w-10 h-10 text-white" /></div>
+      {config.custom_css && <style dangerouslySetInnerHTML={{ __html: config.custom_css }} />}
+      <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-4xl">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+          {/* Informações do Terapeuta */}
+          <Card className="shadow-lg">
+            <CardHeader className="text-center p-4 sm:p-6">
+              {config.logo_url && (
+                <img src={config.logo_url} alt="Logo" className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
+              )}
+              {profile.avatar_url && (
+                <img src={profile.avatar_url} alt={profile.nome} className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
+              )}
+              <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: config.brand_color }}>
+                {config.page_title || `${profile.nome}`}
+              </CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                {config.page_description || profile.bio || `${profile.profissao}`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+              {profile.bio && (
+                <div className="p-3 sm:p-4 bg-muted/50 rounded-lg">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
+                    <Info className="w-4 h-4" />
+                    Sobre
+                  </h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{profile.bio}</p>
+                </div>
+              )}
+
+              {profile.especialidade && (
+                <div>
+                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Especialidade</h3>
+                  <Badge variant="secondary" className="text-xs sm:text-sm">{profile.especialidade}</Badge>
+                </div>
+              )}
+
+              <div className="space-y-3">
+                <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+                  <CreditCard className="w-4 h-4" />
+                  Formas de Pagamento
+                </h3>
+                
+                {config.show_price && config.valor_padrao && (
+                  <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
+                    <p className="font-semibold text-primary text-sm sm:text-base">Valor da Sessão: R$ {config.valor_padrao.toFixed(2)}</p>
+                    {config.show_duration && config.duracao_sessao && (
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Duração: {config.duracao_sessao} minutos</p>
+                    )}
+                  </div>
                 )}
-                <div className="text-left">
-                  <h2 className="text-2xl font-semibold">{profile.nome}</h2>
-                  <p className="text-muted-foreground capitalize">{profile.profissao}{profile.especialidade ? ` - ${profile.especialidade}` : ''}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">{config.show_duration && <div className="flex items-center gap-1.5"><Clock className="w-4 h-4" /><span>{config.duracao_sessao || '50'} minutos</span></div>}</div>
+
+                {config?.chave_pix && (
+                  <div className="p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200">
+                    <h3 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">PIX</h3>
+                    <p className="text-xs sm:text-sm text-green-700 break-all">Chave PIX: {config.chave_pix}</p>
+                  </div>
+                )}
+                
+                {config?.dados_bancarios && (
+                  <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Dados Bancários</h3>
+                    <p className="text-xs sm:text-sm text-blue-700 whitespace-pre-line">{config.dados_bancarios}</p>
+                  </div>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  {paymentMethods.map(method => (
+                    <span key={method.key} className="px-2 sm:px-3 py-1 bg-primary/10 text-primary rounded-full text-xs sm:text-sm">
+                      {method.label}
+                    </span>
+                  ))}
                 </div>
               </div>
-          </div>
-        </div>
-      </header>
-      <main className="container mx-auto px-4 py-10 grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1 space-y-6">
-          {profile.bio && (<Card><CardHeader><CardTitle className="flex items-center gap-2"><Info className="w-5 h-5 text-primary"/>Sobre</CardTitle></CardHeader><CardContent><p className="text-sm text-muted-foreground whitespace-pre-wrap">{profile.bio}</p></CardContent></Card>)}
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><User className="w-5 h-5 text-primary"/>Contato e Credenciais</CardTitle></CardHeader>
-            <CardContent className="space-y-2">
-              {config.email_contato_pacientes && <div className="flex items-center gap-2 text-sm"><Mail className="w-4 h-4"/>{config.email_contato_pacientes}</div>}
-              {profile.telefone && <div className="flex items-center gap-2 text-sm"><Phone className="w-4 h-4"/>{profile.telefone}</div>}
-              {profile.crp && <div className="flex items-center gap-2 text-sm"><CheckCircle className="w-4 h-4"/>{profile.crp}</div>}
+
+              {/* Contato */}
+              <div className="space-y-3">
+                <h3 className="font-semibold text-sm sm:text-base">Contato</h3>
+                <div className="space-y-2">
+                  {config.email_contato_pacientes && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Mail className="w-4 h-4" />
+                      <span className="break-all">{config.email_contato_pacientes}</span>
+                    </div>
+                  )}
+                  {config.whatsapp_contato_pacientes && (
+                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                      <Phone className="w-4 h-4" />
+                      <span>{config.whatsapp_contato_pacientes}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </CardContent>
           </Card>
-          {config.show_price && (<Card><CardHeader><CardTitle className="flex items-center gap-2"><DollarSign className="w-5 h-5 text-primary"/>Valores</CardTitle></CardHeader><CardContent className="space-y-2 text-sm">{config.valor_primeira_consulta && <div className="flex justify-between"><span>Primeira consulta:</span><strong>R$ {Number(config.valor_primeira_consulta).toFixed(2)}</strong></div>}{config.valor_padrao && <div className="flex justify-between"><span>Consulta:</span><strong>R$ {Number(config.valor_padrao).toFixed(2)}</strong></div>}</CardContent></Card>)}
-          {paymentMethods.length > 0 && (<Card><CardHeader><CardTitle className="flex items-center gap-2"><CreditCard className="w-5 h-5 text-primary"/>Formas de Pagamento</CardTitle></CardHeader><CardContent className="flex flex-wrap gap-2">{paymentMethods.map(method => <Badge key={method.key} variant="secondary">{method.label}</Badge>)}</CardContent></Card>)}
-        </div>
-        
-        <div className="lg:col-span-2">
+
+          {/* Formulário de Agendamento */}
           <Card className="shadow-lg">
-            <CardHeader><CardTitle>Agendar Consulta</CardTitle><CardDescription>Preencha seus dados para agendar</CardDescription></CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold">Seus Dados</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label htmlFor="nome">Nome *</Label><Input id="nome" value={clientData.nome} onChange={(e) => setClientData({...clientData, nome: e.target.value})} /></div>
-                  <div className="space-y-2"><Label htmlFor="email">Email *</Label><Input id="email" type="email" value={clientData.email} onChange={(e) => setClientData({...clientData, email: e.target.value})} /></div>
+            <CardHeader className="p-4 sm:p-6">
+              <CardTitle className="text-lg sm:text-xl">Agendar Consulta</CardTitle>
+              <CardDescription className="text-sm sm:text-base">
+                Preencha seus dados para agendar uma sessão
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome" className="text-sm">Nome completo</Label>
+                  <Input id="nome" value={clientData.nome} onChange={(e) => setClientData({ ...clientData, nome: e.target.value })} placeholder="Seu nome" className="text-sm" />
                 </div>
-                <div className="space-y-2"><Label htmlFor="telefone">Telefone</Label><Input id="telefone" value={clientData.telefone} onChange={(e) => setClientData({...clientData, telefone: e.target.value})} /></div>
-                <div className="space-y-2"><Label htmlFor="observacoes">Observações</Label><Textarea id="observacoes" value={clientData.observacoes} onChange={(e) => setClientData({...clientData, observacoes: e.target.value})} rows={3} /></div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm">Email</Label>
+                  <Input id="email" type="email" value={clientData.email} onChange={(e) => setClientData({ ...clientData, email: e.target.value })} placeholder="seu@email.com" className="text-sm" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="telefone" className="text-sm">Telefone (opcional)</Label>
+                <Input id="telefone" value={clientData.telefone} onChange={(e) => setClientData({ ...clientData, telefone: e.target.value })} placeholder="(11) 99999-9999" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="observacoes" className="text-sm">Observações (opcional)</Label>
+                <Textarea id="observacoes" value={clientData.observacoes} onChange={(e) => setClientData({ ...clientData, observacoes: e.target.value })} placeholder="Informações adicionais..." className="resize-none text-sm" />
               </div>
               <div className="space-y-4">
-                <h3 className="font-semibold">Escolha a Data</h3>
+                <h3 className="font-semibold text-sm sm:text-base">Escolha a Data</h3>
                 <Select value={selectedDate} onValueChange={setSelectedDate}>
-                  <SelectTrigger>
+                  <SelectTrigger className="text-sm">
                     <SelectValue placeholder="Selecione uma data" />
                   </SelectTrigger>
                   <SelectContent>
                     {getAvailableDates().length > 0 ? (
                       getAvailableDates().map(date => (
-                        <SelectItem key={date.value} value={date.value}>{date.label}</SelectItem>
+                        <SelectItem key={date.value} value={date.value} className="text-sm">{date.label}</SelectItem>
                       ))
                     ) : (
                       <SelectItem value="" disabled>Não há datas disponíveis</SelectItem>
@@ -217,55 +300,49 @@ const BookingPage = () => {
               </div>
               {selectedDate && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold">Escolha o Horário</h3>
+                  <h3 className="font-semibold text-sm sm:text-base">Escolha o Horário</h3>
                   {availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                       {availableSlots.map(time => (
-                        <Button key={time} variant={selectedTime === time ? "default" : "outline"} onClick={() => setSelectedTime(time)}>{time}</Button>
+                        <Button 
+                          key={time} 
+                          variant={selectedTime === time ? "default" : "outline"} 
+                          onClick={() => setSelectedTime(time)}
+                          className="text-xs sm:text-sm h-8 sm:h-10"
+                        >
+                          {time}
+                        </Button>
                       ))}
                     </div>
                   ) : (
-                    <p className="text-muted-foreground text-center">Não há horários disponíveis para esta data.</p>
+                    <p className="text-muted-foreground text-center text-sm">Não há horários disponíveis para esta data.</p>
                   )}
                 </div>
               )}
               {selectedDate && selectedTime && (
                 <div className="space-y-4 pt-4 border-t">
-                  <Button onClick={handleBooking} disabled={isBooking} className="w-full bg-gradient-primary hover:opacity-90 h-12">
+                  <Button 
+                    onClick={handleBooking} 
+                    disabled={isBooking} 
+                    className="w-full bg-gradient-primary hover:opacity-90 h-10 sm:h-12 text-sm sm:text-base"
+                  >
                     {isBooking ? "Agendando..." : "Confirmar Agendamento"}
                   </Button>
-                </div>
-              )}
-              
-              {config.chave_pix && (
-                <div className="space-y-2 pt-4 border-t">
-                  <h4 className="font-semibold">Informações de Pagamento</h4>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <p className="text-sm"><strong>Chave PIX:</strong> {config.chave_pix}</p>
-                  </div>
-                </div>
-              )}
-              
-              {config.dados_bancarios && (
-                <div className="space-y-2">
-                  <h4 className="font-semibold">Dados Bancários</h4>
-                  <div className="bg-muted/50 p-4 rounded-lg">
-                    <p className="text-sm whitespace-pre-wrap">{config.dados_bancarios}</p>
-                  </div>
                 </div>
               )}
             </CardContent>
           </Card>
         </div>
-      </main>
+      </div>
       {config.custom_footer && (
-        <footer className="bg-background/80 backdrop-blur-sm border-t">
+        <footer className="bg-background/80 backdrop-blur-sm border-t mt-8">
           <div className="container mx-auto px-4 py-4 text-center">
-            <p className="text-sm text-muted-foreground">{config.custom_footer}</p>
+            <p className="text-xs sm:text-sm text-muted-foreground">{config.custom_footer}</p>
           </div>
         </footer>
       )}
     </div>
   )
 }
+
 export default BookingPage
