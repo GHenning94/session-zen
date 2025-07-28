@@ -103,7 +103,7 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
         </TabsContent>
         
         <TabsContent value="design" className="space-y-4">
-          <PlanProtection requiredFeature="hasDesignCustomization">
+          <PlanProtection feature="hasDesignCustomization">
             <Card className="shadow-soft">
               <CardHeader><CardTitle className="flex items-center gap-2"><Palette className="w-5 h-5 text-primary" />Personalização Visual</CardTitle></CardHeader>
               <CardContent className="space-y-4">
@@ -135,7 +135,7 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
         </TabsContent>
         
         <TabsContent value="advanced" className="space-y-4">
-          <PlanProtection requiredFeature="hasAdvancedSettings">
+          <PlanProtection feature="hasAdvancedSettings">
             <Card className="shadow-soft">
               <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5 text-primary" />Configurações Avançadas</CardTitle></CardHeader>
               <CardContent className="space-y-4">
