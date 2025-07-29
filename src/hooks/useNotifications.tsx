@@ -134,41 +134,51 @@ export const useNotifications = () => {
   }
 
   const markAsRead = async (notificationId: string) => {
+    if (!user) return false
+
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ lida: true })
         .eq('id', notificationId)
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
 
-      if (error) {
-        console.error('Erro ao marcar como lida:', error)
-        return false
-      }
+      if (error) throw error
+
+      // Atualizar estado local imediatamente
+      setNotifications(prev => 
+        prev.map(n => 
+          n.id === notificationId ? { ...n, lida: true } : n
+        )
+      )
 
       return true
     } catch (error) {
-      console.error('Erro:', error)
+      console.error('Erro ao marcar como lida:', error)
       return false
     }
   }
 
   const markAllAsRead = async () => {
+    if (!user) return false
+
     try {
       const { error } = await supabase
         .from('notifications')
         .update({ lida: true })
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
         .eq('lida', false)
 
-      if (error) {
-        console.error('Erro ao marcar todas como lidas:', error)
-        return false
-      }
+      if (error) throw error
+
+      // Atualizar estado local imediatamente
+      setNotifications(prev => 
+        prev.map(n => ({ ...n, lida: true }))
+      )
 
       return true
     } catch (error) {
-      console.error('Erro:', error)
+      console.error('Erro ao marcar todas como lidas:', error)
       return false
     }
   }

@@ -24,9 +24,8 @@ interface GoogleEvent {
   htmlLink: string
 }
 
-// Configurações corretas do Google OAuth - Client ID atualizado
+// Configurações Google OAuth
 const GOOGLE_CLIENT_ID = "1039606606801-9ofdjvl0abgcr808q3i1jgmb6kojdk9d.apps.googleusercontent.com"
-const REDIRECT_URI = `${window.location.origin}`
 const SCOPES = 'https://www.googleapis.com/auth/calendar'
 
 export const useGoogleCalendar = () => {
@@ -37,21 +36,51 @@ export const useGoogleCalendar = () => {
   const [events, setEvents] = useState<GoogleEvent[]>([])
   const [loading, setLoading] = useState(false)
 
-  // Inicializar Google API usando a edge function
+  // Inicializar Google API
   const initializeGoogleAPI = async () => {
+    if (typeof window === 'undefined') return
+    
     try {
       setLoading(true)
+      
+      // Verificar se já está carregado
+      if ((window as any).google?.accounts) {
+        setIsInitialized(true)
+        return
+      }
+
+      // Carregar script do Google
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
+      if (existingScript) {
+        existingScript.addEventListener('load', () => setIsInitialized(true))
+        return
+      }
+
       const script = document.createElement('script')
       script.src = 'https://accounts.google.com/gsi/client'
+      script.async = true
+      script.defer = true
+      
       script.onload = () => {
+        console.log('Google API carregada com sucesso')
         setIsInitialized(true)
       }
+      
+      script.onerror = () => {
+        console.error('Erro ao carregar Google API')
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar API do Google",
+          variant: "destructive"
+        })
+      }
+      
       document.head.appendChild(script)
     } catch (error) {
       console.error('Erro ao inicializar Google API:', error)
       toast({
         title: "Erro",
-        description: "Não foi possível conectar com o Google.",
+        description: "Erro de inicialização do Google",
         variant: "destructive"
       })
     } finally {

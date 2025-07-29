@@ -1,95 +1,77 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useCallback, useMemo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, Edit, Trash, Plus } from 'lucide-react'
-import { format, addDays, startOfWeek, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, isSameMonth, parseISO } from 'date-fns'
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, Edit, Trash } from 'lucide-react'
+import { format, addDays, startOfWeek, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, isSameMonth } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useSmartData } from '@/hooks/useSmartData'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { SessionEditModal } from '@/components/SessionEditModal'
 import { NewSessionModal } from '@/components/NewSessionModal'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
-import { AgendaViewDay } from './AgendaViewDay'
-import { AgendaViewWeek } from './AgendaViewWeek'
 
-export const AgendaViews = () => {
+export const OptimizedAgendaViews = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
   const [view, setView] = useState<'day' | 'week' | 'month'>('month')
   const smartSessionData = useSmartData({ type: 'sessions' })
   const smartClientData = useSmartData({ type: 'clients' })
   
-  // Memoizar dados para evitar re-renders desnecessários
-  const sessions = React.useMemo(() => {
-    if (!smartSessionData.data) return []
-    return Array.isArray(smartSessionData.data) ? smartSessionData.data : []
-  }, [smartSessionData.data])
-
-  const clients = React.useMemo(() => {
-    if (!smartClientData.data) return []
-    return Array.isArray(smartClientData.data) ? smartClientData.data : []
-  }, [smartClientData.data])
-
-  const loading = smartSessionData.isLoading || smartClientData.isLoading
-  const calendarRef = useRef<HTMLDivElement>(null)
+  const { toast } = useToast()
   const [selectedSession, setSelectedSession] = useState<any>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [draggedSession, setDraggedSession] = useState<any>(null)
-  const { toast } = useToast()
 
-  // Configurar realtime para atualizar dados automaticamente
-  useEffect(() => {
-    const channel = supabase
-      .channel('agenda-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'sessions'
-        },
-        () => {
-          smartSessionData.refresh()
-        }
-      )
-      .subscribe()
+  // Memoizar dados para performance
+  const sessions = useMemo(() => 
+    Array.isArray(smartSessionData.data) ? smartSessionData.data : [],
+    [smartSessionData.data]
+  )
 
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
+  const clients = useMemo(() => 
+    Array.isArray(smartClientData.data) ? smartClientData.data : [],
+    [smartClientData.data]
+  )
 
-  const getSessionsForDate = (date: Date) => {
-    return sessions.filter(session => {
-      const sessionDate = new Date(session.data)
-      return isSameDay(sessionDate, date)
+  // Memoizar sessões por data
+  const sessionsByDate = useMemo(() => {
+    const map = new Map()
+    sessions.forEach(session => {
+      const dateKey = session.data
+      if (!map.has(dateKey)) {
+        map.set(dateKey, [])
+      }
+      map.get(dateKey).push(session)
     })
-  }
+    return map
+  }, [sessions])
 
-  const handleDragStart = (e: React.DragEvent, session: any) => {
+  const getSessionsForDate = useCallback((date: Date) => {
+    const dateKey = format(date, 'yyyy-MM-dd')
+    return sessionsByDate.get(dateKey) || []
+  }, [sessionsByDate])
+
+  // Handlers otimizados
+  const handleDragStart = useCallback((e: React.DragEvent, session: any) => {
     setDraggedSession(session)
     e.dataTransfer.effectAllowed = 'move'
-  }
+  }, [])
 
-  const handleDragOver = (e: React.DragEvent) => {
+  const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault()
     e.dataTransfer.dropEffect = 'move'
-  }
+  }, [])
 
-  const handleDrop = async (e: React.DragEvent, newDate: Date) => {
+  const handleDrop = useCallback(async (e: React.DragEvent, newDate: Date) => {
     e.preventDefault()
     
     if (!draggedSession) return
 
-    const originalDate = draggedSession.data
     const newDateString = format(newDate, 'yyyy-MM-dd')
-
-    // Se for a mesma data, não fazer nada
-    if (originalDate === newDateString) {
+    if (draggedSession.data === newDateString) {
       setDraggedSession(null)
       return
     }
@@ -103,16 +85,14 @@ export const AgendaViews = () => {
       if (error) throw error
 
       toast({
-        title: "Sessão reagendada",
-        description: `Movida para ${format(newDate, 'dd/MM/yyyy')}`,
+        title: "Reagendado",
+        description: `Movido para ${format(newDate, 'dd/MM/yyyy')}`,
       })
 
       setDraggedSession(null)
       smartSessionData.refresh()
-
     } catch (error) {
-      console.error('Erro ao mover sessão:', error)
-      
+      console.error('Erro:', error)
       toast({
         title: "Erro",
         description: "Falha ao reagendar",
@@ -120,14 +100,14 @@ export const AgendaViews = () => {
       })
       setDraggedSession(null)
     }
-  }
+  }, [draggedSession, toast, smartSessionData])
 
-  const handleEditSession = (session: any) => {
+  const handleEditSession = useCallback((session: any) => {
     setSelectedSession(session)
     setIsEditModalOpen(true)
-  }
+  }, [])
 
-  const handleDeleteSession = async (sessionId: string) => {
+  const handleDeleteSession = useCallback(async (sessionId: string) => {
     try {
       const { error } = await supabase
         .from('sessions')
@@ -137,26 +117,27 @@ export const AgendaViews = () => {
       if (error) throw error
 
       toast({
-        title: "Sessão excluída",
-        description: "A sessão foi removida com sucesso.",
+        title: "Excluída",
+        description: "Sessão removida",
       })
       smartSessionData.refresh()
     } catch (error) {
-      console.error('Erro ao excluir sessão:', error)
+      console.error('Erro:', error)
       toast({
-        title: "Erro ao excluir sessão",
-        description: "Não foi possível excluir a sessão.",
+        title: "Erro",
+        description: "Falha ao excluir",
         variant: "destructive",
       })
     }
-  }
+  }, [toast, smartSessionData])
 
-  const handleCreateSession = (date: Date) => {
+  const handleCreateSession = useCallback((date: Date) => {
     setSelectedDate(date)
     setIsNewSessionModalOpen(true)
-  }
+  }, [])
 
-  const renderMonthView = () => {
+  // Renderizar visualização do mês otimizada
+  const renderMonthView = useMemo(() => {
     const monthStart = startOfMonth(currentDate)
     const monthEnd = endOfMonth(currentDate)
     const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 })
@@ -171,8 +152,8 @@ export const AgendaViews = () => {
     }
 
     return (
-      <div className="w-full" ref={calendarRef}>
-        {/* Header with weekday names */}
+      <div className="w-full">
+        {/* Header */}
         <div className="grid grid-cols-7 gap-px mb-2">
           {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
             <div key={day} className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
@@ -181,20 +162,21 @@ export const AgendaViews = () => {
           ))}
         </div>
         
-        {/* Calendar grid */}
+        {/* Grid */}
         <div className="grid grid-cols-7 gap-px bg-border">
-          {daysInCalendar.map((date, index) => {
+          {daysInCalendar.map((date) => {
             const daySessionsData = getSessionsForDate(date)
             return (
               <div
                 key={date.getTime()}
                 className={cn(
-                  "min-h-[120px] border border-border p-2 bg-background",
+                  "min-h-[120px] border border-border p-2 bg-background cursor-pointer",
                   !isSameMonth(date, currentDate) && "text-muted-foreground bg-muted/50",
                   isSameDay(date, new Date()) && "bg-accent/50"
                 )}
                 onDragOver={handleDragOver}
                 onDrop={(e) => handleDrop(e, date)}
+                onClick={() => handleCreateSession(date)}
               >
                 <div className="font-medium text-sm mb-2">
                   {format(date, 'd')}
@@ -203,10 +185,14 @@ export const AgendaViews = () => {
                 <div className="space-y-1">
                   {daySessionsData.map((session) => (
                     <div 
-                      key={`${date.getDate()}-${session.id}`}
+                      key={session.id}
                       className="text-xs p-2 rounded bg-primary/10 text-primary cursor-move hover:bg-primary/20 transition-colors group relative"
                       draggable
                       onDragStart={(e) => handleDragStart(e, session)}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        handleEditSession(session)
+                      }}
                     >
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
@@ -215,7 +201,7 @@ export const AgendaViews = () => {
                       <div className="flex items-center gap-1 mt-1">
                         <User className="h-3 w-3" />
                         <span className="truncate">
-                          {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
+                          {clients.find(c => c.id === session.client_id)?.nome || 'Cliente'}
                         </span>
                       </div>
                       <Badge variant="outline" className="text-xs mt-1">
@@ -252,10 +238,13 @@ export const AgendaViews = () => {
         </div>
       </div>
     )
-  }
+  }, [currentDate, getSessionsForDate, clients, handleDragOver, handleDrop, handleCreateSession, handleDragStart, handleEditSession, handleDeleteSession])
+
+  const loading = smartSessionData.isLoading || smartClientData.isLoading
 
   return (
     <div className="space-y-4">
+      {/* Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={() => setCurrentDate(new Date())}>
@@ -274,20 +263,6 @@ export const AgendaViews = () => {
         
         <div className="flex items-center gap-2">
           <Button 
-            variant={view === 'day' ? 'default' : 'outline'} 
-            size="sm" 
-            onClick={() => setView('day')}
-          >
-            Dia
-          </Button>
-          <Button 
-            variant={view === 'week' ? 'default' : 'outline'} 
-            size="sm" 
-            onClick={() => setView('week')}
-          >
-            Semana
-          </Button>
-          <Button 
             variant={view === 'month' ? 'default' : 'outline'} 
             size="sm" 
             onClick={() => setView('month')}
@@ -297,38 +272,14 @@ export const AgendaViews = () => {
         </div>
       </div>
 
-      {loading && sessions.length === 0 && clients.length === 0 ? (
-        <div className="text-center py-8">Carregando dados...</div>
+      {/* Content */}
+      {loading ? (
+        <div className="text-center py-8">Carregando...</div>
       ) : (
-        <>
-          {view === 'month' && renderMonthView()}
-          {view === 'week' && (
-            <AgendaViewWeek
-              currentDate={currentDate}
-              sessions={sessions}
-              clients={clients}
-              onEditSession={handleEditSession}
-              onDeleteSession={handleDeleteSession}
-              onCreateSession={handleCreateSession}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-            />
-          )}
-          {view === 'day' && (
-            <AgendaViewDay
-              currentDate={currentDate}
-              sessions={sessions}
-              clients={clients}
-              onEditSession={handleEditSession}
-              onDeleteSession={handleDeleteSession}
-              onCreateSession={handleCreateSession}
-            />
-          )}
-        </>
+        renderMonthView
       )}
 
-      {/* Session Edit Modal */}
+      {/* Modals */}
       {selectedSession && (
         <SessionEditModal
           session={selectedSession}
@@ -343,7 +294,6 @@ export const AgendaViews = () => {
         />
       )}
 
-      {/* New Session Modal */}
       <NewSessionModal
         open={isNewSessionModalOpen}
         onOpenChange={setIsNewSessionModalOpen}

@@ -23,7 +23,7 @@ export const InviteReferralModal = ({ open, onOpenChange }: InviteReferralModalP
     bonusEarned: 59.80
   })
 
-  const referralLink = user ? `${window.location.origin}/signup?ref=${user.id}` : ''
+  const referralLink = user ? `https://therapypro.app/signup?ref=${user.id}` : ''
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(referralLink)
