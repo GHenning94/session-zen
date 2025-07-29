@@ -21,7 +21,7 @@ export const studyContents: StudyContent[] = [
     type: 'livro',
     area: 'psicologia',
     level: 'iniciante',
-    url: 'https://www.gutenberg.org/files/34671/34671-pdf.pdf',
+    url: 'https://www.gutenberg.org/files/25717/25717-pdf.pdf',
     author: 'Dr. William James',
     tags: ['psicologia clínica', 'fundamentos', 'download gratuito'],
     downloadable: true
@@ -33,7 +33,7 @@ export const studyContents: StudyContent[] = [
     type: 'livro',
     area: 'psicanalise',
     level: 'intermediario',
-    url: 'https://www.gutenberg.org/files/15489/15489-pdf.pdf',
+    url: 'https://www.gutenberg.org/ebooks/15489',
     author: 'Sigmund Freud',
     tags: ['psicanálise', 'sonhos', 'inconsciente', 'freud'],
     downloadable: true
@@ -59,7 +59,7 @@ export const studyContents: StudyContent[] = [
     type: 'artigo',
     area: 'psicologia',
     level: 'intermediario',
-    url: 'https://www.scielo.br/j/prc/a/XvPqYpqJnHdN5nMm8bK7QKz/',
+    url: 'https://www.scielo.br/j/prc/',
     author: 'Dr. Maria Silva Santos',
     tags: ['TCC', 'eficácia', 'ansiedade', 'depressão']
   },
@@ -83,7 +83,7 @@ export const studyContents: StudyContent[] = [
     type: 'video',
     area: 'psicanalise',
     level: 'iniciante',
-    url: 'https://www.youtube.com/watch?v=2rOieGmkHsU',
+    url: 'https://www.youtube.com/watch?v=jDolJWZSqBU',
     duration: '1h45min',
     author: 'Prof. Dr. Christian Dunker',
     tags: ['psicanálise', 'freud', 'USP', 'introdução']
@@ -95,7 +95,7 @@ export const studyContents: StudyContent[] = [
     type: 'video',
     area: 'psiquiatria',
     level: 'intermediario',
-    url: 'https://www.youtube.com/watch?v=anxiety_disorders_treatment',
+    url: 'https://www.youtube.com/watch?v=JLLdagSGo24',
     duration: '2h15min',
     author: 'Dra. Ana Claudia Psiquiatra',
     tags: ['ansiedade', 'diagnóstico', 'tratamento', 'DSM-5']
@@ -254,7 +254,7 @@ export const studyContents: StudyContent[] = [
     type: 'artigo',
     area: 'geral',
     level: 'iniciante',
-    url: 'https://site.cfp.org.br/codigo-de-etica/',
+    url: 'https://site.cfp.org.br/wp-content/uploads/2012/07/codigo-de-etica-psicologia.pdf',
     author: 'Conselho Federal de Psicologia',
     tags: ['ética', 'CFP', 'código', 'profissional']
   },

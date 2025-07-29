@@ -17,21 +17,15 @@ export const AgendaViews = () => {
   const [view, setView] = useState<'day' | 'week' | 'month'>('month')
   const smartSessionData = useSmartData({ type: 'sessions' })
   const smartClientData = useSmartData({ type: 'clients' })
-  const [sessions, setSessions] = useState<any[]>([])
-  const [clients, setClients] = useState<any[]>([])
   const loading = smartSessionData.isLoading || smartClientData.isLoading
 
-  // Atualizar estados apenas quando os dados mudarem, evitando re-renders desnecessários
-  useEffect(() => {
-    if (smartSessionData.data && Array.isArray(smartSessionData.data)) {
-      setSessions(smartSessionData.data)
-    }
+  // Memoizar dados para evitar re-renders desnecessários
+  const sessions = React.useMemo(() => {
+    return smartSessionData.data && Array.isArray(smartSessionData.data) ? smartSessionData.data : []
   }, [smartSessionData.data])
 
-  useEffect(() => {
-    if (smartClientData.data && Array.isArray(smartClientData.data)) {
-      setClients(smartClientData.data)
-    }
+  const clients = React.useMemo(() => {
+    return smartClientData.data && Array.isArray(smartClientData.data) ? smartClientData.data : []
   }, [smartClientData.data])
   const calendarRef = useRef<HTMLDivElement>(null)
   const [selectedSession, setSelectedSession] = useState<any>(null)

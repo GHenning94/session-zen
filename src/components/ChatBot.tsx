@@ -93,7 +93,7 @@ const ChatBot = () => {
       return 'Você tem uma página personalizada de agendamento que clientes podem usar para marcar sessões. Acesse em Configurações para personalizar e compartilhar o link.'
     }
     
-    return 'Sou seu assistente do TherapyPro! Posso explicar COMO USAR cada funcionalidade: agenda, clientes, pagamentos, relatórios, configurações, integração Google Calendar, estudos e muito mais. O que gostaria de saber?'
+    return 'Olá! Sou seu assistente inteligente do TherapyPro. Posso explicar detalhadamente COMO USAR cada seção: Agenda (criar/editar sessões), Clientes (cadastro e fichas), Pagamentos (controle financeiro), Relatórios (análises e PDFs), Configurações (perfil e integrações), Estudos (materiais educativos) e muito mais. Digite "como usar [nome da seção]" para instruções específicas!'
   }
 
   const sendMessage = async () => {
