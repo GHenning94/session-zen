@@ -228,11 +228,22 @@ export const useGoogleCalendar = () => {
   // Verificar se já está conectado ao carregar
   useEffect(() => {
     const accessToken = localStorage.getItem('google_access_token')
-    if (accessToken) {
+    if (accessToken && isInitialized) {
       setIsSignedIn(true)
       loadEvents()
     }
   }, [isInitialized])
+
+  // Refresh automático dos eventos a cada 30 segundos quando conectado
+  useEffect(() => {
+    if (isSignedIn) {
+      const interval = setInterval(() => {
+        loadEvents()
+      }, 30000)
+      
+      return () => clearInterval(interval)
+    }
+  }, [isSignedIn])
 
   return {
     isInitialized,

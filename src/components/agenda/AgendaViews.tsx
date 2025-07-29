@@ -109,8 +109,8 @@ export const AgendaViews = () => {
 
       setDraggedSession(null)
       
-      // Refresh dados após sucesso
-      smartSessionData.refresh()
+      // Refresh para garantir UI atualizada
+      await smartSessionData.refresh()
 
     } catch (error) {
       console.error('Erro ao mover sessão:', error)

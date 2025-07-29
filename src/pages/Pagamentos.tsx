@@ -201,6 +201,16 @@ const Pagamentos = () => {
   }
 
   const generateReceipt = (payment: any) => {
+    // Verificar se o pagamento está concluído
+    if (payment.status !== 'pago') {
+      toast({
+        title: "Pagamento Pendente",
+        description: "É necessário marcar o pagamento como concluído antes de gerar o recibo.",
+        variant: "destructive"
+      })
+      return
+    }
+
     const session = sessions.find(s => s.id === payment.session_id)
     const client = clients.find(c => c.id === session?.client_id)
     const profile = profiles[0]
@@ -414,9 +424,10 @@ const Pagamentos = () => {
                             {hasFeature('hasPDFReports') ? (
                               <DropdownMenuItem 
                                 onClick={() => generateReceipt(payment)}
+                                disabled={payment.status !== 'pago'}
                               >
                                 <Receipt className="w-4 h-4 mr-2" />
-                                Exportar Recibo PDF
+                                {payment.status === 'pago' ? 'Exportar Recibo PDF' : 'Recibo PDF (Marque como pago)'}
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem disabled>
