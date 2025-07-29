@@ -59,8 +59,25 @@ export const NotificationSettings = ({ open, onOpenChange, type, title }: Notifi
   }, [open, user, type])
 
   const loadSettings = async () => {
-    // Temporarily disabled until TypeScript types are regenerated
-    console.log('Loading notification settings for type:', type)
+    try {
+      const { data, error } = await supabase
+        .from('notification_settings')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('type', type)
+        .single()
+
+      if (data) {
+        setSettings({
+          enabled: data.enabled || false,
+          frequency: data.frequency || 'daily',
+          time: data.time || '09:00',
+          events: data.events || []
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar configurações:', error)
+    }
   }
 
   const saveSettings = async () => {
@@ -68,9 +85,19 @@ export const NotificationSettings = ({ open, onOpenChange, type, title }: Notifi
 
     setLoading(true)
     try {
-      // Temporarily disabled until TypeScript types are regenerated
-      console.log('Saving notification settings:', { type, settings })
-      
+      const { error } = await supabase
+        .from('notification_settings')
+        .upsert({
+          user_id: user.id,
+          type,
+          enabled: settings.enabled,
+          frequency: settings.frequency,
+          time: settings.time,
+          events: settings.events
+        })
+
+      if (error) throw error
+
       toast({
         title: "Configurações salvas",
         description: "As configurações de notificação foram atualizadas.",
