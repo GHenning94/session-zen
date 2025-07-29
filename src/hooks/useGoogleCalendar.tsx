@@ -24,8 +24,9 @@ interface GoogleEvent {
   htmlLink: string
 }
 
+// Configurações corretas do Google OAuth
 const GOOGLE_CLIENT_ID = "1093962604103-jcv6t51dj03gk3n8s8rub9d8t3fhubfo.apps.googleusercontent.com"
-const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest'
+const REDIRECT_URI = `${window.location.origin}/oauth/callback`
 const SCOPES = 'https://www.googleapis.com/auth/calendar'
 
 export const useGoogleCalendar = () => {

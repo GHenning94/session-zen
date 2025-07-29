@@ -18,114 +18,7 @@ import {
   Heart
 } from "lucide-react"
 
-interface StudyContent {
-  id: string
-  title: string
-  description: string
-  type: 'artigo' | 'video' | 'webinar' | 'curso' | 'podcast'
-  area: 'psicologia' | 'psicanalise' | 'psiquiatria' | 'coaching' | 'terapia' | 'geral'
-  level: 'iniciante' | 'intermediario' | 'avancado'
-  url: string
-  duration?: string
-  author: string
-  tags: string[]
-}
-
-const studyContents: StudyContent[] = [
-  {
-    id: '1',
-    title: 'Fundamentos da Terapia Cognitivo-Comportamental',
-    description: 'Uma introdução completa aos princípios e técnicas da TCC aplicada na prática clínica.',
-    type: 'artigo',
-    area: 'psicologia',
-    level: 'iniciante',
-    url: 'https://www.scielo.br/j/prc/a/tcc-fundamentos/',
-    author: 'Dr. João Silva',
-    tags: ['TCC', 'fundamentos', 'terapia']
-  },
-  {
-    id: '2',
-    title: 'Webinar: Transtornos de Ansiedade na Atualidade',
-    description: 'Discussão sobre os principais transtornos de ansiedade e suas manifestações contemporâneas.',
-    type: 'webinar',
-    area: 'psiquiatria',
-    level: 'intermediario',
-    url: 'https://youtube.com/watch?v=anxiety-webinar',
-    duration: '1h30min',
-    author: 'Dra. Maria Santos',
-    tags: ['ansiedade', 'transtornos', 'psiquiatria']
-  },
-  {
-    id: '3',
-    title: 'Curso Online: Psicanálise Contemporânea',
-    description: 'Curso completo sobre as principais correntes psicanalíticas atuais e sua aplicação clínica.',
-    type: 'curso',
-    area: 'psicanalise',
-    level: 'avancado',
-    url: 'https://coursera.org/psicanalise-contemporanea',
-    duration: '40 horas',
-    author: 'Prof. Carlos Freud',
-    tags: ['psicanálise', 'lacan', 'freud']
-  },
-  {
-    id: '4',
-    title: 'Coaching Ontológico: Ferramentas Práticas',
-    description: 'Artigo sobre ferramentas práticas do coaching ontológico para desenvolvimento pessoal.',
-    type: 'artigo',
-    area: 'coaching',
-    level: 'intermediario',
-    url: 'https://coachingbrasil.org/ontologico-ferramentas',
-    author: 'Coach Ana Lima',
-    tags: ['coaching', 'ontológico', 'ferramentas']
-  },
-  {
-    id: '5',
-    title: 'Podcast: Burnout em Profissionais da Saúde Mental',
-    description: 'Discussão sobre prevenção e tratamento do burnout entre psicólogos e psiquiatras.',
-    type: 'podcast',
-    area: 'geral',
-    level: 'intermediario',
-    url: 'https://spotify.com/burnout-saude-mental',
-    duration: '45min',
-    author: 'Dr. Pedro Oliveira',
-    tags: ['burnout', 'prevenção', 'saúde mental']
-  },
-  {
-    id: '6',
-    title: 'Terapia Familiar Sistêmica: Novos Paradigmas',
-    description: 'Exploração dos novos paradigmas na terapia familiar sistêmica e suas aplicações.',
-    type: 'video',
-    area: 'terapia',
-    level: 'avancado',
-    url: 'https://vimeo.com/terapia-familiar-sistemica',
-    duration: '2h15min',
-    author: 'Dra. Lucia Terapia',
-    tags: ['terapia familiar', 'sistêmica', 'paradigmas']
-  },
-  {
-    id: '7',
-    title: 'Neuropsicologia: Avaliação e Reabilitação',
-    description: 'Manual prático sobre técnicas de avaliação e reabilitação neuropsicológica.',
-    type: 'artigo',
-    area: 'psicologia',
-    level: 'avancado',
-    url: 'https://neuropsicologia.org.br/manual-avaliacao',
-    author: 'Dr. Cérebro Ativo',
-    tags: ['neuropsicologia', 'avaliação', 'reabilitação']
-  },
-  {
-    id: '8',
-    title: 'Mindfulness na Prática Clínica',
-    description: 'Como integrar técnicas de mindfulness na prática clínica terapêutica.',
-    type: 'webinar',
-    area: 'terapia',
-    level: 'iniciante',
-    url: 'https://mindfulness-clinic.com/webinar',
-    duration: '1h',
-    author: 'Mestre Zen Silva',
-    tags: ['mindfulness', 'meditação', 'terapia']
-  }
-]
+import { studyContents, type StudyContent } from "@/data/studyContents"
 
 const Estudos = () => {
   const [filteredContents, setFilteredContents] = useState<StudyContent[]>(studyContents)
@@ -157,6 +50,7 @@ const Estudos = () => {
       case 'webinar': return <Users className="w-4 h-4" />
       case 'curso': return <GraduationCap className="w-4 h-4" />
       case 'podcast': return <BookOpen className="w-4 h-4" />
+      case 'livro': return <BookOpen className="w-4 h-4" />
       default: return <BookOpen className="w-4 h-4" />
     }
   }
@@ -167,7 +61,8 @@ const Estudos = () => {
       'video': 'Vídeo',
       'webinar': 'Webinar',
       'curso': 'Curso',
-      'podcast': 'Podcast'
+      'podcast': 'Podcast',
+      'livro': 'Livro'
     }
     return types[type as keyof typeof types] || type
   }
@@ -265,6 +160,7 @@ const Estudos = () => {
                     <SelectItem value="webinar">Webinars</SelectItem>
                     <SelectItem value="curso">Cursos</SelectItem>
                     <SelectItem value="podcast">Podcasts</SelectItem>
+                    <SelectItem value="livro">Livros</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -350,7 +246,7 @@ const Estudos = () => {
                         className="bg-gradient-primary hover:opacity-90"
                         onClick={() => window.open(content.url, '_blank')}
                       >
-                        Acessar <ExternalLink className="w-3 h-3 ml-1" />
+                        {content.downloadable ? 'Download' : 'Acessar'} <ExternalLink className="w-3 h-3 ml-1" />
                       </Button>
                     </div>
                   </div>

@@ -165,123 +165,128 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* App Screenshots */}
+      {/* Sistema em Ação - Mockups */}
       <section className="py-20 bg-muted/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              Veja a plataforma em ação
+          <div className="text-center mb-16">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+              Veja o sistema em ação
             </h2>
-            <p className="text-xl text-muted-foreground">
-              Interface intuitiva e recursos profissionais ao seu alcance
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Interface profissional e intuitiva, desenvolvida especificamente para otimizar sua prática clínica
             </p>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {/* Dashboard Mockup */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-primary to-primary/80 h-32 flex items-center justify-center">
-                <div className="text-white text-center">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-2" />
-                  <h3 className="font-semibold">Dashboard</h3>
-                </div>
+          <div className="space-y-20">
+            {/* Dashboard Feature */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="order-2 lg:order-1">
+                <img 
+                  src="/lovable-uploads/2e8af0d5-549a-4911-9ea0-90db571fb7cd.png" 
+                  alt="Dashboard do TherapyPro em laptop" 
+                  className="w-full rounded-lg shadow-xl"
+                />
               </div>
-              <div className="p-4">
-                <p className="text-sm text-muted-foreground">
-                  Visualize suas métricas, próximos compromissos e rendimento mensal de forma clara e organizada.
+              <div className="order-1 lg:order-2 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <BarChart3 className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Dashboard Inteligente</h3>
+                </div>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Visualize todas as métricas importantes da sua prática em um só lugar. Acompanhe receita mensal, 
+                  sessões realizadas, próximos compromissos e estatísticas de crescimento com gráficos claros e intuitivos.
                 </p>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Métricas em tempo real</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Gráficos de receita e produtividade</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Agenda do dia destacada</span>
+                  </li>
+                </ul>
               </div>
             </div>
 
-            {/* Agenda Mockup */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-32 flex items-center justify-center">
-                <div className="text-white text-center">
-                  <Calendar className="h-12 w-12 mx-auto mb-2" />
-                  <h3 className="font-semibold">Agenda</h3>
+            {/* Agenda Feature */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Agenda Avançada</h3>
                 </div>
-              </div>
-              <div className="p-4">
-                <p className="text-sm text-muted-foreground">
-                  Gerencie seus agendamentos com visualização por dia, semana ou mês. Arraste e solte para reagendar.
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Gerencie seus agendamentos com facilidade. Visualize por dia, semana ou mês, 
+                  arraste sessões para reagendar e sincronize automaticamente com Google Calendar.
                 </p>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Arrastar e soltar para reagendar</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Múltiplas visualizações</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Integração com Google Calendar</span>
+                  </li>
+                </ul>
+              </div>
+              <div>
+                <img 
+                  src="/lovable-uploads/2e8af0d5-549a-4911-9ea0-90db571fb7cd.png" 
+                  alt="Agenda do TherapyPro em smartphone" 
+                  className="w-full max-w-sm mx-auto rounded-lg shadow-xl"
+                />
               </div>
             </div>
 
-            {/* Clients Mockup */}
-            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-              <div className="bg-gradient-to-r from-green-500 to-green-600 h-32 flex items-center justify-center">
-                <div className="text-white text-center">
-                  <Users className="h-12 w-12 mx-auto mb-2" />
-                  <h3 className="font-semibold">Clientes</h3>
-                </div>
+            {/* Client Management Feature */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <div className="order-2 lg:order-1">
+                <img 
+                  src="/lovable-uploads/2e8af0d5-549a-4911-9ea0-90db571fb7cd.png" 
+                  alt="Gestão de clientes do TherapyPro em tablet" 
+                  className="w-full rounded-lg shadow-xl"
+                />
               </div>
-              <div className="p-4">
-                <p className="text-sm text-muted-foreground">
-                  Organize informações dos pacientes, histórico de sessões e dados clínicos de forma segura.
+              <div className="order-1 lg:order-2 space-y-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
+                    <Users className="w-6 h-6 text-green-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold">Gestão Completa de Clientes</h3>
+                </div>
+                <p className="text-lg text-muted-foreground leading-relaxed">
+                  Mantenha fichas completas dos seus pacientes com histórico de sessões, 
+                  anotações clínicas, dados de contato e evolução do tratamento, tudo em um lugar seguro.
                 </p>
+                <ul className="space-y-3">
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Fichas clínicas completas</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Histórico de sessões detalhado</span>
+                  </li>
+                  <li className="flex items-center gap-3">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    <span>Segurança e privacidade total</span>
+                  </li>
+                </ul>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Testimonials */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-foreground mb-4">
-              O que nossos clientes dizem
-            </h2>
-            <p className="text-xl text-muted-foreground">
-              Veja como nossa plataforma está transformando a vida de profissionais da saúde mental
-            </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <div className="bg-card p-6 rounded-lg shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-                <div className="ml-4">
-                  <h4 className="font-semibold">Dra. Maria Silva</h4>
-                  <p className="text-sm text-muted-foreground">Psicóloga Clínica</p>
-                </div>
-              </div>
-              <p className="text-muted-foreground">
-                "O TherapyPro revolucionou minha prática. A agenda integrada e os relatórios automáticos economizam horas do meu tempo."
-              </p>
-            </div>
-
-            <div className="bg-card p-6 rounded-lg shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-                <div className="ml-4">
-                  <h4 className="font-semibold">Dr. João Santos</h4>
-                  <p className="text-sm text-muted-foreground">Psiquiatra</p>
-                </div>
-              </div>
-              <p className="text-muted-foreground">
-                "A página de agendamento personalizada aumentou minha taxa de agendamentos em 40%. Excelente ferramenta!"
-              </p>
-            </div>
-
-            <div className="bg-card p-6 rounded-lg shadow-lg">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-primary" />
-                </div>
-                <div className="ml-4">
-                  <h4 className="font-semibold">Ana Costa</h4>
-                  <p className="text-sm text-muted-foreground">Coach de Vida</p>
-                </div>
-              </div>
-              <p className="text-muted-foreground">
-                "Interface intuitiva e recursos profissionais. Meus clientes adoram a facilidade para agendar sessões."
-              </p>
             </div>
           </div>
         </div>

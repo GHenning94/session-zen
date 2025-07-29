@@ -17,9 +17,22 @@ export const AgendaViews = () => {
   const [view, setView] = useState<'day' | 'week' | 'month'>('month')
   const smartSessionData = useSmartData({ type: 'sessions' })
   const smartClientData = useSmartData({ type: 'clients' })
-  const sessions = smartSessionData.data || []
-  const clients = smartClientData.data || []
+  const [sessions, setSessions] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
   const loading = smartSessionData.isLoading || smartClientData.isLoading
+
+  // Atualizar estados apenas quando os dados mudarem, evitando re-renders desnecessários
+  useEffect(() => {
+    if (smartSessionData.data && Array.isArray(smartSessionData.data)) {
+      setSessions(smartSessionData.data)
+    }
+  }, [smartSessionData.data])
+
+  useEffect(() => {
+    if (smartClientData.data && Array.isArray(smartClientData.data)) {
+      setClients(smartClientData.data)
+    }
+  }, [smartClientData.data])
   const calendarRef = useRef<HTMLDivElement>(null)
   const [selectedSession, setSelectedSession] = useState<any>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
