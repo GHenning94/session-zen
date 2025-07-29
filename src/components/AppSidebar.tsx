@@ -6,7 +6,8 @@ import {
   LayoutDashboard,
   LogOut,
   Stethoscope,
-  FileBarChart
+  FileBarChart,
+  BookOpen
 } from "lucide-react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
@@ -53,6 +54,11 @@ const menuItems = [
     title: "Relatórios", 
     url: "/relatorios", 
     icon: FileBarChart 
+  },
+  { 
+    title: "Estudos", 
+    url: "/estudos", 
+    icon: BookOpen 
   },
   { 
     title: "Configurações", 

@@ -14,6 +14,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import SharingSettings from "@/components/sharing/SharingSettings"
 import GoogleCalendarIntegration from "@/components/google/GoogleCalendarIntegration"
+import { NotificationSettings } from "@/components/notifications/NotificationSettings"
 
 type AllSettings = Record<string, any>;
 type ScheduleUI = Record<string, { ativo: boolean, inicio: string, fim: string }>;
@@ -25,6 +26,7 @@ const Configuracoes = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
   const [scheduleUi, setScheduleUi] = useState<ScheduleUI>({});
+  const [showNotificationModal, setShowNotificationModal] = useState<{ type: 'email' | 'whatsapp' | 'reminder' | 'reports'; title: string } | null>(null)
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -192,10 +194,54 @@ const Configuracoes = () => {
               <CardHeader><CardTitle className="flex items-center gap-2"><Bell/>Preferências de Notificação</CardTitle><CardDescription>Configure como e quando receber notificações</CardDescription></CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between"><div><h4 className="font-medium">Notificações por E-mail</h4><p className="text-sm text-muted-foreground">Receber avisos sobre agendamentos por e-mail</p></div><Switch checked={settings.notificacao_email ?? false} onCheckedChange={(c) => handleSettingsChange('notificacao_email', c)} /></div>
-                  <div className="flex items-center justify-between"><div><h4 className="font-medium">Notificações WhatsApp</h4><p className="text-sm text-muted-foreground">Enviar lembretes por WhatsApp</p></div><Switch checked={settings.notificacao_whatsapp ?? false} onCheckedChange={(c) => handleSettingsChange('notificacao_whatsapp', c)} /></div>
-                  <div className="flex items-center justify-between"><div><h4 className="font-medium">Lembrete de Sessão</h4><p className="text-sm text-muted-foreground">Notificar 24h antes da sessão</p></div><Switch checked={settings.lembrete_24h ?? false} onCheckedChange={(c) => handleSettingsChange('lembrete_24h', c)} /></div>
-                  <div className="flex items-center justify-between"><div><h4 className="font-medium">Relatórios Semanais</h4><p className="text-sm text-muted-foreground">Resumo semanal de atividades</p></div><Switch checked={settings.relatorio_semanal ?? false} onCheckedChange={(c) => handleSettingsChange('relatorio_semanal', c)} /></div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Notificações por E-mail</h4>
+                      <p className="text-sm text-muted-foreground">Receber avisos sobre agendamentos por e-mail</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Switch checked={settings.notificacao_email ?? false} onCheckedChange={(c) => handleSettingsChange('notificacao_email', c)} />
+                      <Button variant="outline" size="sm" onClick={() => setShowNotificationModal({ type: 'email', title: 'Notificações por E-mail' })}>
+                        Configurar
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Notificações WhatsApp</h4>
+                      <p className="text-sm text-muted-foreground">Enviar lembretes por WhatsApp</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Switch checked={settings.notificacao_whatsapp ?? false} onCheckedChange={(c) => handleSettingsChange('notificacao_whatsapp', c)} />
+                      <Button variant="outline" size="sm" onClick={() => setShowNotificationModal({ type: 'whatsapp', title: 'Notificações WhatsApp' })}>
+                        Configurar
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Lembrete de Sessão</h4>
+                      <p className="text-sm text-muted-foreground">Notificar 24h antes da sessão</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Switch checked={settings.lembrete_24h ?? false} onCheckedChange={(c) => handleSettingsChange('lembrete_24h', c)} />
+                      <Button variant="outline" size="sm" onClick={() => setShowNotificationModal({ type: 'reminder', title: 'Lembrete de Sessão' })}>
+                        Configurar
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium">Relatórios Semanais</h4>
+                      <p className="text-sm text-muted-foreground">Resumo semanal de atividades</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Switch checked={settings.relatorio_semanal ?? false} onCheckedChange={(c) => handleSettingsChange('relatorio_semanal', c)} />
+                      <Button variant="outline" size="sm" onClick={() => setShowNotificationModal({ type: 'reports', title: 'Relatórios Semanais' })}>
+                        Configurar
+                      </Button>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-4 pt-4 border-t"><h4 className="font-medium">Contatos dos Pacientes</h4><div className="grid grid-cols-1 md:grid-cols-2 gap-4"><div className="space-y-2"><Label>E-mail de Contato</Label><Input placeholder="contato@clinica.com" value={settings.email_contato_pacientes || ''} onChange={(e) => handleSettingsChange('email_contato_pacientes', e.target.value)} /></div><div className="space-y-2"><Label>WhatsApp Business</Label><Input placeholder="(11) 99999-9999" value={settings.whatsapp_contato_pacientes || ''} onChange={(e) => handleSettingsChange('whatsapp_contato_pacientes', e.target.value)} /></div></div></div>
                 <Button onClick={handleSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90"><Save className="w-4 h-4 mr-2" />{isLoading ? 'Salvando...' : 'Salvar Preferências'}</Button>
@@ -229,6 +275,16 @@ const Configuracoes = () => {
           </TabsContent>
           <TabsContent value="integrations"><GoogleCalendarIntegration /></TabsContent>
         </Tabs>
+
+        {/* Modal de configuração de notificações */}
+        {showNotificationModal && (
+          <NotificationSettings
+            open={!!showNotificationModal}
+            onOpenChange={(open) => !open && setShowNotificationModal(null)}
+            type={showNotificationModal.type}
+            title={showNotificationModal.title}
+          />
+        )}
       </div>
     </Layout>
   )
