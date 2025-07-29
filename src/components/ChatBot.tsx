@@ -25,7 +25,31 @@ const ChatBot = () => {
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const getBotResponse = (userMessage: string): string => {
+  const getBotResponse = async (userMessage: string): Promise<string> => {
+    try {
+      // Usar ChatGPT API para respostas inteligentes
+      const response = await fetch(`https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/chatgpt-assistant`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: userMessage }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Erro na API')
+      }
+
+      const data = await response.json()
+      return data.response || 'Desculpe, não consegui processar sua pergunta. Tente novamente.'
+    } catch (error) {
+      console.error('Erro ao consultar ChatGPT:', error)
+      // Fallback para resposta local em caso de erro
+      return getBotResponseLocal(userMessage)
+    }
+  }
+
+  const getBotResponseLocal = (userMessage: string): string => {
     const message = userMessage.toLowerCase()
     
     // Sistema inteligente de respostas baseado em contexto e palavras-chave
@@ -153,19 +177,31 @@ const ChatBot = () => {
     }
 
     setMessages(prev => [...prev, userMessage])
+    const currentMessage = inputMessage
     setInputMessage('')
     setIsLoading(true)
 
-    setTimeout(() => {
+    try {
+      const responseText = await getBotResponse(currentMessage)
       const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: getBotResponse(inputMessage),
+        text: responseText,
         isBot: true,
         timestamp: new Date()
       }
       setMessages(prev => [...prev, botResponse])
+    } catch (error) {
+      console.error('Erro ao enviar mensagem:', error)
+      const errorResponse: Message = {
+        id: (Date.now() + 1).toString(),
+        text: 'Desculpe, ocorreu um erro. Tente novamente.',
+        isBot: true,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, errorResponse])
+    } finally {
       setIsLoading(false)
-    }, 1000)
+    }
   }
 
   useEffect(() => {

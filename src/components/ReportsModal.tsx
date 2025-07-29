@@ -124,7 +124,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
             </div>
           </div>
 
-          {/* Filtros */}
+          {/* Filtros - mostrar para todos os tipos de relatório */}
           {selectedReport && (
             <div className="space-y-4">
               <Label className="text-base font-medium">Filtros (opcional)</Label>

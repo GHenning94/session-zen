@@ -85,10 +85,26 @@ export const AgendaViews = () => {
     
     if (!draggedSession) return
 
+    const originalDate = draggedSession.data
+    const newDateString = format(newDate, 'yyyy-MM-dd')
+
+    // Se for a mesma data, não fazer nada
+    if (originalDate === newDateString) {
+      setDraggedSession(null)
+      return
+    }
+
     try {
+      // Atualização otimista da UI
+      smartSessionData.data = sessions.map(session => 
+        session.id === draggedSession.id 
+          ? { ...session, data: newDateString }
+          : session
+      )
+
       const { error } = await supabase
         .from('sessions')
-        .update({ data: format(newDate, 'yyyy-MM-dd') })
+        .update({ data: newDateString })
         .eq('id', draggedSession.id)
 
       if (error) throw error
@@ -99,14 +115,24 @@ export const AgendaViews = () => {
       })
 
       setDraggedSession(null)
-      smartSessionData.refresh()
+      
+      // Força refresh para garantir sincronização
+      setTimeout(() => {
+        smartSessionData.refresh()
+      }, 500)
+
     } catch (error) {
       console.error('Erro ao mover sessão:', error)
+      
+      // Reverte mudança otimista em caso de erro
+      smartSessionData.refresh()
+      
       toast({
         title: "Erro ao mover sessão",
         description: "Não foi possível reagendar a sessão.",
         variant: "destructive",
       })
+      setDraggedSession(null)
     }
   }
 

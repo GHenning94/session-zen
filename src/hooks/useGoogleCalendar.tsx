@@ -129,9 +129,13 @@ export const useGoogleCalendar = () => {
 
     setLoading(true)
     try {
-      // Usar diretamente a API do Google Calendar
+      // Filtrar eventos do dia corrente até o final do ano
+      const timeMin = new Date().toISOString()
+      const timeMax = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59).toISOString()
+      
+      // Usar diretamente a API do Google Calendar com filtros de data
       const response = await fetch(
-        'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=250&singleEvents=true&orderBy=startTime',
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=250&singleEvents=true&orderBy=startTime`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
