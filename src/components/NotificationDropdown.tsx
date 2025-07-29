@@ -32,7 +32,8 @@ const NotificationDropdown = () => {
     loading, 
     markAsRead, 
     markAllAsRead, 
-    deleteNotification 
+    deleteNotification,
+    markVisibleAsRead
   } = useNotifications()
   const [open, setOpen] = useState(false)
 
@@ -79,8 +80,16 @@ const NotificationDropdown = () => {
     }
   }
 
+  // Marcar como lidas quando abrir
+  const handleOpenChange = (newOpen: boolean) => {
+    setOpen(newOpen)
+    if (newOpen && unreadCount > 0) {
+      markVisibleAsRead()
+    }
+  }
+
   return (
-    <DropdownMenu open={open} onOpenChange={setOpen}>
+    <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           {unreadCount > 0 ? (

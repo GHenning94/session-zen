@@ -86,15 +86,21 @@ export const useNotifications = () => {
               prev.map(n => n.id === updatedNotification.id ? updatedNotification : n)
             )
             
-            // Recalcular contagem não lidas
-            setNotifications(current => {
-              setUnreadCount(current.filter(n => !n.lida).length)
-              return current
-            })
+            // Recalcular contagem não lidas imediatamente
+            setTimeout(() => {
+              setNotifications(current => {
+                const newUnreadCount = current.filter(n => !n.lida).length
+                setUnreadCount(newUnreadCount)
+                return current
+              })
+            }, 100)
           } else if (payload.eventType === 'DELETE') {
             const deletedId = payload.old.id
-            setNotifications(prev => prev.filter(n => n.id !== deletedId))
-            setUnreadCount(prev => Math.max(0, prev - 1))
+            setNotifications(prev => {
+              const filtered = prev.filter(n => n.id !== deletedId)
+              setUnreadCount(filtered.filter(n => !n.lida).length)
+              return filtered
+            })
           }
         }
       )
@@ -104,6 +110,28 @@ export const useNotifications = () => {
       supabase.removeChannel(channel)
     }
   }, [user, toast])
+
+  // Auto-marcar notificações como lidas quando o dropdown abrir
+  const markVisibleAsRead = async () => {
+    const unreadNotifications = notifications.filter(n => !n.lida)
+    if (unreadNotifications.length === 0) return
+
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ lida: true })
+        .eq('user_id', user?.id)
+        .eq('lida', false)
+
+      if (!error) {
+        // Atualizar estado local imediatamente
+        setNotifications(prev => prev.map(n => ({ ...n, lida: true })))
+        setUnreadCount(0)
+      }
+    } catch (error) {
+      console.error('Erro ao marcar como lidas:', error)
+    }
+  }
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -197,6 +225,7 @@ export const useNotifications = () => {
     markAsRead,
     markAllAsRead,
     deleteNotification,
-    createNotification
+    createNotification,
+    markVisibleAsRead
   }
 }

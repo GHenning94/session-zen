@@ -109,7 +109,7 @@ export const AgendaViews = () => {
 
       setDraggedSession(null)
       
-      // Refresh imediato dos dados
+      // Refresh dados após sucesso
       smartSessionData.refresh()
 
     } catch (error) {

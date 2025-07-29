@@ -21,15 +21,19 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
+import { generateReceiptPDF } from "@/utils/receiptGenerator"
+import { useNavigate } from 'react-router-dom'
 
 const Pagamentos = () => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { currentPlan, hasFeature } = useSubscription()
+  const navigate = useNavigate()
   const [filterPeriod, setFilterPeriod] = useState("todos")
   const [filterStatus, setFilterStatus] = useState("todos")
   const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
+  const [profiles, setProfiles] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   // Carregar dados do Supabase
@@ -51,6 +55,12 @@ const Pagamentos = () => {
         .select('*')
         .eq('user_id', user.id)
 
+      // Carregar perfil do profissional
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', user.id)
+
       if (sessionsError) {
         console.error('Erro ao carregar sessões:', sessionsError)
       } else {
@@ -61,6 +71,12 @@ const Pagamentos = () => {
         console.error('Erro ao carregar clientes:', clientsError)
       } else {
         setClients(clientsData || [])
+      }
+
+      if (profileError) {
+        console.error('Erro ao carregar perfil:', profileError)
+      } else {
+        setProfiles(profileData || [])
       }
     } catch (error) {
       console.error('Erro:', error)
@@ -182,6 +198,48 @@ const Pagamentos = () => {
       case 'atrasado': return AlertCircle
       default: return Clock
     }
+  }
+
+  const generateReceipt = (payment: any) => {
+    const session = sessions.find(s => s.id === payment.session_id)
+    const client = clients.find(c => c.id === session?.client_id)
+    const profile = profiles[0]
+    
+    if (!session || !client || !profile) {
+      toast({
+        title: "Erro",
+        description: "Dados incompletos para gerar o recibo.",
+        variant: "destructive"
+      })
+      return
+    }
+
+    const receiptData = {
+      clientName: client.nome,
+      sessionDate: session.data,
+      sessionTime: session.horario,
+      value: session.valor || 0,
+      paymentMethod: 'Dinheiro',
+      professionalName: profile.nome,
+      professionalCRP: profile.crp,
+      sessionId: session.id
+    }
+
+    generateReceiptPDF(receiptData)
+    
+    toast({
+      title: "Recibo gerado!",
+      description: "O arquivo PDF foi baixado com sucesso.",
+    })
+  }
+
+  const viewSession = (sessionId: string) => {
+    // Navegar para a agenda com a sessão selecionada
+    navigate('/agenda')
+    toast({
+      title: "Redirecionando",
+      description: "Você será direcionado para a agenda.",
+    })
   }
 
   return (
@@ -355,14 +413,10 @@ const Pagamentos = () => {
                           <DropdownMenuContent className="bg-background border shadow-lg z-50">
                             {hasFeature('hasPDFReports') ? (
                               <DropdownMenuItem 
-                                onClick={() => {
-                                  // Implementar geração de recibo PDF
-                                  console.log('Gerando recibo PDF para:', payment.id)
-                                  alert('Funcionalidade de recibo PDF será implementada em breve!')
-                                }}
+                                onClick={() => generateReceipt(payment)}
                               >
                                 <Receipt className="w-4 h-4 mr-2" />
-                                Gerar Recibo PDF
+                                Exportar Recibo PDF
                               </DropdownMenuItem>
                             ) : (
                               <DropdownMenuItem disabled>
@@ -371,11 +425,7 @@ const Pagamentos = () => {
                               </DropdownMenuItem>
                             )}
                             <DropdownMenuItem 
-                              onClick={() => {
-                                // Navegar para a sessão específica
-                                console.log('Visualizando sessão:', payment.session_id)
-                                alert('Funcionalidade de visualizar sessão será implementada em breve!')
-                              }}
+                              onClick={() => viewSession(payment.session_id)}
                             >
                               <Calendar className="w-4 h-4 mr-2" />
                               Ver Sessão

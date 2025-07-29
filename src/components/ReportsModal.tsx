@@ -150,7 +150,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                   />
                 </div>
                 
-                {(selectedReport === 'sessions' || selectedReport === 'complete' || selectedReport === 'financial') && (
+                {selectedReport && (
                   <>
                     <div>
                       <Label className="text-sm">Cliente</Label>

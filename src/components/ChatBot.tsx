@@ -27,9 +27,9 @@ const ChatBot = () => {
 
   const getBotResponse = async (userMessage: string): Promise<string> => {
     try {
-      console.log('Enviando mensagem para ChatGPT:', userMessage)
+      console.log('Enviando mensagem para Gemini:', userMessage)
       
-      const response = await fetch(`https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/chatgpt-assistant`, {
+      const response = await fetch(`https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/gemini-assistant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,7 +38,7 @@ const ChatBot = () => {
         body: JSON.stringify({ message: userMessage }),
       })
 
-      console.log('Resposta do ChatGPT:', response.status)
+      console.log('Resposta do Gemini:', response.status)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -57,7 +57,7 @@ const ChatBot = () => {
         throw new Error('Resposta inválida da API')
       }
     } catch (error) {
-      console.error('Erro completo ao consultar ChatGPT:', error)
+      console.error('Erro completo ao consultar Gemini:', error)
       return getBotResponseLocal(userMessage)
     }
   }
