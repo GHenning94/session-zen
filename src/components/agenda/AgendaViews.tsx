@@ -310,9 +310,6 @@ export const AgendaViews = () => {
               onEditSession={handleEditSession}
               onDeleteSession={handleDeleteSession}
               onCreateSession={handleCreateSession}
-              onDragStart={handleDragStart}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
             />
           )}
           {view === 'day' && (
