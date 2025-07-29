@@ -127,9 +127,19 @@ export const useNotifications = () => {
         // Atualizar estado local imediatamente
         setNotifications(prev => prev.map(n => ({ ...n, lida: true })))
         setUnreadCount(0)
+        
+        toast({
+          title: "Notificações marcadas como lidas",
+          description: "Todas as notificações foram marcadas como lidas.",
+        })
       }
     } catch (error) {
       console.error('Erro ao marcar como lidas:', error)
+      toast({
+        title: "Erro",
+        description: "Erro ao marcar notificações como lidas.",
+        variant: "destructive"
+      })
     }
   }
 

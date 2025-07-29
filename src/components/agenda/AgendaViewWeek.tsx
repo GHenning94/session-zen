@@ -25,24 +25,22 @@ interface AgendaViewWeekProps {
   currentDate: Date
   sessions: Session[]
   clients: Client[]
+  googleEvents?: any[]
   onEditSession: (session: Session) => void
   onDeleteSession: (sessionId: string) => void
-  onCreateSession?: (date: Date) => void
-  onDragStart?: (e: React.DragEvent, session: Session) => void
-  onDragOver?: (e: React.DragEvent) => void
-  onDrop?: (e: React.DragEvent, date: Date) => void
+  onCreateSession?: (date: Date, time?: string) => void
+  onDragSession?: (sessionId: string, newDate: string, newTime: string) => void
 }
 
 export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
   currentDate,
   sessions,
   clients,
+  googleEvents = [],
   onEditSession,
   onDeleteSession,
   onCreateSession,
-  onDragStart,
-  onDragOver,
-  onDrop
+  onDragSession
 }) => {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
@@ -113,9 +111,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                         "min-h-[80px] p-1 bg-background border border-border/50 cursor-pointer hover:bg-accent/30 transition-colors",
                         isSameDay(day, new Date()) && "bg-accent/20"
                       )}
-                      onDragOver={onDragOver}
-                      onDrop={(e) => onDrop?.(e, day)}
-                      onClick={() => onCreateSession?.(day)}
+                      onClick={() => onCreateSession?.(day, `${String(hour).padStart(2, '0')}:00`)}
                     >
                       {daySessions.map((session) => (
                         <Card 
@@ -125,7 +121,6 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             getStatusColor(session.status)
                           )}
                           draggable
-                          onDragStart={(e) => onDragStart?.(e, session)}
                         >
                           <CardContent className="p-2">
                             <div className="flex items-center gap-1 mb-1">

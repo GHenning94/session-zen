@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
 import { 
   Calendar as CalendarIcon, 
@@ -17,21 +18,40 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  User
+  User,
+  RefreshCw,
+  Link
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
+import { useGoogleCalendar } from "@/hooks/useGoogleCalendar"
+import { AgendaViewDay } from "@/components/agenda/AgendaViewDay"
+import { AgendaViewWeek } from "@/components/agenda/AgendaViewWeek"
+import AgendaViewMonth from "@/components/agenda/AgendaViewMonth"
 import { cn } from "@/lib/utils"
+import { format, addDays, subDays, addMonths, subMonths } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 const Agenda = () => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { canAddSession, planLimits } = useSubscription()
+  const { 
+    isSignedIn, 
+    events: googleEvents, 
+    loading: googleLoading, 
+    connectToGoogle, 
+    disconnectFromGoogle,
+    loadEvents
+  } = useGoogleCalendar()
+  
   const [selectedDate, setSelectedDate] = useState(new Date())
+  const [currentView, setCurrentView] = useState<'day' | 'week' | 'month'>('month')
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
+  const [editingSession, setEditingSession] = useState<any>(null)
   const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
@@ -126,7 +146,7 @@ const Agenda = () => {
 
     // Validação de limite de sessões por cliente
     const clientSessions = sessions.filter(s => s.client_id === newSession.client_id).length
-    if (!canAddSession(clientSessions)) {
+    if (!editingSession && !canAddSession(clientSessions)) {
       toast({
         title: "Limite Atingido",
         description: `Limite de ${planLimits.maxSessionsPerClient === Infinity ? '∞' : planLimits.maxSessionsPerClient} sessões por cliente atingido.`,
@@ -145,14 +165,35 @@ const Agenda = () => {
         horario: newSession.horario,
         valor: newSession.valor ? parseFloat(newSession.valor) : null,
         anotacoes: newSession.anotacoes,
-        status: 'agendada'
+        status: editingSession?.status || 'agendada'
       }
 
-      const { error } = await supabase
-        .from('sessions')
-        .insert([sessionData])
-      
-      if (error) throw error
+      if (editingSession) {
+        // Editar sessão existente
+        const { error } = await supabase
+          .from('sessions')
+          .update(sessionData)
+          .eq('id', editingSession.id)
+        
+        if (error) throw error
+        
+        toast({
+          title: "Sessão atualizada!",
+          description: "A sessão foi atualizada com sucesso.",
+        })
+      } else {
+        // Criar nova sessão
+        const { error } = await supabase
+          .from('sessions')
+          .insert([sessionData])
+        
+        if (error) throw error
+        
+        toast({
+          title: "Sessão criada!",
+          description: "A sessão foi agendada e adicionada ao seu calendário.",
+        })
+      }
       
       setNewSession({
         client_id: "",
@@ -162,13 +203,10 @@ const Agenda = () => {
         anotacoes: ""
       })
       
+      setEditingSession(null)
       setIsNewSessionOpen(false)
       await loadData()
       
-      toast({
-        title: "Sessão salva com sucesso!",
-        description: "A sessão foi agendada e adicionada ao seu calendário.",
-      })
     } catch (error) {
       console.error('Erro ao salvar sessão:', error)
       toast({
@@ -206,6 +244,71 @@ const Agenda = () => {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleEditSession = (session: any) => {
+    setEditingSession(session)
+    setNewSession({
+      client_id: session.client_id,
+      data: session.data,
+      horario: session.horario,
+      valor: session.valor?.toString() || "",
+      anotacoes: session.anotacoes || ""
+    })
+    setIsNewSessionOpen(true)
+  }
+
+  const handleDragSession = async (sessionId: string, newDate: string, newTime: string) => {
+    setIsLoading(true)
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ 
+          data: newDate,
+          horario: newTime
+        })
+        .eq('id', sessionId)
+      
+      if (error) throw error
+      
+      toast({
+        title: "Sessão reagendada",
+        description: "A sessão foi movida com sucesso.",
+      })
+      
+      await loadData()
+    } catch (error) {
+      console.error('Erro ao reagendar sessão:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível reagendar a sessão.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleCreateSession = (date: Date, time?: string) => {
+    setEditingSession(null)
+    setNewSession({
+      client_id: "",
+      data: date.toISOString().split('T')[0],
+      horario: time || "",
+      valor: "",
+      anotacoes: ""
+    })
+    setIsNewSessionOpen(true)
+  }
+
+  const navigateDate = (direction: 'prev' | 'next') => {
+    if (currentView === 'day') {
+      setSelectedDate(direction === 'next' ? addDays(selectedDate, 1) : subDays(selectedDate, 1))
+    } else if (currentView === 'week') {
+      setSelectedDate(direction === 'next' ? addDays(selectedDate, 7) : subDays(selectedDate, 7))
+    } else {
+      setSelectedDate(direction === 'next' ? addMonths(selectedDate, 1) : subMonths(selectedDate, 1))
     }
   }
 
@@ -346,78 +449,131 @@ const Agenda = () => {
           </Dialog>
         </div>
 
+        {/* Navigation and Google Calendar Integration */}
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate('prev')}
+              disabled={isLoading}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            
+            <div className="text-lg font-semibold px-4">
+              {currentView === 'month' && format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
+              {currentView === 'week' && `${format(selectedDate, "dd/MM", { locale: ptBR })} - ${format(addDays(selectedDate, 6), "dd/MM/yyyy", { locale: ptBR })}`}
+              {currentView === 'day' && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigateDate('next')}
+              disabled={isLoading}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setSelectedDate(new Date())}
+              disabled={isLoading}
+            >
+              Hoje
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            {/* Google Calendar Integration */}
+            {isSignedIn ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="secondary" className="bg-green-100 text-green-800">
+                  <Link className="h-3 w-3 mr-1" />
+                  Google Calendar
+                </Badge>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={loadEvents}
+                  disabled={googleLoading}
+                >
+                  <RefreshCw className={cn("h-4 w-4", googleLoading && "animate-spin")} />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={disconnectFromGoogle}
+                >
+                  Desconectar
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={connectToGoogle}
+                disabled={googleLoading}
+              >
+                <Link className="h-4 w-4 mr-2" />
+                Conectar Google Calendar
+              </Button>
+            )}
+
+            {/* View Selector */}
+            <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="day">Dia</TabsTrigger>
+                <TabsTrigger value="week">Semana</TabsTrigger>
+                <TabsTrigger value="month">Mês</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+        </div>
+
         {/* Agenda Views */}
         <div className="space-y-4">
-          <div className="grid grid-cols-7 gap-px mb-2">
-            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-              <div key={day} className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
-                {day}
-              </div>
-            ))}
-          </div>
-          
-          <div className="grid grid-cols-7 gap-px bg-border">
-            {Array.from({ length: 35 }, (_, i) => {
-              const date = addDays(selectedDate, i - selectedDate.getDay())
-              const daySessionsData = sessions.filter(session => session.data === date.toISOString().split('T')[0])
-              
-              return (
-                <div
-                  key={i}
-                  className={cn(
-                    "min-h-[120px] border border-border p-2 bg-background cursor-pointer hover:bg-accent/20",
-                    date.getMonth() !== selectedDate.getMonth() && "text-muted-foreground bg-muted/50"
-                  )}
-                  onClick={() => {
-                    setNewSession({...newSession, data: date.toISOString().split('T')[0]})
-                    setIsNewSessionOpen(true)
-                  }}
-                >
-                  <div className="font-medium text-sm mb-2">
-                    {date.getDate()}
-                  </div>
-                  
-                  <div className="space-y-1">
-                    {daySessionsData.map((session) => (
-                      <div 
-                        key={session.id}
-                        className="text-xs p-2 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                        }}
-                      >
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          <span>{session.horario}</span>
-                        </div>
-                        <div className="flex items-center gap-1 mt-1">
-                          <User className="h-3 w-3" />
-                          <span className="truncate">
-                            {getClientName(session.client_id)}
-                          </span>
-                        </div>
-                        <Badge variant="outline" className="text-xs mt-1">
-                          {session.status}
-                        </Badge>
-                        
-                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleDeleteSession(session.id)
-                            }}
-                            className="p-1 bg-white rounded shadow hover:bg-gray-50 text-red-600"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+          {currentView === 'day' && (
+            <AgendaViewDay
+              currentDate={selectedDate}
+              sessions={sessions}
+              clients={clients}
+              googleEvents={googleEvents}
+              onEditSession={handleEditSession}
+              onDeleteSession={handleDeleteSession}
+              onCreateSession={handleCreateSession}
+              onDragSession={handleDragSession}
+            />
+          )}
+
+          {currentView === 'week' && (
+            <AgendaViewWeek
+              currentDate={selectedDate}
+              sessions={sessions}
+              clients={clients}
+              googleEvents={googleEvents}
+              onEditSession={handleEditSession}
+              onDeleteSession={handleDeleteSession}
+              onCreateSession={handleCreateSession}
+              onDragSession={handleDragSession}
+            />
+          )}
+
+          {currentView === 'month' && (
+            <AgendaViewMonth
+              selectedDate={selectedDate}
+              sessions={sessions}
+              clients={clients}
+              googleEvents={googleEvents}
+              onEditSession={handleEditSession}
+              onDeleteSession={handleDeleteSession}
+              onCreateSession={handleCreateSession}
+              onDragSession={handleDragSession}
+              onDateSelect={setSelectedDate}
+            />
+          )}
         </div>
 
         {/* Resumo do Dia */}
