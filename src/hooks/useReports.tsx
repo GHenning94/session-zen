@@ -78,56 +78,66 @@ export const useReports = () => {
   }
 
   const generatePDF = (data: any, type: string, filters: ReportFilters) => {
-    const doc = new jsPDF()
-    const pageWidth = doc.internal.pageSize.width
+    try {
+      console.log('📄 Iniciando geração PDF com dados:', data)
+      
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.width
 
-    // Add header with branding
-    doc.setFillColor(59, 130, 246) // Primary blue
-    doc.rect(0, 0, pageWidth, 40, 'F')
-    
-    // Logo/Brand name
-    doc.setTextColor(255, 255, 255)
-    doc.setFontSize(20)
-    doc.text('TherapyPro', 20, 25)
-    
-    // Report title
-    const reportTitle = type === 'complete' ? 'Relatório Completo' :
-                       type === 'sessions' ? 'Relatório de Sessões' :
-                       type === 'financial' ? 'Relatório Financeiro' :
-                       'Relatório de Clientes'
-    
-    doc.setFontSize(16)
-    doc.text(reportTitle, pageWidth / 2, 25, { align: 'center' })
-    
-    // Reset colors and add date
-    doc.setTextColor(0, 0, 0)
-    doc.setFontSize(12)
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, 50, { align: 'center' })
+      // Add header with branding
+      doc.setFillColor(59, 130, 246) // Primary blue
+      doc.rect(0, 0, pageWidth, 40, 'F')
+      
+      // Logo/Brand name
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(20)
+      doc.text('TherapyPro', 20, 25)
+      
+      // Report title
+      const reportTitle = type === 'complete' ? 'Relatório Completo' :
+                         type === 'sessions' ? 'Relatório de Sessões' :
+                         type === 'financial' ? 'Relatório Financeiro' :
+                         'Relatório de Clientes'
+      
+      doc.setFontSize(16)
+      doc.text(reportTitle, pageWidth / 2, 25, { align: 'center' })
+      
+      // Reset colors and add date
+      doc.setTextColor(0, 0, 0)
+      doc.setFontSize(12)
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, 50, { align: 'center' })
 
-    let yPosition = 70
+      let yPosition = 70
 
-    // Relatório de Clientes
-    if (type === 'clients' || type === 'complete') {
-      doc.setFontSize(14)
-      doc.text('Clientes', 20, yPosition)
-      yPosition += 10
+      // Relatório de Clientes
+      if (type === 'clients' || type === 'complete') {
+        if (data.clients && data.clients.length > 0) {
+          doc.setFontSize(14)
+          doc.text('Clientes', 20, yPosition)
+          yPosition += 10
 
-      const clientsData = data.clients.map((client: any) => [
-        client.nome,
-        client.email || '-',
-        client.telefone || '-',
-        format(new Date(client.created_at), 'dd/MM/yyyy', { locale: ptBR })
-      ])
+          const clientsData = data.clients.map((client: any) => [
+            client.nome || 'N/A',
+            client.email || '-',
+            client.telefone || '-',
+            client.created_at ? format(new Date(client.created_at), 'dd/MM/yyyy', { locale: ptBR }) : '-'
+          ])
 
-      autoTable(doc, {
-        startY: yPosition,
-        head: [['Nome', 'Email', 'Telefone', 'Cadastro']],
-        body: clientsData,
-        theme: 'grid'
-      })
+          autoTable(doc, {
+            startY: yPosition,
+            head: [['Nome', 'Email', 'Telefone', 'Cadastro']],
+            body: clientsData,
+            theme: 'grid',
+            styles: { fontSize: 10 }
+          })
 
-      yPosition = (doc as any).lastAutoTable.finalY + 20
-    }
+          yPosition = (doc as any).lastAutoTable.finalY + 20
+        } else {
+          doc.setFontSize(12)
+          doc.text('Nenhum cliente encontrado.', 20, yPosition)
+          yPosition += 20
+        }
+      }
 
     // Relatório de Sessões
     if (type === 'sessions' || type === 'complete') {
@@ -186,28 +196,38 @@ export const useReports = () => {
       doc.text(`Total de Clientes: ${data.clients.length}`, 20, yPosition)
     }
 
-    // Salvar PDF
-    const fileName = `relatorio-${type}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`
-    doc.save(fileName)
+      // Salvar PDF
+      const fileName = `relatorio-${type}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`
+      doc.save(fileName)
+      console.log('✅ PDF gerado com sucesso:', fileName)
+    } catch (error) {
+      console.error('❌ Erro ao gerar PDF:', error)
+      throw error
+    }
   }
 
   const generateExcel = (data: any, type: string, filters: ReportFilters) => {
-    const workbook = XLSX.utils.book_new()
+    try {
+      console.log('📊 Iniciando geração Excel com dados:', data)
+      
+      const workbook = XLSX.utils.book_new()
 
-    // Aba de Clientes
-    if (type === 'clients' || type === 'complete') {
-      const clientsData = data.clients.map((client: any) => ({
-        Nome: client.nome,
-        Email: client.email || '',
-        Telefone: client.telefone || '',
-        'Data Cadastro': format(new Date(client.created_at), 'dd/MM/yyyy', { locale: ptBR }),
-        'Dados Clínicos': client.dados_clinicos || '',
-        Histórico: client.historico || ''
-      }))
+      // Aba de Clientes
+      if (type === 'clients' || type === 'complete') {
+        if (data.clients && data.clients.length > 0) {
+          const clientsData = data.clients.map((client: any) => ({
+            Nome: client.nome || 'N/A',
+            Email: client.email || '',
+            Telefone: client.telefone || '',
+            'Data Cadastro': client.created_at ? format(new Date(client.created_at), 'dd/MM/yyyy', { locale: ptBR }) : '',
+            'Dados Clínicos': client.dados_clinicos || '',
+            Histórico: client.historico || ''
+          }))
 
-      const clientsSheet = XLSX.utils.json_to_sheet(clientsData)
-      XLSX.utils.book_append_sheet(workbook, clientsSheet, 'Clientes')
-    }
+          const clientsSheet = XLSX.utils.json_to_sheet(clientsData)
+          XLSX.utils.book_append_sheet(workbook, clientsSheet, 'Clientes')
+        }
+      }
 
     // Aba de Sessões
     if (type === 'sessions' || type === 'complete') {
@@ -244,9 +264,14 @@ export const useReports = () => {
       XLSX.utils.book_append_sheet(workbook, financialSheet, 'Financeiro')
     }
 
-    // Salvar Excel
-    const fileName = `relatorio-${type}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.xlsx`
-    XLSX.writeFile(workbook, fileName)
+      // Salvar Excel
+      const fileName = `relatorio-${type}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.xlsx`
+      XLSX.writeFile(workbook, fileName)
+      console.log('✅ Excel gerado com sucesso:', fileName)
+    } catch (error) {
+      console.error('❌ Erro ao gerar Excel:', error)
+      throw error
+    }
   }
 
   const generateReport = async (type: string, format: 'pdf' | 'excel', filters: ReportFilters = {}) => {

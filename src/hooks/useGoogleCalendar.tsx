@@ -154,15 +154,22 @@ export const useGoogleCalendar = () => {
   // Carregar eventos do Google Calendar
   const loadEvents = async () => {
     const accessToken = localStorage.getItem('google_access_token')
-    if (!accessToken) return
+    if (!accessToken) {
+      console.log('❌ Nenhum token de acesso encontrado')
+      return
+    }
 
     setLoading(true)
     try {
+      console.log('📅 Carregando eventos do Google Calendar...')
+      
       // Filtrar eventos do dia corrente até o final do ano
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const timeMin = today.toISOString()
       const timeMax = new Date(today.getFullYear(), 11, 31, 23, 59, 59).toISOString()
+      
+      console.log('📅 Buscando eventos entre:', { timeMin, timeMax })
       
       // Usar diretamente a API do Google Calendar com filtros de data
       const response = await fetch(
@@ -170,20 +177,40 @@ export const useGoogleCalendar = () => {
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
           },
         }
       )
 
+      console.log('📅 Resposta da API:', response.status)
+
       if (!response.ok) {
+        if (response.status === 401) {
+          // Token expirado
+          localStorage.removeItem('google_access_token')
+          setIsSignedIn(false)
+          toast({
+            title: "Token expirado",
+            description: "Reconecte-se ao Google Calendar.",
+            variant: "destructive"
+          })
+          return
+        }
         throw new Error(`HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
+      console.log('📅 Eventos carregados:', data.items?.length || 0)
       setEvents(data.items || [])
-    } catch (error) {
-      console.error('Erro ao carregar eventos:', error)
+      
       toast({
-        title: "Erro",
+        title: "Eventos sincronizados",
+        description: `${data.items?.length || 0} eventos carregados do Google Calendar.`,
+      })
+    } catch (error) {
+      console.error('❌ Erro ao carregar eventos:', error)
+      toast({
+        title: "Erro de sincronização",
         description: "Não foi possível carregar os eventos do Google Calendar.",
         variant: "destructive"
       })
