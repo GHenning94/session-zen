@@ -18,7 +18,7 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, LogOut, Settings } from "lucide-react"
+import { User, LogOut, Settings, Share, Copy } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
@@ -35,6 +35,7 @@ export const ProfileDropdown = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '' })
   const [loading, setLoading] = useState(false)
+  const [inviteLink] = useState(`https://therapypro.app/convite/${user?.id || 'default'}`)
 
   const fetchProfile = async () => {
     if (!user) return
@@ -133,6 +134,14 @@ export const ProfileDropdown = () => {
     }
   }
 
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(inviteLink)
+    toast({
+      title: "Link copiado!",
+      description: "O link de convite foi copiado para a área de transferência.",
+    })
+  }
+
   return (
     <>
       <DropdownMenu>
@@ -147,6 +156,10 @@ export const ProfileDropdown = () => {
           <DropdownMenuItem onClick={() => setIsModalOpen(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Editar Perfil
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={copyInviteLink}>
+            <Share className="w-4 h-4 mr-2" />
+            Copiar Link de Convite
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-destructive">

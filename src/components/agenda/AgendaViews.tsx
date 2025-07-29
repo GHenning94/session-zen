@@ -1,166 +1,121 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ChevronLeft, ChevronRight, Calendar, Grid, List, User, Plus, MoreHorizontal } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Calendar as CalendarIcon, Edit, Trash2 } from "lucide-react"
+import { Layout } from "@/components/Layout"
+import { useSmartData } from "@/hooks/useSmartData"
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, startOfWeek, endOfWeek, addDays } from "date-fns"
+import { ptBR } from "date-fns/locale"
+import { NewSessionModal } from "@/components/NewSessionModal"
+import { SessionEditModal } from "@/components/SessionEditModal"
 
-export type ViewType = 'month' | 'week' | 'day'
-
-interface AgendaViewsProps {
-  selectedDate: Date
-  setSelectedDate: (date: Date) => void
-  sessions: any[]
-  clients: any[]
-  getClientName: (clientId: string) => string
-  onNewSession: (time?: string, date?: Date) => void
-  onDeleteSession: (sessionId: string) => void
-  timeSlots: string[]
+interface Session {
+  id: string
+  data: string
+  horario: string
+  client_id: string
+  status: string
+  valor?: number
+  anotacoes?: string
+  clients?: {
+    nome: string
+    email?: string
+    telefone?: string
+  }
 }
 
-const AgendaViews = ({ 
-  selectedDate, 
-  setSelectedDate, 
-  sessions, 
-  clients, 
-  getClientName,
-  onNewSession,
-  onDeleteSession,
-  timeSlots 
-}: AgendaViewsProps) => {
-  const [currentView, setCurrentView] = useState<ViewType>('day')
+const AgendaViews = () => {
+  const sessionData = useSmartData({ type: 'sessions' })
+  const clientData = useSmartData({ type: 'clients' })
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [view, setView] = useState<'day' | 'week' | 'month'>('month')
+  const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
+  const [isEditSessionOpen, setIsEditSessionOpen] = useState(false)
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
 
-  const addDays = (date: Date, days: number) => {
-    const result = new Date(date)
-    result.setDate(result.getDate() + days)
-    return result
-  }
+  useEffect(() => {
+    sessionData.refresh()
+    clientData.refresh()
+  }, [])
 
-  const addWeeks = (date: Date, weeks: number) => {
-    return addDays(date, weeks * 7)
-  }
-
-  const addMonths = (date: Date, months: number) => {
-    const result = new Date(date)
-    result.setMonth(result.getMonth() + months)
-    return result
-  }
-
-  const getNavigationLabel = () => {
-    switch (currentView) {
-      case 'month':
-        return selectedDate.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
-      case 'week':
-        const weekStart = getWeekStart(selectedDate)
-        const weekEnd = addDays(weekStart, 6)
-        return `${weekStart.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })} - ${weekEnd.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })}`
-      case 'day':
-        return selectedDate.toLocaleDateString('pt-BR', { 
-          weekday: 'long', 
-          day: '2-digit', 
-          month: 'long', 
-          year: 'numeric' 
-        })
-    }
-  }
-
-  const handlePrevious = () => {
-    switch (currentView) {
-      case 'month':
-        setSelectedDate(addMonths(selectedDate, -1))
-        break
-      case 'week':
-        setSelectedDate(addWeeks(selectedDate, -1))
-        break
-      case 'day':
-        setSelectedDate(addDays(selectedDate, -1))
-        break
-    }
-  }
-
-  const handleNext = () => {
-    switch (currentView) {
-      case 'month':
-        setSelectedDate(addMonths(selectedDate, 1))
-        break
-      case 'week':
-        setSelectedDate(addWeeks(selectedDate, 1))
-        break
-      case 'day':
-        setSelectedDate(addDays(selectedDate, 1))
-        break
-    }
-  }
-
-  const getWeekStart = (date: Date) => {
-    const result = new Date(date)
-    const day = result.getDay()
-    const diff = result.getDate() - day
-    return new Date(result.setDate(diff))
-  }
+  const sessions = sessionData.data || []
+  const clients = clientData.data || []
 
   const getSessionsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = format(date, 'yyyy-MM-dd')
     return sessions.filter(session => session.data === dateStr)
+      .sort((a, b) => a.horario.localeCompare(b.horario))
   }
 
-  const getSessionForDateTime = (date: Date, time: string) => {
-    const dateStr = date.toISOString().split('T')[0]
-    return sessions.find(session => session.data === dateStr && session.horario === time)
+  const handleSessionClick = (session: Session) => {
+    setSelectedSession(session)
+    setIsEditSessionOpen(true)
+  }
+
+  const handleDateClick = (date: Date) => {
+    setCurrentDate(date)
+    setIsNewSessionOpen(true)
   }
 
   const renderMonthView = () => {
-    const monthStart = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
-    const monthEnd = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0)
-    const startDate = getWeekStart(monthStart)
-    const endDate = addDays(getWeekStart(monthEnd), 6)
-    
-    const days = []
-    let currentDate = new Date(startDate)
-    
-    while (currentDate <= endDate) {
-      days.push(new Date(currentDate))
-      currentDate = addDays(currentDate, 1)
-    }
+    const monthStart = startOfMonth(currentDate)
+    const monthEnd = endOfMonth(currentDate)
+    const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 })
+    const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
+    const days = eachDayOfInterval({ start: calendarStart, end: calendarEnd })
 
     return (
       <div className="grid grid-cols-7 gap-1">
         {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
-          <div key={day} className="p-2 text-center font-medium text-muted-foreground border-b">
+          <div key={day} className="p-2 text-center font-medium text-muted-foreground bg-muted/50">
             {day}
           </div>
         ))}
-        {days.map(day => {
-          const isCurrentMonth = day.getMonth() === selectedDate.getMonth()
-          const isToday = day.toDateString() === new Date().toDateString()
-          const isSelected = day.toDateString() === selectedDate.toDateString()
-          const daySessions = getSessionsForDate(day)
-          
+        {days.map((day, index) => {
+          const daySessionsData = getSessionsForDate(day)
+          const isCurrentMonth = isSameMonth(day, currentDate)
+          const isToday = isSameDay(day, new Date())
+
           return (
-            <div 
-              key={day.toISOString()}
-              className={`min-h-[100px] p-2 border cursor-pointer hover:bg-accent/50 transition-colors ${
-                isCurrentMonth ? 'bg-background' : 'bg-muted/30'
-              } ${isSelected ? 'ring-2 ring-primary' : ''}`}
-              onClick={() => setSelectedDate(day)}
+            <div
+              key={index}
+              className={`min-h-24 p-1 border border-border cursor-pointer hover:bg-accent/50 transition-colors ${
+                !isCurrentMonth ? 'bg-muted/30 text-muted-foreground' : ''
+              } ${isToday ? 'bg-primary/10 border-primary' : ''}`}
+              onClick={() => handleDateClick(day)}
             >
-              <div className={`text-sm font-medium mb-1 ${
-                isToday ? 'text-primary' : isCurrentMonth ? 'text-foreground' : 'text-muted-foreground'
-              }`}>
-                {day.getDate()}
+              <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
+                {format(day, 'd')}
               </div>
               <div className="space-y-1">
-                {daySessions.slice(0, 3).map(session => (
-                  <div 
+                {daySessionsData.slice(0, 3).map((session) => (
+                  <div
                     key={session.id}
-                    className="text-xs bg-primary/10 text-primary px-1 py-0.5 rounded truncate"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSessionClick(session)
+                    }}
+                    className={`text-xs p-1 rounded cursor-pointer hover:opacity-80 transition-opacity ${
+                      session.status === 'realizada' 
+                        ? 'bg-success/20 text-success border border-success/30' 
+                        : session.status === 'cancelada'
+                        ? 'bg-destructive/20 text-destructive border border-destructive/30'
+                        : 'bg-primary/20 text-primary border border-primary/30'
+                    }`}
                   >
-                    {session.horario} - {getClientName(session.client_id)}
+                    <div className="font-medium truncate">
+                      {session.horario}
+                    </div>
+                    <div className="truncate">
+                      {session.clients?.nome || 'Cliente'}
+                    </div>
                   </div>
                 ))}
-                {daySessions.length > 3 && (
+                {daySessionsData.length > 3 && (
                   <div className="text-xs text-muted-foreground">
-                    +{daySessions.length - 3} mais
+                    +{daySessionsData.length - 3} mais
                   </div>
                 )}
               </div>
@@ -172,139 +127,102 @@ const AgendaViews = ({
   }
 
   const renderWeekView = () => {
-    const weekStart = getWeekStart(selectedDate)
+    const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
     const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
 
     return (
-      <div className="grid grid-cols-8 gap-1">
-        <div className="p-2"></div>
-        {weekDays.map(day => {
-          const isToday = day.toDateString() === new Date().toDateString()
-          const isSelected = day.toDateString() === selectedDate.toDateString()
-          
+      <div className="grid grid-cols-7 gap-2">
+        {weekDays.map((day) => {
+          const daySessionsData = getSessionsForDate(day)
+          const isToday = isSameDay(day, new Date())
+
           return (
-            <div 
-              key={day.toISOString()}
-              className={`p-2 text-center cursor-pointer hover:bg-accent/50 transition-colors border-b ${
-                isSelected ? 'ring-2 ring-primary' : ''
-              }`}
-              onClick={() => setSelectedDate(day)}
-            >
-              <div className="text-xs text-muted-foreground">
-                {day.toLocaleDateString('pt-BR', { weekday: 'short' })}
+            <div key={day.toString()} className="space-y-2">
+              <div className={`text-center p-2 rounded ${isToday ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                <div className="font-medium">{format(day, 'EEE', { locale: ptBR })}</div>
+                <div className="text-sm">{format(day, 'd')}</div>
               </div>
-              <div className={`text-sm font-medium ${isToday ? 'text-primary' : ''}`}>
-                {day.getDate()}
+              <div 
+                className="min-h-96 p-2 border border-border rounded cursor-pointer hover:bg-accent/50"
+                onClick={() => handleDateClick(day)}
+              >
+                {daySessionsData.map((session) => (
+                  <div
+                    key={session.id}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSessionClick(session)
+                    }}
+                    className={`text-sm p-2 mb-2 rounded cursor-pointer hover:opacity-80 transition-opacity ${
+                      session.status === 'realizada' 
+                        ? 'bg-success/20 text-success border border-success/30' 
+                        : session.status === 'cancelada'
+                        ? 'bg-destructive/20 text-destructive border border-destructive/30'
+                        : 'bg-primary/20 text-primary border border-primary/30'
+                    }`}
+                  >
+                    <div className="font-medium">{session.horario}</div>
+                    <div className="truncate">{session.clients?.nome || 'Cliente'}</div>
+                    {session.valor && (
+                      <div className="text-xs">R$ {session.valor.toFixed(2)}</div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )
         })}
-        
-        {timeSlots.map(time => (
-          <div key={time} className="contents">
-            <div className="p-2 text-xs text-muted-foreground border-r">
-              {time}
-            </div>
-            {weekDays.map(day => {
-              const session = getSessionForDateTime(day, time)
-              return (
-                <div 
-                  key={`${day.toISOString()}-${time}`}
-                  className="min-h-[50px] p-1 border hover:bg-accent/50 transition-colors cursor-pointer"
-                  onClick={() => !session && onNewSession(time, day)}
-                >
-                  {session ? (
-                    <div className="bg-primary/10 text-primary text-xs p-1 rounded h-full flex items-center justify-between">
-                      <span className="truncate">{getClientName(session.client_id)}</span>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-4 w-4 ml-1">
-                            <MoreHorizontal className="w-3 h-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => onDeleteSession(session.id)}>
-                            Cancelar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ) : (
-                    <div className="h-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                      <Plus className="w-3 h-3 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        ))}
       </div>
     )
   }
 
   const renderDayView = () => {
+    const daySessionsData = getSessionsForDate(currentDate)
+    const hours = Array.from({ length: 24 }, (_, i) => i)
+
     return (
-      <div className="space-y-2">
-        {timeSlots.map((time) => {
-          const session = getSessionForDateTime(selectedDate, time)
+      <div className="space-y-1">
+        {hours.map((hour) => {
+          const hourStr = hour.toString().padStart(2, '0')
+          const hourSessions = daySessionsData.filter(session => 
+            session.horario.startsWith(hourStr)
+          )
+
           return (
-            <div key={time} className="flex items-center gap-4 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-              <div className="w-16 text-sm font-mono text-muted-foreground">
-                {time}
+            <div key={hour} className="flex border-b border-border">
+              <div className="w-16 p-2 text-sm text-muted-foreground bg-muted/50">
+                {hourStr}:00
               </div>
-              <div className="flex-1">
-                {session ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                        <User className="w-4 h-4 text-primary" />
-                      </div>
+              <div 
+                className="flex-1 min-h-12 p-2 hover:bg-accent/50 cursor-pointer"
+                onClick={() => handleDateClick(currentDate)}
+              >
+                {hourSessions.map((session) => (
+                  <div
+                    key={session.id}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleSessionClick(session)
+                    }}
+                    className={`p-2 mb-1 rounded cursor-pointer hover:opacity-80 transition-opacity ${
+                      session.status === 'realizada' 
+                        ? 'bg-success/20 text-success border border-success/30' 
+                        : session.status === 'cancelada'
+                        ? 'bg-destructive/20 text-destructive border border-destructive/30'
+                        : 'bg-primary/20 text-primary border border-primary/30'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium">{getClientName(session.client_id)}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Sessão • 50 min
-                        </p>
+                        <div className="font-medium">{session.horario}</div>
+                        <div>{session.clients?.nome || 'Cliente'}</div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="text-right">
-                        <p className="font-medium text-sm">R$ {session.valor?.toFixed(2) || '0,00'}</p>
-                        <Badge 
-                          variant={session.status === 'agendada' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {session.status}
-                        </Badge>
-                      </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => onDeleteSession(session.id)}>
-                            Cancelar
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Badge variant={session.status === 'realizada' ? 'default' : 'secondary'}>
+                        {session.status}
+                      </Badge>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">Horário disponível</p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="text-primary hover:text-primary"
-                      onClick={() => onNewSession(time, selectedDate)}
-                    >
-                      <Plus className="w-4 h-4 mr-1" />
-                      Agendar
-                    </Button>
-                  </div>
-                )}
+                ))}
               </div>
             </div>
           )
@@ -314,74 +232,117 @@ const AgendaViews = ({
   }
 
   return (
-    <Card className="shadow-soft">
-      <CardHeader>
+    <Layout>
+      <div className="space-y-6">
+        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-primary" />
-              {getNavigationLabel()}
-            </CardTitle>
-            <div className="flex items-center gap-1 border border-border rounded-lg p-1">
-              <Button 
-                variant={currentView === 'month' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setCurrentView('month')}
-                className="h-8"
-              >
-                <Grid className="w-4 h-4 mr-1" />
-                Mês
-              </Button>
-              <Button 
-                variant={currentView === 'week' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setCurrentView('week')}
-                className="h-8"
-              >
-                <List className="w-4 h-4 mr-1" />
-                Semana
-              </Button>
-              <Button 
-                variant={currentView === 'day' ? 'default' : 'ghost'}
-                size="sm"
-                onClick={() => setCurrentView('day')}
-                className="h-8"
-              >
-                <Calendar className="w-4 h-4 mr-1" />
-                Dia
-              </Button>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
+            <p className="text-muted-foreground">
+              Visualize e gerencie suas sessões - clique para editar
+            </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handlePrevious}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </Button>
-            <Button 
-              variant="outline"
-              onClick={() => setSelectedDate(new Date())}
-            >
-              Hoje
-            </Button>
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleNext}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </Button>
-          </div>
+          <Button 
+            onClick={() => setIsNewSessionOpen(true)}
+            className="bg-gradient-primary hover:opacity-90"
+          >
+            <CalendarIcon className="w-4 h-4 mr-2" />
+            Nova Sessão
+          </Button>
         </div>
-      </CardHeader>
-      <CardContent>
-        {currentView === 'month' && renderMonthView()}
-        {currentView === 'week' && renderWeekView()}
-        {currentView === 'day' && renderDayView()}
-      </CardContent>
-    </Card>
+
+        {/* Controls */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentDate(addDays(currentDate, view === 'day' ? -1 : view === 'week' ? -7 : -30))}
+                >
+                  Anterior
+                </Button>
+                <h2 className="text-xl font-semibold">
+                  {view === 'month' && format(currentDate, 'MMMM yyyy', { locale: ptBR })}
+                  {view === 'week' && `${format(startOfWeek(currentDate), 'dd/MM')} - ${format(endOfWeek(currentDate), 'dd/MM/yyyy')}`}
+                  {view === 'day' && format(currentDate, 'dd/MM/yyyy', { locale: ptBR })}
+                </h2>
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentDate(addDays(currentDate, view === 'day' ? 1 : view === 'week' ? 7 : 30))}
+                >
+                  Próximo
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setCurrentDate(new Date())}
+                >
+                  Hoje
+                </Button>
+                <Select value={view} onValueChange={(value: 'day' | 'week' | 'month') => setView(value)}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="day">Dia</SelectItem>
+                    <SelectItem value="week">Semana</SelectItem>
+                    <SelectItem value="month">Mês</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {view === 'month' && renderMonthView()}
+            {view === 'week' && renderWeekView()}
+            {view === 'day' && renderDayView()}
+          </CardContent>
+        </Card>
+
+        {/* Legend */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="text-sm">Legenda</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-primary/20 border border-primary/30 rounded"></div>
+                <span>Agendada</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-success/20 border border-success/30 rounded"></div>
+                <span>Realizada</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-destructive/20 border border-destructive/30 rounded"></div>
+                <span>Cancelada</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Modals */}
+      <NewSessionModal
+        open={isNewSessionOpen}
+        onOpenChange={setIsNewSessionOpen}
+        onSessionCreated={() => sessionData.refresh()}
+      />
+
+      {selectedSession && (
+        <SessionEditModal
+          open={isEditSessionOpen}
+          onOpenChange={setIsEditSessionOpen}
+          session={selectedSession}
+          clients={clients}
+          onSessionUpdated={() => sessionData.refresh()}
+        />
+      )}
+    </Layout>
   )
 }
 

@@ -347,24 +347,7 @@ const Agenda = () => {
         </div>
 
         {/* Agenda Views */}
-        <AgendaViews
-          selectedDate={selectedDate}
-          setSelectedDate={setSelectedDate}
-          sessions={sessions}
-          clients={clients}
-          getClientName={getClientName}
-          onNewSession={(time?: string, date?: Date) => {
-            const targetDate = date || selectedDate
-            setNewSession({
-              ...newSession,
-              horario: time || "",
-              data: targetDate.toISOString().split('T')[0]
-            })
-            setIsNewSessionOpen(true)
-          }}
-          onDeleteSession={handleDeleteSession}
-          timeSlots={timeSlots}
-        />
+         <AgendaViews />
 
         {/* Resumo do Dia */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

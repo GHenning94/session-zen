@@ -8,6 +8,7 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
+import ChatBot from "@/components/ChatBot"
 
 const LandingPage = () => {
   const navigate = useNavigate()
@@ -206,6 +207,7 @@ const LandingPage = () => {
           <p className="text-muted-foreground text-sm">© 2025 TherapyPro. Todos os direitos reservados.</p>
         </div>
       </footer>
+      <ChatBot />
     </div>
   )
 }
