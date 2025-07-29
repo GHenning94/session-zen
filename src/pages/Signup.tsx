@@ -1,12 +1,13 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
+import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
-import { useNavigate } from "react-router-dom"
-import { ArrowLeft, UserPlus } from "lucide-react"
+import { useNavigate, useSearchParams } from "react-router-dom"
+import { ArrowLeft, UserPlus, Gift } from "lucide-react"
 
 const Signup = () => {
   const [email, setEmail] = useState('')
@@ -16,6 +17,38 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const [referralId, setReferralId] = useState<string | null>(null)
+  const [referralUser, setReferralUser] = useState<any>(null)
+
+  // Verificar referral
+  useEffect(() => {
+    const ref = searchParams.get('ref')
+    if (ref) {
+      setReferralId(ref)
+      loadReferralUser(ref)
+    }
+  }, [searchParams])
+
+  const loadReferralUser = async (refId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('nome, profissao')
+        .eq('user_id', refId)
+        .single()
+
+      if (!error && data) {
+        setReferralUser(data)
+        toast({
+          title: "Convite especial! 🎉",
+          description: `Você foi convidado por ${data.nome}. Ganhe 20% de desconto no primeiro mês!`,
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do convite:', error)
+    }
+  }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -29,7 +62,8 @@ const Signup = () => {
           emailRedirectTo: `${window.location.origin}/`,
           data: {
             nome,
-            profissao
+            profissao,
+            referral_id: referralId
           }
         }
       })
@@ -37,9 +71,16 @@ const Signup = () => {
       if (error) throw error
 
       if (data.user) {
+        // Se há referral, salvar na sessão para processar após escolha do plano
+        if (referralId) {
+          sessionStorage.setItem('pending_referral', referralId)
+        }
+
         toast({
           title: "Conta criada com sucesso!",
-          description: "Bem-vindo ao TherapyPro. Escolha seu plano para continuar.",
+          description: referralId ? 
+            "Bem-vindo ao TherapyPro! Seu desconto de 20% será aplicado no primeiro mês." :
+            "Bem-vindo ao TherapyPro. Escolha seu plano para continuar.",
         })
         
         // Redirecionar para página de upgrade/planos
@@ -72,6 +113,20 @@ const Signup = () => {
               <CardDescription>
                 Comece sua jornada profissional no TherapyPro
               </CardDescription>
+              {referralUser && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center justify-center gap-2 text-green-800">
+                    <Gift className="w-4 h-4" />
+                    <span className="text-sm font-medium">Convite Especial</span>
+                  </div>
+                  <p className="text-xs text-green-700 mt-1">
+                    Convidado por <strong>{referralUser.nome}</strong>
+                  </p>
+                  <Badge variant="secondary" className="mt-2 bg-green-100 text-green-800">
+                    20% OFF no primeiro mês
+                  </Badge>
+                </div>
+              )}
             </div>
           </CardHeader>
 

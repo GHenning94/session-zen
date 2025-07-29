@@ -13,14 +13,26 @@ interface Message {
 
 const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false)
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: '1',
-      text: 'Olá! Sou a assistente virtual do TherapyPro. Como posso ajudá-lo?',
-      isBot: true,
-      timestamp: new Date()
+  const [messages, setMessages] = useState<Message[]>(() => {
+    // Recuperar mensagens do localStorage
+    const savedMessages = localStorage.getItem('chatbot-messages')
+    if (savedMessages) {
+      try {
+        const parsed = JSON.parse(savedMessages)
+        return parsed.map((msg: any) => ({ ...msg, timestamp: new Date(msg.timestamp) }))
+      } catch {
+        // Se erro na parse, usar mensagem padrão
+      }
     }
-  ])
+    return [
+      {
+        id: '1',
+        text: 'Olá! Sou a assistente virtual do **TherapyPro**. Como posso **ajudá-lo**?',
+        isBot: true,
+        timestamp: new Date()
+      }
+    ]
+  })
   const [inputMessage, setInputMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -217,8 +229,39 @@ const ChatBot = () => {
     }
   }
 
+  // Salvar mensagens no localStorage
   useEffect(() => {
+    localStorage.setItem('chatbot-messages', JSON.stringify(messages))
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
+
+  // Auto-remover conversas antigas após inatividade
+  useEffect(() => {
+    const clearOldConversations = () => {
+      const lastActivity = localStorage.getItem('chatbot-last-activity')
+      if (lastActivity) {
+        const timeDiff = Date.now() - parseInt(lastActivity)
+        // Limpar após 30 minutos de inatividade
+        if (timeDiff > 30 * 60 * 1000) {
+          localStorage.removeItem('chatbot-messages')
+          localStorage.removeItem('chatbot-last-activity')
+          setMessages([{
+            id: '1',
+            text: 'Olá! Sou a assistente virtual do **TherapyPro**. Como posso **ajudá-lo**?',
+            isBot: true,
+            timestamp: new Date()
+          }])
+        }
+      }
+    }
+
+    const interval = setInterval(clearOldConversations, 60000) // Verificar a cada minuto
+    return () => clearInterval(interval)
+  }, [])
+
+  // Registrar atividade do usuário
+  useEffect(() => {
+    localStorage.setItem('chatbot-last-activity', Date.now().toString())
   }, [messages])
 
   if (!isOpen) {
@@ -266,7 +309,9 @@ const ChatBot = () => {
                       : 'bg-primary text-primary-foreground'
                   }`}
                 >
-                  {message.text}
+                  <div dangerouslySetInnerHTML={{
+                    __html: message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  }} />
                 </div>
               </div>
             ))}

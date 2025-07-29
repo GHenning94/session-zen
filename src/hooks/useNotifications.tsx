@@ -194,21 +194,45 @@ export const useNotifications = () => {
   }
 
   const deleteNotification = async (notificationId: string) => {
+    if (!user) return false
+    
     try {
       const { error } = await supabase
         .from('notifications')
         .delete()
         .eq('id', notificationId)
-        .eq('user_id', user?.id)
+        .eq('user_id', user.id)
 
       if (error) {
         console.error('Erro ao deletar notificação:', error)
+        toast({
+          title: "Erro",
+          description: "Erro ao deletar notificação",
+          variant: "destructive"
+        })
         return false
       }
+
+      // Atualizar estado local imediatamente
+      setNotifications(prev => prev.filter(n => n.id !== notificationId))
+      setUnreadCount(prev => {
+        const notification = notifications.find(n => n.id === notificationId)
+        return notification && !notification.lida ? prev - 1 : prev
+      })
+
+      toast({
+        title: "Notificação deletada",
+        description: "A notificação foi removida com sucesso",
+      })
 
       return true
     } catch (error) {
       console.error('Erro:', error)
+      toast({
+        title: "Erro",
+        description: "Erro ao deletar notificação",
+        variant: "destructive"
+      })
       return false
     }
   }

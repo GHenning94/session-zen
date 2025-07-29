@@ -81,6 +81,11 @@ export const useReports = () => {
     try {
       console.log('📄 Iniciando geração PDF com dados:', data)
       
+      // Verificar se os dados estão válidos
+      if (!data || (!data.clients && !data.sessions)) {
+        throw new Error('Dados insuficientes para gerar relatório')
+      }
+      
       const doc = new jsPDF()
       const pageWidth = doc.internal.pageSize.width
 
@@ -209,6 +214,11 @@ export const useReports = () => {
   const generateExcel = (data: any, type: string, filters: ReportFilters) => {
     try {
       console.log('📊 Iniciando geração Excel com dados:', data)
+      
+      // Verificar se os dados estão válidos
+      if (!data || (!data.clients && !data.sessions)) {
+        throw new Error('Dados insuficientes para gerar relatório')
+      }
       
       const workbook = XLSX.utils.book_new()
 

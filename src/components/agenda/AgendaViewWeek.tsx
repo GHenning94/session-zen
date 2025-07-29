@@ -112,6 +112,25 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                         isSameDay(day, new Date()) && "bg-accent/20"
                       )}
                       onClick={() => onCreateSession?.(day, `${String(hour).padStart(2, '0')}:00`)}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.add('bg-primary/10')
+                      }}
+                      onDragLeave={(e) => {
+                        e.currentTarget.classList.remove('bg-primary/10')
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault()
+                        e.currentTarget.classList.remove('bg-primary/10')
+                        const sessionId = e.dataTransfer.getData('session-id')
+                        const sessionData = JSON.parse(e.dataTransfer.getData('session-data'))
+                        
+                        if (sessionId && onDragSession) {
+                          const newDate = format(day, 'yyyy-MM-dd')
+                          const newTime = `${String(hour).padStart(2, '0')}:00`
+                          onDragSession(sessionId, newDate, newTime)
+                        }
+                      }}
                     >
                       {daySessions.map((session) => (
                         <Card 
@@ -121,6 +140,13 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             getStatusColor(session.status)
                           )}
                           draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('session-id', session.id)
+                            e.dataTransfer.setData('session-data', JSON.stringify(session))
+                          }}
+                          onDragEnd={(e) => {
+                            e.preventDefault()
+                          }}
                         >
                           <CardContent className="p-2">
                             <div className="flex items-center gap-1 mb-1">

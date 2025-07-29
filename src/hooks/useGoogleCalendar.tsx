@@ -203,10 +203,13 @@ export const useGoogleCalendar = () => {
       console.log('📅 Eventos carregados:', data.items?.length || 0)
       setEvents(data.items || [])
       
-      toast({
-        title: "Eventos sincronizados",
-        description: `${data.items?.length || 0} eventos carregados do Google Calendar.`,
-      })
+      // Só mostrar toast de sincronização se for chamada manual (não automática)
+      if (!localStorage.getItem('auto-sync-running')) {
+        toast({
+          title: "Sincronização concluída",
+          description: `${data.items?.length || 0} eventos carregados do Google Calendar.`,
+        })
+      }
     } catch (error) {
       console.error('❌ Erro ao carregar eventos:', error)
       toast({
@@ -290,12 +293,15 @@ export const useGoogleCalendar = () => {
     }
   }, [isInitialized])
 
-  // Refresh automático dos eventos a cada 30 segundos quando conectado
+  // Refresh automático dos eventos a cada 5 minutos quando conectado (menos frequente)
   useEffect(() => {
     if (isSignedIn) {
       const interval = setInterval(() => {
-        loadEvents()
-      }, 30000)
+        localStorage.setItem('auto-sync-running', 'true')
+        loadEvents().finally(() => {
+          localStorage.removeItem('auto-sync-running')
+        })
+      }, 300000) // 5 minutos
       
       return () => clearInterval(interval)
     }

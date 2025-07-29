@@ -9,6 +9,7 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { useToast } from "@/hooks/use-toast"
 import { useGoogleCalendar } from "@/hooks/useGoogleCalendar"
 import { PlanProtection } from "@/components/PlanProtection"
+import { UnsyncButton } from "@/components/UnsyncButton"
 import { supabase } from "@/integrations/supabase/client"
 import { 
   Calendar,
@@ -42,6 +43,9 @@ const GoogleCalendarIntegration = () => {
   // Sincronizar evento específico com o sistema
   const syncEventToSystem = async (event: any) => {
     if (!user) return
+
+    // Prevenir múltiplas sincronizações simultâneas
+    if (syncing) return
 
     setSyncing(event.id)
     try {
@@ -142,7 +146,10 @@ const GoogleCalendarIntegration = () => {
         variant: "destructive"
       })
     } finally {
-      setSyncing(null)
+      // Pequeno delay para evitar conflitos visuais
+      setTimeout(() => {
+        setSyncing(null)
+      }, 500)
     }
   }
 
@@ -207,8 +214,9 @@ const GoogleCalendarIntegration = () => {
                     disabled={loading}
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Atualizar
+                    Sincronizar
                   </Button>
+                  <UnsyncButton onSuccess={loadEvents} />
                   <Button 
                     variant="outline" 
                     size="sm"
