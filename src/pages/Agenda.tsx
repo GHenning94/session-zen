@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
-import AgendaViews from "@/components/agenda/AgendaViews"
+import { AgendaViews } from "@/components/agenda/AgendaViews"
 
 const Agenda = () => {
   const { toast } = useToast()
@@ -347,7 +347,7 @@ const Agenda = () => {
         </div>
 
         {/* Agenda Views */}
-         <AgendaViews />
+        <AgendaViews />
 
         {/* Resumo do Dia */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

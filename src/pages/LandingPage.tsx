@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge"
 import { 
   Stethoscope, Calendar, Users, DollarSign, TrendingUp,
   CheckCircle, Star, ArrowRight, Brain, Heart, Shield, Clock,
-  GraduationCap, MessageCircle, Target, BookOpen, Activity
+  GraduationCap, MessageCircle, Target, BookOpen, Activity,
+  BarChart3, User
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -164,9 +165,130 @@ const LandingPage = () => {
         </div>
       </section>
 
-      {/* Trust Indicators & CTA & Footer */}
-      {/* ... (o resto do seu código da landing page continua aqui sem alterações) ... */}
-       <section className="py-20 px-4 sm:px-6 lg:px-8">
+      {/* App Screenshots */}
+      <section className="py-20 bg-muted/50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              Veja a plataforma em ação
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Interface intuitiva e recursos profissionais ao seu alcance
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {/* Dashboard Mockup */}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-primary to-primary/80 h-32 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <BarChart3 className="h-12 w-12 mx-auto mb-2" />
+                  <h3 className="font-semibold">Dashboard</h3>
+                </div>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  Visualize suas métricas, próximos compromissos e rendimento mensal de forma clara e organizada.
+                </p>
+              </div>
+            </div>
+
+            {/* Agenda Mockup */}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-32 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Calendar className="h-12 w-12 mx-auto mb-2" />
+                  <h3 className="font-semibold">Agenda</h3>
+                </div>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  Gerencie seus agendamentos com visualização por dia, semana ou mês. Arraste e solte para reagendar.
+                </p>
+              </div>
+            </div>
+
+            {/* Clients Mockup */}
+            <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+              <div className="bg-gradient-to-r from-green-500 to-green-600 h-32 flex items-center justify-center">
+                <div className="text-white text-center">
+                  <Users className="h-12 w-12 mx-auto mb-2" />
+                  <h3 className="font-semibold">Clientes</h3>
+                </div>
+              </div>
+              <div className="p-4">
+                <p className="text-sm text-muted-foreground">
+                  Organize informações dos pacientes, histórico de sessões e dados clínicos de forma segura.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Testimonials */}
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-foreground mb-4">
+              O que nossos clientes dizem
+            </h2>
+            <p className="text-xl text-muted-foreground">
+              Veja como nossa plataforma está transformando a vida de profissionais da saúde mental
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-card p-6 rounded-lg shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h4 className="font-semibold">Dra. Maria Silva</h4>
+                  <p className="text-sm text-muted-foreground">Psicóloga Clínica</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground">
+                "O TherapyPro revolucionou minha prática. A agenda integrada e os relatórios automáticos economizam horas do meu tempo."
+              </p>
+            </div>
+
+            <div className="bg-card p-6 rounded-lg shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h4 className="font-semibold">Dr. João Santos</h4>
+                  <p className="text-sm text-muted-foreground">Psiquiatra</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground">
+                "A página de agendamento personalizada aumentou minha taxa de agendamentos em 40%. Excelente ferramenta!"
+              </p>
+            </div>
+
+            <div className="bg-card p-6 rounded-lg shadow-lg">
+              <div className="flex items-center mb-4">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <User className="h-6 w-6 text-primary" />
+                </div>
+                <div className="ml-4">
+                  <h4 className="font-semibold">Ana Costa</h4>
+                  <p className="text-sm text-muted-foreground">Coach de Vida</p>
+                </div>
+              </div>
+              <p className="text-muted-foreground">
+                "Interface intuitiva e recursos profissionais. Meus clientes adoram a facilidade para agendar sessões."
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Trust Indicators */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <Card className="p-8 shadow-soft">

@@ -79,21 +79,32 @@ export const useReports = () => {
 
   const generatePDF = (data: any, type: string, filters: ReportFilters) => {
     const doc = new jsPDF()
+    const pageWidth = doc.internal.pageSize.width
 
-    // Cabeçalho
-    doc.setFontSize(18)
-    doc.text('TherapyPro - Relatório', 20, 20)
+    // Add header with branding
+    doc.setFillColor(59, 130, 246) // Primary blue
+    doc.rect(0, 0, pageWidth, 40, 'F')
     
-    doc.setFontSize(12)
+    // Logo/Brand name
+    doc.setTextColor(255, 255, 255)
+    doc.setFontSize(20)
+    doc.text('TherapyPro', 20, 25)
+    
+    // Report title
     const reportTitle = type === 'complete' ? 'Relatório Completo' :
                        type === 'sessions' ? 'Relatório de Sessões' :
                        type === 'financial' ? 'Relatório Financeiro' :
                        'Relatório de Clientes'
     
-    doc.text(reportTitle, 20, 30)
-    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, 20, 40)
+    doc.setFontSize(16)
+    doc.text(reportTitle, pageWidth / 2, 25, { align: 'center' })
+    
+    // Reset colors and add date
+    doc.setTextColor(0, 0, 0)
+    doc.setFontSize(12)
+    doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, 50, { align: 'center' })
 
-    let yPosition = 50
+    let yPosition = 70
 
     // Relatório de Clientes
     if (type === 'clients' || type === 'complete') {
