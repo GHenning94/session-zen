@@ -438,6 +438,10 @@ export type Database = {
         Args: { page_slug: string }
         Returns: Json
       }
+      send_session_reminders: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
