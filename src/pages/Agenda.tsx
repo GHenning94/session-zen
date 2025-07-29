@@ -24,7 +24,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
-import { OptimizedAgendaViews } from "@/components/agenda/OptimizedAgendaViews"
+import { cn } from "@/lib/utils"
 
 const Agenda = () => {
   const { toast } = useToast()
@@ -347,7 +347,78 @@ const Agenda = () => {
         </div>
 
         {/* Agenda Views */}
-        <OptimizedAgendaViews />
+        <div className="space-y-4">
+          <div className="grid grid-cols-7 gap-px mb-2">
+            {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (
+              <div key={day} className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
+                {day}
+              </div>
+            ))}
+          </div>
+          
+          <div className="grid grid-cols-7 gap-px bg-border">
+            {Array.from({ length: 35 }, (_, i) => {
+              const date = addDays(selectedDate, i - selectedDate.getDay())
+              const daySessionsData = sessions.filter(session => session.data === date.toISOString().split('T')[0])
+              
+              return (
+                <div
+                  key={i}
+                  className={cn(
+                    "min-h-[120px] border border-border p-2 bg-background cursor-pointer hover:bg-accent/20",
+                    date.getMonth() !== selectedDate.getMonth() && "text-muted-foreground bg-muted/50"
+                  )}
+                  onClick={() => {
+                    setNewSession({...newSession, data: date.toISOString().split('T')[0]})
+                    setIsNewSessionOpen(true)
+                  }}
+                >
+                  <div className="font-medium text-sm mb-2">
+                    {date.getDate()}
+                  </div>
+                  
+                  <div className="space-y-1">
+                    {daySessionsData.map((session) => (
+                      <div 
+                        key={session.id}
+                        className="text-xs p-2 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                        }}
+                      >
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{session.horario}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <User className="h-3 w-3" />
+                          <span className="truncate">
+                            {getClientName(session.client_id)}
+                          </span>
+                        </div>
+                        <Badge variant="outline" className="text-xs mt-1">
+                          {session.status}
+                        </Badge>
+                        
+                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleDeleteSession(session.id)
+                            }}
+                            className="p-1 bg-white rounded shadow hover:bg-gray-50 text-red-600"
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
 
         {/* Resumo do Dia */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
