@@ -2,15 +2,18 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, Edit, Trash } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, Edit, Trash, Plus } from 'lucide-react'
 import { format, addDays, startOfWeek, startOfMonth, endOfMonth, addMonths, subMonths, isSameDay, isSameMonth, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useSmartData } from '@/hooks/useSmartData'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { SessionEditModal } from '@/components/SessionEditModal'
+import { NewSessionModal } from '@/components/NewSessionModal'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
+import { AgendaViewDay } from './AgendaViewDay'
+import { AgendaViewWeek } from './AgendaViewWeek'
 
 export const AgendaViews = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
@@ -33,8 +36,32 @@ export const AgendaViews = () => {
   const calendarRef = useRef<HTMLDivElement>(null)
   const [selectedSession, setSelectedSession] = useState<any>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isNewSessionModalOpen, setIsNewSessionModalOpen] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [draggedSession, setDraggedSession] = useState<any>(null)
   const { toast } = useToast()
+
+  // Configurar realtime para atualizar dados automaticamente
+  useEffect(() => {
+    const channel = supabase
+      .channel('agenda-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'sessions'
+        },
+        () => {
+          smartSessionData.refresh()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [])
 
   const getSessionsForDate = (date: Date) => {
     return sessions.filter(session => {
@@ -72,6 +99,7 @@ export const AgendaViews = () => {
       })
 
       setDraggedSession(null)
+      smartSessionData.refresh()
     } catch (error) {
       console.error('Erro ao mover sessão:', error)
       toast({
@@ -100,6 +128,7 @@ export const AgendaViews = () => {
         title: "Sessão excluída",
         description: "A sessão foi removida com sucesso.",
       })
+      smartSessionData.refresh()
     } catch (error) {
       console.error('Erro ao excluir sessão:', error)
       toast({
@@ -108,6 +137,11 @@ export const AgendaViews = () => {
         variant: "destructive",
       })
     }
+  }
+
+  const handleCreateSession = (date: Date) => {
+    setSelectedDate(date)
+    setIsNewSessionModalOpen(true)
   }
 
   const renderMonthView = () => {
@@ -254,7 +288,32 @@ export const AgendaViews = () => {
       {loading && sessions.length === 0 && clients.length === 0 ? (
         <div className="text-center py-8">Carregando dados...</div>
       ) : (
-        renderMonthView()
+        <>
+          {view === 'month' && renderMonthView()}
+          {view === 'week' && (
+            <AgendaViewWeek
+              currentDate={currentDate}
+              sessions={sessions}
+              clients={clients}
+              onEditSession={handleEditSession}
+              onDeleteSession={handleDeleteSession}
+              onCreateSession={handleCreateSession}
+              onDragStart={handleDragStart}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
+            />
+          )}
+          {view === 'day' && (
+            <AgendaViewDay
+              currentDate={currentDate}
+              sessions={sessions}
+              clients={clients}
+              onEditSession={handleEditSession}
+              onDeleteSession={handleDeleteSession}
+              onCreateSession={handleCreateSession}
+            />
+          )}
+        </>
       )}
 
       {/* Session Edit Modal */}
@@ -271,6 +330,18 @@ export const AgendaViews = () => {
           }}
         />
       )}
+
+      {/* New Session Modal */}
+      <NewSessionModal
+        open={isNewSessionModalOpen}
+        onOpenChange={setIsNewSessionModalOpen}
+        selectedDate={selectedDate}
+        onSessionCreated={() => {
+          setIsNewSessionModalOpen(false)
+          setSelectedDate(null)
+          smartSessionData.refresh()
+        }}
+      />
     </div>
   )
 }

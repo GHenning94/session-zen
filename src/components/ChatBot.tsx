@@ -28,7 +28,7 @@ const ChatBot = () => {
   const getBotResponse = (userMessage: string): string => {
     const message = userMessage.toLowerCase()
     
-    // Respostas mais inteligentes e detalhadas sobre funcionalidades específicas
+    // Sistema inteligente de respostas baseado em contexto e palavras-chave
     
     // Dashboard
     if (message.includes('dashboard') || message.includes('painel') || message.includes('início')) {
@@ -117,8 +117,29 @@ const ChatBot = () => {
       return '💡 DICAS PRO: 1) Use atalhos: Ctrl+N (nova sessão), Tab para navegar 2) Configure lembretes automáticos 3) Exporte relatórios mensalmente 4) Integre Google Calendar 5) Use filtros nas buscas 6) Mantenha dados dos clientes atualizados!'
     }
     
-    // Resposta padrão mais inteligente
-    return '🤖 Sou seu assistente inteligente do TherapyPro! Posso explicar DETALHADAMENTE como usar: 📊 Dashboard (métricas), 📅 Agenda (sessões), 👥 Clientes (cadastros), 💰 Pagamentos (finanças), 📊 Relatórios (análises), ⚙️ Configurações (personalização), 📚 Estudos (aprendizado). Digite "como usar [nome da seção]" para instruções específicas passo-a-passo!'
+    // Sistema inteligente de análise contextual
+    if (message.includes('não') && (message.includes('funciona') || message.includes('carrega'))) {
+      return '🔧 PROBLEMA IDENTIFICADO: Entendo que algo não está funcionando. Para te ajudar melhor, me informe: 1) Qual seção específica? (agenda, clientes, pagamentos...) 2) Que erro aparece? 3) Em que momento ocorre? Com essas informações, posso dar uma solução precisa!'
+    }
+    
+    if (message.includes('arrastar') || message.includes('mover') || message.includes('reagendar')) {
+      return '📅 ARRASTAR SESSÕES: Na agenda, para reagendar: 1) Clique e segure a sessão 2) Arraste para a nova data 3) Solte. DICA: Use as visualizações Dia/Semana/Mês para facilitar. Se não funcionar, verifique se a sessão não está bloqueada ou use o botão "Editar" (lápis).'
+    }
+    
+    if (message.includes('piscando') || message.includes('pisca') || message.includes('tela') || message.includes('carregando')) {
+      return '⚡ PROBLEMA DE CARREGAMENTO: Isso pode ser lentidão na conexão. Soluções: 1) Atualize a página (F5) 2) Limpe cache do navegador 3) Verifique internet 4) Se persiste, aguarde alguns segundos. O sistema sincroniza automaticamente.'
+    }
+
+    if (message.includes('google') && message.includes('erro')) {
+      return '🔗 ERRO GOOGLE CALENDAR: Problemas comuns: 1) Reautorize: Configurações > Integrações > Desconectar > Conectar novamente 2) Verifique permissões no Google 3) Autorize acesso ao calendário. Se ainda não funcionar, pode ser configuração da API do Google.'
+    }
+
+    if (message.includes('sincroniz') || message.includes('tempo real') || message.includes('atualiz')) {
+      return '🔄 SINCRONIZAÇÃO: O sistema atualiza automaticamente! Mudanças aparecem em segundos. Se não vê as alterações: 1) Aguarde 5 segundos 2) Atualize página (F5) 3) Verifique conexão. Todas as ações (criar, editar, excluir) sincronizam instantaneamente.'
+    }
+
+    // Resposta inteligente padrão com análise contextual
+    return '🤖 ASSISTENTE INTELIGENTE: Analisei sua mensagem e posso te ajudar com qualquer funcionalidade do TherapyPro! Sobre o que precisa de ajuda? 📊 Dashboard, 📅 Agenda, 👥 Clientes, 💰 Pagamentos, 📊 Relatórios, ⚙️ Configurações, 📚 Estudos, 🔗 Integrações. Descreva o problema específico para uma solução personalizada!'
   }
 
   const sendMessage = async () => {

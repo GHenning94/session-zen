@@ -13,10 +13,11 @@ import { supabase } from "@/integrations/supabase/client"
 interface NewSessionModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
+  selectedDate?: Date | null
   onSessionCreated?: () => void
 }
 
-export const NewSessionModal = ({ open, onOpenChange, onSessionCreated }: NewSessionModalProps) => {
+export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCreated }: NewSessionModalProps) => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { canAddSession, planLimits } = useSubscription()
@@ -57,8 +58,13 @@ export const NewSessionModal = ({ open, onOpenChange, onSessionCreated }: NewSes
   useEffect(() => {
     if (open) {
       loadData()
+      // Se há uma data selecionada, usar ela
+      if (selectedDate) {
+        const dateStr = selectedDate.toISOString().split('T')[0]
+        setNewSession(prev => ({ ...prev, data: dateStr }))
+      }
     }
-  }, [open, user])
+  }, [open, user, selectedDate])
 
   const handleSaveSession = async () => {
     if (!newSession.client_id || !newSession.data || !newSession.horario) {

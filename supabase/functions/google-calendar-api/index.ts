@@ -13,17 +13,15 @@ serve(async (req) => {
   try {
     const { action, accessToken, calendarId = 'primary', eventData } = await req.json();
 
-    const apiKey = Deno.env.get('GOOGLE_API_KEY');
-    if (!apiKey) {
-      throw new Error('Google API Key not configured');
-    }
+    // Google API Key não é necessário para OAuth2
+    // A autorização é feita via access token do usuário
 
     let response;
     const baseUrl = 'https://www.googleapis.com/calendar/v3';
 
     switch (action) {
       case 'listEvents':
-        const eventsUrl = `${baseUrl}/calendars/${calendarId}/events?key=${apiKey}&timeMin=${new Date().toISOString()}&maxResults=10&singleEvents=true&orderBy=startTime`;
+        const eventsUrl = `${baseUrl}/calendars/${calendarId}/events?timeMin=${new Date().toISOString()}&maxResults=250&singleEvents=true&orderBy=startTime`;
         response = await fetch(eventsUrl, {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -32,7 +30,7 @@ serve(async (req) => {
         break;
 
       case 'createEvent':
-        const createUrl = `${baseUrl}/calendars/${calendarId}/events?key=${apiKey}`;
+        const createUrl = `${baseUrl}/calendars/${calendarId}/events`;
         response = await fetch(createUrl, {
           method: 'POST',
           headers: {

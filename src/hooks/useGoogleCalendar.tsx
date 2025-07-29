@@ -122,22 +122,28 @@ export const useGoogleCalendar = () => {
     }
   }
 
-  // Carregar eventos do Google Calendar via edge function
+  // Carregar eventos do Google Calendar
   const loadEvents = async () => {
     const accessToken = localStorage.getItem('google_access_token')
     if (!accessToken) return
 
     setLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('google-calendar-api', {
-        body: {
-          action: 'listEvents',
-          accessToken: accessToken,
-          calendarId: 'primary'
+      // Usar diretamente a API do Google Calendar
+      const response = await fetch(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events?maxResults=250&singleEvents=true&orderBy=startTime',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
         }
-      })
+      )
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
       setEvents(data.items || [])
     } catch (error) {
       console.error('Erro ao carregar eventos:', error)
@@ -179,16 +185,21 @@ export const useGoogleCalendar = () => {
         attendees: eventData.attendees?.map(email => ({ email })),
       }
 
-      const { data, error } = await supabase.functions.invoke('google-calendar-api', {
-        body: {
-          action: 'createEvent',
-          accessToken: accessToken,
-          calendarId: 'primary',
-          eventData: event
+      const response = await fetch(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(event)
         }
-      })
+      )
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
 
       toast({
         title: "Evento criado!",
