@@ -46,16 +46,37 @@ const NotificationDropdown = () => {
 
   const handleMarkAsRead = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    await markAsRead(notificationId)
+    try {
+      const success = await markAsRead(notificationId)
+      if (success) {
+        console.log('Notificação marcada como lida')
+      }
+    } catch (error) {
+      console.error('Erro ao marcar como lida:', error)
+    }
   }
 
   const handleDelete = async (notificationId: string, e: React.MouseEvent) => {
     e.stopPropagation()
-    await deleteNotification(notificationId)
+    try {
+      const success = await deleteNotification(notificationId)
+      if (success) {
+        console.log('Notificação excluída')
+      }
+    } catch (error) {
+      console.error('Erro ao excluir notificação:', error)
+    }
   }
 
   const handleMarkAllAsRead = async () => {
-    await markAllAsRead()
+    try {
+      const success = await markAllAsRead()
+      if (success) {
+        console.log('Todas as notificações marcadas como lidas')
+      }
+    } catch (error) {
+      console.error('Erro ao marcar todas como lidas:', error)
+    }
   }
 
   return (
@@ -178,7 +199,15 @@ const NotificationDropdown = () => {
           <>
             <DropdownMenuSeparator />
             <div className="p-2">
-              <Button variant="ghost" className="w-full text-sm">
+              <Button 
+                variant="ghost" 
+                className="w-full text-sm"
+                onClick={() => {
+                  setOpen(false)
+                  // Aqui você pode navegar para uma página de notificações se houver
+                  console.log('Navegar para todas as notificações')
+                }}
+              >
                 Ver todas as notificações
               </Button>
             </div>

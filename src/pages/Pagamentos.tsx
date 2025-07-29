@@ -354,7 +354,13 @@ const Pagamentos = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent className="bg-background border shadow-lg z-50">
                             {hasFeature('hasPDFReports') ? (
-                              <DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => {
+                                  // Implementar geração de recibo PDF
+                                  console.log('Gerando recibo PDF para:', payment.id)
+                                  alert('Funcionalidade de recibo PDF será implementada em breve!')
+                                }}
+                              >
                                 <Receipt className="w-4 h-4 mr-2" />
                                 Gerar Recibo PDF
                               </DropdownMenuItem>
@@ -364,7 +370,13 @@ const Pagamentos = () => {
                                 Recibo PDF (Premium)
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => {
+                                // Navegar para a sessão específica
+                                console.log('Visualizando sessão:', payment.session_id)
+                                alert('Funcionalidade de visualizar sessão será implementada em breve!')
+                              }}
+                            >
                               <Calendar className="w-4 h-4 mr-2" />
                               Ver Sessão
                             </DropdownMenuItem>

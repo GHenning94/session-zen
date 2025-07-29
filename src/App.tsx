@@ -10,6 +10,7 @@ import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Upgrade from "@/pages/Upgrade";
+import Signup from "@/pages/Signup";
 import Agenda from "@/pages/Agenda";
 import Clientes from "@/pages/Clientes";
 import Pagamentos from "@/pages/Pagamentos";
@@ -36,6 +37,7 @@ const App = () => (
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
                 <Route path="/upgrade" element={<ProtectedRoute><Upgrade /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
                 <Route path="/agenda" element={<ProtectedRoute><Agenda /></ProtectedRoute>} />

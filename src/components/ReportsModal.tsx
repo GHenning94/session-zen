@@ -124,7 +124,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
             </div>
           </div>
 
-          {/* Filtros - mostrar para todos os tipos de relatório */}
+          {/* Filtros - sempre mostrar quando um relatório é selecionado */}
           {selectedReport && (
             <div className="space-y-4">
               <Label className="text-base font-medium">Filtros (opcional)</Label>
@@ -150,7 +150,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                   />
                 </div>
                 
-                {(selectedReport === 'sessions' || selectedReport === 'complete') && (
+                {(selectedReport === 'sessions' || selectedReport === 'complete' || selectedReport === 'financial') && (
                   <>
                     <div>
                       <Label className="text-sm">Cliente</Label>

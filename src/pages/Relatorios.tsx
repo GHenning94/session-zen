@@ -108,40 +108,29 @@ export default function Relatorios() {
           })}
         </div>
 
-        {/* Opções de Relatórios */}
-        <div>
-          <h2 className="text-xl font-semibold mb-4">Tipos de Relatório Disponíveis</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {reportOptions.map((option) => {
-              const Icon = option.icon
-              return (
-                <Card key={option.id} className="hover:shadow-md transition-shadow">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <div className={`p-2 rounded-lg ${option.color} text-white`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{option.title}</CardTitle>
-                        <CardDescription className="text-sm">
-                          {option.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <Button 
-                      onClick={() => setShowReportsModal(true)}
-                      className="w-full"
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Gerar Relatório
-                    </Button>
-                  </CardContent>
-                </Card>
-              )
-            })}
-          </div>
+        {/* Botão Principal de Relatórios */}
+        <div className="text-center">
+          <Card className="max-w-md mx-auto shadow-lg">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3 justify-center">
+                <FileText className="h-6 w-6 text-primary" />
+                Gerar Relatórios
+              </CardTitle>
+              <CardDescription>
+                Exporte relatórios personalizados em PDF ou Excel
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button 
+                onClick={() => setShowReportsModal(true)}
+                className="w-full bg-gradient-primary hover:opacity-90"
+                size="lg"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Abrir Gerador de Relatórios
+              </Button>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Informações Adicionais */}

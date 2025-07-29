@@ -95,13 +95,6 @@ export const AgendaViews = () => {
     }
 
     try {
-      // Atualização otimista da UI
-      smartSessionData.data = sessions.map(session => 
-        session.id === draggedSession.id 
-          ? { ...session, data: newDateString }
-          : session
-      )
-
       const { error } = await supabase
         .from('sessions')
         .update({ data: newDateString })
@@ -116,16 +109,11 @@ export const AgendaViews = () => {
 
       setDraggedSession(null)
       
-      // Força refresh para garantir sincronização
-      setTimeout(() => {
-        smartSessionData.refresh()
-      }, 500)
+      // Refresh imediato dos dados
+      smartSessionData.refresh()
 
     } catch (error) {
       console.error('Erro ao mover sessão:', error)
-      
-      // Reverte mudança otimista em caso de erro
-      smartSessionData.refresh()
       
       toast({
         title: "Erro ao mover sessão",

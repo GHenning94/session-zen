@@ -130,8 +130,10 @@ export const useGoogleCalendar = () => {
     setLoading(true)
     try {
       // Filtrar eventos do dia corrente até o final do ano
-      const timeMin = new Date().toISOString()
-      const timeMax = new Date(new Date().getFullYear(), 11, 31, 23, 59, 59).toISOString()
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const timeMin = today.toISOString()
+      const timeMax = new Date(today.getFullYear(), 11, 31, 23, 59, 59).toISOString()
       
       // Usar diretamente a API do Google Calendar com filtros de data
       const response = await fetch(

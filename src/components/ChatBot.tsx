@@ -27,24 +27,37 @@ const ChatBot = () => {
 
   const getBotResponse = async (userMessage: string): Promise<string> => {
     try {
-      // Usar ChatGPT API para respostas inteligentes
+      console.log('Enviando mensagem para ChatGPT:', userMessage)
+      
       const response = await fetch(`https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/chatgpt-assistant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4'}`,
         },
         body: JSON.stringify({ message: userMessage }),
       })
 
+      console.log('Resposta do ChatGPT:', response.status)
+
       if (!response.ok) {
-        throw new Error('Erro na API')
+        const errorText = await response.text()
+        console.error('Erro da API:', errorText)
+        throw new Error(`API Error: ${response.status} - ${errorText}`)
       }
 
       const data = await response.json()
-      return data.response || 'Desculpe, não consegui processar sua pergunta. Tente novamente.'
+      console.log('Dados recebidos:', data)
+      
+      if (data.response) {
+        return data.response
+      } else if (data.error) {
+        throw new Error(data.error)
+      } else {
+        throw new Error('Resposta inválida da API')
+      }
     } catch (error) {
-      console.error('Erro ao consultar ChatGPT:', error)
-      // Fallback para resposta local em caso de erro
+      console.error('Erro completo ao consultar ChatGPT:', error)
       return getBotResponseLocal(userMessage)
     }
   }
