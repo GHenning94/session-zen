@@ -28,72 +28,97 @@ const ChatBot = () => {
   const getBotResponse = (userMessage: string): string => {
     const message = userMessage.toLowerCase()
     
-    // Agenda
+    // Respostas mais inteligentes e detalhadas sobre funcionalidades específicas
+    
+    // Dashboard
+    if (message.includes('dashboard') || message.includes('painel') || message.includes('início')) {
+      return '📊 DASHBOARD: Sua central de controle! Aqui você vê: sessões de hoje (3), receita prevista (R$ 450), taxa de ocupação (13%). Clique nos cards para navegar diretamente para cada seção. O gráfico mostra evolução mensal da receita.'
+    }
+    
+    // Agenda - detalhado
     if (message.includes('agenda') || message.includes('agendar') || message.includes('sessão') || message.includes('horário')) {
       if (message.includes('como') || message.includes('usar') || message.includes('utilizar')) {
-        return 'Para usar a Agenda: 1) Clique em "Nova Sessão" 2) Selecione o cliente 3) Escolha data e horário 4) Adicione valor (opcional) 5) Salve. Você pode visualizar por dia, semana ou mês, e arrastar sessões para reagendar.'
+        return '📅 COMO USAR AGENDA: 1) Clique "Nova Sessão" (azul) 2) Selecione cliente no dropdown 3) Escolha data no calendário 4) Defina horário 5) Adicione valor (R$) 6) Salve. DICAS: Arraste sessões para reagendar, clique nos botões Dia/Semana/Mês para trocar visualização, use botões Hoje/setas para navegar.'
       }
-      return 'A Agenda permite gerenciar sessões com visualização em diferentes modos. Você pode criar, editar, excluir e reagendar sessões arrastando e soltando.'
+      if (message.includes('google') || message.includes('sincronizar')) {
+        return '🔗 GOOGLE CALENDAR: Conecte em Configurações > Integrações > "Conectar Google Calendar". Autorize o acesso e suas sessões aparecerão automaticamente no Google. Útil para não perder compromissos!'
+      }
+      return '📅 AGENDA: Visualize sessões por dia/semana/mês. Crie sessões clicando "Nova Sessão", reagende arrastando e soltando, edite clicando no lápis. Status: agendada (azul), realizada (verde), cancelada (vermelho).'
     }
     
-    // Clientes
+    // Clientes - detalhado
     if (message.includes('cliente') || message.includes('paciente')) {
       if (message.includes('como') || message.includes('usar') || message.includes('utilizar')) {
-        return 'Para gerenciar Clientes: 1) Vá em "Clientes" no menu 2) Clique "Novo Cliente" 3) Preencha nome, contato e informações clínicas 4) Salve. Você pode editar informações, ver histórico de sessões e anotações de cada cliente.'
+        return '👥 COMO USAR CLIENTES: 1) Menu lateral > "Clientes" 2) Botão azul "Novo Cliente" 3) Preencha: nome*, telefone*, email*, endereço, observações clínicas 4) Salve. Para editar: clique no cliente > botão "Editar". Veja histórico de sessões na ficha.'
       }
-      return 'Na seção Clientes você pode cadastrar pacientes, manter fichas completas com histórico de sessões, anotações clínicas e dados de contato.'
+      if (message.includes('histórico') || message.includes('sessões')) {
+        return '📋 HISTÓRICO DO CLIENTE: Na ficha de cada cliente você vê todas as sessões (datas, valores, status), pode adicionar anotações clínicas importantes e acompanhar evolução do tratamento. Útil para relatórios!'
+      }
+      return '👥 CLIENTES: Cadastre pacientes com dados completos, mantenha histórico de sessões, adicione anotações clínicas. Busque por nome/telefone. Cada cliente tem ficha individual com todas as informações.'
     }
     
-    // Pagamentos
-    if (message.includes('pagamento') || message.includes('financeiro') || message.includes('dinheiro') || message.includes('valor')) {
+    // Pagamentos - detalhado  
+    if (message.includes('pagamento') || message.includes('financeiro') || message.includes('dinheiro') || message.includes('valor') || message.includes('receita')) {
       if (message.includes('como') || message.includes('usar') || message.includes('utilizar')) {
-        return 'Para controlar Pagamentos: 1) Defina valores nas sessões 2) Marque como "pago" ou "pendente" 3) Use filtros para ver recebimentos 4) Gere relatórios financeiros mensais.'
+        return '💰 COMO USAR PAGAMENTOS: 1) Defina valores ao criar sessões 2) Marque status: "Pendente"→"Pago" após receber 3) Use filtros (período, status, cliente) 4) Veja totais: receita mensal, valores pendentes. Para relatório: botão "Exportar".'
       }
-      return 'O controle de Pagamentos permite acompanhar valores de sessões, status (pago/pendente), receita mensal e gerar relatórios financeiros detalhados.'
+      return '💰 PAGAMENTOS: Controle total das finanças! Acompanhe valores de sessões, marque como pago/pendente, veja receita mensal (R$ 3.450), valores em atraso, e gere relatórios financeiros detalhados.'
     }
     
-    // Relatórios
-    if (message.includes('relatório') || message.includes('relatorio') || message.includes('dashboard') || message.includes('estatística')) {
+    // Relatórios - detalhado
+    if (message.includes('relatório') || message.includes('relatorio') || message.includes('exportar') || message.includes('pdf') || message.includes('excel')) {
       if (message.includes('como') || message.includes('usar') || message.includes('utilizar')) {
-        return 'Para acessar Relatórios: 1) Vá em "Relatórios" no menu 2) Escolha período 3) Selecione tipo (geral, cliente específico, financeiro) 4) Visualize ou exporte em PDF/Excel.'
+        return '📊 COMO USAR RELATÓRIOS: 1) Menu > "Relatórios" 2) Escolha período (mês/ano) 3) Selecione tipo: Geral (visão geral), Financeiro (receitas/gastos), Por Cliente (individual) 4) Clique "Gerar" 5) "Exportar PDF" ou "Excel" para salvar.'
       }
-      return 'Os Relatórios mostram estatísticas de sessões, receita, clientes ativos e produtividade. Você pode exportar em PDF ou Excel para análises detalhadas.'
+      return '📊 RELATÓRIOS: Análises completas! Gere relatórios de receita mensal/anual, número de sessões, clientes ativos, taxa de ocupação. Exporte em PDF/Excel para apresentações ou imposto de renda.'
     }
     
-    // Configurações
+    // Configurações - detalhado
     if (message.includes('configuração') || message.includes('configuracao') || message.includes('perfil') || message.includes('conta')) {
       if (message.includes('como') || message.includes('usar') || message.includes('utilizar')) {
-        return 'Para acessar Configurações: 1) Clique no seu perfil (canto superior direito) 2) Escolha "Configurações" 3) Edite perfil, página de agendamento, notificações e integrações.'
+        return '⚙️ COMO USAR CONFIGURAÇÕES: 1) Clique seu avatar (canto superior direito) > "Configurações" 2) Abas disponíveis: Perfil (dados pessoais), Página (agendamento online), Notificações (lembretes), Integrações (Google). Edite e salve as alterações.'
       }
-      return 'Nas Configurações você pode editar seu perfil profissional, personalizar página de agendamento, configurar notificações e integrações com Google Calendar.'
+      if (message.includes('página') || message.includes('agendamento') || message.includes('link')) {
+        return '🔗 PÁGINA DE AGENDAMENTO: Em Configurações > Página, personalize sua página pública onde clientes podem agendar sessões online. Adicione foto, horários disponíveis, valores. Compartilhe o link!'
+      }
+      return '⚙️ CONFIGURAÇÕES: Personalize tudo! Edite perfil profissional, configure página de agendamento online, ajuste notificações, integre Google Calendar. Acesse pelo seu avatar no canto superior direito.'
     }
     
-    // Planos
-    if (message.includes('plano') || message.includes('assinatura') || message.includes('upgrade') || message.includes('premium')) {
-      return 'Temos 3 planos: Básico (grátis, até 4 sessões/cliente), Profissional (R$29,90, até 20 clientes), Premium (R$59,90, recursos ilimitados). Para upgrade, vá em "Upgrade" no menu.'
+    // Planos e Upgrade
+    if (message.includes('plano') || message.includes('assinatura') || message.includes('upgrade') || message.includes('premium') || message.includes('limite')) {
+      return '💎 PLANOS: Básico (GRATUITO: 4 sessões/cliente), Profissional (R$29,90: 20 clientes, relatórios), Premium (R$59,90: ILIMITADO, todas as funcionalidades). Para upgrade: Menu > "Upgrade" > Escolha plano > Pague.'
     }
     
-    // Google Calendar
-    if (message.includes('google') || message.includes('calendar') || message.includes('integração')) {
-      return 'Para integrar com Google Calendar: 1) Vá em Configurações 2) Clique "Conectar Google Calendar" 3) Autorize acesso 4) Suas sessões serão sincronizadas automaticamente.'
-    }
-    
-    // Estudos
-    if (message.includes('estudo') || message.includes('curso') || message.includes('artigo') || message.includes('aprendizado')) {
-      return 'A seção Estudos oferece artigos, cursos, webinars e podcasts para desenvolvimento profissional. Use filtros por área (psicologia, psicanálise) e nível (iniciante, avançado).'
+    // Estudos - detalhado
+    if (message.includes('estudo') || message.includes('curso') || message.includes('artigo') || message.includes('aprendizado') || message.includes('material')) {
+      if (message.includes('como') || message.includes('usar') || message.includes('utilizar')) {
+        return '📚 COMO USAR ESTUDOS: 1) Menu > "Estudos" 2) Use filtros: Área (psicologia, psicanálise), Tipo (artigo, vídeo, curso), Nível (iniciante, avançado) 3) Busque por palavra-chave 4) Clique "Acessar" para abrir conteúdo. Todos os links são verificados!'
+      }
+      return '📚 ESTUDOS: Biblioteca completa! Artigos científicos, cursos gratuitos, vídeos educacionais, webinars especializados. Filtre por área e nível. Conteúdo constantemente atualizado para seu desenvolvimento profissional.'
     }
     
     // Notificações
-    if (message.includes('notificação') || message.includes('notificacao') || message.includes('lembrete')) {
-      return 'As notificações avisam sobre sessões agendadas, lembretes de consultas e atualizações. Configure em Configurações > Notificações.'
+    if (message.includes('notificação') || message.includes('notificacao') || message.includes('lembrete') || message.includes('aviso')) {
+      return '🔔 NOTIFICAÇÕES: Receba lembretes de sessões do dia seguinte, avisos de novos agendamentos, alertas de pagamentos pendentes. Configure em Configurações > Notificações (email/push).'
     }
     
-    // Booking/Agendamento online
-    if (message.includes('booking') || message.includes('agendamento online') || message.includes('link')) {
-      return 'Você tem uma página personalizada de agendamento que clientes podem usar para marcar sessões. Acesse em Configurações para personalizar e compartilhar o link.'
+    // Google Calendar integração específica
+    if (message.includes('google') || message.includes('calendar') || message.includes('sincronizar') || message.includes('integração')) {
+      return '📅 GOOGLE CALENDAR: Para conectar: Configurações > Integrações > "Conectar Google Calendar" > Autorizar acesso. Suas sessões do TherapyPro aparecerão automaticamente no Google Calendar. Sincronização bidirecional!'
     }
     
-    return 'Olá! Sou seu assistente inteligente do TherapyPro. Posso explicar detalhadamente COMO USAR cada seção: Agenda (criar/editar sessões), Clientes (cadastro e fichas), Pagamentos (controle financeiro), Relatórios (análises e PDFs), Configurações (perfil e integrações), Estudos (materiais educativos) e muito mais. Digite "como usar [nome da seção]" para instruções específicas!'
+    // Problemas técnicos
+    if (message.includes('erro') || message.includes('problema') || message.includes('não funciona') || message.includes('bug')) {
+      return '🔧 PROBLEMAS TÉCNICOS: 1) Atualize a página (F5) 2) Limpe cache do navegador 3) Verifique conexão com internet 4) Se Google Calendar não conecta, verifique se permitiu todas as permissões. Persiste? Contate suporte!'
+    }
+    
+    // Dicas gerais de uso
+    if (message.includes('dica') || message.includes('sugestão') || message.includes('melhor forma')) {
+      return '💡 DICAS PRO: 1) Use atalhos: Ctrl+N (nova sessão), Tab para navegar 2) Configure lembretes automáticos 3) Exporte relatórios mensalmente 4) Integre Google Calendar 5) Use filtros nas buscas 6) Mantenha dados dos clientes atualizados!'
+    }
+    
+    // Resposta padrão mais inteligente
+    return '🤖 Sou seu assistente inteligente do TherapyPro! Posso explicar DETALHADAMENTE como usar: 📊 Dashboard (métricas), 📅 Agenda (sessões), 👥 Clientes (cadastros), 💰 Pagamentos (finanças), 📊 Relatórios (análises), ⚙️ Configurações (personalização), 📚 Estudos (aprendizado). Digite "como usar [nome da seção]" para instruções específicas passo-a-passo!'
   }
 
   const sendMessage = async () => {

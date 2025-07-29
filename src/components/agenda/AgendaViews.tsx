@@ -17,16 +17,19 @@ export const AgendaViews = () => {
   const [view, setView] = useState<'day' | 'week' | 'month'>('month')
   const smartSessionData = useSmartData({ type: 'sessions' })
   const smartClientData = useSmartData({ type: 'clients' })
-  const loading = smartSessionData.isLoading || smartClientData.isLoading
-
+  
   // Memoizar dados para evitar re-renders desnecessários
   const sessions = React.useMemo(() => {
-    return smartSessionData.data && Array.isArray(smartSessionData.data) ? smartSessionData.data : []
+    if (!smartSessionData.data) return []
+    return Array.isArray(smartSessionData.data) ? smartSessionData.data : []
   }, [smartSessionData.data])
 
   const clients = React.useMemo(() => {
-    return smartClientData.data && Array.isArray(smartClientData.data) ? smartClientData.data : []
+    if (!smartClientData.data) return []
+    return Array.isArray(smartClientData.data) ? smartClientData.data : []
   }, [smartClientData.data])
+
+  const loading = smartSessionData.isLoading || smartClientData.isLoading
   const calendarRef = useRef<HTMLDivElement>(null)
   const [selectedSession, setSelectedSession] = useState<any>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
@@ -248,8 +251,8 @@ export const AgendaViews = () => {
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center py-8">Carregando...</div>
+      {loading && sessions.length === 0 && clients.length === 0 ? (
+        <div className="text-center py-8">Carregando dados...</div>
       ) : (
         renderMonthView()
       )}

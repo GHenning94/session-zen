@@ -25,7 +25,7 @@ interface GoogleEvent {
 }
 
 // Configurações corretas do Google OAuth - Client ID atualizado
-const GOOGLE_CLIENT_ID = "340485456270-a5k8vqkcj4u3lkdiqkm4r1s6rfpgq5et.apps.googleusercontent.com"
+const GOOGLE_CLIENT_ID = "1039606606801-9ofdjvl0abgcr808q3i1jgmb6kojdk9d.apps.googleusercontent.com"
 const REDIRECT_URI = `${window.location.origin}`
 const SCOPES = 'https://www.googleapis.com/auth/calendar'
 

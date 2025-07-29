@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 
 import { studyContents, type StudyContent } from "@/data/studyContents"
+import { workingUrls } from "@/utils/linkValidator"
 
 const Estudos = () => {
   const [filteredContents, setFilteredContents] = useState<StudyContent[]>(studyContents)
@@ -28,7 +29,10 @@ const Estudos = () => {
   const [selectedLevel, setSelectedLevel] = useState<string>('todos')
 
   useEffect(() => {
-    const filtered = studyContents.filter(content => {
+    // Filtrar apenas conteúdos com URLs funcionais
+    const workingContents = studyContents.filter(content => workingUrls.has(content.url))
+    
+    const filtered = workingContents.filter(content => {
       const matchesSearch = content.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            content.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            content.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
