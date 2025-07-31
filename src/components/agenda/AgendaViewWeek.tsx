@@ -67,6 +67,14 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
     }
   }
 
+  const getGoogleEventsForDateTime = (date: Date, hour: number) => {
+    return googleEvents.filter(event => {
+      if (!event.start?.dateTime) return false
+      const eventDate = new Date(event.start.dateTime)
+      return isSameDay(eventDate, date) && eventDate.getHours() === hour
+    })
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -75,15 +83,15 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
         </h3>
       </div>
 
-      <div className="overflow-x-auto">
-        <div className="min-w-[800px]">
+      <Card className="shadow-soft">
+        <CardContent className="p-0">
           {/* Header com dias da semana */}
-          <div className="grid grid-cols-8 gap-px mb-2">
-            <div className="p-2 text-center text-sm font-medium text-muted-foreground bg-muted">
+          <div className="grid grid-cols-8 border-b border-border">
+            <div className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
               Horário
             </div>
             {days.map((day) => (
-              <div key={day.getTime()} className="p-2 text-center text-sm font-medium text-muted-foreground bg-muted">
+              <div key={day.getTime()} className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
                 <div>{format(day, 'EEE', { locale: ptBR })}</div>
                 <div className={cn(
                   "text-lg font-bold mt-1",
@@ -96,20 +104,21 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
           </div>
 
           {/* Grid de horários */}
-          <div className="space-y-px">
+          <div className="grid grid-cols-8">
             {hours.map((hour) => (
-              <div key={hour} className="grid grid-cols-8 gap-px">
-                <div className="p-3 text-center text-sm text-muted-foreground bg-muted">
+              <React.Fragment key={hour}>
+                <div className="p-3 text-center text-sm text-muted-foreground bg-muted border-r border-border">
                   {String(hour).padStart(2, '0')}:00
                 </div>
                 {days.map((day) => {
                   const daySessions = getSessionsForDateTime(day, hour)
+                  const dayGoogleEvents = getGoogleEventsForDateTime(day, hour)
                   return (
                     <div
                       key={`${day.getTime()}-${hour}`}
                       className={cn(
-                        "min-h-[80px] p-1 bg-background border border-border/50 cursor-pointer hover:bg-accent/30 transition-colors",
-                        isSameDay(day, new Date()) && "bg-accent/20"
+                        "min-h-[80px] p-2 border border-border cursor-pointer hover:bg-accent/20 transition-colors",
+                        isSameDay(day, new Date()) && "bg-primary/5"
                       )}
                       onClick={() => onCreateSession?.(day, `${String(hour).padStart(2, '0')}:00`)}
                       onDragOver={(e) => {
@@ -123,7 +132,6 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                         e.preventDefault()
                         e.currentTarget.classList.remove('bg-primary/10')
                         const sessionId = e.dataTransfer.getData('session-id')
-                        const sessionData = JSON.parse(e.dataTransfer.getData('session-data'))
                         
                         if (sessionId && onDragSession) {
                           const newDate = format(day, 'yyyy-MM-dd')
@@ -132,72 +140,89 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                         }
                       }}
                     >
-                      {daySessions.map((session) => (
-                        <Card 
-                          key={session.id} 
-                          className={cn(
-                            "mb-1 cursor-move group relative transition-all hover:shadow-sm text-xs",
-                            getStatusColor(session.status)
-                          )}
-                          draggable
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('session-id', session.id)
-                            e.dataTransfer.setData('session-data', JSON.stringify(session))
-                          }}
-                          onDragEnd={(e) => {
-                            e.preventDefault()
-                          }}
-                        >
-                          <CardContent className="p-2">
-                            <div className="flex items-center gap-1 mb-1">
-                              <Clock className="h-2 w-2" />
-                              <span className="text-xs font-medium">{session.horario}</span>
+                      <div className="space-y-1">
+                        {daySessions.map((session) => (
+                          <Card 
+                            key={session.id} 
+                            className={cn(
+                              "cursor-move group relative transition-all hover:shadow-sm",
+                              getStatusColor(session.status)
+                            )}
+                            draggable
+                            onDragStart={(e) => {
+                              e.dataTransfer.setData('session-id', session.id)
+                              e.dataTransfer.setData('session-data', JSON.stringify(session))
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEditSession(session)
+                            }}
+                          >
+                            <CardContent className="p-2">
+                              <div className="flex items-center gap-1 mb-1">
+                                <Clock className="h-3 w-3" />
+                                <span className="text-xs font-medium">{session.horario}</span>
+                              </div>
+                              <div className="flex items-center gap-1 mb-1">
+                                <User className="h-3 w-3" />
+                                <span className="text-xs truncate">
+                                  {clients.find(c => c.id === session.client_id)?.nome || 'N/A'}
+                                </span>
+                              </div>
+                              <Badge variant="outline" className="text-xs px-1 py-0">
+                                {session.status}
+                              </Badge>
+                              
+                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 p-0"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onEditSession(session)
+                                  }}
+                                >
+                                  <Edit className="h-3 w-3" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-5 w-5 p-0 text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDeleteSession(session.id)
+                                  }}
+                                >
+                                  <Trash className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+
+                        {/* Google Events */}
+                        {dayGoogleEvents.map((event) => (
+                          <div
+                            key={event.id}
+                            className="text-xs p-1 rounded bg-blue-50 text-blue-700 border border-blue-200"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="flex items-center gap-1">
+                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                              <span className="truncate">{event.summary}</span>
                             </div>
-                            <div className="flex items-center gap-1 mb-1">
-                              <User className="h-2 w-2" />
-                              <span className="text-xs truncate">
-                                {clients.find(c => c.id === session.client_id)?.nome || 'N/A'}
-                              </span>
-                            </div>
-                            <Badge variant="outline" className="text-xs px-1 py-0">
-                              {session.status}
-                            </Badge>
-                            
-                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 p-0"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onEditSession(session)
-                                }}
-                              >
-                                <Edit className="h-2 w-2" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-4 w-4 p-0 text-red-600"
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  onDeleteSession(session.id)
-                                }}
-                              >
-                                <Trash className="h-2 w-2" />
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )
                 })}
-              </div>
+              </React.Fragment>
             ))}
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -214,15 +214,48 @@ const GoogleCalendarIntegration = () => {
                     disabled={loading}
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Sincronizar
+                    Sincronizar tudo
                   </Button>
                   <UnsyncButton onSuccess={loadEvents} />
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={disconnectFromGoogle}
+                    onClick={async () => {
+                      // Limpar eventos importados sem desconectar
+                      try {
+                        const { data: sessionsToDelete } = await supabase
+                          .from('sessions')
+                          .select('id')
+                          .eq('user_id', user?.id)
+                          .like('anotacoes', '%Importado do Google Calendar%')
+
+                        if (sessionsToDelete && sessionsToDelete.length > 0) {
+                          await supabase
+                            .from('sessions')
+                            .delete()
+                            .eq('user_id', user?.id)
+                            .like('anotacoes', '%Importado do Google Calendar%')
+                          
+                          toast({
+                            title: "Eventos removidos",
+                            description: `${sessionsToDelete.length} eventos importados foram removidos do sistema.`,
+                          })
+                        } else {
+                          toast({
+                            title: "Nenhum evento encontrado",
+                            description: "Não há eventos importados do Google Calendar para remover.",
+                          })
+                        }
+                      } catch (error) {
+                        toast({
+                          title: "Erro",
+                          description: "Não foi possível remover os eventos importados.",
+                          variant: "destructive"
+                        })
+                      }
+                    }}
                   >
-                    Desconectar
+                    Limpar importações
                   </Button>
                 </div>
               ) : (
