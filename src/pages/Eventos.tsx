@@ -32,6 +32,7 @@ interface Event {
 }
 
 export default function Eventos() {
+  console.log('🎯 Eventos: iniciando componente')
   const { user } = useAuth()
   const { toast } = useToast()
   const [events, setEvents] = useState<Event[]>([])

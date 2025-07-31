@@ -3,8 +3,6 @@ import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-
-console.log('🎯 Prontuarios.tsx carregado')
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -14,7 +12,8 @@ import { FileText, Download, Eye, Filter, Plus, Edit, Clock } from 'lucide-react
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { useSmartData } from '@/hooks/useSmartData'
+
+console.log('🎯 Prontuarios.tsx carregado')
 
 interface RecordTemplate {
   id: string
@@ -43,9 +42,12 @@ interface FilledRecord {
 }
 
 export default function Prontuarios() {
+  console.log('🎯 Prontuarios: iniciando componente')
   const { user } = useAuth()
   const { toast } = useToast()
-  const { data: clients } = useSmartData({ type: 'clients' })
+  
+  // Estados principais
+  const [clients, setClients] = useState<any[]>([])
   const [templates, setTemplates] = useState<RecordTemplate[]>([])
   const [filledRecords, setFilledRecords] = useState<FilledRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -58,6 +60,23 @@ export default function Prontuarios() {
     category: '',
     search: ''
   })
+
+  // Carregar clientes diretamente
+  useEffect(() => {
+    const loadClients = async () => {
+      if (!user) return
+      try {
+        const { data } = await supabase
+          .from('clients')
+          .select('*')
+          .eq('user_id', user.id)
+        setClients(data || [])
+      } catch (error) {
+        console.error('Erro ao carregar clientes:', error)
+      }
+    }
+    loadClients()
+  }, [user])
 
   const categories = [
     'psicologia',

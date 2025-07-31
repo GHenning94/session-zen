@@ -103,25 +103,30 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               {reportTypes.map((report) => {
                 const Icon = report.icon
                 return (
-                  <Card 
+                  <div 
                     key={report.id}
-                    className={`cursor-pointer transition-all ${
+                    className={`cursor-pointer transition-all border rounded-lg ${
                       selectedReport === report.id 
                         ? 'ring-2 ring-primary border-primary' 
-                        : 'hover:border-primary/50'
+                        : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setSelectedReport(report.id)}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      e.stopPropagation()
+                      console.log('🎯 Relatório selecionado:', report.id)
+                      setSelectedReport(report.id)
+                    }}
                   >
-                    <CardHeader className="pb-3">
+                    <div className="p-4">
                       <div className="flex items-center gap-3">
                         <Icon className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-sm">{report.title}</CardTitle>
+                        <div className="text-sm font-medium">{report.title}</div>
                       </div>
-                      <CardDescription className="text-xs">
+                      <div className="text-xs text-muted-foreground mt-2">
                         {report.description}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
+                      </div>
+                    </div>
+                  </div>
                 )
               })}
             </div>
@@ -198,25 +203,30 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               <Label className="text-base font-medium">Selecione o formato</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                 {formats.map((format) => (
-                  <Card 
+                  <div 
                     key={format.id}
-                    className={`cursor-pointer transition-all ${
+                    className={`cursor-pointer transition-all border rounded-lg ${
                       selectedFormat === format.id 
                         ? 'ring-2 ring-primary border-primary' 
-                        : 'hover:border-primary/50'
+                        : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => setSelectedFormat(format.id)}
+                    onClick={(e) => {
+                      e.preventDefault() 
+                      e.stopPropagation()
+                      console.log('🎯 Formato selecionado:', format.id)
+                      setSelectedFormat(format.id)
+                    }}
                   >
-                    <CardHeader className="pb-3">
+                    <div className="p-4">
                       <div className="flex items-center gap-3">
                         <Download className="h-5 w-5 text-primary" />
-                        <CardTitle className="text-sm">{format.name}</CardTitle>
+                        <div className="text-sm font-medium">{format.name}</div>
                       </div>
-                      <CardDescription className="text-xs">
+                      <div className="text-xs text-muted-foreground mt-2">
                         {format.description}
-                      </CardDescription>
-                    </CardHeader>
-                  </Card>
+                      </div>
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>

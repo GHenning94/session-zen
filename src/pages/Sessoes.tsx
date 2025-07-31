@@ -3,8 +3,6 @@ import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-
-console.log('🎯 Sessoes.tsx carregado')
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -16,7 +14,8 @@ import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { useSmartData } from '@/hooks/useSmartData'
+
+console.log('🎯 Sessoes.tsx carregado')
 
 interface SessionNote {
   id: string
@@ -35,10 +34,13 @@ interface SessionNote {
 }
 
 export default function Sessoes() {
+  console.log('🎯 Sessoes: iniciando componente')
   const { user } = useAuth()
   const { toast } = useToast()
-  const { data: clients } = useSmartData({ type: 'clients' })
-  const { data: sessions } = useSmartData({ type: 'sessions' })
+  
+  // Estados principais
+  const [clients, setClients] = useState<any[]>([])
+  const [sessions, setSessions] = useState<any[]>([])
   const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([])
   const [loading, setLoading] = useState(true)
   const [showNoteModal, setShowNoteModal] = useState(false)
@@ -50,6 +52,24 @@ export default function Sessoes() {
     client: '',
     search: ''
   })
+
+  // Carregar dados diretamente
+  useEffect(() => {
+    const loadData = async () => {
+      if (!user) return
+      try {
+        const [clientsData, sessionsData] = await Promise.all([
+          supabase.from('clients').select('*').eq('user_id', user.id),
+          supabase.from('sessions').select('*').eq('user_id', user.id)
+        ])
+        setClients(clientsData.data || [])
+        setSessions(sessionsData.data || [])
+      } catch (error) {
+        console.error('Erro ao carregar dados:', error)
+      }
+    }
+    loadData()
+  }, [user])
 
   const filteredClients = clients.filter((client: any) => 
     !filters.client || client.id === filters.client
