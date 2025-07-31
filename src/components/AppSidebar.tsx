@@ -7,7 +7,10 @@ import {
   LogOut,
   Stethoscope,
   FileBarChart,
-  BookOpen
+  BookOpen,
+  CalendarCheck,
+  FileText,
+  NotebookPen
 } from "lucide-react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
@@ -59,6 +62,21 @@ const menuItems = [
     title: "Estudos", 
     url: "/estudos", 
     icon: BookOpen 
+  },
+  {
+    title: "Eventos",
+    url: "/eventos", 
+    icon: CalendarCheck,
+  },
+  {
+    title: "Prontuários",
+    url: "/prontuarios",
+    icon: FileText,
+  },
+  {
+    title: "Sessões",
+    url: "/sessoes",
+    icon: NotebookPen,
   },
   { 
     title: "Configurações", 

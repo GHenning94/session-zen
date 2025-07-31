@@ -17,6 +17,9 @@ import Pagamentos from "@/pages/Pagamentos";
 import Configuracoes from "@/pages/Configuracoes";
 import Relatorios from "@/pages/Relatorios";
 import Estudos from "@/pages/Estudos";
+import Eventos from "@/pages/Eventos";
+import Prontuarios from "@/pages/Prontuarios";
+import Sessoes from "@/pages/Sessoes";
 import BookingPage from "@/pages/BookingPage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -44,7 +47,10 @@ const App = () => (
                 <Route path="/clientes" element={<ProtectedRoute><Clientes /></ProtectedRoute>} />
                 <Route path="/pagamentos" element={<ProtectedRoute><Pagamentos /></ProtectedRoute>} />
                 <Route path="/relatorios" element={<ProtectedRoute><Relatorios /></ProtectedRoute>} />
-                <Route path="/estudos" element={<ProtectedRoute><Estudos /></ProtectedRoute>} />
+              <Route path="/estudos" element={<ProtectedRoute><Estudos /></ProtectedRoute>} />
+              <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
+              <Route path="/prontuarios" element={<ProtectedRoute><Prontuarios /></ProtectedRoute>} />
+              <Route path="/sessoes" element={<ProtectedRoute><Sessoes /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                 <Route path="/agendar/:userId" element={<BookingPage />} />
                 <Route path="/agendar/slug/:slug" element={<BookingPage />} />
