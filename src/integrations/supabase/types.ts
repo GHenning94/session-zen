@@ -285,33 +285,6 @@ export type Database = {
           },
         ]
       }
-      notificacoes: {
-        Row: {
-          data_envio: string
-          id: string
-          lida: boolean | null
-          mensagem: string
-          titulo: string
-          user_id: string
-        }
-        Insert: {
-          data_envio?: string
-          id?: string
-          lida?: boolean | null
-          mensagem: string
-          titulo: string
-          user_id: string
-        }
-        Update: {
-          data_envio?: string
-          id?: string
-          lida?: boolean | null
-          mensagem?: string
-          titulo?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       notification_settings: {
         Row: {
           created_at: string
@@ -371,36 +344,6 @@ export type Database = {
           id?: string
           lida?: boolean | null
           titulo?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      pacientes: {
-        Row: {
-          created_at: string
-          email: string | null
-          id: string
-          nome: string
-          observacoes: string | null
-          telefone: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          nome: string
-          observacoes?: string | null
-          telefone?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          email?: string | null
-          id?: string
-          nome?: string
-          observacoes?: string | null
-          telefone?: string | null
           user_id?: string
         }
         Relationships: []
@@ -580,50 +523,6 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      sessoes: {
-        Row: {
-          created_at: string
-          data: string
-          horario: string
-          id: string
-          observacoes: string | null
-          paciente_id: string
-          status_pagamento: string | null
-          user_id: string
-          valor: number | null
-        }
-        Insert: {
-          created_at?: string
-          data: string
-          horario: string
-          id?: string
-          observacoes?: string | null
-          paciente_id: string
-          status_pagamento?: string | null
-          user_id: string
-          valor?: number | null
-        }
-        Update: {
-          created_at?: string
-          data?: string
-          horario?: string
-          id?: string
-          observacoes?: string | null
-          paciente_id?: string
-          status_pagamento?: string | null
-          user_id?: string
-          valor?: number | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "sessoes_paciente_id_fkey"
-            columns: ["paciente_id"]
-            isOneToOne: false
-            referencedRelation: "pacientes"
             referencedColumns: ["id"]
           },
         ]

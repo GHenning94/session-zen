@@ -58,11 +58,6 @@ const menuItems = [
     url: "/relatorios", 
     icon: FileBarChart 
   },
-  { 
-    title: "Estudos", 
-    url: "/estudos", 
-    icon: BookOpen 
-  },
   {
     title: "Eventos",
     url: "/eventos", 

@@ -337,11 +337,6 @@ const Agenda = () => {
     return client?.nome || 'Cliente não encontrado'
   }
 
-  const addDays = (date: Date, days: number) => {
-    const result = new Date(date)
-    result.setDate(result.getDate() + days)
-    return result
-  }
 
   const todaySessionsCount = sessions.filter(session => {
     const sessionDate = new Date(session.data)
