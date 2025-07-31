@@ -45,6 +45,8 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 12 }, (_, i) => i + 8) // 8h às 19h
+  
+  console.log('🗓️ AgendaViewWeek dados:', { currentDate, weekStart, days: days.length, hours: hours.length })
 
   const getSessionsForDateTime = (date: Date, hour: number) => {
     return sessions.filter(session => {

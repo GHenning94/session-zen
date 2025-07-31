@@ -14,6 +14,8 @@ interface ReportsModalProps {
   onOpenChange: (open: boolean) => void
 }
 
+console.log('🎯 ReportsModal carregado')
+
 export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
   const { generateReport, generateCompleteReport, isGenerating } = useReports()
   const { data: clients } = useSmartData({ type: 'clients' })
@@ -60,6 +62,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
   ]
 
   const handleGenerate = () => {
+    console.log('🎯 handleGenerate chamado', { selectedReport, selectedFormat })
     if (!selectedReport) return
     
     // Para relatório completo, não precisamos de formato pois gera os dois

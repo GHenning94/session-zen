@@ -3,6 +3,8 @@ import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+
+console.log('🎯 Eventos.tsx carregado')
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Calendar, MapPin, Clock, Users, ExternalLink, Plus, Filter } from 'lucide-react'

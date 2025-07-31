@@ -15,6 +15,8 @@ interface ReportFilters {
   status?: string
 }
 
+console.log('🎯 useReports hook carregado')
+
 export const useReports = () => {
   const { user } = useAuth()
   const [isGenerating, setIsGenerating] = useState(false)
