@@ -103,16 +103,15 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               {reportTypes.map((report) => {
                 const Icon = report.icon
                 return (
-                  <div 
+                  <button 
                     key={report.id}
-                    className={`cursor-pointer transition-all border rounded-lg ${
+                    type="button"
+                    className={`w-full text-left cursor-pointer transition-all border rounded-lg ${
                       selectedReport === report.id 
                         ? 'ring-2 ring-primary border-primary' 
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={(e) => {
-                      e.preventDefault()
-                      e.stopPropagation()
+                    onClick={() => {
                       console.log('🎯 Relatório selecionado:', report.id)
                       setSelectedReport(report.id)
                     }}
@@ -126,7 +125,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                         {report.description}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 )
               })}
             </div>
@@ -203,16 +202,15 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               <Label className="text-base font-medium">Selecione o formato</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                 {formats.map((format) => (
-                  <div 
+                  <button 
                     key={format.id}
-                    className={`cursor-pointer transition-all border rounded-lg ${
+                    type="button"
+                    className={`w-full text-left cursor-pointer transition-all border rounded-lg ${
                       selectedFormat === format.id 
                         ? 'ring-2 ring-primary border-primary' 
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={(e) => {
-                      e.preventDefault() 
-                      e.stopPropagation()
+                    onClick={() => {
                       console.log('🎯 Formato selecionado:', format.id)
                       setSelectedFormat(format.id)
                     }}
@@ -226,7 +224,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                         {format.description}
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
