@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -93,6 +93,9 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Exportar Relatórios</DialogTitle>
+          <DialogDescription>
+            Selecione o tipo de relatório e configure os filtros desejados.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-6">
@@ -155,12 +158,12 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                   <>
                     <div>
                       <Label className="text-sm">Cliente</Label>
-                      <Select value={filters.clientId} onValueChange={(value) => setFilters(prev => ({ ...prev, clientId: value }))}>
+                      <Select value={filters.clientId || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, clientId: value === "all" ? "" : value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todos os clientes" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos os clientes</SelectItem>
+                          <SelectItem value="all">Todos os clientes</SelectItem>
                           {clients.map((client: any) => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.nome}
@@ -172,12 +175,12 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                     
                     <div>
                       <Label className="text-sm">Status</Label>
-                      <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                      <Select value={filters.status || "all"} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value === "all" ? "" : value }))}>
                         <SelectTrigger>
                           <SelectValue placeholder="Todos os status" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="">Todos os status</SelectItem>
+                          <SelectItem value="all">Todos os status</SelectItem>
                           <SelectItem value="agendada">Agendada</SelectItem>
                           <SelectItem value="realizada">Realizada</SelectItem>
                           <SelectItem value="cancelada">Cancelada</SelectItem>
