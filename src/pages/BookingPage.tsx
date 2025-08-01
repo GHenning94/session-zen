@@ -94,9 +94,8 @@ const BookingPage = () => {
       const breakTime = parseInt(config.intervalo_sessoes || '10')
       const totalSlotTime = sessionDuration + breakTime
       
-      // Gerar todos os slots dentro do range de horário
+      // Gerar todos os slots de 10 em 10 minutos
       const allSlots = []
-      const availableSlots = []
       let [currentHour, currentMinute] = startTime.split(':').map(Number)
       
       while (true) {
@@ -104,17 +103,42 @@ const BookingPage = () => {
         if (currentTimeStr >= endTime) break
         
         allSlots.push(currentTimeStr)
-        if (!bookedTimes.includes(currentTimeStr)) {
-          availableSlots.push(currentTimeStr)
-        }
         
-        const totalMinutes = (currentHour * 60) + currentMinute + totalSlotTime
+        // Incrementar 10 minutos
+        const totalMinutes = (currentHour * 60) + currentMinute + 10
         currentHour = Math.floor(totalMinutes / 60)
         currentMinute = totalMinutes % 60
       }
       
+      // Calcular slots bloqueados baseado nas sessões agendadas
+      const blockedSlots = new Set<string>()
+      
+      bookedSessions?.forEach(session => {
+        const sessionTime = session.horario
+        const [sessionHour, sessionMinute] = sessionTime.split(':').map(Number)
+        const sessionStartMinutes = sessionHour * 60 + sessionMinute
+        
+        // Bloquear slots considerando duração + intervalo antes e depois
+        const totalBlockTime = sessionDuration + breakTime
+        const startBlock = sessionStartMinutes - breakTime
+        const endBlock = sessionStartMinutes + totalBlockTime
+        
+        // Marcar todos os slots que estão no range bloqueado
+        allSlots.forEach(slot => {
+          const [slotHour, slotMinute] = slot.split(':').map(Number)
+          const slotMinutes = slotHour * 60 + slotMinute
+          
+          if (slotMinutes >= startBlock && slotMinutes < endBlock) {
+            blockedSlots.add(slot)
+          }
+        })
+      })
+      
+      // Filtrar slots disponíveis
+      const availableSlots = allSlots.filter(slot => !blockedSlots.has(slot))
+      
       setAvailableSlots(allSlots) // Mostra todos os slots
-      setBookedSlots(bookedTimes) // Mantém lista de horários bloqueados
+      setBookedSlots(Array.from(blockedSlots)) // Lista de horários bloqueados
     }
     loadAvailableSlots()
   }, [selectedDate, config, profile])
