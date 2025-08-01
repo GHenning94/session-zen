@@ -13,7 +13,7 @@ import {
   AlertCircle,
   BarChart3
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
+// import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -507,46 +507,13 @@ const Dashboard = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                          <BarChart data={monthlyChart} margin={{ top: 20, right: 30, left: 20, bottom: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                            <XAxis 
-                              dataKey="mes" 
-                              fontSize={12} 
-                              axisLine={false}
-                              tickLine={false}
-                              className="text-muted-foreground"
-                            />
-                            <YAxis 
-                              fontSize={12} 
-                              axisLine={false}
-                              tickLine={false}
-                              className="text-muted-foreground"
-                              tickFormatter={(value) => `R$ ${value}`}
-                            />
-                            <Tooltip 
-                              formatter={(value: number) => [`R$ ${value.toFixed(2)}`, 'Receita']}
-                              labelFormatter={(label: string, payload: any[]) => {
-                                const item = payload?.[0]?.payload
-                                return item ? `${item.fullMonth}` : label
-                              }}
-                              contentStyle={{
-                                background: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                              }}
-                            />
-                            <Bar 
-                              dataKey="receita" 
-                              fill="hsl(var(--primary))" 
-                              radius={[4, 4, 0, 0]}
-                              className="opacity-80 hover:opacity-100"
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
+                       <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
+                         <div className="text-center">
+                           <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                           <p className="text-muted-foreground">Gráfico temporariamente indisponível</p>
+                           <p className="text-xs text-muted-foreground mt-1">Dados carregados: {monthlyChart.length} meses</p>
+                         </div>
+                       </div>
                       
                       {/* Estatísticas do período */}
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
