@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useRealtimeSync } from './useRealtimeSync'
+import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { useSubscription } from './useSubscription'
 import { useToast } from './use-toast'
@@ -13,7 +13,6 @@ interface UseSmartDataOptions {
 export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
   const { type, autoRefresh = true, dependencies = [] } = options
   const { user } = useAuth()
-  const { syncData, isLoading: isSyncing } = useRealtimeSync()
   const { canAddClient, canAddSession, planLimits } = useSubscription()
   const { toast } = useToast()
   
@@ -22,7 +21,7 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
   const [error, setError] = useState<string | null>(null)
   const [validationErrors, setValidationErrors] = useState<string[]>([])
 
-  // Carregar dados do localStorage e sincronizar
+  // Carregar dados diretamente do Supabase
   const loadData = useCallback(async () => {
     if (!user) return
 
@@ -30,21 +29,21 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     setError(null)
 
     try {
-      // Carregar do localStorage primeiro (cache local)
-      const cached = localStorage.getItem(`therapy-${type}`)
-      if (cached) {
-        const cachedData = JSON.parse(cached)
-        setData(cachedData)
-      }
-
-      // Sincronizar com servidor
-      await syncData(type)
+      const { data: fetchedData, error } = await supabase
+        .from(getTableName(type))
+        .select(type === 'sessions' ? '*, clients(nome)' : '*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      
+      setData(fetchedData as T[] || [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro ao carregar dados')
     } finally {
       setIsLoading(false)
     }
-  }, [user, type, syncData])
+  }, [user, type])
 
   // Validação inteligente baseada no plano
   const validateOperation = useCallback((operation: 'add' | 'update' | 'delete', item?: any) => {
@@ -78,17 +77,18 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
       return false
     }
 
-    const tempId = `temp-${Date.now()}`
-    
     try {
       setIsLoading(true)
       
-      // Adicionar ao cache local imediatamente para responsividade
-      const optimisticItem = { ...newItem, id: tempId, user_id: user?.id } as T
-      setData(prev => [...prev, optimisticItem])
+      // Inserir diretamente no Supabase
+      const { error } = await supabase
+        .from(getTableName(type))
+        .insert({ ...newItem as any, user_id: user?.id })
 
-      // Sincronizar com servidor - será tratado pelo realtime
-      await syncData(type)
+      if (error) throw error
+      
+      // Recarregar dados
+      await loadData()
       
       toast({
         title: "Item Adicionado",
@@ -97,8 +97,6 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
       
       return true
     } catch (error) {
-      // Reverter otimização em caso de erro
-      setData(prev => prev.filter(item => (item as any).id !== tempId))
       toast({
         title: "Erro",
         description: "Não foi possível adicionar o item.",
@@ -108,19 +106,23 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     } finally {
       setIsLoading(false)
     }
-  }, [validateOperation, validationErrors, user, syncData, type, toast])
+  }, [validateOperation, validationErrors, user, loadData, type, toast])
 
   // Atualizar item
   const updateItem = useCallback(async (id: string, updates: Partial<T>) => {
     try {
       setIsLoading(true)
       
-      // Atualização otimista
-      setData(prev => prev.map(item => 
-        (item as any).id === id ? { ...item, ...updates } : item
-      ))
+      // Atualizar no Supabase
+      const { error } = await supabase
+        .from(getTableName(type))
+        .update(updates as any)
+        .eq('id', id)
 
-      await syncData(type)
+      if (error) throw error
+      
+      // Recarregar dados
+      await loadData()
       
       toast({
         title: "Item Atualizado",
@@ -129,7 +131,6 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
       
       return true
     } catch (error) {
-      await loadData() // Recarregar em caso de erro
       toast({
         title: "Erro",
         description: "Não foi possível atualizar o item.",
@@ -139,19 +140,23 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     } finally {
       setIsLoading(false)
     }
-  }, [syncData, type, toast, loadData])
+  }, [loadData, type, toast])
 
   // Remover item
   const removeItem = useCallback(async (id: string) => {
-    const originalData = data
-    
     try {
       setIsLoading(true)
       
-      // Remoção otimista
-      setData(prev => prev.filter(item => (item as any).id !== id))
+      // Remover do Supabase
+      const { error } = await supabase
+        .from(getTableName(type))
+        .delete()
+        .eq('id', id)
 
-      await syncData(type)
+      if (error) throw error
+      
+      // Recarregar dados
+      await loadData()
       
       toast({
         title: "Item Removido",
@@ -160,8 +165,6 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
       
       return true
     } catch (error) {
-      // Reverter em caso de erro
-      setData(originalData)
       toast({
         title: "Erro",
         description: "Não foi possível remover o item.",
@@ -171,7 +174,7 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     } finally {
       setIsLoading(false)
     }
-  }, [data, syncData, type, toast])
+  }, [loadData, type, toast])
 
   // Busca inteligente
   const search = useCallback((query: string, fields: (keyof T)[] = []) => {
@@ -220,7 +223,8 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     }
   }, [data, type, canAddClient, planLimits])
 
-  // Listener para atualizações em tempo real
+  // Remover listener para sync (não usado mais)
+  /*
   useEffect(() => {
     const handleSync = (event: CustomEvent) => {
       setData(event.detail)
@@ -229,6 +233,7 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     window.addEventListener(`sync-${type}` as any, handleSync)
     return () => window.removeEventListener(`sync-${type}` as any, handleSync)
   }, [type])
+  */
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -244,7 +249,7 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
 
   return {
     data,
-    isLoading: isLoading || isSyncing,
+    isLoading,
     error,
     validationErrors,
     addItem,
@@ -255,5 +260,15 @@ export const useSmartData = <T = any>(options: UseSmartDataOptions) => {
     stats: stats(),
     refresh: loadData,
     validateOperation
+  }
+}
+
+// Função auxiliar
+function getTableName(type: string): 'clients' | 'sessions' {
+  switch (type) {
+    case 'clients': return 'clients'
+    case 'sessions': return 'sessions'
+    case 'payments': return 'sessions' // pagamentos são parte das sessões
+    default: return 'clients'
   }
 }
