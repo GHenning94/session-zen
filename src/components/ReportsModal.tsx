@@ -90,12 +90,12 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Exportar Relatórios</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
+        <div className="space-y-6">
           {/* Tipo de Relatório */}
           <div>
             <Label className="text-base font-medium">Selecione o tipo de relatório</Label>
@@ -103,29 +103,23 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               {reportTypes.map((report) => {
                 const Icon = report.icon
                 return (
-                  <button 
+                  <div 
                     key={report.id}
-                    type="button"
-                    className={`w-full text-left cursor-pointer transition-all border rounded-lg ${
+                    className={`cursor-pointer transition-all border rounded-lg p-4 ${
                       selectedReport === report.id 
                         ? 'ring-2 ring-primary border-primary' 
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => {
-                      console.log('🎯 Relatório selecionado:', report.id)
-                      setSelectedReport(report.id)
-                    }}
+                    onClick={() => setSelectedReport(report.id)}
                   >
-                    <div className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Icon className="h-5 w-5 text-primary" />
-                        <div className="text-sm font-medium">{report.title}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {report.description}
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Icon className="h-5 w-5 text-primary" />
+                      <div className="text-sm font-medium">{report.title}</div>
                     </div>
-                  </button>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {report.description}
+                    </div>
+                  </div>
                 )
               })}
             </div>
@@ -202,29 +196,23 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               <Label className="text-base font-medium">Selecione o formato</Label>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
                 {formats.map((format) => (
-                  <button 
+                  <div 
                     key={format.id}
-                    type="button"
-                    className={`w-full text-left cursor-pointer transition-all border rounded-lg ${
+                    className={`cursor-pointer transition-all border rounded-lg p-4 ${
                       selectedFormat === format.id 
                         ? 'ring-2 ring-primary border-primary' 
                         : 'border-border hover:border-primary/50'
                     }`}
-                    onClick={() => {
-                      console.log('🎯 Formato selecionado:', format.id)
-                      setSelectedFormat(format.id)
-                    }}
+                    onClick={() => setSelectedFormat(format.id)}
                   >
-                    <div className="p-4">
-                      <div className="flex items-center gap-3">
-                        <Download className="h-5 w-5 text-primary" />
-                        <div className="text-sm font-medium">{format.name}</div>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-2">
-                        {format.description}
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <Download className="h-5 w-5 text-primary" />
+                      <div className="text-sm font-medium">{format.name}</div>
                     </div>
-                  </button>
+                    <div className="text-xs text-muted-foreground mt-2">
+                      {format.description}
+                    </div>
+                  </div>
                 ))}
               </div>
             </div>
@@ -253,7 +241,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               {selectedReport === 'complete' ? 'Gerar Relatório Completo (PDF + Excel)' : 'Gerar Relatório'}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   )
