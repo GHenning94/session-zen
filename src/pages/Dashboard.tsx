@@ -37,7 +37,7 @@ const Dashboard = () => {
   const [recentClients, setRecentClients] = useState<any[]>([])
   const [monthlyChart, setMonthlyChart] = useState<any[]>([])
   const [dynamicReminders, setDynamicReminders] = useState<any[]>([])
-  const [chartPeriod, setChartPeriod] = useState<'3' | '6' | '12'>('6')
+  const [chartPeriod, setChartPeriod] = useState<'3' | '6' | '12'>('12')
 
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
@@ -45,7 +45,7 @@ const Dashboard = () => {
       console.log('👤 Usuário encontrado, carregando dados...')
       loadDashboardData()
     }
-  }, [user, chartPeriod])
+  }, [user])
 
   // Force reload when component mounts
   useEffect(() => {
@@ -162,12 +162,11 @@ const Dashboard = () => {
         .order('created_at', { ascending: false })
         .limit(5)
 
-      // Dados do gráfico mensal baseado no período selecionado
-      const periodMonths = parseInt(chartPeriod)
-      console.log('📊 Período do gráfico:', periodMonths, 'meses')
+      // Dados do gráfico mensal - sempre buscar últimos 12 meses
+      console.log('📊 Carregando dados do gráfico para 12 meses')
       const chartData = []
       
-      for (let i = periodMonths - 1; i >= 0; i--) {
+      for (let i = 11; i >= 0; i--) {
         const date = new Date()
         date.setMonth(date.getMonth() - i)
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
@@ -269,6 +268,7 @@ const Dashboard = () => {
   const handlePeriodChange = async (period: '3' | '6' | '12') => {
     console.log('📊 Mudando período para:', period)
     setChartPeriod(period)
+    // Não recarrega mais dados, apenas filtra o que já temos
   }
 
   const handleNewSession = () => {
@@ -515,27 +515,33 @@ const Dashboard = () => {
                          </div>
                        </div>
                       
-                      {/* Estatísticas do período */}
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-primary">
-                            R$ {monthlyChart.reduce((sum, item) => sum + item.receita, 0).toFixed(2)}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Total do Período</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-secondary">
-                            R$ {monthlyChart.length > 0 ? (monthlyChart.reduce((sum, item) => sum + item.receita, 0) / monthlyChart.length).toFixed(2) : '0.00'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Média Mensal</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="text-2xl font-bold text-success">
-                            R$ {monthlyChart.length > 0 ? Math.max(...monthlyChart.map(item => item.receita)).toFixed(2) : '0.00'}
-                          </p>
-                          <p className="text-sm text-muted-foreground">Melhor Mês</p>
-                        </div>
-                      </div>
+                       {/* Estatísticas do período */}
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+                         <div className="text-center">
+                           <p className="text-2xl font-bold text-primary">
+                             R$ {monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9).reduce((sum, item) => sum + item.receita, 0).toFixed(2)}
+                           </p>
+                           <p className="text-sm text-muted-foreground">Total do Período</p>
+                         </div>
+                         <div className="text-center">
+                           <p className="text-2xl font-bold text-secondary">
+                             R$ {(() => {
+                               const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9);
+                               return filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length).toFixed(2) : '0.00';
+                             })()}
+                           </p>
+                           <p className="text-sm text-muted-foreground">Média Mensal</p>
+                         </div>
+                         <div className="text-center">
+                           <p className="text-2xl font-bold text-success">
+                             R$ {(() => {
+                               const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9);
+                               return filteredData.length > 0 ? Math.max(...filteredData.map(item => item.receita)).toFixed(2) : '0.00';
+                             })()}
+                           </p>
+                           <p className="text-sm text-muted-foreground">Melhor Mês</p>
+                         </div>
+                       </div>
                     </CardContent>
                   </Card>
                 </div>
