@@ -200,7 +200,7 @@ const Pagamentos = () => {
     }
   }
 
-  const generateReceipt = async (payment: any) => {
+  const generateReceipt = (payment: any) => {
     // Verificar se o pagamento está concluído
     if (payment.status !== 'pago') {
       toast({
@@ -236,7 +236,7 @@ const Pagamentos = () => {
     }
 
     try {
-      await generateReceiptPDF(receiptData)
+      generateReceiptPDF(receiptData)
       
       toast({
         title: "Recibo gerado!",

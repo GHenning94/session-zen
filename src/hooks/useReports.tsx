@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { getLogoBase64, LOGO_CONFIG } from '@/utils/logoUtils'
+import { addLogoBranding } from '@/utils/logoUtils'
 
 interface ReportFilters {
   startDate?: string
@@ -92,24 +92,8 @@ export const useReports = () => {
       const doc = new jsPDF()
       const pageWidth = doc.internal.pageSize.width
 
-      // Add header with branding
-      doc.setFillColor(59, 130, 246) // Primary blue
-      doc.rect(0, 0, pageWidth, 40, 'F')
-      
-      // Add logo
-      try {
-        const logoBase64 = await getLogoBase64()
-        if (logoBase64) {
-          doc.addImage(logoBase64, 'PNG', LOGO_CONFIG.x, LOGO_CONFIG.y, LOGO_CONFIG.width, LOGO_CONFIG.height)
-        }
-      } catch (error) {
-        console.warn('Could not load logo:', error)
-      }
-      
-      // Logo/Brand name
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(20)
-      doc.text('TherapyPro', 70, 25)
+      // Add logo branding
+      addLogoBranding(doc, pageWidth)
       
       // Report title
       const reportTitle = type === 'complete' ? 'Relatório Completo' :

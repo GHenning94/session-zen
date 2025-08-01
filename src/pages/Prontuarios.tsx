@@ -15,7 +15,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import jsPDF from 'jspdf'
-import { getLogoBase64, LOGO_CONFIG } from '@/utils/logoUtils'
+import { addLogoBranding } from '@/utils/logoUtils'
 
 interface RecordTemplate {
   id: string
@@ -243,24 +243,8 @@ export default function Prontuarios() {
       const doc = new jsPDF()
       const pageWidth = doc.internal.pageSize.width
       
-      // Header com branding TherapyPro
-      doc.setFillColor(59, 130, 246) // Primary blue
-      doc.rect(0, 0, pageWidth, 40, 'F')
-      
-      // Add logo
-      try {
-        const logoBase64 = await getLogoBase64()
-        if (logoBase64) {
-          doc.addImage(logoBase64, 'PNG', LOGO_CONFIG.x, LOGO_CONFIG.y, LOGO_CONFIG.width, LOGO_CONFIG.height)
-        }
-      } catch (error) {
-        console.warn('Could not load logo:', error)
-      }
-      
-      // Logo/Brand name
-      doc.setTextColor(255, 255, 255)
-      doc.setFontSize(20)
-      doc.text('TherapyPro', 70, 25)
+      // Add logo branding
+      addLogoBranding(doc, pageWidth)
       
       // Reset colors
       doc.setTextColor(0, 0, 0)
