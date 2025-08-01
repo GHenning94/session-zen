@@ -42,13 +42,15 @@ const Configuracoes = () => {
       setSettings(allSettings);
 
       const scheduleFromDb = (configData as any)?.dias_atendimento_array || ['segunda', 'terca', 'quarta', 'quinta', 'sexta'];
+      const horariosPorDia = (configData as any)?.horarios_por_dia || {};
       const initialScheduleUi: ScheduleUI = {};
       const diasSemanaKeys = ['segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'];
       diasSemanaKeys.forEach(day => {
+        const horarioDoDia = horariosPorDia[day];
         initialScheduleUi[day] = {
           ativo: scheduleFromDb.includes(day),
-          inicio: allSettings.horario_inicio || '08:00',
-          fim: allSettings.horario_fim || '18:00'
+          inicio: horarioDoDia?.inicio || allSettings.horario_inicio || '08:00',
+          fim: horarioDoDia?.fim || allSettings.horario_fim || '18:00'
         };
       });
       setScheduleUi(initialScheduleUi);
@@ -77,7 +79,15 @@ const Configuracoes = () => {
     try {
       const diasAtendimentoArray = Object.entries(scheduleUi).filter(([, value]) => value.ativo).map(([key]) => key);
 
-      // Calcular horários globais baseados nos dias ativos
+      // Salvar horários específicos por dia
+      const horariosPorDia = Object.entries(scheduleUi).reduce((acc, [day, config]) => {
+        if (config.ativo) {
+          acc[day] = { inicio: config.inicio, fim: config.fim };
+        }
+        return acc;
+      }, {} as Record<string, { inicio: string, fim: string }>);
+
+      // Calcular horários globais baseados nos dias ativos (para compatibilidade)
       const diasAtivos = Object.entries(scheduleUi).filter(([, value]) => value.ativo);
       let horarioInicioGlobal = '23:59';
       let horarioFimGlobal = '00:00';
@@ -93,6 +103,7 @@ const Configuracoes = () => {
       const profileData: Record<string, any> = {};
       const configData: Record<string, any> = { 
         dias_atendimento_array: diasAtendimentoArray,
+        horarios_por_dia: horariosPorDia,
         horario_inicio: diasAtivos.length > 0 ? horarioInicioGlobal : '08:00',
         horario_fim: diasAtivos.length > 0 ? horarioFimGlobal : '18:00'
       };

@@ -84,8 +84,12 @@ const BookingPage = () => {
       
       const bookedTimes = bookedSessions?.map(s => s.horario) || []
       
-      const startTime = config.horario_inicio || '08:00'
-      const endTime = config.horario_fim || '18:00'
+      // Usar horários específicos por dia se disponível
+      const horariosPorDia = config.horarios_por_dia || {};
+      const horarioDoDia = horariosPorDia[dayName];
+      
+      const startTime = horarioDoDia?.inicio || config.horario_inicio || '08:00'
+      const endTime = horarioDoDia?.fim || config.horario_fim || '18:00'
       const sessionDuration = parseInt(config.duracao_sessao || '50')
       const breakTime = parseInt(config.intervalo_sessoes || '10')
       const totalSlotTime = sessionDuration + breakTime

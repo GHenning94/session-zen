@@ -71,6 +71,7 @@ export type Database = {
           email_contato_pacientes: string | null
           horario_fim: string | null
           horario_inicio: string | null
+          horarios_por_dia: Json | null
           id: string
           intervalo_sessoes: number | null
           lembrete_24h: boolean | null
@@ -110,6 +111,7 @@ export type Database = {
           email_contato_pacientes?: string | null
           horario_fim?: string | null
           horario_inicio?: string | null
+          horarios_por_dia?: Json | null
           id?: string
           intervalo_sessoes?: number | null
           lembrete_24h?: boolean | null
@@ -149,6 +151,7 @@ export type Database = {
           email_contato_pacientes?: string | null
           horario_fim?: string | null
           horario_inicio?: string | null
+          horarios_por_dia?: Json | null
           id?: string
           intervalo_sessoes?: number | null
           lembrete_24h?: boolean | null
