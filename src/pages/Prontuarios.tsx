@@ -57,6 +57,7 @@ export default function Prontuarios() {
   // Estados para modais
   const [showTemplateModal, setShowTemplateModal] = useState(false)
   const [showRecordModal, setShowRecordModal] = useState(false)
+  const [showPreviewModal, setShowPreviewModal] = useState(false)
   const [editingTemplate, setEditingTemplate] = useState<RecordTemplate | null>(null)
   const [selectedTemplate, setSelectedTemplate] = useState<RecordTemplate | null>(null)
   
@@ -451,10 +452,17 @@ export default function Prontuarios() {
         {activeTab === 'templates' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
             {filteredTemplates.map((template) => (
-              <Card key={template.id}>
+              <Card 
+                key={template.id} 
+                className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+                onClick={() => {
+                  setSelectedTemplate(template)
+                  setShowPreviewModal(true)
+                }}
+              >
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1">
                       <CardTitle className="flex items-center gap-2">
                         {template.title}
                         <Badge variant="secondary">{template.category}</Badge>
@@ -466,30 +474,17 @@ export default function Prontuarios() {
                       )}
                     </div>
                     
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => downloadTemplatePDF(template)}
-                        title="Baixar PDF"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditTemplate(template)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleDeleteTemplate(template.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        downloadTemplatePDF(template)
+                      }}
+                      title="Baixar PDF"
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardHeader>
                 
@@ -599,6 +594,100 @@ export default function Prontuarios() {
                 </Button>
               </div>
             </div>
+          </DialogContent>
+        </Dialog>
+        
+        {/* Modal de Preview do Template */}
+        <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Preview do Template: {selectedTemplate?.title}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedTemplate && (
+              <div className="space-y-6">
+                {/* Informações básicas */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Categoria</Label>
+                    <Badge variant="secondary" className="mt-1">
+                      {selectedTemplate.category}
+                    </Badge>
+                  </div>
+                  <div>
+                    <Label>Data de Criação</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {format(new Date(selectedTemplate.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Descrição */}
+                {selectedTemplate.description && (
+                  <div>
+                    <Label>Descrição</Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {selectedTemplate.description}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Conteúdo do template */}
+                <div>
+                  <Label>Campos do Template</Label>
+                  <div className="mt-2 space-y-3">
+                    {selectedTemplate.template_content && Array.isArray(selectedTemplate.template_content) && selectedTemplate.template_content.length > 0 ? (
+                      selectedTemplate.template_content.map((field: any, index: number) => (
+                        <Card key={index} className="p-4">
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline">{field.type || 'Campo'}</Badge>
+                              <h4 className="font-medium">{field.label || field.name || `Campo ${index + 1}`}</h4>
+                            </div>
+                            {field.description && (
+                              <p className="text-sm text-muted-foreground">{field.description}</p>
+                            )}
+                            {field.options && Array.isArray(field.options) && (
+                              <div className="text-sm">
+                                <span className="font-medium">Opções:</span> {field.options.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      ))
+                    ) : (
+                      <p className="text-muted-foreground text-center py-4">
+                        Este template ainda não possui campos configurados.
+                      </p>
+                    )}
+                  </div>
+                </div>
+                
+                {/* Ações */}
+                <div className="flex justify-end gap-3 pt-4 border-t">
+                  <Button variant="outline" onClick={() => setShowPreviewModal(false)}>
+                    Fechar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => downloadTemplatePDF(selectedTemplate)}
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Baixar PDF
+                  </Button>
+                  <Button onClick={() => {
+                    setShowPreviewModal(false)
+                    handleEditTemplate(selectedTemplate)
+                  }}>
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Template
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
         
