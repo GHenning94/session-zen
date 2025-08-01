@@ -200,7 +200,7 @@ const Pagamentos = () => {
     }
   }
 
-  const generateReceipt = (payment: any) => {
+  const generateReceipt = async (payment: any) => {
     // Verificar se o pagamento está concluído
     if (payment.status !== 'pago') {
       toast({
@@ -235,12 +235,20 @@ const Pagamentos = () => {
       sessionId: session.id
     }
 
-    generateReceiptPDF(receiptData)
-    
-    toast({
-      title: "Recibo gerado!",
-      description: "O arquivo PDF foi baixado com sucesso.",
-    })
+    try {
+      await generateReceiptPDF(receiptData)
+      
+      toast({
+        title: "Recibo gerado!",
+        description: "O arquivo PDF foi baixado com sucesso.",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao gerar o recibo. Tente novamente.",
+        variant: "destructive"
+      })
+    }
   }
 
   const viewSession = (sessionId: string) => {

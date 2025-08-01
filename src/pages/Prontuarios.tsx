@@ -14,6 +14,8 @@ import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
+import jsPDF from 'jspdf'
+import { getLogoBase64, LOGO_CONFIG } from '@/utils/logoUtils'
 
 interface RecordTemplate {
   id: string
@@ -236,6 +238,108 @@ export default function Prontuarios() {
     }
   }
 
+  const downloadTemplatePDF = async (template: RecordTemplate) => {
+    try {
+      const doc = new jsPDF()
+      const pageWidth = doc.internal.pageSize.width
+      
+      // Header com branding TherapyPro
+      doc.setFillColor(59, 130, 246) // Primary blue
+      doc.rect(0, 0, pageWidth, 40, 'F')
+      
+      // Add logo
+      try {
+        const logoBase64 = await getLogoBase64()
+        if (logoBase64) {
+          doc.addImage(logoBase64, 'PNG', LOGO_CONFIG.x, LOGO_CONFIG.y, LOGO_CONFIG.width, LOGO_CONFIG.height)
+        }
+      } catch (error) {
+        console.warn('Could not load logo:', error)
+      }
+      
+      // Logo/Brand name
+      doc.setTextColor(255, 255, 255)
+      doc.setFontSize(20)
+      doc.text('TherapyPro', 70, 25)
+      
+      // Reset colors
+      doc.setTextColor(0, 0, 0)
+      
+      // Template title
+      doc.setFontSize(18)
+      doc.text(template.title, 20, 60)
+      
+      // Category badge
+      doc.setFontSize(12)
+      doc.text(`Categoria: ${template.category}`, 20, 75)
+      
+      // Description
+      if (template.description) {
+        doc.setFontSize(14)
+        doc.text('Descrição:', 20, 95)
+        doc.setFontSize(12)
+        const lines = doc.splitTextToSize(template.description, pageWidth - 40)
+        doc.text(lines, 20, 110)
+      }
+      
+      // Template content
+      let yPosition = template.description ? 130 : 110
+      doc.setFontSize(14)
+      doc.text('Campos do Template:', 20, yPosition)
+      yPosition += 15
+      
+      if (template.template_content && Array.isArray(template.template_content)) {
+        doc.setFontSize(12)
+        template.template_content.forEach((field: any, index: number) => {
+          if (yPosition > 270) {
+            doc.addPage()
+            yPosition = 20
+          }
+          
+          doc.text(`${index + 1}. ${field.label || field.name || 'Campo sem nome'}`, 20, yPosition)
+          yPosition += 10
+          
+          if (field.type) {
+            doc.setFontSize(10)
+            doc.text(`   Tipo: ${field.type}`, 20, yPosition)
+            yPosition += 8
+          }
+          
+          if (field.description) {
+            doc.setFontSize(10)
+            const descLines = doc.splitTextToSize(`   ${field.description}`, pageWidth - 40)
+            doc.text(descLines, 20, yPosition)
+            yPosition += descLines.length * 8
+          }
+          
+          yPosition += 5
+          doc.setFontSize(12)
+        })
+      }
+      
+      // Footer
+      doc.setFontSize(8)
+      doc.setTextColor(128, 128, 128)
+      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, 20, 280)
+      
+      // Save PDF
+      const fileName = `template-${template.title.replace(/\s+/g, '-')}.pdf`
+      doc.save(fileName)
+      
+      toast({
+        title: "Sucesso",
+        description: "Template baixado como PDF!",
+      })
+    } catch (error) {
+      console.error('Erro ao gerar PDF:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível gerar o PDF.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const filteredTemplates = templates.filter(template => {
     const matchesCategory = !filters.category || filters.category === "all" || template.category === filters.category
     const matchesSearch = !filters.search || 
@@ -379,6 +483,14 @@ export default function Prontuarios() {
                     </div>
                     
                     <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => downloadTemplatePDF(template)}
+                        title="Baixar PDF"
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
                       <Button
                         variant="outline"
                         size="sm"

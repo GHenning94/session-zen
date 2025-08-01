@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { getLogoBase64, LOGO_CONFIG } from './logoUtils'
 
 interface ReceiptData {
   clientName: string
@@ -13,7 +14,7 @@ interface ReceiptData {
   sessionId: string
 }
 
-export const generateReceiptPDF = (data: ReceiptData) => {
+export const generateReceiptPDF = async (data: ReceiptData) => {
   const doc = new jsPDF()
   const pageWidth = doc.internal.pageSize.width
   
@@ -21,10 +22,20 @@ export const generateReceiptPDF = (data: ReceiptData) => {
   doc.setFillColor(59, 130, 246) // Primary blue
   doc.rect(0, 0, pageWidth, 50, 'F')
   
+  // Add logo
+  try {
+    const logoBase64 = await getLogoBase64()
+    if (logoBase64) {
+      doc.addImage(logoBase64, 'PNG', LOGO_CONFIG.x, LOGO_CONFIG.y, LOGO_CONFIG.width, LOGO_CONFIG.height)
+    }
+  } catch (error) {
+    console.warn('Could not load logo:', error)
+  }
+  
   // Logo/Brand name
   doc.setTextColor(255, 255, 255)
   doc.setFontSize(24)
-  doc.text('TherapyPro', 20, 25)
+  doc.text('TherapyPro', 70, 25)
   
   // Subtitle
   doc.setFontSize(14)

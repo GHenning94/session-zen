@@ -7,6 +7,7 @@ import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { getLogoBase64, LOGO_CONFIG } from '@/utils/logoUtils'
 
 interface ReportFilters {
   startDate?: string
@@ -79,7 +80,7 @@ export const useReports = () => {
     return client?.nome || 'Cliente não encontrado'
   }
 
-  const generatePDF = (data: any, type: string, filters: ReportFilters) => {
+  const generatePDF = async (data: any, type: string, filters: ReportFilters) => {
     try {
       console.log('📄 Iniciando geração PDF com dados:', data)
       
@@ -95,10 +96,20 @@ export const useReports = () => {
       doc.setFillColor(59, 130, 246) // Primary blue
       doc.rect(0, 0, pageWidth, 40, 'F')
       
+      // Add logo
+      try {
+        const logoBase64 = await getLogoBase64()
+        if (logoBase64) {
+          doc.addImage(logoBase64, 'PNG', LOGO_CONFIG.x, LOGO_CONFIG.y, LOGO_CONFIG.width, LOGO_CONFIG.height)
+        }
+      } catch (error) {
+        console.warn('Could not load logo:', error)
+      }
+      
       // Logo/Brand name
       doc.setTextColor(255, 255, 255)
       doc.setFontSize(20)
-      doc.text('TherapyPro', 20, 25)
+      doc.text('TherapyPro', 70, 25)
       
       // Report title
       const reportTitle = type === 'complete' ? 'Relatório Completo' :
@@ -305,7 +316,7 @@ export const useReports = () => {
 
       if (format === 'pdf') {
         console.log('📄 Gerando PDF...')
-        generatePDF(data, type, filters)
+        await generatePDF(data, type, filters)
         toast({
           title: "Sucesso",
           description: "Relatório PDF gerado com sucesso!"
