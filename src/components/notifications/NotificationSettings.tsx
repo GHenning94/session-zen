@@ -135,67 +135,55 @@ export const NotificationSettings = ({ open, onOpenChange, type, title }: Notifi
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <Label>Ativar {title.toLowerCase()}</Label>
-            <Switch
-              checked={settings.enabled}
-              onCheckedChange={(checked) => setSettings(prev => ({ ...prev, enabled: checked }))}
-            />
-          </div>
-
-          {settings.enabled && (
-            <>
-              {(type === 'email' || type === 'reports') && (
-                <div>
-                  <Label>Frequência</Label>
-                  <Select
-                    value={settings.frequency}
-                    onValueChange={(value) => setSettings(prev => ({ ...prev, frequency: value }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="immediate">Imediato</SelectItem>
-                      <SelectItem value="daily">Diário</SelectItem>
-                      <SelectItem value="weekly">Semanal</SelectItem>
-                      {type === 'reports' && <SelectItem value="monthly">Mensal</SelectItem>}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {settings.frequency !== 'immediate' && (
-                <div>
-                  <Label>Horário de envio</Label>
-                  <input
-                    type="time"
-                    value={settings.time}
-                    onChange={(e) => setSettings(prev => ({ ...prev, time: e.target.value }))}
-                    className="w-full p-2 border rounded"
-                  />
-                </div>
-              )}
-
-              <div>
-                <Label>Eventos para notificar</Label>
-                <div className="space-y-2 mt-2">
-                  {eventOptions[type]?.map((event) => (
-                    <div key={event.id} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={event.id}
-                        checked={settings.events.includes(event.id)}
-                        onCheckedChange={(checked) => handleEventToggle(event.id, !!checked)}
-                      />
-                      <Label htmlFor={event.id} className="text-sm">
-                        {event.label}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
+          {(type === 'email' || type === 'reports') && (
+            <div>
+              <Label>Frequência</Label>
+              <Select
+                value={settings.frequency}
+                onValueChange={(value) => setSettings(prev => ({ ...prev, frequency: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="immediate">Imediato</SelectItem>
+                  <SelectItem value="daily">Diário</SelectItem>
+                  <SelectItem value="weekly">Semanal</SelectItem>
+                  {type === 'reports' && <SelectItem value="monthly">Mensal</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
           )}
+
+          {settings.frequency !== 'immediate' && (
+            <div>
+              <Label>Horário de envio</Label>
+              <input
+                type="time"
+                value={settings.time}
+                onChange={(e) => setSettings(prev => ({ ...prev, time: e.target.value }))}
+                className="w-full p-2 border rounded"
+              />
+            </div>
+          )}
+
+          <div>
+            <Label>Eventos para notificar</Label>
+            <div className="space-y-2 mt-2">
+              {eventOptions[type]?.map((event) => (
+                <div key={event.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={event.id}
+                    checked={settings.events.includes(event.id)}
+                    onCheckedChange={(checked) => handleEventToggle(event.id, !!checked)}
+                  />
+                  <Label htmlFor={event.id} className="text-sm">
+                    {event.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
+          </div>
 
           <div className="flex gap-2 justify-end">
             <Button
