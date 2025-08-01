@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 
@@ -342,22 +343,36 @@ const BookingPage = () => {
                 <div className="space-y-4">
                   <h3 className="font-semibold text-sm sm:text-base">Escolha o Horário</h3>
                   {availableSlots.length > 0 ? (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {availableSlots.map(time => {
-                        const isBooked = bookedSlots.includes(time)
-                        return (
-                          <Button 
-                            key={time} 
-                            variant={selectedTime === time ? "default" : "outline"} 
-                            onClick={() => !isBooked && setSelectedTime(time)}
-                            disabled={isBooked}
-                            className={`text-xs sm:text-sm h-8 sm:h-10 ${isBooked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            {time} {isBooked && '(Ocupado)'}
-                          </Button>
-                        )
-                      })}
-                    </div>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="w-full flex items-center gap-2">
+                          <Calendar className="w-4 h-4" />
+                          {selectedTime ? `Horário selecionado: ${selectedTime}` : "Ver horários disponíveis"}
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+                        <DialogHeader>
+                          <DialogTitle>Horários Disponíveis</DialogTitle>
+                        </DialogHeader>
+                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 p-4">
+                          {availableSlots.map(time => {
+                            const isBooked = bookedSlots.includes(time)
+                            return (
+                              <Button 
+                                key={time} 
+                                variant={selectedTime === time ? "default" : "outline"} 
+                                onClick={() => !isBooked && setSelectedTime(time)}
+                                disabled={isBooked}
+                                className={`text-sm h-10 ${isBooked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                              >
+                                {time}
+                                {isBooked && <span className="block text-xs text-muted-foreground">(Ocupado)</span>}
+                              </Button>
+                            )
+                          })}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
                   ) : (
                     <p className="text-muted-foreground text-center text-sm">Não há horários disponíveis para esta data.</p>
                   )}
