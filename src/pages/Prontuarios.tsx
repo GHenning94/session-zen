@@ -237,7 +237,7 @@ export default function Prontuarios() {
   }
 
   const filteredTemplates = templates.filter(template => {
-    const matchesCategory = !filters.category || template.category === filters.category
+    const matchesCategory = !filters.category || filters.category === "all" || template.category === filters.category
     const matchesSearch = !filters.search || 
       template.title.toLowerCase().includes(filters.search.toLowerCase()) ||
       template.description?.toLowerCase().includes(filters.search.toLowerCase())
@@ -246,7 +246,7 @@ export default function Prontuarios() {
   })
 
   const filteredRecords = filledRecords.filter(record => {
-    const matchesClient = !filters.client || record.client_id === filters.client
+    const matchesClient = !filters.client || filters.client === "all" || record.client_id === filters.client
     const matchesSearch = !filters.search || 
       record.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
       record.record_templates?.title.toLowerCase().includes(filters.search.toLowerCase())
@@ -317,7 +317,7 @@ export default function Prontuarios() {
                       <SelectValue placeholder="Todas as categorias" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todas as categorias</SelectItem>
+                      <SelectItem value="all">Todas as categorias</SelectItem>
                       {categories.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
@@ -336,7 +336,7 @@ export default function Prontuarios() {
                       <SelectValue placeholder="Todos os clientes" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos os clientes</SelectItem>
+                      <SelectItem value="all">Todos os clientes</SelectItem>
                       {clients.map((client) => (
                         <SelectItem key={client.id} value={client.id}>
                           {client.nome}

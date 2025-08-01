@@ -145,8 +145,8 @@ export default function Sessoes() {
   }
 
   const filteredSessions = sessions.filter(session => {
-    const matchesStatus = !filters.status || session.status === filters.status
-    const matchesClient = !filters.client || session.client_id === filters.client
+    const matchesStatus = !filters.status || filters.status === "all" || session.status === filters.status
+    const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
     const matchesSearch = !filters.search || 
       session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
       session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
@@ -163,7 +163,7 @@ export default function Sessoes() {
   })
 
   const filteredNotes = sessionNotes.filter(note => {
-    const matchesClient = !filters.client || note.client_id === filters.client
+    const matchesClient = !filters.client || filters.client === "all" || note.client_id === filters.client
     const matchesSearch = !filters.search || 
       note.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
       note.notes.toLowerCase().includes(filters.search.toLowerCase())
@@ -283,8 +283,8 @@ export default function Sessoes() {
                   <SelectTrigger>
                     <SelectValue placeholder="Todos os clientes" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todos os clientes</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os clientes</SelectItem>
                     {clients.map((client) => (
                       <SelectItem key={client.id} value={client.id}>
                         {client.nome}
@@ -301,8 +301,8 @@ export default function Sessoes() {
                     <SelectTrigger>
                       <SelectValue placeholder="Todos os status" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="">Todos os status</SelectItem>
+                      <SelectContent>
+                        <SelectItem value="all">Todos os status</SelectItem>
                       <SelectItem value="realizada">Realizada</SelectItem>
                       <SelectItem value="agendada">Agendada</SelectItem>
                       <SelectItem value="cancelada">Cancelada</SelectItem>

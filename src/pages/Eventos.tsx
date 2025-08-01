@@ -196,7 +196,7 @@ export default function Eventos() {
   }
 
   const filteredEvents = events.filter(event => {
-    const matchesCategory = !filters.category || event.category === filters.category
+    const matchesCategory = !filters.category || filters.category === "all" || event.category === filters.category
     const matchesSearch = !filters.search || 
       event.title.toLowerCase().includes(filters.search.toLowerCase()) ||
       event.description?.toLowerCase().includes(filters.search.toLowerCase())
@@ -368,8 +368,8 @@ export default function Eventos() {
                   <SelectTrigger>
                     <SelectValue placeholder="Todas as categorias" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">Todas as categorias</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="all">Todas as categorias</SelectItem>
                     {categories.map((category) => (
                       <SelectItem key={category} value={category}>
                         {category}
