@@ -13,20 +13,16 @@ export const getLogoBase64 = async (): Promise<string> => {
   return ''
 }
 
-// Alternative: Simple text-based branding that doesn't require image loading
+// Simple text-based branding using existing platform name
 export const addLogoBranding = (doc: any, pageWidth: number) => {
   // Header with branding TherapyPro
   doc.setFillColor(59, 130, 246) // Primary blue
-  doc.rect(0, 0, pageWidth, 40, 'F')
+  doc.rect(0, 0, pageWidth, 30, 'F')
   
-  // Brand name (centered approach)
+  // Brand name only - using existing platform name
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(20)
-  doc.text('TherapyPro', 20, 25)
-  
-  // Subtitle
-  doc.setFontSize(12)
-  doc.text('Gestão Profissional de Psicoterapia', 20, 35)
+  doc.setFontSize(18)
+  doc.text('TherapyPro', 20, 20)
   
   // Reset colors
   doc.setTextColor(0, 0, 0)

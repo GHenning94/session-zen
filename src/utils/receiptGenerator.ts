@@ -21,13 +21,6 @@ export const generateReceiptPDF = (data: ReceiptData) => {
   // Add logo branding
   addLogoBranding(doc, pageWidth)
   
-  // Subtitle
-  doc.setFontSize(14)
-  doc.text('Gestão Profissional de Psicoterapia', 20, 40)
-  
-  // Reset colors
-  doc.setTextColor(0, 0, 0)
-  
   // Título do recibo
   doc.setFontSize(20)
   doc.text('RECIBO DE PAGAMENTO', pageWidth / 2, 70, { align: 'center' })
