@@ -30,7 +30,7 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
   const [lastSync, setLastSync] = useState<Date | null>(null)
-  const [autoSync, setAutoSync] = useState(true)
+  const [autoSync, setAutoSync] = useState(false) // Desabilitar por enquanto
 
   // Cache para evitar chamadas desnecessárias
   const [cache, setCache] = useState<{
@@ -117,7 +117,8 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
     }
   }, [user, isLoading, cache, toast])
 
-  // Configurar realtime subscriptions
+  // Configurar realtime subscriptions (DESABILITADO para evitar loop)
+  /*
   useEffect(() => {
     if (!user || !autoSync) return
 
@@ -155,6 +156,7 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
       channels.forEach(channel => supabase.removeChannel(channel))
     }
   }, [user, autoSync])
+  */
 
   // Handler para atualizações em tempo real
   const handleRealtimeUpdate = useCallback((type: string, payload: any) => {
@@ -200,7 +202,8 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
     }
   }, [toast])
 
-  // Auto-sync periódico
+  // Auto-sync periódico (DESABILITADO para evitar loop)
+  /*
   useEffect(() => {
     if (!autoSync || !user) return
 
@@ -210,13 +213,16 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
 
     return () => clearInterval(interval)
   }, [autoSync, user, syncData])
+  */
 
-  // Sync inicial
+  // Sync inicial (DESABILITADO para evitar loop)
+  /*
   useEffect(() => {
     if (user) {
       syncData('all')
     }
   }, [user])
+  */
 
   return (
     <RealtimeSyncContext.Provider value={{
