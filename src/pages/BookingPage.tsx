@@ -21,6 +21,7 @@ const BookingPage = () => {
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
+  const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [clientData, setClientData] = useState({ nome: "", email: "", telefone: "", observacoes: "" })
 
   const loadTherapistData = useCallback(async () => {
@@ -63,12 +64,14 @@ const BookingPage = () => {
     const loadAvailableSlots = async () => {
       if (!selectedDate || !config?.dias_atendimento_array || !profile) {
         setAvailableSlots([])
+        setBookedSlots([])
         return
       }
       const date = new Date(selectedDate + 'T00:00:00')
       const dayName = ['domingo', 'segunda', 'terca', 'quarta', 'quinta', 'sexta', 'sabado', 'domingo'][date.getDay()]
       if (!config.dias_atendimento_array.includes(dayName)) {
         setAvailableSlots([])
+        setBookedSlots([])
         return
       }
       
@@ -86,19 +89,28 @@ const BookingPage = () => {
       const sessionDuration = parseInt(config.duracao_sessao || '50')
       const breakTime = parseInt(config.intervalo_sessoes || '10')
       const totalSlotTime = sessionDuration + breakTime
-      const slots = []
+      
+      // Gerar todos os slots dentro do range de horário
+      const allSlots = []
+      const availableSlots = []
       let [currentHour, currentMinute] = startTime.split(':').map(Number)
+      
       while (true) {
         const currentTimeStr = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`
         if (currentTimeStr >= endTime) break
+        
+        allSlots.push(currentTimeStr)
         if (!bookedTimes.includes(currentTimeStr)) {
-          slots.push(currentTimeStr)
+          availableSlots.push(currentTimeStr)
         }
+        
         const totalMinutes = (currentHour * 60) + currentMinute + totalSlotTime
         currentHour = Math.floor(totalMinutes / 60)
         currentMinute = totalMinutes % 60
       }
-      setAvailableSlots(slots)
+      
+      setAvailableSlots(allSlots) // Mostra todos os slots
+      setBookedSlots(bookedTimes) // Mantém lista de horários bloqueados
     }
     loadAvailableSlots()
   }, [selectedDate, config, profile])
@@ -303,16 +315,20 @@ const BookingPage = () => {
                   <h3 className="font-semibold text-sm sm:text-base">Escolha o Horário</h3>
                   {availableSlots.length > 0 ? (
                     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                      {availableSlots.map(time => (
-                        <Button 
-                          key={time} 
-                          variant={selectedTime === time ? "default" : "outline"} 
-                          onClick={() => setSelectedTime(time)}
-                          className="text-xs sm:text-sm h-8 sm:h-10"
-                        >
-                          {time}
-                        </Button>
-                      ))}
+                      {availableSlots.map(time => {
+                        const isBooked = bookedSlots.includes(time)
+                        return (
+                          <Button 
+                            key={time} 
+                            variant={selectedTime === time ? "default" : "outline"} 
+                            onClick={() => !isBooked && setSelectedTime(time)}
+                            disabled={isBooked}
+                            className={`text-xs sm:text-sm h-8 sm:h-10 ${isBooked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {time} {isBooked && '(Ocupado)'}
+                          </Button>
+                        )
+                      })}
                     </div>
                   ) : (
                     <p className="text-muted-foreground text-center text-sm">Não há horários disponíveis para esta data.</p>
