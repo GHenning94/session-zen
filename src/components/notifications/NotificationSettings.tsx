@@ -37,8 +37,10 @@ export const NotificationSettings = ({ open, onOpenChange, type, title }: Notifi
     ],
     whatsapp: [
       { id: 'new_booking', label: 'Novos agendamentos' },
+      { id: 'booking_cancelled', label: 'Cancelamentos' },
       { id: 'session_reminder', label: 'Lembrete de sessão' },
-      { id: 'payment_due', label: 'Pagamento pendente' }
+      { id: 'payment_due', label: 'Pagamento pendente' },
+      { id: 'payment_received', label: 'Pagamentos recebidos' }
     ],
     reminder: [
       { id: '24h_before', label: '24 horas antes' },
