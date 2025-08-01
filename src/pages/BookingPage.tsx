@@ -95,7 +95,7 @@ const BookingPage = () => {
       const breakTime = parseInt(config.intervalo_sessoes || '10')
       const totalSlotTime = sessionDuration + breakTime
       
-      // Gerar todos os slots de 10 em 10 minutos
+      // Gerar todos os slots de 30 em 30 minutos
       const allSlots = []
       let [currentHour, currentMinute] = startTime.split(':').map(Number)
       
@@ -105,8 +105,8 @@ const BookingPage = () => {
         
         allSlots.push(currentTimeStr)
         
-        // Incrementar 10 minutos
-        const totalMinutes = (currentHour * 60) + currentMinute + 10
+        // Incrementar 30 minutos
+        const totalMinutes = (currentHour * 60) + currentMinute + 30
         currentHour = Math.floor(totalMinutes / 60)
         currentMinute = totalMinutes % 60
       }
@@ -350,26 +350,28 @@ const BookingPage = () => {
                           {selectedTime ? `Horário selecionado: ${selectedTime}` : "Ver horários disponíveis"}
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-2xl max-h-[80vh] overflow-auto">
+                      <DialogContent className="max-w-2xl h-[600px] flex flex-col">
                         <DialogHeader>
                           <DialogTitle>Horários Disponíveis</DialogTitle>
                         </DialogHeader>
-                        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2 p-4">
-                          {availableSlots.map(time => {
-                            const isBooked = bookedSlots.includes(time)
-                            return (
-                              <Button 
-                                key={time} 
-                                variant={selectedTime === time ? "default" : "outline"} 
-                                onClick={() => !isBooked && setSelectedTime(time)}
-                                disabled={isBooked}
-                                className={`text-sm h-10 ${isBooked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                              >
-                                {time}
-                                {isBooked && <span className="block text-xs text-muted-foreground">(Ocupado)</span>}
-                              </Button>
-                            )
-                          })}
+                        <div className="flex-1 overflow-auto p-4">
+                          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-5 gap-2">
+                            {availableSlots.map(time => {
+                              const isBooked = bookedSlots.includes(time)
+                              return (
+                                <Button 
+                                  key={time} 
+                                  variant={selectedTime === time ? "default" : "outline"} 
+                                  onClick={() => !isBooked && setSelectedTime(time)}
+                                  disabled={isBooked}
+                                  className={`text-sm h-10 ${isBooked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                >
+                                  {time}
+                                  {isBooked && <span className="block text-xs text-muted-foreground">(Ocupado)</span>}
+                                </Button>
+                              )
+                            })}
+                          </div>
                         </div>
                       </DialogContent>
                     </Dialog>
