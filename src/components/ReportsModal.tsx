@@ -90,12 +90,12 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <DialogHeader>
           <DialogTitle>Exportar Relatórios</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <form onSubmit={(e) => e.preventDefault()} className="space-y-6">
           {/* Tipo de Relatório */}
           <div>
             <Label className="text-base font-medium">Selecione o tipo de relatório</Label>
@@ -241,10 +241,11 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
 
           {/* Botões */}
           <div className="flex justify-end gap-3 pt-4 border-t">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button 
+              type="button"
               onClick={handleGenerate}
               disabled={!selectedReport || (selectedReport !== 'complete' && !selectedFormat) || isGenerating}
             >
@@ -252,7 +253,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
               {selectedReport === 'complete' ? 'Gerar Relatório Completo (PDF + Excel)' : 'Gerar Relatório'}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   )
