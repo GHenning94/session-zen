@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.12 (cd3cf9e)"
@@ -532,11 +532,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      safe_public_profiles: {
+        Row: {
+          bio: string | null
+          especialidade: string | null
+          nome: string | null
+          profissao: string | null
+          user_id: string | null
+        }
+        Insert: {
+          bio?: string | null
+          especialidade?: string | null
+          nome?: string | null
+          profissao?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          bio?: string | null
+          especialidade?: string | null
+          nome?: string | null
+          profissao?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_public_profile_by_slug: {
         Args: { page_slug: string }
+        Returns: Json
+      }
+      get_safe_public_profile: {
+        Args: { profile_user_id: string }
         Returns: Json
       }
       send_session_reminders: {
