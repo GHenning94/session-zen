@@ -532,38 +532,11 @@ export type Database = {
       }
     }
     Views: {
-      safe_public_profiles: {
-        Row: {
-          bio: string | null
-          especialidade: string | null
-          nome: string | null
-          profissao: string | null
-          user_id: string | null
-        }
-        Insert: {
-          bio?: string | null
-          especialidade?: string | null
-          nome?: string | null
-          profissao?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          bio?: string | null
-          especialidade?: string | null
-          nome?: string | null
-          profissao?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
       get_public_profile_by_slug: {
         Args: { page_slug: string }
-        Returns: Json
-      }
-      get_safe_public_profile: {
-        Args: { profile_user_id: string }
         Returns: Json
       }
       send_session_reminders: {
