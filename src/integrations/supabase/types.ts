@@ -539,6 +539,10 @@ export type Database = {
         Args: { page_slug: string }
         Returns: Json
       }
+      get_safe_booking_data: {
+        Args: { page_slug: string }
+        Returns: Json
+      }
       send_session_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
