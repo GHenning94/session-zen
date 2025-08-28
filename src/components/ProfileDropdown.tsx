@@ -160,15 +160,15 @@ export const ProfileDropdown = () => {
     setLoading(true)
     try {
       console.log('Salvando perfil no banco...')
-      // Atualizar perfil
+      // Atualizar perfil existente
       const { error: profileError } = await supabase
         .from('profiles')
-        .upsert({
-          user_id: user.id,
+        .update({
           nome: profile.nome,
           profissao: profile.profissao,
           avatar_url: profile.avatar_url
         })
+        .eq('user_id', user.id)
 
       if (profileError) {
         console.error('Erro ao salvar perfil:', profileError)
