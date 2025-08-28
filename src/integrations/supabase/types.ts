@@ -362,6 +362,7 @@ export type Database = {
           nome: string
           plano: string | null
           profissao: string | null
+          public_avatar_url: string | null
           subscription_plan: string | null
           telefone: string | null
           updated_at: string
@@ -377,6 +378,7 @@ export type Database = {
           nome: string
           plano?: string | null
           profissao?: string | null
+          public_avatar_url?: string | null
           subscription_plan?: string | null
           telefone?: string | null
           updated_at?: string
@@ -392,6 +394,7 @@ export type Database = {
           nome?: string
           plano?: string | null
           profissao?: string | null
+          public_avatar_url?: string | null
           subscription_plan?: string | null
           telefone?: string | null
           updated_at?: string
