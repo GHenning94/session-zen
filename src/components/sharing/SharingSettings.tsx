@@ -77,22 +77,25 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                 <div className="space-y-2"><Label>Descrição</Label><Input value={settings.page_description || ''} onChange={(e) => onSettingsChange('page_description', e.target.value)} placeholder="Psicoterapia online" /></div>
               </div>
               <div className="space-y-2">
-                <Label>Foto de Perfil</Label>
+                <Label>Foto Pública</Label>
                 <Input type="file" accept="image/*" onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
                     const reader = new FileReader();
                     reader.onload = (ev) => {
-                      onSettingsChange('avatar_url', ev.target?.result);
+                      onSettingsChange('public_avatar_url', ev.target?.result);
                     };
                     reader.readAsDataURL(file);
                   }
                 }} />
-                {settings.avatar_url && (
+                {settings.public_avatar_url && (
                   <div className="mt-2">
-                    <img src={settings.avatar_url} alt="Foto de perfil" className="w-20 h-20 rounded-full object-cover" />
+                    <img src={settings.public_avatar_url} alt="Foto pública" className="w-20 h-20 rounded-full object-cover" />
                   </div>
                 )}
+                <p className="text-xs text-muted-foreground">
+                  Esta foto será exibida no seu link público de agendamento
+                </p>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between"><div><Label>Mostrar Preço</Label></div><Switch checked={settings.show_price ?? true} onCheckedChange={(checked) => onSettingsChange('show_price', checked)} /></div>

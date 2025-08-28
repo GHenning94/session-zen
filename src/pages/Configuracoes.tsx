@@ -97,7 +97,7 @@ const Configuracoes = () => {
         if (value.fim > horarioFimGlobal) horarioFimGlobal = value.fim;
       });
 
-      const profileFields = ['nome', 'profissao', 'telefone', 'crp', 'especialidade', 'bio', 'avatar_url'];
+      const profileFields = ['nome', 'profissao', 'telefone', 'crp', 'especialidade', 'bio', 'avatar_url', 'public_avatar_url'];
       const configFields = ['duracao_sessao', 'intervalo_sessoes', 'valor_padrao', 'valor_primeira_consulta', 'aceita_pix', 'aceita_cartao', 'aceita_transferencia', 'aceita_dinheiro', 'chave_pix', 'dados_bancarios', 'notificacao_email', 'notificacao_whatsapp', 'lembrete_24h', 'relatorio_semanal', 'email_contato_pacientes', 'whatsapp_contato_pacientes', 'slug', 'page_title', 'page_description', 'brand_color', 'background_color', 'logo_url', 'background_image', 'custom_css', 'custom_domain', 'custom_footer', 'booking_enabled', 'show_price', 'show_duration'];
       
       const profileData: Record<string, any> = {};
