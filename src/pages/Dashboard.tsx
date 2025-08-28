@@ -13,7 +13,7 @@ import {
   AlertCircle,
   BarChart3
 } from "lucide-react"
-// import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -507,12 +507,49 @@ const Dashboard = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                       <div className="h-64 flex items-center justify-center bg-muted/20 rounded-lg">
-                         <div className="text-center">
-                           <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
-                           <p className="text-muted-foreground">Gráfico temporariamente indisponível</p>
-                           <p className="text-xs text-muted-foreground mt-1">Dados carregados: {monthlyChart.length} meses</p>
-                         </div>
+                       <div className="h-64">
+                         <ResponsiveContainer width="100%" height="100%">
+                           <BarChart 
+                             data={monthlyChart.filter((_, index) => {
+                               if (chartPeriod === '12') return true;
+                               if (chartPeriod === '6') return index >= 6;
+                               return index >= 9;
+                             })}
+                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                           >
+                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                             <XAxis 
+                               dataKey="mes" 
+                               tick={{ fontSize: 12 }} 
+                               tickLine={false}
+                               axisLine={false}
+                             />
+                             <YAxis 
+                               tick={{ fontSize: 12 }}
+                               tickLine={false}
+                               axisLine={false}
+                               tickFormatter={(value) => `R$ ${value}`}
+                             />
+                             <Tooltip 
+                               formatter={(value: any) => [`R$ ${value.toFixed(2)}`, 'Receita']}
+                               labelFormatter={(label) => {
+                                 const month = monthlyChart.find(item => item.mes === label);
+                                 return month ? month.fullMonth : label;
+                               }}
+                               contentStyle={{
+                                 backgroundColor: 'hsl(var(--background))',
+                                 border: '1px solid hsl(var(--border))',
+                                 borderRadius: '6px'
+                               }}
+                             />
+                             <Bar 
+                               dataKey="receita" 
+                               fill="hsl(var(--primary))" 
+                               radius={[4, 4, 0, 0]}
+                               className="hover:opacity-80 transition-opacity"
+                             />
+                           </BarChart>
+                         </ResponsiveContainer>
                        </div>
                       
                        {/* Estatísticas do período */}
