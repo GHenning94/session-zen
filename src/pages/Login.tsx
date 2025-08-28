@@ -171,6 +171,49 @@ const Login = () => {
                   >
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
+                  
+                  <div className="text-center">
+                    <button 
+                      type="button"
+                      className="text-sm text-primary hover:underline"
+                      onClick={async () => {
+                        if (!formData.email) {
+                          toast({
+                            title: "Email necessário",
+                            description: "Digite seu email primeiro para recuperar a senha.",
+                            variant: "destructive",
+                          })
+                          return
+                        }
+                        try {
+                          const { supabase } = await import("@/integrations/supabase/client")
+                          const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+                            redirectTo: `${window.location.origin}/reset-password`
+                          })
+                          if (error) {
+                            toast({
+                              title: "Erro",
+                              description: error.message,
+                              variant: "destructive",
+                            })
+                          } else {
+                            toast({
+                              title: "Email enviado",
+                              description: "Verifique sua caixa de entrada para redefinir sua senha.",
+                            })
+                          }
+                        } catch (error) {
+                          toast({
+                            title: "Erro",
+                            description: "Não foi possível enviar o email de recuperação.",
+                            variant: "destructive",
+                          })
+                        }
+                      }}
+                    >
+                      Esqueci minha senha
+                    </button>
+                  </div>
                 </form>
               </TabsContent>
 

@@ -177,16 +177,28 @@ export const ProfileDropdown = () => {
       console.log('Perfil salvo com sucesso')
 
       // Atualizar senha se fornecida
-      if (newPassword) {
+      if (newPassword && newPassword.trim() !== '') {
         console.log('Atualizando senha...')
         const { error: passwordError } = await supabase.auth.updateUser({
           password: newPassword
         })
         if (passwordError) {
           console.error('Erro ao atualizar senha:', passwordError)
-          throw passwordError
+          toast({
+            title: "Erro ao atualizar senha",
+            description: passwordError.message || "Não foi possível atualizar a senha",
+            variant: "destructive",
+          })
+          return
         }
         console.log('Senha atualizada com sucesso')
+        toast({
+          title: "Senha atualizada",
+          description: "Sua senha foi alterada com sucesso.",
+        })
+        // Limpar os campos de senha
+        setNewPassword('')
+        setConfirmPassword('')
       }
 
       // Atualizar e-mail se alterado
