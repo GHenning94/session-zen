@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -18,7 +18,8 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { User, LogOut, Settings, Share, Copy } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { User, LogOut, Settings, Share, Copy, Camera } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
@@ -27,15 +28,20 @@ import { supabase } from "@/integrations/supabase/client"
 interface Profile {
   nome: string
   profissao: string
+  avatar_url?: string
 }
 
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '' })
+  const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '' })
   const [loading, setLoading] = useState(false)
   const [inviteLink] = useState(`https://therapypro.app/convite/${user?.id || 'default'}`)
+  const [email, setEmail] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchProfile = async () => {
     if (!user) return
@@ -43,7 +49,7 @@ export const ProfileDropdown = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('nome, profissao')
+        .select('nome, profissao, avatar_url')
         .eq('user_id', user.id)
         .single()
 
@@ -52,6 +58,7 @@ export const ProfileDropdown = () => {
       if (data) {
         setProfile(data)
       }
+      setEmail(user.email || '')
     } catch (error) {
       console.error('Erro ao buscar perfil:', error)
     }
@@ -83,21 +90,99 @@ export const ProfileDropdown = () => {
     }
   }
 
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file || !user) return
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione apenas arquivos de imagem.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Erro",
+        description: "A imagem deve ter no máximo 5MB.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}.${fileExt}`
+      
+      // Upload file to Supabase Storage (we'll need to create the bucket)
+      const imageUrl = URL.createObjectURL(file)
+      
+      // For now, just set the local URL - in production you'd upload to storage
+      setProfile(prev => ({ ...prev, avatar_url: imageUrl }))
+      
+      toast({
+        title: "Foto carregada",
+        description: "Sua foto de perfil foi carregada com sucesso.",
+      })
+    } catch (error) {
+      console.error('Erro ao fazer upload:', error)
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar foto.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const handleSaveProfile = async () => {
     if (!user) return
+
+    // Validar senha se fornecida
+    if (newPassword && newPassword !== confirmPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem.",
+        variant: "destructive",
+      })
+      return
+    }
 
     setLoading(true)
     try {
       // Atualizar perfil
-      const { error } = await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
         .upsert({
           user_id: user.id,
           nome: profile.nome,
-          profissao: profile.profissao
+          profissao: profile.profissao,
+          avatar_url: profile.avatar_url
         })
 
-      if (error) throw error
+      if (profileError) throw profileError
+
+      // Atualizar senha se fornecida
+      if (newPassword) {
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: newPassword
+        })
+        if (passwordError) throw passwordError
+      }
+
+      // Atualizar e-mail se alterado
+      if (email !== user.email) {
+        const { error: emailError } = await supabase.auth.updateUser({
+          email: email
+        })
+        if (emailError) throw emailError
+        
+        toast({
+          title: "E-mail de confirmação enviado",
+          description: "Verifique sua caixa de entrada para confirmar o novo e-mail.",
+        })
+      }
 
       // Atualizar link de agendamento automaticamente baseado no nome
       const sanitizedName = profile.nome
@@ -119,9 +204,11 @@ export const ProfileDropdown = () => {
 
       toast({
         title: "Perfil atualizado",
-        description: "Suas informações e link de agendamento foram atualizados automaticamente.",
+        description: "Suas informações foram atualizadas com sucesso.",
       })
       setIsModalOpen(false)
+      setNewPassword('')
+      setConfirmPassword('')
     } catch (error) {
       console.error('Erro ao salvar perfil:', error)
       toast({
@@ -146,8 +233,13 @@ export const ProfileDropdown = () => {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm">
-            <User className="w-4 h-4" />
+          <Button variant="outline" size="sm" className="h-8 w-8 rounded-full p-0">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={profile.avatar_url} alt={profile.nome} />
+              <AvatarFallback>
+                <User className="w-4 h-4" />
+              </AvatarFallback>
+            </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 bg-background border shadow-lg z-50">
@@ -179,6 +271,35 @@ export const ProfileDropdown = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">
+                Foto
+              </Label>
+              <div className="col-span-3 flex items-center gap-3">
+                <Avatar className="h-16 w-16">
+                  <AvatarImage src={profile.avatar_url} alt={profile.nome} />
+                  <AvatarFallback>
+                    <User className="w-8 h-8" />
+                  </AvatarFallback>
+                </Avatar>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Camera className="w-4 h-4 mr-2" />
+                  Alterar
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="nome" className="text-right">
                 Nome
               </Label>
@@ -195,9 +316,10 @@ export const ProfileDropdown = () => {
               </Label>
               <Input
                 id="email"
-                value={user?.email || ''}
-                disabled
-                className="col-span-3 bg-muted"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="col-span-3"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
@@ -210,6 +332,32 @@ export const ProfileDropdown = () => {
                 onChange={(e) => setProfile(prev => ({ ...prev, profissao: e.target.value }))}
                 className="col-span-3"
                 placeholder="Ex: Psicólogo"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="newPassword" className="text-right">
+                Nova Senha
+              </Label>
+              <Input
+                id="newPassword"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="col-span-3"
+                placeholder="Deixe em branco para manter a atual"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="confirmPassword" className="text-right">
+                Confirmar Senha
+              </Label>
+              <Input
+                id="confirmPassword"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="col-span-3"
+                placeholder="Confirme a nova senha"
               />
             </div>
           </div>
