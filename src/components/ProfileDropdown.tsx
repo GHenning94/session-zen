@@ -140,10 +140,14 @@ export const ProfileDropdown = () => {
   }
 
   const handleSaveProfile = async () => {
-    if (!user) return
+    if (!user) {
+      console.error('Usuário não encontrado')
+      return
+    }
 
     // Validar senha se fornecida
     if (newPassword && newPassword !== confirmPassword) {
+      console.error('Senhas não coincidem')
       toast({
         title: "Erro",
         description: "As senhas não coincidem.",
@@ -152,8 +156,10 @@ export const ProfileDropdown = () => {
       return
     }
 
+    console.log('Iniciando salvamento do perfil...', { profile, email, hasNewPassword: !!newPassword })
     setLoading(true)
     try {
+      console.log('Salvando perfil no banco...')
       // Atualizar perfil
       const { error: profileError } = await supabase
         .from('profiles')
@@ -168,9 +174,11 @@ export const ProfileDropdown = () => {
         console.error('Erro ao salvar perfil:', profileError)
         throw profileError
       }
+      console.log('Perfil salvo com sucesso')
 
       // Atualizar senha se fornecida
       if (newPassword) {
+        console.log('Atualizando senha...')
         const { error: passwordError } = await supabase.auth.updateUser({
           password: newPassword
         })
@@ -178,10 +186,12 @@ export const ProfileDropdown = () => {
           console.error('Erro ao atualizar senha:', passwordError)
           throw passwordError
         }
+        console.log('Senha atualizada com sucesso')
       }
 
       // Atualizar e-mail se alterado
       if (email !== user.email) {
+        console.log('Atualizando e-mail...')
         const { error: emailError } = await supabase.auth.updateUser({
           email: email
         })
@@ -189,6 +199,7 @@ export const ProfileDropdown = () => {
           console.error('Erro ao atualizar e-mail:', emailError)
           throw emailError
         }
+        console.log('E-mail atualizado com sucesso')
         
         toast({
           title: "E-mail de confirmação enviado",
@@ -197,28 +208,34 @@ export const ProfileDropdown = () => {
       }
 
       // Atualizar link de agendamento automaticamente baseado no nome
-      const sanitizedName = profile.nome
-        .toLowerCase()
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '') // Remove acentos
-        .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
-        .replace(/\s+/g, '-') // Substitui espaços por hífen
-        .replace(/-+/g, '-') // Remove hífens duplos
-        .replace(/^-|-$/g, '') // Remove hífens no início e fim
+      if (profile.nome) {
+        console.log('Atualizando link de agendamento...')
+        const sanitizedName = profile.nome
+          .toLowerCase()
+          .normalize('NFD')
+          .replace(/[\u0300-\u036f]/g, '') // Remove acentos
+          .replace(/[^a-z0-9\s]/g, '') // Remove caracteres especiais
+          .replace(/\s+/g, '-') // Substitui espaços por hífen
+          .replace(/-+/g, '-') // Remove hífens duplos
+          .replace(/^-|-$/g, '') // Remove hífens no início e fim
 
-      const newLink = `https://therapypro.app/agendar/slug/${sanitizedName}`
-      
-      // Atualizar link na tabela de configurações
-      const { error: configError } = await supabase
-        .from('configuracoes')
-        .update({ link_agendamento: newLink })
-        .eq('user_id', user.id)
+        const newLink = `https://therapypro.app/agendar/slug/${sanitizedName}`
         
-      if (configError) {
-        console.error('Erro ao atualizar configurações:', configError)
-        // Não falha a operação se houver erro nas configurações
+        // Atualizar link na tabela de configurações
+        const { error: configError } = await supabase
+          .from('configuracoes')
+          .update({ link_agendamento: newLink })
+          .eq('user_id', user.id)
+          
+        if (configError) {
+          console.error('Erro ao atualizar configurações:', configError)
+          // Não falha a operação se houver erro nas configurações
+        } else {
+          console.log('Link de agendamento atualizado com sucesso')
+        }
       }
 
+      console.log('Perfil salvo com sucesso, fechando modal')
       toast({
         title: "Perfil atualizado",
         description: "Suas informações foram atualizadas com sucesso.",
@@ -227,13 +244,14 @@ export const ProfileDropdown = () => {
       setNewPassword('')
       setConfirmPassword('')
     } catch (error) {
-      console.error('Erro ao salvar perfil:', error)
+      console.error('Erro completo ao salvar perfil:', error)
       toast({
         title: "Erro",
-        description: "Erro ao salvar perfil.",
+        description: `Erro ao salvar perfil: ${error.message || 'Erro desconhecido'}`,
         variant: "destructive",
       })
     } finally {
+      console.log('Finalizando salvamento')
       setLoading(false)
     }
   }
