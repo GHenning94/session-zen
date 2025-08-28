@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { NewSessionModal } from "@/components/NewSessionModal"
+import { NewClientModal } from "@/components/NewClientModal"
+import { NewPaymentModal } from "@/components/NewPaymentModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
 
 const Dashboard = () => {
@@ -33,6 +35,8 @@ const Dashboard = () => {
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([])
   const [recentPayments, setRecentPayments] = useState<any[]>([])
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
+  const [isNewClientOpen, setIsNewClientOpen] = useState(false)
+  const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false)
   const [userPlan, setUserPlan] = useState('basico')
   const [recentClients, setRecentClients] = useState<any[]>([])
   const [monthlyChart, setMonthlyChart] = useState<any[]>([])
@@ -67,12 +71,28 @@ const Dashboard = () => {
       }
     }
 
+    const handleClientAdded = () => {
+      if (user) {
+        loadDashboardData()
+      }
+    }
+
+    const handlePaymentAdded = () => {
+      if (user) {
+        loadDashboardData()
+      }
+    }
+
     window.addEventListener('storage', handleStorageChange)
     window.addEventListener('focus', handleStorageChange)
+    window.addEventListener('clientAdded', handleClientAdded)
+    window.addEventListener('paymentAdded', handlePaymentAdded)
     
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('focus', handleStorageChange)
+      window.removeEventListener('clientAdded', handleClientAdded)
+      window.removeEventListener('paymentAdded', handlePaymentAdded)
     }
   }, [user])
 
@@ -275,6 +295,14 @@ const Dashboard = () => {
     setIsNewSessionOpen(true)
   }
 
+  const handleNewClient = () => {
+    setIsNewClientOpen(true)
+  }
+
+  const handleNewPayment = () => {
+    setIsNewPaymentOpen(true)
+  }
+
   const stats = [
     {
       title: "Sessões Hoje",
@@ -459,11 +487,11 @@ const Dashboard = () => {
                     <Calendar className="w-6 h-6 text-primary" />
                     <span>Agendar Sessão</span>
                   </Button>
-                  <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={() => navigate("/clientes")}>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewClient}>
                     <Users className="w-6 h-6 text-secondary" />
                     <span>Adicionar Cliente</span>
                   </Button>
-                  <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={() => navigate("/pagamentos")}>
+                  <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewPayment}>
                     <DollarSign className="w-6 h-6 text-success" />
                     <span>Registrar Pagamento</span>
                   </Button>
@@ -653,10 +681,21 @@ const Dashboard = () => {
         </Card>
       </div>
 
-      <NewSessionModal 
+      {/* Modals */}
+      <NewSessionModal
         open={isNewSessionOpen}
         onOpenChange={setIsNewSessionOpen}
         onSessionCreated={loadDashboardData}
+      />
+      <NewClientModal
+        open={isNewClientOpen}
+        onOpenChange={setIsNewClientOpen}
+        onClientAdded={loadDashboardData}
+      />
+      <NewPaymentModal
+        open={isNewPaymentOpen}
+        onOpenChange={setIsNewPaymentOpen}
+        onPaymentAdded={loadDashboardData}
       />
     </Layout>
   )
