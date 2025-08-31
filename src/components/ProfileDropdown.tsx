@@ -24,6 +24,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { PasswordRequirements } from "./PasswordRequirements"
 
 interface Profile {
   nome: string
@@ -139,6 +140,18 @@ export const ProfileDropdown = () => {
     }
   }
 
+  const validatePassword = (password: string) => {
+    const requirements = [
+      { test: (pwd: string) => pwd.length >= 8, message: "Pelo menos 8 caracteres" },
+      { test: (pwd: string) => /[A-Z]/.test(pwd), message: "Uma letra maiúscula" },
+      { test: (pwd: string) => /[a-z]/.test(pwd), message: "Uma letra minúscula" },
+      { test: (pwd: string) => /\d/.test(pwd), message: "Um número" },
+      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: "Um caractere especial" }
+    ]
+    
+    return requirements.every(req => req.test(password))
+  }
+
   const handleSaveProfile = async () => {
     if (!user) {
       console.error('Usuário não encontrado')
@@ -151,6 +164,16 @@ export const ProfileDropdown = () => {
       toast({
         title: "Erro",
         description: "As senhas não coincidem.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validar requisitos da senha
+    if (newPassword && newPassword.trim() !== '' && !validatePassword(newPassword)) {
+      toast({
+        title: "Senha inválida",
+        description: "A senha deve atender a todos os requisitos listados.",
         variant: "destructive",
       })
       return
@@ -184,11 +207,7 @@ export const ProfileDropdown = () => {
         })
         if (passwordError) {
           console.error('Erro ao atualizar senha:', passwordError)
-          toast({
-            title: "Erro ao atualizar senha",
-            description: passwordError.message || "Não foi possível atualizar a senha",
-            variant: "destructive",
-          })
+          // Não mostrar toast de erro aqui pois já validamos antes
           return
         }
         console.log('Senha atualizada com sucesso')
@@ -394,6 +413,11 @@ export const ProfileDropdown = () => {
                 placeholder="Deixe em branco para manter a atual"
               />
             </div>
+            {newPassword && (
+              <div className="col-start-2 col-span-3">
+                <PasswordRequirements password={newPassword} />
+              </div>
+            )}
             <div className="grid grid-cols-4 items-center gap-4">
               <Label htmlFor="confirmPassword" className="text-right">
                 Confirmar Senha
