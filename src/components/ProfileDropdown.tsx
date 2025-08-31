@@ -31,6 +31,7 @@ interface Profile {
   nome: string
   profissao: string
   avatar_url?: string
+  public_avatar_url?: string
 }
 
 export const ProfileDropdown = () => {
@@ -53,7 +54,7 @@ export const ProfileDropdown = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('nome, profissao, avatar_url')
+        .select('nome, profissao, avatar_url, public_avatar_url')
         .eq('user_id', user.id)
         .maybeSingle()
 
@@ -158,8 +159,48 @@ export const ProfileDropdown = () => {
     }
   }
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    setProfile(prev => ({ ...prev, avatar_url: croppedImageUrl }))
+  const handleCropComplete = async (croppedImageUrl: string) => {
+    if (!user) return
+    
+    try {
+      // Update both avatar URLs
+      setProfile(prev => ({ 
+        ...prev, 
+        avatar_url: croppedImageUrl,
+        public_avatar_url: croppedImageUrl 
+      }))
+
+      // Save to database immediately
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          avatar_url: croppedImageUrl,
+          public_avatar_url: croppedImageUrl
+        })
+        .eq('user_id', user.id)
+
+      if (error) {
+        console.error('Erro ao salvar avatar:', error)
+        toast({
+          title: "Erro",
+          description: "Erro ao salvar avatar.",
+          variant: "destructive",
+        })
+        return
+      }
+
+      toast({
+        title: "Avatar atualizado",
+        description: "Sua foto foi atualizada com sucesso.",
+      })
+    } catch (error) {
+      console.error('Erro ao processar avatar:', error)
+      toast({
+        title: "Erro",
+        description: "Erro ao processar avatar.",
+        variant: "destructive",
+      })
+    }
   }
 
   const validatePassword = (password: string) => {
