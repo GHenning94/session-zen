@@ -83,6 +83,7 @@ export type Database = {
           page_title: string | null
           relatorio_semanal: boolean | null
           show_duration: boolean | null
+          show_photo: boolean | null
           show_price: boolean | null
           slug: string | null
           updated_at: string
@@ -123,6 +124,7 @@ export type Database = {
           page_title?: string | null
           relatorio_semanal?: boolean | null
           show_duration?: boolean | null
+          show_photo?: boolean | null
           show_price?: boolean | null
           slug?: string | null
           updated_at?: string
@@ -163,6 +165,7 @@ export type Database = {
           page_title?: string | null
           relatorio_semanal?: boolean | null
           show_duration?: boolean | null
+          show_photo?: boolean | null
           show_price?: boolean | null
           slug?: string | null
           updated_at?: string

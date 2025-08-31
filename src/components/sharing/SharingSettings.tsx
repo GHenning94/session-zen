@@ -139,8 +139,18 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                   />
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Esta foto será exibida no seu link público de agendamento
+                  Esta foto será exibida no seu link público de agendamento quando ativada
                 </p>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <Label>Mostrar Foto na Página</Label>
+                  <p className="text-sm text-muted-foreground">Exibir sua foto na página pública</p>
+                </div>
+                <Switch 
+                  checked={settings.show_photo !== false} 
+                  onCheckedChange={(checked) => onSettingsChange('show_photo', checked)} 
+                />
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="flex items-center justify-between"><div><Label>Mostrar Preço</Label></div><Switch checked={settings.show_price ?? true} onCheckedChange={(checked) => onSettingsChange('show_price', checked)} /></div>
