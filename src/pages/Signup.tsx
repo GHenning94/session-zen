@@ -198,13 +198,14 @@ const Signup = () => {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    console.log('Password changed:', e.target.value)
+                    setPassword(e.target.value)
+                  }}
                   required
                   placeholder="Sua senha"
                 />
-                {password && (
-                  <PasswordRequirements password={password} />
-                )}
+                <PasswordRequirements password={password} />
               </div>
 
               <Button 
