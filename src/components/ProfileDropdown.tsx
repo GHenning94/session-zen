@@ -325,19 +325,17 @@ export const ProfileDropdown = () => {
       </DropdownMenu>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
             <DialogDescription>
               Atualize suas informações pessoais aqui.
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label className="text-right">
-                Foto
-              </Label>
-              <div className="col-span-3 flex items-center gap-3">
+          <div className="space-y-6 py-4">
+            <div className="space-y-2">
+              <Label>Foto</Label>
+              <div className="flex items-center gap-3">
                 <Avatar className="h-16 w-16">
                   <AvatarImage src={profile.avatar_url} alt={profile.nome} />
                   <AvatarFallback>
@@ -362,69 +360,59 @@ export const ProfileDropdown = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="nome" className="text-right">
-                Nome
-              </Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="nome">Nome</Label>
               <Input
                 id="nome"
                 value={profile.nome}
                 onChange={(e) => setProfile(prev => ({ ...prev, nome: e.target.value }))}
-                className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="email" className="text-right">
-                E-mail
-              </Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="col-span-3"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="profissao" className="text-right">
-                Profissão
-              </Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="profissao">Profissão</Label>
               <Input
                 id="profissao"
                 value={profile.profissao}
                 onChange={(e) => setProfile(prev => ({ ...prev, profissao: e.target.value }))}
-                className="col-span-3"
                 placeholder="Ex: Psicólogo"
               />
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="newPassword" className="text-right">
-                Nova Senha
-              </Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="newPassword">Nova Senha</Label>
               <Input
                 id="newPassword"
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                className="col-span-3"
                 placeholder="Deixe em branco para manter a atual"
               />
+              {newPassword && (
+                <div className="mt-3">
+                  <PasswordRequirements password={newPassword} />
+                </div>
+              )}
             </div>
-            {newPassword && (
-              <div className="col-start-2 col-span-3">
-                <PasswordRequirements password={newPassword} />
-              </div>
-            )}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="confirmPassword" className="text-right">
-                Confirmar Senha
-              </Label>
+            
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
               <Input
                 id="confirmPassword"
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="col-span-3"
                 placeholder="Confirme a nova senha"
               />
             </div>
