@@ -13,9 +13,11 @@ import { ArrowLeft, UserPlus, Gift, Check, X } from "lucide-react"
 const Signup = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [nome, setNome] = useState('')
   const [profissao, setProfissao] = useState('Psicólogo')
   const [isLoading, setIsLoading] = useState(false)
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -84,9 +86,16 @@ const Signup = () => {
     console.log('=== SIGNUP DEBUG ===')
     console.log('Email:', email)
     console.log('Password length:', password.length)
+    console.log('Confirm password:', confirmPassword)
     console.log('Nome:', nome)
     console.log('Profissao:', profissao)
     console.log('ReferralId:', referralId)
+    
+    // Validar se as senhas são iguais
+    if (password !== confirmPassword) {
+      console.log('Passwords do not match')
+      return
+    }
     
     // Validar requisitos da senha
     if (!validatePassword(password)) {
@@ -240,23 +249,24 @@ const Signup = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Popover open={password.length > 0}>
-                  <PopoverTrigger asChild>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => {
-                        console.log('Password changed:', e.target.value)
-                        setPassword(e.target.value)
-                      }}
-                      required
-                      placeholder="Sua senha"
-                    />
-                  </PopoverTrigger>
-                  <PopoverContent className="w-80 p-4" side="right" align="start">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium text-foreground">Requisitos da senha:</p>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => {
+                      console.log('Password changed:', e.target.value)
+                      setPassword(e.target.value)
+                      setShowPasswordRequirements(e.target.value.length > 0)
+                    }}
+                    onFocus={() => setShowPasswordRequirements(password.length > 0)}
+                    onBlur={() => setShowPasswordRequirements(false)}
+                    required
+                    placeholder="Sua senha"
+                  />
+                  {showPasswordRequirements && (
+                    <div className="absolute top-full left-0 mt-2 w-80 p-4 bg-background border border-border rounded-lg shadow-lg z-50">
+                      <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
                       <div className="space-y-1">
                         {passwordRequirements.map((req, index) => {
                           const isValid = req.test(password)
@@ -275,8 +285,23 @@ const Signup = () => {
                         })}
                       </div>
                     </div>
-                  </PopoverContent>
-                </Popover>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Repetir Senha</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  placeholder="Confirme sua senha"
+                />
+                {confirmPassword && password !== confirmPassword && (
+                  <p className="text-sm text-red-500">As senhas não coincidem</p>
+                )}
               </div>
 
               <Button 
