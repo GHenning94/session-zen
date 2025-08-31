@@ -8,18 +8,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Stethoscope, Brain, Heart } from "lucide-react"
+import { Stethoscope, Brain, Heart, Check, X } from "lucide-react"
 
 const Login = () => {
   const navigate = useNavigate()
   const { signIn, signUp } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     profession: '',
     email: '',
-    password: ''
+    password: '',
+    confirmPassword: ''
   })
+
+  const passwordRequirements = [
+    {
+      text: "Pelo menos 8 caracteres",
+      test: (pwd: string) => pwd.length >= 8
+    },
+    {
+      text: "Uma letra maiúscula",
+      test: (pwd: string) => /[A-Z]/.test(pwd)
+    },
+    {
+      text: "Uma letra minúscula", 
+      test: (pwd: string) => /[a-z]/.test(pwd)
+    },
+    {
+      text: "Um número",
+      test: (pwd: string) => /\d/.test(pwd)
+    },
+    {
+      text: "Um caractere especial",
+      test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    }
+  ]
+
+  const validatePassword = (password: string) => {
+    return passwordRequirements.every(req => req.test(password))
+  }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
@@ -58,6 +87,22 @@ const Login = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validar se as senhas são iguais
+    if (formData.password !== formData.confirmPassword) {
+      return // A mensagem já aparece no campo
+    }
+    
+    // Validar requisitos da senha
+    if (!validatePassword(formData.password)) {
+      toast({
+        title: "Senha inválida",
+        description: "A senha deve atender a todos os requisitos listados.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsLoading(true)
     
     try {
@@ -259,14 +304,57 @@ const Login = () => {
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="register-password">Senha</Label>
+                    <div className="relative">
+                      <Input 
+                        id="register-password" 
+                        type="password" 
+                        placeholder="••••••••" 
+                        value={formData.password}
+                        onChange={(e) => {
+                          handleInputChange('password', e.target.value)
+                          setShowPasswordRequirements(e.target.value.length > 0)
+                        }}
+                        onFocus={() => setShowPasswordRequirements(formData.password.length > 0)}
+                        onBlur={() => setShowPasswordRequirements(false)}
+                        required 
+                      />
+                      {showPasswordRequirements && (
+                        <div className="absolute top-full left-0 mt-2 w-full p-4 bg-background border border-border rounded-lg shadow-lg z-50">
+                          <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
+                          <div className="space-y-1">
+                            {passwordRequirements.map((req, index) => {
+                              const isValid = req.test(formData.password)
+                              return (
+                                <div key={index} className="flex items-center gap-2 text-sm">
+                                  {isValid ? (
+                                    <Check className="w-4 h-4 text-green-500" />
+                                  ) : (
+                                    <X className="w-4 h-4 text-muted-foreground" />
+                                  )}
+                                  <span className={isValid ? "text-green-500" : "text-muted-foreground"}>
+                                    {req.text}
+                                  </span>
+                                </div>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirm-password">Repetir Senha</Label>
                     <Input 
-                      id="register-password" 
+                      id="confirm-password" 
                       type="password" 
-                      placeholder="••••••••" 
-                      value={formData.password}
-                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      placeholder="Confirme sua senha" 
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                       required 
                     />
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (
+                      <p className="text-sm text-red-500">As senhas não coincidem</p>
+                    )}
                   </div>
                   <Button 
                     type="submit" 
