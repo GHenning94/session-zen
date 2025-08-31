@@ -208,7 +208,7 @@ const BookingPage = () => {
               {config.logo_url && (
                 <img src={config.logo_url} alt="Logo" className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
               )}
-              {profile.public_avatar_url && (
+              {profile.public_avatar_url && config.show_photo && (
                 <img src={profile.public_avatar_url} alt={profile.nome} className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
               )}
               <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: config.brand_color }}>
