@@ -66,8 +66,16 @@ const Signup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('=== SIGNUP DEBUG ===')
+    console.log('Email:', email)
+    console.log('Password length:', password.length)
+    console.log('Nome:', nome)
+    console.log('Profissao:', profissao)
+    console.log('ReferralId:', referralId)
+    
     // Validar requisitos da senha
     if (!validatePassword(password)) {
+      console.log('Password validation failed')
       toast({
         title: "Senha inválida",
         description: "A senha deve atender a todos os requisitos listados.",
@@ -76,10 +84,11 @@ const Signup = () => {
       return
     }
     
+    console.log('Password validation passed')
     setIsLoading(true)
 
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const signupData = {
         email,
         password,
         options: {
@@ -90,9 +99,18 @@ const Signup = () => {
             referral_id: referralId
           }
         }
-      })
+      }
+      
+      console.log('Signup data:', signupData)
+      
+      const { data, error } = await supabase.auth.signUp(signupData)
+      
+      console.log('Supabase response:', { data, error })
 
-      if (error) throw error
+      if (error) {
+        console.error('Supabase signup error:', error)
+        throw error
+      }
 
       if (data.user) {
         // Se há referral, salvar na sessão para processar após escolha do plano
@@ -112,9 +130,22 @@ const Signup = () => {
       }
     } catch (error: any) {
       console.error('Erro no cadastro:', error)
+      let errorMessage = "Não foi possível criar a conta."
+      
+      // Traduzir erros específicos do Supabase
+      if (error.message?.includes('Password should be at least')) {
+        errorMessage = "A senha deve ter pelo menos 6 caracteres."
+      } else if (error.message?.includes('User already registered')) {
+        errorMessage = "Este email já está cadastrado. Tente fazer login."
+      } else if (error.message?.includes('Invalid email')) {
+        errorMessage = "Email inválido."
+      } else if (error.message) {
+        errorMessage = error.message
+      }
+      
       toast({
         title: "Erro no cadastro",
-        description: error.message || "Não foi possível criar a conta.",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {
