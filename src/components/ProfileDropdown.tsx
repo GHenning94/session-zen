@@ -120,44 +120,10 @@ export const ProfileDropdown = () => {
       return
     }
 
-    try {
-      setLoading(true)
-      
-      // Create unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}/profile-${Date.now()}.${fileExt}`
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('user-uploads')
-        .upload(fileName, file, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (error) {
-        console.error('Storage error:', error)
-        throw error
-      }
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-uploads')
-        .getPublicUrl(fileName)
-
-      // Open image cropper directly
-      setSelectedImageForCrop(publicUrl)
-      setShowImageCropper(true)
-    } catch (error) {
-      console.error('Erro ao processar imagem:', error)
-      toast({
-        title: "Erro",
-        description: "Erro ao processar imagem.",
-        variant: "destructive",
-      })
-    } finally {
-      setLoading(false)
-    }
+    // Create local URL for cropping (same as SharingSettings)
+    const imageUrl = URL.createObjectURL(file)
+    setSelectedImageForCrop(imageUrl)
+    setShowImageCropper(true)
   }
 
   const handleCropComplete = async (croppedImageUrl: string) => {
