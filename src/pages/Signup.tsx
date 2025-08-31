@@ -4,11 +4,11 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { ArrowLeft, UserPlus, Gift } from "lucide-react"
-import { PasswordRequirements } from "@/components/PasswordRequirements"
+import { ArrowLeft, UserPlus, Gift, Check, X } from "lucide-react"
 
 const Signup = () => {
   const [email, setEmail] = useState('')
@@ -51,16 +51,31 @@ const Signup = () => {
     }
   }
 
+  const passwordRequirements = [
+    {
+      text: "Pelo menos 8 caracteres",
+      test: (pwd: string) => pwd.length >= 8
+    },
+    {
+      text: "Uma letra maiúscula",
+      test: (pwd: string) => /[A-Z]/.test(pwd)
+    },
+    {
+      text: "Uma letra minúscula", 
+      test: (pwd: string) => /[a-z]/.test(pwd)
+    },
+    {
+      text: "Um número",
+      test: (pwd: string) => /\d/.test(pwd)
+    },
+    {
+      text: "Um caractere especial",
+      test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    }
+  ]
+
   const validatePassword = (password: string) => {
-    const requirements = [
-      { test: (pwd: string) => pwd.length >= 8, message: "Pelo menos 8 caracteres" },
-      { test: (pwd: string) => /[A-Z]/.test(pwd), message: "Uma letra maiúscula" },
-      { test: (pwd: string) => /[a-z]/.test(pwd), message: "Uma letra minúscula" },
-      { test: (pwd: string) => /\d/.test(pwd), message: "Um número" },
-      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: "Um caractere especial" }
-    ]
-    
-    return requirements.every(req => req.test(password))
+    return passwordRequirements.every(req => req.test(password))
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -225,18 +240,43 @@ const Signup = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    console.log('Password changed:', e.target.value)
-                    setPassword(e.target.value)
-                  }}
-                  required
-                  placeholder="Sua senha"
-                />
-                <PasswordRequirements password={password} />
+                <Popover open={password.length > 0}>
+                  <PopoverTrigger asChild>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => {
+                        console.log('Password changed:', e.target.value)
+                        setPassword(e.target.value)
+                      }}
+                      required
+                      placeholder="Sua senha"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent className="w-80 p-4" side="right" align="start">
+                    <div className="space-y-2">
+                      <p className="text-sm font-medium text-foreground">Requisitos da senha:</p>
+                      <div className="space-y-1">
+                        {passwordRequirements.map((req, index) => {
+                          const isValid = req.test(password)
+                          return (
+                            <div key={index} className="flex items-center gap-2 text-sm">
+                              {isValid ? (
+                                <Check className="w-4 h-4 text-green-500" />
+                              ) : (
+                                <X className="w-4 h-4 text-muted-foreground" />
+                              )}
+                              <span className={isValid ? "text-green-500" : "text-muted-foreground"}>
+                                {req.text}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
 
               <Button 
