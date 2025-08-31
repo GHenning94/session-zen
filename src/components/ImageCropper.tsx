@@ -3,6 +3,8 @@ import ReactCrop, { Crop, PixelCrop, centerCrop, makeAspectCrop } from 'react-im
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from '@/hooks/use-toast'
+import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from '@/hooks/useAuth'
 import 'react-image-crop/dist/ReactCrop.css'
 
 interface ImageCropperProps {
@@ -44,7 +46,9 @@ export const ImageCropper = ({
 }: ImageCropperProps) => {
   const [crop, setCrop] = useState<Crop>()
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
+  const [loading, setLoading] = useState(false)
   const imgRef = useRef<HTMLImageElement>(null)
+  const { user } = useAuth()
 
   const onImageLoad = useCallback((e: React.SyntheticEvent<HTMLImageElement>) => {
     const { width, height } = e.currentTarget
@@ -52,7 +56,7 @@ export const ImageCropper = ({
   }, [aspectRatio])
 
   const getCroppedImg = useCallback(
-    (image: HTMLImageElement, crop: PixelCrop): Promise<string> => {
+    (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
 
@@ -82,13 +86,13 @@ export const ImageCropper = ({
         crop.height * scaleY,
       )
 
-      return new Promise((resolve) => {
+      return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (!blob) {
-            throw new Error('Failed to create blob')
+            reject(new Error('Failed to create blob'))
+            return
           }
-          const fileUrl = URL.createObjectURL(blob)
-          resolve(fileUrl)
+          resolve(blob)
         }, 'image/jpeg', 0.85)
       })
     },
@@ -96,7 +100,7 @@ export const ImageCropper = ({
   )
 
   const handleCropComplete = useCallback(async () => {
-    if (!completedCrop || !imgRef.current) {
+    if (!completedCrop || !imgRef.current || !user) {
       toast({
         title: "Erro",
         description: "Por favor, selecione uma área para recortar.",
@@ -105,13 +109,36 @@ export const ImageCropper = ({
       return
     }
 
+    setLoading(true)
     try {
-      const croppedImageUrl = await getCroppedImg(imgRef.current, completedCrop)
-      onCropComplete(croppedImageUrl)
+      const croppedBlob = await getCroppedImg(imgRef.current, completedCrop)
+      
+      // Create unique filename for cropped image
+      const fileName = `${user.id}/cropped-${Date.now()}.jpg`
+
+      // Upload cropped image to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, croppedBlob, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Storage error:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName)
+
+      onCropComplete(publicUrl)
       onClose()
       toast({
         title: "Imagem recortada",
-        description: "Sua imagem foi recortada com sucesso.",
+        description: "Sua imagem foi recortada e salva com sucesso.",
       })
     } catch (error) {
       console.error('Error cropping image:', error)
@@ -120,8 +147,10 @@ export const ImageCropper = ({
         description: "Erro ao recortar a imagem.",
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
-  }, [completedCrop, getCroppedImg, onCropComplete, onClose])
+  }, [completedCrop, getCroppedImg, onCropComplete, onClose, user])
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -151,8 +180,8 @@ export const ImageCropper = ({
           <Button variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button onClick={handleCropComplete}>
-            Recortar
+          <Button onClick={handleCropComplete} disabled={loading}>
+            {loading ? 'Salvando...' : 'Recortar'}
           </Button>
         </DialogFooter>
       </DialogContent>

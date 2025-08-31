@@ -120,8 +120,31 @@ export const ProfileDropdown = () => {
     }
 
     try {
-      const imageUrl = URL.createObjectURL(file)
-      setSelectedImageForCrop(imageUrl)
+      setLoading(true)
+      
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/profile-${Date.now()}.${fileExt}`
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Storage error:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName)
+
+      setSelectedImageForCrop(publicUrl)
       setShowImageCropper(true)
     } catch (error) {
       console.error('Erro ao processar imagem:', error)
@@ -130,6 +153,8 @@ export const ProfileDropdown = () => {
         description: "Erro ao processar imagem.",
         variant: "destructive",
       })
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -186,7 +211,8 @@ export const ProfileDropdown = () => {
         .update({
           nome: profile.nome,
           profissao: profile.profissao,
-          avatar_url: profile.avatar_url
+          avatar_url: profile.avatar_url,
+          public_avatar_url: profile.avatar_url  // Salvar também como público
         })
         .eq('user_id', user.id)
 

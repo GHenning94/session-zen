@@ -4,6 +4,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/hooks/useAuth"
 
 interface ImageUploadProps {
   label: string
@@ -15,10 +17,11 @@ interface ImageUploadProps {
 export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false)
   const { toast } = useToast()
+  const { user } = useAuth()
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (!file) return
+    if (!file || !user) return
 
     // Check file type
     if (!file.type.startsWith('image/')) {
@@ -42,9 +45,29 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
 
     setUploading(true)
     try {
-      // Create object URL for preview
-      const objectUrl = URL.createObjectURL(file)
-      onChange(objectUrl)
+      // Create unique filename
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+
+      // Upload to Supabase Storage
+      const { data, error } = await supabase.storage
+        .from('user-uploads')
+        .upload(fileName, file, {
+          cacheControl: '3600',
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Storage error:', error)
+        throw error
+      }
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('user-uploads')
+        .getPublicUrl(fileName)
+
+      onChange(publicUrl)
 
       toast({
         title: "Sucesso",
