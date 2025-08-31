@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
-import { Link, Copy, Eye, Palette, Settings, Crown } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User } from "lucide-react"
+import { useToast } from "@/hooks/use-toast" 
+import { ImageCropper } from "@/components/ImageCropper"
 
 interface SharingSettingsProps {
   settings: Record<string, any>;
@@ -22,6 +24,9 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
   const { hasFeature } = useSubscription()
   const { toast } = useToast()
   const [linkCopied, setLinkCopied] = useState(false)
+  const [showImageCropper, setShowImageCropper] = useState(false)
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const bookingLink = `https://therapypro.app.br/agendar/slug/${settings.slug || ''}`
 
   const generateSlug = (name: string) => {
@@ -37,6 +42,37 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
 
   const previewLink = () => {
     window.open(bookingLink, '_blank')
+  }
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    if (!file.type.startsWith('image/')) {
+      toast({
+        title: "Erro",
+        description: "Por favor, selecione apenas arquivos de imagem.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast({
+        title: "Erro", 
+        description: "A imagem deve ter no máximo 5MB.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const imageUrl = URL.createObjectURL(file)
+    setSelectedImageForCrop(imageUrl)
+    setShowImageCropper(true)
+  }
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    onSettingsChange('public_avatar_url', croppedImageUrl)
   }
 
   return (
@@ -78,21 +114,30 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
               </div>
               <div className="space-y-2">
                 <Label>Foto Pública</Label>
-                <Input type="file" accept="image/*" onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (ev) => {
-                      onSettingsChange('public_avatar_url', ev.target?.result);
-                    };
-                    reader.readAsDataURL(file);
-                  }
-                }} />
-                {settings.public_avatar_url && (
-                  <div className="mt-2">
-                    <img src={settings.public_avatar_url} alt="Foto pública" className="w-20 h-20 rounded-full object-cover" />
-                  </div>
-                )}
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-16 w-16">
+                    <AvatarImage src={settings.public_avatar_url} alt="Foto pública" />
+                    <AvatarFallback>
+                      <User className="w-8 h-8" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Camera className="w-4 h-4 mr-2" />
+                    Alterar Foto
+                  </Button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Esta foto será exibida no seu link público de agendamento
                 </p>
@@ -195,6 +240,15 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
       <div className="flex justify-end">
         <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">{isLoading ? "Salvando..." : "Salvar Configurações"}</Button>
       </div>
+
+      <ImageCropper
+        isOpen={showImageCropper}
+        onClose={() => setShowImageCropper(false)}
+        imageSrc={selectedImageForCrop}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+        circularCrop={true}
+      />
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowLeft, UserPlus, Gift } from "lucide-react"
+import { PasswordRequirements } from "@/components/PasswordRequirements"
 
 const Signup = () => {
   const [email, setEmail] = useState('')
@@ -50,8 +51,31 @@ const Signup = () => {
     }
   }
 
+  const validatePassword = (password: string) => {
+    const requirements = [
+      { test: (pwd: string) => pwd.length >= 8, message: "Pelo menos 8 caracteres" },
+      { test: (pwd: string) => /[A-Z]/.test(pwd), message: "Uma letra maiúscula" },
+      { test: (pwd: string) => /[a-z]/.test(pwd), message: "Uma letra minúscula" },
+      { test: (pwd: string) => /\d/.test(pwd), message: "Um número" },
+      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: "Um caractere especial" }
+    ]
+    
+    return requirements.every(req => req.test(password))
+  }
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validar requisitos da senha
+    if (!validatePassword(password)) {
+      toast({
+        title: "Senha inválida",
+        description: "A senha deve atender a todos os requisitos listados.",
+        variant: "destructive",
+      })
+      return
+    }
+    
     setIsLoading(true)
 
     try {
@@ -177,8 +201,10 @@ const Signup = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Sua senha"
-                  minLength={6}
                 />
+                {password && (
+                  <PasswordRequirements password={password} />
+                )}
               </div>
 
               <Button 

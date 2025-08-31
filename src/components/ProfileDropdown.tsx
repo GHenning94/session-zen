@@ -25,6 +25,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { PasswordRequirements } from "./PasswordRequirements"
+import { ImageCropper } from "./ImageCropper"
 
 interface Profile {
   nome: string
@@ -42,6 +43,8 @@ export const ProfileDropdown = () => {
   const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showImageCropper, setShowImageCropper] = useState(false)
+  const [selectedImageForCrop, setSelectedImageForCrop] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchProfile = async () => {
@@ -117,27 +120,21 @@ export const ProfileDropdown = () => {
     }
 
     try {
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}_profile.${fileExt}`
-      
-      // Upload file to Supabase Storage (we'll need to create the bucket)
       const imageUrl = URL.createObjectURL(file)
-      
-      // For now, just set the local URL - in production you'd upload to storage
-      setProfile(prev => ({ ...prev, avatar_url: imageUrl }))
-      
-      toast({
-        title: "Foto carregada",
-        description: "Sua foto de perfil foi carregada com sucesso.",
-      })
+      setSelectedImageForCrop(imageUrl)
+      setShowImageCropper(true)
     } catch (error) {
-      console.error('Erro ao fazer upload:', error)
+      console.error('Erro ao processar imagem:', error)
       toast({
         title: "Erro",
-        description: "Erro ao carregar foto.",
+        description: "Erro ao processar imagem.",
         variant: "destructive",
       })
     }
+  }
+
+  const handleCropComplete = (croppedImageUrl: string) => {
+    setProfile(prev => ({ ...prev, avatar_url: croppedImageUrl }))
   }
 
   const validatePassword = (password: string) => {
@@ -328,7 +325,7 @@ export const ProfileDropdown = () => {
       </DropdownMenu>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
             <DialogDescription>
@@ -439,6 +436,15 @@ export const ProfileDropdown = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ImageCropper
+        isOpen={showImageCropper}
+        onClose={() => setShowImageCropper(false)}
+        imageSrc={selectedImageForCrop}
+        onCropComplete={handleCropComplete}
+        aspectRatio={1}
+        circularCrop={true}
+      />
     </>
   )
 }
