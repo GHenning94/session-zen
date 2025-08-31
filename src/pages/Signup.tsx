@@ -4,20 +4,17 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { ArrowLeft, UserPlus, Gift, Check, X } from "lucide-react"
+import { ArrowLeft, UserPlus, Gift } from "lucide-react"
 
 const Signup = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
   const [nome, setNome] = useState('')
   const [profissao, setProfissao] = useState('Psicólogo')
   const [isLoading, setIsLoading] = useState(false)
-  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const { toast } = useToast()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -53,53 +50,23 @@ const Signup = () => {
     }
   }
 
-  const passwordRequirements = [
-    {
-      text: "Pelo menos 8 caracteres",
-      test: (pwd: string) => pwd.length >= 8
-    },
-    {
-      text: "Uma letra maiúscula",
-      test: (pwd: string) => /[A-Z]/.test(pwd)
-    },
-    {
-      text: "Uma letra minúscula", 
-      test: (pwd: string) => /[a-z]/.test(pwd)
-    },
-    {
-      text: "Um número",
-      test: (pwd: string) => /\d/.test(pwd)
-    },
-    {
-      text: "Um caractere especial",
-      test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
-    }
-  ]
-
   const validatePassword = (password: string) => {
-    return passwordRequirements.every(req => req.test(password))
+    const requirements = [
+      { test: (pwd: string) => pwd.length >= 8, message: "Pelo menos 8 caracteres" },
+      { test: (pwd: string) => /[A-Z]/.test(pwd), message: "Uma letra maiúscula" },
+      { test: (pwd: string) => /[a-z]/.test(pwd), message: "Uma letra minúscula" },
+      { test: (pwd: string) => /\d/.test(pwd), message: "Um número" },
+      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: "Um caractere especial" }
+    ]
+    
+    return requirements.every(req => req.test(password))
   }
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    console.log('=== SIGNUP DEBUG ===')
-    console.log('Email:', email)
-    console.log('Password length:', password.length)
-    console.log('Confirm password:', confirmPassword)
-    console.log('Nome:', nome)
-    console.log('Profissao:', profissao)
-    console.log('ReferralId:', referralId)
-    
-    // Validar se as senhas são iguais
-    if (password !== confirmPassword) {
-      console.log('Passwords do not match')
-      return
-    }
-    
     // Validar requisitos da senha
     if (!validatePassword(password)) {
-      console.log('Password validation failed')
       toast({
         title: "Senha inválida",
         description: "A senha deve atender a todos os requisitos listados.",
@@ -108,11 +75,10 @@ const Signup = () => {
       return
     }
     
-    console.log('Password validation passed')
     setIsLoading(true)
 
     try {
-      const signupData = {
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -123,18 +89,9 @@ const Signup = () => {
             referral_id: referralId
           }
         }
-      }
-      
-      console.log('Signup data:', signupData)
-      
-      const { data, error } = await supabase.auth.signUp(signupData)
-      
-      console.log('Supabase response:', { data, error })
+      })
 
-      if (error) {
-        console.error('Supabase signup error:', error)
-        throw error
-      }
+      if (error) throw error
 
       if (data.user) {
         // Se há referral, salvar na sessão para processar após escolha do plano
@@ -154,22 +111,9 @@ const Signup = () => {
       }
     } catch (error: any) {
       console.error('Erro no cadastro:', error)
-      let errorMessage = "Não foi possível criar a conta."
-      
-      // Traduzir erros específicos do Supabase
-      if (error.message?.includes('Password should be at least')) {
-        errorMessage = "A senha deve ter pelo menos 6 caracteres."
-      } else if (error.message?.includes('User already registered')) {
-        errorMessage = "Este email já está cadastrado. Tente fazer login."
-      } else if (error.message?.includes('Invalid email')) {
-        errorMessage = "Email inválido."
-      } else if (error.message) {
-        errorMessage = error.message
-      }
-      
       toast({
         title: "Erro no cadastro",
-        description: errorMessage,
+        description: error.message || "Não foi possível criar a conta.",
         variant: "destructive"
       })
     } finally {
@@ -249,59 +193,14 @@ const Signup = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => {
-                      console.log('Password changed:', e.target.value)
-                      setPassword(e.target.value)
-                      setShowPasswordRequirements(e.target.value.length > 0)
-                    }}
-                    onFocus={() => setShowPasswordRequirements(password.length > 0)}
-                    onBlur={() => setShowPasswordRequirements(false)}
-                    required
-                    placeholder="Sua senha"
-                  />
-                  {showPasswordRequirements && (
-                    <div className="absolute top-full left-0 mt-2 w-80 p-4 bg-background border border-border rounded-lg shadow-lg z-50">
-                      <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
-                      <div className="space-y-1">
-                        {passwordRequirements.map((req, index) => {
-                          const isValid = req.test(password)
-                          return (
-                            <div key={index} className="flex items-center gap-2 text-sm">
-                              {isValid ? (
-                                <Check className="w-4 h-4 text-green-500" />
-                              ) : (
-                                <X className="w-4 h-4 text-muted-foreground" />
-                              )}
-                              <span className={isValid ? "text-green-500" : "text-muted-foreground"}>
-                                {req.text}
-                              </span>
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Repetir Senha</Label>
                 <Input
-                  id="confirmPassword"
+                  id="password"
                   type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
-                  placeholder="Confirme sua senha"
+                  placeholder="Sua senha"
                 />
-                {confirmPassword && password !== confirmPassword && (
-                  <p className="text-sm text-red-500">As senhas não coincidem</p>
-                )}
               </div>
 
               <Button 

@@ -19,12 +19,11 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Settings, Share, Copy, Camera } from "lucide-react"
+import { User, LogOut, Settings, Share, Copy, Camera, Check, X } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { PasswordRequirements } from "./PasswordRequirements"
 import { ImageCropper } from "./ImageCropper"
 
 interface Profile {
@@ -44,9 +43,33 @@ export const ProfileDropdown = () => {
   const [email, setEmail] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [showImageCropper, setShowImageCropper] = useState(false)
   const [selectedImageForCrop, setSelectedImageForCrop] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const passwordRequirements = [
+    {
+      text: "Pelo menos 8 caracteres",
+      test: (pwd: string) => pwd.length >= 8
+    },
+    {
+      text: "Uma letra maiúscula",
+      test: (pwd: string) => /[A-Z]/.test(pwd)
+    },
+    {
+      text: "Uma letra minúscula", 
+      test: (pwd: string) => /[a-z]/.test(pwd)
+    },
+    {
+      text: "Um número",
+      test: (pwd: string) => /\d/.test(pwd)
+    },
+    {
+      text: "Um caractere especial",
+      test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd)
+    }
+  ]
 
   const fetchProfile = async () => {
     if (!user) return
@@ -171,15 +194,7 @@ export const ProfileDropdown = () => {
   }
 
   const validatePassword = (password: string) => {
-    const requirements = [
-      { test: (pwd: string) => pwd.length >= 8, message: "Pelo menos 8 caracteres" },
-      { test: (pwd: string) => /[A-Z]/.test(pwd), message: "Uma letra maiúscula" },
-      { test: (pwd: string) => /[a-z]/.test(pwd), message: "Uma letra minúscula" },
-      { test: (pwd: string) => /\d/.test(pwd), message: "Um número" },
-      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: "Um caractere especial" }
-    ]
-    
-    return requirements.every(req => req.test(password))
+    return passwordRequirements.every(req => req.test(password))
   }
 
   const handleSaveProfile = async () => {
@@ -426,22 +441,46 @@ export const ProfileDropdown = () => {
             
             <div className="space-y-2">
               <Label htmlFor="newPassword">Nova Senha</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Deixe em branco para manter a atual"
-              />
-              {newPassword && (
-                <div className="mt-3">
-                  <PasswordRequirements password={newPassword} />
-                </div>
-              )}
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => {
+                    setNewPassword(e.target.value)
+                    setShowPasswordRequirements(e.target.value.length > 0)
+                  }}
+                  onFocus={() => setShowPasswordRequirements(newPassword.length > 0)}
+                  onBlur={() => setShowPasswordRequirements(false)}
+                  placeholder="Deixe em branco para manter a atual"
+                />
+                {showPasswordRequirements && (
+                  <div className="absolute top-full left-0 mt-2 w-full p-4 bg-background border border-border rounded-lg shadow-lg z-50">
+                    <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
+                    <div className="space-y-1">
+                      {passwordRequirements.map((req, index) => {
+                        const isValid = req.test(newPassword)
+                        return (
+                          <div key={index} className="flex items-center gap-2 text-sm">
+                            {isValid ? (
+                              <Check className="w-4 h-4 text-green-500" />
+                            ) : (
+                              <X className="w-4 h-4 text-muted-foreground" />
+                            )}
+                            <span className={isValid ? "text-green-500" : "text-muted-foreground"}>
+                              {req.text}
+                            </span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Senha</Label>
+              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
               <Input
                 id="confirmPassword"
                 type="password"
@@ -449,6 +488,9 @@ export const ProfileDropdown = () => {
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirme a nova senha"
               />
+              {confirmPassword && newPassword !== confirmPassword && (
+                <p className="text-sm text-red-500">As senhas não coincidem</p>
+              )}
             </div>
           </div>
           <DialogFooter>
