@@ -145,6 +145,7 @@ export const ProfileDropdown = () => {
         .from('user-uploads')
         .getPublicUrl(fileName)
 
+      // Open image cropper directly
       setSelectedImageForCrop(publicUrl)
       setShowImageCropper(true)
     } catch (error) {
