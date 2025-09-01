@@ -2,7 +2,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
-import ChatBot from "@/components/ChatBot"
+import WhatsAppButton from "@/components/WhatsAppButton"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -36,7 +36,7 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </div>
-        <ChatBot />
+        <WhatsAppButton />
       </div>
     </SidebarProvider>
   )

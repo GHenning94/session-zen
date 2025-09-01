@@ -119,14 +119,15 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
     }
   }
   
-  // Função para calcular a posição da linha de tempo
+  // Função para calcular a posição da linha de tempo atual
   const getCurrentTimePosition = () => {
     const currentHour = currentTime.getHours()
     const currentMinute = currentTime.getMinutes()
     return currentHour + (currentMinute / 60)
   }
   
-  const currentTimePosition = getCurrentTimePosition()
+  const isToday = format(currentDate, 'yyyy-MM-dd') === format(currentTime, 'yyyy-MM-dd')
+  const currentTimePosition = isToday ? getCurrentTimePosition() : null
 
   return (
     <div className="space-y-4">
@@ -249,11 +250,11 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
         })}
         
         {/* Linha de tempo atual - apenas se for hoje */}
-        {format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && (
+        {currentTimePosition !== null && (
           <div 
             className="absolute left-0 right-0 h-0.5 bg-red-500 z-10 pointer-events-none"
             style={{ 
-              top: `${(currentTimePosition * 84) + 2}px`, // 84px é a altura de cada hora (min-h-[80px] + gap)
+              top: `${(currentTimePosition * 84) + 2}px`,
             }}
           >
             <div className="w-3 h-3 bg-red-500 rounded-full -ml-1.5 -mt-1.5"></div>

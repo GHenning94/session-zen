@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, User, Trash2 } from "lucide-react"
+import { Clock, User, Trash } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -153,7 +153,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       onDragStart={(e) => handleDragStart(e, session.id)}
                       onDragEnd={handleDragEnd}
                       className={cn(
-                        "text-xs p-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move",
+                        "text-xs p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move border border-primary/20",
                         highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
                         draggedSession === session.id && "opacity-50 scale-95"
                       )}
@@ -183,9 +183,9 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             e.stopPropagation()
                             onDeleteSession(session.id)
                           }}
-                          className="h-5 w-5 p-0 text-destructive"
+                          className="h-5 w-5 p-0 text-destructive hover:text-destructive"
                         >
-                          <Trash2 className="h-3 w-3" />
+                          <Trash className="h-3 w-3" />
                         </Button>
                       </div>
                     </div>

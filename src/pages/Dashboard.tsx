@@ -491,11 +491,10 @@ const Dashboard = () => {
             <CardContent>
                <div className="space-y-3">
                   {recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => (
-                   <div 
-                     key={payment.id || index} 
-                     className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
-                     onClick={() => navigate(`/pagamentos?highlight=${payment.id}`)}
-                   >
+                    <div 
+                      key={payment.id || index} 
+                      className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                    >
                       <div>
                         <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
                         <p className="text-xs text-muted-foreground">
