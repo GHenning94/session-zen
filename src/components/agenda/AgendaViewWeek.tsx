@@ -1,7 +1,7 @@
 import React from 'react'
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Clock, User, Edit, Trash, Plus } from 'lucide-react'
+import { Clock, User, Trash, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -177,18 +177,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                 </div>
                               </div>
                               
-                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5 p-0"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onEditSession(session)
-                                  }}
-                                >
-                                  <Edit className="h-3 w-3" />
-                                </Button>
+                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Button
                                   variant="ghost"
                                   size="icon"

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Clock, User, Edit, Trash, Plus } from 'lucide-react'
+import { Clock, User, Trash, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -149,7 +149,10 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                       )}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEditSession(session)
+                      }}
                     >
                       <CardContent className="p-2">
                         <div className="flex items-center justify-between">
@@ -180,18 +183,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                             )}
                           </div>
                           
-                          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-5 w-5 p-0"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onEditSession(session)
-                              }}
-                            >
-                              <Edit className="h-3 w-3" />
-                            </Button>
+                          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
                             <Button
                               variant="ghost"
                               size="icon"

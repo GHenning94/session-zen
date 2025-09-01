@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, User, Edit, Trash2 } from "lucide-react"
+import { Clock, User, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -175,18 +175,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                         </div>
                       </div>
 
-                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onEditSession(session)
-                          }}
-                          className="h-5 w-5 p-0"
-                        >
-                          <Edit className="h-3 w-3" />
-                        </Button>
+                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
                           size="sm"
                           variant="ghost"
