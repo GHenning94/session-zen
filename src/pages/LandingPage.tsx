@@ -16,6 +16,7 @@ const LandingPage = () => {
   const { user, signOut } = useAuth()
   const [typedText, setTypedText] = useState("")
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [showCursor, setShowCursor] = useState(true)
   const fullText = "atendimentos"
 
   useEffect(() => {
@@ -34,6 +35,14 @@ const LandingPage = () => {
       return () => clearTimeout(resetTimeout)
     }
   }, [currentIndex, fullText])
+
+  // Cursor blinking effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 500)
+    return () => clearInterval(cursorInterval)
+  }, [])
 
   const features = [
     { icon: Calendar, title: "Agendamento Inteligente", description: "Gerencie sua agenda com facilidade e evite conflitos de horários" },
@@ -88,11 +97,28 @@ const LandingPage = () => {
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
               Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block">
-                <span className="inline-block w-[380px] sm:w-[480px] lg:w-[580px] h-[1.2em] text-left">
-                  <span className="absolute left-0 top-0">
-                    {typedText}
+                <span className="inline-block w-[11ch] h-[1.2em] text-left relative overflow-hidden">
+                  <span className="absolute left-0 top-0 whitespace-nowrap">
+                    {fullText}
                   </span>
-                  <span className="animate-pulse absolute" style={{ left: `${typedText.length * 0.6}em` }}>|</span>
+                  <span 
+                    className="absolute left-0 top-0 whitespace-nowrap bg-background"
+                    style={{ 
+                      width: `${fullText.length - typedText.length}ch`,
+                      right: 0,
+                      marginLeft: `${typedText.length}ch`
+                    }}
+                  >
+                    {fullText.slice(typedText.length)}
+                  </span>
+                  <span 
+                    className={`absolute border-r-2 border-primary ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}
+                    style={{ 
+                      left: `${typedText.length}ch`,
+                      height: '1.2em',
+                      width: '2px'
+                    }}
+                  />
                 </span>
               </span> com facilidade
             </h1>
@@ -110,26 +136,26 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-accent/20 will-change-auto">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-accent/20">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Principais funcionalidades</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Tudo que você precisa para uma gestão profissional e eficiente</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" style={{ minHeight: '320px' }}>
             {features.map((feature, index) => (
-              <Card key={index} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border-border/50 backdrop-blur-sm relative overflow-hidden transform-gpu will-change-transform h-[280px] flex flex-col">
+              <div key={index} style={{ height: '280px' }} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border border-border/50 backdrop-blur-sm relative overflow-hidden transform-gpu will-change-transform rounded-lg flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardHeader className="relative z-10 pb-4">
+                <div className="relative z-10 p-6 pb-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform duration-500 transform-gpu">
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300 min-h-[3rem] flex items-center justify-center">{feature.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="relative z-10 flex-1 flex items-start">
+                  <h3 className="text-xl font-semibold group-hover:text-primary transition-colors duration-300 min-h-[3rem] flex items-center justify-center">{feature.title}</h3>
+                </div>
+                <div className="relative z-10 flex-1 flex items-start px-6 pb-6">
                   <p className="text-muted-foreground group-hover:text-foreground transition-colors duration-300 text-sm leading-relaxed">{feature.description}</p>
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             ))}
           </div>
         </div>
