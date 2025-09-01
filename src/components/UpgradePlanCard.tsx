@@ -170,13 +170,6 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
                       <p className="text-xs text-muted-foreground">{plan.description}</p>
                     </div>
                   </div>
-                  
-                  <div className="text-right">
-                    <div className="flex items-baseline gap-0.5">
-                      <span className="text-base font-bold">{plan.price}</span>
-                      <span className="text-xs text-muted-foreground">{plan.period}</span>
-                    </div>
-                  </div>
                 </div>
               </div>
 
