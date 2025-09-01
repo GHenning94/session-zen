@@ -14,7 +14,9 @@ import {
   MoreHorizontal,
   Receipt,
   CreditCard,
-  Smartphone
+  Smartphone,
+  Building2,
+  Banknote
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
@@ -23,6 +25,7 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { generateReceiptPDF } from "@/utils/receiptGenerator"
 import { useNavigate } from 'react-router-dom'
+import PaymentMethodModal from "@/components/PaymentMethodModal"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -35,6 +38,8 @@ const Pagamentos = () => {
   const [clients, setClients] = useState<any[]>([])
   const [profiles, setProfiles] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -102,17 +107,20 @@ const Pagamentos = () => {
       time: session.horario,
       value: session.valor || 0,
       status: session.status === 'realizada' ? 'pago' : 'pendente',
-      method: 'dinheiro',
+      method: session.metodo_pagamento || 'dinheiro',
       session_id: session.id
     }))
   }
 
-  const markAsPaid = async (sessionId: string) => {
+  const markAsPaid = async (sessionId: string, paymentMethod: string) => {
     setIsLoading(true)
     try {
       const { error } = await supabase
         .from('sessions')
-        .update({ status: 'realizada' })
+        .update({ 
+          status: 'realizada',
+          metodo_pagamento: paymentMethod
+        })
         .eq('id', sessionId)
       
       if (error) throw error
@@ -132,6 +140,19 @@ const Pagamentos = () => {
       })
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const openPaymentModal = (sessionId: string) => {
+    setSelectedSessionId(sessionId)
+    setPaymentModalOpen(true)
+  }
+
+  const handlePaymentConfirm = async (method: string) => {
+    if (selectedSessionId) {
+      await markAsPaid(selectedSessionId, method)
+      setPaymentModalOpen(false)
+      setSelectedSessionId(null)
     }
   }
 
@@ -224,12 +245,19 @@ const Pagamentos = () => {
       return
     }
 
+    const methodLabels = {
+      'dinheiro': 'Dinheiro',
+      'pix': 'PIX',
+      'cartao': 'Cartão',
+      'transferencia': 'Transferência Bancária'
+    };
+
     const receiptData = {
       clientName: client.nome,
       sessionDate: session.data,
       sessionTime: session.horario,
       value: session.valor || 0,
-      paymentMethod: 'Dinheiro',
+      paymentMethod: methodLabels[session.metodo_pagamento as keyof typeof methodLabels] || session.metodo_pagamento || 'Dinheiro',
       professionalName: profile.nome,
       professionalCRP: profile.crp,
       sessionId: session.id
@@ -414,7 +442,7 @@ const Pagamentos = () => {
                         {payment.status === 'pendente' && (
                           <Button 
                             size="sm" 
-                            onClick={() => markAsPaid(payment.session_id)}
+                            onClick={() => openPaymentModal(payment.session_id)}
                             className="bg-gradient-primary hover:opacity-90"
                             disabled={isLoading}
                           >
@@ -492,33 +520,69 @@ const Pagamentos = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4" />
-                      <span className="text-sm">Dinheiro</span>
-                    </div>
-                    <span className="font-bold">{paidCount} pagamentos</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Smartphone className="w-4 h-4" />
-                      <span className="text-sm">Pix</span>
-                    </div>
-                    <span className="font-bold">0 pagamentos</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <CreditCard className="w-4 h-4" />
-                      <span className="text-sm">Cartão</span>
-                    </div>
-                    <span className="font-bold">0 pagamentos</span>
-                  </div>
+                  {(() => {
+                    const methodCounts = {
+                      dinheiro: 0,
+                      pix: 0,
+                      cartao: 0,
+                      transferencia: 0
+                    };
+                    
+                    filteredPayments
+                      .filter(p => p.status === 'pago')
+                      .forEach(p => {
+                        const method = p.method || 'dinheiro';
+                        if (methodCounts[method as keyof typeof methodCounts] !== undefined) {
+                          methodCounts[method as keyof typeof methodCounts]++;
+                        }
+                      });
+
+                    return (
+                      <>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Banknote className="w-4 h-4" />
+                            <span className="text-sm">Dinheiro</span>
+                          </div>
+                          <span className="font-bold">{methodCounts.dinheiro} pagamentos</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Smartphone className="w-4 h-4" />
+                            <span className="text-sm">PIX</span>
+                          </div>
+                          <span className="font-bold">{methodCounts.pix} pagamentos</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <CreditCard className="w-4 h-4" />
+                            <span className="text-sm">Cartão</span>
+                          </div>
+                          <span className="font-bold">{methodCounts.cartao} pagamentos</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Building2 className="w-4 h-4" />
+                            <span className="text-sm">Transferência</span>
+                          </div>
+                          <span className="font-bold">{methodCounts.transferencia} pagamentos</span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </CardContent>
             </Card>
           </div>
         )}
       </div>
+
+      <PaymentMethodModal
+        open={paymentModalOpen}
+        onOpenChange={setPaymentModalOpen}
+        onConfirm={handlePaymentConfirm}
+        loading={isLoading}
+      />
     </Layout>
   )
 }

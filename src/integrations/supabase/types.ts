@@ -497,6 +497,7 @@ export type Database = {
           data: string
           horario: string
           id: string
+          metodo_pagamento: string | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -509,6 +510,7 @@ export type Database = {
           data: string
           horario: string
           id?: string
+          metodo_pagamento?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -521,6 +523,7 @@ export type Database = {
           data?: string
           horario?: string
           id?: string
+          metodo_pagamento?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string

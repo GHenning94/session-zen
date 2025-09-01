@@ -59,7 +59,16 @@ export const generateReceiptPDF = (data: ReceiptData) => {
   doc.setFontSize(12)
   doc.text(`Data da Sessão: ${format(new Date(data.sessionDate), 'dd/MM/yyyy', { locale: ptBR })}`, 20, 220)
   doc.text(`Horário: ${data.sessionTime}`, 20, 235)
-  doc.text(`Método de Pagamento: ${data.paymentMethod}`, 20, 250)
+  
+  // Get readable payment method
+  const methodLabels = {
+    'dinheiro': 'Dinheiro',
+    'pix': 'PIX',
+    'cartao': 'Cartão',
+    'transferencia': 'Transferência Bancária'
+  };
+  const readableMethod = methodLabels[data.paymentMethod as keyof typeof methodLabels] || data.paymentMethod;
+  doc.text(`Método de Pagamento: ${readableMethod}`, 20, 250)
   
   // Valor - destacado
   doc.setFontSize(16)
