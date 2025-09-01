@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { MessageCircle, Send, X, Minimize2 } from "lucide-react"
+import DOMPurify from 'dompurify'
 
 interface Message {
   id: string
@@ -310,7 +311,7 @@ const ChatBot = () => {
                   }`}
                 >
                   <div dangerouslySetInnerHTML={{
-                    __html: message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    __html: DOMPurify.sanitize(message.text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'))
                   }} />
                 </div>
               </div>

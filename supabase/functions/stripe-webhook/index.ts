@@ -12,11 +12,17 @@ const supabase = createClient(
 );
 
 serve(async (req) => {
+  // Security: Only allow POST requests for webhooks
+  if (req.method !== 'POST') {
+    return new Response('Method not allowed', { status: 405 });
+  }
+
   const signature = req.headers.get("stripe-signature");
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
   if (!signature || !webhookSecret) {
-    return new Response("Missing signature or webhook secret", { status: 400 });
+    console.error("Security: Missing signature or webhook secret");
+    return new Response("Unauthorized", { status: 401 });
   }
 
   try {
@@ -66,7 +72,8 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         const customer = await stripe.customers.retrieve(subscription.customer as string);
         
-        if (customer && !customer.deleted && customer.email) {
+        // Security: Validate customer email format
+        if (customer && !customer.deleted && customer.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
           const isActive = subscription.status === "active";
           const planName = isActive ? "pro" : "basico"; // Downgrade para básico se cancelar
 
