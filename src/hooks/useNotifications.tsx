@@ -128,10 +128,7 @@ export const useNotifications = () => {
         setNotifications(prev => prev.map(n => ({ ...n, lida: true })))
         setUnreadCount(0)
         
-        toast({
-          title: "Notificações marcadas como lidas",
-          description: "Todas as notificações foram marcadas como lidas.",
-        })
+        // Removido toast para evitar spam de notificações
       }
     } catch (error) {
       console.error('Erro ao marcar como lidas:', error)
@@ -220,10 +217,7 @@ export const useNotifications = () => {
         return notification && !notification.lida ? prev - 1 : prev
       })
 
-      toast({
-        title: "Notificação deletada",
-        description: "A notificação foi removida com sucesso",
-      })
+      // Removido toast para evitar spam de notificações
 
       return true
     } catch (error) {

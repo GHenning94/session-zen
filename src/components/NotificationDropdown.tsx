@@ -92,11 +92,7 @@ const NotificationDropdown = () => {
     <DropdownMenu open={open} onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
-          {unreadCount > 0 ? (
-            <Bell className="w-5 h-5" />
-          ) : (
-            <BellOff className="w-5 h-5" />
-          )}
+          <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
