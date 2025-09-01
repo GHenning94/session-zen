@@ -41,6 +41,7 @@ interface AgendaViewDayProps {
   onDeleteSession: (sessionId: string) => void
   onCreateSession?: (date: Date, time?: string) => void
   onDragSession?: (sessionId: string, newDate: string, newTime: string) => void
+  highlightedSessionId?: string | null
 }
 
 export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
@@ -51,7 +52,8 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   onEditSession,
   onDeleteSession,
   onCreateSession,
-  onDragSession
+  onDragSession,
+  highlightedSessionId
 }) => {
   const [draggedSession, setDraggedSession] = useState<string | null>(null)
   const daySessionsData = sessions.filter(session => {
@@ -146,7 +148,11 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                   hourSessions.map((session) => (
                     <Card 
                       key={session.id} 
-                      className={cn("relative group cursor-move transition-all hover:shadow-md", getStatusColor(session.status))}
+                      className={cn(
+                        "relative group cursor-move transition-all hover:shadow-md", 
+                        getStatusColor(session.status),
+                        highlightedSessionId === session.id && "animate-pulse-highlight"
+                      )}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
                       onClick={(e) => e.stopPropagation()}

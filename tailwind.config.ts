@@ -111,11 +111,22 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'pulse-highlight': {
+					'0%, 100%': {
+						boxShadow: '0 0 0 0px hsl(var(--primary) / 0.7)',
+						transform: 'scale(1)'
+					},
+					'50%': {
+						boxShadow: '0 0 0 8px hsl(var(--primary) / 0.3)',
+						transform: 'scale(1.02)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'pulse-highlight': 'pulse-highlight 2s ease-in-out infinite'
 			}
 		}
 	},

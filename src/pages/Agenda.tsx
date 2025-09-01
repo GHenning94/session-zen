@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -55,6 +56,8 @@ const Agenda = () => {
   const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [highlightedSessionId, setHighlightedSessionId] = useState<string | null>(null)
+  const [searchParams, setSearchParams] = useSearchParams()
 
   // Formulário para nova sessão
   const [newSession, setNewSession] = useState({
@@ -110,6 +113,16 @@ const Agenda = () => {
   useEffect(() => {
     loadData()
   }, [user])
+
+  // Check for highlighted session from URL params
+  useEffect(() => {
+    const highlightParam = searchParams.get('highlight')
+    if (highlightParam) {
+      setHighlightedSessionId(highlightParam)
+      // Clear the URL parameter
+      setSearchParams({})
+    }
+  }, [searchParams, setSearchParams])
 
   // Recarregar dados quando há mudanças ou quando a data muda
   useEffect(() => {
@@ -248,6 +261,8 @@ const Agenda = () => {
   }
 
   const handleEditSession = (session: any) => {
+    // Clear highlight when session is clicked
+    setHighlightedSessionId(null)
     setEditingSession(session)
     setNewSession({
       client_id: session.client_id,
@@ -540,6 +555,7 @@ const Agenda = () => {
               onDeleteSession={handleDeleteSession}
               onCreateSession={handleCreateSession}
               onDragSession={handleDragSession}
+              highlightedSessionId={highlightedSessionId}
             />
           )}
 
@@ -553,6 +569,7 @@ const Agenda = () => {
               onDeleteSession={handleDeleteSession}
               onCreateSession={handleCreateSession}
               onDragSession={handleDragSession}
+              highlightedSessionId={highlightedSessionId}
             />
           )}
 
@@ -567,6 +584,7 @@ const Agenda = () => {
               onCreateSession={handleCreateSession}
               onDragSession={handleDragSession}
               onDateSelect={setSelectedDate}
+              highlightedSessionId={highlightedSessionId}
             />
           )}
         </div>

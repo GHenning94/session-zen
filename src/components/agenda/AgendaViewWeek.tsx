@@ -30,6 +30,7 @@ interface AgendaViewWeekProps {
   onDeleteSession: (sessionId: string) => void
   onCreateSession?: (date: Date, time?: string) => void
   onDragSession?: (sessionId: string, newDate: string, newTime: string) => void
+  highlightedSessionId?: string | null
 }
 
 export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
@@ -40,7 +41,8 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
   onEditSession,
   onDeleteSession,
   onCreateSession,
-  onDragSession
+  onDragSession,
+  highlightedSessionId
 }) => {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
@@ -148,7 +150,8 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             key={session.id} 
                             className={cn(
                               "cursor-move group relative transition-all hover:shadow-sm",
-                              getStatusColor(session.status)
+                              getStatusColor(session.status),
+                              highlightedSessionId === session.id && "animate-pulse-highlight"
                             )}
                             draggable
                             onDragStart={(e) => {

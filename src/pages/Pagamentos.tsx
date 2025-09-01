@@ -281,11 +281,7 @@ const Pagamentos = () => {
 
   const viewSession = (sessionId: string) => {
     // Navegar para a agenda com a sessão selecionada
-    navigate('/agenda')
-    toast({
-      title: "Redirecionando",
-      description: "Você será direcionado para a agenda.",
-    })
+    navigate(`/agenda?highlight=${sessionId}`)
   }
 
   return (

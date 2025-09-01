@@ -17,6 +17,7 @@ interface AgendaViewMonthProps {
   onCreateSession: (date: Date) => void
   onDragSession: (sessionId: string, newDate: string, newTime: string) => void
   onDateSelect: (date: Date) => void
+  highlightedSessionId?: string | null
 }
 
 const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
@@ -28,7 +29,8 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   onDeleteSession,
   onCreateSession,
   onDragSession,
-  onDateSelect
+  onDateSelect,
+  highlightedSessionId
 }) => {
   const [draggedSession, setDraggedSession] = useState<string | null>(null)
 
@@ -146,7 +148,10 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       key={session.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
-                      className="text-xs p-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move"
+                      className={cn(
+                        "text-xs p-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move",
+                        highlightedSessionId === session.id && "animate-pulse-highlight"
+                      )}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center gap-1">
