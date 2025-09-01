@@ -14,6 +14,7 @@ import { useToast } from '@/hooks/use-toast'
 import { cn } from '@/lib/utils'
 import { AgendaViewDay } from './AgendaViewDay'
 import { AgendaViewWeek } from './AgendaViewWeek'
+import { formatTimeBR } from '@/utils/formatters'
 
 export const AgendaViews = () => {
   const [currentDate, setCurrentDate] = useState(new Date())
