@@ -101,16 +101,27 @@ const Pagamentos = () => {
   }
 
   const getSessionPayments = () => {
-    return sessions.map(session => ({
-      id: session.id,
-      client: getClientName(session.client_id),
-      date: session.data,
-      time: session.horario,
-      value: session.valor || 0,
-      status: session.status === 'realizada' ? 'pago' : 'pendente',
-      method: session.metodo_pagamento || 'dinheiro',
-      session_id: session.id
-    }))
+    return sessions.map(session => {
+      const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+      const currentDateTime = new Date()
+      let status = session.status === 'realizada' ? 'pago' : 'pendente'
+      
+      // Se a sessão já passou (data e hora) e ainda está pendente, marcar como atrasado
+      if (status === 'pendente' && sessionDateTime < currentDateTime) {
+        status = 'atrasado'
+      }
+      
+      return {
+        id: session.id,
+        client: getClientName(session.client_id),
+        date: session.data,
+        time: session.horario,
+        value: session.valor || 0,
+        status: status,
+        method: session.metodo_pagamento || 'dinheiro',
+        session_id: session.id
+      }
+    })
   }
 
   const markAsPaid = async (sessionId: string, paymentMethod: string) => {
@@ -198,11 +209,7 @@ const Pagamentos = () => {
 
   const paidCount = filteredPayments.filter(p => p.status === 'pago').length
   const pendingCount = filteredPayments.filter(p => p.status === 'pendente').length
-  const lateCount = filteredPayments.filter(p => {
-    const paymentDate = new Date(p.date)
-    const now = new Date()
-    return p.status === 'pendente' && paymentDate < now
-  }).length
+  const lateCount = filteredPayments.filter(p => p.status === 'atrasado').length
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -413,10 +420,9 @@ const Pagamentos = () => {
             ) : (
               <div className="space-y-4">
                 {filteredPayments.map((payment) => {
-                  const StatusIcon = getStatusIcon(payment.status)
-                  const isLate = payment.status === 'pendente' && new Date(payment.date) < new Date()
-                  
-                  return (
+                   const StatusIcon = getStatusIcon(payment.status)
+                   
+                   return (
                     <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
@@ -425,8 +431,8 @@ const Pagamentos = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{payment.client}</p>
-                            <Badge variant={getStatusColor(isLate ? 'atrasado' : payment.status)} className="text-xs">
-                              {isLate ? 'Atrasado' : payment.status}
+                            <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                              {payment.status === 'pago' ? 'Pago' : payment.status === 'atrasado' ? 'Atrasado' : 'Pendente'}
                             </Badge>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">

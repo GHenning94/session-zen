@@ -491,15 +491,22 @@ const Dashboard = () => {
             <CardContent>
                 <div className="space-y-3">
                   {recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => {
-                    const isLate = payment.status === 'agendada' && new Date(payment.data) < new Date()
-                    const displayStatus = payment.status === 'realizada' ? 'pago' : isLate ? 'atrasado' : 'pendente'
+                    // Determinar status baseado na data E hora da sessão
+                    const sessionDateTime = new Date(`${payment.data}T${payment.horario}`)
+                    const currentDateTime = new Date()
+                    let displayStatus = payment.status === 'realizada' ? 'pago' : 'pendente'
                     
+                    // Se a sessão já passou (data e hora) e ainda está pendente, marcar como atrasado
+                    if (displayStatus === 'pendente' && sessionDateTime < currentDateTime) {
+                      displayStatus = 'atrasado'
+                    }
+
                     const getStatusColor = (status: string) => {
                       switch (status) {
-                        case 'pago': return 'bg-success/10 text-success border-success/20'
-                        case 'pendente': return 'bg-warning/10 text-warning border-warning/20'
-                        case 'atrasado': return 'bg-destructive/10 text-destructive border-destructive/20'
-                        default: return 'bg-warning/10 text-warning border-warning/20'
+                        case 'pago': return 'default'
+                        case 'pendente': return 'secondary'
+                        case 'atrasado': return 'destructive'
+                        default: return 'secondary'
                       }
                     }
                     
@@ -511,14 +518,14 @@ const Dashboard = () => {
                         <div>
                           <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDateBR(payment.data)}
+                            {formatDateBR(payment.data)} às {formatTimeBR(payment.horario)}
                           </p>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
                           <Badge 
-                            variant="secondary"
-                            className={`text-xs ${getStatusColor(displayStatus)}`}
+                            variant={getStatusColor(displayStatus)}
+                            className="text-xs"
                           >
                             {displayStatus === 'pago' ? 'Pago' : displayStatus === 'atrasado' ? 'Atrasado' : 'Pendente'}
                           </Badge>
