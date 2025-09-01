@@ -132,75 +132,84 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Todos os Planos */}
-        <div className="space-y-4">
+        <div className="space-y-6">
           {allPlans.map((plan) => (
             <div 
               key={plan.id} 
-              className={`p-4 border rounded-lg transition-all ${
+              className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 ${
                 plan.id === currentPlan 
-                  ? 'border-primary bg-primary/5 shadow-md' 
-                  : 'border-border hover:border-primary/50'
+                  ? 'border-primary bg-gradient-to-r from-primary/5 to-primary/10 shadow-lg' 
+                  : 'border-border bg-card hover:border-primary/50 hover:shadow-md'
               }`}
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                {/* Ícone e Info Principal */}
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className={`w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0 ${
-                    plan.id === currentPlan ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
-                  }`}>
-                    {plan.icon}
+              {/* Header do Plano */}
+              <div className="p-6 pb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+                      plan.id === currentPlan 
+                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                        : 'bg-primary/10 text-primary'
+                    }`}>
+                      {plan.icon}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="text-xl font-bold">{plan.name}</h3>
+                        {plan.recommended && (
+                          <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                            Popular
+                          </Badge>
+                        )}
+                        {plan.id === currentPlan && (
+                          <Badge className="bg-green-500 text-white px-3 py-1">
+                            Ativo
+                          </Badge>
+                        )}
+                      </div>
+                      <p className="text-muted-foreground">{plan.description}</p>
+                    </div>
                   </div>
                   
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h4 className="font-semibold text-lg">{plan.name}</h4>
-                      {plan.recommended && (
-                        <Badge className="text-xs bg-primary text-primary-foreground">
-                          Popular
-                        </Badge>
-                      )}
-                      {plan.id === currentPlan && (
-                        <Badge className="text-xs bg-green-500 text-white">
-                          Ativo
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground mb-2">{plan.description}</p>
+                  <div className="text-right">
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold">{plan.price}</span>
-                      <span className="text-sm text-muted-foreground">{plan.period}</span>
+                      <span className="text-3xl font-bold">{plan.price}</span>
+                      <span className="text-muted-foreground">{plan.period}</span>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                {/* Recursos */}
-                <div className="w-full sm:w-auto sm:flex-shrink-0">
-                  <div className="mb-4 sm:mb-0 sm:min-w-[200px]">
-                    <ul className="text-sm space-y-1">
+              {/* Recursos e Botão */}
+              <div className="px-6 pb-6">
+                <div className="flex flex-col lg:flex-row gap-6 items-start">
+                  {/* Lista de Recursos */}
+                  <div className="flex-1">
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></div>
-                          <span className="text-xs sm:text-sm">{feature}</span>
+                        <li key={index} className="flex items-center gap-3">
+                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1"></div>
+                          <span className="text-sm">{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-                </div>
 
-                {/* Botão de Ação */}
-                <div className="w-full sm:w-auto">
-                  <Button
-                    className="w-full sm:w-auto sm:min-w-[140px]"
-                    size="default"
-                    variant={plan.id === currentPlan ? "outline" : plan.recommended ? "default" : "outline"}
-                    onClick={() => handleChangePlan(plan)}
-                    disabled={loading || plan.id === currentPlan}
-                  >
-                    {loading ? 'Processando...' : 
-                     plan.id === currentPlan ? 'Plano Atual' :
-                     plan.id === 'basico' ? 'Alterar para Básico' :
-                     `Alterar para ${plan.name}`}
-                  </Button>
+                  {/* Botão de Ação */}
+                  <div className="w-full lg:w-auto lg:min-w-[200px]">
+                    <Button
+                      className="w-full h-12 text-base font-medium"
+                      size="lg"
+                      variant={plan.id === currentPlan ? "outline" : plan.recommended ? "default" : "outline"}
+                      onClick={() => handleChangePlan(plan)}
+                      disabled={loading || plan.id === currentPlan}
+                    >
+                      {loading ? 'Processando...' : 
+                       plan.id === currentPlan ? 'Plano Atual' :
+                       plan.id === 'basico' ? 'Alterar para Básico' :
+                       `Alterar para ${plan.name}`}
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
