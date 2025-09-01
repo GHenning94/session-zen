@@ -394,9 +394,19 @@ const Dashboard = () => {
                 </Button>
               </div>
             </CardHeader>
-            <CardContent>
+            <CardContent 
+              className={`transition-all duration-300 ${
+                upcomingSessions.length === 0 
+                  ? 'min-h-[120px]' 
+                  : upcomingSessions.length <= 2 
+                    ? 'min-h-[200px]' 
+                    : upcomingSessions.length <= 4 
+                      ? 'min-h-[350px]' 
+                      : 'min-h-[450px]'
+              }`}
+            >
               <div className="space-y-4">
-                {upcomingSessions.length > 0 ? upcomingSessions.map((session, index) => (
+                {upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
                   <div key={session.id || index} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-4">
                       <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
@@ -422,7 +432,22 @@ const Dashboard = () => {
                      </div>
                   </div>
                 )) : (
-                  <p className="text-muted-foreground text-center py-4">Nenhuma sessão agendada</p>
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-muted-foreground text-center">Nenhuma sessão agendada</p>
+                  </div>
+                )}
+                {upcomingSessions.length > 4 && (
+                  <div className="pt-2 border-t border-border">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full text-primary hover:text-primary/80"
+                      onClick={() => navigate("/agenda")}
+                    >
+                      Ver todas as sessões ({upcomingSessions.length})
+                      <ArrowRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
                 )}
               </div>
             </CardContent>
