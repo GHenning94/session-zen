@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react"
 import { useSearchParams } from "react-router-dom"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
@@ -11,24 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
 import { 
-  Calendar as CalendarIcon, 
-  Clock, 
   Plus, 
   ChevronLeft, 
   ChevronRight,
-  MoreHorizontal,
-  Edit,
-  Trash2,
-  User,
   RefreshCw,
   Link
 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
-import { supabase } from "@/integrations/supabase/client"
-import { useGoogleCalendar } from "@/hooks/useGoogleCalendar"
+import { useCalendarData } from "@/hooks/useCalendarData"
 import { AgendaViewDay } from "@/components/agenda/AgendaViewDay"
 import { AgendaViewWeek } from "@/components/agenda/AgendaViewWeek"
 import AgendaViewMonth from "@/components/agenda/AgendaViewMonth"
@@ -38,24 +29,29 @@ import { ptBR } from "date-fns/locale"
 
 const Agenda = () => {
   const { toast } = useToast()
-  const { user } = useAuth()
   const { canAddSession, planLimits } = useSubscription()
-  const { 
-    isSignedIn, 
-    events: googleEvents, 
-    loading: googleLoading, 
-    connectToGoogle, 
-    disconnectFromGoogle,
-    loadEvents
-  } = useGoogleCalendar()
   
+  // Usar o novo hook centralizado para dados do calendário
+  const {
+    sessions,
+    clients,
+    googleEvents,
+    isLoading,
+    isGoogleConnected,
+    connectToGoogle,
+    disconnectFromGoogle,
+    loadGoogleEvents,
+    createSession,
+    updateSession,
+    deleteSession,
+    moveSession,
+    getClientName
+  } = useCalendarData()
+
   const [selectedDate, setSelectedDate] = useState(new Date())
   const [currentView, setCurrentView] = useState<'day' | 'week' | 'month'>('month')
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [editingSession, setEditingSession] = useState<any>(null)
-  const [sessions, setSessions] = useState<any[]>([])
-  const [clients, setClients] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
 
@@ -67,52 +63,6 @@ const Agenda = () => {
     valor: "",
     anotacoes: ""
   })
-
-  // Carregar dados do Supabase
-  const loadData = async () => {
-    if (!user) return
-    
-    setIsLoading(true)
-    try {
-      // Carregar sessões
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('data', { ascending: true })
-      
-      // Carregar clientes
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('user_id', user.id)
-
-      if (sessionsError) {
-        console.error('Erro ao carregar sessões:', sessionsError)
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar as sessões.",
-          variant: "destructive"
-        })
-      } else {
-        setSessions(sessionsData || [])
-      }
-
-      if (clientsError) {
-        console.error('Erro ao carregar clientes:', clientsError)
-      } else {
-        setClients(clientsData || [])
-      }
-    } catch (error) {
-      console.error('Erro:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadData()
-  }, [user])
 
   // Check for highlighted session from URL params
   useEffect(() => {
@@ -138,29 +88,6 @@ const Agenda = () => {
     }
   }, [searchParams, setSearchParams, sessions])
 
-  // Recarregar dados quando há mudanças ou quando a data muda
-  useEffect(() => {
-    const handleStorageChange = () => {
-      if (user) {
-        loadData()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('focus', handleStorageChange)
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('focus', handleStorageChange)
-    }
-  }, [user])
-
-  useEffect(() => {
-    if (user) {
-      loadData()
-    }
-  }, [selectedDate, user])
-
   const handleSaveSession = async () => {
     if (!newSession.client_id || !newSession.data || !newSession.horario) {
       toast({
@@ -182,46 +109,23 @@ const Agenda = () => {
       return
     }
 
-    setIsLoading(true)
-    
-    try {
-      const sessionData = {
-        user_id: user?.id,
-        client_id: newSession.client_id,
-        data: newSession.data,
-        horario: newSession.horario,
-        valor: newSession.valor ? parseFloat(newSession.valor) : null,
-        anotacoes: newSession.anotacoes,
-        status: editingSession?.status || 'agendada'
-      }
+    const sessionData = {
+      client_id: newSession.client_id,
+      data: newSession.data,
+      horario: newSession.horario,
+      valor: newSession.valor ? parseFloat(newSession.valor) : undefined,
+      anotacoes: newSession.anotacoes,
+      status: editingSession?.status || 'agendada'
+    }
 
-      if (editingSession) {
-        // Editar sessão existente
-        const { error } = await supabase
-          .from('sessions')
-          .update(sessionData)
-          .eq('id', editingSession.id)
-        
-        if (error) throw error
-        
-        toast({
-          title: "Sessão atualizada!",
-          description: "A sessão foi atualizada com sucesso.",
-        })
-      } else {
-        // Criar nova sessão
-        const { error } = await supabase
-          .from('sessions')
-          .insert([sessionData])
-        
-        if (error) throw error
-        
-        toast({
-          title: "Sessão criada!",
-          description: "A sessão foi agendada e adicionada ao seu calendário.",
-        })
-      }
-      
+    let success = false
+    if (editingSession) {
+      success = await updateSession(editingSession.id, sessionData)
+    } else {
+      success = await createSession(sessionData)
+    }
+
+    if (success) {
       setNewSession({
         client_id: "",
         data: "",
@@ -229,49 +133,13 @@ const Agenda = () => {
         valor: "",
         anotacoes: ""
       })
-      
       setEditingSession(null)
       setIsNewSessionOpen(false)
-      await loadData()
-      
-    } catch (error) {
-      console.error('Erro ao salvar sessão:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar a sessão.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const handleDeleteSession = async (sessionId: string) => {
-    setIsLoading(true)
-    try {
-      const { error } = await supabase
-        .from('sessions')
-        .delete()
-        .eq('id', sessionId)
-      
-      if (error) throw error
-      
-      toast({
-        title: "Sessão cancelada",
-        description: "A sessão foi removida da sua agenda.",
-      })
-      
-      await loadData()
-    } catch (error) {
-      console.error('Erro ao deletar sessão:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível cancelar a sessão.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
+    await deleteSession(sessionId)
   }
 
   const handleEditSession = (session: any) => {
@@ -288,35 +156,8 @@ const Agenda = () => {
     setIsNewSessionOpen(true)
   }
 
-  const handleDragSession = async (sessionId: string, newDate: string, newTime: string) => {
-    setIsLoading(true)
-    try {
-      const { error } = await supabase
-        .from('sessions')
-        .update({ 
-          data: newDate,
-          horario: newTime
-        })
-        .eq('id', sessionId)
-      
-      if (error) throw error
-      
-      toast({
-        title: "Sessão reagendada",
-        description: "A sessão foi movida com sucesso.",
-      })
-      
-      await loadData()
-    } catch (error) {
-      console.error('Erro ao reagendar sessão:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível reagendar a sessão.",
-        variant: "destructive"
-      })
-    } finally {
-      setIsLoading(false)
-    }
+  const handleDragSession = async (sessionId: string, newDate: string, newTime?: string) => {
+    await moveSession(sessionId, newDate, newTime)
   }
 
   const handleCreateSession = (date: Date, time?: string) => {
@@ -347,29 +188,8 @@ const Agenda = () => {
     "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30"
   ]
 
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString('pt-BR', { 
-      weekday: 'long', 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    })
-  }
-
-  const getSessionForTime = (time: string) => {
-    const dateStr = selectedDate.toISOString().split('T')[0]
-    return sessions.find(session => session.horario === time && session.data === dateStr)
-  }
-
-  const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId)
-    return client?.nome || 'Cliente não encontrado'
-  }
-
-
   const todaySessionsCount = sessions.filter(session => {
     const sessionDate = new Date(session.data)
-    const today = new Date()
     return sessionDate.toDateString() === selectedDate.toDateString()
   }).length
 
@@ -393,9 +213,11 @@ const Agenda = () => {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
-                <DialogTitle>Agendar Nova Sessão</DialogTitle>
+                <DialogTitle>
+                  {editingSession ? "Editar Sessão" : "Agendar Nova Sessão"}
+                </DialogTitle>
                 <DialogDescription>
-                  Preencha os dados para criar um novo agendamento
+                  {editingSession ? "Modifique os dados da sessão" : "Preencha os dados para criar um novo agendamento"}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
@@ -466,7 +288,7 @@ const Agenda = () => {
                   onClick={handleSaveSession}
                   disabled={isLoading}
                 >
-                  {isLoading ? "Salvando..." : "Salvar Sessão"}
+                  {isLoading ? "Salvando..." : editingSession ? "Atualizar Sessão" : "Salvar Sessão"}
                 </Button>
               </div>
             </DialogContent>
@@ -512,7 +334,7 @@ const Agenda = () => {
 
           <div className="flex items-center gap-2">
             {/* Google Calendar Integration */}
-            {isSignedIn ? (
+            {isGoogleConnected ? (
               <div className="flex items-center gap-2">
                 <Badge variant="secondary" className="bg-green-100 text-green-800">
                   <Link className="h-3 w-3 mr-1" />
@@ -521,10 +343,10 @@ const Agenda = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={loadEvents}
-                  disabled={googleLoading}
+                  onClick={loadGoogleEvents}
+                  disabled={isLoading}
                 >
-                  <RefreshCw className={cn("h-4 w-4", googleLoading && "animate-spin")} />
+                  <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
                 </Button>
                 <Button
                   variant="outline"
@@ -539,7 +361,7 @@ const Agenda = () => {
                 variant="outline"
                 size="sm"
                 onClick={connectToGoogle}
-                disabled={googleLoading}
+                disabled={isLoading}
               >
                 <Link className="h-4 w-4 mr-2" />
                 Conectar Google Calendar

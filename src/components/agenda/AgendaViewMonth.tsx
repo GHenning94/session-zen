@@ -81,17 +81,21 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
     e.dataTransfer.dropEffect = 'move'
   }
 
-  const handleDrop = (e: React.DragEvent, targetDate: Date) => {
+  const handleDrop = async (e: React.DragEvent, targetDate: Date) => {
     e.preventDefault()
     
     if (draggedSession) {
       const session = sessions.find(s => s.id === draggedSession)
       if (session) {
         const newDate = targetDate.toISOString().split('T')[0]
-        onDragSession(draggedSession, newDate, session.horario)
+        await onDragSession(draggedSession, newDate, session.horario)
       }
       setDraggedSession(null)
     }
+  }
+
+  const handleDragEnd = () => {
+    setDraggedSession(null)
   }
 
   return (
@@ -126,13 +130,11 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                   draggedSession && "border-dashed border-primary"
                 )}
                 onDragOver={handleDragOver}
-                onDrop={(e) => handleDrop(e, date)}
-                onClick={() => {
-                  onDateSelect(date)
-                  if (daySessionsData.length === 0) {
+                  onDrop={(e) => handleDrop(e, date)}
+                  onClick={() => {
+                    onDateSelect(date)
                     onCreateSession(date)
-                  }
-                }}
+                  }}
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className={cn(
@@ -149,11 +151,16 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       key={session.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
+                      onDragEnd={handleDragEnd}
                       className={cn(
                         "text-xs p-1 rounded bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move",
-                        highlightedSessionId === session.id && "animate-pulse-highlight"
+                        highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
+                        draggedSession === session.id && "opacity-50 scale-95"
                       )}
-                      onClick={(e) => e.stopPropagation()}
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        onEditSession(session)
+                      }}
                     >
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
