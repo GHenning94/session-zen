@@ -280,8 +280,14 @@ const Pagamentos = () => {
   }
 
   const viewSession = (sessionId: string) => {
-    // Navegar para a agenda com a sessão selecionada
-    navigate(`/agenda?highlight=${sessionId}`)
+    // Encontrar a sessão para pegar a data
+    const session = sessions.find(s => s.id === sessionId)
+    if (session) {
+      // Navegar para a agenda com a sessão selecionada e sua data
+      navigate(`/agenda?highlight=${sessionId}&date=${session.data}`)
+    } else {
+      navigate('/agenda')
+    }
   }
 
   return (

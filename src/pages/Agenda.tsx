@@ -117,12 +117,26 @@ const Agenda = () => {
   // Check for highlighted session from URL params
   useEffect(() => {
     const highlightParam = searchParams.get('highlight')
+    const dateParam = searchParams.get('date')
+    
     if (highlightParam) {
       setHighlightedSessionId(highlightParam)
-      // Clear the URL parameter
+      
+      // Set the date if provided
+      if (dateParam) {
+        setSelectedDate(new Date(dateParam))
+      } else {
+        // Try to find the session date from loaded sessions
+        const session = sessions.find(s => s.id === highlightParam)
+        if (session) {
+          setSelectedDate(new Date(session.data))
+        }
+      }
+      
+      // Clear the URL parameters
       setSearchParams({})
     }
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, sessions])
 
   // Recarregar dados quando há mudanças ou quando a data muda
   useEffect(() => {
