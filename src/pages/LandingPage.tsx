@@ -87,9 +87,11 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative">
-                {typedText}
-                <span className="animate-pulse">|</span>
+              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[300px] sm:min-w-[400px] lg:min-w-[500px]">
+                <span className="inline-block min-h-[1.2em]">
+                  {typedText}
+                  <span className="animate-pulse absolute">|</span>
+                </span>
               </span> com facilidade
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
@@ -106,7 +108,7 @@ const LandingPage = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-accent/20">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-accent/20 will-change-auto">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Principais funcionalidades</h2>
@@ -114,10 +116,10 @@ const LandingPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border-border/50 backdrop-blur-sm relative overflow-hidden">
+              <Card key={index} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border-border/50 backdrop-blur-sm relative overflow-hidden transform-gpu will-change-transform min-h-[200px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                 <CardHeader className="relative z-10">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform duration-500">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform duration-500 transform-gpu">
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
                   <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300">{feature.title}</CardTitle>
@@ -140,10 +142,10 @@ const LandingPage = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {professionals.map((prof, index) => (
-              <Card key={index} className="text-center p-6 shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105 group bg-gradient-to-br from-card to-card/80 border-border/50 relative overflow-hidden">
+              <Card key={index} className="text-center p-6 shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105 group bg-gradient-to-br from-card to-card/80 border-border/50 relative overflow-hidden transform-gpu will-change-transform min-h-[120px]">
                 <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <div className="relative z-10">
-                  <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-soft group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
+                  <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-soft group-hover:shadow-glow group-hover:scale-110 transition-all duration-300 transform-gpu">
                     <prof.icon className="w-6 h-6 text-white" />
                   </div>
                   <p className="font-medium text-sm group-hover:text-secondary transition-colors duration-300">{prof.name}</p>
