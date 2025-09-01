@@ -173,7 +173,7 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
                   
                   <div className="text-right">
                     <div className="flex items-baseline gap-0.5">
-                      <span className="text-lg font-bold">{plan.price}</span>
+                      <span className="text-base font-bold">{plan.price}</span>
                       <span className="text-xs text-muted-foreground">{plan.period}</span>
                     </div>
                   </div>
@@ -182,10 +182,10 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
 
               {/* Recursos e Botão */}
               <div className="px-4 pb-4">
-                <div className="flex flex-col lg:flex-row gap-3 items-start">
+                <div className="space-y-3">
                   {/* Lista de Recursos */}
-                  <div className="flex-1">
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                  <div>
+                    <ul className="space-y-1.5">
                       {plan.features.map((feature, index) => (
                         <li key={index} className="flex items-center gap-2">
                           <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0 mt-0.5"></div>
@@ -196,7 +196,7 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
                   </div>
 
                   {/* Botão de Ação */}
-                  <div className="w-full lg:w-auto lg:min-w-[160px]">
+                  <div>
                     <Button
                       className="w-full h-8 text-xs font-medium"
                       size="sm"
