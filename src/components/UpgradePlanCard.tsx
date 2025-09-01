@@ -66,19 +66,33 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
     }
   ]
 
-  // Filtrar planos superiores ao atual
-  const getAvailablePlans = () => {
-    const planOrder = ['basico', 'pro', 'premium']
-    const currentIndex = planOrder.indexOf(currentPlan)
-    return allPlans.filter((plan, index) => index > currentIndex)
-  }
-
-  const availablePlans = getAvailablePlans()
   const currentPlanInfo = allPlans.find(plan => plan.id === currentPlan)
 
-  const handleUpgrade = async (plan: Plan) => {
-    if (!user) return
+  const handleChangePlan = async (plan: Plan) => {
+    if (!user || plan.id === currentPlan) return
     
+    // Se for plano básico (gratuito), usar função de teste
+    if (plan.id === 'basico') {
+      setLoading(true)
+      try {
+        const { data, error } = await supabase.functions.invoke('test-upgrade', {
+          body: { plan: 'basico' }
+        })
+
+        if (error) throw error
+        
+        alert('Plano alterado com sucesso para Básico!')
+        window.location.reload()
+      } catch (error) {
+        console.error('Erro ao alterar plano:', error)
+        alert('Erro ao alterar plano. Tente novamente.')
+      } finally {
+        setLoading(false)
+      }
+      return
+    }
+    
+    // Para planos pagos, usar Stripe
     setLoading(true)
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -105,98 +119,61 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
     navigate('/upgrade')
   }
 
-  if (availablePlans.length === 0) {
-    return (
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Crown className="w-5 h-5 text-primary" />
-            Seu Plano
-          </CardTitle>
-          <CardDescription>
-            Você está no nosso plano mais avançado!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 border border-primary/20 rounded-lg bg-primary/5">
-            <div className="flex items-center gap-3">
-              {currentPlanInfo?.icon}
-              <div>
-                <p className="font-medium">{currentPlanInfo?.name}</p>
-                <p className="text-sm text-muted-foreground">{currentPlanInfo?.description}</p>
-              </div>
-            </div>
-            <Badge className="bg-primary text-primary-foreground">
-              Ativo
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
-    )
-  }
-
   return (
     <Card className="shadow-soft">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Crown className="w-5 h-5 text-primary" />
-          Upgrade de Plano
+          Planos de Assinatura
         </CardTitle>
         <CardDescription>
-          Desbloqueie mais funcionalidades para sua prática
+          Seu plano atual: <strong>{currentPlanInfo?.name}</strong>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Plano Atual */}
-        <div className="p-3 border border-border rounded-lg bg-muted/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              {currentPlanInfo?.icon}
-              <div>
-                <p className="font-medium text-sm">Plano Atual: {currentPlanInfo?.name}</p>
-                <p className="text-xs text-muted-foreground">{currentPlanInfo?.price}{currentPlanInfo?.period}</p>
-              </div>
-            </div>
-            <Badge variant="outline">
-              Ativo
-            </Badge>
-          </div>
-        </div>
-
-        {/* Planos Disponíveis para Upgrade */}
-        <div className="space-y-3">
-          {availablePlans.slice(0, 2).map((plan) => (
-            <div key={plan.id} className="p-4 border border-border rounded-lg hover:border-primary/50 transition-colors">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-primary/10 text-primary">
-                    {plan.icon}
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{plan.name}</p>
-                      {plan.recommended && (
-                        <Badge className="text-xs bg-primary text-primary-foreground">
-                          Popular
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-sm text-muted-foreground">{plan.description}</p>
-                  </div>
+        {/* Todos os Planos */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {allPlans.map((plan) => (
+            <div 
+              key={plan.id} 
+              className={`p-4 border rounded-lg transition-all ${
+                plan.id === currentPlan 
+                  ? 'border-primary bg-primary/5 shadow-md' 
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <div className="text-center mb-4">
+                <div className={`w-12 h-12 rounded-full mx-auto mb-3 flex items-center justify-center ${
+                  plan.id === currentPlan ? 'bg-primary text-primary-foreground' : 'bg-primary/10 text-primary'
+                }`}>
+                  {plan.icon}
                 </div>
-                <div className="text-right">
-                  <p className="font-bold">{plan.price}</p>
-                  <p className="text-xs text-muted-foreground">{plan.period}</p>
+                <div className="flex items-center justify-center gap-2 mb-1">
+                  <h4 className="font-medium">{plan.name}</h4>
+                  {plan.recommended && (
+                    <Badge className="text-xs bg-primary text-primary-foreground">
+                      Popular
+                    </Badge>
+                  )}
+                  {plan.id === currentPlan && (
+                    <Badge className="text-xs bg-green-500 text-white">
+                      Ativo
+                    </Badge>
+                  )}
+                </div>
+                <p className="text-sm text-muted-foreground mb-3">{plan.description}</p>
+                <div className="mb-3">
+                  <span className="text-2xl font-bold">{plan.price}</span>
+                  <span className="text-sm text-muted-foreground">{plan.period}</span>
                 </div>
               </div>
               
-              <div className="mb-3">
-                <p className="text-xs text-muted-foreground mb-2">Principais recursos:</p>
-                <ul className="text-xs space-y-1">
-                  {plan.features.slice(0, 3).map((feature, index) => (
+              <div className="mb-4">
+                <ul className="text-xs space-y-2">
+                  {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-2">
-                      <div className="w-1 h-1 bg-primary rounded-full"></div>
-                      {feature}
+                      <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0"></div>
+                      <span>{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -205,24 +182,29 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
               <Button
                 className="w-full"
                 size="sm"
-                variant={plan.recommended ? "default" : "outline"}
-                onClick={() => handleUpgrade(plan)}
-                disabled={loading}
+                variant={plan.id === currentPlan ? "outline" : plan.recommended ? "default" : "outline"}
+                onClick={() => handleChangePlan(plan)}
+                disabled={loading || plan.id === currentPlan}
               >
-                {loading ? 'Processando...' : `Upgrade para ${plan.name}`}
+                {loading ? 'Processando...' : 
+                 plan.id === currentPlan ? 'Plano Atual' :
+                 plan.id === 'basico' ? 'Alterar para Básico' :
+                 `Alterar para ${plan.name}`}
               </Button>
             </div>
           ))}
         </div>
 
-        <Button 
-          variant="ghost" 
-          className="w-full" 
-          size="sm"
-          onClick={handleViewAllPlans}
-        >
-          Ver todos os planos <ArrowRight className="w-4 h-4 ml-2" />
-        </Button>
+        <div className="text-center pt-4">
+          <Button 
+            variant="ghost" 
+            className="text-sm" 
+            size="sm"
+            onClick={handleViewAllPlans}
+          >
+            Ver detalhes completos <ArrowRight className="w-4 h-4 ml-2" />
+          </Button>
+        </div>
       </CardContent>
     </Card>
   )
