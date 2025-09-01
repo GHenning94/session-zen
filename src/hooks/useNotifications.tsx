@@ -74,12 +74,7 @@ export const useNotifications = () => {
             setNotifications(prev => [newNotification, ...prev])
             setUnreadCount(prev => prev + 1)
             
-            // Mostrar toast para nova notificação
-            toast({
-              title: newNotification.titulo,
-              description: newNotification.conteudo,
-              duration: 5000,
-            })
+            // Removido toast para evitar spam de notificações
           } else if (payload.eventType === 'UPDATE') {
             const updatedNotification = payload.new as Notification
             setNotifications(prev => 
@@ -132,11 +127,7 @@ export const useNotifications = () => {
       }
     } catch (error) {
       console.error('Erro ao marcar como lidas:', error)
-      toast({
-        title: "Erro",
-        description: "Erro ao marcar notificações como lidas.",
-        variant: "destructive"
-      })
+      // Removido toast para evitar spam de notificações
     }
   }
 
@@ -201,12 +192,8 @@ export const useNotifications = () => {
         .eq('user_id', user.id)
 
       if (error) {
-        console.error('Erro ao deletar notificação:', error)
-        toast({
-          title: "Erro",
-          description: "Erro ao deletar notificação",
-          variant: "destructive"
-        })
+      console.error('Erro ao deletar notificação:', error)
+      // Removido toast para evitar spam de notificações
         return false
       }
 
@@ -222,11 +209,7 @@ export const useNotifications = () => {
       return true
     } catch (error) {
       console.error('Erro:', error)
-      toast({
-        title: "Erro",
-        description: "Erro ao deletar notificação",
-        variant: "destructive"
-      })
+      // Removido toast para evitar spam de notificações
       return false
     }
   }
