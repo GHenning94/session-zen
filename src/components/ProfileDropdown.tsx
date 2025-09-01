@@ -361,10 +361,6 @@ export const ProfileDropdown = () => {
             <Settings className="w-4 h-4 mr-2" />
             Editar Perfil
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={copyInviteLink}>
-            <Share className="w-4 h-4 mr-2" />
-            Copiar Link de Convite
-          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
             <LogOut className="w-4 h-4 mr-2" />

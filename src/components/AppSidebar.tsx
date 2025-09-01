@@ -10,7 +10,9 @@ import {
   BookOpen,
   CalendarCheck,
   FileText,
-  NotebookPen
+  NotebookPen,
+  Star,
+  Share2
 } from "lucide-react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
@@ -72,6 +74,21 @@ const menuItems = [
     title: "Sessões",
     url: "/sessoes",
     icon: NotebookPen,
+  },
+  {
+    title: "Estudos",
+    url: "/estudos",
+    icon: BookOpen,
+  },
+  {
+    title: "Redes Sociais",
+    url: "/redes-sociais",
+    icon: Share2,
+  },
+  {
+    title: "Programa de Indicação",
+    url: "/programa-indicacao",
+    icon: Star,
   },
   { 
     title: "Configurações", 

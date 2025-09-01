@@ -19,6 +19,9 @@ import Relatorios from "@/pages/Relatorios";
 import Eventos from "@/pages/Eventos";
 import Prontuarios from "@/pages/Prontuarios";
 import Sessoes from "@/pages/Sessoes";
+import Estudos from "@/pages/Estudos";
+import RedesSociais from "@/pages/RedesSociais";
+import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import BookingPage from "@/pages/BookingPage";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -49,6 +52,9 @@ const App = () => (
               <Route path="/eventos" element={<ProtectedRoute><Eventos /></ProtectedRoute>} />
               <Route path="/prontuarios" element={<ProtectedRoute><Prontuarios /></ProtectedRoute>} />
               <Route path="/sessoes" element={<ProtectedRoute><Sessoes /></ProtectedRoute>} />
+              <Route path="/estudos" element={<ProtectedRoute><Estudos /></ProtectedRoute>} />
+              <Route path="/redes-sociais" element={<ProtectedRoute><RedesSociais /></ProtectedRoute>} />
+              <Route path="/programa-indicacao" element={<ProtectedRoute><ProgramaIndicacao /></ProtectedRoute>} />
                 <Route path="/configuracoes" element={<ProtectedRoute><Configuracoes /></ProtectedRoute>} />
                 <Route path="/agendar/:userId" element={<BookingPage />} />
                 <Route path="/agendar/slug/:slug" element={<BookingPage />} />
