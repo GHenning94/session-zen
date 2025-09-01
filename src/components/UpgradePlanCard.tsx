@@ -121,18 +121,18 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
 
   return (
     <Card className="shadow-soft">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Crown className="w-5 h-5 text-primary" />
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <Crown className="w-4 h-4 text-primary" />
           Planos de Assinatura
         </CardTitle>
-        <CardDescription>
+        <CardDescription className="text-xs">
           Seu plano atual: <strong>{currentPlanInfo?.name}</strong>
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         {/* Todos os Planos */}
-        <div className="space-y-6">
+        <div className="space-y-3">
           {allPlans.map((plan) => (
             <div 
               key={plan.id} 
@@ -143,63 +143,63 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
               }`}
             >
               {/* Header do Plano */}
-              <div className="p-6 pb-4">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-14 h-14 rounded-full flex items-center justify-center ${
+              <div className="p-4 pb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                       plan.id === currentPlan 
-                        ? 'bg-primary text-primary-foreground shadow-lg' 
+                        ? 'bg-primary text-primary-foreground' 
                         : 'bg-primary/10 text-primary'
                     }`}>
                       {plan.icon}
                     </div>
                     <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <h3 className="text-xl font-bold">{plan.name}</h3>
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <h3 className="text-base font-semibold">{plan.name}</h3>
                         {plan.recommended && (
-                          <Badge className="bg-primary text-primary-foreground px-3 py-1">
+                          <Badge className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5">
                             Popular
                           </Badge>
                         )}
                         {plan.id === currentPlan && (
-                          <Badge className="bg-green-500 text-white px-3 py-1">
+                          <Badge className="bg-green-500 text-white text-xs px-1.5 py-0.5">
                             Ativo
                           </Badge>
                         )}
                       </div>
-                      <p className="text-muted-foreground">{plan.description}</p>
+                      <p className="text-xs text-muted-foreground">{plan.description}</p>
                     </div>
                   </div>
                   
                   <div className="text-right">
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-3xl font-bold">{plan.price}</span>
-                      <span className="text-muted-foreground">{plan.period}</span>
+                    <div className="flex items-baseline gap-0.5">
+                      <span className="text-lg font-bold">{plan.price}</span>
+                      <span className="text-xs text-muted-foreground">{plan.period}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Recursos e Botão */}
-              <div className="px-6 pb-6">
-                <div className="flex flex-col lg:flex-row gap-6 items-start">
+              <div className="px-4 pb-4">
+                <div className="flex flex-col lg:flex-row gap-3 items-start">
                   {/* Lista de Recursos */}
                   <div className="flex-1">
-                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                       {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-3">
-                          <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0 mt-1"></div>
-                          <span className="text-sm">{feature}</span>
+                        <li key={index} className="flex items-center gap-2">
+                          <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0 mt-0.5"></div>
+                          <span className="text-xs">{feature}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
 
                   {/* Botão de Ação */}
-                  <div className="w-full lg:w-auto lg:min-w-[200px]">
+                  <div className="w-full lg:w-auto lg:min-w-[160px]">
                     <Button
-                      className="w-full h-12 text-base font-medium"
-                      size="lg"
+                      className="w-full h-8 text-xs font-medium"
+                      size="sm"
                       variant={plan.id === currentPlan ? "outline" : plan.recommended ? "default" : "outline"}
                       onClick={() => handleChangePlan(plan)}
                       disabled={loading || plan.id === currentPlan}
