@@ -87,10 +87,12 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[300px] sm:min-w-[400px] lg:min-w-[500px]">
-                <span className="inline-block min-h-[1.2em]">
-                  {typedText}
-                  <span className="animate-pulse absolute">|</span>
+              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block">
+                <span className="inline-block w-[380px] sm:w-[480px] lg:w-[580px] h-[1.2em] text-left">
+                  <span className="absolute left-0 top-0">
+                    {typedText}
+                  </span>
+                  <span className="animate-pulse absolute" style={{ left: `${typedText.length * 0.6}em` }}>|</span>
                 </span>
               </span> com facilidade
             </h1>
@@ -116,16 +118,16 @@ const LandingPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border-border/50 backdrop-blur-sm relative overflow-hidden transform-gpu will-change-transform min-h-[200px]">
+              <Card key={index} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border-border/50 backdrop-blur-sm relative overflow-hidden transform-gpu will-change-transform h-[280px] flex flex-col">
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-                <CardHeader className="relative z-10">
+                <CardHeader className="relative z-10 pb-4">
                   <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform duration-500 transform-gpu">
                     <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300">{feature.title}</CardTitle>
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300 min-h-[3rem] flex items-center justify-center">{feature.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="relative z-10">
-                  <p className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">{feature.description}</p>
+                <CardContent className="relative z-10 flex-1 flex items-start">
+                  <p className="text-muted-foreground group-hover:text-foreground transition-colors duration-300 text-sm leading-relaxed">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
