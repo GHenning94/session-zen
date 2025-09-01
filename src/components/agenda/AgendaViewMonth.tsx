@@ -54,7 +54,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   }
 
   const getSessionsForDate = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0]
+    const dateStr = format(date, 'yyyy-MM-dd')
     return sessions.filter(session => session.data === dateStr)
   }
 
@@ -87,7 +87,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
     if (draggedSession) {
       const session = sessions.find(s => s.id === draggedSession)
       if (session) {
-        const newDate = targetDate.toISOString().split('T')[0]
+        const newDate = format(targetDate, 'yyyy-MM-dd')
         await onDragSession(draggedSession, newDate, session.horario)
       }
       setDraggedSession(null)

@@ -92,7 +92,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   const handleDrop = (e: React.DragEvent, hour: number) => {
     e.preventDefault()
     if (draggedSession && onDragSession) {
-      const newDate = currentDate.toISOString().split('T')[0]
+      const newDate = format(currentDate, 'yyyy-MM-dd')
       const newTime = `${String(hour).padStart(2, '0')}:00`
       onDragSession(draggedSession, newDate, newTime)
       setDraggedSession(null)
@@ -118,12 +118,6 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
         <h3 className="text-lg font-semibold">
           {format(currentDate, "EEEE, dd 'de' MMMM", { locale: ptBR })}
         </h3>
-        {onCreateSession && (
-          <Button onClick={() => onCreateSession(currentDate)} size="sm">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Sessão
-          </Button>
-        )}
       </div>
 
       <div className="grid gap-2 max-h-[600px] overflow-y-auto">
@@ -158,21 +152,21 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                       onDragStart={(e) => handleDragStart(e, session.id)}
                       onClick={(e) => e.stopPropagation()}
                     >
-                      <CardContent className="p-3">
+                      <CardContent className="p-2">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-2 mb-1">
-                              <Clock className="h-4 w-4" />
-                              <span className="text-sm font-medium">{formatTimeBR(session.horario)}</span>
+                            <div className="flex items-center gap-1 mb-1">
+                              <Clock className="h-3 w-3" />
+                              <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
                             </div>
-                            <div className="flex items-center gap-2 mb-2">
-                              <User className="h-4 w-4" />
-                              <span className="text-sm">
+                            <div className="flex items-center gap-1 mb-1">
+                              <User className="h-3 w-3" />
+                              <span className="text-xs">
                                 {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
                               </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline" className="text-xs">
+                            <div className="flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs px-1 py-0">
                                 {session.status}
                               </Badge>
                               {session.valor && (
@@ -182,7 +176,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                               )}
                             </div>
                             {session.anotacoes && (
-                              <div className="mt-2 text-xs text-muted-foreground">
+                              <div className="mt-1 text-xs text-muted-foreground truncate">
                                 {session.anotacoes}
                               </div>
                             )}
@@ -192,7 +186,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6"
+                              className="h-5 w-5 p-0"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 onEditSession(session)
@@ -203,7 +197,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-6 w-6 text-destructive hover:text-destructive"
+                              className="h-5 w-5 p-0 text-destructive hover:text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 onDeleteSession(session.id)
