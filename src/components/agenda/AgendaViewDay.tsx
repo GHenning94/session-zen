@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Clock, User, Trash, Plus } from 'lucide-react'
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
+import { useInterval } from 'react-use'
 
 interface Session {
   id: string
@@ -57,6 +58,13 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   highlightedSessionId
 }) => {
   const [draggedSession, setDraggedSession] = useState<string | null>(null)
+  const [currentTime, setCurrentTime] = useState(new Date())
+  
+  // Atualizar a hora atual a cada minuto
+  useInterval(() => {
+    setCurrentTime(new Date())
+  }, 60000) // 60 segundos
+  
   const daySessionsData = sessions.filter(session => {
     return session.data === format(currentDate, 'yyyy-MM-dd')
   })
@@ -110,6 +118,15 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
         return 'bg-gray-100 text-gray-800 border-gray-200'
     }
   }
+  
+  // Função para calcular a posição da linha de tempo
+  const getCurrentTimePosition = () => {
+    const currentHour = currentTime.getHours()
+    const currentMinute = currentTime.getMinutes()
+    return currentHour + (currentMinute / 60)
+  }
+  
+  const currentTimePosition = getCurrentTimePosition()
 
   return (
     <div className="space-y-4">
@@ -119,7 +136,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
         </h3>
       </div>
 
-      <div className="grid gap-2 max-h-[600px] overflow-y-auto">
+      <div className="grid gap-2 max-h-[600px] overflow-y-auto relative">
         {hours.map((hour) => {
           const hourSessions = getSessionsForHour(hour)
           const hourGoogleEvents = getGoogleEventsForHour(hour)
@@ -230,6 +247,18 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
             </div>
           )
         })}
+        
+        {/* Linha de tempo atual - apenas se for hoje */}
+        {format(currentDate, 'yyyy-MM-dd') === format(new Date(), 'yyyy-MM-dd') && (
+          <div 
+            className="absolute left-0 right-0 h-0.5 bg-red-500 z-10 pointer-events-none"
+            style={{ 
+              top: `${(currentTimePosition * 84) + 2}px`, // 84px é a altura de cada hora (min-h-[80px] + gap)
+            }}
+          >
+            <div className="w-3 h-3 bg-red-500 rounded-full -ml-1.5 -mt-1.5"></div>
+          </div>
+        )}
       </div>
     </div>
   )

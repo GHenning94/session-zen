@@ -423,31 +423,38 @@ const Dashboard = () => {
               }`}
             >
               <div className="space-y-4">
-                {upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
-                  <div key={session.id || index} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
-                       <span className="text-sm font-medium text-primary">
-                           {session.clients?.nome ? session.clients.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                         </span>
+                 {upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
+                   <div 
+                     key={session.id || index} 
+                     className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                     onClick={() => navigate(`/agenda?highlight=${session.id}&date=${session.data}`)}
+                   >
+                     <div className="flex items-center gap-4">
+                       <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
+                        <span className="text-sm font-medium text-primary">
+                            {session.clients?.nome ? session.clients.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
+                          </span>
+                        </div>
+                        <div>
+                          <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {formatTimeBR(session.horario)}
+                          </p>
+                          <p className="text-sm font-medium text-success">
+                            {formatCurrencyBR(session.valor || 0)}
+                          </p>
                        </div>
-                       <div>
-                         <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
-                         <p className="text-sm text-muted-foreground">
-                           {formatTimeBR(session.horario)}
-                         </p>
-                      </div>
-                    </div>
-                      <div className="text-right">
-                        <p className="font-medium">{formatDateBR(session.data)}</p>
-                       <Badge 
-                         variant={session.status === 'concluida' ? 'default' : 'secondary'}
-                         className="text-xs"
-                       >
-                         {session.status || 'agendada'}
-                       </Badge>
                      </div>
-                  </div>
+                      <div className="text-right">
+                         <p className="font-medium">{formatDateBR(session.data)}</p>
+                        <Badge 
+                          variant={session.status === 'realizada' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {session.status || 'agendada'}
+                        </Badge>
+                      </div>
+                   </div>
                 )) : (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-muted-foreground text-center">Nenhuma sessão agendada</p>
@@ -493,12 +500,18 @@ const Dashboard = () => {
                       </div>
                       <div className="text-right">
                         <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
-                       <Badge 
-                         variant={payment.status === 'concluida' ? 'default' : 'destructive'}
-                         className="text-xs"
-                       >
-                         {payment.status || 'agendada'}
-                       </Badge>
+                        <Badge 
+                          variant={
+                            payment.status === 'realizada' ? 'default' : 
+                            payment.status === 'agendada' ? 'secondary' : 
+                            'destructive'
+                          }
+                          className="text-xs"
+                        >
+                          {payment.status === 'realizada' ? 'Pago' : 
+                           payment.status === 'agendada' ? 'Pendente' : 
+                           payment.status || 'agendada'}
+                        </Badge>
                      </div>
                   </div>
                 )) : (

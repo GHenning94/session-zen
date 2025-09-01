@@ -42,7 +42,8 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
     valor: "",
     metodo: "",
     data: new Date().toISOString().split('T')[0],
-    observacoes: ""
+    observacoes: "",
+    sessaoExterna: false
   })
 
   const loadClients = async () => {
@@ -150,7 +151,8 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
         valor: "",
         metodo: "",
         data: new Date().toISOString().split('T')[0],
-        observacoes: ""
+        observacoes: "",
+        sessaoExterna: false
       })
       onOpenChange(false)
       
@@ -223,13 +225,26 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
                 <SelectItem value="pix">PIX</SelectItem>
+                <SelectItem value="cartao">Cartão</SelectItem>
                 <SelectItem value="transferencia">Transferência Bancária</SelectItem>
-                <SelectItem value="cheque">Cheque</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="grid gap-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="sessaoExterna"
+                checked={paymentData.sessaoExterna}
+                onChange={(e) => setPaymentData({...paymentData, sessaoExterna: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="sessaoExterna" className="text-sm">
+                Sessão realizada por fora da plataforma
+              </Label>
+            </div>
           </div>
           
           <div className="grid gap-2">
@@ -253,7 +268,8 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
                 valor: "",
                 metodo: "",
                 data: new Date().toISOString().split('T')[0],
-                observacoes: ""
+                observacoes: "",
+                sessaoExterna: false
               })
             }}
           >
