@@ -18,6 +18,7 @@ import { Layout } from "@/components/Layout"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
+import { useSubscription } from "@/hooks/useSubscription"
 import { NewSessionModal } from "@/components/NewSessionModal"
 import { NewClientModal } from "@/components/NewClientModal"
 import { NewPaymentModal } from "@/components/NewPaymentModal"
@@ -27,6 +28,7 @@ import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const { currentPlan } = useSubscription()
   const [dashboardData, setDashboardData] = useState({
     sessionsToday: 0,
     activeClients: 0,
@@ -39,11 +41,10 @@ const Dashboard = () => {
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
   const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false)
-  const [userPlan, setUserPlan] = useState('basico')
   const [recentClients, setRecentClients] = useState<any[]>([])
   const [monthlyChart, setMonthlyChart] = useState<any[]>([])
   const [dynamicReminders, setDynamicReminders] = useState<any[]>([])
-  const [chartPeriod, setChartPeriod] = useState<'3' | '6' | '12'>('12')
+  const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
 
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
@@ -102,17 +103,6 @@ const Dashboard = () => {
     try {
       console.log('🔄 Carregando dados do dashboard...')
       
-      // Carregar plano do usuário
-      const { data: profileData } = await supabase
-        .from('profiles')
-        .select('subscription_plan')
-        .eq('user_id', user?.id)
-        .single()
-
-      if (profileData?.subscription_plan) {
-        setUserPlan(profileData.subscription_plan)
-      }
-
       // Carregar sessões de hoje
       const today = new Date().toISOString().split('T')[0]
       console.log('📅 Data de hoje:', today)
@@ -312,7 +302,7 @@ const Dashboard = () => {
     }
   }
 
-  const handlePeriodChange = async (period: '3' | '6' | '12') => {
+  const handlePeriodChange = async (period: '1' | '3' | '6' | '12') => {
     console.log('📊 Mudando período para:', period)
     setChartPeriod(period)
     // Não recarrega mais dados, apenas filtra o que já temos
@@ -560,6 +550,13 @@ const Dashboard = () => {
                         </div>
                         <div className="flex gap-2">
                           <Button 
+                            variant={chartPeriod === '1' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handlePeriodChange('1')}
+                          >
+                            1 mês
+                          </Button>
+                          <Button 
                             variant={chartPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('3')}
@@ -590,11 +587,12 @@ const Dashboard = () => {
                        <div className="h-64">
                          <ResponsiveContainer width="100%" height="100%">
                            <BarChart 
-                             data={monthlyChart.filter((_, index) => {
-                               if (chartPeriod === '12') return true;
-                               if (chartPeriod === '6') return index >= 6;
-                               return index >= 9;
-                             })}
+                              data={monthlyChart.filter((_, index) => {
+                                if (chartPeriod === '12') return true;
+                                if (chartPeriod === '6') return index >= 6;
+                                if (chartPeriod === '3') return index >= 9;
+                                return index >= 11; // 1 mês = último mês
+                              })}
                              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                            >
                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -646,20 +644,20 @@ const Dashboard = () => {
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
                           <div className="text-center">
                             <p className="text-2xl font-bold text-primary">
-                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9).reduce((sum, item) => sum + item.receita, 0))}
+                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : chartPeriod === '3' ? index >= 9 : index >= 11).reduce((sum, item) => sum + item.receita, 0))}
                             </p>
                             <p className="text-sm text-muted-foreground">Total Recebido</p>
                           </div>
                           <div className="text-center">
                             <p className="text-2xl font-bold text-destructive">
-                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9).reduce((sum, item) => sum + (item.aReceber || 0), 0))}
+                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : chartPeriod === '3' ? index >= 9 : index >= 11).reduce((sum, item) => sum + (item.aReceber || 0), 0))}
                             </p>
                             <p className="text-sm text-muted-foreground">A Receber</p>
                           </div>
                           <div className="text-center">
                             <p className="text-2xl font-bold text-secondary">
                               {(() => {
-                                const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9);
+                                const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : chartPeriod === '3' ? index >= 9 : index >= 11);
                                 return formatCurrencyBR(filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length) : 0);
                               })()}
                             </p>
@@ -719,7 +717,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Upgrade de Plano */}
-          <UpgradePlanCard currentPlan={userPlan} />
+          <UpgradePlanCard currentPlan={currentPlan} />
         </div>
 
         {/* Alertas */}
