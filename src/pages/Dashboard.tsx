@@ -305,7 +305,8 @@ const Dashboard = () => {
   const handlePeriodChange = async (period: '1' | '3' | '6' | '12') => {
     console.log('📊 Mudando período para:', period)
     setChartPeriod(period)
-    // Não recarrega mais dados, apenas filtra o que já temos
+    // Recarregar dados para garantir que o gráfico esteja atualizado
+    await loadDashboardData()
   }
 
   const handleNewSession = () => {
@@ -494,11 +495,16 @@ const Dashboard = () => {
                     // Determinar status baseado na data E hora da sessão
                     const sessionDateTime = new Date(`${payment.data}T${payment.horario}`)
                     const currentDateTime = new Date()
-                    let displayStatus = payment.status === 'realizada' ? 'pago' : 'pendente'
                     
-                    // Se a sessão já passou (data e hora) e ainda está pendente, marcar como atrasado
-                    if (displayStatus === 'pendente' && sessionDateTime < currentDateTime) {
+                    // Status correto: se status da sessão é 'realizada', então está pago
+                    // Se não está realizada, verificar se já passou da hora para determinar se é atrasado
+                    let displayStatus: string
+                    if (payment.status === 'realizada') {
+                      displayStatus = 'pago'
+                    } else if (sessionDateTime < currentDateTime) {
                       displayStatus = 'atrasado'
+                    } else {
+                      displayStatus = 'pendente'
                     }
 
                     const getStatusColor = (status: string) => {

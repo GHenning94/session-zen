@@ -104,11 +104,16 @@ const Pagamentos = () => {
     return sessions.map(session => {
       const sessionDateTime = new Date(`${session.data}T${session.horario}`)
       const currentDateTime = new Date()
-      let status = session.status === 'realizada' ? 'pago' : 'pendente'
       
-      // Se a sessão já passou (data e hora) e ainda está pendente, marcar como atrasado
-      if (status === 'pendente' && sessionDateTime < currentDateTime) {
+      // Status correto: se status da sessão é 'realizada', então está pago
+      // Se não está realizada, verificar se já passou da hora para determinar se é atrasado
+      let status: string
+      if (session.status === 'realizada') {
+        status = 'pago'
+      } else if (sessionDateTime < currentDateTime) {
         status = 'atrasado'
+      } else {
+        status = 'pendente'
       }
       
       return {
