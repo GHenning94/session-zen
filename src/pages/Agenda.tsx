@@ -188,13 +188,14 @@ const Agenda = () => {
     "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30"
   ]
 
-  // Calcular estatísticas baseadas na data selecionada
-  const selectedDateSessions = sessions.filter(session => {
+  // Calcular estatísticas baseadas na data de hoje (sempre hoje, não a data selecionada)
+  const today = new Date()
+  const todaySessionsData = sessions.filter(session => {
     const sessionDate = new Date(session.data)
-    return sessionDate.toDateString() === selectedDate.toDateString()
+    return sessionDate.toDateString() === today.toDateString()
   })
   
-  const todaySessionsCount = selectedDateSessions.length
+  const todaySessionsCount = todaySessionsData.length
 
   return (
     <Layout>
@@ -446,7 +447,7 @@ const Agenda = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-success">
-                R$ {selectedDateSessions
+                R$ {todaySessionsData
                   .reduce((sum, s) => sum + (s.valor || 0), 0)
                   .toFixed(2)
                 }

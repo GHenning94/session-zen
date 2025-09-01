@@ -126,12 +126,15 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   
   // Função para calcular a posição da linha de tempo atual
   const getCurrentTimePosition = () => {
-    const currentHour = currentTime.getHours()
-    const currentMinute = currentTime.getMinutes()
+    // Usar horário local brasileiro
+    const now = new Date()
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
     return currentHour + (currentMinute / 60)
   }
   
-  const isToday = format(currentDate, 'yyyy-MM-dd') === format(currentTime, 'yyyy-MM-dd')
+  const today = new Date()
+  const isToday = format(currentDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
   const currentTimePosition = isToday ? getCurrentTimePosition() : null
 
   return (
