@@ -375,130 +375,136 @@ const Dashboard = () => {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Próximas Sessões */}
-          <Card className="lg:col-span-2 shadow-soft">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-primary" />
-                    Próximas Sessões
-                  </CardTitle>
-                  <CardDescription>
-                    Suas consultas agendadas para hoje
-                  </CardDescription>
-                </div>
-                <Button variant="outline" size="sm" onClick={() => navigate("/agenda")}>
-                  Ver Agenda <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+        {/* Próximas Sessões - Independente */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Próximas Sessões
+                </CardTitle>
+                <CardDescription>
+                  Suas consultas agendadas para hoje
+                </CardDescription>
               </div>
-            </CardHeader>
-            <CardContent 
-              className={`transition-all duration-300 ${
-                upcomingSessions.length === 0 
-                  ? 'min-h-[120px]' 
-                  : upcomingSessions.length <= 2 
-                    ? 'min-h-[200px]' 
-                    : upcomingSessions.length <= 4 
-                      ? 'min-h-[350px]' 
-                      : 'min-h-[450px]'
-              }`}
-            >
-              <div className="space-y-4">
-                {upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
-                  <div key={session.id || index} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
-                       <span className="text-sm font-medium text-primary">
-                           {session.clients?.nome ? session.clients.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                         </span>
-                       </div>
-                       <div>
-                         <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(`2000-01-01T${session.horario}`).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
-                      </div>
-                    </div>
-                     <div className="text-right">
-                       <p className="font-medium">{new Date(session.data).toLocaleDateString('pt-BR')}</p>
-                       <Badge 
-                         variant={session.status === 'concluida' ? 'default' : 'secondary'}
-                         className="text-xs"
-                       >
-                         {session.status || 'agendada'}
-                       </Badge>
-                     </div>
-                  </div>
-                )) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-muted-foreground text-center">Nenhuma sessão agendada</p>
-                  </div>
-                )}
-                {upcomingSessions.length > 4 && (
-                  <div className="pt-2 border-t border-border">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="w-full text-primary hover:text-primary/80"
-                      onClick={() => navigate("/agenda")}
-                    >
-                      Ver todas as sessões ({upcomingSessions.length})
-                      <ArrowRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Pagamentos Recentes */}
-          <Card className="shadow-soft">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-secondary" />
-                Pagamentos Recentes
-              </CardTitle>
-              <CardDescription>
-                Últimas transações
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {recentPayments.length > 0 ? recentPayments.map((payment, index) => (
-                  <div key={payment.id || index} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                     <div>
-                       <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
-                       <p className="text-xs text-muted-foreground">
-                         {new Date(payment.data).toLocaleDateString('pt-BR')}
-                       </p>
-                     </div>
-                     <div className="text-right">
-                       <p className="font-medium text-sm">R$ {payment.valor?.toFixed(2) || '0,00'}</p>
-                       <Badge 
-                         variant={payment.status === 'concluida' ? 'default' : 'destructive'}
-                         className="text-xs"
-                       >
-                         {payment.status || 'agendada'}
-                       </Badge>
-                     </div>
-                  </div>
-                )) : (
-                  <p className="text-muted-foreground text-center py-4">Nenhum pagamento registrado</p>
-                )}
-              </div>
-              <Button variant="outline" className="w-full mt-4" size="sm" onClick={() => navigate("/pagamentos")}>
-                Ver Todos <ArrowRight className="w-4 h-4 ml-2" />
+              <Button variant="outline" size="sm" onClick={() => navigate("/agenda")}>
+                Ver Agenda <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </CardHeader>
+          <CardContent 
+            className={`transition-all duration-300 ${
+              upcomingSessions.length === 0 
+                ? 'h-[120px]' 
+                : upcomingSessions.length <= 2 
+                  ? 'max-h-[280px]' 
+                  : upcomingSessions.length <= 4 
+                    ? 'max-h-[450px]' 
+                    : 'max-h-[550px]'
+            }`}
+          >
+            <div className="space-y-4">
+              {upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
+                <div key={session.id || index} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
+                     <span className="text-sm font-medium text-primary">
+                         {session.clients?.nome ? session.clients.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
+                       </span>
+                     </div>
+                     <div>
+                       <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {new Date(`2000-01-01T${session.horario}`).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                   <div className="text-right">
+                     <p className="font-medium">{new Date(session.data).toLocaleDateString('pt-BR')}</p>
+                     <Badge 
+                       variant={session.status === 'concluida' ? 'default' : 'secondary'}
+                       className="text-xs"
+                     >
+                       {session.status || 'agendada'}
+                     </Badge>
+                   </div>
+                </div>
+              )) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground text-center">Nenhuma sessão agendada</p>
+                </div>
+              )}
+              {upcomingSessions.length > 4 && (
+                <div className="pt-2 border-t border-border">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-primary hover:text-primary/80"
+                    onClick={() => navigate("/agenda")}
+                  >
+                    Ver todas as sessões ({upcomingSessions.length})
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
-        {/* Ações Rápidas e Upgrade */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Ações Rápidas */}
-          <Card className="lg:col-span-2 shadow-soft">
+        {/* Pagamentos Recentes - Independente */}
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5 text-secondary" />
+              Pagamentos Recentes
+            </CardTitle>
+            <CardDescription>
+              Últimas transações
+            </CardDescription>
+          </CardHeader>
+          <CardContent className={`${
+            recentPayments.length === 0 
+              ? 'h-[120px]' 
+              : recentPayments.length <= 2 
+                ? 'max-h-[200px]' 
+                : recentPayments.length <= 4 
+                  ? 'max-h-[320px]' 
+                  : 'max-h-[400px]'
+          } transition-all duration-300`}>
+            <div className="space-y-3">
+              {recentPayments.length > 0 ? recentPayments.map((payment, index) => (
+                <div key={payment.id || index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                   <div>
+                     <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
+                     <p className="text-xs text-muted-foreground">
+                       {new Date(payment.data).toLocaleDateString('pt-BR')}
+                     </p>
+                   </div>
+                   <div className="text-right">
+                     <p className="font-medium text-sm">R$ {payment.valor?.toFixed(2) || '0,00'}</p>
+                     <Badge 
+                       variant={payment.status === 'concluida' ? 'default' : 'destructive'}
+                       className="text-xs"
+                     >
+                       {payment.status || 'agendada'}
+                     </Badge>
+                   </div>
+                </div>
+              )) : (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-muted-foreground text-center py-4">Nenhum pagamento registrado</p>
+                </div>
+              )}
+            </div>
+            <Button variant="outline" className="w-full mt-4" size="sm" onClick={() => navigate("/pagamentos")}>
+              Ver Todos <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Ações Rápidas - Independente */}
+        <Card className="shadow-soft">
             <CardHeader>
               <CardTitle>Ações Rápidas</CardTitle>
               <CardDescription>
@@ -684,9 +690,8 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Upgrade de Plano */}
-          <UpgradePlanCard currentPlan={userPlan} />
-        </div>
+        {/* Upgrade de Plano - Independente */}
+        <UpgradePlanCard currentPlan={userPlan} />
 
         {/* Alertas */}
         <Card className="shadow-soft border-warning/20 bg-warning/5">
