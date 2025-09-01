@@ -3,12 +3,15 @@ import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
 import WhatsAppButton from "@/components/WhatsAppButton"
+import { useAuth } from "@/hooks/useAuth"
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
 export function Layout({ children }: LayoutProps) {
+  const { user } = useAuth()
+  
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background">
@@ -36,7 +39,7 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </div>
-        <WhatsAppButton />
+        {user && <WhatsAppButton />}
       </div>
     </SidebarProvider>
   )

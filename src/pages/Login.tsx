@@ -154,37 +154,37 @@ const Login = () => {
 
         {/* Features Cards */}
         <div className="grid grid-cols-1 gap-3 mb-6">
-          <div className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border shadow-soft">
+          <div className="flex items-center gap-3 p-3 bg-card/80 rounded-lg border border-border/50 shadow-soft backdrop-blur-sm">
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
               <Brain className="w-4 h-4 text-primary" />
             </div>
             <div className="text-sm">
-              <p className="font-medium">Gestão Completa</p>
+              <p className="font-medium text-foreground">Gestão Completa</p>
               <p className="text-muted-foreground text-xs">Agenda, clientes e pagamentos</p>
             </div>
           </div>
-          <div className="flex items-center gap-3 p-3 bg-card rounded-lg border border-border shadow-soft">
+          <div className="flex items-center gap-3 p-3 bg-card/80 rounded-lg border border-border/50 shadow-soft backdrop-blur-sm">
             <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
               <Heart className="w-4 h-4 text-secondary" />
             </div>
             <div className="text-sm">
-              <p className="font-medium">Foco no Cuidado</p>
+              <p className="font-medium text-foreground">Foco no Cuidado</p>
               <p className="text-muted-foreground text-xs">Mais tempo para seus pacientes</p>
             </div>
           </div>
         </div>
 
         {/* Formulários */}
-        <Card className="shadow-large border-border">
+        <Card className="shadow-elegant border-border/50 bg-gradient-card backdrop-blur-sm">
           <Tabs defaultValue="login" className="w-full">
-            <CardHeader className="pb-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="register">Criar Conta</TabsTrigger>
+            <CardHeader className="pb-4 bg-transparent">
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                <TabsTrigger value="login" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Entrar</TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Criar Conta</TabsTrigger>
               </TabsList>
             </CardHeader>
 
-            <CardContent>
+            <CardContent className="bg-transparent">
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">

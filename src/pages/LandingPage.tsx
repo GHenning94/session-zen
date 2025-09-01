@@ -5,15 +5,35 @@ import {
   Stethoscope, Calendar, Users, DollarSign, TrendingUp,
   CheckCircle, Star, ArrowRight, Brain, Heart, Shield, Clock,
   GraduationCap, MessageCircle, Target, BookOpen, Activity,
-  BarChart3, User
+  BarChart3, User, Sparkles
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
-import WhatsAppButton from "@/components/WhatsAppButton"
+import { useState, useEffect } from "react"
 
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
+  const [typedText, setTypedText] = useState("")
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const fullText = "atendimentos"
+
+  useEffect(() => {
+    if (currentIndex < fullText.length) {
+      const timeout = setTimeout(() => {
+        setTypedText(fullText.slice(0, currentIndex + 1))
+        setCurrentIndex(currentIndex + 1)
+      }, 150)
+      return () => clearTimeout(timeout)
+    } else {
+      // Reset after showing full text for 2 seconds
+      const resetTimeout = setTimeout(() => {
+        setCurrentIndex(0)
+        setTypedText("")
+      }, 3000)
+      return () => clearTimeout(resetTimeout)
+    }
+  }, [currentIndex, fullText])
 
   const features = [
     { icon: Calendar, title: "Agendamento Inteligente", description: "Gerencie sua agenda com facilidade e evite conflitos de horários" },
@@ -67,7 +87,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">atendimentos</span> com facilidade
+              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative">
+                {typedText}
+                <span className="animate-pulse">|</span>
+              </span> com facilidade
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.
@@ -91,15 +114,16 @@ const LandingPage = () => {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {features.map((feature, index) => (
-              <Card key={index} className="text-center shadow-soft hover:shadow-medium transition-shadow">
-                <CardHeader>
-                  <div className="w-16 h-16 bg-gradient-primary/10 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                    <feature.icon className="w-8 h-8 text-primary" />
+              <Card key={index} className="text-center shadow-elegant hover:shadow-glow transition-all duration-500 hover:scale-105 group bg-gradient-to-br from-card via-card to-card/50 border-border/50 backdrop-blur-sm relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <CardHeader className="relative z-10">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary-glow rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-glow group-hover:scale-110 transition-transform duration-500">
+                    <feature.icon className="w-8 h-8 text-white" />
                   </div>
-                  <CardTitle className="text-xl">{feature.title}</CardTitle>
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors duration-300">{feature.title}</CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground">{feature.description}</p>
+                <CardContent className="relative z-10">
+                  <p className="text-muted-foreground group-hover:text-foreground transition-colors duration-300">{feature.description}</p>
                 </CardContent>
               </Card>
             ))}
@@ -116,11 +140,14 @@ const LandingPage = () => {
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {professionals.map((prof, index) => (
-              <Card key={index} className="text-center p-6 shadow-soft hover:shadow-medium transition-shadow">
-                <div className="w-12 h-12 bg-gradient-secondary/10 rounded-full flex items-center justify-center mx-auto mb-3">
-                  <prof.icon className="w-6 h-6 text-secondary" />
+              <Card key={index} className="text-center p-6 shadow-elegant hover:shadow-glow transition-all duration-300 hover:scale-105 group bg-gradient-to-br from-card to-card/80 border-border/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-secondary/10 via-transparent to-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="relative z-10">
+                  <div className="w-12 h-12 bg-gradient-to-br from-secondary to-secondary/80 rounded-full flex items-center justify-center mx-auto mb-3 shadow-soft group-hover:shadow-glow group-hover:scale-110 transition-all duration-300">
+                    <prof.icon className="w-6 h-6 text-white" />
+                  </div>
+                  <p className="font-medium text-sm group-hover:text-secondary transition-colors duration-300">{prof.name}</p>
                 </div>
-                <p className="font-medium text-sm">{prof.name}</p>
               </Card>
             ))}
           </div>
@@ -334,7 +361,6 @@ const LandingPage = () => {
           <p className="text-muted-foreground text-sm">© 2025 TherapyPro. Todos os direitos reservados.</p>
         </div>
       </footer>
-      <WhatsAppButton />
     </div>
   )
 }
