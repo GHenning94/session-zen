@@ -78,7 +78,20 @@ export function formatDateBR(date: string | Date | null | undefined): string {
   if (!date) return '--'
   
   try {
-    const dateObj = typeof date === 'string' ? new Date(date) : date
+    let dateObj: Date
+    
+    if (typeof date === 'string') {
+      // Se é string no formato YYYY-MM-DD, criar data local para evitar timezone issues
+      if (date.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = date.split('-').map(Number)
+        dateObj = new Date(year, month - 1, day)
+      } else {
+        dateObj = new Date(date)
+      }
+    } else {
+      dateObj = date
+    }
+    
     return dateObj.toLocaleDateString('pt-BR')
   } catch {
     return '--'
