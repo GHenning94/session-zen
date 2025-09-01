@@ -624,12 +624,28 @@ const Dashboard = () => {
                        <div className="h-64">
                          <ResponsiveContainer width="100%" height="100%">
                            <BarChart 
-                              data={monthlyChart.filter((_, index) => {
-                                if (chartPeriod === '12') return true;
-                                if (chartPeriod === '6') return index >= 6;
-                                if (chartPeriod === '3') return index >= 9;
-                                return index >= 11; // 1 mês = último mês
-                              })}
+                              data={(() => {
+                                const totalMonths = monthlyChart.length;
+                                let startIndex = 0;
+                                
+                                switch(chartPeriod) {
+                                  case '1':
+                                    startIndex = totalMonths - 1; // Último mês apenas
+                                    break;
+                                  case '3':
+                                    startIndex = Math.max(0, totalMonths - 3); // Últimos 3 meses
+                                    break;
+                                  case '6':
+                                    startIndex = Math.max(0, totalMonths - 6); // Últimos 6 meses
+                                    break;
+                                  case '12':
+                                  default:
+                                    startIndex = 0; // Todos os 12 meses
+                                    break;
+                                }
+                                
+                                return monthlyChart.slice(startIndex);
+                              })()}
                              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                            >
                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -677,30 +693,93 @@ const Dashboard = () => {
                          </ResponsiveContainer>
                        </div>
                       
-                       {/* Estatísticas do período */}
-                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
-                          <div className="text-center">
-                            <p className="text-2xl font-bold text-primary">
-                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : chartPeriod === '3' ? index >= 9 : index >= 11).reduce((sum, item) => sum + item.receita, 0))}
-                            </p>
-                            <p className="text-sm text-muted-foreground">Total Recebido</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-2xl font-bold text-destructive">
-                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : chartPeriod === '3' ? index >= 9 : index >= 11).reduce((sum, item) => sum + (item.aReceber || 0), 0))}
-                            </p>
-                            <p className="text-sm text-muted-foreground">A Receber</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="text-2xl font-bold text-secondary">
-                              {(() => {
-                                const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : chartPeriod === '3' ? index >= 9 : index >= 11);
-                                return formatCurrencyBR(filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length) : 0);
-                              })()}
-                            </p>
-                            <p className="text-sm text-muted-foreground">Média Mensal</p>
-                          </div>
-                       </div>
+                        {/* Estatísticas do período */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
+                           <div className="text-center">
+                             <p className="text-2xl font-bold text-primary">
+                               {(() => {
+                                 const totalMonths = monthlyChart.length;
+                                 let startIndex = 0;
+                                 
+                                 switch(chartPeriod) {
+                                   case '1':
+                                     startIndex = totalMonths - 1;
+                                     break;
+                                   case '3':
+                                     startIndex = Math.max(0, totalMonths - 3);
+                                     break;
+                                   case '6':
+                                     startIndex = Math.max(0, totalMonths - 6);
+                                     break;
+                                   case '12':
+                                   default:
+                                     startIndex = 0;
+                                     break;
+                                 }
+                                 
+                                 const filteredData = monthlyChart.slice(startIndex);
+                                 return formatCurrencyBR(filteredData.reduce((sum, item) => sum + item.receita, 0));
+                               })()}
+                             </p>
+                             <p className="text-sm text-muted-foreground">Total Recebido</p>
+                           </div>
+                           <div className="text-center">
+                             <p className="text-2xl font-bold text-destructive">
+                               {(() => {
+                                 const totalMonths = monthlyChart.length;
+                                 let startIndex = 0;
+                                 
+                                 switch(chartPeriod) {
+                                   case '1':
+                                     startIndex = totalMonths - 1;
+                                     break;
+                                   case '3':
+                                     startIndex = Math.max(0, totalMonths - 3);
+                                     break;
+                                   case '6':
+                                     startIndex = Math.max(0, totalMonths - 6);
+                                     break;
+                                   case '12':
+                                   default:
+                                     startIndex = 0;
+                                     break;
+                                 }
+                                 
+                                 const filteredData = monthlyChart.slice(startIndex);
+                                 return formatCurrencyBR(filteredData.reduce((sum, item) => sum + (item.aReceber || 0), 0));
+                               })()}
+                             </p>
+                             <p className="text-sm text-muted-foreground">A Receber</p>
+                           </div>
+                           <div className="text-center">
+                             <p className="text-2xl font-bold text-secondary">
+                               {(() => {
+                                 const totalMonths = monthlyChart.length;
+                                 let startIndex = 0;
+                                 
+                                 switch(chartPeriod) {
+                                   case '1':
+                                     startIndex = totalMonths - 1;
+                                     break;
+                                   case '3':
+                                     startIndex = Math.max(0, totalMonths - 3);
+                                     break;
+                                   case '6':
+                                     startIndex = Math.max(0, totalMonths - 6);
+                                     break;
+                                   case '12':
+                                   default:
+                                     startIndex = 0;
+                                     break;
+                                 }
+                                 
+                                 const filteredData = monthlyChart.slice(startIndex);
+                                 return formatCurrencyBR(filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length) : 0);
+                               })()}
+                             </p>
+                             <p className="text-sm text-muted-foreground">Média Mensal</p>
+                           </div>
+                        </div>
                     </CardContent>
                   </Card>
                 </div>
