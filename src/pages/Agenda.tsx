@@ -188,10 +188,13 @@ const Agenda = () => {
     "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30"
   ]
 
-  const todaySessionsCount = sessions.filter(session => {
+  // Calcular estatísticas baseadas na data selecionada
+  const selectedDateSessions = sessions.filter(session => {
     const sessionDate = new Date(session.data)
     return sessionDate.toDateString() === selectedDate.toDateString()
-  }).length
+  })
+  
+  const todaySessionsCount = selectedDateSessions.length
 
   return (
     <Layout>
@@ -443,8 +446,7 @@ const Agenda = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-success">
-                R$ {sessions
-                  .filter(s => s.data === selectedDate.toISOString().split('T')[0])
+                R$ {selectedDateSessions
                   .reduce((sum, s) => sum + (s.valor || 0), 0)
                   .toFixed(2)
                 }

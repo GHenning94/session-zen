@@ -65,6 +65,11 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
     setCurrentTime(new Date())
   }, 60000) // 60 segundos
   
+  // Atualizar hora inicial
+  useEffect(() => {
+    setCurrentTime(new Date())
+  }, [])
+  
   const daySessionsData = sessions.filter(session => {
     return session.data === format(currentDate, 'yyyy-MM-dd')
   })
