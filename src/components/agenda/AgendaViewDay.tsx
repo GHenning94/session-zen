@@ -58,8 +58,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
 }) => {
   const [draggedSession, setDraggedSession] = useState<string | null>(null)
   const daySessionsData = sessions.filter(session => {
-    const sessionDate = new Date(session.data)
-    return isSameDay(sessionDate, currentDate)
+    return session.data === format(currentDate, 'yyyy-MM-dd')
   })
 
   const hours = Array.from({ length: 24 }, (_, i) => i)
@@ -155,20 +154,19 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                       <CardContent className="p-2">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
-                            <div className="flex items-center gap-1 mb-1">
-                              <Clock className="h-3 w-3" />
-                              <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
-                            </div>
-                            <div className="flex items-center gap-1 mb-1">
-                              <User className="h-3 w-3" />
-                              <span className="text-xs">
-                                {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
+                              </div>
+                              <div className="flex items-center gap-1">
+                                <User className="h-3 w-3" />
+                                <span className="text-xs truncate">
+                                  {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
+                                </span>
+                              </div>
                             </div>
                             <div className="flex items-center gap-1">
-                              <Badge variant="outline" className="text-xs px-1 py-0">
-                                {session.status}
-                              </Badge>
                               {session.valor && (
                                 <span className="text-xs text-success font-medium">
                                   R$ {Number(session.valor).toFixed(2)}

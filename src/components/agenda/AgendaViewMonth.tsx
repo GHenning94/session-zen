@@ -162,19 +162,18 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                         onEditSession(session)
                       }}
                     >
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatTimeBR(session.horario)}</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimeBR(session.horario)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="truncate">
+                            {getClientName(session.client_id)}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <User className="h-3 w-3" />
-                        <span className="truncate">
-                          {getClientName(session.client_id)}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {session.status}
-                      </Badge>
 
                       <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                         <Button

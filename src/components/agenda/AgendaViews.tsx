@@ -66,8 +66,7 @@ export const AgendaViews = () => {
 
   const getSessionsForDate = (date: Date) => {
     return sessions.filter(session => {
-      const sessionDate = new Date(session.data)
-      return isSameDay(sessionDate, date)
+      return session.data === format(date, 'yyyy-MM-dd')
     })
   }
 
@@ -209,19 +208,18 @@ export const AgendaViews = () => {
                       draggable
                       onDragStart={(e) => handleDragStart(e, session)}
                     >
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        <span>{formatTimeBR(session.horario)}</span>
+                      <div className="flex items-center gap-2 text-xs">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          <span>{formatTimeBR(session.horario)}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          <span className="truncate">
+                            {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <User className="h-3 w-3" />
-                        <span className="truncate">
-                          {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
-                        </span>
-                      </div>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {session.status}
-                      </Badge>
                       
                       {/* Action buttons */}
                       <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">

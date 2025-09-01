@@ -53,9 +53,8 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
 
   const getSessionsForDateTime = (date: Date, hour: number) => {
     return sessions.filter(session => {
-      const sessionDate = new Date(session.data)
       const sessionHour = parseInt(session.horario.split(':')[0])
-      return isSameDay(sessionDate, date) && sessionHour === hour
+      return session.data === format(date, 'yyyy-MM-dd') && sessionHour === hour
     })
   }
 
@@ -165,19 +164,18 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             }}
                           >
                             <CardContent className="p-2">
-                              <div className="flex items-center gap-1 mb-1">
-                                <Clock className="h-3 w-3" />
-                                <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
+                              <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-3 w-3" />
+                                  <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <User className="h-3 w-3" />
+                                  <span className="text-xs truncate">
+                                    {clients.find(c => c.id === session.client_id)?.nome || 'N/A'}
+                                  </span>
+                                </div>
                               </div>
-                              <div className="flex items-center gap-1 mb-1">
-                                <User className="h-3 w-3" />
-                                <span className="text-xs truncate">
-                                  {clients.find(c => c.id === session.client_id)?.nome || 'N/A'}
-                                </span>
-                              </div>
-                              <Badge variant="outline" className="text-xs px-1 py-0">
-                                {session.status}
-                              </Badge>
                               
                               <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                                 <Button
