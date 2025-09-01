@@ -6,6 +6,7 @@ import { Clock, User, Edit, Trash2 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { formatTimeBR } from "@/utils/formatters"
 
 interface AgendaViewMonthProps {
   selectedDate: Date
@@ -156,7 +157,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                     >
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        <span>{session.horario}</span>
+                        <span>{formatTimeBR(session.horario)}</span>
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <User className="h-3 w-3" />

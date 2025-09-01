@@ -12,6 +12,7 @@ import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
+import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 
 interface Session {
   id: string
@@ -250,7 +251,7 @@ export default function Sessoes() {
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-green-600">
-                R$ {stats.totalFaturado.toFixed(2)}
+                {formatCurrencyBR(stats.totalFaturado)}
               </div>
               <p className="text-xs text-muted-foreground">Total Faturado</p>
             </CardContent>
@@ -350,13 +351,13 @@ export default function Sessoes() {
                       <div className="flex items-center gap-2">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm">
-                          {format(new Date(session.data), "dd/MM/yyyy", { locale: ptBR })}
+                          {formatDateBR(session.data)}
                         </span>
                       </div>
                       
                       <div className="flex items-center gap-2">
                         <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{session.horario}</span>
+                        <span className="text-sm">{formatTimeBR(session.horario)}</span>
                       </div>
                       
                       <Badge variant={getStatusColor(session.status)}>
@@ -365,7 +366,7 @@ export default function Sessoes() {
                       
                       {session.valor && (
                         <span className="text-sm font-medium text-green-600">
-                          R$ {session.valor.toFixed(2)}
+                          {formatCurrencyBR(session.valor)}
                         </span>
                       )}
                     </div>
@@ -413,13 +414,13 @@ export default function Sessoes() {
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
                             <span className="text-sm">
-                              {format(new Date(note.sessions.data), "dd/MM/yyyy", { locale: ptBR })}
+                              {formatDateBR(note.sessions.data)}
                             </span>
                           </div>
                           
                           <div className="flex items-center gap-2">
                             <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{note.sessions.horario}</span>
+                            <span className="text-sm">{formatTimeBR(note.sessions.horario)}</span>
                           </div>
                         </>
                       )}

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import { DollarSign, Calendar } from "lucide-react"
+import { formatCurrencyBR, formatTimeBR } from "@/utils/formatters"
 
 interface NewPaymentModalProps {
   open: boolean
@@ -90,7 +91,7 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
       const clientName = getClientName(session.client_id)
       return {
         ...session,
-        label: `${clientName} - ${sessionDate} ${session.horario} (R$ ${session.valor?.toFixed(2) || '0,00'})`
+        label: `${clientName} - ${sessionDate} ${formatTimeBR(session.horario)} (${formatCurrencyBR(session.valor)})`
       }
     })
   }

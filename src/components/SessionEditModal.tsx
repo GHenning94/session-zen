@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { formatCurrencyBR } from "@/utils/formatters"
 
 interface SessionEditModalProps {
   session: any
@@ -137,11 +138,12 @@ export const SessionEditModal = ({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="valor">Valor (R$)</Label>
+              <Label htmlFor="valor">Valor</Label>
               <Input
                 id="valor"
                 type="number"
                 step="0.01"
+                placeholder="Ex: 150.00"
                 value={formData.valor}
                 onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
               />

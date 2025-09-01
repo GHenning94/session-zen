@@ -22,6 +22,7 @@ import { NewSessionModal } from "@/components/NewSessionModal"
 import { NewClientModal } from "@/components/NewClientModal"
 import { NewPaymentModal } from "@/components/NewPaymentModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
+import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -30,6 +31,7 @@ const Dashboard = () => {
     sessionsToday: 0,
     activeClients: 0,
     monthlyRevenue: 0,
+    pendingRevenue: 0,
     completionRate: 94
   })
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([])
@@ -151,6 +153,18 @@ const Dashboard = () => {
       const monthlyRevenue = monthlyPayments?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
       console.log('💰 Receita mensal calculada:', monthlyRevenue)
 
+      // Calcular valores a receber (sessões não pagas/atrasadas)
+      const { data: pendingSessions } = await supabase
+        .from('sessions')
+        .select('valor, data, status')
+        .eq('user_id', user?.id)
+        .in('status', ['agendada'])
+        .lt('data', new Date().toISOString().split('T')[0])
+
+      console.log('💸 Sessões pendentes encontradas:', pendingSessions)
+      const pendingRevenue = pendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
+      console.log('💸 Receita pendente calculada:', pendingRevenue)
+
       // Carregar próximas sessões (apenas futuras - hoje em diante)
       const now = new Date()
       const todayStr = now.toISOString().split('T')[0]
@@ -205,9 +219,20 @@ const Dashboard = () => {
           .gte('data', monthStartStr)
           .lte('data', monthEndStr)
         
+        // Buscar sessões pendentes/atrasadas do mesmo período
+        const { data: monthPendingSessions } = await supabase
+          .from('sessions')
+          .select('valor')
+          .eq('user_id', user?.id)
+          .in('status', ['agendada'])
+          .gte('data', monthStartStr)
+          .lte('data', monthEndStr)
+          .lt('data', new Date().toISOString().split('T')[0])
+        
         console.log(`💰 Sessões do mês ${date.getMonth() + 1}/${date.getFullYear()}:`, monthSessions)
         const revenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-        console.log(`💰 Receita calculada:`, revenue)
+        const pending = monthPendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
+        console.log(`💰 Receita calculada: ${revenue}, Pendente: ${pending}`)
         
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -215,6 +240,7 @@ const Dashboard = () => {
         chartData.push({
           mes: monthNames[date.getMonth()],
           receita: revenue,
+          aReceber: pending,
           fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
       }
@@ -271,6 +297,7 @@ const Dashboard = () => {
         sessionsToday: todaySessions?.length || 0,
         activeClients: clientsCount || 0,
         monthlyRevenue,
+        pendingRevenue,
         completionRate: 94
       })
 
@@ -322,7 +349,7 @@ const Dashboard = () => {
     },
     {
       title: "Receita Mensal",
-      value: `R$ ${dashboardData.monthlyRevenue.toFixed(2)}`,
+      value: formatCurrencyBR(dashboardData.monthlyRevenue),
       change: "+15% vs mês anterior",
       icon: DollarSign,
       color: "text-success",
@@ -416,13 +443,13 @@ const Dashboard = () => {
                        </div>
                        <div>
                          <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {new Date(`2000-01-01T${session.horario}`).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                        </p>
+                         <p className="text-sm text-muted-foreground">
+                           {formatTimeBR(session.horario)}
+                         </p>
                       </div>
                     </div>
-                     <div className="text-right">
-                       <p className="font-medium">{new Date(session.data).toLocaleDateString('pt-BR')}</p>
+                      <div className="text-right">
+                        <p className="font-medium">{formatDateBR(session.data)}</p>
                        <Badge 
                          variant={session.status === 'concluida' ? 'default' : 'secondary'}
                          className="text-xs"
@@ -468,14 +495,14 @@ const Dashboard = () => {
               <div className="space-y-3">
                 {recentPayments.length > 0 ? recentPayments.map((payment, index) => (
                   <div key={payment.id || index} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                     <div>
-                       <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
-                       <p className="text-xs text-muted-foreground">
-                         {new Date(payment.data).toLocaleDateString('pt-BR')}
-                       </p>
-                     </div>
-                     <div className="text-right">
-                       <p className="font-medium text-sm">R$ {payment.valor?.toFixed(2) || '0,00'}</p>
+                      <div>
+                        <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDateBR(payment.data)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
                        <Badge 
                          variant={payment.status === 'concluida' ? 'default' : 'destructive'}
                          className="text-xs"
@@ -581,56 +608,63 @@ const Dashboard = () => {
                                tick={{ fontSize: 12 }}
                                tickLine={false}
                                axisLine={false}
-                               tickFormatter={(value) => `R$ ${value}`}
+                               tickFormatter={(value) => formatCurrencyBR(value)}
                              />
-                             <Tooltip 
-                               formatter={(value: any) => [`R$ ${value.toFixed(2)}`, 'Receita']}
-                               labelFormatter={(label) => {
-                                 const month = monthlyChart.find(item => item.mes === label);
-                                 return month ? month.fullMonth : label;
-                               }}
-                               contentStyle={{
-                                 backgroundColor: 'hsl(var(--background))',
-                                 border: '1px solid hsl(var(--border))',
-                                 borderRadius: '6px'
-                               }}
-                             />
-                             <Bar 
-                               dataKey="receita" 
-                               fill="hsl(var(--primary))" 
-                               radius={[4, 4, 0, 0]}
-                               className="hover:opacity-80 transition-opacity"
-                             />
+                              <Tooltip 
+                                formatter={(value: any, name: string) => {
+                                  if (name === 'receita') return [formatCurrencyBR(value), 'Receita']
+                                  if (name === 'aReceber') return [formatCurrencyBR(value), 'A Receber']
+                                  return [formatCurrencyBR(value), name]
+                                }}
+                                labelFormatter={(label) => {
+                                  const month = monthlyChart.find(item => item.mes === label);
+                                  return month ? month.fullMonth : label;
+                                }}
+                                contentStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '6px'
+                                }}
+                              />
+                              <Bar 
+                                dataKey="receita" 
+                                fill="hsl(var(--primary))" 
+                                radius={[4, 4, 0, 0]}
+                                className="hover:opacity-80 transition-opacity"
+                              />
+                              <Bar 
+                                dataKey="aReceber" 
+                                fill="hsl(var(--destructive))" 
+                                radius={[4, 4, 0, 0]}
+                                className="hover:opacity-80 transition-opacity"
+                              />
                            </BarChart>
                          </ResponsiveContainer>
                        </div>
                       
                        {/* Estatísticas do período */}
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
-                         <div className="text-center">
-                           <p className="text-2xl font-bold text-primary">
-                             R$ {monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9).reduce((sum, item) => sum + item.receita, 0).toFixed(2)}
-                           </p>
-                           <p className="text-sm text-muted-foreground">Total do Período</p>
-                         </div>
-                         <div className="text-center">
-                           <p className="text-2xl font-bold text-secondary">
-                             R$ {(() => {
-                               const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9);
-                               return filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length).toFixed(2) : '0.00';
-                             })()}
-                           </p>
-                           <p className="text-sm text-muted-foreground">Média Mensal</p>
-                         </div>
-                         <div className="text-center">
-                           <p className="text-2xl font-bold text-success">
-                             R$ {(() => {
-                               const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9);
-                               return filteredData.length > 0 ? Math.max(...filteredData.map(item => item.receita)).toFixed(2) : '0.00';
-                             })()}
-                           </p>
-                           <p className="text-sm text-muted-foreground">Melhor Mês</p>
-                         </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-primary">
+                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9).reduce((sum, item) => sum + item.receita, 0))}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Total Recebido</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-destructive">
+                              {formatCurrencyBR(monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9).reduce((sum, item) => sum + (item.aReceber || 0), 0))}
+                            </p>
+                            <p className="text-sm text-muted-foreground">A Receber</p>
+                          </div>
+                          <div className="text-center">
+                            <p className="text-2xl font-bold text-secondary">
+                              {(() => {
+                                const filteredData = monthlyChart.filter((_, index) => chartPeriod === '12' ? true : chartPeriod === '6' ? index >= 6 : index >= 9);
+                                return formatCurrencyBR(filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length) : 0);
+                              })()}
+                            </p>
+                            <p className="text-sm text-muted-foreground">Média Mensal</p>
+                          </div>
                        </div>
                     </CardContent>
                   </Card>
@@ -660,7 +694,7 @@ const Dashboard = () => {
                             <div className="flex-1 min-w-0">
                               <p className="font-medium truncate">{client.nome}</p>
                               <p className="text-sm text-muted-foreground">
-                                {new Date(client.created_at).toLocaleDateString('pt-BR')}
+                                {formatDateBR(client.created_at)}
                               </p>
                               {client.telefone && (
                                 <p className="text-xs text-muted-foreground truncate">{client.telefone}</p>

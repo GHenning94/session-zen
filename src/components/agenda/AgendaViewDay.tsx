@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
+import { formatTimeBR } from '@/utils/formatters'
 
 interface Session {
   id: string
@@ -162,7 +163,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
                               <Clock className="h-4 w-4" />
-                              <span className="text-sm font-medium">{session.horario}</span>
+                              <span className="text-sm font-medium">{formatTimeBR(session.horario)}</span>
                             </div>
                             <div className="flex items-center gap-2 mb-2">
                               <User className="h-4 w-4" />

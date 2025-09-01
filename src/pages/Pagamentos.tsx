@@ -26,6 +26,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { generateReceiptPDF } from "@/utils/receiptGenerator"
 import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
+import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -312,7 +313,7 @@ const Pagamentos = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-success">
-                R$ {totalReceived.toFixed(2)}
+                {formatCurrencyBR(totalReceived)}
               </div>
               <p className="text-xs text-muted-foreground">{paidCount} pagamentos confirmados</p>
             </CardContent>
@@ -325,7 +326,7 @@ const Pagamentos = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-warning">
-                R$ {totalPending.toFixed(2)}
+                {formatCurrencyBR(totalPending)}
               </div>
               <p className="text-sm text-muted-foreground">{pendingCount} pagamentos pendentes</p>
             </CardContent>
@@ -430,14 +431,14 @@ const Pagamentos = () => {
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="w-3 h-3" />
-                            <span>{new Date(payment.date).toLocaleDateString('pt-BR')} às {payment.time}</span>
+                            <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="font-bold text-lg">R$ {payment.value?.toFixed(2) || '0,00'}</p>
+                          <p className="font-bold text-lg">{formatCurrencyBR(payment.value)}</p>
                           <p className="text-xs text-muted-foreground">{payment.method}</p>
                         </div>
                         
@@ -504,7 +505,7 @@ const Pagamentos = () => {
                 <div className="space-y-2">
                   <div className="flex justify-between">
                     <span>Janeiro 2024</span>
-                    <span className="font-bold">R$ {totalReceived.toFixed(2)}</span>
+                    <span className="font-bold">{formatCurrencyBR(totalReceived)}</span>
                   </div>
                   <div className="text-sm text-muted-foreground">
                     Meta: R$ 5.000,00 ({((totalReceived / 5000) * 100).toFixed(1)}%)
