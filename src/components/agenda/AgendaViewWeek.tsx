@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Clock, User, Trash, Plus } from 'lucide-react'
@@ -48,6 +48,17 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
   const hours = Array.from({ length: 12 }, (_, i) => i + 8) // 8h às 19h
+  
+  // Current time tracking for red line
+  const [, setCurrentTime] = useState(new Date())
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(new Date())
+    }, 60000) // Update every minute
+    
+    return () => clearInterval(interval)
+  }, [])
   
   console.log('🗓️ AgendaViewWeek dados:', { currentDate, weekStart, days: days.length, hours: hours.length })
 
@@ -121,7 +132,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                     <div
                       key={`${day.getTime()}-${hour}`}
                       className={cn(
-                        "min-h-[80px] p-2 border border-border cursor-pointer hover:bg-accent/20 transition-colors",
+                        "min-h-[80px] p-2 border border-border cursor-pointer hover:bg-accent/20 transition-colors relative",
                         isSameDay(day, new Date()) && "bg-primary/5"
                       )}
                       onClick={() => onCreateSession?.(day, `${String(hour).padStart(2, '0')}:00`)}
@@ -144,6 +155,30 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                         }
                       }}
                     >
+                      {/* Current time red line for today only */}
+                      {(() => {
+                        const now = new Date()
+                        const isToday = isSameDay(day, now)
+                        const currentHour = now.getHours()
+                        const currentMinute = now.getMinutes()
+                        
+                        if (isToday && currentHour === hour) {
+                          const currentTimePosition = (currentMinute / 60) * 100
+                          return (
+                            <div 
+                              className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                              style={{ top: `${currentTimePosition}%` }}
+                            >
+                              <div className="w-1 h-1 bg-red-500 rounded-full mr-1" />
+                              <div className="flex-1 h-0.5 bg-red-500" />
+                              <span className="text-xs text-red-500 ml-1 bg-white px-1 rounded text-[10px]">
+                                {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                              </span>
+                            </div>
+                          )
+                        }
+                        return null
+                      })()}
                       <div className="space-y-1">
                         {daySessions.map((session) => (
                           <Card 

@@ -206,6 +206,21 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
           </div>
           
           <div className="grid gap-2">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="sessaoExterna"
+                checked={paymentData.sessaoExterna}
+                onChange={(e) => setPaymentData({...paymentData, sessaoExterna: e.target.checked})}
+                className="w-4 h-4"
+              />
+              <Label htmlFor="sessaoExterna" className="text-sm">
+                Sessão realizada por fora da plataforma
+              </Label>
+            </div>
+          </div>
+          
+          <div className="grid gap-2">
             <Label htmlFor="valor">Valor (R$) *</Label>
             <Input 
               id="valor"
@@ -232,20 +247,6 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
             </Select>
           </div>
           
-          <div className="grid gap-2">
-            <div className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id="sessaoExterna"
-                checked={paymentData.sessaoExterna}
-                onChange={(e) => setPaymentData({...paymentData, sessaoExterna: e.target.checked})}
-                className="w-4 h-4"
-              />
-              <Label htmlFor="sessaoExterna" className="text-sm">
-                Sessão realizada por fora da plataforma
-              </Label>
-            </div>
-          </div>
           
           <div className="grid gap-2">
             <Label htmlFor="data">Data do Pagamento *</Label>

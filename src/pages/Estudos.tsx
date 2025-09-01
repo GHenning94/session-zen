@@ -1,42 +1,51 @@
-import { Layout } from "@/components/Layout";
-import { PlanProtection } from "@/components/PlanProtection";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { BookOpen, Lock } from "lucide-react";
+import { Layout } from '@/components/Layout'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import { BookOpen, Construction, ArrowLeft } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 
-const Estudos = () => {
+export default function Estudos() {
+  const navigate = useNavigate()
+
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center gap-3">
-          <BookOpen className="w-8 h-8 text-primary" />
-          <div>
+      <div className="p-6">
+        <div className="flex items-center gap-4 mb-6">
+          <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Voltar
+          </Button>
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-6 w-6 text-primary" />
             <h1 className="text-2xl font-bold">Estudos</h1>
-            <p className="text-muted-foreground">Materiais e recursos educacionais</p>
           </div>
         </div>
-
-        <PlanProtection feature="Estudos" requiresPremium={true}>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Lock className="w-5 h-5" />
-                Funcionalidade em Desenvolvimento
-              </CardTitle>
-              <CardDescription>
-                Esta funcionalidade está sendo desenvolvida e estará disponível em breve.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">
-                Em breve você terá acesso a materiais de estudo, artigos científicos, 
-                cursos e recursos educacionais para aprimorar sua prática profissional.
-              </p>
-            </CardContent>
-          </Card>
-        </PlanProtection>
+        
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader className="text-center">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-warning/20 rounded-full flex items-center justify-center">
+                <Construction className="h-8 w-8 text-warning" />
+              </div>
+            </div>
+            <CardTitle className="text-xl">Funcionalidade em Desenvolvimento</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center space-y-4">
+            <p className="text-muted-foreground">
+              A funcionalidade de <strong>Estudos</strong> está sendo desenvolvida e estará disponível em breve.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Em breve você terá acesso a materiais de estudo, artigos científicos, 
+              cursos e recursos educacionais para aprimorar sua prática profissional.
+            </p>
+            <div className="pt-4">
+              <Button onClick={() => navigate('/dashboard')}>
+                Voltar ao Dashboard
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </Layout>
-  );
-};
-
-export default Estudos;
+  )
+}

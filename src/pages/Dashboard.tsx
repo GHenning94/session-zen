@@ -489,9 +489,13 @@ const Dashboard = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {recentPayments.length > 0 ? recentPayments.map((payment, index) => (
-                  <div key={payment.id || index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+               <div className="space-y-3">
+                  {recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => (
+                   <div 
+                     key={payment.id || index} 
+                     className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                     onClick={() => navigate(`/pagamentos?highlight=${payment.id}`)}
+                   >
                       <div>
                         <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
                         <p className="text-xs text-muted-foreground">
@@ -501,16 +505,17 @@ const Dashboard = () => {
                       <div className="text-right">
                         <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
                         <Badge 
-                          variant={
-                            payment.status === 'realizada' ? 'default' : 
-                            payment.status === 'agendada' ? 'secondary' : 
-                            'destructive'
-                          }
-                          className="text-xs"
+                          variant="secondary"
+                          className={`text-xs ${
+                            payment.status === 'realizada' ? 'bg-success/10 text-success border-success/20' :
+                            payment.status === 'agendada' ? 'bg-warning/10 text-warning border-warning/20' :
+                            'bg-destructive/10 text-destructive border-destructive/20'
+                          }`}
                         >
-                          {payment.status === 'realizada' ? 'Pago' : 
-                           payment.status === 'agendada' ? 'Pendente' : 
-                           payment.status || 'agendada'}
+                          {payment.status === 'realizada' ? 'Realizada' : 
+                           payment.status === 'agendada' ? 'Agendada' : 
+                           payment.status === 'cancelada' ? 'Cancelada' :
+                           payment.status || 'Agendada'}
                         </Badge>
                      </div>
                   </div>
@@ -730,7 +735,17 @@ const Dashboard = () => {
           </Card>
 
           {/* Upgrade de Plano */}
-          <UpgradePlanCard currentPlan={currentPlan} />
+          <Card className="shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-xl">Planos de Assinatura</CardTitle>
+              <CardDescription>
+                Acesse recursos avançados e expanda sua prática
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <UpgradePlanCard currentPlan={currentPlan} />
+            </CardContent>
+          </Card>
         </div>
 
         {/* Alertas */}
