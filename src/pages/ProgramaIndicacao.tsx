@@ -281,7 +281,7 @@ const ProgramaIndicacao = () => {
                   <p className="text-sm text-muted-foreground">Usuários Ativos</p>
                   <p className="text-2xl font-bold">{stats.activeUsers}</p>
                 </div>
-                <Users className="w-8 h-8 text-green-500" />
+                <Users className="w-8 h-8" style={{ color: 'hsl(142 71% 45%)' }} />
               </div>
             </CardContent>
           </Card>

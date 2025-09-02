@@ -33,7 +33,7 @@ export default function Relatorios() {
       title: 'Relatório de Clientes',
       description: 'Lista completa de clientes com informações detalhadas',
       icon: Users,
-      color: 'bg-green-500'
+      color: 'hsl(142 71% 45%)'
     },
     {
       id: 'sessions',
@@ -62,7 +62,7 @@ export default function Relatorios() {
       title: 'Sessões Este Mês',
       value: sessionsThisMonth.length,
       icon: Calendar,
-      color: 'text-green-600'
+      color: 'hsl(142 71% 45%)'
     },
     {
       title: 'Sessões Realizadas',
@@ -98,7 +98,7 @@ export default function Relatorios() {
                   <CardTitle className="text-sm font-medium">
                     {stat.title}
                   </CardTitle>
-                  <Icon className={`h-4 w-4 ${stat.color}`} />
+                  <Icon className="h-4 w-4" style={{ color: stat.color.startsWith('hsl') ? stat.color : undefined }} />
                 </CardHeader>
                 <CardContent>
                   <div className="text-2xl font-bold">{stat.value}</div>

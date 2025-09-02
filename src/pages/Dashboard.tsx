@@ -361,7 +361,7 @@ const Dashboard = () => {
       value: formatCurrencyBR(dashboardData.monthlyRevenue),
       change: "+15% vs mês anterior",
       icon: DollarSign,
-      color: "text-success-fixed",
+      color: "hsl(142 71% 45%)",
       bgColor: "bg-success/10"
     },
     {
