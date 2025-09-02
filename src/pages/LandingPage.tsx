@@ -18,7 +18,6 @@ const LandingPage = () => {
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [currentCharIndex, setCurrentCharIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [showCursor, setShowCursor] = useState(true)
   const [waitingToDelete, setWaitingToDelete] = useState(false)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
@@ -55,13 +54,6 @@ const LandingPage = () => {
     return () => clearTimeout(timeout)
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete])
 
-  // Cursor blinking effect
-  useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor(prev => !prev)
-    }, 500)
-    return () => clearInterval(cursorInterval)
-  }, [])
 
   const features = [
     { icon: Calendar, title: "Agendamento Inteligente", description: "Gerencie sua agenda com facilidade e evite conflitos de horários" },
@@ -114,13 +106,8 @@ const LandingPage = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-normal py-2">
-              <span>Organize seus </span>
-              <span className="bg-gradient-primary bg-clip-text text-transparent inline-block w-[20ch] whitespace-nowrap">
-                {displayText}
-                <span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
-              </span>
-              <span> com facilidade</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-relaxed pb-4">
+              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span> com facilidade
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.
