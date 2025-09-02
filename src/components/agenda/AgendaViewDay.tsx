@@ -124,17 +124,6 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
     }
   }
   
-  // Função para calcular a posição da linha de tempo atual
-  const getCurrentTimePosition = () => {
-    const now = new Date()
-    const currentHour = now.getHours()
-    const currentMinute = now.getMinutes()
-    return currentHour + (currentMinute / 60)
-  }
-  
-  const today = new Date()
-  const isToday = format(currentDate, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
-  const currentTimePosition = isToday ? getCurrentTimePosition() : null
 
   return (
     <div className="space-y-4">
@@ -162,7 +151,32 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
               <div className="col-span-2 flex items-center justify-center text-sm text-muted-foreground font-medium border-r border-border">
                 {String(hour).padStart(2, '0')}:00
               </div>
-              <div className="col-span-10 space-y-1 py-2 cursor-pointer">
+              <div className="col-span-10 space-y-1 py-2 cursor-pointer relative">
+                {/* Current time red line for today only */}
+                {(() => {
+                  const now = new Date()
+                  const isToday = format(currentDate, 'yyyy-MM-dd') === format(now, 'yyyy-MM-dd')
+                  const currentHour = now.getHours()
+                  const currentMinute = now.getMinutes()
+                  
+                  if (isToday && currentHour === hour) {
+                    const currentTimePosition = (currentMinute / 60) * 100
+                    return (
+                      <div 
+                        className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                        style={{ top: `${currentTimePosition}%` }}
+                      >
+                        <div className="w-1 h-1 bg-red-500 rounded-full mr-1" />
+                        <div className="flex-1 h-0.5 bg-red-500" />
+                        <span className="text-xs text-red-500 ml-1 bg-white px-1 rounded text-[10px]">
+                          {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    )
+                  }
+                  return null
+                })()}
+                
                 {hourSessions.length > 0 ? (
                   hourSessions.map((session) => (
                     <Card 
@@ -255,18 +269,6 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
             </div>
           )
         })}
-        
-        {/* Linha de tempo atual - apenas se for hoje */}
-        {currentTimePosition !== null && (
-          <div 
-            className="absolute left-0 right-0 h-0.5 bg-red-500 z-10 pointer-events-none"
-            style={{ 
-              top: `${(currentTimePosition * 84) + 2}px`,
-            }}
-          >
-            <div className="w-3 h-3 bg-red-500 rounded-full -ml-1.5 -mt-1.5"></div>
-          </div>
-        )}
       </div>
     </div>
   )
