@@ -324,7 +324,7 @@ const Pagamentos = () => {
               <DollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">
+              <div className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>
                 {formatCurrencyBR(totalReceived)}
               </div>
               <p className="text-xs text-muted-foreground">{paidCount} pagamentos confirmados</p>

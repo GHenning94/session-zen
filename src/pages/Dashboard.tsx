@@ -361,7 +361,7 @@ const Dashboard = () => {
       value: formatCurrencyBR(dashboardData.monthlyRevenue),
       change: "+15% vs mês anterior",
       icon: DollarSign,
-      color: "text-success",
+      color: "text-success-fixed",
       bgColor: "bg-success/10"
     },
     {
@@ -459,7 +459,7 @@ const Dashboard = () => {
                           <p className="text-sm text-muted-foreground">
                             {formatTimeBR(session.horario)}
                           </p>
-                          <p className="text-sm font-medium text-success">
+                          <p className="text-sm font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
                             {formatCurrencyBR(session.valor || 0)}
                           </p>
                        </div>
@@ -589,7 +589,7 @@ const Dashboard = () => {
                     <span>Adicionar Cliente</span>
                   </Button>
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewPayment}>
-                    <DollarSign className="w-6 h-6 text-success" />
+                    <DollarSign className="w-6 h-6" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Registrar Pagamento</span>
                   </Button>
                 </div>

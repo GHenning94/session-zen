@@ -21,6 +21,16 @@ const LandingPage = () => {
   const [waitingToDelete, setWaitingToDelete] = useState(false)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
+  // Force light theme for landing page
+  useEffect(() => {
+    document.documentElement.classList.remove('dark')
+    document.documentElement.setAttribute('data-theme', 'light')
+    
+    return () => {
+      // Don't restore theme on unmount - let the app handle it
+    }
+  }, [])
+
   useEffect(() => {
     const word = words[currentWordIndex]
     let timeout: NodeJS.Timeout
@@ -199,7 +209,7 @@ const LandingPage = () => {
                   <ul className="space-y-3 mb-6 flex-grow">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-success flex-shrink-0" />
+                        <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                         <span className="text-sm">{feature}</span>
                       </li>
                     ))}
@@ -249,15 +259,15 @@ const LandingPage = () => {
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Métricas em tempo real</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Gráficos de receita e produtividade</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Agenda do dia destacada</span>
                   </li>
                 </ul>
@@ -279,15 +289,15 @@ const LandingPage = () => {
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Arrastar e soltar para reagendar</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Múltiplas visualizações</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Integração com Google Calendar</span>
                   </li>
                 </ul>
@@ -323,15 +333,15 @@ const LandingPage = () => {
                 </p>
                 <ul className="space-y-3">
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Fichas clínicas completas</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                     <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Histórico de sessões detalhado</span>
                   </li>
                   <li className="flex items-center gap-3">
-                    <CheckCircle className="w-5 h-5 text-success" />
+                    <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                     <span>Segurança e privacidade total</span>
                   </li>
                 </ul>
@@ -356,7 +366,7 @@ const LandingPage = () => {
               <p className="text-muted-foreground">Automatize tarefas administrativas e foque no que realmente importa</p>
             </Card>
             <Card className="p-8 shadow-soft">
-              <Heart className="w-12 h-12 text-success mx-auto mb-4" />
+              <Heart className="w-12 h-12 mx-auto mb-4" style={{ color: 'hsl(142 71% 45%)' }} />
               <h3 className="text-xl font-semibold mb-2">Suporte Humano</h3>
               <p className="text-muted-foreground">Atendimento personalizado quando você precisar de ajuda</p>
             </Card>

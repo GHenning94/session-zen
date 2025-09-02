@@ -96,7 +96,7 @@ export const GoogleAdsSetup = () => {
             </Button>
             
             {isConfigured && (
-              <div className="flex items-center gap-2 text-success">
+              <div className="flex items-center gap-2" style={{ color: 'hsl(142 71% 45%)' }}>
                 <CheckCircle className="h-4 w-4" />
                 <span className="text-sm">Google Ads configurado com sucesso</span>
               </div>

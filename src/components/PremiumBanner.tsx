@@ -35,14 +35,14 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
   return (
     <Button
       variant="ghost"
-      className="premium-banner w-full h-14 relative overflow-hidden group"
+      className="premium-banner w-full h-12 relative overflow-hidden group"
       onClick={handleUpgrade}
     >
       <div className="flex items-center gap-3 relative z-10">
         <Crown className="w-5 h-5 text-white" />
         <div className="text-left">
-          <div className="text-white font-semibold text-sm">Torne-se Premium</div>
-          <div className="text-white/80 text-xs">Desbloqueie recursos exclusivos</div>
+          <div className="text-white font-semibold text-xs">Torne-se Premium</div>
+          <div className="text-white/80 text-[10px]">Desbloqueie recursos exclusivos</div>
         </div>
       </div>
     </Button>

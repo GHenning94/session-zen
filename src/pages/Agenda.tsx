@@ -464,7 +464,7 @@ const Agenda = () => {
               <CardTitle className="text-lg">Receita Prevista</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-success">
+              <div className="text-3xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>
                 R$ {todaySessionsStats.todayRevenue.toFixed(2)}
               </div>
               <p className="text-sm text-muted-foreground">Valor total do dia</p>
