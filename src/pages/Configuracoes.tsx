@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import { NotificationSettings } from "@/components/notifications/NotificationSettings"
+import { PaymentMethodCard } from "@/components/PaymentMethodCard"
+import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
 
 type AllSettings = Record<string, any>;
 
@@ -23,6 +25,31 @@ const Configuracoes = () => {
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
   const [showNotificationModal, setShowNotificationModal] = useState<{ type: 'email' | 'whatsapp' | 'reminder' | 'reports'; title: string } | null>(null)
+  const [paymentMethods, setPaymentMethods] = useState<any[]>([])
+  const [loadingPayments, setLoadingPayments] = useState(false)
+  const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false)
+
+  const loadPaymentMethods = async () => {
+    if (!user) return;
+    
+    try {
+      setLoadingPayments(true);
+      const { data, error } = await supabase.functions.invoke('get-payment-methods');
+      
+      if (error) throw error;
+      
+      setPaymentMethods(data.paymentMethods || []);
+    } catch (error) {
+      console.error('Error loading payment methods:', error);
+      toast({
+        title: "Erro",
+        description: "Erro ao carregar métodos de pagamento.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -36,6 +63,9 @@ const Configuracoes = () => {
       
       const allSettings = { ...profileData, ...(configData || {}), email: user.email || '' };
       setSettings(allSettings);
+
+      // Load payment methods
+      loadPaymentMethods();
 
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
@@ -83,26 +113,12 @@ const Configuracoes = () => {
     }
   };
 
-  const handleStripePortal = async () => {
-    try {
-      setIsLoading(true);
-      const { data, error } = await supabase.functions.invoke('customer-portal');
-      
-      if (error) throw error;
-      
-      if (data?.url) {
-        window.open(data.url, '_blank');
-      }
-    } catch (error) {
-      console.error('Erro ao abrir portal do cliente:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível abrir o portal de pagamentos.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
+  const handlePaymentSuccess = () => {
+    loadPaymentMethods();
+    toast({
+      title: "Sucesso!",
+      description: "Método de pagamento atualizado com sucesso.",
+    });
   };
 
   if (isLoading) return <Layout><p className="p-4">Carregando configurações...</p></Layout>;
@@ -205,42 +221,40 @@ const Configuracoes = () => {
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CreditCard />Pagamentos da Plataforma
+                  <CreditCard />Métodos de Pagamento
                 </CardTitle>
-                <CardDescription>Gerencie seu método de pagamento para a assinatura da plataforma</CardDescription>
+                <CardDescription>
+                  Gerencie seus cartões de crédito e débito para pagamento da assinatura
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex items-center justify-between p-4 border rounded-lg">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
-                      <CreditCard className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <h4 className="font-medium">Método de Pagamento</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Gerencie seu cartão de crédito e histórico de pagamentos
-                      </p>
-                    </div>
+              <CardContent className="space-y-4">
+                {loadingPayments ? (
+                  <div className="flex justify-center items-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
-                  <Button 
-                    onClick={handleStripePortal} 
-                    disabled={isLoading}
-                    className="flex items-center gap-2"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Gerenciar Pagamentos
-                  </Button>
-                </div>
-                
-                <div className="p-4 bg-muted/30 rounded-lg">
-                  <h4 className="font-medium mb-2">Sobre o Portal de Pagamentos</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• Visualize e atualize seu método de pagamento</li>
-                    <li>• Acesse seu histórico de faturas</li>
-                    <li>• Baixe recibos de pagamento</li>
-                    <li>• Altere ou cancele sua assinatura</li>
-                  </ul>
-                </div>
+                ) : paymentMethods.length > 0 ? (
+                  <div className="space-y-4">
+                    {paymentMethods.map((method) => (
+                      <PaymentMethodCard
+                        key={method.id}
+                        paymentMethod={method}
+                        onEdit={() => setShowUpdatePaymentModal(true)}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">
+                      Nenhum método de pagamento cadastrado
+                    </p>
+                    <Button 
+                      onClick={() => setShowUpdatePaymentModal(true)}
+                      variant="outline"
+                    >
+                      Adicionar Cartão
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
@@ -443,6 +457,12 @@ const Configuracoes = () => {
             title={showNotificationModal.title}
           />
         )}
+        
+        <UpdatePaymentMethodModal
+          open={showUpdatePaymentModal}
+          onOpenChange={setShowUpdatePaymentModal}
+          onSuccess={handlePaymentSuccess}
+        />
       </div>
     </Layout>
   )

@@ -22,6 +22,15 @@ verify_jwt = true
 [functions.check-subscription]
 verify_jwt = true
 
+[functions.get-payment-methods]
+verify_jwt = true
+
+[functions.create-setup-intent]
+verify_jwt = true
+
+[functions.update-default-payment-method]
+verify_jwt = true
+
 [functions.test-upgrade]
 verify_jwt = true
 
