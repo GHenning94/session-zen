@@ -12,7 +12,9 @@ import {
   FileText,
   NotebookPen,
   Star,
-  Share2
+  Share2,
+  Globe,
+  Plug
 } from "lucide-react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
@@ -89,6 +91,16 @@ const menuItems = [
     title: "Programa de Indicação",
     url: "/programa-indicacao",
     icon: Star,
+  },
+  { 
+    title: "Página Pública", 
+    url: "/pagina-publica", 
+    icon: Globe 
+  },
+  { 
+    title: "Integrações", 
+    url: "/integracoes", 
+    icon: Plug 
   },
   { 
     title: "Configurações", 

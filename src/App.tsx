@@ -21,6 +21,8 @@ import Pagamentos from "@/pages/Pagamentos";
 import Configuracoes from "@/pages/Configuracoes";
 import Relatorios from "@/pages/Relatorios";
 import Sessoes from "@/pages/Sessoes";
+import PaginaPublica from "@/pages/PaginaPublica";
+import Integracoes from "@/pages/Integracoes";
 
 // Importações diretas para todas as páginas principais
 import Upgrade from "@/pages/Upgrade";
@@ -118,6 +120,16 @@ const App = () => (
                 <Route path="/programa-indicacao" element={
                   <ProtectedRoute>
                     <ProgramaIndicacao />
+                  </ProtectedRoute>
+                } />
+                <Route path="/pagina-publica" element={
+                  <ProtectedRoute>
+                    <PaginaPublica />
+                  </ProtectedRoute>
+                } />
+                <Route path="/integracoes" element={
+                  <ProtectedRoute>
+                    <Integracoes />
                   </ProtectedRoute>
                 } />
                 <Route path="/agendar/:userId" element={

@@ -151,13 +151,11 @@ const Configuracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="schedule">Horários</TabsTrigger>
+            <TabsTrigger value="platform-payments">Pagamentos</TabsTrigger>
+            <TabsTrigger value="bank-details">Dados Bancários</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
-            <TabsTrigger value="payments">Pagamentos</TabsTrigger>
-            <TabsTrigger value="sharing">Compartilhamento</TabsTrigger>
-            <TabsTrigger value="integrations">Integrações</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-6">
