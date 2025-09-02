@@ -507,11 +507,11 @@ export const ProfileDropdown = () => {
                         return (
                           <div key={index} className="flex items-center gap-2 text-sm">
                             {isValid ? (
-                              <Check className="w-4 h-4 text-green-500" />
+                              <Check className="w-4 h-4" style={{ color: 'hsl(var(--success-fixed))' }} />
                             ) : (
                               <X className="w-4 h-4 text-muted-foreground" />
                             )}
-                            <span className={isValid ? "text-green-500" : "text-muted-foreground"}>
+                            <span className={isValid ? "" : "text-muted-foreground"} style={isValid ? { color: 'hsl(var(--success-fixed))' } : {}}>
                               {req.text}
                             </span>
                           </div>
@@ -533,7 +533,7 @@ export const ProfileDropdown = () => {
                 placeholder="Confirme a nova senha"
               />
               {confirmPassword && newPassword !== confirmPassword && (
-                <p className="text-sm text-red-500">As senhas não coincidem</p>
+                <p className="text-sm" style={{ color: 'hsl(var(--destructive-fixed))' }}>As senhas não coincidem</p>
               )}
             </div>
           </div>

@@ -125,7 +125,7 @@ export const ColorPicker = ({
           </Button>
           <Button onClick={handleSave} disabled={!selectedColor || isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Salvar
+            Confirmar
           </Button>
         </DialogFooter>
       </DialogContent>

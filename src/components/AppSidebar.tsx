@@ -35,6 +35,8 @@ import {
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "@/hooks/use-toast"
+import { PremiumBanner } from "@/components/PremiumBanner"
+import { useSubscription } from "@/hooks/useSubscription"
 
 const menuItems = [
   { 
@@ -113,7 +115,8 @@ export function AppSidebar() {
   const { state } = useSidebar()
   const location = useLocation()
   const navigate = useNavigate()
-  const { signOut } = useAuth()
+  const { signOut, user } = useAuth()
+  const { currentPlan } = useSubscription()
   const currentPath = location.pathname
 
   const isActive = (path: string) => currentPath === path
@@ -123,6 +126,9 @@ export function AppSidebar() {
       : "hover:bg-accent transition-colors"
 
   const isCollapsed = state === "collapsed"
+
+  // Show banner for basic and pro plans (always show for testing)
+  const shouldShowPremiumBanner = true // Changed for testing - normally: (currentPlan === 'basico' || currentPlan === 'pro')
 
   const handleSignOut = async () => {
     try {
@@ -189,6 +195,8 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border p-4">
+        <PremiumBanner shouldShow={shouldShowPremiumBanner} />
+        
         <Button 
           variant="ghost" 
           size={isCollapsed ? "icon" : "sm"}
