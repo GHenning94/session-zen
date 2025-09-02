@@ -107,7 +107,12 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-relaxed pb-4">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span> com facilidade
+              <div className="text-center">
+                Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span>
+              </div>
+              <div className="text-center">
+                com facilidade
+              </div>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.
