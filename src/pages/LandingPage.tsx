@@ -14,35 +14,6 @@ import { useState, useEffect } from "react"
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const [typedText, setTypedText] = useState("")
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [showCursor, setShowCursor] = useState(true)
-  const fullText = "atendimentos"
-
-  useEffect(() => {
-    if (currentIndex < fullText.length) {
-      const timeout = setTimeout(() => {
-        setTypedText(fullText.slice(0, currentIndex + 1))
-        setCurrentIndex(currentIndex + 1)
-      }, 150)
-      return () => clearTimeout(timeout)
-    } else {
-      // Reset after showing full text for 2 seconds
-      const resetTimeout = setTimeout(() => {
-        setCurrentIndex(0)
-        setTypedText("")
-      }, 3000)
-      return () => clearTimeout(resetTimeout)
-    }
-  }, [currentIndex, fullText])
-
-  // Cursor blinking effect
-  useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor(prev => !prev)
-    }, 500)
-    return () => clearInterval(cursorInterval)
-  }, [])
 
   const features = [
     { icon: Calendar, title: "Agendamento Inteligente", description: "Gerencie sua agenda com facilidade e evite conflitos de horários" },
@@ -96,31 +67,9 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block">
-                <span className="inline-block w-[11ch] h-[1.2em] text-left relative overflow-hidden">
-                  <span className="absolute left-0 top-0 whitespace-nowrap">
-                    {fullText}
-                  </span>
-                  <span 
-                    className="absolute left-0 top-0 whitespace-nowrap bg-background"
-                    style={{ 
-                      width: `${fullText.length - typedText.length}ch`,
-                      right: 0,
-                      marginLeft: `${typedText.length}ch`
-                    }}
-                  >
-                    {fullText.slice(typedText.length)}
-                  </span>
-                  <span 
-                    className={`absolute border-r-2 border-primary ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}
-                    style={{ 
-                      left: `${typedText.length}ch`,
-                      height: '1.2em',
-                      width: '2px'
-                    }}
-                  />
-                </span>
-              </span> com facilidade
+              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">atendimentos</span>
+              <br />
+              com facilidade
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.
