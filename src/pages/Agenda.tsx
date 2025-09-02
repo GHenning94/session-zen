@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -188,14 +188,25 @@ const Agenda = () => {
     "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30"
   ]
 
-  // Calcular estatísticas baseadas na data de hoje (sempre hoje, não a data selecionada)
-  const today = new Date()
-  const todaySessionsData = sessions.filter(session => {
-    const sessionDate = new Date(session.data)
-    return sessionDate.toDateString() === today.toDateString()
-  })
-  
-  const todaySessionsCount = todaySessionsData.length
+  // Calcular estatísticas baseadas na data de hoje (sempre hoje, não a data selecionada) - useMemo para reatividade
+  const todaySessionsStats = useMemo(() => {
+    const today = new Date()
+    const todaySessionsData = sessions.filter(session => {
+      const sessionDate = new Date(session.data)
+      return sessionDate.toDateString() === today.toDateString()
+    })
+    
+    const todaySessionsCount = todaySessionsData.length
+    const todayRevenue = todaySessionsData.reduce((sum, s) => sum + (s.valor || 0), 0)
+    const occupationRate = timeSlots.length > 0 ? ((todaySessionsCount / timeSlots.length) * 100).toFixed(0) : 0
+    
+    return {
+      todaySessionsData,
+      todaySessionsCount,
+      todayRevenue,
+      occupationRate
+    }
+  }, [sessions, timeSlots.length])
 
   return (
     <Layout>
@@ -436,7 +447,7 @@ const Agenda = () => {
               <CardTitle className="text-lg">Sessões Hoje</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{todaySessionsCount}</div>
+              <div className="text-3xl font-bold text-primary">{todaySessionsStats.todaySessionsCount}</div>
               <p className="text-sm text-muted-foreground">Total de atendimentos</p>
             </CardContent>
           </Card>
@@ -447,10 +458,7 @@ const Agenda = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-success">
-                R$ {todaySessionsData
-                  .reduce((sum, s) => sum + (s.valor || 0), 0)
-                  .toFixed(2)
-                }
+                R$ {todaySessionsStats.todayRevenue.toFixed(2)}
               </div>
               <p className="text-sm text-muted-foreground">Valor total do dia</p>
             </CardContent>
@@ -462,9 +470,9 @@ const Agenda = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-warning">
-                {timeSlots.length > 0 ? ((todaySessionsCount / timeSlots.length) * 100).toFixed(0) : 0}%
+                {todaySessionsStats.occupationRate}%
               </div>
-              <p className="text-sm text-muted-foreground">{todaySessionsCount} de {timeSlots.length} horários</p>
+              <p className="text-sm text-muted-foreground">{todaySessionsStats.todaySessionsCount} de {timeSlots.length} horários</p>
             </CardContent>
           </Card>
         </div>
