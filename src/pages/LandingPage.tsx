@@ -14,43 +14,36 @@ import { useState, useEffect } from "react"
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const [displayText, setDisplayText] = useState("")
+  const [displayText, setDisplayText] = useState("atendimentos")
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
-  const [currentCharIndex, setCurrentCharIndex] = useState(0)
+  const [currentCharIndex, setCurrentCharIndex] = useState(12)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCursor, setShowCursor] = useState(true)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
   useEffect(() => {
-    const currentWord = words[currentWordIndex]
+    const word = words[currentWordIndex]
     let timeout: NodeJS.Timeout
-    
+
     if (isDeleting) {
-      if (currentCharIndex > 0) {
-        timeout = setTimeout(() => {
-          setDisplayText(currentWord.substring(0, currentCharIndex - 1))
-          setCurrentCharIndex(prev => prev - 1)
-        }, 50)
-      } else {
-        // Finished deleting, move to next word
-        setIsDeleting(false)
-        setCurrentWordIndex(prev => (prev + 1) % words.length)
-        timeout = setTimeout(() => {
-          setCurrentCharIndex(0)
-        }, 200)
-      }
+      timeout = setTimeout(() => {
+        setDisplayText(word.substring(0, currentCharIndex - 1))
+        setCurrentCharIndex(currentCharIndex - 1)
+        
+        if (currentCharIndex - 1 === 0) {
+          setIsDeleting(false)
+          setCurrentWordIndex((currentWordIndex + 1) % words.length)
+        }
+      }, 75)
     } else {
-      if (currentCharIndex < currentWord.length) {
-        timeout = setTimeout(() => {
-          setDisplayText(currentWord.substring(0, currentCharIndex + 1))
-          setCurrentCharIndex(prev => prev + 1)
-        }, 150)
-      } else {
-        // Finished typing, wait then start deleting
-        timeout = setTimeout(() => {
-          setIsDeleting(true)
-        }, 2000)
-      }
+      timeout = setTimeout(() => {
+        setDisplayText(word.substring(0, currentCharIndex + 1))
+        setCurrentCharIndex(currentCharIndex + 1)
+        
+        if (currentCharIndex + 1 === word.length) {
+          setTimeout(() => setIsDeleting(true), 2500)
+        }
+      }, 150)
     }
 
     return () => clearTimeout(timeout)
@@ -116,13 +109,8 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              <span className="block">
-                Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block text-left w-fit">
-                  <span className="min-w-[12ch] inline-block text-left">{displayText}</span>
-                  <span className={`absolute ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
-                </span>
-              </span>
-              <span className="block">com facilidade</span>
+              <div>Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent inline-block w-[13ch] text-left">{displayText}<span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span></span></div>
+              <div>com facilidade</div>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.
