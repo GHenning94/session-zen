@@ -33,7 +33,7 @@ interface ColorPickerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentColor: string
-  onSaveColor: (colorValue: string, colorName: string) => Promise<boolean>
+  onSaveColor: (colorValue: string) => Promise<boolean>
 }
 
 export const ColorPicker = ({
@@ -54,7 +54,7 @@ export const ColorPicker = ({
   const handleSave = async () => {
     if (selectedColor && !isSaving) {
       setIsSaving(true)
-      const success = await onSaveColor(selectedColor, selectedColorName)
+      const success = await onSaveColor(selectedColor)
       setIsSaving(false)
       
       if (success) {

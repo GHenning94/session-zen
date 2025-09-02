@@ -566,7 +566,7 @@ export const ProfileDropdown = () => {
         open={showColorPicker}
         onOpenChange={setShowColorPicker}
         currentColor={profile.brand_color || '217 91% 45%'}
-        onSaveColor={async (colorValue, colorName) => {
+        onSaveColor={async (colorValue) => {
           const success = await saveBrandColor(colorValue)
           if (success) {
             setProfile(prev => ({ ...prev, brand_color: colorValue }))
