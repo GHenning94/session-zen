@@ -14,6 +14,47 @@ import { useState, useEffect } from "react"
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
+  const [typedText, setTypedText] = useState("")
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [wordIndex, setWordIndex] = useState(0)
+  const [showCursor, setShowCursor] = useState(true)
+  const words = ["atendimentos", "agendamentos", "ganhos", "clientes", "tempo"]
+  const currentWord = words[wordIndex]
+
+  useEffect(() => {
+    if (currentIndex < currentWord.length) {
+      const timeout = setTimeout(() => {
+        setTypedText(currentWord.slice(0, currentIndex + 1))
+        setCurrentIndex(currentIndex + 1)
+      }, 100)
+      return () => clearTimeout(timeout)
+    } else {
+      // Show complete word for 2 seconds, then start erasing
+      const pauseTimeout = setTimeout(() => {
+        const eraseInterval = setInterval(() => {
+          setTypedText(prev => {
+            if (prev.length > 0) {
+              return prev.slice(0, -1)
+            } else {
+              clearInterval(eraseInterval)
+              setWordIndex((prev) => (prev + 1) % words.length)
+              setCurrentIndex(0)
+              return ""
+            }
+          })
+        }, 50)
+      }, 2000)
+      return () => clearTimeout(pauseTimeout)
+    }
+  }, [currentIndex, currentWord, words])
+
+  // Cursor blinking effect
+  useEffect(() => {
+    const cursorInterval = setInterval(() => {
+      setShowCursor(prev => !prev)
+    }, 500)
+    return () => clearInterval(cursorInterval)
+  }, [])
 
   const features = [
     { icon: Calendar, title: "Agendamento Inteligente", description: "Gerencie sua agenda com facilidade e evite conflitos de horários" },
@@ -67,7 +108,10 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">atendimentos</span>
+              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[13ch]">
+                {typedText}
+                <span className={`absolute ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
+              </span>
               <br />
               com facilidade
             </h1>
