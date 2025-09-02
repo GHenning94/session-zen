@@ -258,7 +258,9 @@ const Dashboard = () => {
       // Próximas sessões (apenas futuras)
       if (filteredUpcoming && filteredUpcoming.length > 0) {
         const nextSession = filteredUpcoming[0]
-        const sessionDate = new Date(nextSession.data)
+        // Parse manual da data para evitar problemas de timezone
+        const [year, month, day] = nextSession.data.split('-')
+        const sessionDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
         const sessionTime = new Date(`${nextSession.data}T${nextSession.horario}`)
         const isToday = sessionDate.toDateString() === now.toDateString()
         
