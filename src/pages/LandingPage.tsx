@@ -14,42 +14,39 @@ import { useState, useEffect } from "react"
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const [typedText, setTypedText] = useState("")
+  const [displayText, setDisplayText] = useState("")
+  const [currentWordIndex, setCurrentWordIndex] = useState(0)
+  const [currentCharIndex, setCurrentCharIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
-  const [loopNum, setLoopNum] = useState(0)
   const [showCursor, setShowCursor] = useState(true)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes", "tempo"]
-  const typingSpeed = 100
-  const deletingSpeed = 50
-  const pauseDuration = 2000
 
   useEffect(() => {
-    const handleTyping = () => {
-      const currentWord = words[loopNum % words.length]
-      
-      if (isDeleting) {
-        setTypedText(currentWord.substring(0, typedText.length - 1))
-      } else {
-        setTypedText(currentWord.substring(0, typedText.length + 1))
-      }
-      
-      let delta = isDeleting ? deletingSpeed : typingSpeed
-      
-      if (!isDeleting && typedText === currentWord) {
-        delta = pauseDuration
-        setIsDeleting(true)
-      } else if (isDeleting && typedText === '') {
+    const currentWord = words[currentWordIndex]
+    
+    const typeEffect = () => {
+      if (!isDeleting && currentCharIndex < currentWord.length) {
+        // Typing
+        setDisplayText(currentWord.substring(0, currentCharIndex + 1))
+        setCurrentCharIndex(prev => prev + 1)
+      } else if (isDeleting && currentCharIndex > 0) {
+        // Deleting
+        setDisplayText(currentWord.substring(0, currentCharIndex - 1))
+        setCurrentCharIndex(prev => prev - 1)
+      } else if (!isDeleting && currentCharIndex === currentWord.length) {
+        // Finished typing, wait then start deleting
+        setTimeout(() => setIsDeleting(true), 2000)
+        return
+      } else if (isDeleting && currentCharIndex === 0) {
+        // Finished deleting, move to next word
         setIsDeleting(false)
-        setLoopNum(loopNum + 1)
-        delta = 500
+        setCurrentWordIndex(prev => (prev + 1) % words.length)
       }
-      
-      setTimeout(handleTyping, delta)
     }
 
-    const timeout = setTimeout(handleTyping, typingSpeed)
+    const timeout = setTimeout(typeEffect, isDeleting ? 50 : 150)
     return () => clearTimeout(timeout)
-  }, [typedText, isDeleting, loopNum, words])
+  }, [currentCharIndex, currentWordIndex, isDeleting, words])
 
   // Cursor blinking effect
   useEffect(() => {
@@ -112,8 +109,8 @@ const LandingPage = () => {
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               <span className="block">
-                Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[13ch]">
-                  {typedText}
+                 Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[13ch]">
+                  {displayText}
                   <span className={`absolute ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
                 </span>
               </span>
