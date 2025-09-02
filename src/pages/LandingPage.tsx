@@ -31,18 +31,20 @@ const LandingPage = () => {
     } else {
       // Show complete word for 2 seconds, then start erasing
       const pauseTimeout = setTimeout(() => {
-        const eraseInterval = setInterval(() => {
-          setTypedText(prev => {
-            if (prev.length > 0) {
-              return prev.slice(0, -1)
+        if (currentWord.length > 0) {
+          let eraseIndex = currentWord.length
+          const eraseInterval = setInterval(() => {
+            if (eraseIndex > 0) {
+              eraseIndex--
+              setTypedText(currentWord.slice(0, eraseIndex))
             } else {
               clearInterval(eraseInterval)
               setWordIndex((prev) => (prev + 1) % words.length)
               setCurrentIndex(0)
-              return ""
+              setTypedText("")
             }
-          })
-        }, 50)
+          }, 50)
+        }
       }, 2000)
       return () => clearTimeout(pauseTimeout)
     }
@@ -107,13 +109,14 @@ const LandingPage = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6">
-              Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[13ch]">
-                {typedText}
-                <span className={`absolute ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
+              <span className="block">
+                Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[13ch]">
+                  {typedText}
+                  <span className={`absolute ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
+                </span>
               </span>
-              <br />
-              com facilidade
+              <span className="block">com facilidade</span>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
               A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.
