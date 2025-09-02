@@ -19,32 +19,40 @@ const LandingPage = () => {
   const [currentCharIndex, setCurrentCharIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCursor, setShowCursor] = useState(true)
-  const words = ["atendimentos", "agendamentos", "ganhos", "clientes", "tempo"]
+  const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
   useEffect(() => {
     const currentWord = words[currentWordIndex]
+    let timeout: NodeJS.Timeout
     
-    const typeEffect = () => {
-      if (!isDeleting && currentCharIndex < currentWord.length) {
-        // Typing
-        setDisplayText(currentWord.substring(0, currentCharIndex + 1))
-        setCurrentCharIndex(prev => prev + 1)
-      } else if (isDeleting && currentCharIndex > 0) {
-        // Deleting
-        setDisplayText(currentWord.substring(0, currentCharIndex - 1))
-        setCurrentCharIndex(prev => prev - 1)
-      } else if (!isDeleting && currentCharIndex === currentWord.length) {
-        // Finished typing, wait then start deleting
-        setTimeout(() => setIsDeleting(true), 2000)
-        return
-      } else if (isDeleting && currentCharIndex === 0) {
+    if (isDeleting) {
+      if (currentCharIndex > 0) {
+        timeout = setTimeout(() => {
+          setDisplayText(currentWord.substring(0, currentCharIndex - 1))
+          setCurrentCharIndex(prev => prev - 1)
+        }, 50)
+      } else {
         // Finished deleting, move to next word
         setIsDeleting(false)
         setCurrentWordIndex(prev => (prev + 1) % words.length)
+        timeout = setTimeout(() => {
+          setCurrentCharIndex(0)
+        }, 200)
+      }
+    } else {
+      if (currentCharIndex < currentWord.length) {
+        timeout = setTimeout(() => {
+          setDisplayText(currentWord.substring(0, currentCharIndex + 1))
+          setCurrentCharIndex(prev => prev + 1)
+        }, 150)
+      } else {
+        // Finished typing, wait then start deleting
+        timeout = setTimeout(() => {
+          setIsDeleting(true)
+        }, 2000)
       }
     }
 
-    const timeout = setTimeout(typeEffect, isDeleting ? 50 : 150)
     return () => clearTimeout(timeout)
   }, [currentCharIndex, currentWordIndex, isDeleting, words])
 
@@ -109,8 +117,8 @@ const LandingPage = () => {
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
               <span className="block">
-                 Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block min-w-[13ch]">
-                  {displayText}
+                Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent relative inline-block text-left w-fit">
+                  <span className="min-w-[12ch] inline-block text-left">{displayText}</span>
                   <span className={`absolute ${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span>
                 </span>
               </span>
