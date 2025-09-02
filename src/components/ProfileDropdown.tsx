@@ -41,7 +41,7 @@ interface Profile {
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
-  const { applyBrandColor } = useColorTheme()
+  const { applyBrandColor, saveBrandColor } = useColorTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '' })
   const [loading, setLoading] = useState(false)
@@ -566,9 +566,12 @@ export const ProfileDropdown = () => {
         open={showColorPicker}
         onOpenChange={setShowColorPicker}
         currentColor={profile.brand_color || '217 91% 45%'}
-        onSelectColor={(colorValue, colorName) => {
-          setProfile(prev => ({ ...prev, brand_color: colorValue }))
-          applyBrandColor(colorValue)
+        onSaveColor={async (colorValue, colorName) => {
+          const success = await saveBrandColor(colorValue)
+          if (success) {
+            setProfile(prev => ({ ...prev, brand_color: colorValue }))
+          }
+          return success
         }}
       />
     </>

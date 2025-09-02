@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { Check } from "lucide-react"
+import { Check, Loader2 } from "lucide-react"
 
 const COLOR_PALETTE = [
   { name: "Azul Profissional", value: "217 91% 45%", color: "hsl(217, 91%, 45%)" },
@@ -33,27 +33,33 @@ interface ColorPickerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   currentColor: string
-  onSelectColor: (colorValue: string, colorName: string) => void
+  onSaveColor: (colorValue: string, colorName: string) => Promise<boolean>
 }
 
 export const ColorPicker = ({
   open,
   onOpenChange,
   currentColor,
-  onSelectColor
+  onSaveColor
 }: ColorPickerProps) => {
   const [selectedColor, setSelectedColor] = useState(currentColor)
   const [selectedColorName, setSelectedColorName] = useState("")
+  const [isSaving, setIsSaving] = useState(false)
 
   const handleColorSelect = (colorValue: string, colorName: string) => {
     setSelectedColor(colorValue)
     setSelectedColorName(colorName)
   }
 
-  const handleConfirm = () => {
-    if (selectedColor) {
-      onSelectColor(selectedColor, selectedColorName)
-      onOpenChange(false)
+  const handleSave = async () => {
+    if (selectedColor && !isSaving) {
+      setIsSaving(true)
+      const success = await onSaveColor(selectedColor, selectedColorName)
+      setIsSaving(false)
+      
+      if (success) {
+        onOpenChange(false)
+      }
     }
   }
 
@@ -114,11 +120,12 @@ export const ColorPicker = ({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isSaving}>
             Cancelar
           </Button>
-          <Button onClick={handleConfirm} disabled={!selectedColor}>
-            Aplicar Cor
+          <Button onClick={handleSave} disabled={!selectedColor || isSaving}>
+            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Salvar
           </Button>
         </DialogFooter>
       </DialogContent>

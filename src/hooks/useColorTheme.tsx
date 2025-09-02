@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
+
+const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 
 export const useColorTheme = () => {
   const { user } = useAuth()
@@ -20,6 +23,27 @@ export const useColorTheme = () => {
     }
   }
 
+  const saveBrandColor = async (colorValue: string) => {
+    if (!user) return false
+
+    try {
+      const { error } = await supabase
+        .from('configuracoes')
+        .update({ brand_color: colorValue })
+        .eq('user_id', user.id)
+
+      if (error) throw error
+
+      applyBrandColor(colorValue)
+      toast.success('Cor da plataforma atualizada com sucesso!')
+      return true
+    } catch (error) {
+      console.error('Error saving user color:', error)
+      toast.error('Erro ao salvar cor da plataforma')
+      return false
+    }
+  }
+
   useEffect(() => {
     const loadUserColor = async () => {
       if (!user) return
@@ -33,14 +57,19 @@ export const useColorTheme = () => {
 
         if (data?.brand_color) {
           applyBrandColor(data.brand_color)
+        } else {
+          // Aplicar cor padrão para novos usuários
+          applyBrandColor(DEFAULT_COLOR)
         }
       } catch (error) {
         console.error('Error loading user color:', error)
+        // Em caso de erro, aplicar cor padrão
+        applyBrandColor(DEFAULT_COLOR)
       }
     }
 
     loadUserColor()
   }, [user])
 
-  return { applyBrandColor }
+  return { applyBrandColor, saveBrandColor }
 }
