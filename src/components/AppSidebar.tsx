@@ -194,18 +194,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border p-4">
-        <PremiumBanner shouldShow={shouldShowPremiumBanner} />
+      <SidebarFooter className="border-t border-border">
+        <div className="p-4 pb-2">
+          <PremiumBanner shouldShow={shouldShowPremiumBanner} />
+        </div>
         
-        <Button 
-          variant="ghost" 
-          size={isCollapsed ? "icon" : "sm"}
-          className="w-full justify-start text-muted-foreground hover:text-foreground"
-          onClick={handleSignOut}
-        >
-          <LogOut className="w-4 h-4" />
-          {!isCollapsed && <span className="ml-2">Sair</span>}
-        </Button>
+        <div className="border-t border-border p-4">
+          <Button 
+            variant="ghost" 
+            size={isCollapsed ? "icon" : "sm"}
+            className="w-full justify-start text-muted-foreground hover:text-foreground"
+            onClick={handleSignOut}
+          >
+            <LogOut className="w-4 h-4" />
+            {!isCollapsed && <span className="ml-2">Sair</span>}
+          </Button>
+        </div>
       </SidebarFooter>
     </Sidebar>
   )
