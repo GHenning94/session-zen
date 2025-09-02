@@ -190,11 +190,29 @@ const Agenda = () => {
 
   // Calcular estatísticas baseadas na data de hoje (sempre hoje, não a data selecionada) - useMemo para reatividade
   const todaySessionsStats = useMemo(() => {
+    console.log('🔄 Recalculando estatísticas, sessions length:', sessions.length)
     const today = new Date()
+    
+    // Usar toLocaleString para garantir timezone Brasil
+    const todayString = today.toLocaleString("pt-BR", {
+      timeZone: "America/Sao_Paulo",
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).split(',')[0]
+    
     const todaySessionsData = sessions.filter(session => {
       const sessionDate = new Date(session.data)
-      return sessionDate.toDateString() === today.toDateString()
+      const sessionString = sessionDate.toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit'
+      }).split(',')[0]
+      return sessionString === todayString
     })
+    
+    console.log('📊 Sessões de hoje encontradas:', todaySessionsData.length)
     
     const todaySessionsCount = todaySessionsData.length
     const todayRevenue = todaySessionsData.reduce((sum, s) => sum + (s.valor || 0), 0)

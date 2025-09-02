@@ -13,17 +13,19 @@ import Signup from "@/pages/Signup";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthRedirect } from "@/components/AuthRedirect";
 
-// Lazy load pages that are accessed after authentication
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
+// Importações diretas para páginas principais (sem loading)
+import Dashboard from "@/pages/Dashboard";
+import Agenda from "@/pages/Agenda";
+import Clientes from "@/pages/Clientes";
+import Pagamentos from "@/pages/Pagamentos";
+import Configuracoes from "@/pages/Configuracoes";
+import Relatorios from "@/pages/Relatorios";
+import Sessoes from "@/pages/Sessoes";
+
+// Lazy load apenas para páginas menos acessadas
 const Upgrade = lazy(() => import("@/pages/Upgrade"));
-const Agenda = lazy(() => import("@/pages/Agenda"));
-const Clientes = lazy(() => import("@/pages/Clientes"));
-const Pagamentos = lazy(() => import("@/pages/Pagamentos"));
-const Configuracoes = lazy(() => import("@/pages/Configuracoes"));
-const Relatorios = lazy(() => import("@/pages/Relatorios"));
 const Eventos = lazy(() => import("@/pages/Eventos"));
 const Prontuarios = lazy(() => import("@/pages/Prontuarios"));
-const Sessoes = lazy(() => import("@/pages/Sessoes"));
 const Estudos = lazy(() => import("@/pages/Estudos"));
 const RedesSociais = lazy(() => import("@/pages/RedesSociais"));
 const ProgramaIndicacao = lazy(() => import("@/pages/ProgramaIndicacao"));
@@ -62,37 +64,37 @@ const App = () => (
                 } />
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Dashboard />
-                    </Suspense>
+                    <Dashboard />
                   </ProtectedRoute>
                 } />
                 <Route path="/agenda" element={
                   <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Agenda />
-                    </Suspense>
+                    <Agenda />
                   </ProtectedRoute>
                 } />
                 <Route path="/clientes" element={
                   <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Clientes />
-                    </Suspense>
+                    <Clientes />
                   </ProtectedRoute>
                 } />
                 <Route path="/pagamentos" element={
                   <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Pagamentos />
-                    </Suspense>
+                    <Pagamentos />
                   </ProtectedRoute>
                 } />
                 <Route path="/relatorios" element={
                   <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Relatorios />
-                    </Suspense>
+                    <Relatorios />
+                  </ProtectedRoute>
+                } />
+                <Route path="/sessoes" element={
+                  <ProtectedRoute>
+                    <Sessoes />
+                  </ProtectedRoute>
+                } />
+                <Route path="/configuracoes" element={
+                  <ProtectedRoute>
+                    <Configuracoes />
                   </ProtectedRoute>
                 } />
               <Route path="/eventos" element={
@@ -106,13 +108,6 @@ const App = () => (
                 <ProtectedRoute>
                   <Suspense fallback={<PageLoading />}>
                     <Prontuarios />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
-              <Route path="/sessoes" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoading />}>
-                    <Sessoes />
                   </Suspense>
                 </ProtectedRoute>
               } />
@@ -137,13 +132,6 @@ const App = () => (
                   </Suspense>
                 </ProtectedRoute>
               } />
-                <Route path="/configuracoes" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Configuracoes />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
                 <Route path="/agendar/:userId" element={
                   <Suspense fallback={<PageLoading />}>
                     <BookingPage />
