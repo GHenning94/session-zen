@@ -15,40 +15,41 @@ const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
   const [typedText, setTypedText] = useState("")
-  const [currentIndex, setCurrentIndex] = useState(0)
-  const [wordIndex, setWordIndex] = useState(0)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [loopNum, setLoopNum] = useState(0)
   const [showCursor, setShowCursor] = useState(true)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes", "tempo"]
-  const currentWord = words[wordIndex]
+  const typingSpeed = 100
+  const deletingSpeed = 50
+  const pauseDuration = 2000
 
   useEffect(() => {
-    if (currentIndex < currentWord.length) {
-      const timeout = setTimeout(() => {
-        setTypedText(currentWord.slice(0, currentIndex + 1))
-        setCurrentIndex(currentIndex + 1)
-      }, 100)
-      return () => clearTimeout(timeout)
-    } else {
-      // Show complete word for 2 seconds, then start erasing
-      const pauseTimeout = setTimeout(() => {
-        if (currentWord.length > 0) {
-          let eraseIndex = currentWord.length
-          const eraseInterval = setInterval(() => {
-            if (eraseIndex > 0) {
-              eraseIndex--
-              setTypedText(currentWord.slice(0, eraseIndex))
-            } else {
-              clearInterval(eraseInterval)
-              setWordIndex((prev) => (prev + 1) % words.length)
-              setCurrentIndex(0)
-              setTypedText("")
-            }
-          }, 50)
-        }
-      }, 2000)
-      return () => clearTimeout(pauseTimeout)
+    const handleTyping = () => {
+      const currentWord = words[loopNum % words.length]
+      
+      if (isDeleting) {
+        setTypedText(currentWord.substring(0, typedText.length - 1))
+      } else {
+        setTypedText(currentWord.substring(0, typedText.length + 1))
+      }
+      
+      let delta = isDeleting ? deletingSpeed : typingSpeed
+      
+      if (!isDeleting && typedText === currentWord) {
+        delta = pauseDuration
+        setIsDeleting(true)
+      } else if (isDeleting && typedText === '') {
+        setIsDeleting(false)
+        setLoopNum(loopNum + 1)
+        delta = 500
+      }
+      
+      setTimeout(handleTyping, delta)
     }
-  }, [currentIndex, currentWord, words])
+
+    const timeout = setTimeout(handleTyping, typingSpeed)
+    return () => clearTimeout(timeout)
+  }, [typedText, isDeleting, loopNum, words])
 
   // Cursor blinking effect
   useEffect(() => {
