@@ -160,15 +160,32 @@ const Dashboard = () => {
       const todayStr = now.toISOString().split('T')[0]
       const currentTime = now.toTimeString().slice(0, 5)
       
+      console.log('🔍 Buscando próximas sessões a partir de:', todayStr, 'hora atual:', currentTime)
+      
       const { data: upcomingData } = await supabase
         .from('sessions')
         .select('*, clients(nome)')
         .eq('user_id', user?.id)
         .eq('status', 'agendada')
-        .or(`data.gt.${todayStr},and(data.eq.${todayStr},horario.gt.${currentTime})`)
+        .gte('data', todayStr)
         .order('data')
         .order('horario')
-        .limit(4)
+        .limit(10)
+      
+      // Filtrar sessões futuras (hoje após horário atual ou datas futuras)
+      const filteredUpcoming = upcomingData?.filter(session => {
+        const sessionDate = session.data
+        const sessionTime = session.horario
+        
+        if (sessionDate > todayStr) {
+          return true // Sessões de datas futuras
+        } else if (sessionDate === todayStr) {
+          return sessionTime > currentTime // Sessões de hoje após horário atual
+        }
+        return false
+      }).slice(0, 4)
+      
+      console.log('📅 Sessões futuras encontradas:', filteredUpcoming)
 
       // Carregar pagamentos recentes
       const { data: paymentsData } = await supabase
@@ -209,7 +226,7 @@ const Dashboard = () => {
           .gte('data', monthStartStr)
           .lte('data', monthEndStr)
         
-        // Buscar sessões pendentes/atrasadas do mesmo período
+        // Buscar sessões pendentes do mesmo período (inclui pendentes + atrasadas)
         const { data: monthPendingSessions } = await supabase
           .from('sessions')
           .select('valor')
@@ -217,7 +234,6 @@ const Dashboard = () => {
           .in('status', ['agendada'])
           .gte('data', monthStartStr)
           .lte('data', monthEndStr)
-          .lt('data', new Date().toISOString().split('T')[0])
         
         console.log(`💰 Sessões do mês ${date.getMonth() + 1}/${date.getFullYear()}:`, monthSessions)
         const revenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
@@ -240,8 +256,8 @@ const Dashboard = () => {
       const reminders = []
       
       // Próximas sessões (apenas futuras)
-      if (upcomingData && upcomingData.length > 0) {
-        const nextSession = upcomingData[0]
+      if (filteredUpcoming && filteredUpcoming.length > 0) {
+        const nextSession = filteredUpcoming[0]
         const sessionDate = new Date(nextSession.data)
         const sessionTime = new Date(`${nextSession.data}T${nextSession.horario}`)
         const isToday = sessionDate.toDateString() === now.toDateString()
@@ -291,7 +307,7 @@ const Dashboard = () => {
         completionRate: 94
       })
 
-      setUpcomingSessions(upcomingData || [])
+      setUpcomingSessions(filteredUpcoming || [])
       setRecentPayments(paymentsData || [])
       setRecentClients(recentClientsData || [])
       setMonthlyChart(chartData)
