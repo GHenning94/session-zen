@@ -1,27 +1,31 @@
-import { useEffect, useCallback } from 'react'
+import { useLayoutEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { useTheme } from 'next-themes'
 
 const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 
 export const useColorTheme = () => {
   const { user } = useAuth()
-  const { theme, setTheme } = useTheme()
 
   const applyBrandColor = useCallback((colorValue: string) => {
-    // Update CSS custom property with !important to override theme defaults
-    document.documentElement.style.setProperty('--primary', colorValue, 'important')
-    document.documentElement.style.setProperty('--primary-glow', colorValue.replace('45%', '60%'))
-    document.documentElement.style.setProperty('--sidebar-primary', colorValue, 'important')
+    // Ensure we're working with HSL format
+    const cleanColor = colorValue.replace(/[^\d\s%]/g, '').trim()
     
-    // Create gradient variations
-    const hslValues = colorValue.match(/\d+/g)
+    // Update CSS custom properties
+    document.documentElement.style.setProperty('--primary', cleanColor)
+    document.documentElement.style.setProperty('--sidebar-primary', cleanColor)
+    
+    // Create variations
+    const hslValues = cleanColor.match(/\d+/g)
     if (hslValues && hslValues.length >= 3) {
-      const [h, s] = hslValues
-      const darkerL = Math.max(25, parseInt(hslValues[2]) - 10)
-      const gradient = `linear-gradient(135deg, hsl(${h} ${s}% ${hslValues[2]}%), hsl(${h} ${s}% ${darkerL}%))`
+      const [h, s, l] = hslValues
+      const lighterL = Math.min(85, parseInt(l) + 15)
+      const darkerL = Math.max(25, parseInt(l) - 10)
+      
+      document.documentElement.style.setProperty('--primary-glow', `${h} ${s}% ${lighterL}%`)
+      
+      const gradient = `linear-gradient(135deg, hsl(${h} ${s}% ${l}%), hsl(${h} ${s}% ${darkerL}%))`
       document.documentElement.style.setProperty('--gradient-primary', gradient)
     }
   }, [])
@@ -47,13 +51,10 @@ export const useColorTheme = () => {
     }
   }
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const loadUserColor = async () => {
       if (!user) {
-        // Garantir tema light e cor padrão para usuários não logados
-        if (theme !== 'light') {
-          setTheme('light')
-        }
+        // Aplicar cor padrão para usuários não logados
         applyBrandColor(DEFAULT_COLOR)
         return
       }
@@ -65,53 +66,16 @@ export const useColorTheme = () => {
           .eq('user_id', user.id)
           .maybeSingle()
 
-        if (data?.brand_color) {
-          applyBrandColor(data.brand_color)
-        } else {
-          // Aplicar cor padrão para novos usuários e garantir tema light
-          if (theme !== 'light') {
-            setTheme('light')
-          }
-          applyBrandColor(DEFAULT_COLOR)
-        }
+        const colorToApply = data?.brand_color || DEFAULT_COLOR
+        applyBrandColor(colorToApply)
       } catch (error) {
         console.error('Error loading user color:', error)
-        // Em caso de erro, aplicar cor padrão e tema light
-        if (theme !== 'light') {
-          setTheme('light')
-        }
         applyBrandColor(DEFAULT_COLOR)
       }
     }
 
     loadUserColor()
-  }, [user, theme, setTheme, applyBrandColor])
-
-  // Reaplicar cor quando tema muda
-  useEffect(() => {
-    if (user) {
-      const reapplyColor = async () => {
-        try {
-          const { data } = await supabase
-            .from('configuracoes')
-            .select('brand_color')
-            .eq('user_id', user.id)
-            .maybeSingle()
-
-          if (data?.brand_color) {
-            // Pequeno delay para garantir que o tema foi aplicado
-            setTimeout(() => {
-              applyBrandColor(data.brand_color)
-            }, 100)
-          }
-        } catch (error) {
-          console.error('Error reapplying color:', error)
-        }
-      }
-      
-      reapplyColor()
-    }
-  }, [theme, user, applyBrandColor])
+  }, [user, applyBrandColor])
 
   return { applyBrandColor, saveBrandColor }
 }

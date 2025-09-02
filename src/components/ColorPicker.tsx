@@ -12,21 +12,21 @@ import {
 import { Check, Loader2 } from "lucide-react"
 
 const COLOR_PALETTE = [
-  { name: "Azul Profissional", value: "217 91% 45%", color: "hsl(217, 91%, 45%)" },
-  { name: "Verde Saúde", value: "142 71% 45%", color: "hsl(142, 71%, 45%)" },
-  { name: "Roxo Elegante", value: "262 83% 58%", color: "hsl(262, 83%, 58%)" },
-  { name: "Vermelho Energia", value: "0 84% 60%", color: "hsl(0, 84%, 60%)" },
-  { name: "Laranja Criativo", value: "24 95% 53%", color: "hsl(24, 95%, 53%)" },
-  { name: "Rosa Moderno", value: "330 81% 60%", color: "hsl(330, 81%, 60%)" },
-  { name: "Teal Calmo", value: "173 58% 39%", color: "hsl(173, 58%, 39%)" },
-  { name: "Índigo Profundo", value: "243 75% 59%", color: "hsl(243, 75%, 59%)" },
+  { name: "Azul Profissional", value: "217 91% 45%", color: "hsl(217 91% 45%)" },
+  { name: "Verde Saúde", value: "142 76% 36%", color: "hsl(142 76% 36%)" },
+  { name: "Roxo Elegante", value: "271 91% 65%", color: "hsl(271 91% 65%)" },
+  { name: "Vermelho Energia", value: "0 84% 60%", color: "hsl(0 84% 60%)" },
+  { name: "Laranja Criativo", value: "33 96% 56%", color: "hsl(33 96% 56%)" },
+  { name: "Rosa Moderno", value: "348 83% 47%", color: "hsl(348 83% 47%)" },
+  { name: "Azul Céu", value: "200 98% 39%", color: "hsl(200 98% 39%)" },
+  { name: "Verde Menta", value: "160 84% 39%", color: "hsl(160 84% 39%)" },
 ]
 
 const GRADIENT_PALETTE = [
-  { name: "Azul Oceano", value: "217 91% 45%", gradient: "linear-gradient(135deg, hsl(217, 91%, 45%), hsl(200, 95%, 60%))" },
-  { name: "Verde Natureza", value: "142 71% 45%", gradient: "linear-gradient(135deg, hsl(142, 71%, 45%), hsl(120, 75%, 55%))" },
-  { name: "Roxo Místico", value: "262 83% 58%", gradient: "linear-gradient(135deg, hsl(262, 83%, 58%), hsl(280, 85%, 65%))" },
-  { name: "Por do Sol", value: "24 95% 53%", gradient: "linear-gradient(135deg, hsl(24, 95%, 53%), hsl(45, 95%, 60%))" },
+  { name: "Azul Oceano", value: "217 91% 45%", gradient: "linear-gradient(135deg, hsl(217 91% 45%), hsl(217 91% 35%))" },
+  { name: "Verde Natureza", value: "142 76% 36%", gradient: "linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 26%))" },
+  { name: "Roxo Místico", value: "271 91% 65%", gradient: "linear-gradient(135deg, hsl(271 91% 65%), hsl(271 91% 55%))" },
+  { name: "Por do Sol", value: "33 96% 56%", gradient: "linear-gradient(135deg, hsl(33 96% 56%), hsl(45 95% 60%))" },
 ]
 
 interface ColorPickerProps {
