@@ -19,23 +19,29 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Settings, Share, Copy, Camera, Check, X } from "lucide-react"
+import { User, LogOut, Settings, Share, Copy, Camera, Check, X, Sun, Moon } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { ImageCropper } from "./ImageCropper"
+import { ThemeToggle } from "./ThemeToggle"
+import { ProfessionSelector } from "./ProfessionSelector"
+import { ColorPicker } from "./ColorPicker"
+import { useColorTheme } from "@/hooks/useColorTheme"
 
 interface Profile {
   nome: string
   profissao: string
   avatar_url?: string
   public_avatar_url?: string
+  brand_color?: string
 }
 
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
+  const { applyBrandColor } = useColorTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '' })
   const [loading, setLoading] = useState(false)
@@ -46,6 +52,8 @@ export const ProfileDropdown = () => {
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [showImageCropper, setShowImageCropper] = useState(false)
   const [selectedImageForCrop, setSelectedImageForCrop] = useState('')
+  const [showProfessionSelector, setShowProfessionSelector] = useState(false)
+  const [showColorPicker, setShowColorPicker] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const passwordRequirements = [
@@ -81,13 +89,23 @@ export const ProfileDropdown = () => {
         .eq('user_id', user.id)
         .maybeSingle()
 
+      // Also get brand color from configuracoes
+      const { data: configData } = await supabase
+        .from('configuracoes')
+        .select('brand_color')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
       if (error) {
         console.error('Erro ao buscar perfil:', error)
         throw error
       }
       
       if (data) {
-        setProfile(data)
+        setProfile({
+          ...data,
+          brand_color: configData?.brand_color || '217 91% 45%'
+        })
       }
       setEmail(user.email || '')
     } catch (error) {
@@ -239,6 +257,18 @@ export const ProfileDropdown = () => {
         })
         .eq('user_id', user.id)
 
+      // Update brand color in configuracoes if changed
+      if (profile.brand_color) {
+        const { error: colorError } = await supabase
+          .from('configuracoes')
+          .update({ brand_color: profile.brand_color })
+          .eq('user_id', user.id)
+        
+        if (!colorError) {
+          applyBrandColor(profile.brand_color)
+        }
+      }
+
       if (profileError) {
         console.error('Erro ao salvar perfil:', profileError)
         throw profileError
@@ -355,7 +385,10 @@ export const ProfileDropdown = () => {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56 bg-background border shadow-lg z-50">
-          <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+          <DropdownMenuLabel className="flex items-center justify-between">
+            Minha Conta
+            <ThemeToggle />
+          </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setIsModalOpen(true)}>
             <Settings className="w-4 h-4 mr-2" />
@@ -377,25 +410,24 @@ export const ProfileDropdown = () => {
               Atualize suas informações pessoais aqui.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-6 py-4">
+          <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Foto</Label>
-              <div className="flex items-center gap-3">
-                <Avatar className="h-16 w-16">
-                  <AvatarImage src={profile.avatar_url} alt={profile.nome} />
-                  <AvatarFallback>
-                    <User className="w-8 h-8" />
-                  </AvatarFallback>
-                </Avatar>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
+              <div className="flex justify-center">
+                <div 
+                  className="relative group cursor-pointer"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Camera className="w-4 h-4 mr-2" />
-                  Alterar
-                </Button>
+                  <Avatar className="h-20 w-20">
+                    <AvatarImage src={profile.avatar_url} alt={profile.nome} />
+                    <AvatarFallback>
+                      <User className="w-10 h-10" />
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <Camera className="w-6 h-6 text-white" />
+                  </div>
+                </div>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -427,12 +459,28 @@ export const ProfileDropdown = () => {
             
             <div className="space-y-2">
               <Label htmlFor="profissao">Profissão</Label>
-              <Input
-                id="profissao"
-                value={profile.profissao}
-                onChange={(e) => setProfile(prev => ({ ...prev, profissao: e.target.value }))}
-                placeholder="Ex: Psicólogo"
-              />
+              <Button
+                variant="outline"
+                className="w-full justify-start h-10"
+                onClick={() => setShowProfessionSelector(true)}
+              >
+                {profile.profissao || "Selecionar profissão"}
+              </Button>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Cor da Plataforma</Label>
+              <Button
+                variant="outline"
+                className="w-full justify-start h-10"
+                onClick={() => setShowColorPicker(true)}
+              >
+                <div 
+                  className="w-4 h-4 rounded-full mr-2 border border-border"
+                  style={{ backgroundColor: `hsl(${profile.brand_color || '217 91% 45%'})` }}
+                />
+                Personalizar cores
+              </Button>
             </div>
             
             <div className="space-y-2">
@@ -504,6 +552,24 @@ export const ProfileDropdown = () => {
         onCropComplete={handleCropComplete}
         aspectRatio={1}
         circularCrop={true}
+      />
+      <ProfessionSelector
+        open={showProfessionSelector}
+        onOpenChange={setShowProfessionSelector}
+        currentProfession={profile.profissao}
+        onSelectProfession={(profession) => 
+          setProfile(prev => ({ ...prev, profissao: profession }))
+        }
+      />
+
+      <ColorPicker
+        open={showColorPicker}
+        onOpenChange={setShowColorPicker}
+        currentColor={profile.brand_color || '217 91% 45%'}
+        onSelectColor={(colorValue, colorName) => {
+          setProfile(prev => ({ ...prev, brand_color: colorValue }))
+          applyBrandColor(colorValue)
+        }}
       />
     </>
   )

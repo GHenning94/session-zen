@@ -28,6 +28,7 @@ const Configuracoes = () => {
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [loadingPayments, setLoadingPayments] = useState(false)
   const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false)
+  const [deletingPaymentMethod, setDeletingPaymentMethod] = useState<string | null>(null)
 
   const loadPaymentMethods = async () => {
     if (!user) return;
@@ -120,6 +121,59 @@ const Configuracoes = () => {
       description: "Método de pagamento atualizado com sucesso.",
     });
   };
+
+  const handleDeletePaymentMethod = async (paymentMethodId: string) => {
+    if (!user) return
+
+    setDeletingPaymentMethod(paymentMethodId)
+    try {
+      const { error } = await supabase.functions.invoke('delete-payment-method', {
+        body: { paymentMethodId }
+      })
+
+      if (error) throw error
+
+      await loadPaymentMethods()
+      toast({
+        title: "Cartão removido",
+        description: "O método de pagamento foi removido com sucesso.",
+      })
+    } catch (error) {
+      console.error('Erro ao deletar método de pagamento:', error)
+      toast({
+        title: "Erro",
+        description: "Erro ao remover método de pagamento.",
+        variant: "destructive",
+      })
+    } finally {
+      setDeletingPaymentMethod(null)
+    }
+  }
+
+  const handleSetDefaultPaymentMethod = async (paymentMethodId: string) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase.functions.invoke('update-default-payment-method', {
+        body: { paymentMethodId }
+      })
+
+      if (error) throw error
+
+      await loadPaymentMethods()
+      toast({
+        title: "Cartão padrão definido",
+        description: "O método de pagamento padrão foi atualizado.",
+      })
+    } catch (error) {
+      console.error('Erro ao definir método padrão:', error)
+      toast({
+        title: "Erro",
+        description: "Erro ao definir método de pagamento padrão.",
+        variant: "destructive",
+      })
+    }
+  }
 
   if (isLoading) return <Layout><p className="p-4">Carregando configurações...</p></Layout>;
 
@@ -239,8 +293,18 @@ const Configuracoes = () => {
                         key={method.id}
                         paymentMethod={method}
                         onEdit={() => setShowUpdatePaymentModal(true)}
+                        onDelete={() => handleDeletePaymentMethod(method.id)}
+                        onSetDefault={() => handleSetDefaultPaymentMethod(method.id)}
+                        isDeleting={deletingPaymentMethod === method.id}
                       />
                     ))}
+                    <Button 
+                      onClick={() => setShowUpdatePaymentModal(true)}
+                      variant="outline"
+                      className="w-full"
+                    >
+                      Adicionar Novo Cartão
+                    </Button>
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -251,7 +315,7 @@ const Configuracoes = () => {
                       onClick={() => setShowUpdatePaymentModal(true)}
                       variant="outline"
                     >
-                      Adicionar Cartão
+                      Adicionar Primeiro Cartão
                     </Button>
                   </div>
                 )}
