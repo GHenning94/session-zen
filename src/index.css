@@ -151,8 +151,13 @@
   /* Premium Banner Animations */
   .premium-banner {
     @apply rounded-xl border-0 transition-all duration-300;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)) !important;
-    background-size: 200% 200% !important;
+    background: linear-gradient(135deg, 
+      hsl(var(--primary) / 0.9), 
+      hsl(var(--primary) / 0.7), 
+      hsl(var(--primary) / 0.9), 
+      hsl(var(--primary) / 0.7)
+    ) !important;
+    background-size: 400% 400% !important;
     animation: premium-flow 4s ease-in-out infinite !important;
     box-shadow: 
       0 4px 14px 0 hsl(var(--primary) / 0.25),
@@ -168,8 +173,13 @@
 
   .premium-banner-mini {
     @apply rounded-lg border-0 transition-all duration-300;
-    background: linear-gradient(135deg, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.7)) !important;
-    background-size: 200% 200% !important;
+    background: linear-gradient(135deg, 
+      hsl(var(--primary) / 0.9), 
+      hsl(var(--primary) / 0.7), 
+      hsl(var(--primary) / 0.9), 
+      hsl(var(--primary) / 0.7)
+    ) !important;
+    background-size: 400% 400% !important;
     animation: premium-flow 4s ease-in-out infinite !important;
     box-shadow: 
       0 2px 8px 0 hsl(var(--primary) / 0.25),
@@ -184,7 +194,7 @@
   }
 
   @keyframes premium-flow {
-    0%, 100% {
+    0% {
       background-position: 0% 50%;
     }
     25% {
@@ -195,6 +205,9 @@
     }
     75% {
       background-position: 0% 100%;
+    }
+    100% {
+      background-position: 0% 50%;
     }
   }
 

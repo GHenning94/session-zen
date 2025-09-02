@@ -380,13 +380,13 @@ const GoogleCalendarIntegration = () => {
         )}
 
         {/* Informações sobre a Integração */}
-        <Card className="shadow-soft border-gray-700 dark:border-gray-700 bg-gray-800 dark:bg-gray-800">
+        <Card className="shadow-soft border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
           <CardContent className="p-6">
             <div className="flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-gray-100 dark:text-gray-100 mt-0.5" />
+              <AlertCircle className="w-5 h-5 text-gray-700 dark:text-gray-100 mt-0.5" />
               <div className="space-y-2">
-                <h4 className="font-medium text-gray-50 dark:text-gray-50">Como funciona a integração</h4>
-                <ul className="text-sm text-gray-100 dark:text-gray-100 space-y-1">
+                <h4 className="font-medium text-gray-900 dark:text-gray-50">Como funciona a integração</h4>
+                <ul className="text-sm text-gray-700 dark:text-gray-100 space-y-1">
                   <li>• Visualize todos os seus eventos do Google Agenda</li>
                   <li>• Sincronize eventos específicos com um clique</li>
                   <li>• Os dados dos participantes são importados automaticamente</li>

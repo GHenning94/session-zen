@@ -331,12 +331,12 @@ const ProgramaIndicacao = () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 bg-green-50 rounded-lg">
+              <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'hsl(142 71% 45% / 0.1)' }}>
                 <div>
                   <p className="font-semibold text-lg">Total Recebido</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.totalEarned}</p>
+                  <p className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>{stats.totalEarned}</p>
                 </div>
-                <Badge variant="secondary" className="bg-green-100 text-green-700">
+                <Badge variant="secondary" style={{ backgroundColor: 'hsl(142 71% 45% / 0.1)', color: 'hsl(142 71% 45%)' }}>
                   ↗ +15% este mês
                 </Badge>
               </div>
