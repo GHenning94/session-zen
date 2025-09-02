@@ -453,7 +453,7 @@ const Pagamentos = () => {
                           <p className="text-xs text-muted-foreground">{payment.method}</p>
                         </div>
                         
-                        {payment.status === 'pendente' && (
+                        {(payment.status === 'pendente' || payment.status === 'atrasado') && (
                           <Button 
                             size="sm" 
                             onClick={() => openPaymentModal(payment.session_id)}
