@@ -14,40 +14,46 @@ import { useState, useEffect } from "react"
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
-  const [displayText, setDisplayText] = useState("atendimentos")
+  const [displayText, setDisplayText] = useState("")
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
-  const [currentCharIndex, setCurrentCharIndex] = useState(12)
+  const [currentCharIndex, setCurrentCharIndex] = useState(0)
   const [isDeleting, setIsDeleting] = useState(false)
   const [showCursor, setShowCursor] = useState(true)
+  const [waitingToDelete, setWaitingToDelete] = useState(false)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
   useEffect(() => {
     const word = words[currentWordIndex]
     let timeout: NodeJS.Timeout
 
-    if (isDeleting) {
+    if (waitingToDelete) {
       timeout = setTimeout(() => {
-        setDisplayText(word.substring(0, currentCharIndex - 1))
-        setCurrentCharIndex(currentCharIndex - 1)
-        
-        if (currentCharIndex - 1 === 0) {
-          setIsDeleting(false)
-          setCurrentWordIndex((currentWordIndex + 1) % words.length)
-        }
-      }, 75)
+        setWaitingToDelete(false)
+        setIsDeleting(true)
+      }, 2000)
+    } else if (isDeleting) {
+      if (currentCharIndex > 0) {
+        timeout = setTimeout(() => {
+          setCurrentCharIndex(prev => prev - 1)
+          setDisplayText(word.substring(0, currentCharIndex - 1))
+        }, 75)
+      } else {
+        setIsDeleting(false)
+        setCurrentWordIndex(prev => (prev + 1) % words.length)
+      }
     } else {
-      timeout = setTimeout(() => {
-        setDisplayText(word.substring(0, currentCharIndex + 1))
-        setCurrentCharIndex(currentCharIndex + 1)
-        
-        if (currentCharIndex + 1 === word.length) {
-          setTimeout(() => setIsDeleting(true), 2500)
-        }
-      }, 150)
+      if (currentCharIndex < word.length) {
+        timeout = setTimeout(() => {
+          setCurrentCharIndex(prev => prev + 1)
+          setDisplayText(word.substring(0, currentCharIndex + 1))
+        }, 150)
+      } else if (!waitingToDelete) {
+        setWaitingToDelete(true)
+      }
     }
 
     return () => clearTimeout(timeout)
-  }, [currentCharIndex, currentWordIndex, isDeleting, words])
+  }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete])
 
   // Cursor blinking effect
   useEffect(() => {
@@ -109,7 +115,7 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              <div>Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent inline-block w-[13ch] text-left">{displayText}<span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span></span></div>
+              <div>Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent inline-block min-w-0 text-left">{displayText}<span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span></span></div>
               <div>com facilidade</div>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
