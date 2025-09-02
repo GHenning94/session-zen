@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Clock, User, Trash, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
 
@@ -47,10 +48,16 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
 }) => {
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 0 })
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i))
-  const hours = Array.from({ length: 12 }, (_, i) => i + 8) // 8h às 19h
+  // Create 48 time slots (24 hours * 2 for 30-minute intervals)
+  const timeSlots = Array.from({ length: 48 }, (_, i) => {
+    const hour = Math.floor(i / 2)
+    const minute = i % 2 === 0 ? 0 : 30
+    return { hour, minute, timeString: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` }
+  })
   
   // Current time tracking for red line
   const [, setCurrentTime] = useState(new Date())
+  const scrollAreaRef = useRef<HTMLDivElement>(null)
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,13 +66,41 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
     
     return () => clearInterval(interval)
   }, [])
-  
-  console.log('🗓️ AgendaViewWeek dados:', { currentDate, weekStart, days: days.length, hours: hours.length })
 
-  const getSessionsForDateTime = (date: Date, hour: number) => {
+  // Auto-scroll to current time on component mount
+  useEffect(() => {
+    const scrollToCurrentTime = () => {
+      if (!scrollAreaRef.current) return
+      
+      const now = new Date()
+      const currentHour = now.getHours()
+      const currentMinute = now.getMinutes()
+      
+      // Find the closest time slot index
+      const currentSlotIndex = currentHour * 2 + (currentMinute >= 30 ? 1 : 0)
+      
+      // Calculate scroll position (each row is approximately 60px)
+      const scrollPosition = Math.max(0, (currentSlotIndex - 4) * 60) // Show 4 slots before current time
+      
+      const viewport = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]')
+      if (viewport) {
+        viewport.scrollTop = scrollPosition
+      }
+    }
+
+    // Delay to ensure component is fully rendered
+    const timer = setTimeout(scrollToCurrentTime, 100)
+    return () => clearTimeout(timer)
+  }, [currentDate])
+  
+  console.log('🗓️ AgendaViewWeek dados:', { currentDate, weekStart, days: days.length, timeSlots: timeSlots.length })
+
+  const getSessionsForTimeSlot = (date: Date, timeSlot: { hour: number; minute: number }) => {
     return sessions.filter(session => {
-      const sessionHour = parseInt(session.horario.split(':')[0])
-      return session.data === format(date, 'yyyy-MM-dd') && sessionHour === hour
+      const [sessionHour, sessionMinute] = session.horario.split(':').map(Number)
+      return session.data === format(date, 'yyyy-MM-dd') && 
+             sessionHour === timeSlot.hour && 
+             (sessionMinute === timeSlot.minute || (sessionMinute >= timeSlot.minute && sessionMinute < timeSlot.minute + 30))
     })
   }
 
@@ -82,11 +117,16 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
     }
   }
 
-  const getGoogleEventsForDateTime = (date: Date, hour: number) => {
+  const getGoogleEventsForTimeSlot = (date: Date, timeSlot: { hour: number; minute: number }) => {
     return googleEvents.filter(event => {
       if (!event.start?.dateTime) return false
       const eventDate = new Date(event.start.dateTime)
-      return isSameDay(eventDate, date) && eventDate.getHours() === hour
+      const eventHour = eventDate.getHours()
+      const eventMinute = eventDate.getMinutes()
+      return isSameDay(eventDate, date) && 
+             eventHour === timeSlot.hour && 
+             eventMinute >= timeSlot.minute && 
+             eventMinute < timeSlot.minute + 30
     })
   }
 
@@ -100,13 +140,13 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
 
       <Card className="shadow-soft">
         <CardContent className="p-0">
-          {/* Header com dias da semana */}
-          <div className="grid grid-cols-8 border-b border-border">
-            <div className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
+          {/* Header com dias da semana - fixo */}
+          <div className="grid grid-cols-8 border-b border-border sticky top-0 z-20 bg-background">
+            <div className="p-3 text-center text-sm font-medium text-muted-foreground bg-muted">
               Horário
             </div>
             {days.map((day) => (
-              <div key={day.getTime()} className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
+              <div key={day.getTime()} className="p-3 text-center text-sm font-medium text-muted-foreground bg-muted">
                 <div>{format(day, 'EEE', { locale: ptBR })}</div>
                 <div className={cn(
                   "text-lg font-bold mt-1",
@@ -118,137 +158,151 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
             ))}
           </div>
 
-          {/* Grid de horários */}
-          <div className="grid grid-cols-8">
-            {hours.map((hour) => (
-              <React.Fragment key={hour}>
-                <div className="p-3 text-center text-sm text-muted-foreground bg-muted border-r border-border">
-                  {String(hour).padStart(2, '0')}:00
-                </div>
-                {days.map((day) => {
-                  const daySessions = getSessionsForDateTime(day, hour)
-                  const dayGoogleEvents = getGoogleEventsForDateTime(day, hour)
-                  return (
-                    <div
-                      key={`${day.getTime()}-${hour}`}
-                      className={cn(
-                        "min-h-[80px] p-2 border border-border cursor-pointer hover:bg-accent/20 transition-colors relative",
-                        isSameDay(day, new Date()) && "bg-primary/5"
-                      )}
-                      onClick={() => onCreateSession?.(day, `${String(hour).padStart(2, '0')}:00`)}
-                      onDragOver={(e) => {
-                        e.preventDefault()
-                        e.currentTarget.classList.add('bg-primary/10')
-                      }}
-                      onDragLeave={(e) => {
-                        e.currentTarget.classList.remove('bg-primary/10')
-                      }}
-                      onDrop={(e) => {
-                        e.preventDefault()
-                        e.currentTarget.classList.remove('bg-primary/10')
-                        const sessionId = e.dataTransfer.getData('session-id')
-                        
-                        if (sessionId && onDragSession) {
-                          const newDate = format(day, 'yyyy-MM-dd')
-                          const newTime = `${String(hour).padStart(2, '0')}:00`
-                          onDragSession(sessionId, newDate, newTime)
-                        }
-                      }}
-                    >
-                      {/* Current time red line for today only */}
-                      {(() => {
-                        const now = new Date()
-                        const isToday = isSameDay(day, now)
-                        const currentHour = now.getHours()
-                        const currentMinute = now.getMinutes()
-                        
-                        if (isToday && currentHour === hour) {
-                          const currentTimePosition = (currentMinute / 60) * 100
-                          return (
-                            <div 
-                              className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
-                              style={{ top: `${currentTimePosition}%` }}
-                            >
-                              <div className="w-1 h-1 bg-red-500 rounded-full mr-1" />
-                              <div className="flex-1 h-0.5 bg-red-500" />
-                              <span className="text-xs text-red-500 ml-1 bg-white px-1 rounded text-[10px]">
-                                {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                          )
-                        }
-                        return null
-                      })()}
-                      <div className="space-y-1">
-                        {daySessions.map((session) => (
-                          <Card 
-                            key={session.id} 
-                            className={cn(
-                              "cursor-move group relative transition-all hover:shadow-sm",
-                              getStatusColor(session.status),
-                              highlightedSessionId === session.id && "animate-pulse-highlight"
-                            )}
-                            draggable
-                            onDragStart={(e) => {
-                              e.dataTransfer.setData('session-id', session.id)
-                              e.dataTransfer.setData('session-data', JSON.stringify(session))
-                            }}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onEditSession(session)
-                            }}
-                          >
-                            <CardContent className="p-2">
-                              <div className="flex items-center gap-2">
-                                <div className="flex items-center gap-1">
-                                  <Clock className="h-3 w-3" />
-                                  <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
+          {/* Grid de horários com scroll */}
+          <ScrollArea className="h-[600px]" ref={scrollAreaRef}>
+            <div className="grid grid-cols-8">
+              {timeSlots.map((timeSlot, index) => (
+                <React.Fragment key={index}>
+                  <div className="p-2 text-center text-xs text-muted-foreground bg-muted border-r border-border min-h-[60px] flex items-center justify-center">
+                    <span className={cn(
+                      "font-medium",
+                      timeSlot.minute === 0 && "text-sm font-semibold"
+                    )}>
+                      {timeSlot.timeString}
+                    </span>
+                  </div>
+                  {days.map((day) => {
+                    const daySessions = getSessionsForTimeSlot(day, timeSlot)
+                    const dayGoogleEvents = getGoogleEventsForTimeSlot(day, timeSlot)
+                    return (
+                      <div
+                        key={`${day.getTime()}-${index}`}
+                        className={cn(
+                          "min-h-[60px] p-1 border border-border cursor-pointer hover:bg-accent/20 transition-colors relative",
+                          isSameDay(day, new Date()) && "bg-primary/5"
+                        )}
+                        onClick={() => onCreateSession?.(day, timeSlot.timeString)}
+                        onDragOver={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.add('bg-primary/10')
+                        }}
+                        onDragLeave={(e) => {
+                          e.currentTarget.classList.remove('bg-primary/10')
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault()
+                          e.currentTarget.classList.remove('bg-primary/10')
+                          const sessionId = e.dataTransfer.getData('session-id')
+                          
+                          if (sessionId && onDragSession) {
+                            const newDate = format(day, 'yyyy-MM-dd')
+                            const newTime = timeSlot.timeString
+                            onDragSession(sessionId, newDate, newTime)
+                          }
+                        }}
+                      >
+                        {/* Current time red line for today only */}
+                        {(() => {
+                          const now = new Date()
+                          const isToday = isSameDay(day, now)
+                          const currentHour = now.getHours()
+                          const currentMinute = now.getMinutes()
+                          
+                          if (isToday && currentHour === timeSlot.hour) {
+                            // Show red line in the correct 30-minute slot
+                            const isInCorrectSlot = timeSlot.minute === 0 ? 
+                              currentMinute < 30 : currentMinute >= 30
+                            
+                            if (isInCorrectSlot) {
+                              const slotMinute = timeSlot.minute === 0 ? currentMinute : currentMinute - 30
+                              const currentTimePosition = (slotMinute / 30) * 100
+                              return (
+                                <div 
+                                  className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
+                                  style={{ top: `${currentTimePosition}%` }}
+                                >
+                                  <div className="w-1 h-1 bg-red-500 rounded-full mr-1" />
+                                  <div className="flex-1 h-0.5 bg-red-500" />
+                                  <span className="text-xs text-red-500 ml-1 bg-white px-1 rounded text-[10px]">
+                                    {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                  </span>
                                 </div>
+                              )
+                            }
+                          }
+                          return null
+                        })()}
+                        <div className="space-y-1">
+                          {daySessions.map((session) => (
+                            <Card 
+                              key={session.id} 
+                              className={cn(
+                                "cursor-move group relative transition-all hover:shadow-sm",
+                                getStatusColor(session.status),
+                                highlightedSessionId === session.id && "animate-pulse-highlight"
+                              )}
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.setData('session-id', session.id)
+                                e.dataTransfer.setData('session-data', JSON.stringify(session))
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onEditSession(session)
+                              }}
+                            >
+                              <CardContent className="p-1.5">
                                 <div className="flex items-center gap-1">
-                                  <User className="h-3 w-3" />
-                                  <span className="text-xs truncate">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-2.5 w-2.5" />
+                                    <span className="text-[10px] font-medium">{formatTimeBR(session.horario)}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-1 mt-0.5">
+                                  <User className="h-2.5 w-2.5" />
+                                  <span className="text-[10px] truncate">
                                     {clients.find(c => c.id === session.client_id)?.nome || 'N/A'}
                                   </span>
                                 </div>
-                              </div>
-                              
-                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-5 w-5 p-0 text-destructive"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    onDeleteSession(session.id)
-                                  }}
-                                >
-                                  <Trash className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ))}
+                                
+                                <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-4 w-4 p-0 text-destructive"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onDeleteSession(session.id)
+                                    }}
+                                  >
+                                    <Trash className="h-2.5 w-2.5" />
+                                  </Button>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
 
-                        {/* Google Events */}
-                        {dayGoogleEvents.map((event) => (
-                          <div
-                            key={event.id}
-                            className="text-xs p-1 rounded bg-blue-50 text-blue-700 border border-blue-200"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="flex items-center gap-1">
-                              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                              <span className="truncate">{event.summary}</span>
+                          {/* Google Events */}
+                          {dayGoogleEvents.map((event) => (
+                            <div
+                              key={event.id}
+                              className="text-[10px] p-1 rounded bg-blue-50 text-blue-700 border border-blue-200"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                <span className="truncate">{event.summary}</span>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )
-                })}
-              </React.Fragment>
-            ))}
-          </div>
+                    )
+                  })}
+                </React.Fragment>
+              ))}
+            </div>
+          </ScrollArea>
         </CardContent>
       </Card>
     </div>
