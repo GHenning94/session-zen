@@ -98,12 +98,7 @@ const Integracoes = () => {
           </TabsList>
           
           <TabsContent value="google-calendar" className="space-y-6">
-            <GoogleCalendarIntegration
-              settings={settings}
-              onSettingsChange={handleSettingsChange}
-              onSave={handleSave}
-              isLoading={isLoading}
-            />
+            <GoogleCalendarIntegration />
           </TabsContent>
           
           <TabsContent value="google-drive" className="space-y-6">

@@ -395,8 +395,12 @@ export type Database = {
       }
       profiles: {
         Row: {
+          agencia: string | null
           avatar_url: string | null
+          banco: string | null
           bio: string | null
+          conta: string | null
+          cpf_cnpj: string | null
           created_at: string
           crp: string | null
           especialidade: string | null
@@ -407,12 +411,17 @@ export type Database = {
           public_avatar_url: string | null
           subscription_plan: string | null
           telefone: string | null
+          tipo_conta: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          agencia?: string | null
           avatar_url?: string | null
+          banco?: string | null
           bio?: string | null
+          conta?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
           especialidade?: string | null
@@ -423,12 +432,17 @@ export type Database = {
           public_avatar_url?: string | null
           subscription_plan?: string | null
           telefone?: string | null
+          tipo_conta?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          agencia?: string | null
           avatar_url?: string | null
+          banco?: string | null
           bio?: string | null
+          conta?: string | null
+          cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
           especialidade?: string | null
@@ -439,6 +453,7 @@ export type Database = {
           public_avatar_url?: string | null
           subscription_plan?: string | null
           telefone?: string | null
+          tipo_conta?: string | null
           updated_at?: string
           user_id?: string
         }
