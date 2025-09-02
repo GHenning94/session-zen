@@ -22,13 +22,13 @@ import Configuracoes from "@/pages/Configuracoes";
 import Relatorios from "@/pages/Relatorios";
 import Sessoes from "@/pages/Sessoes";
 
-// Lazy load apenas para páginas menos acessadas
-const Upgrade = lazy(() => import("@/pages/Upgrade"));
-const Eventos = lazy(() => import("@/pages/Eventos"));
-const Prontuarios = lazy(() => import("@/pages/Prontuarios"));
-const Estudos = lazy(() => import("@/pages/Estudos"));
-const RedesSociais = lazy(() => import("@/pages/RedesSociais"));
-const ProgramaIndicacao = lazy(() => import("@/pages/ProgramaIndicacao"));
+// Importações diretas para todas as páginas principais
+import Upgrade from "@/pages/Upgrade";
+import Eventos from "@/pages/Eventos";
+import Prontuarios from "@/pages/Prontuarios";
+import Estudos from "@/pages/Estudos";
+import RedesSociais from "@/pages/RedesSociais";
+import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -55,13 +55,6 @@ const App = () => (
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/signup" element={<Signup />} />
-                <Route path="/upgrade" element={
-                  <ProtectedRoute>
-                    <Suspense fallback={<PageLoading />}>
-                      <Upgrade />
-                    </Suspense>
-                  </ProtectedRoute>
-                } />
                 <Route path="/dashboard" element={
                   <ProtectedRoute>
                     <Dashboard />
@@ -97,41 +90,36 @@ const App = () => (
                     <Configuracoes />
                   </ProtectedRoute>
                 } />
-              <Route path="/eventos" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoading />}>
+                <Route path="/upgrade" element={
+                  <ProtectedRoute>
+                    <Upgrade />
+                  </ProtectedRoute>
+                } />
+                <Route path="/eventos" element={
+                  <ProtectedRoute>
                     <Eventos />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
-              <Route path="/prontuarios" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoading />}>
+                  </ProtectedRoute>
+                } />
+                <Route path="/prontuarios" element={
+                  <ProtectedRoute>
                     <Prontuarios />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
-              <Route path="/estudos" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoading />}>
+                  </ProtectedRoute>
+                } />
+                <Route path="/estudos" element={
+                  <ProtectedRoute>
                     <Estudos />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
-              <Route path="/redes-sociais" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoading />}>
+                  </ProtectedRoute>
+                } />
+                <Route path="/redes-sociais" element={
+                  <ProtectedRoute>
                     <RedesSociais />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
-              <Route path="/programa-indicacao" element={
-                <ProtectedRoute>
-                  <Suspense fallback={<PageLoading />}>
+                  </ProtectedRoute>
+                } />
+                <Route path="/programa-indicacao" element={
+                  <ProtectedRoute>
                     <ProgramaIndicacao />
-                  </Suspense>
-                </ProtectedRoute>
-              } />
+                  </ProtectedRoute>
+                } />
                 <Route path="/agendar/:userId" element={
                   <Suspense fallback={<PageLoading />}>
                     <BookingPage />

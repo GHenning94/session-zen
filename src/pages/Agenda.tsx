@@ -192,27 +192,13 @@ const Agenda = () => {
   const todaySessionsStats = useMemo(() => {
     console.log('🔄 Recalculando estatísticas, sessions length:', sessions.length)
     const today = new Date()
-    
-    // Usar toLocaleString para garantir timezone Brasil
-    const todayString = today.toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit'
-    }).split(',')[0]
+    const todayFormatted = format(today, 'yyyy-MM-dd')
     
     const todaySessionsData = sessions.filter(session => {
-      const sessionDate = new Date(session.data)
-      const sessionString = sessionDate.toLocaleString("pt-BR", {
-        timeZone: "America/Sao_Paulo",
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      }).split(',')[0]
-      return sessionString === todayString
+      return session.data === todayFormatted
     })
     
-    console.log('📊 Sessões de hoje encontradas:', todaySessionsData.length)
+    console.log('📊 Sessões de hoje encontradas:', todaySessionsData.length, 'para data:', todayFormatted)
     
     const todaySessionsCount = todaySessionsData.length
     const todayRevenue = todaySessionsData.reduce((sum, s) => sum + (s.valor || 0), 0)

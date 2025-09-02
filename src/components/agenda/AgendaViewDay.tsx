@@ -126,16 +126,10 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   
   // Função para calcular a posição da linha de tempo atual
   const getCurrentTimePosition = () => {
-    // Usar timezone real do Brasil (considera horário de verão automaticamente)
     const now = new Date()
-    const brasiliaTimeString = now.toLocaleString("pt-BR", {
-      timeZone: "America/Sao_Paulo",
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-    const [hours, minutes] = brasiliaTimeString.split(':').map(Number)
-    return hours + (minutes / 60)
+    const currentHour = now.getHours()
+    const currentMinute = now.getMinutes()
+    return currentHour + (currentMinute / 60)
   }
   
   const today = new Date()
