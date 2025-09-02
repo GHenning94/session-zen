@@ -114,8 +114,8 @@ const LandingPage = () => {
       <section className="py-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-7xl mx-auto text-center">
           <div className="max-w-3xl mx-auto">
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-tight">
-              <div>Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent inline-block min-w-0 text-left">{displayText}<span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span></span></div>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-foreground mb-6 leading-loose pb-2">
+              <div>Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent inline-flex w-[13ch] text-left whitespace-nowrap">{displayText}<span className={`${showCursor ? 'opacity-100' : 'opacity-0'} transition-opacity duration-100`}>|</span></span></div>
               <div>com facilidade</div>
             </h1>
             <p className="text-xl text-muted-foreground mb-8 leading-relaxed">
