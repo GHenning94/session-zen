@@ -189,9 +189,8 @@ const GoogleCalendarIntegration = () => {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full ${
-                  isSignedIn ? 'bg-green-500' : 'bg-gray-300'
-                }`} />
+                <div className={`w-3 h-3 rounded-full`} 
+                     style={{ backgroundColor: isSignedIn ? 'hsl(142 71% 45%)' : '#d1d5db' }} />
                 <div>
                   <p className="font-medium">
                     {isSignedIn ? 'Conectado' : 'Não conectado'}

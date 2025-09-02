@@ -252,9 +252,15 @@ const BookingPage = () => {
                 )}
 
                 {config?.chave_pix && (
-                  <div className="p-3 sm:p-4 bg-green-50 rounded-lg border border-green-200">
-                    <h3 className="font-semibold text-green-800 mb-2 text-sm sm:text-base">PIX</h3>
-                    <p className="text-xs sm:text-sm text-green-700 break-all">Chave PIX: {config.chave_pix}</p>
+                  <div className="p-3 sm:p-4 rounded-lg border" 
+                       style={{ 
+                         backgroundColor: 'hsl(142 71% 45% / 0.1)', 
+                         borderColor: 'hsl(142 71% 45% / 0.3)' 
+                       }}>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base" 
+                        style={{ color: 'hsl(142 71% 35%)' }}>PIX</h3>
+                    <p className="text-xs sm:text-sm break-all" 
+                       style={{ color: 'hsl(142 71% 40%)' }}>Chave PIX: {config.chave_pix}</p>
                   </div>
                 )}
                 

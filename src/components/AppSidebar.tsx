@@ -153,9 +153,9 @@ export function AppSidebar() {
       collapsible="icon"
     >
       <SidebarHeader className="border-b border-border p-4">
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-gradient-primary rounded-lg flex items-center justify-center">
-            <Stethoscope className="w-4 h-4 text-white" />
+        <div className="flex items-center gap-3 justify-center">
+          <div className={`${isCollapsed ? 'w-6 h-6' : 'w-8 h-8'} bg-gradient-primary rounded-lg flex items-center justify-center mx-auto`}>
+            <Stethoscope className={`${isCollapsed ? 'w-3 h-3' : 'w-4 h-4'} text-white`} />
           </div>
           {!isCollapsed && (
             <div>

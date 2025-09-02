@@ -55,8 +55,9 @@ export default function Upgrade() {
         </div>
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {plans.map((plan) => (
-            <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${plan.id === currentPlan ? 'border-2 border-green-500' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`}>
-              {plan.id === currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600">Plano Atual</Badge>)}
+            <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${plan.id === currentPlan ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
+                  style={plan.id === currentPlan ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
+              {plan.id === currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
               {plan.recommended && plan.id !== currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
@@ -73,7 +74,7 @@ export default function Upgrade() {
                 <ul className="space-y-3 mb-6 flex-grow">
                   {plan.features.map((feature, index) => (
                     <li key={index} className="flex items-center gap-3">
-                      <div className="flex-shrink-0"><Check className="h-4 w-4 text-green-500" /></div>
+                      <div className="flex-shrink-0"><Check className="h-4 w-4" style={{ color: 'hsl(142 71% 45%)' }} /></div>
                       <span className="text-sm">{feature}</span>
                     </li>
                   ))}

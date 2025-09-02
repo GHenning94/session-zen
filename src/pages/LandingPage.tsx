@@ -322,8 +322,8 @@ const LandingPage = () => {
               </div>
               <div className="order-1 lg:order-2 space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-green-500/10 rounded-xl flex items-center justify-center">
-                    <Users className="w-6 h-6 text-green-600" />
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ backgroundColor: 'hsl(142 71% 45% / 0.1)' }}>
+                    <Users className="w-6 h-6" style={{ color: 'hsl(142 71% 45%)' }} />
                   </div>
                   <h3 className="text-2xl font-bold">Gestão Completa de Clientes</h3>
                 </div>
