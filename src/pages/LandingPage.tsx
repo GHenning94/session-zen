@@ -23,11 +23,14 @@ const LandingPage = () => {
 
   // Force light theme for landing page
   useEffect(() => {
+    // More robust theme forcing
     document.documentElement.classList.remove('dark')
+    document.documentElement.classList.add('light')
     document.documentElement.setAttribute('data-theme', 'light')
+    document.body.style.colorScheme = 'light'
     
     return () => {
-      // Don't restore theme on unmount - let the app handle it
+      document.body.style.colorScheme = ''
     }
   }, [])
 

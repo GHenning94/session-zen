@@ -22,16 +22,14 @@ interface PaymentMethodCardProps {
 }
 
 const getBrandIcon = (brand: string) => {
-  const brandColors = {
-    visa: 'text-blue-600',
-    mastercard: 'text-red-600',
-    amex: 'text-green-600',
-    discover: 'text-orange-600',
+  const brandIcons = {
+    visa: <CreditCard className="w-8 h-8 text-blue-600" />,
+    mastercard: <CreditCard className="w-8 h-8 text-red-600" />,
+    amex: <CreditCard className="w-8 h-8" style={{ color: 'hsl(142 71% 45%)' }} />,
+    discover: <CreditCard className="w-8 h-8 text-orange-600" />,
   };
   
-  return (
-    <CreditCard className={`w-8 h-8 ${brandColors[brand as keyof typeof brandColors] || 'text-gray-600'}`} />
-  );
+  return brandIcons[brand as keyof typeof brandIcons] || <CreditCard className="w-8 h-8 text-gray-600" />;
 };
 
 const formatBrand = (brand: string) => {
