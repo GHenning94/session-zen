@@ -459,7 +459,7 @@ const Dashboard = () => {
                           <p className="text-sm text-muted-foreground">
                             {formatTimeBR(session.horario)}
                           </p>
-                          <p className="text-sm font-medium text-green-600">
+                          <p className="text-sm font-medium text-[#16a34a]">
                             {formatCurrencyBR(session.valor || 0)}
                           </p>
                        </div>
@@ -589,7 +589,7 @@ const Dashboard = () => {
                     <span>Adicionar Cliente</span>
                   </Button>
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewPayment}>
-                    <DollarSign className="w-6 h-6 text-green-600" />
+                    <DollarSign className="w-6 h-6 text-[#16a34a]" />
                     <span>Registrar Pagamento</span>
                   </Button>
                 </div>

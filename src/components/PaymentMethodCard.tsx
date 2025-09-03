@@ -25,7 +25,7 @@ const getBrandIcon = (brand: string) => {
   const brandIcons = {
     visa: <CreditCard className="w-8 h-8 text-blue-600" />,
     mastercard: <CreditCard className="w-8 h-8 text-red-600" />,
-    amex: <CreditCard className="w-8 h-8 text-green-600" />,
+    amex: <CreditCard className="w-8 h-8 text-[#16a34a]" />,
     discover: <CreditCard className="w-8 h-8 text-orange-600" />,
   };
   

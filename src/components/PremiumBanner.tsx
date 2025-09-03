@@ -23,11 +23,11 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
       <Button
         variant="ghost"
         size="icon"
-        className="w-8 h-8 premium-banner-mini relative overflow-hidden"
+        className="w-8 h-8 premium-banner-mini relative overflow-hidden mx-auto"
         onClick={handleUpgrade}
         title="Torne-se Premium"
       >
-        <Crown className="w-4 h-4 text-white relative z-10" />
+        <Crown className="w-5 h-5 text-white relative z-10" />
       </Button>
     )
   }

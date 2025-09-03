@@ -218,7 +218,7 @@ const LandingPage = () => {
                   <ul className="space-y-3 mb-6 flex-grow">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-3">
-                         <CheckCircle className="w-5 h-5 text-green-600" />
+                         <CheckCircle className="w-5 h-5 text-[#16a34a]" />
                         <span className="text-sm">{feature}</span>
                       </li>
                     ))}

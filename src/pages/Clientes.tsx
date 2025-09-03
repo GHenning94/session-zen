@@ -344,7 +344,7 @@ const Clientes = () => {
               <CardTitle className="text-lg">Status</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold text-green-600">
+              <div className="text-lg font-bold text-[#16a34a]">
                 {clients.length >= planLimits.maxClients ? 'Limite atingido' : 'Funcionando'}
               </div>
               <p className="text-sm text-muted-foreground">Sistema operacional</p>

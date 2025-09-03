@@ -56,13 +56,13 @@ export const useColorTheme = () => {
 
   useLayoutEffect(() => {
     const loadUserColor = async () => {
-      // Não aplicar cores personalizadas na landing page
+      // NUNCA aplicar cores personalizadas na landing page - deixar sistema nativo
       if (isLandingPage) {
         return
       }
 
       if (!user) {
-        // Aplicar cor padrão para usuários não logados (exceto landing page)
+        // Aplicar cor padrão apenas para usuários não logados dentro da plataforma
         applyBrandColor(DEFAULT_COLOR)
         return
       }
