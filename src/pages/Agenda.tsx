@@ -358,7 +358,7 @@ const Agenda = () => {
             {/* Google Calendar Integration */}
             {isGoogleConnected ? (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" style={{ backgroundColor: 'hsl(142 71% 45% / 0.1)', color: 'hsl(142 71% 45%)' }}>
+                <Badge variant="secondary" className="bg-green-100 text-green-700 border-green-200">
                   <Link className="h-3 w-3 mr-1" />
                   Google Calendar
                 </Badge>
@@ -464,7 +464,7 @@ const Agenda = () => {
               <CardTitle className="text-lg">Receita Prevista</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>
+              <div className="text-3xl font-bold text-green-600">
                 R$ {todaySessionsStats.todayRevenue.toFixed(2)}
               </div>
               <p className="text-sm text-muted-foreground">Valor total do dia</p>
