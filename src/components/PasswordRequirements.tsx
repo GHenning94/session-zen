@@ -37,11 +37,11 @@ export const PasswordRequirements = ({ password }: PasswordRequirementsProps) =>
           return (
             <div key={index} className="flex items-center gap-2 text-sm">
               {isValid ? (
-                <Check className="w-4 h-4 text-[#16a34a]" />
+                <Check className="w-4 h-4" style={{ color: 'hsl(142 71% 45%)' }} />
               ) : (
                 <X className="w-4 h-4 text-muted-foreground" />
               )}
-              <span className={isValid ? "text-[#16a34a]" : "text-muted-foreground"}>
+              <span className={isValid ? "" : "text-muted-foreground"} style={isValid ? { color: 'hsl(142 71% 45%)' } : {}}>
                 {req.text}
               </span>
             </div>

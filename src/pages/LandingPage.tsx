@@ -21,22 +21,16 @@ const LandingPage = () => {
   const [waitingToDelete, setWaitingToDelete] = useState(false)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
-  // Force light theme for landing page - MAIS ROBUSTO
+  // Force light theme for landing page
   useEffect(() => {
-    // Prevent theme from affecting landing page
+    // More robust theme forcing
     document.documentElement.classList.remove('dark')
     document.documentElement.classList.add('light')
     document.documentElement.setAttribute('data-theme', 'light')
     document.body.style.colorScheme = 'light'
     
-    // Override any CSS variables that might be applied
-    document.documentElement.style.setProperty('--primary', '217 91% 45%')
-    document.documentElement.style.setProperty('--background', '0 0% 100%')
-    document.documentElement.style.setProperty('--foreground', '215 25% 15%')
-    
     return () => {
       document.body.style.colorScheme = ''
-      // Don't restore theme variables on unmount - let the app handle it
     }
   }, [])
 
@@ -218,7 +212,7 @@ const LandingPage = () => {
                   <ul className="space-y-3 mb-6 flex-grow">
                     {plan.features.map((feature, i) => (
                       <li key={i} className="flex items-center gap-3">
-                         <CheckCircle className="w-5 h-5 text-[#16a34a]" />
+                        <CheckCircle className="w-5 h-5" style={{ color: 'hsl(142 71% 45%)' }} />
                         <span className="text-sm">{feature}</span>
                       </li>
                     ))}

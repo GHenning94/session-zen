@@ -2,14 +2,11 @@ import { useLayoutEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { useLocation } from 'react-router-dom'
 
 const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 
 export const useColorTheme = () => {
   const { user } = useAuth()
-  const location = useLocation()
-  const isLandingPage = location.pathname === '/'
 
   const applyBrandColor = useCallback((colorValue: string) => {
     // Ensure we're working with HSL format
@@ -56,13 +53,8 @@ export const useColorTheme = () => {
 
   useLayoutEffect(() => {
     const loadUserColor = async () => {
-      // NUNCA aplicar cores personalizadas na landing page - deixar sistema nativo
-      if (isLandingPage) {
-        return
-      }
-
       if (!user) {
-        // Aplicar cor padrão apenas para usuários não logados dentro da plataforma
+        // Aplicar cor padrão para usuários não logados
         applyBrandColor(DEFAULT_COLOR)
         return
       }
@@ -83,7 +75,7 @@ export const useColorTheme = () => {
     }
 
     loadUserColor()
-  }, [user, applyBrandColor, isLandingPage])
+  }, [user, applyBrandColor])
 
   return { applyBrandColor, saveBrandColor }
 }

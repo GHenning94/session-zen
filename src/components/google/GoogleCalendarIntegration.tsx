@@ -190,7 +190,7 @@ const GoogleCalendarIntegration = () => {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full`} 
-                     style={{ backgroundColor: isSignedIn ? '#22c55e' : '#d1d5db' }} />
+                     style={{ backgroundColor: isSignedIn ? 'hsl(142 71% 45%)' : '#d1d5db' }} />
                 <div>
                   <p className="font-medium">
                     {isSignedIn ? 'Conectado' : 'Não conectado'}

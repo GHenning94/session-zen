@@ -154,7 +154,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-border p-4">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} bg-gradient-primary rounded-lg flex items-center justify-center mx-auto`}>
+          <div className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} bg-gradient-primary rounded-lg flex items-center justify-center ${isCollapsed ? '' : ''}`}>
             <Stethoscope className={`${isCollapsed ? 'w-4 h-4' : 'w-4 h-4'} text-white`} />
           </div>
           {!isCollapsed && (

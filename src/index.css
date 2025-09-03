@@ -148,9 +148,9 @@
     @apply bg-background text-foreground;
   }
 
-  /* Premium Banner Animations - MÁXIMA PRIORIDADE COM !important */
+  /* Premium Banner Animations */
   .premium-banner {
-    @apply rounded-xl border-0 transition-all duration-300 !important;
+    @apply rounded-xl border-0 transition-all duration-300;
     background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
     background-size: 400% 400% !important;
     animation: premium-flow 4s ease-in-out infinite !important;
@@ -160,16 +160,14 @@
   }
 
   .premium-banner:hover {
-    @apply scale-[1.02] !important;
-    background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
-    animation: premium-flow 4s ease-in-out infinite !important;
+    @apply scale-[1.02];
     box-shadow: 
       0 8px 25px 0 rgba(102, 126, 234, 0.35),
       0 0 30px rgba(102, 126, 234, 0.3) !important;
   }
 
   .premium-banner-mini {
-    @apply rounded-lg border-0 transition-all duration-300 !important;
+    @apply rounded-lg border-0 transition-all duration-300;
     background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
     background-size: 400% 400% !important;
     animation: premium-flow 4s ease-in-out infinite !important;
@@ -179,9 +177,7 @@
   }
 
   .premium-banner-mini:hover {
-    @apply scale-105 !important;
-    background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
-    animation: premium-flow 4s ease-in-out infinite !important;
+    @apply scale-105;
     box-shadow: 
       0 4px 15px 0 rgba(102, 126, 234, 0.35),
       0 0 20px rgba(102, 126, 234, 0.3) !important;

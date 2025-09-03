@@ -210,7 +210,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                             </div>
                             <div className="flex items-center gap-1">
                               {session.valor && (
-                                <span className="text-xs font-medium text-[#16a34a]">
+                                <span className="text-xs font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
                                   R$ {Number(session.valor).toFixed(2)}
                                 </span>
                               )}

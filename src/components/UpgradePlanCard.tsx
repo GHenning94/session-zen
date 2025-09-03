@@ -162,7 +162,7 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
                           </Badge>
                         )}
                         {plan.id === currentPlan && (
-                          <Badge className="text-white text-xs px-1.5 py-0.5 bg-[#16a34a]">
+                          <Badge className="text-white text-xs px-1.5 py-0.5" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>
                             Ativo
                           </Badge>
                         )}
