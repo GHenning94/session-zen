@@ -24,6 +24,7 @@ export interface CalendarClient {
   email?: string
   telefone?: string
   user_id: string
+  ativo: boolean
 }
 
 export const useCalendarData = () => {

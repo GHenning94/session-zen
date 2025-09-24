@@ -34,6 +34,7 @@ export const SessionEditModal = ({
     anotacoes: ''
   })
   const [loading, setLoading] = useState(false)
+  const [showReactivationMessage, setShowReactivationMessage] = useState(false)
 
   useEffect(() => {
     if (session) {
@@ -45,14 +46,37 @@ export const SessionEditModal = ({
         status: session.status || 'agendada',
         anotacoes: session.anotacoes || ''
       })
+      setShowReactivationMessage(false)
     }
   }, [session])
+
+  const handleClientChange = (value: string) => {
+    setFormData(prev => ({ ...prev, client_id: value }))
+    
+    // Verificar se o cliente selecionado está inativo
+    const selectedClient = clients.find(c => c.id === value)
+    setShowReactivationMessage(selectedClient && !selectedClient.ativo)
+  }
 
   const handleSave = async () => {
     if (!session) return
 
     setLoading(true)
     try {
+      // Verificar se o cliente está inativo e reativá-lo se necessário
+      const selectedClient = clients.find(c => c.id === formData.client_id)
+      if (selectedClient && !selectedClient.ativo) {
+        await supabase
+          .from('clients')
+          .update({ ativo: true })
+          .eq('id', formData.client_id)
+        
+        toast({
+          title: "Cliente reativado",
+          description: "O cliente foi reativado automaticamente.",
+        })
+      }
+
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -100,7 +124,7 @@ export const SessionEditModal = ({
             <Label htmlFor="client">Cliente</Label>
             <Select
               value={formData.client_id}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, client_id: value }))}
+              onValueChange={handleClientChange}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecione um cliente" />
@@ -108,11 +132,23 @@ export const SessionEditModal = ({
               <SelectContent>
                 {clients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
-                    {client.nome}
+                    <div className="flex items-center gap-2">
+                      <span>{client.nome}</span>
+                      {!client.ativo && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                          inativo
+                        </span>
+                      )}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {showReactivationMessage && (
+              <div className="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
+                Ao salvar, este cliente será reativado automaticamente.
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

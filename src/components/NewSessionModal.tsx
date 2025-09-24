@@ -26,6 +26,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCre
   const [clients, setClients] = useState<any[]>([])
   const [sessions, setSessions] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [showReactivationMessage, setShowReactivationMessage] = useState(false)
   const [newSession, setNewSession] = useState({
     client_id: "",
     data: "",
@@ -43,6 +44,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCre
         .from('clients')
         .select('*')
         .eq('user_id', user.id)
+        .order('nome')
       
       const { data: sessionsData } = await supabase
         .from('sessions')
@@ -64,8 +66,41 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCre
         const dateStr = selectedDate.toISOString().split('T')[0]
         setNewSession(prev => ({ ...prev, data: dateStr }))
       }
+      setShowReactivationMessage(false)
     }
   }, [open, user, selectedDate])
+
+  // Configurar listener de tempo real para clientes
+  useEffect(() => {
+    if (!user || !open) return
+
+    const clientsChannel = supabase
+      .channel('clients-channel')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'clients',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          loadData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(clientsChannel)
+    }
+  }, [user, open])
+
+  const handleClientChange = (value: string) => {
+    setNewSession({...newSession, client_id: value})
+    
+    // Verificar se o cliente selecionado está inativo
+    const selectedClient = clients.find(c => c.id === value)
+    setShowReactivationMessage(selectedClient && !selectedClient.ativo)
+  }
 
   const handleSaveSession = async () => {
     if (!newSession.client_id || !newSession.data || !newSession.horario) {
@@ -91,6 +126,20 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCre
     setIsLoading(true)
     
     try {
+      // Verificar se o cliente está inativo e reativá-lo se necessário
+      const selectedClient = clients.find(c => c.id === newSession.client_id)
+      if (selectedClient && !selectedClient.ativo) {
+        await supabase
+          .from('clients')
+          .update({ ativo: true })
+          .eq('id', newSession.client_id)
+        
+        toast({
+          title: "Cliente reativado",
+          description: "O cliente foi reativado automaticamente.",
+        })
+      }
+
       const sessionData = {
         user_id: user?.id,
         client_id: newSession.client_id,
@@ -155,16 +204,30 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCre
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="client">Cliente</Label>
-            <Select value={newSession.client_id} onValueChange={(value) => setNewSession({...newSession, client_id: value})}>
+            <Select value={newSession.client_id} onValueChange={handleClientChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o cliente" />
               </SelectTrigger>
               <SelectContent>
                 {clients.map(client => (
-                  <SelectItem key={client.id} value={client.id}>{client.nome}</SelectItem>
+                  <SelectItem key={client.id} value={client.id}>
+                    <div className="flex items-center gap-2">
+                      <span>{client.nome}</span>
+                      {!client.ativo && (
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                          inativo
+                        </span>
+                      )}
+                    </div>
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
+            {showReactivationMessage && (
+              <div className="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
+                Ao agendar, este cliente será reativado automaticamente.
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
