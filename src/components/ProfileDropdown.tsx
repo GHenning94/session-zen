@@ -395,18 +395,12 @@ export const ProfileDropdown = () => {
             <ThemeToggle />
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={() => setIsModalOpen(true)}
-            className="data-[highlighted]:bg-primary/10 data-[highlighted]:text-primary focus:bg-primary/10 focus:text-primary"
-          >
+          <DropdownMenuItem onClick={() => setIsModalOpen(true)}>
             <Settings className="w-4 h-4 mr-2" />
             Editar Perfil
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem 
-            onClick={handleSignOut} 
-            className="text-destructive data-[highlighted]:bg-primary/10 focus:bg-primary/10"
-          >
+          <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
             <LogOut className="w-4 h-4 mr-2" />
             Sair
           </DropdownMenuItem>
