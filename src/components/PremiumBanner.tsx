@@ -26,11 +26,6 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
         className="w-8 h-8 premium-banner-mini relative overflow-hidden"
         onClick={handleUpgrade}
         title="Torne-se Premium"
-        style={{
-          background: 'linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
-          backgroundSize: '400% 400%',
-          animation: 'premium-flow 4s ease-in-out infinite'
-        }}
       >
         <Crown className="w-4 h-4 text-white relative z-10" />
       </Button>
@@ -42,11 +37,6 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
       variant="ghost"
       className="premium-banner w-full h-12 relative overflow-hidden group"
       onClick={handleUpgrade}
-      style={{
-        background: 'linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%)',
-        backgroundSize: '400% 400%',
-        animation: 'premium-flow 4s ease-in-out infinite'
-      }}
     >
       <div className="flex items-center gap-3 relative z-10">
         <Crown className="w-5 h-5 text-white" />

@@ -153,7 +153,7 @@
     @apply rounded-xl border-0 transition-all duration-300;
     background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
     background-size: 400% 400% !important;
-    animation: premium-flow 4s ease-in-out infinite !important;
+    animation: premium-flow 15s ease infinite !important;
     box-shadow: 
       0 4px 14px 0 rgba(102, 126, 234, 0.25),
       0 0 20px rgba(102, 126, 234, 0.2) !important;
@@ -170,7 +170,7 @@
     @apply rounded-lg border-0 transition-all duration-300;
     background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
     background-size: 400% 400% !important;
-    animation: premium-flow 4s ease-in-out infinite !important;
+    animation: premium-flow 15s ease infinite !important;
     box-shadow: 
       0 2px 8px 0 rgba(102, 126, 234, 0.25),
       0 0 15px rgba(102, 126, 234, 0.2) !important;
@@ -187,14 +187,8 @@
     0% {
       background-position: 0% 50%;
     }
-    25% {
-      background-position: 100% 50%;
-    }
     50% {
-      background-position: 100% 100%;
-    }
-    75% {
-      background-position: 0% 100%;
+      background-position: 100% 50%;
     }
     100% {
       background-position: 0% 50%;
