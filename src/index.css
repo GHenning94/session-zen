@@ -149,9 +149,12 @@
   }
 
   /* Premium Banner Animations */
-  .premium-banner {
-    @apply rounded-xl border-0 transition-all duration-300;
+  .premium-banner.premium-banner {
+    border: 0 !important;
+    border-radius: 0.75rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
+    background-color: transparent !important;
     background-size: 400% 400% !important;
     animation: premium-flow 15s ease infinite !important;
     box-shadow: 
@@ -159,16 +162,23 @@
       0 0 20px rgba(102, 126, 234, 0.2) !important;
   }
 
-  .premium-banner:hover {
-    @apply scale-[1.02];
+  .premium-banner.premium-banner:hover {
+    transform: scale(1.02) !important;
+    background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
+    background-color: transparent !important;
+    background-size: 400% 400% !important;
+    animation: premium-flow 15s ease infinite !important;
     box-shadow: 
       0 8px 25px 0 rgba(102, 126, 234, 0.35),
       0 0 30px rgba(102, 126, 234, 0.3) !important;
   }
 
-  .premium-banner-mini {
-    @apply rounded-lg border-0 transition-all duration-300;
+  .premium-banner-mini.premium-banner-mini {
+    border: 0 !important;
+    border-radius: 0.5rem !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
     background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
+    background-color: transparent !important;
     background-size: 400% 400% !important;
     animation: premium-flow 15s ease infinite !important;
     box-shadow: 
@@ -176,8 +186,12 @@
       0 0 15px rgba(102, 126, 234, 0.2) !important;
   }
 
-  .premium-banner-mini:hover {
-    @apply scale-105;
+  .premium-banner-mini.premium-banner-mini:hover {
+    transform: scale(1.05) !important;
+    background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
+    background-color: transparent !important;
+    background-size: 400% 400% !important;
+    animation: premium-flow 15s ease infinite !important;
     box-shadow: 
       0 4px 15px 0 rgba(102, 126, 234, 0.35),
       0 0 20px rgba(102, 126, 234, 0.3) !important;
