@@ -396,9 +396,8 @@ const LandingPage = () => {
           <h3 className="text-lg font-semibold mb-4 text-muted-foreground">Dev Test - Animação do Degradê</h3>
           <button 
             data-animate="true" 
-            className="premium-banner w-full h-12 relative isolate overflow-hidden rounded-lg bg-transparent border border-border hover:scale-105 transition-transform"
+            className="animated-premium w-full h-12 rounded-lg hover:scale-105 transition-transform"
           >
-            <span className="premium-gradient" aria-hidden="true" />
             <div className="flex items-center justify-center gap-2 relative z-10">
               <Sparkles className="w-5 h-5 text-white" />
               <span className="text-white font-medium">Teste do degradê animado</span>

@@ -1,44 +1,28 @@
-/* Premium Banner Gradient Overlay */
-@keyframes premium-flow-overlay {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
+/* Premium Banner Animated Gradient */
+@keyframes premium-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-.premium-gradient {
-  position: absolute !important;
-  inset: 0 !important;
-  pointer-events: none !important;
-  background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
-  background-size: 400% 400% !important;
-  animation: premium-flow-overlay 15s ease infinite !important;
-  z-index: 1 !important;
-  border-radius: inherit !important;
-  will-change: background-position, opacity;
+.animated-premium {
+  position: relative;
+  background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+  background-size: 400% 400%;
+  animation: premium-flow 15s ease infinite;
+  color: #fff;
+  border: none;
+  will-change: background-position;
   transform: translateZ(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .premium-gradient {
-    animation: none !important;
+  .animated-premium { 
+    animation: none; 
   }
 }
 
 /* Force animation when explicitly enabled */
-[data-animate="true"] .premium-gradient {
-  animation: premium-flow-overlay 15s ease infinite !important;
-}
-
-/* Ensure Button variant styles don't override the animated overlay */
-.premium-banner.premium-banner,
-.premium-banner.premium-banner:hover,
-.premium-banner.premium-banner:focus,
-.premium-banner.premium-banner:active,
-.premium-banner-mini.premium-banner-mini,
-.premium-banner-mini.premium-banner-mini:hover,
-.premium-banner-mini.premium-banner-mini:focus,
-.premium-banner-mini.premium-banner-mini:active {
-  background: transparent !important;
-  background-color: transparent !important;
-  animation: none !important;
+[data-animate="true"].animated-premium {
+  animation: premium-flow 15s ease infinite !important;
 }

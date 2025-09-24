@@ -26,11 +26,10 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
         variant="ghost"
         size="icon"
         data-animate="true"
-        className="w-8 h-8 premium-banner-mini relative isolate overflow-hidden bg-transparent hover:bg-transparent focus:bg-transparent active:bg-transparent"
+        className="premium-banner-mini animated-premium w-8 h-8 isolate overflow-hidden"
         onClick={handleUpgrade}
         title="Torne-se Premium"
       >
-        <span className="premium-gradient" aria-hidden="true" />
         <Crown className="w-4 h-4 text-white relative z-10" />
       </Button>
     )
@@ -40,10 +39,9 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
     <Button
       variant="ghost"
       data-animate="true"
-      className="premium-banner w-full h-12 relative isolate overflow-hidden group bg-transparent hover:bg-transparent focus:bg-transparent active:bg-transparent"
+      className="premium-banner animated-premium w-full h-12 isolate overflow-hidden group"
       onClick={handleUpgrade}
     >
-      <span className="premium-gradient" aria-hidden="true" />
       <div className="flex items-center gap-3 relative z-10">
         <Crown className="w-5 h-5 text-white" />
         <div className="text-left">
