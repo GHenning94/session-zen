@@ -609,6 +609,10 @@ export type Database = {
         Args: { page_slug: string }
         Returns: Json
       }
+      sanitize_text: {
+        Args: { input_text: string }
+        Returns: string
+      }
       send_session_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
