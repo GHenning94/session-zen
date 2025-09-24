@@ -22,6 +22,8 @@ export const useColorTheme = () => {
     // Update CSS custom properties
     document.documentElement.style.setProperty('--primary', cleanColor)
     document.documentElement.style.setProperty('--sidebar-primary', cleanColor)
+    document.documentElement.style.setProperty('--ring', cleanColor)
+    document.documentElement.style.setProperty('--sidebar-ring', cleanColor)
     
     // Create variations
     const hslValues = cleanColor.match(/\d+/g)
@@ -41,6 +43,8 @@ export const useColorTheme = () => {
     // Reset to default blue for landing page
     document.documentElement.style.setProperty('--primary', DEFAULT_COLOR)
     document.documentElement.style.setProperty('--sidebar-primary', DEFAULT_COLOR)
+    document.documentElement.style.setProperty('--ring', DEFAULT_COLOR)
+    document.documentElement.style.setProperty('--sidebar-ring', DEFAULT_COLOR)
     document.documentElement.style.setProperty('--primary-glow', '217 91% 60%')
     document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, hsl(217 91% 45%), hsl(217 91% 35%))')
   }, [])

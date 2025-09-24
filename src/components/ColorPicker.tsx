@@ -81,18 +81,16 @@ export const ColorPicker = ({
           <div>
             <Label className="text-sm font-medium mb-3 block">Cores Sólidas</Label>
             <div className="grid grid-cols-4 gap-3">
-              {COLOR_PALETTE.map((color) => {
-                const isSelected = selectedColor === color.value
-                const focusRingColor = isSelected ? `hsl(${currentColor})` : `hsl(${color.value})`
+               {COLOR_PALETTE.map((color) => {
+                 const isSelected = selectedColor === color.value
                 
                 return (
                   <button
                     key={color.value}
-                    className={`relative w-16 h-16 rounded-lg border-2 border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2`}
+                    className={`relative w-16 h-16 rounded-lg border-2 border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background`}
                     style={{ 
-                      backgroundColor: color.color,
-                      '--tw-ring-color': focusRingColor
-                    } as React.CSSProperties & { '--tw-ring-color': string }}
+                      backgroundColor: color.color
+                    }}
                     onClick={() => handleColorSelect(color.value, color.name)}
                     title={color.name}
                   >
