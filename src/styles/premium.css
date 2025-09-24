@@ -7,22 +7,42 @@
 
 .animated-premium {
   position: relative;
-  background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
-  background-size: 400% 400%;
-  animation: premium-flow 15s ease infinite;
+  background: linear-gradient(-45deg, #FFA63D, #FF3D77, #338AFF, #3CF0C5);
+  background-size: 600% 600%;
+  animation: premium-flow 16s linear infinite;
   color: #fff;
   border: none;
   will-change: background-position;
   transform: translateZ(0);
 }
 
+.animated-premium::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(-45deg, #FFA63D, #FF3D77, #338AFF, #3CF0C5);
+  background-size: 600% 600%;
+  animation: premium-flow 16s linear infinite;
+  filter: blur(30px);
+  opacity: 0.8;
+  z-index: -1;
+  border-radius: inherit;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animated-premium { 
+  .animated-premium, .animated-premium::before { 
     animation: none; 
   }
 }
 
 /* Force animation when explicitly enabled */
 [data-animate="true"].animated-premium {
-  animation: premium-flow 15s ease infinite !important;
+  animation: premium-flow 16s linear infinite !important;
+}
+
+[data-animate="true"].animated-premium::before {
+  animation: premium-flow 16s linear infinite !important;
 }
