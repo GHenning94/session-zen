@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import Stripe from "https://esm.sh/stripe@14.21.0";
+import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -67,7 +67,7 @@ serve(async (req) => {
       type: 'card',
     });
 
-    const formattedMethods = paymentMethods.data.map(method => ({
+    const formattedMethods = paymentMethods.data.map((method: any) => ({
       id: method.id,
       brand: method.card?.brand,
       last4: method.card?.last4,
