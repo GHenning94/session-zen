@@ -84,8 +84,11 @@ export const ColorPicker = ({
               {COLOR_PALETTE.map((color) => (
                 <button
                   key={color.value}
-                  className="relative w-16 h-16 rounded-lg border-2 border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  style={{ backgroundColor: color.color }}
+                  className="relative w-16 h-16 rounded-lg border-2 border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2"
+                  style={{ 
+                    backgroundColor: color.color,
+                    '--tw-ring-color': `hsl(${selectedColor === color.value ? currentColor : color.value})` 
+                  } as any}
                   onClick={() => handleColorSelect(color.value, color.name)}
                   title={color.name}
                 >
