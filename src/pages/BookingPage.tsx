@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { useParams } from "react-router-dom"
+import { useTheme } from "next-themes"
+import { useColorTheme } from "@/hooks/useColorTheme"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,6 +17,8 @@ import { supabase } from "@/integrations/supabase/client"
 const BookingPage = () => {
   const { slug } = useParams<{ slug?: string }>()
   const { toast } = useToast()
+  const { setTheme } = useTheme()
+  const { resetToDefaultColors } = useColorTheme()
   const [profile, setProfile] = useState<any>(null)
   const [config, setConfig] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -24,6 +28,12 @@ const BookingPage = () => {
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [clientData, setClientData] = useState({ nome: "", email: "", telefone: "", observacoes: "" })
+
+  // Force light theme and default colors for public booking page
+  useEffect(() => {
+    setTheme('light')
+    resetToDefaultColors()
+  }, [setTheme, resetToDefaultColors])
 
   const loadTherapistData = useCallback(async () => {
     if (!slug) {

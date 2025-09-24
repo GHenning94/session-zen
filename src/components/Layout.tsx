@@ -4,6 +4,7 @@ import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
 import WhatsAppButton from "@/components/WhatsAppButton"
 import { useAuth } from "@/hooks/useAuth"
+import { useUserTheme } from "@/hooks/useUserTheme"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -11,6 +12,9 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth()
+  
+  // Load and apply user's theme preference
+  useUserTheme()
   
   return (
     <SidebarProvider>

@@ -125,6 +125,7 @@ export type Database = {
           show_photo: boolean | null
           show_price: boolean | null
           slug: string | null
+          theme_preference: string | null
           updated_at: string
           user_id: string
           valor_padrao: number | null
@@ -166,6 +167,7 @@ export type Database = {
           show_photo?: boolean | null
           show_price?: boolean | null
           slug?: string | null
+          theme_preference?: string | null
           updated_at?: string
           user_id: string
           valor_padrao?: number | null
@@ -207,6 +209,7 @@ export type Database = {
           show_photo?: boolean | null
           show_price?: boolean | null
           slug?: string | null
+          theme_preference?: string | null
           updated_at?: string
           user_id?: string
           valor_padrao?: number | null

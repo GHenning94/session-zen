@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, LogOut, Settings, Share, Copy, Camera, Check, X, Sun, Moon } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
+import { useTheme } from "next-themes"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { ImageCropper } from "./ImageCropper"
@@ -41,6 +42,7 @@ interface Profile {
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
+  const { setTheme } = useTheme()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '' })
@@ -120,6 +122,9 @@ export const ProfileDropdown = () => {
   const handleSignOut = async () => {
     console.log('handleSignOut: starting logout process')
     try {
+      // Set theme to light before logout to prevent flicker
+      setTheme('light')
+      
       const result = await signOut()
       console.log('handleSignOut: signOut result:', result)
       
