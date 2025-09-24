@@ -9,11 +9,13 @@ import {
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
+import { useColorTheme } from "@/hooks/useColorTheme"
 import { useState, useEffect } from "react"
 
 const LandingPage = () => {
   const navigate = useNavigate()
   const { user, signOut } = useAuth()
+  const { resetToDefaultColors } = useColorTheme()
   const [displayText, setDisplayText] = useState("")
   const [currentWordIndex, setCurrentWordIndex] = useState(0)
   const [currentCharIndex, setCurrentCharIndex] = useState(0)
@@ -21,7 +23,7 @@ const LandingPage = () => {
   const [waitingToDelete, setWaitingToDelete] = useState(false)
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
 
-  // Force light theme for landing page
+  // Force light theme and default colors for landing page
   useEffect(() => {
     // More robust theme forcing
     document.documentElement.classList.remove('dark')
@@ -29,10 +31,13 @@ const LandingPage = () => {
     document.documentElement.setAttribute('data-theme', 'light')
     document.body.style.colorScheme = 'light'
     
+    // Ensure default colors are applied
+    resetToDefaultColors()
+    
     return () => {
       document.body.style.colorScheme = ''
     }
-  }, [])
+  }, [resetToDefaultColors])
 
   useEffect(() => {
     const word = words[currentWordIndex]

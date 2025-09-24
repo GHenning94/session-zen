@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import {
@@ -39,6 +39,16 @@ export const ColorPicker = ({
   const [selectedColor, setSelectedColor] = useState(currentColor)
   const [selectedColorName, setSelectedColorName] = useState("")
   const [isSaving, setIsSaving] = useState(false)
+
+  // Update selected color when modal opens or currentColor changes
+  useEffect(() => {
+    if (open) {
+      setSelectedColor(currentColor)
+      // Find the name of the current color
+      const currentColorObj = COLOR_PALETTE.find(color => color.value === currentColor)
+      setSelectedColorName(currentColorObj?.name || "")
+    }
+  }, [open, currentColor])
 
   const handleColorSelect = (colorValue: string, colorName: string) => {
     setSelectedColor(colorValue)

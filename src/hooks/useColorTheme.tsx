@@ -37,6 +37,14 @@ export const useColorTheme = () => {
     }
   }, [user, location.pathname])
 
+  const resetToDefaultColors = useCallback(() => {
+    // Reset to default blue for landing page
+    document.documentElement.style.setProperty('--primary', DEFAULT_COLOR)
+    document.documentElement.style.setProperty('--sidebar-primary', DEFAULT_COLOR)
+    document.documentElement.style.setProperty('--primary-glow', '217 91% 60%')
+    document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, hsl(217 91% 45%), hsl(217 91% 35%))')
+  }, [])
+
   const saveBrandColor = async (colorValue: string) => {
     if (!user) return false
 
@@ -60,16 +68,14 @@ export const useColorTheme = () => {
 
   useLayoutEffect(() => {
     const loadUserColor = async () => {
-      // If on landing page, always use default color
+      // If on landing page, always reset to default and don't apply any custom color
       if (location.pathname === '/') {
-        // Reset to default blue for landing page
-        document.documentElement.style.setProperty('--primary', DEFAULT_COLOR)
-        document.documentElement.style.setProperty('--sidebar-primary', DEFAULT_COLOR)
+        resetToDefaultColors()
         return
       }
 
       if (!user) {
-        // For logged users not on landing page, apply default color
+        // For non-logged users not on landing page, apply default color
         applyBrandColor(DEFAULT_COLOR)
         return
       }
@@ -90,7 +96,7 @@ export const useColorTheme = () => {
     }
 
     loadUserColor()
-  }, [user, applyBrandColor, location.pathname])
+  }, [user, applyBrandColor, resetToDefaultColors, location.pathname])
 
-  return { applyBrandColor, saveBrandColor }
+  return { applyBrandColor, saveBrandColor, resetToDefaultColors }
 }
