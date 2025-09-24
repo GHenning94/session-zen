@@ -35,13 +35,13 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
     )
   }
 
-  return (
-    <Button
-      variant="ghost"
-      data-animate="true"
-      className="premium-banner animated-premium w-full h-12 isolate overflow-hidden group"
-      onClick={handleUpgrade}
-    >
+    return (
+      <Button
+        variant="ghost"
+        data-animate="true"
+        className="premium-banner animated-premium w-full py-3 isolate overflow-hidden group"
+        onClick={handleUpgrade}
+      >
       <div className="flex items-center gap-3 relative z-10">
         <Crown className="w-5 h-5 text-white" />
         <div className="text-left">

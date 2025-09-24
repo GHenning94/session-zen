@@ -154,7 +154,7 @@ export function AppSidebar() {
     >
       <SidebarHeader className="border-b border-border p-3">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className={`${isCollapsed ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-primary to-primary/80 rounded-[6px] flex items-center justify-center shadow-lg`}>
+          <div className={`${isCollapsed ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg`}>
             <Stethoscope className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} />
           </div>
           {!isCollapsed && (
@@ -194,8 +194,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border">
-        <div className={`mx-3 ${isCollapsed ? 'p-2 flex justify-center' : 'p-4 pb-2'}`}>
+      <SidebarFooter>
+        <div className={`border-t border-border mx-3 ${isCollapsed ? 'p-2 flex justify-center' : 'p-4 pb-2'}`}>
           <PremiumBanner shouldShow={shouldShowPremiumBanner} />
         </div>
         
