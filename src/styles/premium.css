@@ -1,0 +1,27 @@
+/* Premium Banner Gradient Overlay */
+.premium-gradient {
+  position: absolute !important;
+  inset: 0 !important;
+  pointer-events: none !important;
+  background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%) !important;
+  background-size: 400% 400% !important;
+  animation: premium-flow 15s ease infinite !important;
+  z-index: 0 !important;
+  border-radius: inherit !important;
+  will-change: background-position, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .premium-gradient {
+    animation: none !important;
+  }
+}
+
+/* Ensure Button variant styles don't override the animated overlay */
+.premium-banner.premium-banner,
+.premium-banner.premium-banner:hover,
+.premium-banner-mini.premium-banner-mini,
+.premium-banner-mini.premium-banner-mini:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+}

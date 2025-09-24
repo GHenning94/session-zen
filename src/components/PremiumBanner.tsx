@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useSidebar } from "@/components/ui/sidebar"
 
+import "@/styles/premium.css"
+
 interface PremiumBannerProps {
   shouldShow: boolean
 }
@@ -27,6 +29,7 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
         onClick={handleUpgrade}
         title="Torne-se Premium"
       >
+        <span className="premium-gradient" aria-hidden="true" />
         <Crown className="w-4 h-4 text-white relative z-10" />
       </Button>
     )
@@ -38,6 +41,7 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
       className="premium-banner w-full h-12 relative overflow-hidden group"
       onClick={handleUpgrade}
     >
+      <span className="premium-gradient" aria-hidden="true" />
       <div className="flex items-center gap-3 relative z-10">
         <Crown className="w-5 h-5 text-white" />
         <div className="text-left">
