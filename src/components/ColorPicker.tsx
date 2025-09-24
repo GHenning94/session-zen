@@ -22,12 +22,6 @@ const COLOR_PALETTE = [
   { name: "Verde Menta", value: "160 84% 39%", color: "hsl(160 84% 39%)" },
 ]
 
-const GRADIENT_PALETTE = [
-  { name: "Azul Oceano", value: "217 91% 45%", gradient: "linear-gradient(135deg, hsl(217 91% 45%), hsl(217 91% 35%))" },
-  { name: "Verde Natureza", value: "142 76% 36%", gradient: "linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 26%))" },
-  { name: "Roxo Místico", value: "271 91% 65%", gradient: "linear-gradient(135deg, hsl(271 91% 65%), hsl(271 91% 55%))" },
-  { name: "Por do Sol", value: "33 96% 56%", gradient: "linear-gradient(135deg, hsl(33 96% 56%), hsl(45 95% 60%))" },
-]
 
 interface ColorPickerProps {
   open: boolean
@@ -93,24 +87,6 @@ export const ColorPicker = ({
             </div>
           </div>
 
-          <div>
-            <Label className="text-sm font-medium mb-3 block">Gradientes</Label>
-            <div className="grid grid-cols-4 gap-3">
-              {GRADIENT_PALETTE.map((gradient) => (
-                <button
-                  key={gradient.value}
-                  className="relative w-16 h-16 rounded-lg border-2 border-border hover:border-primary transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                  style={{ background: gradient.gradient }}
-                  onClick={() => handleColorSelect(gradient.value, gradient.name)}
-                  title={gradient.name}
-                >
-                  {selectedColor === gradient.value && (
-                    <Check className="absolute inset-0 m-auto w-6 h-6 text-white drop-shadow-lg" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {selectedColorName && (
             <div className="text-sm text-muted-foreground">

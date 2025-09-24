@@ -2,13 +2,20 @@ import { useLayoutEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { useLocation } from 'react-router-dom'
 
 const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 
 export const useColorTheme = () => {
   const { user } = useAuth()
+  const location = useLocation()
 
   const applyBrandColor = useCallback((colorValue: string) => {
+    // Only apply colors if user is logged in and not on landing page
+    if (!user || location.pathname === '/') {
+      return
+    }
+
     // Ensure we're working with HSL format
     const cleanColor = colorValue.replace(/[^\d\s%]/g, '').trim()
     
@@ -28,7 +35,7 @@ export const useColorTheme = () => {
       const gradient = `linear-gradient(135deg, hsl(${h} ${s}% ${l}%), hsl(${h} ${s}% ${darkerL}%))`
       document.documentElement.style.setProperty('--gradient-primary', gradient)
     }
-  }, [])
+  }, [user, location.pathname])
 
   const saveBrandColor = async (colorValue: string) => {
     if (!user) return false
@@ -53,8 +60,16 @@ export const useColorTheme = () => {
 
   useLayoutEffect(() => {
     const loadUserColor = async () => {
+      // If on landing page, always use default color
+      if (location.pathname === '/') {
+        // Reset to default blue for landing page
+        document.documentElement.style.setProperty('--primary', DEFAULT_COLOR)
+        document.documentElement.style.setProperty('--sidebar-primary', DEFAULT_COLOR)
+        return
+      }
+
       if (!user) {
-        // Aplicar cor padrão para usuários não logados
+        // For logged users not on landing page, apply default color
         applyBrandColor(DEFAULT_COLOR)
         return
       }
@@ -75,7 +90,7 @@ export const useColorTheme = () => {
     }
 
     loadUserColor()
-  }, [user, applyBrandColor])
+  }, [user, applyBrandColor, location.pathname])
 
   return { applyBrandColor, saveBrandColor }
 }
