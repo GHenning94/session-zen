@@ -149,13 +149,13 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={isCollapsed ? "w-16" : "w-64"}
+      className={isCollapsed ? "w-20" : "w-64"}
       collapsible="icon"
     >
-      <SidebarHeader className="border-b border-border p-4">
+      <SidebarHeader className="border-b border-border p-3">
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className={`${isCollapsed ? 'w-8 h-8' : 'w-8 h-8'} bg-gradient-primary rounded-lg flex items-center justify-center ${isCollapsed ? '' : ''}`}>
-            <Stethoscope className={`${isCollapsed ? 'w-4 h-4' : 'w-4 h-4'} text-white`} />
+          <div className={`${isCollapsed ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg`}>
+            <Stethoscope className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} />
           </div>
           {!isCollapsed && (
             <div>
@@ -195,18 +195,18 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border">
-        <div className={`p-4 pb-2 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`${isCollapsed ? 'p-2 flex justify-center' : 'p-4 pb-2'}`}>
           <PremiumBanner shouldShow={shouldShowPremiumBanner} />
         </div>
         
-        <div className={`border-t border-border p-4 ${isCollapsed ? 'flex justify-center' : ''}`}>
+        <div className={`border-t border-border ${isCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
           <Button 
             variant="ghost" 
             size={isCollapsed ? "icon" : "sm"}
-            className={`${isCollapsed ? 'w-8 h-8' : 'w-full justify-start'} text-muted-foreground hover:text-foreground`}
+            className={`${isCollapsed ? 'w-10 h-10' : 'w-full justify-start'} text-muted-foreground hover:text-foreground`}
             onClick={handleSignOut}
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
             {!isCollapsed && <span className="ml-2">Sair</span>}
           </Button>
         </div>

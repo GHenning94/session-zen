@@ -16,6 +16,11 @@
   transform: translateZ(0);
 }
 
+.premium-banner-mini {
+  min-width: 40px !important;
+  min-height: 40px !important;
+}
+
 .animated-premium::before {
   content: '';
   position: absolute;
