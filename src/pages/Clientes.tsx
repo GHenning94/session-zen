@@ -19,7 +19,8 @@ import {
   MoreHorizontal,
   Edit,
   Trash2,
-  Eye
+  Eye,
+  UserX
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -93,10 +94,10 @@ const Clientes = () => {
     }
 
     // Validar limite do plano
-    if (!editingClient && !canAddClient(clients.length)) {
+    if (!editingClient && !canAddClient(activeClients.length)) {
       toast({
         title: "Limite Atingido",
-        description: `Seu plano ${currentPlan} permite apenas ${planLimits.maxClients} clientes.`,
+        description: `Seu plano ${currentPlan} permite apenas ${planLimits.maxClients} clientes ativos.`,
         variant: "destructive"
       })
       return
@@ -183,6 +184,36 @@ const Clientes = () => {
     }
   }
 
+  const handleToggleClientStatus = async (clientId: string, currentStatus: boolean) => {
+    setIsLoading(true)
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ ativo: !currentStatus })
+        .eq('id', clientId)
+      
+      if (error) throw error
+      
+      toast({
+        title: currentStatus ? "Cliente desativado" : "Cliente ativado",
+        description: currentStatus 
+          ? "O cliente foi desativado e não aparecerá nas listas."
+          : "O cliente foi reativado com sucesso.",
+      })
+      
+      await loadClients()
+    } catch (error) {
+      console.error('Erro ao alterar status do cliente:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível alterar o status do cliente.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handleEditClient = (client: any) => {
     setEditingClient(client)
     setNewClient({
@@ -202,7 +233,10 @@ const Clientes = () => {
     client.telefone?.includes(searchTerm)
   )
 
-  const canAddMore = canAddClient(clients.length)
+  const activeClients = clients.filter(client => client.ativo !== false)
+  const inactiveClients = clients.filter(client => client.ativo === false)
+
+  const canAddMore = canAddClient(activeClients.length)
 
   return (
     <Layout>
@@ -217,12 +251,12 @@ const Clientes = () => {
           </div>
           <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
             <DialogTrigger asChild>
-              <Button 
+                <Button 
                 className="bg-gradient-primary hover:opacity-90"
                 disabled={!canAddMore}
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Novo Cliente {!canAddMore && `(${clients.length}/${planLimits.maxClients})`}
+                Novo Cliente {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
@@ -320,9 +354,9 @@ const Clientes = () => {
               <CardTitle className="text-lg">Total de Clientes</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{clients.length}</div>
+              <div className="text-3xl font-bold text-primary">{activeClients.length}</div>
               <p className="text-sm text-muted-foreground">
-                {canAddMore ? 'Cadastrados no sistema' : `Limite do plano ${currentPlan} atingido`}
+                {canAddMore ? 'Clientes ativos no sistema' : `Limite do plano ${currentPlan} atingido`}
               </p>
             </CardContent>
           </Card>
@@ -334,20 +368,20 @@ const Clientes = () => {
             <CardContent>
               <div className="text-2xl font-bold text-primary capitalize">{currentPlan}</div>
               <p className="text-sm text-muted-foreground">
-                {clients.length}/{planLimits.maxClients === Infinity ? '∞' : planLimits.maxClients} clientes
+                {activeClients.length}/{planLimits.maxClients === Infinity ? '∞' : planLimits.maxClients} clientes ativos
               </p>
             </CardContent>
           </Card>
           
           <Card className="shadow-soft">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Status</CardTitle>
+              <CardTitle className="text-lg">Total de Clientes Inativos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-lg font-bold" style={{ color: 'hsl(142 71% 45%)' }}>
-                {clients.length >= planLimits.maxClients ? 'Limite atingido' : 'Funcionando'}
+              <div className="text-3xl font-bold" style={{ color: 'hsl(45 93% 47%)' }}>
+                {inactiveClients.length}
               </div>
-              <p className="text-sm text-muted-foreground">Sistema operacional</p>
+              <p className="text-sm text-muted-foreground">Clientes desativados</p>
             </CardContent>
           </Card>
         </div>
@@ -399,9 +433,18 @@ const Clientes = () => {
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{client.nome}</h3>
-                          <Badge variant="default" className="text-xs">
-                            ativo
-                          </Badge>
+                          {client.ativo === false ? (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs border-yellow-500 text-yellow-600 bg-yellow-50"
+                            >
+                              inativo
+                            </Badge>
+                          ) : (
+                            <Badge variant="default" className="text-xs">
+                              ativo
+                            </Badge>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <span className="flex items-center gap-1">
@@ -438,6 +481,13 @@ const Clientes = () => {
                           <DropdownMenuItem>
                             <Calendar className="w-4 h-4 mr-2" />
                             Agendar Sessão
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-yellow-600" 
+                            onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}
+                          >
+                            <UserX className="w-4 h-4 mr-2" />
+                            {client.ativo === false ? 'Reativar' : 'Desativar'}
                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-destructive" 
