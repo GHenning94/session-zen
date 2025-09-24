@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useSidebar } from "@/components/ui/sidebar"
 
-import "@/styles/premium.css"
+
 
 interface PremiumBannerProps {
   shouldShow: boolean
