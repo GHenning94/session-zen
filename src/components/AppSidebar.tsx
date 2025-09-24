@@ -194,12 +194,12 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border mx-3">
-        <div className={`${isCollapsed ? 'p-2 flex justify-center' : 'p-4 pb-2'}`}>
+      <SidebarFooter className="border-t border-border">
+        <div className={`mx-3 ${isCollapsed ? 'p-2 flex justify-center' : 'p-4 pb-2'}`}>
           <PremiumBanner shouldShow={shouldShowPremiumBanner} />
         </div>
         
-        <div className={`border-t border-border mx-0 ${isCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
+        <div className={`border-t border-border mx-3 ${isCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
           <Button 
             variant="ghost" 
             size={isCollapsed ? "icon" : "sm"}
