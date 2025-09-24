@@ -25,6 +25,7 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
       <Button
         variant="ghost"
         size="icon"
+        data-animate="true"
         className="w-8 h-8 premium-banner-mini relative isolate overflow-hidden bg-transparent hover:bg-transparent focus:bg-transparent active:bg-transparent"
         onClick={handleUpgrade}
         title="Torne-se Premium"
@@ -38,6 +39,7 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
   return (
     <Button
       variant="ghost"
+      data-animate="true"
       className="premium-banner w-full h-12 relative isolate overflow-hidden group bg-transparent hover:bg-transparent focus:bg-transparent active:bg-transparent"
       onClick={handleUpgrade}
     >
