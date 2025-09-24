@@ -1,1 +1,28 @@
-/* Utility classes for premium components - WebGL gradient now handled by StripeGradient component */
+/* Premium Banner Animated Gradient */
+@keyframes premium-flow {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animated-premium {
+  position: relative;
+  background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%);
+  background-size: 400% 400%;
+  animation: premium-flow 15s ease infinite;
+  color: #fff;
+  border: none;
+  will-change: background-position;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animated-premium { 
+    animation: none; 
+  }
+}
+
+/* Force animation when explicitly enabled */
+[data-animate="true"].animated-premium {
+  animation: premium-flow 15s ease infinite !important;
+}

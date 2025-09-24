@@ -2,7 +2,6 @@ import { Crown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 import { useSidebar } from "@/components/ui/sidebar"
-import { StripeGradientCanvas } from "./StripeGradient"
 
 
 
@@ -23,37 +22,33 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
 
   if (isCollapsed) {
     return (
-      <div className="relative w-8 h-8 rounded-md overflow-hidden">
-        <StripeGradientCanvas />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative z-10 w-8 h-8 bg-transparent border-0 hover:bg-white/10"
-          onClick={handleUpgrade}
-          title="Torne-se Premium"
-        >
-          <Crown className="w-4 h-4 text-white" />
-        </Button>
-      </div>
+      <Button
+        variant="ghost"
+        size="icon"
+        data-animate="true"
+        className="premium-banner-mini animated-premium w-8 h-8 isolate overflow-hidden"
+        onClick={handleUpgrade}
+        title="Torne-se Premium"
+      >
+        <Crown className="w-4 h-4 text-white relative z-10" />
+      </Button>
     )
   }
 
   return (
-    <div className="relative w-full h-12 rounded-md overflow-hidden">
-      <StripeGradientCanvas />
-      <Button
-        variant="ghost"
-        className="relative z-10 w-full h-12 bg-transparent border-0 hover:bg-white/10 group"
-        onClick={handleUpgrade}
-      >
-        <div className="flex items-center gap-3">
-          <Crown className="w-5 h-5 text-white" />
-          <div className="text-left">
-            <div className="text-white font-semibold text-xs">Torne-se Premium</div>
-            <div className="text-white/80 text-[10px]">Desbloqueie recursos exclusivos</div>
-          </div>
+    <Button
+      variant="ghost"
+      data-animate="true"
+      className="premium-banner animated-premium w-full h-12 isolate overflow-hidden group"
+      onClick={handleUpgrade}
+    >
+      <div className="flex items-center gap-3 relative z-10">
+        <Crown className="w-5 h-5 text-white" />
+        <div className="text-left">
+          <div className="text-white font-semibold text-xs">Torne-se Premium</div>
+          <div className="text-white/80 text-[10px]">Desbloqueie recursos exclusivos</div>
         </div>
-      </Button>
-    </div>
+      </div>
+    </Button>
   )
 }
