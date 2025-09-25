@@ -291,6 +291,7 @@ const Dashboard = () => {
       console.log('📊 Dados finais do gráfico:', chartData)
 
       // Calcular dados de ticket médio ao longo do tempo
+      console.log('📊 Carregando dados de ticket médio...')
       const ticketMedioData = []
       for (let i = 11; i >= 0; i--) {
         const date = new Date()
@@ -301,6 +302,8 @@ const Dashboard = () => {
         const monthStartStr = monthStart.toISOString().split('T')[0]
         const monthEndStr = monthEnd.toISOString().split('T')[0]
         
+        console.log(`📊 Buscando ticket médio para ${monthStartStr} - ${monthEndStr}`)
+        
         const { data: monthSessions } = await supabase
           .from('sessions')
           .select('valor')
@@ -308,10 +311,15 @@ const Dashboard = () => {
           .eq('status', 'realizada')
           .gte('data', monthStartStr)
           .lte('data', monthEndStr)
+          .not('valor', 'is', null)
+        
+        console.log(`📊 Sessões encontradas para ticket médio:`, monthSessions)
         
         const totalRevenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
         const totalSessions = monthSessions?.length || 0
         const ticketMedio = totalSessions > 0 ? totalRevenue / totalSessions : 0
+        
+        console.log(`📊 Ticket médio calculado: ${ticketMedio} (${totalSessions} sessões, ${totalRevenue} total)`)
         
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -323,18 +331,24 @@ const Dashboard = () => {
           fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
       }
+      
+      console.log('📊 Dados finais de ticket médio:', ticketMedioData)
 
       // Calcular top 5 clientes que mais pagam
+      console.log('👥 Carregando top clientes...')
       const { data: allClientsWithPayments } = await supabase
         .from('sessions')
         .select('client_id, valor, clients(nome)')
         .eq('user_id', user?.id)
         .eq('status', 'realizada')
         .not('client_id', 'is', null)
+        .not('valor', 'is', null)
+
+      console.log('👥 Sessões com clientes encontradas:', allClientsWithPayments)
 
       const clientPayments = {}
       allClientsWithPayments?.forEach(session => {
-        if (session.client_id && session.clients?.nome) {
+        if (session.client_id && session.clients?.nome && session.valor) {
           if (!clientPayments[session.client_id]) {
             clientPayments[session.client_id] = {
               nome: session.clients.nome,
@@ -342,10 +356,12 @@ const Dashboard = () => {
               sessoes: 0
             }
           }
-          clientPayments[session.client_id].total += session.valor || 0
+          clientPayments[session.client_id].total += Number(session.valor) || 0
           clientPayments[session.client_id].sessoes += 1
         }
       })
+
+      console.log('👥 Pagamentos por cliente processados:', clientPayments)
 
       const topClientsData = Object.entries(clientPayments)
         .map(([clientId, data]: [string, any]) => ({
@@ -358,6 +374,8 @@ const Dashboard = () => {
         .sort((a, b) => b.total - a.total)
         .slice(0, 5)
 
+      console.log('👥 Top 5 clientes calculados:', topClientsData)
+
       // Calcular ticket médio por cliente (todos os clientes com sessões)
       const clientTicketMedioData = Object.entries(clientPayments)
         .map(([clientId, data]: [string, any]) => ({
@@ -368,6 +386,8 @@ const Dashboard = () => {
         }))
         .filter(client => client.sessoes > 0)
         .sort((a, b) => b.ticketMedio - a.ticketMedio)
+
+      console.log('📊 Ticket médio por cliente calculado:', clientTicketMedioData)
 
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
@@ -430,7 +450,16 @@ const Dashboard = () => {
       setRecentPayments(paymentsData || [])
       setRecentClients(recentClientsData || [])
       setMonthlyChart(chartData)
+      setTicketMedioChart(ticketMedioData)
+      setTopClients(topClientsData)
+      setClientTicketMedio(clientTicketMedioData)
       setDynamicReminders(reminders)
+
+      console.log('✅ Todos os dados foram atualizados no estado:')
+      console.log('📊 Monthly Chart:', chartData.length, 'itens')
+      console.log('📈 Ticket Médio Chart:', ticketMedioData.length, 'itens')
+      console.log('👑 Top Clients:', topClientsData.length, 'itens')
+      console.log('📊 Client Ticket Médio:', clientTicketMedioData.length, 'itens')
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
