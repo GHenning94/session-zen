@@ -15,7 +15,7 @@ import {
   BarChart3,
   Crown
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -48,9 +48,12 @@ const Dashboard = () => {
   const [ticketMedioChart, setTicketMedioChart] = useState<any[]>([])
   const [topClients, setTopClients] = useState<any[]>([])
   const [clientTicketMedio, setClientTicketMedio] = useState<any[]>([])
+  const [receitaPorCanal, setReceitaPorCanal] = useState<any[]>([])
   const [dynamicReminders, setDynamicReminders] = useState<any[]>([])
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
+  const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
+  const [dashboardLoaded, setDashboardLoaded] = useState(false)
 
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
@@ -141,6 +144,10 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
+      if (dashboardLoaded) {
+        console.log('🚀 Dashboard em cache, otimizando carregamento...')
+      }
+      
       console.log('🔄 Carregando dados do dashboard...')
       
       // Carregar sessões de hoje
@@ -393,6 +400,45 @@ const Dashboard = () => {
 
       console.log('📊 Ticket médio por cliente calculado:', clientTicketMedioData)
 
+      // Calcular receita por canal de pagamento
+      console.log('💳 Carregando receita por canal de pagamento...')
+      const { data: allPaymentMethods } = await supabase
+        .from('sessions')
+        .select('metodo_pagamento, valor')
+        .eq('user_id', user?.id)
+        .eq('status', 'realizada')
+        .not('valor', 'is', null)
+        .not('metodo_pagamento', 'is', null)
+
+      console.log('💳 Métodos de pagamento encontrados:', allPaymentMethods)
+
+      const canalPayments = {}
+      allPaymentMethods?.forEach(session => {
+        const metodo = session.metodo_pagamento || 'Não informado'
+        if (!canalPayments[metodo]) {
+          canalPayments[metodo] = 0
+        }
+        canalPayments[metodo] += Number(session.valor) || 0
+      })
+
+      const canalColors = {
+        'pix': '#00D09C',
+        'cartao': '#6366F1', 
+        'dinheiro': '#F59E0B',
+        'transferencia': '#8B5CF6',
+        'Não informado': '#6B7280'
+      }
+
+      const receitaPorCanalData = Object.entries(canalPayments)
+        .map(([canal, valor]: [string, any]) => ({
+          canal: canal.charAt(0).toUpperCase() + canal.slice(1),
+          valor: valor,
+          color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
+        }))
+        .sort((a, b) => b.valor - a.valor)
+
+      console.log('💳 Receita por canal calculada:', receitaPorCanalData)
+
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
       
@@ -457,7 +503,9 @@ const Dashboard = () => {
       setTicketMedioChart(ticketMedioData)
       setTopClients(topClientsData)
       setClientTicketMedio(clientTicketMedioData)
+      setReceitaPorCanal(receitaPorCanalData)
       setDynamicReminders(reminders)
+      setDashboardLoaded(true)
 
       console.log('✅ Todos os dados foram atualizados no estado:')
       console.log('📊 Monthly Chart:', chartData.length, 'itens')
@@ -480,6 +528,11 @@ const Dashboard = () => {
   const handleTicketPeriodChange = (period: '1' | '3' | '6' | '12') => {
     console.log('📈 Mudando período do ticket médio para:', period)
     setTicketPeriod(period)
+  }
+
+  const handleCanalPeriodChange = (period: '1' | '3' | '6' | '12') => {
+    console.log('💳 Mudando período dos canais para:', period)
+    setCanalPeriod(period)
   }
 
   const handleNewSession = () => {
@@ -1007,65 +1060,66 @@ const Dashboard = () => {
                     <CardContent>
                       <div className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
-                           <LineChart
-                             data={(() => {
-                               const totalMonths = ticketMedioChart.length;
-                               let startIndex = 0;
-                               
-                               switch(ticketPeriod) {
-                                 case '1':
-                                   startIndex = totalMonths - 1;
-                                   break;
-                                 case '3':
-                                   startIndex = Math.max(0, totalMonths - 3);
-                                   break;
-                                 case '6':
-                                   startIndex = Math.max(0, totalMonths - 6);
-                                   break;
-                                 case '12':
-                                 default:
-                                   startIndex = 0;
-                                   break;
-                               }
-                               
-                               return ticketMedioChart.slice(startIndex);
-                             })()}
-                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                          >
-                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                            <XAxis 
-                              dataKey="mes" 
-                              tick={{ fontSize: 12 }} 
-                              tickLine={false}
-                              axisLine={false}
-                            />
-                            <YAxis 
-                              tick={{ fontSize: 12 }}
-                              tickLine={false}
-                              axisLine={false}
-                              tickFormatter={(value) => formatCurrencyBR(value)}
-                            />
-                            <Tooltip 
-                              formatter={(value: any) => [formatCurrencyBR(value), 'Ticket Médio']}
-                              labelFormatter={(label) => {
-                                const month = ticketMedioChart.find(item => item.mes === label);
-                                return month ? month.fullMonth : label;
-                              }}
-                              contentStyle={{
-                                backgroundColor: 'hsl(var(--background))',
-                                border: '1px solid hsl(var(--border))',
-                                borderRadius: '6px'
-                              }}
-                            />
-                            <Line 
-                              type="monotone" 
-                              dataKey="ticketMedio" 
-                              stroke="hsl(var(--secondary))"
-                              strokeWidth={3}
-                              dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2, r: 4 }}
-                              activeDot={{ r: 6, stroke: 'hsl(var(--secondary))', strokeWidth: 2 }}
-                            />
-                          </LineChart>
+                            <LineChart
+                              key={`ticket-${ticketPeriod}-${ticketMedioChart.length}`}
+                              data={(() => {
+                                const totalMonths = ticketMedioChart.length;
+                                let startIndex = 0;
+                                
+                                switch(ticketPeriod) {
+                                  case '1':
+                                    startIndex = totalMonths - 1;
+                                    break;
+                                  case '3':
+                                    startIndex = Math.max(0, totalMonths - 3);
+                                    break;
+                                  case '6':
+                                    startIndex = Math.max(0, totalMonths - 6);
+                                    break;
+                                  case '12':
+                                  default:
+                                    startIndex = 0;
+                                    break;
+                                }
+                                
+                                return ticketMedioChart.slice(startIndex);
+                              })()}
+                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                           >
+                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                             <XAxis 
+                               dataKey="mes" 
+                               tick={{ fontSize: 12 }} 
+                               tickLine={false}
+                               axisLine={false}
+                             />
+                             <YAxis 
+                               tick={{ fontSize: 12 }}
+                               tickLine={false}
+                               axisLine={false}
+                               tickFormatter={(value) => formatCurrencyBR(value)}
+                             />
+                             <Tooltip 
+                               formatter={(value: any) => [formatCurrencyBR(value), 'Ticket Médio']}
+                               labelFormatter={(label) => {
+                                 const month = ticketMedioChart.find(item => item.mes === label);
+                                 return month ? month.fullMonth : label;
+                               }}
+                               contentStyle={{
+                                 backgroundColor: 'hsl(var(--background))',
+                                 border: '1px solid hsl(var(--border))',
+                                 borderRadius: '6px'
+                               }}
+                             />
+                             <Line 
+                               type="monotone" 
+                               dataKey="ticketMedio" 
+                               stroke="hsl(var(--secondary))"
+                               strokeWidth={3}
+                               dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2, r: 4 }}
+                               activeDot={{ r: 6, stroke: 'hsl(var(--secondary))', strokeWidth: 2 }}
+                             />
+                           </LineChart>
                         </ResponsiveContainer>
                       </div>
                       
@@ -1157,6 +1211,116 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
+
+                {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
+                <div className="col-span-full">
+                  <Card className="shadow-soft">
+                    <CardHeader className="pb-2">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <DollarSign className="w-5 h-5 text-primary" />
+                            Receita por Canal de Pagamento
+                          </CardTitle>
+                          <CardDescription>
+                            Distribuição da receita por método de pagamento
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant={canalPeriod === '1' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleCanalPeriodChange('1')}
+                          >
+                            1 mês
+                          </Button>
+                          <Button 
+                            variant={canalPeriod === '3' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleCanalPeriodChange('3')}
+                          >
+                            3 meses
+                          </Button>
+                          <Button 
+                            variant={canalPeriod === '6' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleCanalPeriodChange('6')}
+                          >
+                            6 meses
+                          </Button>
+                          <Button 
+                            variant={canalPeriod === '12' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleCanalPeriodChange('12')}
+                          >
+                            1 ano
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        {/* Gráfico de Pizza */}
+                        <div className="h-80">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={receitaPorCanal}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={80}
+                                innerRadius={30}
+                                paddingAngle={5}
+                                dataKey="valor"
+                              >
+                                {receitaPorCanal.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip 
+                                formatter={(value: any) => [formatCurrencyBR(value), 'Receita']}
+                                contentStyle={{
+                                  backgroundColor: 'hsl(var(--background))',
+                                  border: '1px solid hsl(var(--border))',
+                                  borderRadius: '6px'
+                                }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        
+                        {/* Lista de Canais */}
+                        <div className="space-y-4">
+                          {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
+                            const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
+                            const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
+                            
+                            return (
+                              <div key={canal.canal} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div 
+                                    className="w-4 h-4 rounded-full"
+                                    style={{ backgroundColor: canal.color }}
+                                  />
+                                  <span className="font-medium">{canal.canal}</span>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-bold text-primary">{formatCurrencyBR(canal.valor)}</p>
+                                  <p className="text-sm text-muted-foreground">{percentage}%</p>
+                                </div>
+                              </div>
+                            )
+                          }) : (
+                            <div className="text-center py-8">
+                              <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">Nenhum pagamento registrado</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -1189,10 +1353,10 @@ const Dashboard = () => {
                       {index === 0 && (
                         <div className="absolute -top-2 -right-2 z-10">
                           <Crown 
-                            className="w-6 h-6 text-yellow-500 animate-pulse"
+                            className="w-6 h-6 text-yellow-500 animate-crown-glow"
+                            fill="currentColor"
                             style={{
-                              filter: 'drop-shadow(0 0 8px gold)',
-                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite, brightness 1.5s ease-in-out infinite alternate'
+                              filter: 'drop-shadow(0 0 8px gold)'
                             }}
                           />
                         </div>
