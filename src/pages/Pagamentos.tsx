@@ -124,10 +124,11 @@ const Pagamentos = () => {
       const sessionDateTime = new Date(`${session.data}T${session.horario}`)
       const currentDateTime = new Date()
       
-      // Status correto: se status da sessão é 'realizada', então está pago
-      // Se não está realizada, verificar se já passou da hora para determinar se é atrasado
+      // Status correto baseado no status da sessão
       let status: string
-      if (session.status === 'realizada') {
+      if (session.status === 'cancelada') {
+        status = 'cancelado'
+      } else if (session.status === 'realizada') {
         status = 'pago'
       } else if (sessionDateTime < currentDateTime) {
         status = 'atrasado'
@@ -143,7 +144,8 @@ const Pagamentos = () => {
         value: session.valor || 0,
         status: status,
         method: session.metodo_pagamento || 'dinheiro',
-        session_id: session.id
+        session_id: session.id,
+        session_status: session.status
       }
     })
   }
@@ -219,27 +221,37 @@ const Pagamentos = () => {
   }
 
   const payments = getSessionPayments()
-  const filteredPayments = filterByPeriod(payments).filter(payment => 
+  const activePayments = payments.filter(payment => payment.status !== 'cancelado')
+  const cancelledPayments = payments.filter(payment => payment.status === 'cancelado')
+  
+  const filteredActivePayments = filterByPeriod(activePayments).filter(payment => 
     filterStatus === "todos" || payment.status === filterStatus
   )
+  
+  const filteredCancelledPayments = filterByPeriod(cancelledPayments)
 
-  const totalReceived = filteredPayments
+  const totalReceived = filteredActivePayments
     .filter(p => p.status === 'pago')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const totalPending = filteredPayments
+  const totalPending = filteredActivePayments
     .filter(p => p.status === 'pendente')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const paidCount = filteredPayments.filter(p => p.status === 'pago').length
-  const pendingCount = filteredPayments.filter(p => p.status === 'pendente').length
-  const lateCount = filteredPayments.filter(p => p.status === 'atrasado').length
+  const totalCancelled = filteredCancelledPayments
+    .reduce((sum, p) => sum + (p.value || 0), 0)
+
+  const paidCount = filteredActivePayments.filter(p => p.status === 'pago').length
+  const pendingCount = filteredActivePayments.filter(p => p.status === 'pendente').length
+  const lateCount = filteredActivePayments.filter(p => p.status === 'atrasado').length
+  const cancelledCount = filteredCancelledPayments.length
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pago': return 'default'
       case 'pendente': return 'secondary'
       case 'atrasado': return 'destructive'
+      case 'cancelado': return 'destructive'
       default: return 'secondary'
     }
   }
@@ -336,7 +348,7 @@ const Pagamentos = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <Card className="shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Recebido</CardTitle>
@@ -371,6 +383,17 @@ const Pagamentos = () => {
             <CardContent>
               <div className="text-2xl font-bold text-destructive">{lateCount}</div>
               <p className="text-sm text-muted-foreground">Pagamentos atrasados</p>
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-soft">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
+              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">{cancelledCount}</div>
+              <p className="text-sm text-muted-foreground">Pagamentos cancelados</p>
             </CardContent>
           </Card>
           
@@ -429,7 +452,7 @@ const Pagamentos = () => {
           <CardHeader>
             <CardTitle>Histórico de Pagamentos</CardTitle>
             <CardDescription>
-              {filteredPayments.length} pagamento(s) encontrado(s)
+              {filteredActivePayments.length} pagamento(s) ativo(s) encontrado(s)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -437,13 +460,13 @@ const Pagamentos = () => {
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Carregando pagamentos...</p>
               </div>
-            ) : filteredPayments.length === 0 ? (
+            ) : filteredActivePayments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 Nenhum pagamento encontrado para os filtros selecionados.
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredPayments.map((payment) => {
+                {filteredActivePayments.map((payment) => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
                    return (
@@ -458,9 +481,9 @@ const Pagamentos = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <p className="font-medium">{payment.client}</p>
-                            <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                              {payment.status === 'pago' ? 'Pago' : payment.status === 'atrasado' ? 'Atrasado' : 'Pendente'}
-                            </Badge>
+                           <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                             {payment.status === 'pago' ? 'Pago' : payment.status === 'atrasado' ? 'Atrasado' : payment.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
+                           </Badge>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="w-3 h-3" />
@@ -519,6 +542,74 @@ const Pagamentos = () => {
                     </div>
                   )
                 })}
+
+                {/* Separador para Pagamentos Cancelados */}
+                {filteredCancelledPayments.length > 0 && (
+                  <>
+                    <div className="py-6">
+                      <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-border"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                          <span className="bg-background px-4 text-muted-foreground">Pagamentos Cancelados</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {filteredCancelledPayments.map((payment) => {
+                       const StatusIcon = getStatusIcon(payment.status)
+                       
+                       return (
+                       <div key={payment.id} className={cn(
+                         "flex items-center justify-between p-4 border border-border rounded-lg opacity-75",
+                         highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                       )}>
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
+                              <StatusIcon className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium text-muted-foreground">{payment.client}</p>
+                                <Badge variant="destructive" className="text-xs">
+                                  Cancelado
+                                </Badge>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                <Calendar className="w-3 h-3" />
+                                <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="font-bold text-lg text-muted-foreground">{formatCurrencyBR(payment.value)}</p>
+                              <p className="text-xs text-muted-foreground">{payment.method}</p>
+                            </div>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent className="bg-background border shadow-lg z-50">
+                                <DropdownMenuItem 
+                                  onClick={() => viewSession(payment.session_id)}
+                                >
+                                  <Calendar className="w-4 h-4 mr-2" />
+                                  Ver Sessão
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </>
+                )}
               </div>
             )}
           </CardContent>
@@ -563,10 +654,10 @@ const Pagamentos = () => {
                       cartao: 0,
                       transferencia: 0
                     };
-                    
-                    filteredPayments
-                      .filter(p => p.status === 'pago')
-                      .forEach(p => {
+                     
+                     filteredActivePayments
+                       .filter(p => p.status === 'pago')
+                       .forEach(p => {
                         const method = p.method || 'dinheiro';
                         if (methodCounts[method as keyof typeof methodCounts] !== undefined) {
                           methodCounts[method as keyof typeof methodCounts]++;

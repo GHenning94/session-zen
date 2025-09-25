@@ -141,35 +141,36 @@ export const useReports = () => {
         }
       }
 
-    // Relatório de Sessões
-    if (type === 'sessions' || type === 'complete') {
-      if (yPosition > 200) {
-        doc.addPage()
-        yPosition = 20
+      // Relatório de Sessões
+      if (type === 'sessions' || type === 'complete') {
+        if (yPosition > 200) {
+          doc.addPage()
+          yPosition = 20
+        }
+
+        doc.setFontSize(14)
+        doc.text('Sessões', 20, yPosition)
+        yPosition += 10
+
+        const sessionsData = data.sessions.map((session: any) => [
+          getClientName(session.client_id, data.clients),
+          format(new Date(session.data), 'dd/MM/yyyy', { locale: ptBR }),
+          session.horario,
+          session.status === 'realizada' ? 'Realizada' : 
+          session.status === 'cancelada' ? 'Cancelada' : 
+          session.status === 'falta' ? 'Falta' : 'Agendada',
+          session.valor ? `R$ ${Number(session.valor).toFixed(2)}` : '-'
+        ])
+
+        autoTable(doc, {
+          startY: yPosition,
+          head: [['Cliente', 'Data', 'Horário', 'Status', 'Valor']],
+          body: sessionsData,
+          theme: 'grid'
+        })
+
+        yPosition = (doc as any).lastAutoTable.finalY + 20
       }
-
-      doc.setFontSize(14)
-      doc.text('Sessões', 20, yPosition)
-      yPosition += 10
-
-      const sessionsData = data.sessions.map((session: any) => [
-        getClientName(session.client_id, data.clients),
-        format(new Date(session.data), 'dd/MM/yyyy', { locale: ptBR }),
-        session.horario,
-        session.status === 'realizada' ? 'Realizada' : 
-        session.status === 'cancelada' ? 'Cancelada' : 'Agendada',
-        session.valor ? `R$ ${Number(session.valor).toFixed(2)}` : '-'
-      ])
-
-      autoTable(doc, {
-        startY: yPosition,
-        head: [['Cliente', 'Data', 'Horário', 'Status', 'Valor']],
-        body: sessionsData,
-        theme: 'grid'
-      })
-
-      yPosition = (doc as any).lastAutoTable.finalY + 20
-    }
 
     // Relatório Financeiro
     if (type === 'financial' || type === 'complete') {
@@ -179,10 +180,13 @@ export const useReports = () => {
       }
 
       const realizadas = data.sessions.filter((s: any) => s.status === 'realizada')
+      const canceladas = data.sessions.filter((s: any) => s.status === 'cancelada')
+      const faltas = data.sessions.filter((s: any) => s.status === 'falta')
       const totalArrecadado = realizadas.reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
       const totalPendente = data.sessions
         .filter((s: any) => s.status === 'agendada')
         .reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
+      const totalCancelado = canceladas.reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
 
       doc.setFontSize(14)
       doc.text('Resumo Financeiro', 20, yPosition)
@@ -193,7 +197,13 @@ export const useReports = () => {
       yPosition += 10
       doc.text(`Total Pendente: R$ ${totalPendente.toFixed(2)}`, 20, yPosition)
       yPosition += 10
+      doc.text(`Total Cancelado: R$ ${totalCancelado.toFixed(2)}`, 20, yPosition)
+      yPosition += 10
       doc.text(`Sessões Realizadas: ${realizadas.length}`, 20, yPosition)
+      yPosition += 10
+      doc.text(`Sessões Canceladas: ${canceladas.length}`, 20, yPosition)
+      yPosition += 10
+      doc.text(`Sessões com Falta: ${faltas.length}`, 20, yPosition)
       yPosition += 10
       doc.text(`Total de Clientes: ${data.clients.length}`, 20, yPosition)
     }
@@ -243,7 +253,8 @@ export const useReports = () => {
         Data: format(new Date(session.data), 'dd/MM/yyyy', { locale: ptBR }),
         Horário: session.horario,
         Status: session.status === 'realizada' ? 'Realizada' : 
-                session.status === 'cancelada' ? 'Cancelada' : 'Agendada',
+                session.status === 'cancelada' ? 'Cancelada' : 
+                session.status === 'falta' ? 'Falta' : 'Agendada',
         Valor: session.valor ? Number(session.valor) : 0,
         Anotações: session.anotacoes || ''
       }))
@@ -255,15 +266,21 @@ export const useReports = () => {
     // Aba Financeiro
     if (type === 'financial' || type === 'complete') {
       const realizadas = data.sessions.filter((s: any) => s.status === 'realizada')
+      const canceladas = data.sessions.filter((s: any) => s.status === 'cancelada')
+      const faltas = data.sessions.filter((s: any) => s.status === 'falta')
       const totalArrecadado = realizadas.reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
       const totalPendente = data.sessions
         .filter((s: any) => s.status === 'agendada')
         .reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
+      const totalCancelado = canceladas.reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
 
       const financialData = [
         { Métrica: 'Total Arrecadado', Valor: totalArrecadado },
         { Métrica: 'Total Pendente', Valor: totalPendente },
+        { Métrica: 'Total Cancelado', Valor: totalCancelado },
         { Métrica: 'Sessões Realizadas', Valor: realizadas.length },
+        { Métrica: 'Sessões Canceladas', Valor: canceladas.length },
+        { Métrica: 'Sessões com Falta', Valor: faltas.length },
         { Métrica: 'Total de Clientes', Valor: data.clients.length }
       ]
 

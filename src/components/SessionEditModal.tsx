@@ -30,7 +30,6 @@ export const SessionEditModal = ({
     data: '',
     horario: '',
     valor: '',
-    status: 'agendada',
     anotacoes: ''
   })
   const [loading, setLoading] = useState(false)
@@ -43,7 +42,6 @@ export const SessionEditModal = ({
         data: session.data || '',
         horario: session.horario ? session.horario.slice(0, 5) : '',
         valor: session.valor?.toString() || '',
-        status: session.status || 'agendada',
         anotacoes: session.anotacoes || ''
       })
       setShowReactivationMessage(false)
@@ -58,8 +56,20 @@ export const SessionEditModal = ({
     setShowReactivationMessage(selectedClient && !selectedClient.ativo)
   }
 
+  const calculateStatus = (date: string, time: string) => {
+    const sessionDateTime = new Date(`${date}T${time}:00`)
+    const currentDateTime = new Date()
+    
+    // Se ainda não chegou a hora da sessão, é "agendada"
+    // Se já passou da hora, é "realizada"
+    return sessionDateTime <= currentDateTime ? 'realizada' : 'agendada'
+  }
+
   const handleSave = async () => {
     if (!session) return
+
+    // Calcular status automaticamente
+    const autoStatus = calculateStatus(formData.data, formData.horario)
 
     setLoading(true)
     try {
@@ -84,7 +94,7 @@ export const SessionEditModal = ({
           data: formData.data,
           horario: formData.horario + ':00',
           valor: parseFloat(formData.valor) || null,
-          status: formData.status,
+          status: autoStatus,
           anotacoes: formData.anotacoes || null
         })
         .eq('id', session.id)
@@ -185,21 +195,10 @@ export const SessionEditModal = ({
               />
             </div>
             <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="agendada">Agendada</SelectItem>
-                  <SelectItem value="realizada">Realizada</SelectItem>
-                  <SelectItem value="cancelada">Cancelada</SelectItem>
-                  <SelectItem value="falta">Falta</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label>Status</Label>
+              <div className="p-2 bg-muted rounded-md text-sm text-muted-foreground">
+                Status será calculado automaticamente baseado na data/hora
+              </div>
             </div>
           </div>
 
