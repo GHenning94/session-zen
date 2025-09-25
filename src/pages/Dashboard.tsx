@@ -14,7 +14,7 @@ import {
   AlertCircle,
   BarChart3
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -44,6 +44,9 @@ const Dashboard = () => {
   const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false)
   const [recentClients, setRecentClients] = useState<any[]>([])
   const [monthlyChart, setMonthlyChart] = useState<any[]>([])
+  const [ticketMedioChart, setTicketMedioChart] = useState<any[]>([])
+  const [topClients, setTopClients] = useState<any[]>([])
+  const [clientTicketMedio, setClientTicketMedio] = useState<any[]>([])
   const [dynamicReminders, setDynamicReminders] = useState<any[]>([])
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
 
@@ -286,6 +289,85 @@ const Dashboard = () => {
         })
       }
       console.log('📊 Dados finais do gráfico:', chartData)
+
+      // Calcular dados de ticket médio ao longo do tempo
+      const ticketMedioData = []
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date()
+        date.setMonth(date.getMonth() - i)
+        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
+        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+        
+        const monthStartStr = monthStart.toISOString().split('T')[0]
+        const monthEndStr = monthEnd.toISOString().split('T')[0]
+        
+        const { data: monthSessions } = await supabase
+          .from('sessions')
+          .select('valor')
+          .eq('user_id', user?.id)
+          .eq('status', 'realizada')
+          .gte('data', monthStartStr)
+          .lte('data', monthEndStr)
+        
+        const totalRevenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
+        const totalSessions = monthSessions?.length || 0
+        const ticketMedio = totalSessions > 0 ? totalRevenue / totalSessions : 0
+        
+        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+        const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+        
+        ticketMedioData.push({
+          mes: monthNames[date.getMonth()],
+          ticketMedio: ticketMedio,
+          sessoes: totalSessions,
+          fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
+        })
+      }
+
+      // Calcular top 5 clientes que mais pagam
+      const { data: allClientsWithPayments } = await supabase
+        .from('sessions')
+        .select('client_id, valor, clients(nome)')
+        .eq('user_id', user?.id)
+        .eq('status', 'realizada')
+        .not('client_id', 'is', null)
+
+      const clientPayments = {}
+      allClientsWithPayments?.forEach(session => {
+        if (session.client_id && session.clients?.nome) {
+          if (!clientPayments[session.client_id]) {
+            clientPayments[session.client_id] = {
+              nome: session.clients.nome,
+              total: 0,
+              sessoes: 0
+            }
+          }
+          clientPayments[session.client_id].total += session.valor || 0
+          clientPayments[session.client_id].sessoes += 1
+        }
+      })
+
+      const topClientsData = Object.entries(clientPayments)
+        .map(([clientId, data]: [string, any]) => ({
+          clientId,
+          nome: data.nome,
+          total: data.total,
+          sessoes: data.sessoes,
+          ticketMedio: data.sessoes > 0 ? data.total / data.sessoes : 0
+        }))
+        .sort((a, b) => b.total - a.total)
+        .slice(0, 5)
+
+      // Calcular ticket médio por cliente (todos os clientes com sessões)
+      const clientTicketMedioData = Object.entries(clientPayments)
+        .map(([clientId, data]: [string, any]) => ({
+          clientId,
+          nome: data.nome,
+          ticketMedio: data.sessoes > 0 ? data.total / data.sessoes : 0,
+          sessoes: data.sessoes
+        }))
+        .filter(client => client.sessoes > 0)
+        .sort((a, b) => b.ticketMedio - a.ticketMedio)
 
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
@@ -834,6 +916,215 @@ const Dashboard = () => {
                              <p className="text-sm text-muted-foreground">Média Mensal</p>
                            </div>
                         </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Gráfico de Ticket Médio */}
+                <div className="col-span-full">
+                  <Card className="shadow-soft">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <TrendingUp className="w-5 h-5 text-primary" />
+                        Evolução do Ticket Médio
+                      </CardTitle>
+                      <CardDescription>
+                        Ticket médio por sessão ao longo do tempo
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-80">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <LineChart
+                            data={(() => {
+                              const totalMonths = ticketMedioChart.length;
+                              let startIndex = 0;
+                              
+                              switch(chartPeriod) {
+                                case '1':
+                                  startIndex = totalMonths - 1;
+                                  break;
+                                case '3':
+                                  startIndex = Math.max(0, totalMonths - 3);
+                                  break;
+                                case '6':
+                                  startIndex = Math.max(0, totalMonths - 6);
+                                  break;
+                                case '12':
+                                default:
+                                  startIndex = 0;
+                                  break;
+                              }
+                              
+                              return ticketMedioChart.slice(startIndex);
+                            })()}
+                            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                          >
+                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                            <XAxis 
+                              dataKey="mes" 
+                              tick={{ fontSize: 12 }} 
+                              tickLine={false}
+                              axisLine={false}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 12 }}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(value) => formatCurrencyBR(value)}
+                            />
+                            <Tooltip 
+                              formatter={(value: any) => [formatCurrencyBR(value), 'Ticket Médio']}
+                              labelFormatter={(label) => {
+                                const month = ticketMedioChart.find(item => item.mes === label);
+                                return month ? month.fullMonth : label;
+                              }}
+                              contentStyle={{
+                                backgroundColor: 'hsl(var(--background))',
+                                border: '1px solid hsl(var(--border))',
+                                borderRadius: '6px'
+                              }}
+                            />
+                            <Line 
+                              type="monotone" 
+                              dataKey="ticketMedio" 
+                              stroke="hsl(var(--secondary))"
+                              strokeWidth={3}
+                              dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2, r: 4 }}
+                              activeDot={{ r: 6, stroke: 'hsl(var(--secondary))', strokeWidth: 2 }}
+                            />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Estatística do ticket médio atual */}
+                      <div className="mt-6 pt-6 border-t text-center">
+                        <p className="text-3xl font-bold text-secondary">
+                          {(() => {
+                            const totalMonths = ticketMedioChart.length;
+                            let startIndex = 0;
+                            
+                            switch(chartPeriod) {
+                              case '1':
+                                startIndex = totalMonths - 1;
+                                break;
+                              case '3':
+                                startIndex = Math.max(0, totalMonths - 3);
+                                break;
+                              case '6':
+                                startIndex = Math.max(0, totalMonths - 6);
+                                break;
+                              case '12':
+                              default:
+                                startIndex = 0;
+                                break;
+                            }
+                            
+                            const filteredData = ticketMedioChart.slice(startIndex);
+                            const totalRevenue = filteredData.reduce((sum, item) => sum + (item.ticketMedio * item.sessoes), 0);
+                            const totalSessions = filteredData.reduce((sum, item) => sum + item.sessoes, 0);
+                            return formatCurrencyBR(totalSessions > 0 ? totalRevenue / totalSessions : 0);
+                          })()}
+                        </p>
+                        <p className="text-sm text-muted-foreground">Ticket Médio do Período</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Top 5 Clientes que Mais Pagam */}
+                <div className="col-span-full lg:col-span-1">
+                  <Card className="shadow-soft">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <Users className="w-5 h-5 text-primary" />
+                        Top 5 Clientes
+                      </CardTitle>
+                      <CardDescription>
+                        Clientes que mais geraram receita
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {topClients.length > 0 ? topClients.map((client, index) => (
+                          <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                            <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
+                              {index + 1}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{client.nome}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {client.sessoes} sessões
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-bold text-primary">{formatCurrencyBR(client.total)}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {formatCurrencyBR(client.ticketMedio)} médio
+                              </p>
+                            </div>
+                          </div>
+                        )) : (
+                          <div className="text-center py-8">
+                            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <p className="text-muted-foreground">Nenhum cliente com pagamentos ainda</p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Ticket Médio por Cliente - Gráfico de Barras Horizontais */}
+                <div className="col-span-full lg:col-span-1">
+                  <Card className="shadow-soft">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2">
+                        <BarChart3 className="w-5 h-5 text-secondary" />
+                        Ticket Médio por Cliente
+                      </CardTitle>
+                      <CardDescription>
+                        Valor médio por sessão de cada cliente
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-muted hover:scrollbar-thumb-primary/30 transition-colors">
+                        <div className="space-y-3 pr-2">
+                          {clientTicketMedio.length > 0 ? clientTicketMedio.map((client, index) => {
+                            const maxTicket = Math.max(...clientTicketMedio.map(c => c.ticketMedio))
+                            const widthPercent = maxTicket > 0 ? (client.ticketMedio / maxTicket) * 100 : 0
+                            
+                            return (
+                              <div key={client.clientId} className="space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <p className="text-sm font-medium truncate flex-1 mr-2">
+                                    {client.nome}
+                                  </p>
+                                  <p className="text-sm font-bold text-secondary whitespace-nowrap">
+                                    {formatCurrencyBR(client.ticketMedio)}
+                                  </p>
+                                </div>
+                                <div className="relative">
+                                  <div className="w-full bg-muted rounded-full h-2">
+                                    <div 
+                                      className="bg-gradient-success h-2 rounded-full transition-all duration-500" 
+                                      style={{ width: `${widthPercent}%` }}
+                                    />
+                                  </div>
+                                  <p className="text-xs text-muted-foreground mt-1">
+                                    {client.sessoes} sessões
+                                  </p>
+                                </div>
+                              </div>
+                            )
+                          }) : (
+                            <div className="text-center py-8">
+                              <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                              <p className="text-muted-foreground">Nenhum cliente com sessões realizadas</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
