@@ -187,6 +187,8 @@ export default function Sessoes() {
       })
     }
   }
+
+  const handleMarkNoShow = async (sessionId: string) => {
     try {
       const { error } = await supabase
         .from('sessions')
