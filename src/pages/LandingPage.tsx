@@ -5,7 +5,7 @@ import {
   Stethoscope, Calendar, Users, DollarSign, TrendingUp,
   CheckCircle, Star, ArrowRight, Brain, Heart, Shield, Clock,
   GraduationCap, MessageCircle, Target, BookOpen, Activity,
-  BarChart3, User, Sparkles
+  BarChart3, User
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -389,22 +389,6 @@ const LandingPage = () => {
           <Button size="lg" variant="secondary" className="text-lg px-8 py-6 bg-white text-primary hover:bg-white/90" onClick={() => handleGetStarted()}>
             Acessar Plataforma <ArrowRight className="w-5 h-5 ml-2" />
           </Button>
-        </div>
-      </section>
-      {/* Temporary Premium Test - Remove after validation */}
-      <section className="py-10 px-4 bg-muted/30">
-        <div className="max-w-md mx-auto text-center">
-          <h3 className="text-lg font-semibold mb-4 text-muted-foreground">Dev Test - Animação do Degradê</h3>
-          <button 
-            data-animate="true" 
-            className="animated-premium w-full h-12 rounded-lg hover:scale-105 transition-transform"
-          >
-            <div className="flex items-center justify-center gap-2 relative z-10">
-              <Sparkles className="w-5 h-5 text-white" />
-              <span className="text-white font-medium">Teste do degradê animado</span>
-            </div>
-          </button>
-          <p className="text-xs text-muted-foreground mt-2">Se você vê uma animação fluida aqui, o sistema está funcionando</p>
         </div>
       </section>
 
