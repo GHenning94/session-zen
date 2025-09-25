@@ -70,13 +70,19 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
       // Se há um cliente pré-selecionado, usar ele
       if (selectedClientId) {
         setNewSession(prev => ({ ...prev, client_id: selectedClientId }))
-        // Verificar se o cliente está inativo
-        const selectedClient = clients.find(c => c.id === selectedClientId)
-        setShowReactivationMessage(selectedClient && !selectedClient.ativo)
       }
+      // Reset reactivation message initially
       setShowReactivationMessage(false)
     }
-  }, [open, user, selectedDate, selectedClientId, clients])
+  }, [open, user, selectedDate, selectedClientId])
+
+  // Check for inactive client when clients data is loaded and clientId is set
+  useEffect(() => {
+    if (clients.length > 0 && newSession.client_id) {
+      const selectedClient = clients.find(c => c.id === newSession.client_id)
+      setShowReactivationMessage(selectedClient && !selectedClient.ativo)
+    }
+  }, [clients, newSession.client_id])
 
   // Configurar listener de tempo real para clientes
   useEffect(() => {

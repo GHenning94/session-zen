@@ -429,6 +429,20 @@ export const ProfileDropdown = () => {
                   <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <Camera className="w-6 h-6 text-white" />
                   </div>
+                  
+                  {profile.avatar_url && (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setProfile(prev => ({ ...prev, avatar_url: '' }));
+                      }}
+                    >
+                      <X className="w-3 h-3" />
+                    </Button>
+                  )}
                 </div>
                 <input
                   ref={fileInputRef}

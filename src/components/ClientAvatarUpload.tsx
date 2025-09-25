@@ -1,7 +1,7 @@
 import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Upload, Loader2 } from "lucide-react";
+import { Camera, Upload, Loader2, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -106,6 +106,20 @@ export const ClientAvatarUpload = ({
             <Camera className="w-6 h-6 text-white" />
           )}
         </div>
+        
+        {currentAvatarUrl && (
+          <Button
+            size="sm"
+            variant="destructive"
+            className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAvatarChange('');
+            }}
+          >
+            <X className="w-3 h-3" />
+          </Button>
+        )}
       </div>
 
       {isUploading && compressionProgress > 0 && (

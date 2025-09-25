@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
-import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User } from "lucide-react"
+import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast" 
 import { ImageCropper } from "@/components/ImageCropper"
 import { ImageUpload } from "@/components/sharing/ImageUpload"
@@ -116,21 +116,34 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
               <div className="space-y-2">
                 <Label>Foto Pública</Label>
                 <div className="flex items-center gap-3">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={settings.public_avatar_url} alt="Foto pública" />
-                    <AvatarFallback>
-                      <User className="w-8 h-8" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
+                  <div 
+                    className="relative group cursor-pointer"
                     onClick={() => fileInputRef.current?.click()}
                   >
-                    <Camera className="w-4 h-4 mr-2" />
-                    Alterar Foto
-                  </Button>
+                    <Avatar className="h-16 w-16">
+                      <AvatarImage src={settings.public_avatar_url} alt="Foto pública" />
+                      <AvatarFallback>
+                        <User className="w-8 h-8" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera className="w-4 h-4 text-white" />
+                    </div>
+                    
+                    {settings.public_avatar_url && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onSettingsChange('public_avatar_url', '');
+                        }}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    )}
+                  </div>
                   <input
                     ref={fileInputRef}
                     type="file"

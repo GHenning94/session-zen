@@ -214,7 +214,7 @@ const Dashboard = () => {
         if (sessionDate > todayStr) {
           return true // Sessões de datas futuras
         } else if (sessionDate === todayStr) {
-          return sessionTime > currentTime // Sessões de hoje após horário atual
+          return sessionTime >= currentTime // Sessões de hoje no horário atual ou após
         }
         return false
       }).slice(0, 4)
