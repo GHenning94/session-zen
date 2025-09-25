@@ -155,3 +155,9 @@
     color: hsl(var(--success-fixed)) !important;
   }
 }
+
+/* Animação para a coroa dourada */
+@keyframes brightness {
+  0% { filter: brightness(1) drop-shadow(0 0 8px gold); }
+  100% { filter: brightness(1.3) drop-shadow(0 0 12px gold); }
+}

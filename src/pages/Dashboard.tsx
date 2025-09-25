@@ -12,7 +12,8 @@ import {
   ArrowRight,
   TrendingUp,
   AlertCircle,
-  BarChart3
+  BarChart3,
+  Crown
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -49,6 +50,7 @@ const Dashboard = () => {
   const [clientTicketMedio, setClientTicketMedio] = useState<any[]>([])
   const [dynamicReminders, setDynamicReminders] = useState<any[]>([])
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
+  const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
 
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
@@ -338,7 +340,7 @@ const Dashboard = () => {
       console.log('👥 Carregando top clientes...')
       const { data: allClientsWithPayments } = await supabase
         .from('sessions')
-        .select('client_id, valor, clients(nome)')
+        .select('client_id, valor, clients(nome, avatar_url)')
         .eq('user_id', user?.id)
         .eq('status', 'realizada')
         .not('client_id', 'is', null)
@@ -352,6 +354,7 @@ const Dashboard = () => {
           if (!clientPayments[session.client_id]) {
             clientPayments[session.client_id] = {
               nome: session.clients.nome,
+              avatar_url: session.clients.avatar_url,
               total: 0,
               sessoes: 0
             }
@@ -367,6 +370,7 @@ const Dashboard = () => {
         .map(([clientId, data]: [string, any]) => ({
           clientId,
           nome: data.nome,
+          avatar_url: data.avatar_url,
           total: data.total,
           sessoes: data.sessoes,
           ticketMedio: data.sessoes > 0 ? data.total / data.sessoes : 0
@@ -471,6 +475,11 @@ const Dashboard = () => {
     setChartPeriod(period)
     // Recarregar dados para garantir que o gráfico esteja atualizado
     await loadDashboardData()
+  }
+
+  const handleTicketPeriodChange = (period: '1' | '3' | '6' | '12') => {
+    console.log('📈 Mudando período do ticket médio para:', period)
+    setTicketPeriod(period)
   }
 
   const handleNewSession = () => {
@@ -953,40 +962,74 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center gap-2">
-                        <TrendingUp className="w-5 h-5 text-primary" />
-                        Evolução do Ticket Médio
-                      </CardTitle>
-                      <CardDescription>
-                        Ticket médio por sessão ao longo do tempo
-                      </CardDescription>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-primary" />
+                            Evolução do Ticket Médio
+                          </CardTitle>
+                          <CardDescription>
+                            Ticket médio por sessão ao longo do tempo
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant={ticketPeriod === '1' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleTicketPeriodChange('1')}
+                          >
+                            1 mês
+                          </Button>
+                          <Button 
+                            variant={ticketPeriod === '3' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleTicketPeriodChange('3')}
+                          >
+                            3 meses
+                          </Button>
+                          <Button 
+                            variant={ticketPeriod === '6' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleTicketPeriodChange('6')}
+                          >
+                            6 meses
+                          </Button>
+                          <Button 
+                            variant={ticketPeriod === '12' ? 'default' : 'outline'} 
+                            size="sm"
+                            onClick={() => handleTicketPeriodChange('12')}
+                          >
+                            1 ano
+                          </Button>
+                        </div>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            data={(() => {
-                              const totalMonths = ticketMedioChart.length;
-                              let startIndex = 0;
-                              
-                              switch(chartPeriod) {
-                                case '1':
-                                  startIndex = totalMonths - 1;
-                                  break;
-                                case '3':
-                                  startIndex = Math.max(0, totalMonths - 3);
-                                  break;
-                                case '6':
-                                  startIndex = Math.max(0, totalMonths - 6);
-                                  break;
-                                case '12':
-                                default:
-                                  startIndex = 0;
-                                  break;
-                              }
-                              
-                              return ticketMedioChart.slice(startIndex);
-                            })()}
+                           <LineChart
+                             data={(() => {
+                               const totalMonths = ticketMedioChart.length;
+                               let startIndex = 0;
+                               
+                               switch(ticketPeriod) {
+                                 case '1':
+                                   startIndex = totalMonths - 1;
+                                   break;
+                                 case '3':
+                                   startIndex = Math.max(0, totalMonths - 3);
+                                   break;
+                                 case '6':
+                                   startIndex = Math.max(0, totalMonths - 6);
+                                   break;
+                                 case '12':
+                                 default:
+                                   startIndex = 0;
+                                   break;
+                               }
+                               
+                               return ticketMedioChart.slice(startIndex);
+                             })()}
                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                           >
                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
@@ -1029,27 +1072,27 @@ const Dashboard = () => {
                       {/* Estatística do ticket médio atual */}
                       <div className="mt-6 pt-6 border-t text-center">
                         <p className="text-3xl font-bold text-secondary">
-                          {(() => {
-                            const totalMonths = ticketMedioChart.length;
-                            let startIndex = 0;
-                            
-                            switch(chartPeriod) {
-                              case '1':
-                                startIndex = totalMonths - 1;
-                                break;
-                              case '3':
-                                startIndex = Math.max(0, totalMonths - 3);
-                                break;
-                              case '6':
-                                startIndex = Math.max(0, totalMonths - 6);
-                                break;
-                              case '12':
-                              default:
-                                startIndex = 0;
-                                break;
-                            }
-                            
-                            const filteredData = ticketMedioChart.slice(startIndex);
+                           {(() => {
+                             const totalMonths = ticketMedioChart.length;
+                             let startIndex = 0;
+                             
+                             switch(ticketPeriod) {
+                               case '1':
+                                 startIndex = totalMonths - 1;
+                                 break;
+                               case '3':
+                                 startIndex = Math.max(0, totalMonths - 3);
+                                 break;
+                               case '6':
+                                 startIndex = Math.max(0, totalMonths - 6);
+                                 break;
+                               case '12':
+                               default:
+                                 startIndex = 0;
+                                 break;
+                             }
+                             
+                             const filteredData = ticketMedioChart.slice(startIndex);
                             const totalRevenue = filteredData.reduce((sum, item) => sum + (item.ticketMedio * item.sessoes), 0);
                             const totalSessions = filteredData.reduce((sum, item) => sum + item.sessoes, 0);
                             return formatCurrencyBR(totalSessions > 0 ? totalRevenue / totalSessions : 0);
@@ -1061,51 +1104,8 @@ const Dashboard = () => {
                   </Card>
                 </div>
 
-                {/* Top 5 Clientes que Mais Pagam */}
-                <div className="col-span-full lg:col-span-1">
-                  <Card className="shadow-soft">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-primary" />
-                        Top 5 Clientes
-                      </CardTitle>
-                      <CardDescription>
-                        Clientes que mais geraram receita
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {topClients.length > 0 ? topClients.map((client, index) => (
-                          <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                            <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center text-white font-bold text-sm">
-                              {index + 1}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{client.nome}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {client.sessoes} sessões
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-bold text-primary">{formatCurrencyBR(client.total)}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {formatCurrencyBR(client.ticketMedio)} médio
-                              </p>
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="text-center py-8">
-                            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">Nenhum cliente com pagamentos ainda</p>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
                 {/* Ticket Médio por Cliente - Gráfico de Barras Horizontais */}
-                <div className="col-span-full lg:col-span-1">
+                <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
@@ -1157,61 +1157,121 @@ const Dashboard = () => {
                     </CardContent>
                   </Card>
                 </div>
-
-                {/* Clientes Recentes */}
-                <div className="col-span-full">
-                  <Card>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center gap-2">
-                        <Users className="w-5 h-5 text-secondary" />
-                        Clientes Recentes
-                      </CardTitle>
-                      <CardDescription>
-                        Últimos clientes adicionados ao sistema
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {recentClients.length > 0 ? recentClients.slice(0, 6).map((client, index) => (
-                          <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                            <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                              <span className="text-sm font-medium text-primary">
-                                {client.nome ? client.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                              </span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium truncate">{client.nome}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {formatDateBR(client.created_at)}
-                              </p>
-                              {client.telefone && (
-                                <p className="text-xs text-muted-foreground truncate">{client.telefone}</p>
-                              )}
-                            </div>
-                          </div>
-                        )) : (
-                          <div className="col-span-full text-center py-8">
-                            <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                            <p className="text-muted-foreground">Nenhum cliente adicionado ainda</p>
-                            <Button variant="outline" className="mt-2" onClick={() => navigate("/clientes")}>
-                              Adicionar Primeiro Cliente
-                            </Button>
-                          </div>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Upgrade de Plano */}
-          <Card className="shadow-soft">
-            <CardContent className="p-6">
-              <UpgradePlanCard currentPlan={currentPlan} />
-            </CardContent>
-          </Card>
+          {/* Coluna da Direita */}
+          <div className="space-y-6">
+            {/* Upgrade de Plano */}
+            <Card className="shadow-soft">
+              <CardContent className="p-6">
+                <UpgradePlanCard currentPlan={currentPlan} />
+              </CardContent>
+            </Card>
+
+            {/* Top 5 Clientes que Mais Pagam */}
+            <Card className="shadow-soft">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Top 5 Clientes
+                </CardTitle>
+                <CardDescription>
+                  Clientes que mais geraram receita
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {topClients.length > 0 ? topClients.map((client, index) => (
+                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative">
+                      {/* Coroa dourada animada para o primeiro cliente */}
+                      {index === 0 && (
+                        <div className="absolute -top-2 -right-2 z-10">
+                          <Crown 
+                            className="w-6 h-6 text-yellow-500 animate-pulse"
+                            style={{
+                              filter: 'drop-shadow(0 0 8px gold)',
+                              animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite, brightness 1.5s ease-in-out infinite alternate'
+                            }}
+                          />
+                        </div>
+                      )}
+                      
+                      <Avatar className="w-12 h-12">
+                        <AvatarImage src={client.avatar_url} alt={client.nome} />
+                        <AvatarFallback className="bg-gradient-card text-primary font-medium">
+                          {client.nome ? client.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
+                        </AvatarFallback>
+                      </Avatar>
+                      
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{client.nome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {client.sessoes} sessões
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold text-primary">{formatCurrencyBR(client.total)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatCurrencyBR(client.ticketMedio)} médio
+                        </p>
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhum cliente com pagamentos ainda</p>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Clientes Recentes */}
+            <Card className="shadow-soft">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-secondary" />
+                  Clientes Recentes
+                </CardTitle>
+                <CardDescription>
+                  Últimos clientes adicionados
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
+                    <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={client.avatar_url} alt={client.nome} />
+                        <AvatarFallback className="bg-gradient-card text-primary font-medium text-sm">
+                          {client.nome ? client.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{client.nome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {formatDateBR(client.created_at)}
+                        </p>
+                        {client.telefone && (
+                          <p className="text-xs text-muted-foreground truncate">{client.telefone}</p>
+                        )}
+                      </div>
+                    </div>
+                  )) : (
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Nenhum cliente adicionado ainda</p>
+                      <Button variant="outline" className="mt-2" onClick={() => navigate("/clientes")}>
+                        Adicionar Cliente
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
 
         {/* Alertas */}
