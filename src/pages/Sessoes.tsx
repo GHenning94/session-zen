@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -187,6 +187,50 @@ export default function Sessoes() {
       })
     }
   }
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ status: 'falta' })
+        .eq('id', sessionId)
+
+      if (error) throw error
+
+      toast({
+        title: "Sessão marcada como falta",
+        description: "A sessão foi marcada como falta com sucesso.",
+      })
+    } catch (error) {
+      console.error('Erro ao marcar falta:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível marcar a falta.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleDeleteSession = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('id', sessionId)
+
+      if (error) throw error
+
+      toast({
+        title: "Sessão excluída",
+        description: "A sessão foi excluída permanentemente.",
+      })
+    } catch (error) {
+      console.error('Erro ao excluir sessão:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir a sessão.",
+        variant: "destructive",
+      })
+    }
+  }
 
   const handleViewSession = (sessionId: string) => {
     const session = sessions.find(s => s.id === sessionId)
@@ -219,6 +263,8 @@ export default function Sessoes() {
         return 'secondary'
       case 'cancelada':
         return 'destructive'
+      case 'falta':
+        return 'outline'
       default:
         return 'outline'
     }
@@ -232,14 +278,17 @@ export default function Sessoes() {
         return 'Agendada'
       case 'cancelada':
         return 'Cancelada'
+      case 'falta':
+        return 'Falta'
       default:
         return status
     }
   }
 
   // Separar sessões ativas e canceladas
-  const activeSessions = sessions.filter(session => session.status !== 'cancelada')
+  const activeSessions = sessions.filter(session => session.status !== 'cancelada' && session.status !== 'falta')
   const cancelledSessions = sessions.filter(session => session.status === 'cancelada')
+  const noShowSessions = sessions.filter(session => session.status === 'falta')
 
   const filteredActiveSessions = activeSessions.filter(session => {
     const matchesStatus = !filters.status || filters.status === "all" || session.status === filters.status
@@ -276,13 +325,30 @@ export default function Sessoes() {
     return matchesClient && matchesSearch && matchesDate
   })
 
-  const filteredNotes = sessionNotes.filter(note => {
-    const matchesClient = !filters.client || filters.client === "all" || note.client_id === filters.client
+  const filteredNoShowSessions = noShowSessions.filter(session => {
+    const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
     const matchesSearch = !filters.search || 
+      session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
+      session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
+    
+    let matchesDate = true
+    if (filters.startDate) {
+      matchesDate = matchesDate && session.data >= filters.startDate
+    }
+    if (filters.endDate) {
+      matchesDate = matchesDate && session.data <= filters.endDate
+    }
+    
+    return matchesClient && matchesSearch && matchesDate
+  })
+
+  const filteredNotes = sessionNotes.filter(note => {
+    const clientMatches = !filters.client || filters.client === "all" || note.client_id === filters.client
+    const searchMatches = !filters.search || 
       note.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
       note.notes.toLowerCase().includes(filters.search.toLowerCase())
     
-    return matchesClient && matchesSearch
+    return clientMatches && searchMatches
   })
 
   // Estatísticas
@@ -291,6 +357,7 @@ export default function Sessoes() {
     realizadas: sessions.filter(s => s.status === 'realizada').length,
     agendadas: sessions.filter(s => s.status === 'agendada').length,
     canceladas: sessions.filter(s => s.status === 'cancelada').length,
+    faltas: sessions.filter(s => s.status === 'falta').length,
     totalFaturado: sessions
       .filter(s => s.status === 'realizada' && s.valor)
       .reduce((sum, s) => sum + (s.valor || 0), 0)
@@ -332,7 +399,7 @@ export default function Sessoes() {
         </div>
         
         {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="text-2xl font-bold">{stats.total}</div>
@@ -358,6 +425,13 @@ export default function Sessoes() {
             <CardContent className="p-4">
               <div className="text-2xl font-bold text-red-600">{stats.canceladas}</div>
               <p className="text-xs text-muted-foreground">Canceladas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-4">
+              <div className="text-2xl font-bold text-yellow-600">{stats.faltas}</div>
+              <p className="text-xs text-muted-foreground">Faltas</p>
             </CardContent>
           </Card>
           
@@ -417,9 +491,10 @@ export default function Sessoes() {
                     </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">Todos os status</SelectItem>
-                      <SelectItem value="realizada">Realizada</SelectItem>
-                      <SelectItem value="agendada">Agendada</SelectItem>
-                      <SelectItem value="cancelada">Cancelada</SelectItem>
+                        <SelectItem value="realizada">Realizada</SelectItem>
+                        <SelectItem value="agendada">Agendada</SelectItem>
+                        <SelectItem value="falta">Falta</SelectItem>
+                        <SelectItem value="cancelada">Cancelada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -489,7 +564,7 @@ export default function Sessoes() {
                       
                       <div className="flex gap-2">
                         <Button 
-                          variant="default" 
+                          variant="outline" 
                           size="sm"
                           onClick={() => handleAddNote(session)}
                         >
@@ -504,44 +579,94 @@ export default function Sessoes() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditSession(session)}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver sessão
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
-                              <CreditCard className="h-4 w-4 mr-2" />
-                              Ver Pagamento
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                  <X className="h-4 w-4 mr-2" />
-                                  <span className="text-destructive">Cancelar</span>
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Cancelar Sessão</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Tem certeza que deseja cancelar esta sessão? Esta ação pode ser desfeita editando a sessão posteriormente.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Voltar</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleCancelSession(session.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Cancelar Sessão
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver sessão
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Ver Pagamento
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <X className="h-4 w-4 mr-2" />
+                                    <span className="text-destructive">Cancelar</span>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Cancelar Sessão</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja cancelar esta sessão? Esta ação pode ser desfeita editando a sessão posteriormente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleCancelSession(session.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Cancelar Sessão
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <AlertTriangle className="h-4 w-4 mr-2" />
+                                    <span className="text-yellow-600">Falta</span>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Marcar como Falta</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja marcar esta sessão como falta? Esta ação pode ser desfeita editando a sessão posteriormente.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleMarkNoShow(session.id)}
+                                      className="bg-yellow-600 text-white hover:bg-yellow-700"
+                                    >
+                                      Marcar Falta
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    <span className="text-destructive">Excluir</span>
+                                  </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Sessão</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Tem certeza que deseja excluir permanentemente esta sessão? Esta ação não pode ser desfeita.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleDeleteSession(session.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Excluir Permanentemente
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -579,7 +704,16 @@ export default function Sessoes() {
             {/* Sessões Canceladas */}
             {filteredCancelledSessions.length > 0 && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold text-muted-foreground">Sessões Canceladas</h3>
+                <div className="py-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="bg-background px-4 text-muted-foreground">Sessões Canceladas</span>
+                    </div>
+                  </div>
+                </div>
                 {filteredCancelledSessions.map((session) => (
                   <Card key={session.id} className="opacity-75">
                     <CardContent className="p-4">
@@ -604,6 +738,92 @@ export default function Sessoes() {
                           
                           <Badge variant="destructive">
                             Cancelada
+                          </Badge>
+                          
+                          {session.valor && (
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {formatCurrencyBR(session.valor)}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver sessão
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Ver Pagamento
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                      
+                      {session.anotacoes && (
+                        <div className="mt-3 p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Anotações</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Sessões com Falta */}
+            {filteredNoShowSessions.length > 0 && (
+              <div className="space-y-4">
+                <div className="py-6">
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-border"></div>
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <span className="bg-background px-4 text-muted-foreground">Sessões com Falta</span>
+                    </div>
+                  </div>
+                </div>
+                {filteredNoShowSessions.map((session) => (
+                  <Card key={session.id} className="opacity-75">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-muted-foreground">{session.clients?.nome}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {formatDateBR(session.data)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{formatTimeBR(session.horario)}</span>
+                          </div>
+                          
+                          <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50">
+                            Falta
                           </Badge>
                           
                           {session.valor && (
