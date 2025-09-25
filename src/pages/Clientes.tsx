@@ -588,6 +588,13 @@ const Clientes = () => {
             </DialogContent>
           </Dialog>
         )}
+        
+        <NewSessionModal 
+          open={isNewSessionOpen} 
+          onOpenChange={setIsNewSessionOpen} 
+          selectedClientId={newSessionClientId} 
+          onSessionCreated={loadClients} 
+        />
       </div>
     </Layout>
   )

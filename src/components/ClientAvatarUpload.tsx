@@ -74,67 +74,24 @@ export const ClientAvatarUpload = ({
     setShowCropper(true);
   };
 
-  const handleCropComplete = async (croppedImageUrl: string) => {
-    try {
-      setIsUploading(true);
-      setShowCropper(false);
-      
-      // Convert the cropped image URL to a blob
-      const response = await fetch(croppedImageUrl);
-      const blob = await response.blob();
-      
-      // Create file from blob for compression
-      const file = new File([blob], 'avatar.png', { type: 'image/png' });
-      
-      // Compress the image
-      const compressionSettings = getOptimalCompressionSettings(file);
-      const compressedBlob = await compressImageWithProgress(
-        file, 
-        compressionSettings,
-        (progress) => setCompressionProgress(progress)
-      );
-      
-      // Create unique filename
-      const fileName = `clients/${user?.id}/${Date.now()}.webp`;
-
-      // Upload compressed image to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('user-uploads')
-        .upload(fileName, compressedBlob, {
-          cacheControl: '3600',
-          upsert: false
-        });
-
-      if (error) throw error;
-
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-uploads')
-        .getPublicUrl(fileName);
-
-      onAvatarChange(publicUrl);
-
-      toast({
-        title: "Sucesso",
-        description: "Foto do cliente atualizada com sucesso.",
-      });
-
-    } catch (error) {
-      console.error('Erro ao fazer upload da foto:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível fazer upload da foto.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploading(false);
-      setCompressionProgress(0);
-    }
+  const handleCropComplete = (croppedImageUrl: string) => {
+    // ImageCropper already handles compression and upload
+    // Just update the avatar URL
+    onAvatarChange(croppedImageUrl);
+    setShowCropper(false);
+    
+    toast({
+      title: "Sucesso",
+      description: "Foto do cliente atualizada com sucesso.",
+    });
   };
 
   return (
     <div className="flex flex-col items-center gap-3">
-      <div className="relative">
+      <div 
+        className="relative group cursor-pointer"
+        onClick={() => fileInputRef.current?.click()}
+      >
         <Avatar className={sizeClasses[size]}>
           <AvatarImage src={currentAvatarUrl} alt={clientName} />
           <AvatarFallback className="bg-gradient-card text-primary font-medium">
@@ -142,20 +99,13 @@ export const ClientAvatarUpload = ({
           </AvatarFallback>
         </Avatar>
         
-        <Button
-          type="button"
-          size="sm"
-          variant="outline"
-          className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full p-0 bg-background border-2 border-background shadow-sm"
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-        >
+        <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
           {isUploading ? (
-            <Loader2 className="w-3 h-3 animate-spin" />
+            <Loader2 className="w-6 h-6 text-white animate-spin" />
           ) : (
-            <Camera className="w-3 h-3" />
+            <Camera className="w-6 h-6 text-white" />
           )}
-        </Button>
+        </div>
       </div>
 
       {isUploading && compressionProgress > 0 && (
@@ -163,18 +113,6 @@ export const ClientAvatarUpload = ({
           Otimizando imagem... {compressionProgress}%
         </div>
       )}
-
-      <Button
-        type="button"
-        variant="ghost"
-        size="sm"
-        className="text-xs text-muted-foreground"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={isUploading}
-      >
-        <Upload className="w-3 h-3 mr-1" />
-        {currentAvatarUrl ? "Alterar foto" : "Adicionar foto"}
-      </Button>
 
       <input
         ref={fileInputRef}

@@ -109,6 +109,30 @@ const Dashboard = () => {
     }
   }, [user])
 
+  // Add real-time updates for sessions
+  useEffect(() => {
+    if (!user) return
+
+    const sessionsChannel = supabase
+      .channel('dashboard-sessions')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'sessions',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          loadDashboardData()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(sessionsChannel)
+    }
+  }, [user])
+
   const loadDashboardData = async () => {
     try {
       console.log('🔄 Carregando dados do dashboard...')

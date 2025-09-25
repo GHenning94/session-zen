@@ -12,6 +12,7 @@ import { PlanProtection } from "@/components/PlanProtection"
 import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User } from "lucide-react"
 import { useToast } from "@/hooks/use-toast" 
 import { ImageCropper } from "@/components/ImageCropper"
+import { ImageUpload } from "@/components/sharing/ImageUpload"
 
 interface SharingSettingsProps {
   settings: Record<string, any>;
@@ -180,38 +181,11 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                   <Input value={settings.logo_url || ''} onChange={(e) => onSettingsChange('logo_url', e.target.value)} placeholder="https://exemplo.com/logo.png" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Imagem de Fundo</Label>
-                  <Input 
-                    value={settings.background_image || ''} 
-                    onChange={(e) => onSettingsChange('background_image', e.target.value)} 
-                    placeholder="https://exemplo.com/background.jpg" 
-                    className="mb-2"
+                  <ImageUpload 
+                    label="Imagem de Fundo"
+                    value={settings.background_image || ''}
+                    onChange={(url) => onSettingsChange('background_image', url)}
                   />
-                  <div className="text-sm text-muted-foreground mb-2">ou faça upload de uma imagem:</div>
-                  <Input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) {
-                        const reader = new FileReader();
-                        reader.onload = (ev) => {
-                          onSettingsChange('background_image', ev.target?.result);
-                        };
-                        reader.readAsDataURL(file);
-                      }
-                    }} 
-                  />
-                  {settings.background_image && (
-                    <div className="mt-2">
-                      <img 
-                        src={settings.background_image} 
-                        alt="Imagem de fundo" 
-                        className="w-32 h-20 object-cover rounded border"
-                        style={{ aspectRatio: '16/10' }}
-                      />
-                    </div>
-                  )}
                   <p className="text-xs text-muted-foreground">
                     A imagem carregada terá prioridade sobre a cor de fundo selecionada.
                   </p>

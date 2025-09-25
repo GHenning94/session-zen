@@ -67,9 +67,16 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
         const dateStr = selectedDate.toISOString().split('T')[0]
         setNewSession(prev => ({ ...prev, data: dateStr }))
       }
+      // Se há um cliente pré-selecionado, usar ele
+      if (selectedClientId) {
+        setNewSession(prev => ({ ...prev, client_id: selectedClientId }))
+        // Verificar se o cliente está inativo
+        const selectedClient = clients.find(c => c.id === selectedClientId)
+        setShowReactivationMessage(selectedClient && !selectedClient.ativo)
+      }
       setShowReactivationMessage(false)
     }
-  }, [open, user, selectedDate])
+  }, [open, user, selectedDate, selectedClientId, clients])
 
   // Configurar listener de tempo real para clientes
   useEffect(() => {
@@ -167,6 +174,9 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
       
       onOpenChange(false)
       onSessionCreated?.()
+      
+      // Dispatch custom event for dashboard updates
+      window.dispatchEvent(new CustomEvent('sessionAdded'))
       
       toast({
         title: "Sessão criada!",

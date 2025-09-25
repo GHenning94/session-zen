@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { Plus } from "lucide-react"
+import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
 
 interface NewClientModalProps {
   open: boolean
@@ -28,7 +29,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
     phone: "",
     profession: "",
     age: "",
-    notes: ""
+    notes: "",
+    avatarUrl: ""
   })
 
   const loadClients = async () => {
@@ -92,6 +94,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
           nome: newClient.name,
           email: newClient.email,
           telefone: newClient.phone,
+          avatar_url: newClient.avatarUrl,
           dados_clinicos: `Profissão: ${newClient.profession}\nIdade: ${newClient.age}\nObservações: ${newClient.notes}`
         }])
 
@@ -102,7 +105,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
         description: "Cliente adicionado com sucesso!",
       })
 
-      setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "" })
+      setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "", avatarUrl: "" })
       onOpenChange(false)
       
       if (onClientAdded) {
@@ -147,6 +150,14 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
         )}
         
         <div className="grid gap-4 py-4">
+          <div className="flex flex-col items-center gap-4">
+            <ClientAvatarUpload 
+              clientName={newClient.name || "Novo Cliente"}
+              currentAvatarUrl={newClient.avatarUrl}
+              onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
+              size="lg"
+            />
+          </div>
           <div className="grid gap-2">
             <Label htmlFor="name">Nome Completo *</Label>
             <Input 
@@ -219,7 +230,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
             variant="outline" 
             onClick={() => {
               onOpenChange(false)
-              setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "" })
+              setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "", avatarUrl: "" })
             }}
           >
             Cancelar

@@ -176,19 +176,17 @@ export const ProfileDropdown = () => {
     if (!user) return
     
     try {
-      // Update both avatar URLs
+      // Update only the private avatar URL
       setProfile(prev => ({ 
         ...prev, 
-        avatar_url: croppedImageUrl,
-        public_avatar_url: croppedImageUrl 
+        avatar_url: croppedImageUrl
       }))
 
-      // Save to database immediately
+      // Save to database immediately - only private avatar
       const { error } = await supabase
         .from('profiles')
         .update({
-          avatar_url: croppedImageUrl,
-          public_avatar_url: croppedImageUrl
+          avatar_url: croppedImageUrl
         })
         .eq('user_id', user.id)
 
@@ -252,13 +250,12 @@ export const ProfileDropdown = () => {
     try {
       console.log('Salvando perfil no banco...')
       // Atualizar perfil existente
-      const { error: profileError } = await supabase
+        const { error: profileError } = await supabase
         .from('profiles')
         .update({
           nome: profile.nome,
           profissao: profile.profissao,
-          avatar_url: profile.avatar_url,
-          public_avatar_url: profile.avatar_url  // Salvar também como público
+          avatar_url: profile.avatar_url
         })
         .eq('user_id', user.id)
 
