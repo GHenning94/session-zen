@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
 import { 
   Search, 
@@ -15,14 +14,14 @@ import {
   Phone, 
   Mail, 
   Calendar,
-  AlertTriangle,
   MoreHorizontal,
-  Edit,
+  Edit2,
   Trash2,
   Eye,
-  UserX
+  UserX,
+  UserCheck
 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -44,7 +43,6 @@ const Clientes = () => {
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
-  // Formulário para novo cliente
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -55,7 +53,6 @@ const Clientes = () => {
     avatarUrl: ""
   })
 
-  // Carregar clientes do Supabase
   const loadClients = async () => {
     if (!user) return
     
@@ -88,6 +85,42 @@ const Clientes = () => {
     loadClients()
   }, [user])
 
+  const handleAvatarChange = async (clientId: string, avatarUrl: string) => {
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .update({ avatar_url: avatarUrl })
+        .eq('id', clientId)
+      
+      if (error) throw error
+      
+      setClients(prevClients => 
+        prevClients.map(client => 
+          client.id === clientId 
+            ? { ...client, avatar_url: avatarUrl }
+            : client
+        )
+      )
+      
+      toast({
+        title: "Avatar atualizado",
+        description: "A foto do cliente foi atualizada com sucesso.",
+      })
+    } catch (error) {
+      console.error('Erro ao atualizar avatar:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o avatar do cliente.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  const setSelectedClientForSession = (client: any) => {
+    setNewSessionClientId(client.id)
+    setIsNewSessionOpen(true)
+  }
+
   const handleSaveClient = async () => {
     if (!newClient.name || !newClient.email || !newClient.phone) {
       toast({
@@ -98,7 +131,7 @@ const Clientes = () => {
       return
     }
 
-    // Validar limite do plano
+    const activeClients = clients.filter(client => client.ativo !== false)
     if (!editingClient && !canAddClient(activeClients.length)) {
       toast({
         title: "Limite Atingido",
@@ -234,21 +267,13 @@ const Clientes = () => {
     setIsNewClientOpen(true)
   }
 
-  const filteredClients = clients.filter(client =>
-    client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    client.telefone?.includes(searchTerm)
-  )
-
   const activeClients = clients.filter(client => client.ativo !== false)
   const inactiveClients = clients.filter(client => client.ativo === false)
-
   const canAddMore = canAddClient(activeClients.length)
 
   return (
     <Layout>
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
@@ -258,7 +283,7 @@ const Clientes = () => {
           </div>
           <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
             <DialogTrigger asChild>
-                <Button 
+              <Button 
                 className="bg-gradient-primary hover:opacity-90"
                 disabled={!canAddMore}
               >
@@ -362,7 +387,6 @@ const Clientes = () => {
           </Dialog>
         </div>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="shadow-soft">
             <CardHeader className="pb-3">
@@ -401,7 +425,6 @@ const Clientes = () => {
           </Card>
         </div>
 
-        {/* Search and Filters */}
         <Card className="shadow-soft">
           <CardHeader>
             <div className="flex items-center gap-4">
@@ -418,12 +441,11 @@ const Clientes = () => {
           </CardHeader>
         </Card>
 
-        {/* Clients List */}
         <Card className="shadow-soft">
           <CardHeader>
             <CardTitle>Lista de Clientes</CardTitle>
             <CardDescription>
-              {filteredClients.length} cliente(s) encontrado(s)
+              {clients.length} cliente(s) encontrado(s)
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -431,172 +453,223 @@ const Clientes = () => {
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Carregando clientes...</p>
               </div>
-            ) : filteredClients.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">
-                  {searchTerm ? 'Nenhum cliente encontrado.' : 'Nenhum cliente cadastrado ainda.'}
-                </p>
-              </div>
             ) : (
               <div className="space-y-4">
-                {filteredClients.map((client) => (
-                  <div key={client.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                    <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center overflow-hidden">
-                      {client.avatar_url ? (
-                        <img 
-                          src={client.avatar_url} 
-                          alt={client.nome}
-                          className="w-full h-full object-cover"
+                {/* Active clients */}
+                {activeClients.filter(client =>
+                  client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  client.telefone?.includes(searchTerm)
+                ).map((client) => (
+                  <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <ClientAvatarUpload
+                          clientName={client.nome}
+                          currentAvatarUrl={client.avatar_url}
+                          onAvatarChange={(url) => handleAvatarChange(client.id, url)}
+                          size="sm"
                         />
-                      ) : (
-                        <span className="text-sm font-medium text-primary">
-                          {client.nome.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
-                        </span>
-                      )}
-                    </div>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <h3 className="font-medium">{client.nome}</h3>
-                          {client.ativo === false ? (
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs border-yellow-500 text-yellow-600 bg-yellow-50"
-                            >
-                              inativo
-                            </Badge>
-                          ) : (
-                            <Badge variant="default" className="text-xs">
-                              ativo
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <Mail className="w-3 h-3" />
-                            {client.email}
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <Phone className="w-3 h-3" />
-                            {client.telefone}
-                          </span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{client.nome}</h3>
+                            <Badge variant="success">Ativo</Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {client.email && <p>{client.email}</p>}
+                            {client.telefone && <p>{client.telefone}</p>}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setSelectedClient(client)}
-                      >
-                        <Eye className="w-4 h-4 mr-2" />
-                        Ver Detalhes
-                      </Button>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                          <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                            <Edit className="w-4 h-4 mr-2" />
-                            Editar
-                          </DropdownMenuItem>
-                           <DropdownMenuItem onClick={() => {
-                             setNewSessionClientId(client.id)
-                             setIsNewSessionOpen(true) 
-                           }}>
-                             <Calendar className="w-4 h-4 mr-2" />
-                             Agendar Sessão
-                           </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-yellow-600" 
-                            onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}
-                          >
-                            <UserX className="w-4 h-4 mr-2" />
-                            {client.ativo === false ? 'Reativar' : 'Desativar'}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            className="text-destructive" 
-                            onClick={() => handleDeleteClient(client.id)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedClientForSession(client)}
+                        >
+                          <Calendar className="w-4 h-4 mr-1" />
+                          Agendar
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-background border shadow-lg">
+                            <DropdownMenuItem onClick={() => setSelectedClient(client)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Ver detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClient(client)}>
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Agendar sessão
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
+                              <UserX className="w-4 h-4 mr-2" />
+                              Desativar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteClient(client.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 ))}
+
+                {/* Separator */}
+                {inactiveClients.filter(client =>
+                  client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  client.telefone?.includes(searchTerm)
+                ).length > 0 && (
+                  <div className="py-6">
+                    <div className="relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-border"></div>
+                      </div>
+                      <div className="relative flex justify-center text-sm">
+                        <span className="bg-background px-4 text-muted-foreground">Clientes Inativos</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Inactive clients */}
+                {inactiveClients.filter(client =>
+                  client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                  client.telefone?.includes(searchTerm)
+                ).map((client) => (
+                  <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm opacity-75">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <ClientAvatarUpload
+                          clientName={client.nome}
+                          currentAvatarUrl={client.avatar_url}
+                          onAvatarChange={(url) => handleAvatarChange(client.id, url)}
+                          size="sm"
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-medium">{client.nome}</h3>
+                            <Badge variant="secondary">Inativo</Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {client.email && <p>{client.email}</p>}
+                            {client.telefone && <p>{client.telefone}</p>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSelectedClientForSession(client)}
+                        >
+                          <Calendar className="w-4 h-4 mr-1" />
+                          Agendar
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 bg-background border shadow-lg">
+                            <DropdownMenuItem onClick={() => setSelectedClient(client)}>
+                              <Eye className="w-4 h-4 mr-2" />
+                              Ver detalhes
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleEditClient(client)}>
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Agendar sessão
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
+                              <UserCheck className="w-4 h-4 mr-2" />
+                              Ativar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDeleteClient(client.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {activeClients.length === 0 && inactiveClients.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Nenhum cliente cadastrado ainda.</p>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Client Details Modal */}
         {selectedClient && (
           <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-            <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
-                  <User className="w-5 h-5" />
-                  {selectedClient.nome}
-                </DialogTitle>
-                <DialogDescription>
-                  Informações completas do cliente
-                </DialogDescription>
+                <DialogTitle>Detalhes do Cliente</DialogTitle>
               </DialogHeader>
-              
-              <Tabs defaultValue="info" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="info">Informações Básicas</TabsTrigger>
-                  <TabsTrigger value="clinical">Dados Clínicos</TabsTrigger>
-                </TabsList>
-                
-                <TabsContent value="info" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">E-mail</Label>
-                      <p className="text-sm">{selectedClient.email}</p>
-                    </div>
-                    <div>
-                      <Label className="text-sm font-medium text-muted-foreground">Telefone</Label>
-                      <p className="text-sm">{selectedClient.telefone}</p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Data de Cadastro</Label>
-                    <p className="text-sm">{new Date(selectedClient.created_at).toLocaleDateString('pt-BR')}</p>
-                  </div>
-                </TabsContent>
-                
-                <TabsContent value="clinical" className="space-y-4">
-                  <div>
-                    <Label className="text-sm font-medium text-muted-foreground">Dados Clínicos</Label>
-                    <p className="text-sm whitespace-pre-line">{selectedClient.dados_clinicos || 'Nenhum dado clínico registrado.'}</p>
-                  </div>
-                </TabsContent>
-              </Tabs>
-              
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={() => setSelectedClient(null)}>
-                  Fechar
-                </Button>
+              <div className="space-y-4">
+                <div className="text-center">
+                  <h3 className="text-xl font-semibold">{selectedClient.nome}</h3>
+                  <Badge variant={selectedClient.ativo ? "default" : "secondary"}>
+                    {selectedClient.ativo ? "Ativo" : "Inativo"}
+                  </Badge>
+                </div>
+                <div className="space-y-2">
+                  <p><strong>Email:</strong> {selectedClient.email || "Não informado"}</p>
+                  <p><strong>Telefone:</strong> {selectedClient.telefone || "Não informado"}</p>
+                  <p><strong>Dados Clínicos:</strong> {selectedClient.dados_clinicos || "Não informado"}</p>
+                </div>
               </div>
             </DialogContent>
           </Dialog>
         )}
-        
-        <NewSessionModal 
-          open={isNewSessionOpen} 
-          onOpenChange={setIsNewSessionOpen} 
-          selectedClientId={newSessionClientId} 
-          onSessionCreated={loadClients} 
+
+        <NewSessionModal
+          isOpen={isNewSessionOpen}
+          onClose={() => {
+            setIsNewSessionOpen(false)
+            setNewSessionClientId(null)
+          }}
+          selectedClientId={newSessionClientId}
+          onSessionCreated={() => {
+            toast({
+              title: "Sessão agendada!",
+              description: "A sessão foi agendada com sucesso.",
+            })
+          }}
         />
       </div>
-    </Layout>
+    </Launch>
   )
 }
 

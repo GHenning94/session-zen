@@ -1,4 +1,4 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useCallback } from 'react'
 import { useTheme } from 'next-themes'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
@@ -104,8 +104,12 @@ export const useUserTheme = () => {
   }, [loadUserTheme])
 
   // Force light theme on public pages
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isPublicPage()) {
+      // Apply light theme immediately on public pages
+      document.documentElement.classList.remove('dark')
+      document.documentElement.classList.add('light')
+      document.documentElement.setAttribute('data-theme', 'light')
       setTheme('light')
     }
   }, [isPublicPage, setTheme])

@@ -32,6 +32,7 @@ import Prontuarios from "@/pages/Prontuarios";
 import Estudos from "@/pages/Estudos";
 import RedesSociais from "@/pages/RedesSociais";
 import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
+import Suporte from "@/pages/Suporte";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -135,6 +136,11 @@ const App = () => (
                   <Route path="/integracoes" element={
                     <ProtectedRoute>
                       <Integracoes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/suporte" element={
+                    <ProtectedRoute>
+                      <Suporte />
                     </ProtectedRoute>
                   } />
                   <Route path="/agendar/:userId" element={

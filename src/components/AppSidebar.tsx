@@ -38,78 +38,83 @@ import { toast } from "@/hooks/use-toast"
 import { PremiumBanner } from "@/components/PremiumBanner"
 import { useSubscription } from "@/hooks/useSubscription"
 
-const menuItems = [
-  { 
-    title: "Dashboard", 
-    url: "/dashboard", 
-    icon: LayoutDashboard 
-  },
-  { 
-    title: "Agenda", 
-    url: "/agenda", 
-    icon: Calendar 
-  },
-  { 
-    title: "Clientes", 
-    url: "/clientes", 
-    icon: Users 
-  },
-  { 
-    title: "Pagamentos", 
-    url: "/pagamentos", 
-    icon: CreditCard 
-  },
-  { 
-    title: "Relatórios", 
-    url: "/relatorios", 
-    icon: FileBarChart 
-  },
-  {
-    title: "Eventos",
-    url: "/eventos", 
-    icon: CalendarCheck,
-  },
-  {
-    title: "Prontuários",
-    url: "/prontuarios",
-    icon: FileText,
-  },
-  {
-    title: "Sessões",
-    url: "/sessoes",
-    icon: NotebookPen,
-  },
-  {
-    title: "Estudos",
-    url: "/estudos",
-    icon: BookOpen,
-  },
-  {
-    title: "Redes Sociais",
-    url: "/redes-sociais",
-    icon: Share2,
-  },
-  {
-    title: "Programa de Indicação",
-    url: "/programa-indicacao",
-    icon: Star,
-  },
-  { 
-    title: "Página Pública", 
-    url: "/pagina-publica", 
-    icon: Globe 
-  },
-  { 
-    title: "Integrações", 
-    url: "/integracoes", 
-    icon: Plug 
-  },
-  { 
-    title: "Configurações", 
-    url: "/configuracoes", 
-    icon: Settings 
-  },
-]
+  const menuItems = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboard,
+    },
+    {
+      title: "Agenda",
+      url: "/agenda",
+      icon: Calendar,
+    },
+    {
+      title: "Clientes",
+      url: "/clientes",
+      icon: Users,
+    },
+    {
+      title: "Pagamentos",
+      url: "/pagamentos",
+      icon: CreditCard,
+    },
+    {
+      title: "Relatórios",
+      url: "/relatorios",
+      icon: FileBarChart,
+    },
+    {
+      title: "Eventos",
+      url: "/eventos", 
+      icon: CalendarCheck,
+    },
+    {
+      title: "Prontuários",
+      url: "/prontuarios",
+      icon: FileText,
+    },
+    {
+      title: "Sessões",
+      url: "/sessoes",
+      icon: NotebookPen,
+    },
+    {
+      title: "Estudos",
+      url: "/estudos",
+      icon: BookOpen,
+    },
+    {
+      title: "Redes Sociais",
+      url: "/redes-sociais",
+      icon: Share2,
+    },
+    {
+      title: "Programa de Indicação",
+      url: "/programa-indicacao",
+      icon: Star,
+    },
+    { 
+      title: "Página Pública", 
+      url: "/pagina-publica", 
+      icon: Globe 
+    },
+    { 
+      title: "Integrações", 
+      url: "/integracoes", 
+      icon: Plug 
+    },
+    {
+      title: "Suporte",
+      url: "/suporte",
+      icon: Star,
+    },
+    { 
+      title: "Configurações", 
+      url: "/configuracoes", 
+      icon: Settings 
+    },
+  ]
 
 export function AppSidebar() {
   const { state } = useSidebar()
