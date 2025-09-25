@@ -150,7 +150,7 @@ const Clientes = () => {
         email: newClient.email,
         telefone: newClient.phone,
         avatar_url: newClient.avatarUrl,
-        dados_clinicos: newClient.notes || ""
+        dados_clinicos: `${newClient.notes ? `Observações: ${newClient.notes}` : ''}${newClient.age ? `\nIdade: ${newClient.age}` : ''}${newClient.profession ? `\nProfissão: ${newClient.profession}` : ''}`
       }
 
       if (editingClient) {
@@ -255,13 +255,20 @@ const Clientes = () => {
 
   const handleEditClient = (client: any) => {
     setEditingClient(client)
+    
+    // Parse existing clinical data
+    const clinicalData = client.dados_clinicos || ""
+    const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
+    const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
+    const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
+    
     setNewClient({
       name: client.nome || "",
       email: client.email || "",
       phone: client.telefone || "",
-      profession: "",
-      age: "",
-      notes: client.dados_clinicos || "",
+      profession: professionMatch ? professionMatch[1] : "",
+      age: ageMatch ? ageMatch[1] : "",
+      notes: notesMatch ? notesMatch[1] : "",
       avatarUrl: client.avatar_url || ""
     })
     setIsNewClientOpen(true)
@@ -507,13 +514,16 @@ const Clientes = () => {
                               Agendar sessão
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleClientStatus(client.id, client.ativo)}
+                              className="text-yellow-600 focus:text-yellow-600"
+                            >
                               <UserX className="w-4 h-4 mr-2" />
                               Desativar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeleteClient(client.id)}
-                              className="text-destructive"
+                              className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Excluir
@@ -595,13 +605,16 @@ const Clientes = () => {
                               Agendar sessão
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
+                            <DropdownMenuItem 
+                              onClick={() => handleToggleClientStatus(client.id, client.ativo)}
+                              className="text-yellow-600 focus:text-yellow-600"
+                            >
                               <UserCheck className="w-4 h-4 mr-2" />
                               Ativar
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               onClick={() => handleDeleteClient(client.id)}
-                              className="text-destructive"
+                              className="text-red-600 focus:text-red-600"
                             >
                               <Trash2 className="w-4 h-4 mr-2" />
                               Excluir
@@ -631,12 +644,19 @@ const Clientes = () => {
               </DialogHeader>
               <div className="space-y-4">
                 <div className="text-center space-y-3">
-                  <ClientAvatarUpload
-                    clientName={selectedClient.nome}
-                    currentAvatarUrl={selectedClient.avatar_url}
-                    onAvatarChange={(url) => handleAvatarChange(selectedClient.id, url)}
-                    size="lg"
-                  />
+                  <div className="flex justify-center">
+                    <div className="relative w-20 h-20 rounded-full bg-gradient-primary text-white flex items-center justify-center text-xl font-semibold overflow-hidden">
+                      {selectedClient.avatar_url ? (
+                        <img 
+                          src={selectedClient.avatar_url} 
+                          alt={selectedClient.nome}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span>{selectedClient.nome.charAt(0).toUpperCase()}</span>
+                      )}
+                    </div>
+                  </div>
                   <div>
                     <h3 className="text-xl font-semibold">{selectedClient.nome}</h3>
                     <Badge variant={selectedClient.ativo ? "default" : "outline"} 
@@ -648,7 +668,29 @@ const Clientes = () => {
                 <div className="space-y-2">
                   <p><strong>Email:</strong> {selectedClient.email || "Não informado"}</p>
                   <p><strong>Telefone:</strong> {selectedClient.telefone || "Não informado"}</p>
-                  <p><strong>Dados Clínicos:</strong> {selectedClient.dados_clinicos || "Não informado"}</p>
+                  
+                  {/* Parse and display individual fields */}
+                  {(() => {
+                    const clinicalData = selectedClient.dados_clinicos || ""
+                    const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
+                    const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
+                    const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
+                    
+                    return (
+                      <>
+                        {ageMatch && <p><strong>Idade:</strong> {ageMatch[1]}</p>}
+                        {professionMatch && <p><strong>Profissão:</strong> {professionMatch[1]}</p>}
+                        {notesMatch && (
+                          <div className="border-t pt-4">
+                            <p><strong>Observações Iniciais:</strong></p>
+                            <p className="text-muted-foreground text-sm mt-1">
+                              {notesMatch[1]}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             </DialogContent>
