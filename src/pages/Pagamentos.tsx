@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -27,12 +28,14 @@ import { generateReceiptPDF } from "@/utils/receiptGenerator"
 import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { cn } from "@/lib/utils"
 
 const Pagamentos = () => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { currentPlan, hasFeature } = useSubscription()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [filterPeriod, setFilterPeriod] = useState("todos")
   const [filterStatus, setFilterStatus] = useState("todos")
   const [sessions, setSessions] = useState<any[]>([])
@@ -41,6 +44,7 @@ const Pagamentos = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -94,6 +98,21 @@ const Pagamentos = () => {
   useEffect(() => {
     loadData()
   }, [user])
+
+  // Check for highlighted payment from URL params
+  useEffect(() => {
+    const highlightParam = searchParams.get('highlight')
+    
+    if (highlightParam) {
+      setHighlightedPaymentId(highlightParam)
+      
+      // Clear the URL parameters after a delay
+      setTimeout(() => {
+        setSearchParams({})
+        setHighlightedPaymentId(null)
+      }, 3000)
+    }
+  }, [searchParams, setSearchParams])
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)
@@ -428,7 +447,10 @@ const Pagamentos = () => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
                    return (
-                    <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                   <div key={payment.id} className={cn(
+                     "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors",
+                     highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                   )}>
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                           <StatusIcon className="w-5 h-5 text-primary" />

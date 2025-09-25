@@ -6,13 +6,18 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Clock, User, Calendar, FileText, Filter, Eye, Edit } from 'lucide-react'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
+import { SessionNoteModal } from '@/components/SessionNoteModal'
+import { SessionEditModal } from '@/components/SessionEditModal'
+import { useNavigate } from 'react-router-dom'
 
 interface Session {
   id: string
@@ -46,6 +51,7 @@ interface SessionNote {
 export default function Sessoes() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
   
   // Estados principais
   const [sessions, setSessions] = useState<Session[]>([])
@@ -53,6 +59,11 @@ export default function Sessoes() {
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'sessions' | 'notes'>('sessions')
+  
+  // Estados para modais
+  const [noteModalOpen, setNoteModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false)
+  const [selectedSession, setSelectedSession] = useState<Session | null>(null)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -78,7 +89,7 @@ export default function Sessoes() {
         .from('sessions')
         .select(`
           *,
-          clients (nome)
+          clients (nome, ativo)
         `)
         .order('data', { ascending: false })
 
@@ -96,10 +107,10 @@ export default function Sessoes() {
 
       if (notesError) throw notesError
 
-      // Carregar clientes
+      // Carregar clientes (incluindo inativos para edição)
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select('id, nome')
+        .select('id, nome, ativo')
         .order('nome')
 
       if (clientsError) throw clientsError
@@ -117,6 +128,87 @@ export default function Sessoes() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Configurar listeners em tempo real
+  useEffect(() => {
+    if (!user) return
+
+    const sessionsChannel = supabase
+      .channel('sessions-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'sessions', filter: `user_id=eq.${user.id}` },
+        () => loadData()
+      )
+      .subscribe()
+
+    const notesChannel = supabase
+      .channel('notes-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'session_notes', filter: `user_id=eq.${user.id}` },
+        () => loadData()
+      )
+      .subscribe()
+
+    const clientsChannel = supabase
+      .channel('clients-changes')
+      .on('postgres_changes', 
+        { event: '*', schema: 'public', table: 'clients', filter: `user_id=eq.${user.id}` },
+        () => loadData()
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(sessionsChannel)
+      supabase.removeChannel(notesChannel)
+      supabase.removeChannel(clientsChannel)
+    }
+  }, [user])
+
+  const handleCancelSession = async (sessionId: string) => {
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({ status: 'cancelada' })
+        .eq('id', sessionId)
+
+      if (error) throw error
+
+      toast({
+        title: "Sessão cancelada",
+        description: "A sessão foi cancelada com sucesso.",
+      })
+    } catch (error) {
+      console.error('Erro ao cancelar sessão:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível cancelar a sessão.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleViewSession = (sessionId: string) => {
+    const session = sessions.find(s => s.id === sessionId)
+    if (session) {
+      navigate(`/agenda?highlight=${sessionId}&date=${session.data}`)
+    } else {
+      navigate('/agenda')
+    }
+  }
+
+  const handleViewPayment = (sessionId: string) => {
+    navigate(`/pagamentos?highlight=${sessionId}`)
+  }
+
+  const handleAddNote = (session: Session) => {
+    setSelectedSession(session)
+    setNoteModalOpen(true)
+  }
+
+  const handleEditSession = (session: Session) => {
+    setSelectedSession(session)
+    setEditModalOpen(true)
   }
 
   const getStatusColor = (status: string) => {
@@ -145,7 +237,11 @@ export default function Sessoes() {
     }
   }
 
-  const filteredSessions = sessions.filter(session => {
+  // Separar sessões ativas e canceladas
+  const activeSessions = sessions.filter(session => session.status !== 'cancelada')
+  const cancelledSessions = sessions.filter(session => session.status === 'cancelada')
+
+  const filteredActiveSessions = activeSessions.filter(session => {
     const matchesStatus = !filters.status || filters.status === "all" || session.status === filters.status
     const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
     const matchesSearch = !filters.search || 
@@ -161,6 +257,23 @@ export default function Sessoes() {
     }
     
     return matchesStatus && matchesClient && matchesSearch && matchesDate
+  })
+
+  const filteredCancelledSessions = cancelledSessions.filter(session => {
+    const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
+    const matchesSearch = !filters.search || 
+      session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
+      session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
+    
+    let matchesDate = true
+    if (filters.startDate) {
+      matchesDate = matchesDate && session.data >= filters.startDate
+    }
+    if (filters.endDate) {
+      matchesDate = matchesDate && session.data <= filters.endDate
+    }
+    
+    return matchesClient && matchesSearch && matchesDate
   })
 
   const filteredNotes = sessionNotes.filter(note => {
@@ -337,62 +450,208 @@ export default function Sessoes() {
         
         {/* Sessions Tab */}
         {activeTab === 'sessions' && (
-          <div className="space-y-4">
-            {filteredSessions.map((session) => (
-              <Card key={session.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{session.clients?.nome}</span>
+          <div className="space-y-6">
+            {/* Sessões Ativas */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">Sessões Ativas</h3>
+              {filteredActiveSessions.map((session) => (
+                <Card key={session.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-2">
+                          <User className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{session.clients?.nome}</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">
+                            {formatDateBR(session.data)}
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{formatTimeBR(session.horario)}</span>
+                        </div>
+                        
+                        <Badge variant={getStatusColor(session.status)}>
+                          {getStatusLabel(session.status)}
+                        </Badge>
+                        
+                        {session.valor && (
+                          <span className="text-sm font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
+                            {formatCurrencyBR(session.valor)}
+                          </span>
+                        )}
                       </div>
                       
-                      <div className="flex items-center gap-2">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">
-                          {formatDateBR(session.data)}
-                        </span>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => handleAddNote(session)}
+                        >
+                          <StickyNote className="h-4 w-4 mr-2" />
+                          Adicionar Anotação
+                        </Button>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditSession(session)}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Editar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                              <Eye className="h-4 w-4 mr-2" />
+                              Ver sessão
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                              <CreditCard className="h-4 w-4 mr-2" />
+                              Ver Pagamento
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                  <X className="h-4 w-4 mr-2" />
+                                  <span className="text-destructive">Cancelar</span>
+                                </DropdownMenuItem>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancelar Sessão</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja cancelar esta sessão? Esta ação pode ser desfeita editando a sessão posteriormente.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleCancelSession(session.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Cancelar Sessão
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm">{formatTimeBR(session.horario)}</span>
-                      </div>
-                      
-                      <Badge variant={getStatusColor(session.status)}>
-                        {getStatusLabel(session.status)}
-                      </Badge>
-                      
-                      {session.valor && (
-                        <span className="text-sm font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
-                          {formatCurrencyBR(session.valor)}
-                        </span>
-                      )}
                     </div>
                     
-                    <div className="flex gap-2">
-                      <Button variant="outline" size="sm">
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  
-                  {session.anotacoes && (
-                    <div className="mt-3 p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2 mb-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm font-medium">Anotações</span>
+                    {session.anotacoes && (
+                      <div className="mt-3 p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">Anotações</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
                       </div>
-                      <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+              
+              {filteredActiveSessions.length === 0 && (
+                <Card>
+                  <CardContent className="text-center py-12">
+                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Nenhuma sessão ativa encontrada</h3>
+                    <p className="text-muted-foreground">
+                      {activeSessions.length === 0 
+                        ? 'Suas sessões aparecerão aqui conforme forem criadas na agenda.' 
+                        : 'Tente ajustar os filtros para encontrar sessões.'
+                      }
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Sessões Canceladas */}
+            {filteredCancelledSessions.length > 0 && (
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-muted-foreground">Sessões Canceladas</h3>
+                {filteredCancelledSessions.map((session) => (
+                  <Card key={session.id} className="opacity-75">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="flex items-center gap-2">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium text-muted-foreground">{session.clients?.nome}</span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">
+                              {formatDateBR(session.data)}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm text-muted-foreground">{formatTimeBR(session.horario)}</span>
+                          </div>
+                          
+                          <Badge variant="destructive">
+                            Cancelada
+                          </Badge>
+                          
+                          {session.valor && (
+                            <span className="text-sm font-medium text-muted-foreground">
+                              {formatCurrencyBR(session.valor)}
+                            </span>
+                          )}
+                        </div>
+                        
+                        <div className="flex gap-2">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                                <Eye className="h-4 w-4 mr-2" />
+                                Ver sessão
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                                <CreditCard className="h-4 w-4 mr-2" />
+                                Ver Pagamento
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </div>
+                      
+                      {session.anotacoes && (
+                        <div className="mt-3 p-3 bg-muted rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm font-medium">Anotações</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
           </div>
         )}
         
@@ -444,21 +703,21 @@ export default function Sessoes() {
           </div>
         )}
         
-        {/* Empty States */}
-        {activeTab === 'sessions' && filteredSessions.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhuma sessão encontrada</h3>
-              <p className="text-muted-foreground">
-                {sessions.length === 0 
-                  ? 'Suas sessões aparecerão aqui conforme forem criadas na agenda.' 
-                  : 'Tente ajustar os filtros para encontrar sessões.'
-                }
-              </p>
-            </CardContent>
-          </Card>
-        )}
+        {/* Modals */}
+        <SessionNoteModal
+          session={selectedSession}
+          open={noteModalOpen}
+          onOpenChange={setNoteModalOpen}
+          onNoteCreated={loadData}
+        />
+        
+        <SessionEditModal
+          session={selectedSession}
+          clients={clients}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onSessionUpdated={loadData}
+        />
         
         {activeTab === 'notes' && filteredNotes.length === 0 && (
           <Card>
