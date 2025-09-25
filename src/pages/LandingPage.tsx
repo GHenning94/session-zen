@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useState, useEffect } from "react"
+import { CookieNotice } from "@/components/CookieNotice"
 
 const LandingPage = () => {
   const navigate = useNavigate()
@@ -418,6 +419,9 @@ const LandingPage = () => {
           <p className="text-muted-foreground text-sm">© 2025 TherapyPro. Todos os direitos reservados.</p>
         </div>
       </footer>
+      
+      {/* Cookie Notice for LGPD Compliance */}
+      <CookieNotice />
     </div>
   )
 }
