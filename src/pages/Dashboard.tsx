@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   Calendar, 
   Users, 
@@ -198,7 +199,7 @@ const Dashboard = () => {
       
       const { data: upcomingData } = await supabase
         .from('sessions')
-        .select('*, clients(nome)')
+        .select('*, clients(nome, avatar_url)')
         .eq('user_id', user?.id)
         .eq('status', 'agendada')
         .gte('data', todayStr)
@@ -482,12 +483,13 @@ const Dashboard = () => {
                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
                      onClick={() => navigate(`/agenda?highlight=${session.id}&date=${session.data}`)}
                    >
-                     <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-primary">
+                      <div className="flex items-center gap-4">
+                        <Avatar className="w-12 h-12">
+                          <AvatarImage src={session.clients?.avatar_url} alt={session.clients?.nome} />
+                          <AvatarFallback className="bg-gradient-card text-primary text-sm font-medium">
                             {session.clients?.nome ? session.clients.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                          </span>
-                        </div>
+                          </AvatarFallback>
+                        </Avatar>
                         <div>
                           <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
                           <p className="text-sm text-muted-foreground">

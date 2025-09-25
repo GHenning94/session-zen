@@ -5,6 +5,8 @@ import { supabase } from '@/integrations/supabase/client'
 import { useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
+const THEME_CACHE_KEY = 'user-theme-cache'
+
 export const useUserTheme = () => {
   const { setTheme } = useTheme()
   const { user } = useAuth()
@@ -17,10 +19,19 @@ export const useUserTheme = () => {
     return publicRoutes.includes(location.pathname) || isBookingPage
   }, [location.pathname])
 
-  // Load user's theme preference from database
+  // Load user's theme preference with instant cache
   const loadUserTheme = useCallback(async () => {
     if (!user || isPublicPage()) return
 
+    // First, try to get cached theme and apply it immediately
+    const cacheKey = `${THEME_CACHE_KEY}_${user.id}`
+    const cachedTheme = localStorage.getItem(cacheKey)
+    
+    if (cachedTheme && (cachedTheme === 'light' || cachedTheme === 'dark')) {
+      setTheme(cachedTheme)
+    }
+
+    // Then load from database and update if different
     try {
       const { data, error } = await supabase
         .from('configuracoes')
@@ -33,16 +44,27 @@ export const useUserTheme = () => {
         return
       }
 
-      const themePreference = data?.theme_preference || 'light'
-      setTheme(themePreference)
+      const dbTheme = data?.theme_preference || 'light'
+      
+      // Update cache
+      localStorage.setItem(cacheKey, dbTheme)
+      
+      // Apply theme if different from cache
+      if (dbTheme !== cachedTheme) {
+        setTheme(dbTheme)
+      }
     } catch (error) {
       console.error('Error loading theme preference:', error)
     }
   }, [user, isPublicPage, setTheme])
 
-  // Save user's theme preference to database
+  // Save user's theme preference to database and cache
   const saveThemePreference = useCallback(async (theme: 'light' | 'dark') => {
     if (!user || isPublicPage()) return false
+
+    // Update cache immediately
+    const cacheKey = `${THEME_CACHE_KEY}_${user.id}`
+    localStorage.setItem(cacheKey, theme)
 
     try {
       const { error } = await supabase
@@ -60,6 +82,8 @@ export const useUserTheme = () => {
 
       if (error) {
         console.error('Error saving theme preference:', error)
+        // Remove from cache if save failed
+        localStorage.removeItem(cacheKey)
         toast.error('Erro ao salvar preferência de tema')
         return false
       }
@@ -67,6 +91,8 @@ export const useUserTheme = () => {
       return true
     } catch (error) {
       console.error('Error saving theme preference:', error)
+      // Remove from cache if save failed
+      localStorage.removeItem(cacheKey)
       toast.error('Erro ao salvar preferência de tema')
       return false
     }

@@ -5,6 +5,7 @@ import { ProfileDropdown } from "@/components/ProfileDropdown"
 import WhatsAppButton from "@/components/WhatsAppButton"
 import { useAuth } from "@/hooks/useAuth"
 import { useUserTheme } from "@/hooks/useUserTheme"
+import { useInstantTheme } from "@/hooks/useInstantTheme"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -12,6 +13,9 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user } = useAuth()
+  
+  // Apply cached theme instantly to prevent flicker
+  useInstantTheme(user?.id)
   
   // Load and apply user's theme preference
   useUserTheme()
