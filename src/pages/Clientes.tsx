@@ -473,7 +473,7 @@ const Clientes = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-medium">{client.nome}</h3>
-                            <Badge variant="success">Ativo</Badge>
+                            <Badge variant="default">Ativo</Badge>
                           </div>
                           <div className="text-sm text-muted-foreground space-y-1">
                             {client.email && <p>{client.email}</p>}
@@ -655,10 +655,10 @@ const Clientes = () => {
         )}
 
         <NewSessionModal
-          isOpen={isNewSessionOpen}
-          onClose={() => {
-            setIsNewSessionOpen(false)
-            setNewSessionClientId(null)
+          open={isNewSessionOpen}
+          onOpenChange={(open) => {
+            setIsNewSessionOpen(open)
+            if (!open) setNewSessionClientId(null)
           }}
           selectedClientId={newSessionClientId}
           onSessionCreated={() => {
@@ -669,7 +669,7 @@ const Clientes = () => {
           }}
         />
       </div>
-    </Launch>
+    </Layout>
   )
 }
 
