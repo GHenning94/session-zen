@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes'
 import { AuthProvider } from '@/hooks/useAuth'
 import { SubscriptionProvider } from '@/hooks/useSubscription'
 import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
+import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
 import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
@@ -45,6 +46,12 @@ const PageLoading = () => (
   </div>
 );
 
+// Analytics wrapper to track page views
+const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
+  useGoogleAnalytics()
+  return <>{children}</>
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider
@@ -58,8 +65,9 @@ const App = () => (
           <SubscriptionProvider>
             <RealtimeSyncProvider>
               <BrowserRouter>
-                <AuthRedirect />
-                <Routes>
+                <AnalyticsWrapper>
+                  <AuthRedirect />
+                  <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
@@ -159,7 +167,8 @@ const App = () => (
                       <NotFound />
                     </Suspense>
                   } />
-                </Routes>
+                  </Routes>
+                </AnalyticsWrapper>
               </BrowserRouter>
               <Toaster />
               <Sonner />

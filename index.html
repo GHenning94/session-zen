@@ -13,8 +13,28 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
+      
+      // Default consent mode
+      gtag('consent', 'default', {
+        'analytics_storage': 'denied',
+        'ad_storage': 'denied',
+        'functionality_storage': 'granted',
+        'personalization_storage': 'denied',
+        'security_storage': 'granted',
+        'wait_for_update': 500,
+      });
 
-      gtag('config', 'G-KB3SCVSH9B');
+      gtag('config', 'G-KB3SCVSH9B', {
+        'anonymize_ip': true,
+        'custom_map': {'custom_parameter_1': 'page_type'},
+        'page_title': document.title
+      });
+      
+      // Track page views for SPA navigation
+      gtag('event', 'page_view', {
+        page_title: document.title,
+        page_location: window.location.href
+      });
     </script>
 
     <!-- Resource hints for faster loading -->
