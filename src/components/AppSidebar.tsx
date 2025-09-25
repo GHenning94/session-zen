@@ -14,7 +14,8 @@ import {
   Star,
   Share2,
   Globe,
-  Plug
+  Plug,
+  HelpCircle
 } from "lucide-react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
@@ -104,15 +105,15 @@ import { useSubscription } from "@/hooks/useSubscription"
       url: "/integracoes", 
       icon: Plug 
     },
-    {
-      title: "Suporte",
-      url: "/suporte",
-      icon: Star,
-    },
     { 
       title: "Configurações", 
       url: "/configuracoes", 
       icon: Settings 
+    },
+    {
+      title: "Suporte",
+      url: "/suporte",
+      icon: HelpCircle,
     },
   ]
 
