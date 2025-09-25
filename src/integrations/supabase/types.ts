@@ -56,6 +56,7 @@ export type Database = {
       clients: {
         Row: {
           ativo: boolean
+          avatar_url: string | null
           created_at: string | null
           dados_clinicos: string | null
           email: string | null
@@ -68,6 +69,7 @@ export type Database = {
         }
         Insert: {
           ativo?: boolean
+          avatar_url?: string | null
           created_at?: string | null
           dados_clinicos?: string | null
           email?: string | null
@@ -80,6 +82,7 @@ export type Database = {
         }
         Update: {
           ativo?: boolean
+          avatar_url?: string | null
           created_at?: string | null
           dados_clinicos?: string | null
           email?: string | null

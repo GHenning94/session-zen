@@ -15,10 +15,11 @@ interface NewSessionModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   selectedDate?: Date | null
+  selectedClientId?: string | null
   onSessionCreated?: () => void
 }
 
-export const NewSessionModal = ({ open, onOpenChange, selectedDate, onSessionCreated }: NewSessionModalProps) => {
+export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClientId, onSessionCreated }: NewSessionModalProps) => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { canAddSession, planLimits } = useSubscription()

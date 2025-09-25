@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog'
 import { toast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
+import { compressImageWithProgress, getOptimalCompressionSettings } from '@/utils/imageCompression'
 import { useAuth } from '@/hooks/useAuth'
 import 'react-image-crop/dist/ReactCrop.css'
 
@@ -47,6 +48,7 @@ export const ImageCropper = ({
   const [crop, setCrop] = useState<Crop>()
   const [completedCrop, setCompletedCrop] = useState<PixelCrop>()
   const [loading, setLoading] = useState(false)
+  const [compressionProgress, setCompressionProgress] = useState(0)
   const imgRef = useRef<HTMLImageElement>(null)
   const { user } = useAuth()
 
@@ -113,13 +115,24 @@ export const ImageCropper = ({
     try {
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop)
       
-      // Create unique filename for cropped image
-      const fileName = `${user.id}/cropped-${Date.now()}.jpg`
+      // Convert blob to File for compression
+      const file = new File([croppedBlob], 'cropped-image.jpg', { type: 'image/jpeg' })
+      
+      // Compress the cropped image
+      const compressionSettings = getOptimalCompressionSettings(file)
+      const compressedBlob = await compressImageWithProgress(
+        file, 
+        compressionSettings,
+        (progress) => setCompressionProgress(progress)
+      )
+      
+      // Create unique filename with .webp extension
+      const fileName = `${user.id}/cropped-${Date.now()}.webp`
 
-      // Upload cropped image to Supabase Storage
+      // Upload compressed image to Supabase Storage
       const { data, error } = await supabase.storage
         .from('user-uploads')
-        .upload(fileName, croppedBlob, {
+        .upload(fileName, compressedBlob, {
           cacheControl: '3600',
           upsert: false
         })
@@ -149,6 +162,7 @@ export const ImageCropper = ({
       })
     } finally {
       setLoading(false)
+      setCompressionProgress(0)
     }
   }, [completedCrop, getCroppedImg, onCropComplete, onClose, user])
 
@@ -181,7 +195,10 @@ export const ImageCropper = ({
             Cancelar
           </Button>
           <Button onClick={handleCropComplete} disabled={loading}>
-            {loading ? 'Salvando...' : 'Recortar'}
+            {loading 
+              ? `Otimizando... ${compressionProgress}%` 
+              : 'Recortar'
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

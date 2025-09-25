@@ -91,11 +91,21 @@ const Dashboard = () => {
     window.addEventListener('clientAdded', handleClientAdded)
     window.addEventListener('paymentAdded', handlePaymentAdded)
     
+    // Listen for session updates to refresh dashboard data
+    const handleSessionUpdate = () => {
+      if (user) {
+        loadDashboardData()
+      }
+    }
+
+    window.addEventListener('sessionAdded', handleSessionUpdate)
+    
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       window.removeEventListener('focus', handleStorageChange)
       window.removeEventListener('clientAdded', handleClientAdded)
       window.removeEventListener('paymentAdded', handlePaymentAdded)
+      window.removeEventListener('sessionAdded', handleSessionUpdate)
     }
   }, [user])
 

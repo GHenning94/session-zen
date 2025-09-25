@@ -2,10 +2,11 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Upload, X } from "lucide-react"
+import { Upload, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
+import { compressImageWithProgress, getOptimalCompressionSettings } from "@/utils/imageCompression"
 
 interface ImageUploadProps {
   label: string
@@ -16,6 +17,7 @@ interface ImageUploadProps {
 
 export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false)
+  const [compressionProgress, setCompressionProgress] = useState(0)
   const { toast } = useToast()
   const { user } = useAuth()
 
@@ -33,11 +35,11 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
       return
     }
 
-    // Check file size (max 5MB)
-    if (file.size > 5 * 1024 * 1024) {
+    // Check file size (max 10MB before compression)
+    if (file.size > 10 * 1024 * 1024) {
       toast({
         title: "Erro", 
-        description: "Imagem muito grande. Máximo 5MB.",
+        description: "Imagem muito grande. Máximo 10MB.",
         variant: "destructive",
       })
       return
@@ -45,14 +47,21 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
 
     setUploading(true)
     try {
-      // Create unique filename
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`
+      // Compress image automatically
+      const compressionSettings = getOptimalCompressionSettings(file)
+      const compressedBlob = await compressImageWithProgress(
+        file, 
+        compressionSettings,
+        (progress) => setCompressionProgress(progress)
+      )
 
-      // Upload to Supabase Storage
+      // Create unique filename with .webp extension
+      const fileName = `${user.id}/${Date.now()}.webp`
+
+      // Upload compressed image to Supabase Storage
       const { data, error } = await supabase.storage
         .from('user-uploads')
-        .upload(fileName, file, {
+        .upload(fileName, compressedBlob, {
           cacheControl: '3600',
           upsert: false
         })
@@ -82,6 +91,7 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
       })
     } finally {
       setUploading(false)
+      setCompressionProgress(0)
     }
   }
 
@@ -122,8 +132,15 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
               onClick={() => document.getElementById(`file-upload-${label}`)?.click()}
               disabled={uploading}
             >
-              <Upload className="h-4 w-4 mr-2" />
-              {uploading ? 'Carregando...' : 'Upload'}
+              {uploading ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {uploading 
+                ? `Otimizando... ${compressionProgress}%` 
+                : 'Upload'
+              }
             </Button>
             {value && (
               <Button

@@ -27,6 +27,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
+import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
+import { NewSessionModal } from "@/components/NewSessionModal"
 import { supabase } from "@/integrations/supabase/client"
 
 const Clientes = () => {
@@ -37,6 +39,8 @@ const Clientes = () => {
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
   const [editingClient, setEditingClient] = useState<any>(null)
+  const [newSessionClientId, setNewSessionClientId] = useState<string | null>(null)
+  const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
@@ -47,7 +51,8 @@ const Clientes = () => {
     phone: "",
     profession: "",
     age: "",
-    notes: ""
+    notes: "",
+    avatarUrl: ""
   })
 
   // Carregar clientes do Supabase
@@ -111,6 +116,7 @@ const Clientes = () => {
         nome: newClient.name,
         email: newClient.email,
         telefone: newClient.phone,
+        avatar_url: newClient.avatarUrl,
         dados_clinicos: `Profissão: ${newClient.profession}\nIdade: ${newClient.age}\nObservações: ${newClient.notes}`
       }
 
@@ -140,7 +146,7 @@ const Clientes = () => {
         })
       }
 
-      setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "" })
+      setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "", avatarUrl: "" })
       setIsNewClientOpen(false)
       await loadClients()
       
@@ -222,7 +228,8 @@ const Clientes = () => {
       phone: client.telefone || "",
       profession: "",
       age: "",
-      notes: client.dados_clinicos || ""
+      notes: client.dados_clinicos || "",
+      avatarUrl: client.avatar_url || ""
     })
     setIsNewClientOpen(true)
   }
@@ -267,6 +274,14 @@ const Clientes = () => {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
+                <div className="flex flex-col items-center gap-4">
+                  <ClientAvatarUpload 
+                    clientName={newClient.name || "Novo Cliente"}
+                    currentAvatarUrl={newClient.avatarUrl}
+                    onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
+                    size="lg"
+                  />
+                </div>
                 <div className="grid gap-2">
                   <Label htmlFor="name">Nome Completo</Label>
                   <Input 
@@ -331,7 +346,7 @@ const Clientes = () => {
                 <Button variant="outline" onClick={() => {
                   setIsNewClientOpen(false)
                   setEditingClient(null)
-                  setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "" })
+                  setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "", avatarUrl: "" })
                 }}>
                   Cancelar
                 </Button>
@@ -427,9 +442,19 @@ const Clientes = () => {
                 {filteredClients.map((client) => (
                   <div key={client.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center">
-                        <User className="w-6 h-6 text-primary" />
-                      </div>
+                    <div className="w-12 h-12 bg-gradient-card rounded-full flex items-center justify-center overflow-hidden">
+                      {client.avatar_url ? (
+                        <img 
+                          src={client.avatar_url} 
+                          alt={client.nome}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <span className="text-sm font-medium text-primary">
+                          {client.nome.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}
+                        </span>
+                      )}
+                    </div>
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <h3 className="font-medium">{client.nome}</h3>
@@ -478,10 +503,13 @@ const Clientes = () => {
                             <Edit className="w-4 h-4 mr-2" />
                             Editar
                           </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Agendar Sessão
-                          </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => {
+                             setNewSessionClientId(client.id)
+                             setIsNewSessionOpen(true) 
+                           }}>
+                             <Calendar className="w-4 h-4 mr-2" />
+                             Agendar Sessão
+                           </DropdownMenuItem>
                           <DropdownMenuItem 
                             className="text-yellow-600" 
                             onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}
