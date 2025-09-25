@@ -150,7 +150,7 @@ const Clientes = () => {
         email: newClient.email,
         telefone: newClient.phone,
         avatar_url: newClient.avatarUrl,
-        dados_clinicos: `Profissão: ${newClient.profession}\nIdade: ${newClient.age}\nObservações: ${newClient.notes}`
+        dados_clinicos: newClient.notes || ""
       }
 
       if (editingClient) {
@@ -485,10 +485,10 @@ const Clientes = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSelectedClientForSession(client)}
+                          onClick={() => setSelectedClient(client)}
                         >
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Agendar
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver detalhes
                         </Button>
                         
                         <DropdownMenu>
@@ -498,10 +498,6 @@ const Clientes = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 bg-background border shadow-lg">
-                            <DropdownMenuItem onClick={() => setSelectedClient(client)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Ver detalhes
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEditClient(client)}>
                               <Edit2 className="w-4 h-4 mr-2" />
                               Editar
@@ -565,7 +561,7 @@ const Clientes = () => {
                         <div>
                           <div className="flex items-center gap-2">
                             <h3 className="font-medium">{client.nome}</h3>
-                            <Badge variant="secondary">Inativo</Badge>
+                            <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50">Inativo</Badge>
                           </div>
                           <div className="text-sm text-muted-foreground space-y-1">
                             {client.email && <p>{client.email}</p>}
@@ -577,10 +573,10 @@ const Clientes = () => {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => setSelectedClientForSession(client)}
+                          onClick={() => setSelectedClient(client)}
                         >
-                          <Calendar className="w-4 h-4 mr-1" />
-                          Agendar
+                          <Eye className="w-4 h-4 mr-1" />
+                          Ver detalhes
                         </Button>
                         
                         <DropdownMenu>
@@ -590,10 +586,6 @@ const Clientes = () => {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 bg-background border shadow-lg">
-                            <DropdownMenuItem onClick={() => setSelectedClient(client)}>
-                              <Eye className="w-4 h-4 mr-2" />
-                              Ver detalhes
-                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleEditClient(client)}>
                               <Edit2 className="w-4 h-4 mr-2" />
                               Editar
@@ -638,11 +630,20 @@ const Clientes = () => {
                 <DialogTitle>Detalhes do Cliente</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
-                <div className="text-center">
-                  <h3 className="text-xl font-semibold">{selectedClient.nome}</h3>
-                  <Badge variant={selectedClient.ativo ? "default" : "secondary"}>
-                    {selectedClient.ativo ? "Ativo" : "Inativo"}
-                  </Badge>
+                <div className="text-center space-y-3">
+                  <ClientAvatarUpload
+                    clientName={selectedClient.nome}
+                    currentAvatarUrl={selectedClient.avatar_url}
+                    onAvatarChange={(url) => handleAvatarChange(selectedClient.id, url)}
+                    size="lg"
+                  />
+                  <div>
+                    <h3 className="text-xl font-semibold">{selectedClient.nome}</h3>
+                    <Badge variant={selectedClient.ativo ? "default" : "outline"} 
+                           className={selectedClient.ativo ? "" : "border-yellow-500 text-yellow-600 bg-yellow-50"}>
+                      {selectedClient.ativo ? "Ativo" : "Inativo"}
+                    </Badge>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <p><strong>Email:</strong> {selectedClient.email || "Não informado"}</p>
