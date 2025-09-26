@@ -23,13 +23,13 @@ interface PaymentMethodCardProps {
 
 const getBrandIcon = (brand: string) => {
   const brandIcons = {
-    visa: <CreditCard className="w-8 h-8 text-blue-600" />,
-    mastercard: <CreditCard className="w-8 h-8 text-red-600" />,
+    visa: <CreditCard className="w-8 h-8 text-primary" />,
+    mastercard: <CreditCard className="w-8 h-8 text-destructive" />,
     amex: <CreditCard className="w-8 h-8 text-success" />,
-    discover: <CreditCard className="w-8 h-8 text-orange-600" />,
+    discover: <CreditCard className="w-8 h-8 text-warning" />,
   };
   
-  return brandIcons[brand as keyof typeof brandIcons] || <CreditCard className="w-8 h-8 text-gray-600" />;
+  return brandIcons[brand as keyof typeof brandIcons] || <CreditCard className="w-8 h-8 text-muted-foreground" />;
 };
 
 const formatBrand = (brand: string) => {

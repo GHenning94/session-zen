@@ -231,7 +231,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
                     <div className="flex items-center gap-2">
                       <span>{client.nome}</span>
                       {!client.ativo && (
-                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                        <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-warning/10 text-warning">
                           inativo
                         </span>
                       )}
@@ -241,7 +241,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
               </SelectContent>
             </Select>
             {showReactivationMessage && (
-              <div className="text-sm p-2 bg-yellow-50 border border-yellow-200 rounded-md text-yellow-800">
+              <div className="text-sm p-2 bg-warning/10 border border-warning/20 rounded-md text-warning">
                 Ao agendar, este cliente será reativado automaticamente.
               </div>
             )}

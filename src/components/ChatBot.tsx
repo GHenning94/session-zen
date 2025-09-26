@@ -306,7 +306,7 @@ const ChatBot = () => {
                 <div
                   className={`max-w-[80%] p-2 rounded-lg text-sm ${
                     message.isBot
-                      ? 'bg-gray-100 text-gray-800'
+                      ? 'bg-muted text-muted-foreground'
                       : 'bg-primary text-primary-foreground'
                   }`}
                 >
@@ -318,7 +318,7 @@ const ChatBot = () => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 text-gray-800 p-2 rounded-lg text-sm">
+                <div className="bg-muted text-muted-foreground p-2 rounded-lg text-sm">
                   Digitando...
                 </div>
               </div>

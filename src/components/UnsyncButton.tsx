@@ -66,7 +66,7 @@ export const UnsyncButton: React.FC<UnsyncButtonProps> = ({ onSuccess }) => {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
+        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive/80">
           <Unlink className="w-4 h-4 mr-2" />
           Desfazer Sincronização
         </Button>
@@ -86,7 +86,7 @@ export const UnsyncButton: React.FC<UnsyncButtonProps> = ({ onSuccess }) => {
           <AlertDialogAction 
             onClick={handleUnsync}
             disabled={isUnsyncing}
-            className="bg-red-600 hover:bg-red-700"
+            className="bg-destructive hover:bg-destructive/90"
           >
             {isUnsyncing && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Desfazer Sincronização

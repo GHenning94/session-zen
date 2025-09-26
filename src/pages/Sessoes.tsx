@@ -361,21 +361,21 @@ export default function Sessoes() {
           
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-blue-600">{stats.agendadas}</div>
+              <div className="text-2xl font-bold text-primary">{stats.agendadas}</div>
               <p className="text-xs text-muted-foreground">Agendadas</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-red-600">{stats.canceladas}</div>
+              <div className="text-2xl font-bold text-destructive">{stats.canceladas}</div>
               <p className="text-xs text-muted-foreground">Canceladas</p>
             </CardContent>
           </Card>
           
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold text-yellow-600">{stats.faltas}</div>
+              <div className="text-2xl font-bold text-warning">{stats.faltas}</div>
               <p className="text-xs text-muted-foreground">Faltas</p>
             </CardContent>
           </Card>
@@ -559,14 +559,14 @@ export default function Sessoes() {
                                 <>
                                   <DropdownMenuItem 
                                     onClick={() => handleCancelSession(session.id)}
-                                    className="text-red-600"
+                                    className="text-destructive"
                                   >
                                     <X className="w-4 h-4 mr-2" />
                                     Cancelar Sessão
                                   </DropdownMenuItem>
                                   <DropdownMenuItem 
                                     onClick={() => handleMarkNoShow(session.id)}
-                                    className="text-yellow-600"
+                                    className="text-warning"
                                   >
                                     <AlertTriangle className="w-4 h-4 mr-2" />
                                     Marcar como Falta

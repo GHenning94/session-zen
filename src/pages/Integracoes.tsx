@@ -111,7 +111,7 @@ const Integracoes = () => {
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <HardDrive className="text-blue-600" />
+                  <HardDrive className="text-primary" />
                   Google Drive
                   <Badge variant="secondary" className="ml-2">Em breve</Badge>
                 </CardTitle>
@@ -183,7 +183,7 @@ const Integracoes = () => {
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Trello className="text-blue-600" />
+                  <Trello className="text-primary" />
                   Trello
                   <Badge variant="secondary" className="ml-2">Em breve</Badge>
                 </CardTitle>

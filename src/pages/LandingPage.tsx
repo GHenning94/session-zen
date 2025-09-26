@@ -287,8 +287,8 @@ const LandingPage = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-6">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-blue-500/10 rounded-xl flex items-center justify-center">
-                    <Calendar className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-primary" />
                   </div>
                   <h3 className="text-2xl font-bold">Agenda Avançada</h3>
                 </div>

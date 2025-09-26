@@ -111,9 +111,9 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
       case 'realizada':
         return { backgroundColor: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', borderColor: 'hsl(var(--success) / 0.2)' }
       case 'cancelada':
-        return 'bg-red-100 text-red-800 border-red-200'
+        return 'bg-destructive/10 text-destructive border-destructive/20'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200'
+        return 'bg-muted text-muted-foreground border-border'
     }
   }
 
@@ -221,9 +221,9 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                   className="absolute left-0 right-0 z-10 flex items-center pointer-events-none"
                                   style={{ top: `${currentTimePosition}%` }}
                                 >
-                                  <div className="w-1 h-1 bg-red-500 rounded-full mr-1" />
-                                  <div className="flex-1 h-0.5 bg-red-500" />
-                                  <span className="text-xs text-red-500 ml-1 bg-white px-1 rounded text-[10px]">
+                                  <div className="w-1 h-1 bg-destructive rounded-full mr-1" />
+                                  <div className="flex-1 h-0.5 bg-destructive" />
+                                  <span className="text-xs text-destructive ml-1 bg-background px-1 rounded text-[10px]">
                                     {now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                                   </span>
                                 </div>
@@ -286,11 +286,11 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                           {dayGoogleEvents.map((event) => (
                             <div
                               key={event.id}
-                              className="text-[10px] p-1 rounded bg-blue-50 text-blue-700 border border-blue-200"
+                              className="text-[10px] p-1 rounded bg-primary/10 text-primary border border-primary/20"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <div className="flex items-center gap-1">
-                                <div className="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
+                                <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
                                 <span className="truncate">{event.summary}</span>
                               </div>
                             </div>

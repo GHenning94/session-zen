@@ -216,7 +216,7 @@ export const OptimizedAgendaViews = () => {
                             e.stopPropagation()
                             handleEditSession(session)
                           }}
-                          className="p-1 bg-white rounded shadow hover:bg-gray-50"
+                          className="p-1 bg-background rounded shadow hover:bg-accent"
                         >
                           <Edit className="h-3 w-3" />
                         </button>
@@ -225,7 +225,7 @@ export const OptimizedAgendaViews = () => {
                             e.stopPropagation()
                             handleDeleteSession(session.id)
                           }}
-                          className="p-1 bg-white rounded shadow hover:bg-gray-50 text-red-600"
+                          className="p-1 bg-background rounded shadow hover:bg-accent text-destructive"
                         >
                           <Trash className="h-3 w-3" />
                         </button>

@@ -194,11 +194,11 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                   {dayGoogleEvents.slice(0, 2).map((event) => (
                     <div
                       key={event.id}
-                      className="text-xs p-1 rounded bg-blue-50 text-blue-700 border border-blue-200"
+                      className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                        <div className="w-2 h-2 bg-primary rounded-full"></div>
                         <span className="truncate">{event.summary}</span>
                       </div>
                     </div>
@@ -211,7 +211,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                   )}
 
                   {dayGoogleEvents.length > 2 && (
-                    <div className="text-xs text-blue-600">
+                    <div className="text-xs text-primary">
                       +{dayGoogleEvents.length - 2} eventos
                     </div>
                   )}

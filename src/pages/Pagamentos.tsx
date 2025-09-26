@@ -401,7 +401,7 @@ const Pagamentos = () => {
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{cancelledCount}</div>
+              <div className="text-2xl font-bold text-destructive">{cancelledCount}</div>
               <p className="text-sm text-muted-foreground">{cancelledCount} pagamentos cancelados</p>
             </CardContent>
           </Card>

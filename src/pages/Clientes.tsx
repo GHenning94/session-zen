@@ -567,7 +567,7 @@ const Clientes = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="w-8 h-8 rounded-full bg-green-500 hover:bg-green-600 text-white p-0"
+                            className="w-8 h-8 rounded-full bg-success hover:bg-success/90 text-success-foreground p-0"
                             onClick={() => {
                               const phone = client.telefone.replace(/\D/g, '')
                               const whatsappUrl = `https://wa.me/55${phone}`
@@ -607,13 +607,13 @@ const Clientes = () => {
                             <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}>
                               {client.ativo !== false ? (
                                 <>
-                                  <UserX className="w-4 h-4 mr-2 text-yellow-500" />
-                                  <span className="text-yellow-600">Desativar Cliente</span>
+                                  <UserX className="w-4 h-4 mr-2 text-warning" />
+                                  <span className="text-warning">Desativar Cliente</span>
                                 </>
                               ) : (
                                 <>
-                                  <UserCheck className="w-4 h-4 mr-2 text-yellow-500" />
-                                  <span className="text-yellow-600">Ativar Cliente</span>
+                                  <UserCheck className="w-4 h-4 mr-2 text-warning" />
+                                  <span className="text-warning">Ativar Cliente</span>
                                 </>
                               )}
                             </DropdownMenuItem>

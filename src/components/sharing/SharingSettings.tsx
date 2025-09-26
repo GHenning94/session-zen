@@ -95,8 +95,8 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
       <Tabs defaultValue="basic" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic">Básico</TabsTrigger>
-          <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>Design{!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-yellow-500" />}</TabsTrigger>
-          <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>Avançado{!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-yellow-500" />}</TabsTrigger>
+          <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>Design{!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
+          <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>Avançado{!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
         </TabsList>
         <TabsContent value="basic" className="space-y-4">
           <Card className="shadow-soft">

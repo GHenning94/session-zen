@@ -235,7 +235,7 @@ const ProgramaIndicacao = () => {
                   onClick={() => shareOnSocial('facebook')}
                   variant="outline"
                   size="sm"
-                  className="text-blue-600"
+                  className="text-primary"
                 >
                   <Facebook className="w-4 h-4 mr-2" />
                   Facebook

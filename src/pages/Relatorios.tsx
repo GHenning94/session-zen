@@ -26,28 +26,28 @@ export default function Relatorios() {
       title: 'Relatório Completo',
       description: 'Todos os dados: clientes, sessões e informações financeiras',
       icon: FileText,
-      color: 'bg-blue-500'
+      color: 'bg-primary'
     },
     {
       id: 'clients',
       title: 'Relatório de Clientes',
       description: 'Lista completa de clientes com informações detalhadas',
       icon: Users,
-      color: 'hsl(142 71% 45%)'
+      color: 'hsl(var(--success))'
     },
     {
       id: 'sessions',
       title: 'Relatório de Sessões',
       description: 'Histórico detalhado de todas as sessões realizadas',
       icon: Calendar,
-      color: 'bg-purple-500'
+      color: 'bg-secondary'
     },
     {
       id: 'financial',
       title: 'Relatório Financeiro',
       description: 'Resumo financeiro, pagamentos e estatísticas',
       icon: DollarSign,
-      color: 'bg-orange-500'
+      color: 'bg-warning'
     }
   ]
 
@@ -56,25 +56,25 @@ export default function Relatorios() {
       title: 'Total de Clientes',
       value: clients.length,
       icon: Users,
-      color: 'text-blue-600'
+      color: 'text-primary'
     },
     {
       title: 'Sessões Este Mês',
       value: sessionsThisMonth.length,
       icon: Calendar,
-      color: 'hsl(142 71% 45%)'
+      color: 'hsl(var(--success))'
     },
     {
       title: 'Sessões Realizadas',
       value: realizadas.length,
       icon: BarChart3,
-      color: 'text-purple-600'
+      color: 'text-secondary'
     },
     {
       title: 'Total Arrecadado',
       value: `R$ ${totalArrecadado.toFixed(2)}`,
       icon: DollarSign,
-      color: 'text-orange-600'
+      color: 'text-warning'
     }
   ]
 

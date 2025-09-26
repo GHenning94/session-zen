@@ -223,8 +223,8 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
 
           {/* Aviso para relatório completo */}
           {selectedReport === 'complete' && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-800">
+            <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+              <p className="text-sm text-primary">
                 <strong>Relatório Completo:</strong> Será gerado automaticamente em formato PDF e Excel com todos os dados disponíveis.
               </p>
             </div>
