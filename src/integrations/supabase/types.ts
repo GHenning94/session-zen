@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      anamneses: {
+        Row: {
+          antecedentes_relevantes: string | null
+          client_id: string
+          created_at: string
+          diagnostico_inicial: string | null
+          historico_familiar: string | null
+          historico_medico: string | null
+          id: string
+          motivo_consulta: string | null
+          observacoes_adicionais: string | null
+          queixa_principal: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          antecedentes_relevantes?: string | null
+          client_id: string
+          created_at?: string
+          diagnostico_inicial?: string | null
+          historico_familiar?: string | null
+          historico_medico?: string | null
+          id?: string
+          motivo_consulta?: string | null
+          observacoes_adicionais?: string | null
+          queixa_principal?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          antecedentes_relevantes?: string | null
+          client_id?: string
+          created_at?: string
+          diagnostico_inicial?: string | null
+          historico_familiar?: string | null
+          historico_medico?: string | null
+          id?: string
+          motivo_consulta?: string | null
+          observacoes_adicionais?: string | null
+          queixa_principal?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
@@ -281,6 +326,39 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string | null
+        }
+        Relationships: []
+      }
+      evolucoes: {
+        Row: {
+          client_id: string
+          created_at: string
+          data_sessao: string
+          evolucao: string
+          id: string
+          session_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data_sessao: string
+          evolucao: string
+          id?: string
+          session_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data_sessao?: string
+          evolucao?: string
+          id?: string
+          session_id?: string | null
+          updated_at?: string
+          user_id?: string
         }
         Relationships: []
       }

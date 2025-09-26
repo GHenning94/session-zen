@@ -4,92 +4,75 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { FileText, Download, Eye, Filter, Plus, Edit, Trash2, Clock } from 'lucide-react'
+import { FileText, User, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import jsPDF from 'jspdf'
-import { addLogoBranding } from '@/utils/logoUtils'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+import { AnamneseModal } from '@/components/AnamneseModal'
+import { EvolucaoModal } from '@/components/EvolucaoModal'
 
-interface RecordTemplate {
+interface Client {
   id: string
-  title: string
-  category: string
-  description?: string
-  template_content: any
-  is_public: boolean
-  user_id?: string
+  nome: string
+  email?: string
+  telefone?: string
+  ativo: boolean
   created_at: string
 }
 
-interface FilledRecord {
+interface Anamnese {
   id: string
   client_id: string
-  template_id: string
-  content: any
+  motivo_consulta?: string
+  queixa_principal?: string
+  historico_familiar?: string
+  historico_medico?: string
+  antecedentes_relevantes?: string
+  diagnostico_inicial?: string
+  observacoes_adicionais?: string
   created_at: string
-  clients?: {
-    nome: string
-  }
-  record_templates?: {
-    title: string
-    category: string
-  }
+  updated_at: string
+}
+
+interface Evolucao {
+  id: string
+  client_id: string
+  session_id?: string
+  data_sessao: string
+  evolucao: string
+  created_at: string
+  updated_at: string
 }
 
 export default function Prontuarios() {
   const { user } = useAuth()
   const { toast } = useToast()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   
   // Estados principais
-  const [templates, setTemplates] = useState<RecordTemplate[]>([])
-  const [filledRecords, setFilledRecords] = useState<FilledRecord[]>([])
-  const [clients, setClients] = useState<any[]>([])
+  const [clients, setClients] = useState<Client[]>([])
+  const [anamneses, setAnamneses] = useState<Anamnese[]>([])
+  const [evolucoes, setEvolucoes] = useState<Evolucao[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'templates' | 'records'>('records')
+  const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   
   // Estados para modais
-  const [showTemplateModal, setShowTemplateModal] = useState(false)
-  const [showRecordModal, setShowRecordModal] = useState(false)
-  const [showPreviewModal, setShowPreviewModal] = useState(false)
-  const [editingTemplate, setEditingTemplate] = useState<RecordTemplate | null>(null)
-  const [selectedTemplate, setSelectedTemplate] = useState<RecordTemplate | null>(null)
+  const [anamneseModalOpen, setAnamneseModalOpen] = useState(false)
+  const [evolucaoModalOpen, setEvolucaoModalOpen] = useState(false)
+  const [editingAnamnese, setEditingAnamnese] = useState<Anamnese | null>(null)
+  const [editingEvolucao, setEditingEvolucao] = useState<Evolucao | null>(null)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
-    category: '',
     search: '',
     client: ''
   })
-  
-  // Estados para novos dados
-  const [newTemplate, setNewTemplate] = useState({
-    title: '',
-    category: '',
-    description: '',
-    template_content: []
-  })
-  
-  const [newRecord, setNewRecord] = useState({
-    client_id: '',
-    template_id: '',
-    content: []
-  })
-
-  const categories = [
-    'Anamnese',
-    'Evolução',
-    'Avaliação',
-    'Triagem',
-    'Relatório',
-    'Outros'
-  ]
 
   useEffect(() => {
     if (user) {
@@ -97,41 +80,49 @@ export default function Prontuarios() {
     }
   }, [user])
 
+  useEffect(() => {
+    // Verificar se há um cliente específico na URL
+    const clientId = searchParams.get('cliente')
+    if (clientId && clients.length > 0) {
+      const client = clients.find(c => c.id === clientId)
+      if (client) {
+        setSelectedClient(client)
+      }
+    }
+  }, [searchParams, clients])
+
   const loadData = async () => {
     try {
       setLoading(true)
       
-      // Carregar templates
-      const { data: templatesData, error: templatesError } = await supabase
-        .from('record_templates')
-        .select('*')
-        .order('created_at', { ascending: false })
-
-      if (templatesError) throw templatesError
-
-      // Carregar registros preenchidos
-      const { data: recordsData, error: recordsError } = await supabase
-        .from('filled_records')
-        .select(`
-          *,
-          clients (nome),
-          record_templates (title, category)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (recordsError) throw recordsError
-
       // Carregar clientes
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select('id, nome')
+        .select('id, nome, email, telefone, ativo, created_at')
+        .eq('ativo', true)
         .order('nome')
 
       if (clientsError) throw clientsError
 
-      setTemplates(templatesData || [])
-      setFilledRecords(recordsData || [])
+      // Carregar anamneses
+      const { data: anamnesesData, error: anamnesisError } = await supabase
+        .from('anamneses')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      if (anamnesisError) throw anamnesisError
+
+      // Carregar evoluções
+      const { data: evolucoesData, error: evolucoesError } = await supabase
+        .from('evolucoes')
+        .select('*')
+        .order('data_sessao', { ascending: false })
+
+      if (evolucoesError) throw evolucoesError
+
       setClients(clientsData || [])
+      setAnamneses(anamnesesData || [])
+      setEvolucoes(evolucoesData || [])
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
       toast({
@@ -144,203 +135,77 @@ export default function Prontuarios() {
     }
   }
 
-  const handleSaveTemplate = async () => {
-    try {
-      if (!newTemplate.title || !newTemplate.category) {
-        toast({
-          title: "Erro",
-          description: "Título e categoria são obrigatórios.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      const templateData = {
-        ...newTemplate,
-        user_id: user?.id
-      }
-
-      if (editingTemplate) {
-        const { error } = await supabase
-          .from('record_templates')
-          .update(templateData)
-          .eq('id', editingTemplate.id)
-
-        if (error) throw error
-        
-        toast({
-          title: "Sucesso",
-          description: "Template atualizado com sucesso!",
-        })
-      } else {
-        const { error } = await supabase
-          .from('record_templates')
-          .insert([templateData])
-
-        if (error) throw error
-        
-        toast({
-          title: "Sucesso",
-          description: "Template criado com sucesso!",
-        })
-      }
-
-      setShowTemplateModal(false)
-      setEditingTemplate(null)
-      setNewTemplate({
-        title: '',
-        category: '',
-        description: '',
-        template_content: []
-      })
-      loadData()
-    } catch (error) {
-      console.error('Erro ao salvar template:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar o template.",
-        variant: "destructive",
-      })
-    }
+  const handleSelectClient = (client: Client) => {
+    setSelectedClient(client)
+    navigate(`/prontuarios?cliente=${client.id}`)
   }
 
-  const handleEditTemplate = (template: RecordTemplate) => {
-    setEditingTemplate(template)
-    setNewTemplate({
-      title: template.title,
-      category: template.category,
-      description: template.description || '',
-      template_content: template.template_content || []
-    })
-    setShowTemplateModal(true)
+  const handleBackToList = () => {
+    setSelectedClient(null)
+    navigate('/prontuarios')
   }
 
-  const handleDeleteTemplate = async (templateId: string) => {
+  const getClientAnamnese = (clientId: string): Anamnese | null => {
+    return anamneses.find(a => a.client_id === clientId) || null
+  }
+
+  const getClientEvolucoes = (clientId: string): Evolucao[] => {
+    return evolucoes.filter(e => e.client_id === clientId)
+  }
+
+  const handleCreateAnamnese = (client: Client) => {
+    setEditingAnamnese(null)
+    setSelectedClient(client)
+    setAnamneseModalOpen(true)
+  }
+
+  const handleEditAnamnese = (anamnese: Anamnese) => {
+    setEditingAnamnese(anamnese)
+    setAnamneseModalOpen(true)
+  }
+
+  const handleCreateEvolucao = (client: Client) => {
+    setEditingEvolucao(null)
+    setSelectedClient(client)
+    setEvolucaoModalOpen(true)
+  }
+
+  const handleEditEvolucao = (evolucao: Evolucao) => {
+    setEditingEvolucao(evolucao)
+    setEvolucaoModalOpen(true)
+  }
+
+  const handleDeleteEvolucao = async (evolucaoId: string) => {
     try {
       const { error } = await supabase
-        .from('record_templates')
+        .from('evolucoes')
         .delete()
-        .eq('id', templateId)
+        .eq('id', evolucaoId)
 
       if (error) throw error
 
       toast({
-        title: "Sucesso",
-        description: "Template excluído com sucesso!",
+        title: "Evolução excluída",
+        description: "A evolução foi excluída com sucesso.",
       })
-      loadData()
+      await loadData()
     } catch (error) {
-      console.error('Erro ao excluir template:', error)
+      console.error('Erro ao excluir evolução:', error)
       toast({
         title: "Erro",
-        description: "Não foi possível excluir o template.",
+        description: "Não foi possível excluir a evolução.",
         variant: "destructive",
       })
     }
   }
 
-  const downloadTemplatePDF = async (template: RecordTemplate) => {
-    try {
-      const doc = new jsPDF()
-      const pageWidth = doc.internal.pageSize.width
-      
-      // Add logo branding
-      addLogoBranding(doc, pageWidth)
-      
-      // Reset colors
-      doc.setTextColor(0, 0, 0)
-      
-      // Template title
-      doc.setFontSize(18)
-      doc.text(template.title, 20, 60)
-      
-      // Category badge
-      doc.setFontSize(12)
-      doc.text(`Categoria: ${template.category}`, 20, 75)
-      
-      // Description
-      if (template.description) {
-        doc.setFontSize(14)
-        doc.text('Descrição:', 20, 95)
-        doc.setFontSize(12)
-        const lines = doc.splitTextToSize(template.description, pageWidth - 40)
-        doc.text(lines, 20, 110)
-      }
-      
-      // Template content
-      let yPosition = template.description ? 130 : 110
-      doc.setFontSize(14)
-      doc.text('Campos do Template:', 20, yPosition)
-      yPosition += 15
-      
-      if (template.template_content && Array.isArray(template.template_content)) {
-        doc.setFontSize(12)
-        template.template_content.forEach((field: any, index: number) => {
-          if (yPosition > 270) {
-            doc.addPage()
-            yPosition = 20
-          }
-          
-          doc.text(`${index + 1}. ${field.label || field.name || 'Campo sem nome'}`, 20, yPosition)
-          yPosition += 10
-          
-          if (field.type) {
-            doc.setFontSize(10)
-            doc.text(`   Tipo: ${field.type}`, 20, yPosition)
-            yPosition += 8
-          }
-          
-          if (field.description) {
-            doc.setFontSize(10)
-            const descLines = doc.splitTextToSize(`   ${field.description}`, pageWidth - 40)
-            doc.text(descLines, 20, yPosition)
-            yPosition += descLines.length * 8
-          }
-          
-          yPosition += 5
-          doc.setFontSize(12)
-        })
-      }
-      
-      // Footer
-      doc.setFontSize(8)
-      doc.setTextColor(128, 128, 128)
-      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss', { locale: ptBR })}`, 20, 280)
-      
-      // Save PDF
-      const fileName = `template-${template.title.replace(/\s+/g, '-')}.pdf`
-      doc.save(fileName)
-      
-      toast({
-        title: "Sucesso",
-        description: "Template baixado como PDF!",
-      })
-    } catch (error) {
-      console.error('Erro ao gerar PDF:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível gerar o PDF.",
-        variant: "destructive",
-      })
-    }
-  }
-
-  const filteredTemplates = templates.filter(template => {
-    const matchesCategory = !filters.category || filters.category === "all" || template.category === filters.category
+  const filteredClients = clients.filter(client => {
     const matchesSearch = !filters.search || 
-      template.title.toLowerCase().includes(filters.search.toLowerCase()) ||
-      template.description?.toLowerCase().includes(filters.search.toLowerCase())
+      client.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
+      client.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
+      client.telefone?.includes(filters.search)
     
-    return matchesCategory && matchesSearch
-  })
-
-  const filteredRecords = filledRecords.filter(record => {
-    const matchesClient = !filters.client || filters.client === "all" || record.client_id === filters.client
-    const matchesSearch = !filters.search || 
-      record.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
-      record.record_templates?.title.toLowerCase().includes(filters.search.toLowerCase())
-    
-    return matchesClient && matchesSearch
+    return matchesSearch
   })
 
   if (loading) {
@@ -353,382 +218,333 @@ export default function Prontuarios() {
     )
   }
 
+  // Se há um cliente selecionado, mostra o prontuário individual
+  if (selectedClient) {
+    const clientAnamnese = getClientAnamnese(selectedClient.id)
+    const clientEvolucoes = getClientEvolucoes(selectedClient.id)
+
+    return (
+      <Layout>
+        <div className="p-6 space-y-6">
+          {/* Header com informações do cliente */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                onClick={handleBackToList}
+                className="shrink-0"
+              >
+                ← Voltar
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold">Prontuário - {selectedClient.nome}</h1>
+                <p className="text-muted-foreground">
+                  Cliente desde {format(new Date(selectedClient.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Resumo do cliente */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5" />
+                Informações do Cliente
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Nome</Label>
+                <p>{selectedClient.nome}</p>
+              </div>
+              {selectedClient.email && (
+                <div>
+                  <Label className="text-sm font-medium">E-mail</Label>
+                  <p>{selectedClient.email}</p>
+                </div>
+              )}
+              {selectedClient.telefone && (
+                <div>
+                  <Label className="text-sm font-medium">Telefone</Label>
+                  <p>{selectedClient.telefone}</p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Abas do prontuário */}
+          <Tabs defaultValue="anamnese" className="space-y-4">
+            <TabsList>
+              <TabsTrigger value="anamnese" className="flex items-center gap-2">
+                <BookOpen className="h-4 w-4" />
+                Anamnese
+              </TabsTrigger>
+              <TabsTrigger value="evolucoes" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Evoluções ({clientEvolucoes.length})
+              </TabsTrigger>
+            </TabsList>
+
+            {/* Aba Anamnese */}
+            <TabsContent value="anamnese">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Anamnese Inicial</CardTitle>
+                    {clientAnamnese ? (
+                      <Button 
+                        variant="outline" 
+                        onClick={() => handleEditAnamnese(clientAnamnese)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar Anamnese
+                      </Button>
+                    ) : (
+                      <Button onClick={() => handleCreateAnamnese(selectedClient)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Criar Anamnese
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {clientAnamnese ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {clientAnamnese.motivo_consulta && (
+                        <div>
+                          <Label className="text-sm font-medium">Motivo da Consulta</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.motivo_consulta}</p>
+                        </div>
+                      )}
+                      {clientAnamnese.queixa_principal && (
+                        <div>
+                          <Label className="text-sm font-medium">Queixa Principal</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.queixa_principal}</p>
+                        </div>
+                      )}
+                      {clientAnamnese.historico_familiar && (
+                        <div className="md:col-span-2">
+                          <Label className="text-sm font-medium">Histórico Familiar</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.historico_familiar}</p>
+                        </div>
+                      )}
+                      {clientAnamnese.historico_medico && (
+                        <div className="md:col-span-2">
+                          <Label className="text-sm font-medium">Histórico Médico/Psicológico</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.historico_medico}</p>
+                        </div>
+                      )}
+                      {clientAnamnese.antecedentes_relevantes && (
+                        <div className="md:col-span-2">
+                          <Label className="text-sm font-medium">Antecedentes Relevantes</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.antecedentes_relevantes}</p>
+                        </div>
+                      )}
+                      {clientAnamnese.diagnostico_inicial && (
+                        <div>
+                          <Label className="text-sm font-medium">Diagnóstico Inicial</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.diagnostico_inicial}</p>
+                        </div>
+                      )}
+                      {clientAnamnese.observacoes_adicionais && (
+                        <div>
+                          <Label className="text-sm font-medium">Observações Adicionais</Label>
+                          <p className="mt-1 text-sm">{clientAnamnese.observacoes_adicionais}</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground mb-4">
+                        Nenhuma anamnese registrada para este cliente.
+                      </p>
+                      <Button onClick={() => handleCreateAnamnese(selectedClient)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Criar Anamnese Inicial
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* Aba Evoluções */}
+            <TabsContent value="evolucoes">
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle>Evoluções Clínicas</CardTitle>
+                    <Button onClick={() => handleCreateEvolucao(selectedClient)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Nova Evolução
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {clientEvolucoes.length > 0 ? (
+                    <div className="space-y-4">
+                      {clientEvolucoes.map((evolucao) => (
+                        <div key={evolucao.id} className="border border-border rounded-lg p-4">
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-primary" />
+                              <span className="font-medium">
+                                {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}
+                              </span>
+                              <Badge variant="outline" className="text-xs">
+                                {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                              </Badge>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleEditEvolucao(evolucao)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="sm"
+                                onClick={() => handleDeleteEvolucao(evolucao.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <div 
+                            className="prose prose-sm max-w-none"
+                            dangerouslySetInnerHTML={{ __html: evolucao.evolucao }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                      <p className="text-muted-foreground mb-4">
+                        Nenhuma evolução registrada para este cliente.
+                      </p>
+                      <Button onClick={() => handleCreateEvolucao(selectedClient)}>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Registrar Primeira Evolução
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </div>
+
+        {/* Modais */}
+        <AnamneseModal
+          open={anamneseModalOpen}
+          onOpenChange={setAnamneseModalOpen}
+          clientId={selectedClient.id}
+          clientName={selectedClient.nome}
+          onAnamneseCreated={loadData}
+          existingAnamnese={editingAnamnese}
+        />
+
+        <EvolucaoModal
+          open={evolucaoModalOpen}
+          onOpenChange={setEvolucaoModalOpen}
+          clientId={selectedClient.id}
+          clientName={selectedClient.nome}
+          onEvolucaoCreated={loadData}
+          existingEvolucao={editingEvolucao}
+        />
+      </Layout>
+    )
+  }
+
+  // Lista de clientes
   return (
     <Layout>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
             <FileText className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Prontuários</h1>
-          </div>
-          
-          <div className="flex gap-2">
-            <Button
-              variant={activeTab === 'records' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('records')}
-            >
-              Registros
-            </Button>
-            <Button
-              variant={activeTab === 'templates' ? 'default' : 'outline'}
-              onClick={() => setActiveTab('templates')}
-            >
-              Templates
-            </Button>
+            <h1 className="text-2xl font-bold">Prontuários Clínicos</h1>
           </div>
         </div>
         
         {/* Filtros */}
         <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filtros
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="search">Buscar</Label>
+          <CardContent className="pt-6">
+            <div className="flex gap-4">
+              <div className="flex-1">
                 <Input
-                  id="search"
-                  placeholder="Buscar por título ou descrição..."
+                  placeholder="Buscar cliente por nome, e-mail ou telefone..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 />
-              </div>
-              
-              {activeTab === 'templates' && (
-                <div>
-                  <Label htmlFor="category-filter">Categoria</Label>
-                  <Select value={filters.category} onValueChange={(value) => setFilters(prev => ({ ...prev, category: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todas as categorias" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todas as categorias</SelectItem>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              {activeTab === 'records' && (
-                <div>
-                  <Label htmlFor="client-filter">Cliente</Label>
-                  <Select value={filters.client} onValueChange={(value) => setFilters(prev => ({ ...prev, client: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos os clientes" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os clientes</SelectItem>
-                      {clients.map((client) => (
-                        <SelectItem key={client.id} value={client.id}>
-                          {client.nome}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              
-              <div className="flex items-end">
-                <Button 
-                  onClick={() => activeTab === 'templates' ? setShowTemplateModal(true) : setShowRecordModal(true)}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  {activeTab === 'templates' ? 'Novo Template' : 'Novo Registro'}
-                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
         
-        {/* Templates Tab */}
-        {activeTab === 'templates' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-            {filteredTemplates.map((template) => (
+        {/* Lista de Clientes */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredClients.map((client) => {
+            const clientAnamnese = getClientAnamnese(client.id)
+            const clientEvolucoes = getClientEvolucoes(client.id)
+            
+            return (
               <Card 
-                key={template.id} 
+                key={client.id} 
                 className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
-                onClick={() => {
-                  setSelectedTemplate(template)
-                  setShowPreviewModal(true)
-                }}
+                onClick={() => handleSelectClient(client)}
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="flex items-center gap-2">
-                        {template.title}
-                        <Badge variant="secondary">{template.category}</Badge>
+                        <User className="h-5 w-5" />
+                        {client.nome}
                       </CardTitle>
-                      {template.description && (
+                      {client.email && (
                         <p className="text-sm text-muted-foreground mt-1">
-                          {template.description}
+                          {client.email}
                         </p>
                       )}
                     </div>
-                    
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        downloadTemplatePDF(template)
-                      }}
-                      title="Baixar PDF"
-                    >
-                      <Download className="h-4 w-4" />
-                    </Button>
                   </div>
                 </CardHeader>
                 
                 <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      Criado em {format(new Date(template.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                    </span>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-        
-        {/* Records Tab */}
-        {activeTab === 'records' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredRecords.map((record) => (
-              <Card key={record.id}>
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        {record.clients?.nome}
-                        {record.record_templates?.category && (
-                          <Badge variant="secondary">{record.record_templates.category}</Badge>
-                        )}
-                      </CardTitle>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {record.record_templates?.title}
-                      </p>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Anamnese:</span>
+                      <Badge variant={clientAnamnese ? "default" : "secondary"}>
+                        {clientAnamnese ? "Realizada" : "Pendente"}
+                      </Badge>
                     </div>
-                    
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                
-                <CardContent>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      {format(new Date(record.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </span>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Evoluções:</span>
+                      <span className="font-medium">{clientEvolucoes.length}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Calendar className="h-4 w-4" />
+                      <span>
+                        Cliente desde {format(new Date(client.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                      </span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
-        
-        {/* Modal para Template */}
-        <Dialog open={showTemplateModal} onOpenChange={setShowTemplateModal}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {editingTemplate ? 'Editar Template' : 'Criar Novo Template'}
-              </DialogTitle>
-            </DialogHeader>
-            
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="template-title">Título*</Label>
-                <Input
-                  id="template-title"
-                  value={newTemplate.title}
-                  onChange={(e) => setNewTemplate(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="Nome do template"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="template-category">Categoria*</Label>
-                <Select value={newTemplate.category} onValueChange={(value) => setNewTemplate(prev => ({ ...prev, category: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione uma categoria" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="template-description">Descrição</Label>
-                <Textarea
-                  id="template-description"
-                  value={newTemplate.description}
-                  onChange={(e) => setNewTemplate(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Descrição do template"
-                />
-              </div>
-              
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setShowTemplateModal(false)}>
-                  Cancelar
-                </Button>
-                <Button onClick={handleSaveTemplate}>
-                  {editingTemplate ? 'Atualizar' : 'Criar'} Template
-                </Button>
-              </div>
+            )
+          })}
+
+          {filteredClients.length === 0 && (
+            <div className="col-span-full text-center py-8 text-muted-foreground">
+              Nenhum cliente encontrado. Cadastre clientes na página de Clientes para criar prontuários.
             </div>
-          </DialogContent>
-        </Dialog>
-        
-        {/* Modal de Preview do Template */}
-        <Dialog open={showPreviewModal} onOpenChange={setShowPreviewModal}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5" />
-                Preview do Template: {selectedTemplate?.title}
-              </DialogTitle>
-            </DialogHeader>
-            
-            {selectedTemplate && (
-              <div className="space-y-6">
-                {/* Informações básicas */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Categoria</Label>
-                    <Badge variant="secondary" className="mt-1">
-                      {selectedTemplate.category}
-                    </Badge>
-                  </div>
-                  <div>
-                    <Label>Data de Criação</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {format(new Date(selectedTemplate.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                    </p>
-                  </div>
-                </div>
-                
-                {/* Descrição */}
-                {selectedTemplate.description && (
-                  <div>
-                    <Label>Descrição</Label>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {selectedTemplate.description}
-                    </p>
-                  </div>
-                )}
-                
-                {/* Conteúdo do template */}
-                <div>
-                  <Label>Campos do Template</Label>
-                  <div className="mt-2 space-y-3">
-                    {selectedTemplate.template_content && Array.isArray(selectedTemplate.template_content) && selectedTemplate.template_content.length > 0 ? (
-                      selectedTemplate.template_content.map((field: any, index: number) => (
-                        <Card key={index} className="p-4">
-                          <div className="space-y-2">
-                            <div className="flex items-center gap-2">
-                              <Badge variant="outline">{field.type || 'Campo'}</Badge>
-                              <h4 className="font-medium">{field.label || field.name || `Campo ${index + 1}`}</h4>
-                            </div>
-                            {field.description && (
-                              <p className="text-sm text-muted-foreground">{field.description}</p>
-                            )}
-                            {field.options && Array.isArray(field.options) && (
-                              <div className="text-sm">
-                                <span className="font-medium">Opções:</span> {field.options.join(', ')}
-                              </div>
-                            )}
-                          </div>
-                        </Card>
-                      ))
-                    ) : (
-                      <p className="text-muted-foreground text-center py-4">
-                        Este template ainda não possui campos configurados.
-                      </p>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Ações */}
-                <div className="flex justify-end gap-3 pt-4 border-t">
-                  <Button variant="outline" onClick={() => setShowPreviewModal(false)}>
-                    Fechar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => downloadTemplatePDF(selectedTemplate)}
-                  >
-                    <Download className="h-4 w-4 mr-2" />
-                    Baixar PDF
-                  </Button>
-                  <Button onClick={() => {
-                    setShowPreviewModal(false)
-                    handleEditTemplate(selectedTemplate)
-                  }}>
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar Template
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-        
-        {/* Empty States */}
-        {activeTab === 'templates' && filteredTemplates.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum template encontrado</h3>
-              <p className="text-muted-foreground mb-4">
-                {templates.length === 0 
-                  ? 'Comece criando seu primeiro template de prontuário.' 
-                  : 'Tente ajustar os filtros para encontrar templates.'
-                }
-              </p>
-              <Button onClick={() => setShowTemplateModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Template
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-        
-        {activeTab === 'records' && filteredRecords.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhum registro encontrado</h3>
-              <p className="text-muted-foreground mb-4">
-                {filledRecords.length === 0 
-                  ? 'Comece criando seu primeiro registro de prontuário.' 
-                  : 'Tente ajustar os filtros para encontrar registros.'
-                }
-              </p>
-              <Button onClick={() => setShowRecordModal(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar Primeiro Registro
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+          )}
+        </div>
       </div>
     </Layout>
   )

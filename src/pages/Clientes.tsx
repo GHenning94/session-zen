@@ -22,6 +22,7 @@ import {
   UserCheck,
   Filter,
   MessageCircle,
+  FileText,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
@@ -32,12 +33,14 @@ import { NewSessionModal } from "@/components/NewSessionModal"
 import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useNavigate } from 'react-router-dom'
 
 const Clientes = () => {
   console.log("Clientes component is loading - build system test")
   const { toast } = useToast()
   const { user } = useAuth()
   const { currentPlan, planLimits, canAddClient } = useSubscription()
+  const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
@@ -595,6 +598,10 @@ const Clientes = () => {
                             <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
                               <Calendar className="w-4 h-4 mr-2" />
                               Nova Sessão
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate(`/prontuarios?cliente=${client.id}`)}>
+                              <FileText className="w-4 h-4 mr-2" />
+                              Abrir Prontuário
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}>
