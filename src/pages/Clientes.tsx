@@ -23,6 +23,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
 import { ClientDetailsModal } from "@/components/ClientDetailsModal"
+import { NewClientModal } from "@/components/NewClientModal"
 import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -665,7 +666,11 @@ const Clientes = () => {
                                 <Mail className="w-4 h-4" />
                                 <span>{client.email || "Email não informado"}</span>
                                 {hasMedications && (
-                                  <Pill className="w-4 h-4 text-primary ml-2" />
+                                  <div className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center ml-2">
+                                    <div className="w-4 h-4 relative">
+                                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-white border border-gray-300"></div>
+                                    </div>
+                                  </div>
                                 )}
                               </div>
                               <div className="flex items-center gap-2">
@@ -709,6 +714,17 @@ const Clientes = () => {
             )}
           </CardContent>
         </Card>
+
+        <NewClientModal
+          open={isNewClientOpen}
+          onOpenChange={setIsNewClientOpen}
+          onClientAdded={loadClients}
+          editingClient={editingClient}
+          onEditComplete={() => {
+            setEditingClient(null)
+            loadClients()
+          }}
+        />
 
         <ClientDetailsModal
           open={isClientDetailsOpen}

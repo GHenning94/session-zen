@@ -330,10 +330,10 @@ export const ClientDetailsModal = ({
           <Button
             variant="destructive"
             onClick={() => onDelete(client.id)}
-            className="flex items-center gap-2 ml-auto"
+            className="flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Excluir Cliente
+            Excluir
           </Button>
         </div>
       </DialogContent>
