@@ -2,6 +2,7 @@ import { Moon, Sun } from "lucide-react"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { useUserTheme } from "@/hooks/useUserTheme"
+import { useEffect } from "react"
 
 export const ThemeToggle = () => {
   const { theme, setTheme } = useTheme()
@@ -9,9 +10,24 @@ export const ThemeToggle = () => {
 
   const handleThemeToggle = async () => {
     const newTheme = theme === "dark" ? "light" : "dark"
+    
+    // Aplica o tema imediatamente no DOM para evitar flash
+    document.documentElement.classList.remove('light', 'dark')
+    document.documentElement.classList.add(newTheme)
+    document.documentElement.setAttribute('data-theme', newTheme)
+    
     setTheme(newTheme)
     await saveThemePreference(newTheme)
   }
+
+  // Garante sincronização entre next-themes e DOM
+  useEffect(() => {
+    if (theme) {
+      document.documentElement.classList.remove('light', 'dark')
+      document.documentElement.classList.add(theme)
+      document.documentElement.setAttribute('data-theme', theme)
+    }
+  }, [theme])
 
   return (
     <Button

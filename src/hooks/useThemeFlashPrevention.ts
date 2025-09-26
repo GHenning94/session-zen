@@ -21,7 +21,7 @@ export const applyThemeInstantly = () => {
         const cachedTheme = localStorage.getItem(cacheKey)
         
         if (cachedTheme === 'dark' || cachedTheme === 'light') {
-          // Remove classes existentes
+          // Remove TODAS as classes de tema existentes
           document.documentElement.classList.remove('light', 'dark')
           
           // Aplica o tema imediatamente
@@ -48,7 +48,46 @@ export const applyThemeInstantly = () => {
   return 'light'
 }
 
+// Função para monitorar mudanças de tema em tempo real
+export const watchThemeChanges = () => {
+  if (typeof window === 'undefined') return
+
+  // Observa mudanças no localStorage do tema
+  const originalSetItem = localStorage.setItem
+  localStorage.setItem = function(key, value) {
+    if (key === 'theme') {
+      // Remove classes existentes e aplica a nova imediatamente
+      document.documentElement.classList.remove('light', 'dark')
+      document.documentElement.classList.add(value)
+      document.documentElement.setAttribute('data-theme', value)
+    }
+    originalSetItem.call(this, key, value)
+  }
+
+  // Observa mudanças no atributo data-theme
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
+        const newTheme = document.documentElement.getAttribute('data-theme')
+        if (newTheme && (newTheme === 'light' || newTheme === 'dark')) {
+          // Garante que a classe corresponde ao atributo
+          document.documentElement.classList.remove('light', 'dark')
+          document.documentElement.classList.add(newTheme)
+        }
+      }
+    })
+  })
+
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme', 'class']
+  })
+
+  return () => observer.disconnect()
+}
+
 // Auto-executa quando o módulo é carregado
 if (typeof window !== 'undefined') {
   applyThemeInstantly()
+  watchThemeChanges()
 }
