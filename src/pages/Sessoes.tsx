@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 import { SessionNoteModal } from '@/components/SessionNoteModal'
 import { SessionEditModal } from '@/components/SessionEditModal'
+import { calculateSessionStatus } from "@/utils/sessionStatusUtils"
 import { useNavigate } from 'react-router-dom'
 
 interface Session {
@@ -64,6 +65,7 @@ export default function Sessoes() {
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
+  const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -92,6 +94,7 @@ export default function Sessoes() {
           clients (nome, ativo)
         `)
         .order('data', { ascending: false })
+        .order('horario', { ascending: false })
 
       if (sessionsError) throw sessionsError
 
@@ -115,7 +118,7 @@ export default function Sessoes() {
 
       if (clientsError) throw clientsError
 
-      setSessions(sessionsData || [])
+      setSessions(updatedSessions)
       setSessionNotes(notesData || [])
       setClients(clientsData || [])
     } catch (error) {
@@ -249,6 +252,13 @@ export default function Sessoes() {
 
   const handleAddNote = (session: Session) => {
     setSelectedSession(session)
+    setEditingNote(null)
+    setNoteModalOpen(true)
+  }
+
+  const handleEditNote = (note: SessionNote) => {
+    setEditingNote(note)
+    setSelectedSession(null)
     setNoteModalOpen(true)
   }
 
@@ -907,9 +917,19 @@ export default function Sessoes() {
                       )}
                     </div>
                     
-                    <span className="text-xs text-muted-foreground">
-                      {format(new Date(note.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEditNote(note)}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Editar
+                      </Button>
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(note.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="p-3 bg-muted rounded-lg">
@@ -917,7 +937,10 @@ export default function Sessoes() {
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm font-medium">Anotação da Sessão</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{note.notes}</p>
+                    <div 
+                      className="text-sm text-muted-foreground prose prose-sm max-w-none"
+                      dangerouslySetInnerHTML={{ __html: note.notes }}
+                    />
                   </div>
                 </CardContent>
               </Card>
@@ -931,6 +954,7 @@ export default function Sessoes() {
           open={noteModalOpen}
           onOpenChange={setNoteModalOpen}
           onNoteCreated={loadData}
+          editingNote={editingNote}
         />
         
         <SessionEditModal

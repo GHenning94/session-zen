@@ -28,6 +28,7 @@ import { generateReceiptPDF } from "@/utils/receiptGenerator"
 import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { calculatePaymentStatus } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
 
 const Pagamentos = () => {
@@ -58,6 +59,7 @@ const Pagamentos = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('data', { ascending: false })
+        .order('horario', { ascending: false })
       
       // Carregar clientes
       const { data: clientsData, error: clientsError } = await supabase
@@ -121,20 +123,7 @@ const Pagamentos = () => {
 
   const getSessionPayments = () => {
     return sessions.map(session => {
-      const sessionDateTime = new Date(`${session.data}T${session.horario}`)
-      const currentDateTime = new Date()
-      
-      // Status correto baseado no status da sessão
-      let status: string
-      if (session.status === 'cancelada') {
-        status = 'cancelado'
-      } else if (session.status === 'realizada') {
-        status = 'pago'
-      } else if (sessionDateTime < currentDateTime) {
-        status = 'atrasado'
-      } else {
-        status = 'pendente'
-      }
+      const status = calculatePaymentStatus(session.data, session.horario, session.status)
       
       return {
         id: session.id,
@@ -236,6 +225,10 @@ const Pagamentos = () => {
 
   const totalPending = filteredActivePayments
     .filter(p => p.status === 'pendente')
+    .reduce((sum, p) => sum + (p.value || 0), 0)
+
+  const totalOverdue = filteredActivePayments
+    .filter(p => p.status === 'atrasado')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
   const totalCancelled = filteredCancelledPayments
@@ -358,7 +351,7 @@ const Pagamentos = () => {
               <div className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>
                 {formatCurrencyBR(totalReceived)}
               </div>
-              <p className="text-xs text-muted-foreground">{paidCount} pagamentos confirmados</p>
+              <p className="text-sm text-muted-foreground">{paidCount} pagamentos confirmados</p>
             </CardContent>
           </Card>
           
@@ -393,7 +386,7 @@ const Pagamentos = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-red-600">{cancelledCount}</div>
-              <p className="text-sm text-muted-foreground">Pagamentos cancelados</p>
+              <p className="text-sm text-muted-foreground">{cancelledCount} pagamentos cancelados</p>
             </CardContent>
           </Card>
           
@@ -436,11 +429,12 @@ const Pagamentos = () => {
                   <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="pago">Pagos</SelectItem>
-                    <SelectItem value="pendente">Pendentes</SelectItem>
-                  </SelectContent>
+                   <SelectContent>
+                     <SelectItem value="todos">Todos</SelectItem>
+                     <SelectItem value="pago">Pagos</SelectItem>
+                     <SelectItem value="pendente">Pendentes</SelectItem>
+                     <SelectItem value="atrasado">Atrasados</SelectItem>
+                   </SelectContent>
                 </Select>
               </div>
             </div>

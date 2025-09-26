@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Layout } from "@/components/Layout"
 import { 
   Search, 
@@ -19,7 +20,9 @@ import {
   Trash2,
   Eye,
   UserX,
-  UserCheck
+  UserCheck,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -42,6 +45,8 @@ const Clientes = () => {
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [activeClientsExpanded, setActiveClientsExpanded] = useState(true)
+  const [inactiveClientsExpanded, setInactiveClientsExpanded] = useState(false)
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -461,175 +466,195 @@ const Clientes = () => {
                 <p className="text-muted-foreground">Carregando clientes...</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {/* Active clients */}
-                {activeClients.filter(client =>
-                  client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  client.telefone?.includes(searchTerm)
-                ).map((client) => (
-                  <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <ClientAvatarUpload
-                          clientName={client.nome}
-                          currentAvatarUrl={client.avatar_url}
-                          onAvatarChange={(url) => handleAvatarChange(client.id, url)}
-                          size="sm"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{client.nome}</h3>
-                            <Badge variant="default">Ativo</Badge>
+              <div className="space-y-6">
+                {/* Clientes Ativos */}
+                <Collapsible open={activeClientsExpanded} onOpenChange={setActiveClientsExpanded}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-lg font-semibold">Clientes Ativos ({activeClients.length})</h3>
+                      </div>
+                      {activeClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="space-y-4 mt-4">
+                      {activeClients.filter(client =>
+                        client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        client.telefone?.includes(searchTerm)
+                      ).map((client) => (
+                        <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                              <ClientAvatarUpload
+                                clientName={client.nome}
+                                currentAvatarUrl={client.avatar_url}
+                                onAvatarChange={(url) => handleAvatarChange(client.id, url)}
+                                size="sm"
+                              />
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium">{client.nome}</h3>
+                                  <Badge variant="default">Ativo</Badge>
+                                </div>
+                                <div className="text-sm text-muted-foreground space-y-1">
+                                  <div className="flex items-center gap-1">
+                                    <Mail className="w-3 h-3" />
+                                    <span>{client.email}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <Phone className="w-3 h-3" />
+                                    <span>{client.telefone}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                  <MoreHorizontal className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
+                                  <Calendar className="w-4 h-4 mr-2" />
+                                  Agendar Sessão
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditClient(client)}>
+                                  <Edit2 className="w-4 h-4 mr-2" />
+                                  Editar Cliente
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
+                                  <UserX className="w-4 h-4 mr-2" />
+                                  Desativar Cliente
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  onClick={() => handleDeleteClient(client.id)}
+                                  className="text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Excluir Cliente
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            {client.email && <p>{client.email}</p>}
-                            {client.telefone && <p>{client.telefone}</p>}
-                          </div>
+                          
+                          {client.dados_clinicos && (
+                            <div className="mt-3 p-3 bg-muted rounded-lg">
+                              <h4 className="font-medium text-sm mb-2">Dados Clínicos</h4>
+                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{client.dados_clinicos}</p>
+                            </div>
+                          )}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedClient(client)}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Ver detalhes
-                        </Button>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-background border shadow-lg">
-                            <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                              <Edit2 className="w-4 h-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Agendar sessão
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => handleToggleClientStatus(client.id, client.ativo)}
-                              className="text-yellow-600 focus:text-yellow-600"
-                            >
-                              <UserX className="w-4 h-4 mr-2" />
-                              Desativar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteClient(client.id)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                      ))}
 
-                {/* Separator */}
-                {inactiveClients.filter(client =>
-                  client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  client.telefone?.includes(searchTerm)
-                ).length > 0 && (
-                  <div className="py-6">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-border"></div>
-                      </div>
-                      <div className="relative flex justify-center text-sm">
-                        <span className="bg-background px-4 text-muted-foreground">Clientes Inativos</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Inactive clients */}
-                {inactiveClients.filter(client =>
-                  client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                  client.telefone?.includes(searchTerm)
-                ).map((client) => (
-                  <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm opacity-75">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <ClientAvatarUpload
-                          clientName={client.nome}
-                          currentAvatarUrl={client.avatar_url}
-                          onAvatarChange={(url) => handleAvatarChange(client.id, url)}
-                          size="sm"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium">{client.nome}</h3>
-                            <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50">Inativo</Badge>
-                          </div>
-                          <div className="text-sm text-muted-foreground space-y-1">
-                            {client.email && <p>{client.email}</p>}
-                            {client.telefone && <p>{client.telefone}</p>}
-                          </div>
+                      {activeClients.filter(client =>
+                        client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                        client.telefone?.includes(searchTerm)
+                      ).length === 0 && (
+                        <div className="text-center py-8 text-muted-foreground">
+                          {searchTerm ? 'Nenhum cliente ativo encontrado para a busca.' : 'Nenhum cliente ativo cadastrado.'}
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedClient(client)}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          Ver detalhes
-                        </Button>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 bg-background border shadow-lg">
-                            <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                              <Edit2 className="w-4 h-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Agendar sessão
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem 
-                              onClick={() => handleToggleClientStatus(client.id, client.ativo)}
-                              className="text-yellow-600 focus:text-yellow-600"
-                            >
-                              <UserCheck className="w-4 h-4 mr-2" />
-                              Ativar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              onClick={() => handleDeleteClient(client.id)}
-                              className="text-red-600 focus:text-red-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  </CollapsibleContent>
+                </Collapsible>
 
-                {activeClients.length === 0 && inactiveClients.length === 0 && (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Nenhum cliente cadastrado ainda.</p>
-                  </div>
+                {/* Clientes Inativos */}
+                {inactiveClients.length > 0 && (
+                  <Collapsible open={inactiveClientsExpanded} onOpenChange={setInactiveClientsExpanded}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold text-muted-foreground">Clientes Inativos ({inactiveClients.length})</h3>
+                        </div>
+                        {inactiveClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="space-y-4 mt-4">
+                        {inactiveClients.filter(client =>
+                          client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          client.telefone?.includes(searchTerm)
+                        ).map((client) => (
+                          <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm opacity-75">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center space-x-3">
+                                <ClientAvatarUpload
+                                  clientName={client.nome}
+                                  currentAvatarUrl={client.avatar_url}
+                                  onAvatarChange={(url) => handleAvatarChange(client.id, url)}
+                                  size="sm"
+                                />
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h3 className="font-medium text-muted-foreground">{client.nome}</h3>
+                                    <Badge variant="secondary">Inativo</Badge>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground space-y-1">
+                                    <div className="flex items-center gap-1">
+                                      <Mail className="w-3 h-3" />
+                                      <span>{client.email}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                      <Phone className="w-3 h-3" />
+                                      <span>{client.telefone}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditClient(client)}>
+                                    <Edit2 className="w-4 h-4 mr-2" />
+                                    Editar Cliente
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
+                                    <UserCheck className="w-4 h-4 mr-2" />
+                                    Reativar Cliente
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={() => handleDeleteClient(client.id)}
+                                    className="text-destructive"
+                                  >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Excluir Cliente
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                            
+                            {client.dados_clinicos && (
+                              <div className="mt-3 p-3 bg-muted rounded-lg">
+                                <h4 className="font-medium text-sm mb-2">Dados Clínicos</h4>
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{client.dados_clinicos}</p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+
+                        {inactiveClients.filter(client =>
+                          client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          client.telefone?.includes(searchTerm)
+                        ).length === 0 && (
+                          <div className="text-center py-8 text-muted-foreground">
+                            Nenhum cliente inativo encontrado para a busca.
+                          </div>
+                        )}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 )}
               </div>
             )}
