@@ -3,6 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function() {
+        try {
+          var token = localStorage.getItem('sb-supabase-auth-token');
+          var preferred = 'light';
+          if (token) {
+            var authData = JSON.parse(token);
+            var userId = authData && authData.user && authData.user.id;
+            if (userId) {
+              var cached = localStorage.getItem('user-theme-cache_' + userId);
+              if (cached === 'dark' || cached === 'light') preferred = cached;
+            }
+          }
+          var theme = localStorage.getItem('theme') || preferred || 'light';
+          var root = document.documentElement;
+          root.classList.remove('light','dark');
+          root.classList.add(theme);
+          root.setAttribute('data-theme', theme);
+        } catch (e) {
+          document.documentElement.classList.add('light');
+          document.documentElement.setAttribute('data-theme','light');
+        }
+      })();
+    </script>
     <title>TherapyPro - Gestão Profissional para Terapeutas</title>
     <meta name="description" content="Plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar." />
     <meta name="author" content="TherapyPro" />

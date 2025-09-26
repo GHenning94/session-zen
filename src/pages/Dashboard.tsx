@@ -1096,7 +1096,7 @@ const Dashboard = () => {
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-primary" />
+                          <TrendingUp className="w-5 h-5 text-success" />
                           <CardTitle>Ticket Médio</CardTitle>
                         </div>
                         <div className="flex gap-2">
@@ -1167,21 +1167,21 @@ const Dashboard = () => {
                                  borderRadius: '6px'
                                }}
                              />
-                             <Line 
-                               type="monotone" 
-                               dataKey="ticketMedio" 
-                               stroke="hsl(var(--secondary))"
-                               strokeWidth={3}
-                               dot={{ fill: 'hsl(var(--secondary))', strokeWidth: 2, r: 4 }}
-                               activeDot={{ r: 6, stroke: 'hsl(var(--secondary))', strokeWidth: 2 }}
-                             />
+                              <Line 
+                                type="monotone" 
+                                dataKey="ticketMedio" 
+                                stroke="hsl(var(--success))"
+                                strokeWidth={3}
+                                dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
+                                activeDot={{ r: 6, stroke: 'hsl(var(--success))', strokeWidth: 2 }}
+                              />
                            </LineChart>
                         </ResponsiveContainer>
                       </div>
                       
                       {/* Estatística do ticket médio atual */}
                       <div className="mt-6 pt-6 border-t text-center">
-                        <p className="text-3xl font-bold text-secondary">
+                        <p className="text-3xl font-bold text-success">
                           {formatCurrencyBR(ticketMedioAverage)}
                         </p>
                         <p className="text-sm text-muted-foreground">Ticket Médio do Período</p>
@@ -1195,7 +1195,7 @@ const Dashboard = () => {
                   <Card className="shadow-soft">
                     <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-secondary" />
+                        <BarChart3 className="w-5 h-5 text-success" />
                         Ticket Médio por Cliente
                       </CardTitle>
                       <CardDescription>
