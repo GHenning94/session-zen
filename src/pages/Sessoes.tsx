@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -68,10 +68,6 @@ export default function Sessoes() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
   
-  // Estados para collapsible sections
-  const [activeSessionsExpanded, setActiveSessionsExpanded] = useState(true)
-  const [cancelledSessionsExpanded, setCancelledSessionsExpanded] = useState(false)
-  const [noShowSessionsExpanded, setNoShowSessionsExpanded] = useState(false)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -309,62 +305,30 @@ export default function Sessoes() {
     }
   }
 
-  // Separar sessões ativas e canceladas
-  const activeSessions = sessions.filter(session => session.status !== 'cancelada' && session.status !== 'falta')
-  const cancelledSessions = sessions.filter(session => session.status === 'cancelada')
-  const noShowSessions = sessions.filter(session => session.status === 'falta')
-
-  const filteredActiveSessions = activeSessions.filter(session => {
-    const matchesStatus = !filters.status || filters.status === "all" || session.status === filters.status
-    const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
-    const matchesSearch = !filters.search || 
-      session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
-      session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
-    
-    let matchesDate = true
-    if (filters.startDate) {
-      matchesDate = matchesDate && session.data >= filters.startDate
-    }
-    if (filters.endDate) {
-      matchesDate = matchesDate && session.data <= filters.endDate
-    }
-    
-    return matchesStatus && matchesClient && matchesSearch && matchesDate
-  })
-
-  const filteredCancelledSessions = cancelledSessions.filter(session => {
-    const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
-    const matchesSearch = !filters.search || 
-      session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
-      session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
-    
-    let matchesDate = true
-    if (filters.startDate) {
-      matchesDate = matchesDate && session.data >= filters.startDate
-    }
-    if (filters.endDate) {
-      matchesDate = matchesDate && session.data <= filters.endDate
-    }
-    
-    return matchesClient && matchesSearch && matchesDate
-  })
-
-  const filteredNoShowSessions = noShowSessions.filter(session => {
-    const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
-    const matchesSearch = !filters.search || 
-      session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
-      session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
-    
-    let matchesDate = true
-    if (filters.startDate) {
-      matchesDate = matchesDate && session.data >= filters.startDate
-    }
-    if (filters.endDate) {
-      matchesDate = matchesDate && session.data <= filters.endDate
-    }
-    
-    return matchesClient && matchesSearch && matchesDate
-  })
+  // Filtrar e ordenar sessões
+  const filteredSessions = sessions
+    .filter(session => {
+      const matchesStatus = !filters.status || filters.status === "all" || session.status === filters.status
+      const matchesClient = !filters.client || filters.client === "all" || session.client_id === filters.client
+      const matchesSearch = !filters.search || 
+        session.clients?.nome.toLowerCase().includes(filters.search.toLowerCase()) ||
+        session.anotacoes?.toLowerCase().includes(filters.search.toLowerCase())
+      
+      let matchesDate = true
+      if (filters.startDate) {
+        matchesDate = matchesDate && session.data >= filters.startDate
+      }
+      if (filters.endDate) {
+        matchesDate = matchesDate && session.data <= filters.endDate
+      }
+      
+      return matchesStatus && matchesClient && matchesSearch && matchesDate
+    })
+    .sort((a, b) => {
+      const dateA = new Date(`${a.data} ${a.horario}`)
+      const dateB = new Date(`${b.data} ${b.horario}`)
+      return dateB.getTime() - dateA.getTime()
+    })
 
   const filteredNotes = sessionNotes.filter(note => {
     const clientMatches = !filters.client || filters.client === "all" || note.client_id === filters.client

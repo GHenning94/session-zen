@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+
 import { Layout } from "@/components/Layout"
 import { 
   Search, 
@@ -21,8 +21,6 @@ import {
   Eye,
   UserX,
   UserCheck,
-  ChevronDown,
-  ChevronRight
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -45,8 +43,6 @@ const Clientes = () => {
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [activeClientsExpanded, setActiveClientsExpanded] = useState(true)
-  const [inactiveClientsExpanded, setInactiveClientsExpanded] = useState(false)
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -279,9 +275,16 @@ const Clientes = () => {
     setIsNewClientOpen(true)
   }
 
-  const activeClients = clients.filter(client => client.ativo !== false)
-  const inactiveClients = clients.filter(client => client.ativo === false)
-  const canAddMore = canAddClient(activeClients.length)
+  // Filtrar clientes por busca e ordenar por data de criação
+  const filteredClients = [...clients]
+    .filter(client =>
+      client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      client.telefone?.includes(searchTerm)
+    )
+    .sort((a, b) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    })
 
   return (
     <Layout>

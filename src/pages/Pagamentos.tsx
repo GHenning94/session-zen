@@ -18,11 +18,9 @@ import {
   Smartphone,
   Building2,
   Banknote,
-  ChevronDown,
-  ChevronRight
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -49,8 +47,6 @@ const Pagamentos = () => {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
-  const [activePaymentsExpanded, setActivePaymentsExpanded] = useState(true)
-  const [cancelledPaymentsExpanded, setCancelledPaymentsExpanded] = useState(false)
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -214,35 +210,36 @@ const Pagamentos = () => {
     })
   }
 
-  const payments = getSessionPayments()
-  const activePayments = payments.filter(payment => payment.status !== 'cancelado')
-  const cancelledPayments = payments.filter(payment => payment.status === 'cancelado')
-  
-  const filteredActivePayments = filterByPeriod(activePayments).filter(payment => 
+  // Filtrar e ordenar pagamentos
+  const allPayments = getSessionPayments()
+  const filteredPayments = filterByPeriod(allPayments).filter(payment => 
     filterStatus === "todos" || payment.status === filterStatus
-  )
-  
-  const filteredCancelledPayments = filterByPeriod(cancelledPayments)
+  ).sort((a, b) => {
+    const dateA = new Date(`${a.date} ${a.time}`)
+    const dateB = new Date(`${b.date} ${b.time}`)
+    return dateB.getTime() - dateA.getTime()
+  })
 
-  const totalReceived = filteredActivePayments
+  const totalReceived = filteredPayments
     .filter(p => p.status === 'pago')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const totalPending = filteredActivePayments
+  const totalPending = filteredPayments
     .filter(p => p.status === 'pendente')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const totalOverdue = filteredActivePayments
+  const totalOverdue = filteredPayments
     .filter(p => p.status === 'atrasado')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const totalCancelled = filteredCancelledPayments
+  const totalCancelled = filteredPayments
+    .filter(p => p.status === 'cancelado')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const paidCount = filteredActivePayments.filter(p => p.status === 'pago').length
-  const pendingCount = filteredActivePayments.filter(p => p.status === 'pendente').length
-  const lateCount = filteredActivePayments.filter(p => p.status === 'atrasado').length
-  const cancelledCount = filteredCancelledPayments.length
+  const paidCount = filteredPayments.filter(p => p.status === 'pago').length
+  const pendingCount = filteredPayments.filter(p => p.status === 'pendente').length
+  const lateCount = filteredPayments.filter(p => p.status === 'atrasado').length
+  const cancelledCount = filteredPayments.filter(p => p.status === 'cancelado').length
 
   const getStatusColor = (status: string) => {
     switch (status) {
