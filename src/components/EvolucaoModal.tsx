@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
@@ -36,9 +37,13 @@ export const EvolucaoModal = ({
   const { toast } = useToast()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [sessions, setSessions] = useState<any[]>([])
+  const [inputMode, setInputMode] = useState<'manual' | 'session'>('manual')
 
   const [evolucao, setEvolucao] = useState({
     data_sessao: '',
+    horario_sessao: '',
+    session_id: '',
     evolucao: ''
   })
 
@@ -46,21 +51,66 @@ export const EvolucaoModal = ({
     if (existingEvolucao) {
       setEvolucao({
         data_sessao: existingEvolucao.data_sessao,
+        horario_sessao: '',
+        session_id: existingEvolucao.session_id || '',
         evolucao: existingEvolucao.evolucao
       })
+      setInputMode(existingEvolucao.session_id ? 'session' : 'manual')
     } else if (sessionData) {
       setEvolucao({
         data_sessao: sessionData.data,
+        horario_sessao: sessionData.horario,
+        session_id: sessionData.id,
         evolucao: ''
       })
+      setInputMode('session')
     } else {
       const today = new Date().toISOString().split('T')[0]
       setEvolucao({
         data_sessao: today,
+        horario_sessao: '',
+        session_id: '',
         evolucao: ''
       })
+      setInputMode('manual')
     }
   }, [existingEvolucao, sessionData, open])
+
+  // Carregar sessões do cliente quando o modal abre
+  useEffect(() => {
+    if (open && clientId && user) {
+      loadClientSessions()
+    }
+  }, [open, clientId, user])
+
+  const loadClientSessions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id, data, horario, status')
+        .eq('client_id', clientId)
+        .eq('user_id', user?.id)
+        .order('data', { ascending: false })
+        .order('horario', { ascending: false })
+
+      if (error) throw error
+      setSessions(data || [])
+    } catch (error) {
+      console.error('Erro ao carregar sessões:', error)
+    }
+  }
+
+  const handleSessionSelect = (sessionId: string) => {
+    const selectedSession = sessions.find(s => s.id === sessionId)
+    if (selectedSession) {
+      setEvolucao(prev => ({
+        ...prev,
+        data_sessao: selectedSession.data,
+        horario_sessao: selectedSession.horario,
+        session_id: sessionId
+      }))
+    }
+  }
 
   const handleSave = async () => {
     if (!user || !evolucao.evolucao.trim()) {
@@ -97,7 +147,7 @@ export const EvolucaoModal = ({
           .insert({
             user_id: user.id,
             client_id: clientId,
-            session_id: sessionData?.id || null,
+            session_id: evolucao.session_id || null,
             data_sessao: evolucao.data_sessao,
             evolucao: evolucao.evolucao.trim()
           })
@@ -134,21 +184,98 @@ export const EvolucaoModal = ({
         </DialogHeader>
 
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="data_sessao">Data da Sessão</Label>
-            <Input
-              id="data_sessao"
-              type="date"
-              value={evolucao.data_sessao}
-              onChange={(e) => setEvolucao(prev => ({ ...prev, data_sessao: e.target.value }))}
-              disabled={!!sessionData} // Desabilita se vem de uma sessão específica
-            />
-            {sessionData && (
-              <p className="text-sm text-muted-foreground mt-1">
-                Vinculada à sessão de {format(new Date(sessionData.data), "dd/MM/yyyy", { locale: ptBR })} às {sessionData.horario}
-              </p>
-            )}
-          </div>
+          {/* Modo de entrada */}
+          {!sessionData && (
+            <div>
+              <Label>Modo de Entrada</Label>
+              <div className="flex gap-2 mt-2">
+                <Button
+                  type="button"
+                  variant={inputMode === 'manual' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('manual')}
+                >
+                  Manual
+                </Button>
+                <Button
+                  type="button"
+                  variant={inputMode === 'session' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setInputMode('session')}
+                >
+                  Selecionar Sessão
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Entrada manual */}
+          {inputMode === 'manual' && !sessionData && (
+            <>
+              <div>
+                <Label htmlFor="data_sessao">Data da Sessão</Label>
+                <Input
+                  id="data_sessao"
+                  type="date"
+                  value={evolucao.data_sessao}
+                  onChange={(e) => setEvolucao(prev => ({ ...prev, data_sessao: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="horario_sessao">Horário da Sessão</Label>
+                <Input
+                  id="horario_sessao"
+                  type="time"
+                  value={evolucao.horario_sessao}
+                  onChange={(e) => setEvolucao(prev => ({ ...prev, horario_sessao: e.target.value }))}
+                  placeholder="09:00"
+                />
+              </div>
+            </>
+          )}
+
+          {/* Seleção de sessão */}
+          {inputMode === 'session' && !sessionData && (
+            <div>
+              <Label>Selecionar Sessão</Label>
+              <Select
+                value={evolucao.session_id}
+                onValueChange={(value) => {
+                  setEvolucao(prev => ({ ...prev, session_id: value }))
+                  handleSessionSelect(value)
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione uma sessão" />
+                </SelectTrigger>
+                <SelectContent>
+                  {sessions.map((session) => (
+                    <SelectItem key={session.id} value={session.id}>
+                      {format(new Date(session.data), "dd/MM/yyyy", { locale: ptBR })} às {session.horario} - {session.status === 'realizada' ? '✓' : '📅'} {session.status}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {evolucao.session_id && (
+                <p className="text-sm text-muted-foreground mt-1">
+                  Sessão de {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })} às {evolucao.horario_sessao}
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Entrada via sessionData (quando vem de uma sessão específica) */}
+          {sessionData && (
+            <div>
+              <Label>Sessão Vinculada</Label>
+              <div className="p-3 bg-muted rounded-md">
+                <p className="text-sm">
+                  {format(new Date(sessionData.data), "dd/MM/yyyy", { locale: ptBR })} às {sessionData.horario}
+                </p>
+              </div>
+            </div>
+          )}
 
           <div>
             <Label htmlFor="evolucao">Evolução/Nota Clínica</Label>
