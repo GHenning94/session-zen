@@ -534,7 +534,7 @@ const Clientes = () => {
                                <h3 className="text-lg font-semibold">{client.nome}</h3>
                                <Badge 
                                  variant={client.ativo !== false ? "default" : "secondary"}
-                                 className={client.ativo === false ? "bg-yellow-500 text-yellow-900 hover:bg-yellow-500/80" : ""}
+                                 className={client.ativo === false ? "bg-yellow-500 text-white hover:bg-yellow-500/80" : ""}
                                >
                                  {client.ativo !== false ? "Ativo" : "Inativo"}
                                </Badge>
@@ -595,12 +595,12 @@ const Clientes = () => {
                             <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}>
                               {client.ativo !== false ? (
                                 <>
-                                  <UserX className="w-4 h-4 mr-2" />
+                                  <UserX className="w-4 h-4 mr-2 text-yellow-500" />
                                   <span className="text-yellow-600">Desativar Cliente</span>
                                 </>
                               ) : (
                                 <>
-                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  <UserCheck className="w-4 h-4 mr-2 text-yellow-500" />
                                   <span className="text-yellow-600">Ativar Cliente</span>
                                 </>
                               )}
