@@ -1320,23 +1320,23 @@ const Dashboard = () => {
                         </div>
                         
                         {/* Lista de Canais */}
-                        <div className="space-y-3 flex flex-col justify-center">
+                        <div className="space-y-2 flex flex-col justify-center">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
                             
                             return (
-                              <div key={canal.canal} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                                <div className="flex items-center gap-3">
+                              <div key={canal.canal} className="flex items-center justify-between px-3 py-2 border border-border rounded-lg">
+                                <div className="flex items-center gap-2">
                                   <div 
-                                    className="w-4 h-4 rounded-full"
+                                    className="w-3 h-3 rounded-full flex-shrink-0"
                                     style={{ backgroundColor: canal.color }}
                                   />
-                                  <span className="font-medium">{canal.canal}</span>
+                                  <span className="font-medium text-sm">{canal.canal}</span>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-bold text-primary">{formatCurrencyBR(canal.valor)}</p>
-                                  <p className="text-sm text-muted-foreground">{percentage}%</p>
+                                  <p className="font-bold text-primary text-sm">{formatCurrencyBR(canal.valor)}</p>
+                                  <p className="text-xs text-muted-foreground">{percentage}%</p>
                                 </div>
                               </div>
                             )
