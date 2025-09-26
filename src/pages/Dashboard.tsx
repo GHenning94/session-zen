@@ -661,8 +661,8 @@ const Dashboard = () => {
       value: dashboardData.activeClients.toString(),
       change: "+5 este mês",
       icon: Users,
-      color: "text-secondary",
-      bgColor: "bg-secondary/10"
+      color: "text-success",
+      bgColor: "bg-success/10"
     },
     {
       title: "Receita Mensal",
@@ -809,7 +809,7 @@ const Dashboard = () => {
           <Card className="shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <DollarSign className="w-5 h-5 text-secondary" />
+                <DollarSign className="w-5 h-5 text-success" />
                 Pagamentos Recentes
               </CardTitle>
               <CardDescription>
@@ -894,7 +894,7 @@ const Dashboard = () => {
                     <span>Agendar Sessão</span>
                   </Button>
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewClient}>
-                    <Users className="w-6 h-6 text-secondary" />
+                    <Users className="w-6 h-6 text-success" />
                     <span>Adicionar Cliente</span>
                   </Button>
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewPayment}>
@@ -1058,7 +1058,7 @@ const Dashboard = () => {
                              <p className="text-sm text-muted-foreground">A Receber</p>
                            </div>
                            <div className="text-center">
-                             <p className="text-2xl font-bold text-secondary">
+                             <p className="text-2xl font-bold text-success">
                                {(() => {
                                  const totalMonths = monthlyChart.length;
                                  let startIndex = 0;
@@ -1426,7 +1426,7 @@ const Dashboard = () => {
             <Card className="shadow-soft">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-secondary" />
+                  <Users className="w-5 h-5 text-success" />
                   Clientes Recentes
                 </CardTitle>
                 <CardDescription>
