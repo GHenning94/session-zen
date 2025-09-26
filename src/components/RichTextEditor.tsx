@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useState } from 'react'
+import { forwardRef, useEffect } from 'react'
 import ReactQuill from 'react-quill'
 import 'react-quill/dist/quill.snow.css'
 
@@ -27,6 +27,47 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
       'list', 'bullet', 'indent', 'link'
     ]
 
+    useEffect(() => {
+      // Inject global styles for ReactQuill
+      const style = document.createElement('style')
+      style.textContent = `
+        .ql-editor {
+          word-wrap: break-word !important;
+          word-break: break-word !important;
+          white-space: pre-wrap !important;
+          overflow-wrap: break-word !important;
+          max-height: 320px !important;
+          overflow-y: auto !important;
+          overflow-x: hidden !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        .ql-container {
+          max-height: 400px !important;
+          overflow: hidden !important;
+        }
+        .ql-toolbar {
+          border-top: 1px solid #ccc !important;
+          border-left: 1px solid #ccc !important;
+          border-right: 1px solid #ccc !important;
+          border-bottom: none !important;
+          border-radius: 6px 6px 0 0 !important;
+        }
+        .ql-container.ql-snow {
+          border-top: none !important;
+          border-bottom: 1px solid #ccc !important;
+          border-left: 1px solid #ccc !important;
+          border-right: 1px solid #ccc !important;
+          border-radius: 0 0 6px 6px !important;
+        }
+      `
+      document.head.appendChild(style)
+      
+      return () => {
+        document.head.removeChild(style)
+      }
+    }, [])
+
     return (
       <div className={className}>
         <ReactQuill
@@ -40,7 +81,9 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
             backgroundColor: 'white',
             borderRadius: '6px',
             minHeight: '200px',
-            maxWidth: '100%'
+            maxHeight: '400px',
+            width: '100%',
+            overflow: 'hidden'
           }}
           bounds={'.modal-content'}
         />
