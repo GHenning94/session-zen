@@ -746,12 +746,14 @@ export type Database = {
           created_at: string | null
           dados_clinicos_status: string | null
           email: string | null
+          has_medical_data: boolean | null
           historico_status: string | null
           id: string | null
           nome: string | null
           telefone: string | null
           updated_at: string | null
           user_id: string | null
+          view_accessed_at: string | null
         }
         Insert: {
           ativo?: boolean | null
@@ -759,12 +761,14 @@ export type Database = {
           created_at?: string | null
           dados_clinicos_status?: never
           email?: string | null
+          has_medical_data?: never
           historico_status?: never
           id?: string | null
           nome?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id?: string | null
+          view_accessed_at?: never
         }
         Update: {
           ativo?: boolean | null
@@ -772,17 +776,23 @@ export type Database = {
           created_at?: string | null
           dados_clinicos_status?: never
           email?: string | null
+          has_medical_data?: never
           historico_status?: never
           id?: string | null
           nome?: string | null
           telefone?: string | null
           updated_at?: string | null
           user_id?: string | null
+          view_accessed_at?: never
         }
         Relationships: []
       }
     }
     Functions: {
+      can_access_client_safe_view: {
+        Args: { client_user_id: string }
+        Returns: boolean
+      }
       export_client_data_secure: {
         Args: { p_client_id: string }
         Returns: Json
@@ -791,12 +801,38 @@ export type Database = {
         Args: { p_client_id: string }
         Returns: Json
       }
+      get_client_summary: {
+        Args: { client_id: string }
+        Returns: Json
+      }
       get_public_profile_by_slug: {
         Args: { page_slug: string }
         Returns: Json
       }
       get_safe_booking_data: {
         Args: { page_slug: string }
+        Returns: Json
+      }
+      get_safe_clients: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ativo: boolean
+          avatar_url: string
+          created_at: string
+          dados_clinicos_status: string
+          email: string
+          has_medical_data: boolean
+          historico_status: string
+          id: string
+          nome: string
+          telefone: string
+          updated_at: string
+          user_id: string
+          view_accessed_at: string
+        }[]
+      }
+      get_security_summary: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
       log_medical_data_access: {
@@ -814,6 +850,10 @@ export type Database = {
       sanitize_text: {
         Args: { input_text: string }
         Returns: string
+      }
+      secure_client_query_validator: {
+        Args: { requested_user_id: string }
+        Returns: boolean
       }
       send_session_reminders: {
         Args: Record<PropertyKey, never>

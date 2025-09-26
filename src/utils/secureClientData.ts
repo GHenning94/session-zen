@@ -140,18 +140,15 @@ export async function getClientAuditLogs(clientId?: string): Promise<ClientAudit
 }
 
 /**
- * Get clients using the safe view (masks medical data)
+ * Get clients using the secure function (replaces direct view access)
  */
 export async function getSafeClientsList() {
   try {
-    const { data, error } = await supabase
-      .from('clients_safe')
-      .select('*')
-      .order('created_at', { ascending: false })
+    const { data, error } = await supabase.rpc('get_safe_clients')
 
     if (error) {
       console.error('Error fetching safe clients:', error.message)
-      throw new Error('Failed to fetch clients list')
+      throw new Error('Failed to fetch clients list: ' + error.message)
     }
 
     return data || []
@@ -199,12 +196,54 @@ export function validateMedicalDataInput(text: string): { isValid: boolean; erro
   return { isValid: true }
 }
 
+/**
+ * Get individual client summary securely
+ */
+export async function getSecureClientSummary(clientId: string): Promise<any> {
+  try {
+    const { data, error } = await supabase.rpc('get_client_summary', {
+      client_id: clientId
+    })
+
+    if (error) {
+      console.error('Error fetching client summary:', error.message)
+      throw new Error('Failed to fetch client summary: ' + error.message)
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error fetching client summary:', error)
+    throw error
+  }
+}
+
+/**
+ * Get security statistics for the current user
+ */
+export async function getSecuritySummary(): Promise<any> {
+  try {
+    const { data, error } = await supabase.rpc('get_security_summary')
+
+    if (error) {
+      console.error('Error fetching security summary:', error.message)
+      throw new Error('Failed to fetch security summary: ' + error.message)
+    }
+
+    return data
+  } catch (error) {
+    console.error('Error fetching security summary:', error)
+    throw error
+  }
+}
+
 export default {
   getSecureClientMedicalData,
   updateSecureClientMedicalData,
   exportSecureClientData,
   getClientAuditLogs,
   getSafeClientsList,
+  getSecureClientSummary,
+  getSecuritySummary,
   sanitizeMedicalTextClientSide,
   validateMedicalDataInput
 }

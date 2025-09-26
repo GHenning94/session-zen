@@ -6,6 +6,8 @@ import {
   updateSecureClientMedicalData, 
   exportSecureClientData,
   getSafeClientsList,
+  getSecureClientSummary,
+  getSecuritySummary,
   type SecureMedicalData 
 } from '@/utils/secureClientData'
 
@@ -30,6 +32,12 @@ interface UseSecureClientDataReturn {
   // Safe client operations (no medical data exposed)
   safeClients: any[]
   loadSafeClients: () => Promise<void>
+  
+  // Individual client operations
+  getClientSummary: (clientId: string) => Promise<any>
+  
+  // Security monitoring
+  getSecurityStats: () => Promise<any>
   
   // Secure medical data operations  
   getClientMedicalData: (clientId: string) => Promise<SecureMedicalData | null>
@@ -180,6 +188,44 @@ export function useSecureClientData(): UseSecureClientDataReturn {
     }
   }, [user, handleError, clearError, toast])
 
+  const getClientSummary = useCallback(async (clientId: string): Promise<any> => {
+    if (!user) {
+      throw new Error('Usuário não autenticado')
+    }
+    
+    setLoading(true)
+    clearError()
+    
+    try {
+      const data = await getSecureClientSummary(clientId)
+      return data
+    } catch (error) {
+      handleError(error, 'buscar resumo do cliente')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }, [user, handleError, clearError])
+
+  const getSecurityStats = useCallback(async (): Promise<any> => {
+    if (!user) {
+      throw new Error('Usuário não autenticado')
+    }
+    
+    setLoading(true)
+    clearError()
+    
+    try {
+      const data = await getSecuritySummary()
+      return data
+    } catch (error) {
+      handleError(error, 'buscar estatísticas de segurança')
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }, [user, handleError, clearError])
+
   return {
     // State
     loading,
@@ -188,6 +234,12 @@ export function useSecureClientData(): UseSecureClientDataReturn {
     // Safe client operations
     safeClients,
     loadSafeClients,
+    
+    // Individual client operations  
+    getClientSummary,
+    
+    // Security monitoring
+    getSecurityStats,
     
     // Secure medical data operations
     getClientMedicalData,
