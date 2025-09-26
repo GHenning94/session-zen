@@ -443,7 +443,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               </div>
             </div>
 
-            {!isQuickRegistration && newClient.ehCriancaAdolescente && (
+            {newClient.ehCriancaAdolescente && (
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
