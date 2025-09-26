@@ -6,9 +6,10 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2 } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, ChevronDown, ChevronRight } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -154,7 +155,7 @@ export default function Sessoes() {
     const notesChannel = supabase
       .channel('notes-changes')
       .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'session_notes', filter: `user_id=eq.${user.id}` },
+        { event: '*', schema: 'public', table:'session_notes', filter: `user_id=eq.${user.id}` },
         () => loadData()
       )
       .subscribe()
@@ -500,26 +501,24 @@ export default function Sessoes() {
                 </Select>
               </div>
               
-              {activeTab === 'sessions' && (
-                <div>
-                  <Label htmlFor="status-filter">Status</Label>
-                  <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Todos os status" />
-                    </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos os status</SelectItem>
-                        <SelectItem value="realizada">Realizada</SelectItem>
-                        <SelectItem value="agendada">Agendada</SelectItem>
-                        <SelectItem value="falta">Falta</SelectItem>
-                        <SelectItem value="cancelada">Cancelada</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <Label htmlFor="status-filter">Status</Label>
+                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="realizada">Realizadas</SelectItem>
+                    <SelectItem value="agendada">Agendadas</SelectItem>
+                    <SelectItem value="cancelada">Canceladas</SelectItem>
+                    <SelectItem value="falta">Faltas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
-                <Label htmlFor="start-date">Data Inicial</Label>
+                <Label htmlFor="start-date">Data Início</Label>
                 <Input
                   id="start-date"
                   type="date"
@@ -529,7 +528,7 @@ export default function Sessoes() {
               </div>
               
               <div>
-                <Label htmlFor="end-date">Data Final</Label>
+                <Label htmlFor="end-date">Data Fim</Label>
                 <Input
                   id="end-date"
                   type="date"
@@ -545,445 +544,387 @@ export default function Sessoes() {
         {activeTab === 'sessions' && (
           <div className="space-y-6">
             {/* Sessões Ativas */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">Sessões Ativas</h3>
-              {filteredActiveSessions.map((session) => (
-                <Card key={session.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                          <User className="h-4 w-4 text-muted-foreground" />
-                          <span className="font-medium">{session.clients?.nome}</span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">
-                            {formatDateBR(session.data)}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm">{formatTimeBR(session.horario)}</span>
-                        </div>
-                        
-                        <Badge variant={getStatusColor(session.status)}>
-                          {getStatusLabel(session.status)}
-                        </Badge>
-                        
-                        {session.valor && (
-                          <span className="text-sm font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
-                            {formatCurrencyBR(session.valor)}
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleAddNote(session)}
-                        >
-                          <StickyNote className="h-4 w-4 mr-2" />
-                          Adicionar Anotação
-                        </Button>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
+            <Collapsible open={true} onOpenChange={() => {}}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between p-0 h-auto mb-4">
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-lg font-semibold">Sessões Ativas ({filteredActiveSessions.length})</h3>
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="space-y-4">
+                  {filteredActiveSessions.map((session) => (
+                    <Card key={session.id}>
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{session.clients?.nome}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">
+                                {formatDateBR(session.data)}
+                              </span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm">{formatTimeBR(session.horario)}</span>
+                            </div>
+                            
+                            <Badge variant={getStatusColor(session.status)}>
+                              {getStatusLabel(session.status)}
+                            </Badge>
+                            
+                            {session.valor && (
+                              <span className="text-sm font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
+                                {formatCurrencyBR(session.valor)}
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleAddNote(session)}
+                            >
+                              <StickyNote className="h-4 w-4 mr-2" />
+                              Adicionar Anotação
                             </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver sessão
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
-                                <CreditCard className="h-4 w-4 mr-2" />
-                                Ver Pagamento
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <X className="h-4 w-4 mr-2" />
-                                    <span className="text-destructive">Cancelar</span>
+                            
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditSession(session)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Editar
                                   </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Cancelar Sessão</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja cancelar esta sessão? Esta ação pode ser desfeita editando a sessão posteriormente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleCancelSession(session.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Cancelar Sessão
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <AlertTriangle className="h-4 w-4 mr-2" />
-                                    <span className="text-yellow-600">Falta</span>
+                                  <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ver sessão
                                   </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Marcar como Falta</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja marcar esta sessão como falta? Esta ação pode ser desfeita editando a sessão posteriormente.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleMarkNoShow(session.id)}
-                                      className="bg-yellow-600 text-white hover:bg-yellow-700"
-                                    >
-                                      Marcar Falta
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                                    <Trash2 className="h-4 w-4 mr-2" />
-                                    <span className="text-destructive">Excluir</span>
+                                  <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Ver Pagamento
                                   </DropdownMenuItem>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir Sessão</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Tem certeza que deseja excluir permanentemente esta sessão? Esta ação não pode ser desfeita.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Voltar</AlertDialogCancel>
-                                    <AlertDialogAction
-                                      onClick={() => handleDeleteSession(session.id)}
-                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                    >
-                                      Excluir Permanentemente
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
-                    
-                    {session.anotacoes && (
-                      <div className="mt-3 p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-2 mb-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium">Anotações</span>
+                                  <DropdownMenuSeparator />
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <X className="h-4 w-4 mr-2" />
+                                        <span className="text-destructive">Cancelar</span>
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Cancelar Sessão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja cancelar esta sessão? Esta ação pode ser desfeita editando a sessão posteriormente.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleCancelSession(session.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Cancelar Sessão
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <AlertTriangle className="h-4 w-4 mr-2" />
+                                        <span className="text-yellow-600">Falta</span>
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Marcar como Falta</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja marcar esta sessão como falta? Esta ação pode ser desfeita editando a sessão posteriormente.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleMarkNoShow(session.id)}
+                                          className="bg-yellow-600 text-white hover:bg-yellow-700"
+                                        >
+                                          Marcar Falta
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        <span className="text-destructive">Excluir</span>
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Excluir Sessão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja excluir permanentemente esta sessão? Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteSession(session.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Excluir Permanentemente
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </div>
-                        <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              ))}
-              
-              {filteredActiveSessions.length === 0 && (
-                <Card>
-                  <CardContent className="text-center py-12">
-                    <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">Nenhuma sessão ativa encontrada</h3>
-                    <p className="text-muted-foreground">
-                      {activeSessions.length === 0 
-                        ? 'Suas sessões aparecerão aqui conforme forem criadas na agenda.' 
-                        : 'Tente ajustar os filtros para encontrar sessões.'
-                      }
-                    </p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
+                        
+                        {session.anotacoes && (
+                          <div className="mt-3 p-3 bg-muted rounded-lg">
+                            <div className="flex items-center gap-2 mb-2">
+                              <FileText className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">Anotações</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                  
+                  {filteredActiveSessions.length === 0 && (
+                    <Card>
+                      <CardContent className="text-center py-12">
+                        <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-medium mb-2">Nenhuma sessão ativa encontrada</h3>
+                        <p className="text-muted-foreground">
+                          {activeSessions.length === 0 
+                            ? 'Suas sessões aparecerão aqui conforme forem criadas na agenda.' 
+                            : 'Tente ajustar os filtros para encontrar sessões.'
+                          }
+                        </p>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
             {/* Sessões Canceladas */}
             {filteredCancelledSessions.length > 0 && (
-              <div className="space-y-4">
-                <div className="py-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
+              <Collapsible open={false} onOpenChange={() => {}}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto py-6">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-lg font-semibold">Sessões Canceladas ({filteredCancelledSessions.length})</h3>
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="bg-background px-4 text-muted-foreground">Sessões Canceladas</span>
-                    </div>
-                  </div>
-                </div>
-                {filteredCancelledSessions.map((session) => (
-                  <Card key={session.id} className="opacity-75">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-muted-foreground">{session.clients?.nome}</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-4 mt-4">
+                    {filteredCancelledSessions.map((session) => (
+                      <Card key={session.id} className="opacity-75">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium text-muted-foreground">{session.clients?.nome}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDateBR(session.data)}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">{formatTimeBR(session.horario)}</span>
+                              </div>
+                              
+                              <Badge variant="destructive">
+                                Cancelada
+                              </Badge>
+                              
+                              {session.valor && (
+                                <span className="text-sm font-medium text-muted-foreground">
+                                  {formatCurrencyBR(session.valor)}
+                                </span>
+                              )}
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleEditSession(session)}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ver sessão
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Ver Pagamento
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {formatDateBR(session.data)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{formatTimeBR(session.horario)}</span>
-                          </div>
-                          
-                          <Badge variant="destructive">
-                            Cancelada
-                          </Badge>
-                          
-                          {session.valor && (
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {formatCurrencyBR(session.valor)}
-                            </span>
+                          {session.anotacoes && (
+                            <div className="mt-3 p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">Anotações</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
+                            </div>
                           )}
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver sessão
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
-                                <CreditCard className="h-4 w-4 mr-2" />
-                                Ver Pagamento
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                      
-                      {session.anotacoes && (
-                        <div className="mt-3 p-3 bg-muted rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Anotações</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-
-            {/* Sessões com Falta */}
-            {filteredNoShowSessions.length > 0 && (
-              <div className="space-y-4">
-                <div className="py-6">
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-border"></div>
-                    </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="bg-background px-4 text-muted-foreground">Sessões com Falta</span>
-                    </div>
+                        </CardContent>
+                      </Card>
+                    ))}
                   </div>
-                </div>
-                {filteredNoShowSessions.map((session) => (
-                  <Card key={session.id} className="opacity-75">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium text-muted-foreground">{session.clients?.nome}</span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">
-                              {formatDateBR(session.data)}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm text-muted-foreground">{formatTimeBR(session.horario)}</span>
-                          </div>
-                          
-                          <Badge variant="outline" className="border-yellow-500 text-yellow-600 bg-yellow-50">
-                            Falta
-                          </Badge>
-                          
-                          {session.valor && (
-                            <span className="text-sm font-medium text-muted-foreground">
-                              {formatCurrencyBR(session.valor)}
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex gap-2">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreHorizontal className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleEditSession(session)}>
-                                <Edit className="h-4 w-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
-                                <Eye className="h-4 w-4 mr-2" />
-                                Ver sessão
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
-                                <CreditCard className="h-4 w-4 mr-2" />
-                                Ver Pagamento
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      </div>
-                      
-                      {session.anotacoes && (
-                        <div className="mt-3 p-3 bg-muted rounded-lg">
-                          <div className="flex items-center gap-2 mb-2">
-                            <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm font-medium">Anotações</span>
-                          </div>
-                          <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                </CollapsibleContent>
+              </Collapsible>
             )}
           </div>
         )}
         
         {/* Notes Tab */}
         {activeTab === 'notes' && (
-          <div className="space-y-4">
-            {filteredNotes.map((note) => (
-              <Card key={note.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium">{note.clients?.nome}</span>
-                      </div>
-                      
-                      {note.sessions && (
-                        <>
+          <Collapsible open={true} onOpenChange={() => {}}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" className="w-full justify-between p-0 h-auto mb-4">
+                <div className="flex items-center gap-2">
+                  <h3 className="text-lg font-semibold">Anotações das Sessões ({filteredNotes.length})</h3>
+                </div>
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="space-y-4">
+                {filteredNotes.map((note) => (
+                  <Card key={note.id}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-4">
                           <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">
-                              {formatDateBR(note.sessions.data)}
-                            </span>
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span className="font-medium">{note.clients?.nome}</span>
                           </div>
                           
-                          <div className="flex items-center gap-2">
-                            <Clock className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{formatTimeBR(note.sessions.horario)}</span>
-                          </div>
-                        </>
-                      )}
-                    </div>
-                    
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleEditNote(note)}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Editar
-                      </Button>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(note.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 bg-muted rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <FileText className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Anotação da Sessão</span>
-                    </div>
-                    <div 
-                      className="text-sm text-muted-foreground prose prose-sm max-w-none"
-                      dangerouslySetInnerHTML={{ __html: note.notes }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                          {note.sessions && (
+                            <>
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {formatDateBR(note.sessions.data)}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">
+                                  {formatTimeBR(note.sessions.horario)}
+                                </span>
+                              </div>
+                              
+                              <Badge variant={getStatusColor(note.sessions.status)}>
+                                {getStatusLabel(note.sessions.status)}
+                              </Badge>
+                            </>
+                          )}
+                          
+                          <span className="text-xs text-muted-foreground">
+                            {format(new Date(note.created_at), 'dd/MM/yyyy HH:mm', { locale: ptBR })}
+                          </span>
+                        </div>
+                        
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleEditNote(note)}
+                        >
+                          <Edit className="h-4 w-4 mr-2" />
+                          Editar
+                        </Button>
+                      </div>
+                      
+                      <div className="bg-muted p-3 rounded-lg">
+                        <div 
+                          className="prose prose-sm max-w-none" 
+                          dangerouslySetInnerHTML={{ __html: note.notes }}
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {filteredNotes.length === 0 && (
+                  <Card>
+                    <CardContent className="text-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">Nenhuma anotação encontrada</h3>
+                      <p className="text-muted-foreground">
+                        {sessionNotes.length === 0 
+                          ? 'As anotações das suas sessões aparecerão aqui.' 
+                          : 'Tente ajustar os filtros para encontrar anotações.'
+                        }
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
-        
+
         {/* Modals */}
         <SessionNoteModal
-          session={selectedSession}
           open={noteModalOpen}
           onOpenChange={setNoteModalOpen}
-          onNoteCreated={loadData}
-          editingNote={editingNote}
-        />
-        
-        <SessionEditModal
           session={selectedSession}
-          clients={clients}
-          open={editModalOpen}
-          onOpenChange={setEditModalOpen}
-          onSessionUpdated={loadData}
+          editingNote={editingNote}
+          onNoteCreated={loadData}
         />
-        
-        {activeTab === 'notes' && filteredNotes.length === 0 && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-medium mb-2">Nenhuma anotação encontrada</h3>
-              <p className="text-muted-foreground">
-                {sessionNotes.length === 0 
-                  ? 'As anotações das suas sessões aparecerão aqui.' 
-                  : 'Tente ajustar os filtros para encontrar anotações.'
-                }
-              </p>
-            </CardContent>
-          </Card>
+
+        {selectedSession && (
+          <SessionEditModal
+            open={editModalOpen}
+            onOpenChange={setEditModalOpen}
+            session={selectedSession}
+            clients={clients}
+            onSessionUpdated={loadData}
+          />
         )}
       </div>
     </Layout>

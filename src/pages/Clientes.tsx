@@ -492,6 +492,7 @@ const Clientes = () => {
                                 currentAvatarUrl={client.avatar_url}
                                 onAvatarChange={(url) => handleAvatarChange(client.id, url)}
                                 size="sm"
+                                readOnly={true}
                               />
                               <div>
                                 <div className="flex items-center gap-2">
@@ -507,6 +508,38 @@ const Clientes = () => {
                                     <Phone className="w-3 h-3" />
                                     <span>{client.telefone}</span>
                                   </div>
+                                  {(() => {
+                                    const clinicalData = client.dados_clinicos || ""
+                                    const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
+                                    const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
+                                    
+                                    return (
+                                      <div className="flex gap-4">
+                                        {ageMatch && (
+                                          <div className="flex items-center gap-1">
+                                            <User className="w-3 h-3" />
+                                            <span>{ageMatch[1]} anos</span>
+                                          </div>
+                                        )}
+                                        {professionMatch && (
+                                          <div className="flex items-center gap-1">
+                                            <span className="text-xs">•</span>
+                                            <span>{professionMatch[1]}</span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    )
+                                  })()}
+                                  {(() => {
+                                    const clinicalData = client.dados_clinicos || ""
+                                    const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
+                                    
+                                    return notesMatch && (
+                                      <div className="mt-2 p-2 bg-muted rounded text-xs">
+                                        <span className="font-medium">Dados clínicos:</span> {notesMatch[1]}
+                                      </div>
+                                    )
+                                  })()}
                                 </div>
                               </div>
                             </div>

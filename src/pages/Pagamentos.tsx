@@ -17,9 +17,12 @@ import {
   CreditCard,
   Smartphone,
   Building2,
-  Banknote
+  Banknote,
+  ChevronDown,
+  ChevronRight
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -429,7 +432,7 @@ const Pagamentos = () => {
                   <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
-                   <SelectContent>
+                    <SelectContent>
                      <SelectItem value="todos">Todos</SelectItem>
                      <SelectItem value="pago">Pagos</SelectItem>
                      <SelectItem value="pendente">Pendentes</SelectItem>
@@ -444,10 +447,21 @@ const Pagamentos = () => {
         {/* Payment History */}
         <Card className="shadow-soft">
           <CardHeader>
-            <CardTitle>Histórico de Pagamentos</CardTitle>
-            <CardDescription>
-              {filteredActivePayments.length} pagamento(s) ativo(s) encontrado(s)
-            </CardDescription>
+            <Collapsible open={true} onOpenChange={() => {}}>
+              <CollapsibleTrigger asChild>
+                <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                  <div className="flex items-center gap-2">
+                    <CardTitle>Histórico de Pagamentos</CardTitle>
+                  </div>
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardDescription className="mt-2">
+                  {filteredActivePayments.length} pagamento(s) ativo(s) encontrado(s)
+                </CardDescription>
+              </CollapsibleContent>
+            </Collapsible>
           </CardHeader>
           <CardContent>
             {isLoading ? (
@@ -539,17 +553,17 @@ const Pagamentos = () => {
 
                 {/* Separador para Pagamentos Cancelados */}
                 {filteredCancelledPayments.length > 0 && (
-                  <>
-                    <div className="py-6">
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <div className="w-full border-t border-border"></div>
+                  <Collapsible open={false} onOpenChange={() => {}}>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between p-0 h-auto py-6">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-lg font-semibold">Pagamentos Cancelados ({filteredCancelledPayments.length})</h3>
                         </div>
-                        <div className="relative flex justify-center text-sm">
-                          <span className="bg-background px-4 text-muted-foreground">Pagamentos Cancelados</span>
-                        </div>
-                      </div>
-                    </div>
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent>
+                      <div className="space-y-4 mt-4">
                     
                     {filteredCancelledPayments.map((payment) => {
                        const StatusIcon = getStatusIcon(payment.status)
@@ -597,12 +611,14 @@ const Pagamentos = () => {
                                   Ver Sessão
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
-                            </DropdownMenu>
-                          </div>
-                        </div>
-                      )
-                    })}
-                  </>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                   )
+                 })}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 )}
               </div>
             )}

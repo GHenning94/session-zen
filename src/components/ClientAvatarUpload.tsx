@@ -13,13 +13,15 @@ interface ClientAvatarUploadProps {
   currentAvatarUrl?: string;
   onAvatarChange: (url: string) => void;
   size?: "sm" | "md" | "lg";
+  readOnly?: boolean;
 }
 
 export const ClientAvatarUpload = ({ 
   clientName = "Cliente", 
   currentAvatarUrl, 
   onAvatarChange,
-  size = "md" 
+  size = "md",
+  readOnly = false
 }: ClientAvatarUploadProps) => {
   const [isUploading, setIsUploading] = useState(false);
   const [compressionProgress, setCompressionProgress] = useState(0);
@@ -89,8 +91,8 @@ export const ClientAvatarUpload = ({
   return (
     <div className="flex flex-col items-center gap-3">
       <div 
-        className="relative group cursor-pointer"
-        onClick={() => fileInputRef.current?.click()}
+        className={`relative group ${readOnly ? '' : 'cursor-pointer'}`}
+        onClick={readOnly ? undefined : () => fileInputRef.current?.click()}
       >
         <Avatar className={sizeClasses[size]}>
           <AvatarImage src={currentAvatarUrl} alt={clientName} />
@@ -99,26 +101,30 @@ export const ClientAvatarUpload = ({
           </AvatarFallback>
         </Avatar>
         
-        <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-          {isUploading ? (
-            <Loader2 className="w-6 h-6 text-white animate-spin" />
-          ) : (
-            <Camera className="w-6 h-6 text-white" />
-          )}
-        </div>
-        
-        {currentAvatarUrl && (
-          <Button
-            size="sm"
-            variant="destructive"
-            className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-            onClick={(e) => {
-              e.stopPropagation();
-              onAvatarChange('');
-            }}
-          >
-            <X className="w-3 h-3" />
-          </Button>
+        {!readOnly && (
+          <>
+            <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              {isUploading ? (
+                <Loader2 className="w-6 h-6 text-white animate-spin" />
+              ) : (
+                <Camera className="w-6 h-6 text-white" />
+              )}
+            </div>
+            
+            {currentAvatarUrl && (
+              <Button
+                size="sm"
+                variant="destructive"
+                className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAvatarChange('');
+                }}
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            )}
+          </>
         )}
       </div>
 
