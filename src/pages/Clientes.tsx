@@ -34,6 +34,7 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
 const Clientes = () => {
+  console.log("Clientes component is loading - build system test")
   const { toast } = useToast()
   const { user } = useAuth()
   const { currentPlan, planLimits, canAddClient } = useSubscription()
@@ -503,144 +504,108 @@ const Clientes = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredClients.map((client) => {
-                  const clinicalData = client.dados_clinicos || ""
-                  const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
-                  const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
-                  const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
-                  
-                  const age = ageMatch ? ageMatch[1] : ""
-                  const profession = professionMatch ? professionMatch[1] : ""
-                  const notes = notesMatch ? notesMatch[1] : ""
-                  
-                  return (
-                    <div key={client.id} className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0">
-                            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                              {client.avatar_url ? (
-                                <img 
-                                  src={client.avatar_url} 
-                                  alt={client.nome} 
-                                  className="w-full h-full rounded-full object-cover"
-                                />
-                              ) : (
-                                <User className="w-6 h-6 text-muted-foreground" />
-                              )}
+                {filteredClients.map((client) => (
+                  <div key={client.id} className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-start space-x-4">
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                            {client.avatar_url ? (
+                              <img 
+                                src={client.avatar_url} 
+                                alt={client.nome} 
+                                className="w-full h-full rounded-full object-cover"
+                              />
+                            ) : (
+                              <User className="w-6 h-6 text-muted-foreground" />
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="text-lg font-semibold">{client.nome}</h3>
+                            <Badge 
+                              variant={client.ativo !== false ? "default" : "secondary"}
+                              className={client.ativo === false ? "bg-yellow-500 text-white hover:bg-yellow-500/80" : ""}
+                            >
+                              {client.ativo !== false ? "Ativo" : "Inativo"}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-4 h-4" />
+                              <span>{client.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Phone className="w-4 h-4" />
+                              <span>{client.telefone}</span>
                             </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold">{client.nome}</h3>
-                              <Badge 
-                                variant={client.ativo !== false ? "default" : "secondary"}
-                                className={client.ativo === false ? "bg-yellow-500 text-white hover:bg-yellow-500/80" : ""}
-                              >
-                                {client.ativo !== false ? "Ativo" : "Inativo"}
-                              </Badge>
-                            </div>
-                           
-                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
-                             <div className="flex items-center gap-2">
-                               <Mail className="w-4 h-4" />
-                               <span>{client.email}</span>
-                             </div>
-                             <div className="flex items-center gap-2">
-                               <Phone className="w-4 h-4" />
-                               <span>{client.telefone}</span>
-                             </div>
-                             {age && (
-                               <div className="flex items-center gap-2">
-                                 <User className="w-4 h-4" />
-                                 <span>Idade: {age}</span>
-                               </div>
-                             )}
-                             {profession && (
-                               <div className="flex items-center gap-2">
-                                 <User className="w-4 h-4" />
-                                 <span>Profissão: {profession}</span>
-                               </div>
-                             )}
-                           </div>
-                           
-                           {notes && (
-                             <div className="bg-muted/50 rounded-md p-3 text-sm mb-3">
-                               <strong className="text-muted-foreground">Dados Clínicos:</strong>
-                               <p className="mt-1">{notes}</p>
-                             </div>
-                           )}
-                           
-                           <div className="text-xs text-muted-foreground">
-                             Cadastrado em {format(new Date(client.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                           </div>
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center gap-2">
-                         {client.telefone && (
-                           <Button
-                             variant="ghost"
-                             size="sm"
-                             className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                             onClick={() => {
-                               const phone = client.telefone.replace(/\D/g, '')
-                               const whatsappUrl = `https://wa.me/55${phone}`
-                               window.open(whatsappUrl, '_blank')
-                             }}
-                             title="Enviar mensagem no WhatsApp"
-                           >
-                             <MessageCircle className="w-4 h-4" />
-                           </Button>
-                         )}
-                         
-                         <DropdownMenu>
-                           <DropdownMenuTrigger asChild>
-                             <Button variant="ghost" size="sm">
-                               <MoreHorizontal className="w-4 h-4" />
-                             </Button>
-                           </DropdownMenuTrigger>
-                           <DropdownMenuContent align="end">
-                             <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                               <Edit2 className="w-4 h-4 mr-2" />
-                               Editar Cliente
-                             </DropdownMenuItem>
-                             <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
-                               <Calendar className="w-4 h-4 mr-2" />
-                               Nova Sessão
-                             </DropdownMenuItem>
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}>
-                               {client.ativo !== false ? (
-                                 <>
-                                   <UserX className="w-4 h-4 mr-2 text-yellow-500" />
-                                   <span className="text-yellow-600">Desativar Cliente</span>
-                                 </>
-                               ) : (
-                                 <>
-                                   <UserCheck className="w-4 h-4 mr-2 text-yellow-500" />
-                                   <span className="text-yellow-600">Ativar Cliente</span>
-                                 </>
-                               )}
-                             </DropdownMenuItem>
-                             <DropdownMenuSeparator />
-                             <DropdownMenuItem 
-                               className="text-destructive"
-                               onClick={() => handleDeleteClient(client.id)}
-                             >
-                               <Trash2 className="w-4 h-4 mr-2" />
-                               Excluir Cliente
-                             </DropdownMenuItem>
-                           </DropdownMenuContent>
-                         </DropdownMenu>
-                       </div>
-                     </div>
-                   )
-                 })}
-               </div>
-             )}
-           </CardContent>
-         </Card>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {client.telefone && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50"
+                            onClick={() => {
+                              const phone = client.telefone.replace(/\D/g, '')
+                              const whatsappUrl = `https://wa.me/55${phone}`
+                              window.open(whatsappUrl, '_blank')
+                            }}
+                            title="Enviar mensagem no WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </Button>
+                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditClient(client)}>
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              Editar Cliente
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Nova Sessão
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}>
+                              {client.ativo !== false ? (
+                                <>
+                                  <UserX className="w-4 h-4 mr-2 text-yellow-500" />
+                                  <span className="text-yellow-600">Desativar Cliente</span>
+                                </>
+                              ) : (
+                                <>
+                                  <UserCheck className="w-4 h-4 mr-2 text-yellow-500" />
+                                  <span className="text-yellow-600">Ativar Cliente</span>
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDeleteClient(client.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir Cliente
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
          <NewSessionModal
            open={isNewSessionOpen}
