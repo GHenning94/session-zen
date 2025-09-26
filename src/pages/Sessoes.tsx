@@ -118,6 +118,12 @@ export default function Sessoes() {
 
       if (clientsError) throw clientsError
 
+      // Atualizar status automático das sessões baseado na data/hora atual
+      const updatedSessions = (sessionsData || []).map(session => ({
+        ...session,
+        status: calculateSessionStatus(session.data, session.horario, session.status)
+      }))
+
       setSessions(updatedSessions)
       setSessionNotes(notesData || [])
       setClients(clientsData || [])
