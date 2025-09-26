@@ -41,3 +41,29 @@ export const calculatePaymentStatus = (sessionData: string, sessionHorario: stri
   
   return 'pendente'
 }
+
+/**
+ * Retorna a cor/variante do badge para o status da sessão
+ */
+export const getSessionStatusColor = (status: string) => {
+  switch (status) {
+    case 'realizada': return 'default'
+    case 'agendada': return 'secondary'
+    case 'cancelada': return 'destructive'
+    case 'falta': return 'outline'
+    default: return 'outline'
+  }
+}
+
+/**
+ * Retorna o label em português para o status da sessão
+ */
+export const getSessionStatusLabel = (status: string) => {
+  switch (status) {
+    case 'realizada': return 'Realizada'
+    case 'agendada': return 'Agendada'
+    case 'cancelada': return 'Cancelada'
+    case 'falta': return 'Falta'
+    default: return status
+  }
+}

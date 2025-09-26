@@ -10,6 +10,8 @@ import { useAuth } from "@/hooks/useAuth"
 import RichTextEditor from "./RichTextEditor"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { getSessionStatusColor, getSessionStatusLabel } from "@/utils/sessionStatusUtils"
+import { Badge } from "@/components/ui/badge"
 
 interface EvolucaoModalProps {
   open: boolean
@@ -252,7 +254,14 @@ export const EvolucaoModal = ({
                 <SelectContent>
                   {sessions.map((session) => (
                     <SelectItem key={session.id} value={session.id}>
-                      {format(new Date(session.data), "dd/MM/yyyy", { locale: ptBR })} às {session.horario} - {session.status === 'realizada' ? '✓' : '📅'} {session.status}
+                      <div className="flex items-center justify-between w-full">
+                        <span>
+                          {format(new Date(session.data), "dd/MM/yyyy", { locale: ptBR })} às {session.horario}
+                        </span>
+                        <Badge variant={getSessionStatusColor(session.status)} className="ml-2">
+                          {getSessionStatusLabel(session.status)}
+                        </Badge>
+                      </div>
                     </SelectItem>
                   ))}
                 </SelectContent>

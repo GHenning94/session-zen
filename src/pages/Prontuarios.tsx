@@ -17,6 +17,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { TextPreview } from '@/components/TextPreview'
+import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
 
 interface Client {
   id: string
@@ -50,6 +51,12 @@ interface Evolucao {
   evolucao: string
   created_at: string
   updated_at: string
+  session?: {
+    id: string
+    data: string
+    horario: string
+    status: string
+  }
 }
 
 export default function Prontuarios() {
@@ -123,9 +130,30 @@ export default function Prontuarios() {
 
       if (evolucoesError) throw evolucoesError
 
+      // Carregar sessões para associar com as evoluções
+      const sessionIds = evolucoesData?.filter(e => e.session_id).map(e => e.session_id) || []
+      let sessionsData: any[] = []
+      
+      if (sessionIds.length > 0) {
+        const { data: sessions, error: sessionsError } = await supabase
+          .from('sessions')
+          .select('id, data, horario, status')
+          .in('id', sessionIds)
+
+        if (!sessionsError) {
+          sessionsData = sessions || []
+        }
+      }
+
+      // Combinar evoluções com dados das sessões
+      const evolucoesWithSessions = evolucoesData?.map(evolucao => ({
+        ...evolucao,
+        session: evolucao.session_id ? sessionsData.find(s => s.id === evolucao.session_id) : null
+      })) || []
+
       setClients(clientsData || [])
       setAnamneses(anamnesesData || [])
-      setEvolucoes(evolucoesData || [])
+      setEvolucoes(evolucoesWithSessions)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
       toast({
@@ -392,17 +420,25 @@ export default function Prontuarios() {
                   {clientEvolucoes.length > 0 ? (
                     <div className="space-y-4">
                       {clientEvolucoes.map((evolucao) => (
-                        <div key={evolucao.id} className="border border-border rounded-lg p-4">
-                          <div className="flex items-center justify-between mb-2">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-primary" />
-                              <span className="font-medium">
-                                {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}
-                              </span>
-                              <Badge variant="outline" className="text-xs">
-                                {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                              </Badge>
-                            </div>
+                         <div key={evolucao.id} className="border border-border rounded-lg p-4">
+                           <div className="flex items-center justify-between mb-2">
+                             <div className="flex items-center gap-2">
+                               <Calendar className="h-4 w-4 text-primary" />
+                               <span className="font-medium">
+                                 {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}
+                               </span>
+                               {evolucao.session && (
+                                 <>
+                                   <span className="text-muted-foreground">às {evolucao.session.horario}</span>
+                                   <Badge variant={getSessionStatusColor(evolucao.session.status)} className="text-xs">
+                                     {getSessionStatusLabel(evolucao.session.status)}
+                                   </Badge>
+                                 </>
+                               )}
+                               <Badge variant="outline" className="text-xs">
+                                 {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                               </Badge>
+                             </div>
                             <div className="flex gap-2">
                               <Button 
                                 variant="ghost" 
