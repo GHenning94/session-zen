@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -54,71 +54,63 @@ const Dashboard = () => {
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [dashboardLoaded, setDashboardLoaded] = useState(false)
+  const [canalDataCache, setCanalDataCache] = useState<any[]>([])
+
+  // Optimized loading with caching
+  const loadDashboardDataOptimized = useCallback(async () => {
+    if (!user) return
+    
+    try {
+      if (dashboardLoaded) {
+        console.log('🚀 Dashboard em cache, otimizando carregamento...')
+      }
+      
+      console.log('🔄 Carregando dados do dashboard...')
+      await loadDashboardData()
+    } catch (error) {
+      console.error('Erro ao carregar dados do dashboard:', error)
+    }
+  }, [user, dashboardLoaded])
 
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
-    if (user) {
+    if (user && !dashboardLoaded) {
       console.log('👤 Usuário encontrado, carregando dados...')
-      loadDashboardData()
+      loadDashboardDataOptimized()
     }
-  }, [user])
+  }, [user, loadDashboardDataOptimized, dashboardLoaded])
 
-  // Force reload when component mounts
+  // Optimized event listeners with debouncing
   useEffect(() => {
-    console.log('🔄 useEffect de força disparado')
-    if (user) {
-      console.log('⚡ Forçando reload em 100ms...')
-      setTimeout(() => {
-        console.log('⚡ Executando reload forçado agora')
-        loadDashboardData()
-      }, 100)
-    }
-  }, [])
+    let timeoutId: NodeJS.Timeout
 
-  // Recarregar dados quando há mudanças
-  useEffect(() => {
-    const handleStorageChange = () => {
+    const handleDataChange = () => {
       if (user) {
-        loadDashboardData()
+        clearTimeout(timeoutId)
+        timeoutId = setTimeout(() => {
+          setDashboardLoaded(false) // Force refresh
+          loadDashboardDataOptimized()
+        }, 300) // Debounce for 300ms
       }
     }
 
-    const handleClientAdded = () => {
-      if (user) {
-        loadDashboardData()
-      }
-    }
-
-    const handlePaymentAdded = () => {
-      if (user) {
-        loadDashboardData()
-      }
-    }
-
-    window.addEventListener('storage', handleStorageChange)
-    window.addEventListener('focus', handleStorageChange)
-    window.addEventListener('clientAdded', handleClientAdded)
-    window.addEventListener('paymentAdded', handlePaymentAdded)
-    
-    // Listen for session updates to refresh dashboard data
-    const handleSessionUpdate = () => {
-      if (user) {
-        loadDashboardData()
-      }
-    }
-
-    window.addEventListener('sessionAdded', handleSessionUpdate)
+    window.addEventListener('storage', handleDataChange)
+    window.addEventListener('focus', handleDataChange)
+    window.addEventListener('clientAdded', handleDataChange)
+    window.addEventListener('paymentAdded', handleDataChange)
+    window.addEventListener('sessionAdded', handleDataChange)
     
     return () => {
-      window.removeEventListener('storage', handleStorageChange)
-      window.removeEventListener('focus', handleStorageChange)
-      window.removeEventListener('clientAdded', handleClientAdded)
-      window.removeEventListener('paymentAdded', handlePaymentAdded)
-      window.removeEventListener('sessionAdded', handleSessionUpdate)
+      clearTimeout(timeoutId)
+      window.removeEventListener('storage', handleDataChange)
+      window.removeEventListener('focus', handleDataChange)
+      window.removeEventListener('clientAdded', handleDataChange)
+      window.removeEventListener('paymentAdded', handleDataChange)
+      window.removeEventListener('sessionAdded', handleDataChange)
     }
-  }, [user])
+  }, [user, loadDashboardDataOptimized])
 
-  // Add real-time updates for sessions
+  // Optimized real-time updates
   useEffect(() => {
     if (!user) return
 
@@ -132,7 +124,8 @@ const Dashboard = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         () => {
-          loadDashboardData()
+          setDashboardLoaded(false) // Force refresh
+          loadDashboardDataOptimized()
         }
       )
       .subscribe()
@@ -140,7 +133,7 @@ const Dashboard = () => {
     return () => {
       supabase.removeChannel(sessionsChannel)
     }
-  }, [user])
+  }, [user, loadDashboardDataOptimized])
 
   const loadDashboardData = async () => {
     try {
@@ -504,6 +497,7 @@ const Dashboard = () => {
       setTopClients(topClientsData)
       setClientTicketMedio(clientTicketMedioData)
       setReceitaPorCanal(receitaPorCanalData)
+      setCanalDataCache(receitaPorCanalData) // Cache all canal data for filtering
       setDynamicReminders(reminders)
       setDashboardLoaded(true)
 
@@ -518,21 +512,87 @@ const Dashboard = () => {
     }
   }
 
-  const handlePeriodChange = async (period: '1' | '3' | '6' | '12') => {
-    console.log('📊 Mudando período para:', period)
+  // Independent filter handlers - no cross-interference
+  const handlePeriodChange = (period: '1' | '3' | '6' | '12') => {
+    console.log('📊 Mudando período do gráfico de receita para:', period)
     setChartPeriod(period)
-    // Recarregar dados para garantir que o gráfico esteja atualizado
-    await loadDashboardData()
+    // Only affects revenue chart - no reloading needed
   }
 
   const handleTicketPeriodChange = (period: '1' | '3' | '6' | '12') => {
     console.log('📈 Mudando período do ticket médio para:', period)
     setTicketPeriod(period)
+    // Only affects ticket chart - no reloading needed
   }
 
-  const handleCanalPeriodChange = (period: '1' | '3' | '6' | '12') => {
+  const handleCanalPeriodChange = async (period: '1' | '3' | '6' | '12') => {
     console.log('💳 Mudando período dos canais para:', period)
     setCanalPeriod(period)
+    // Load filtered data for pie chart
+    await loadCanalData(period)
+  }
+
+  // Load canal data with period filter
+  const loadCanalData = async (period: '1' | '3' | '6' | '12') => {
+    try {
+      if (!user) return
+
+      console.log('💳 Carregando dados do canal para período:', period)
+      
+      // Calculate date range based on period
+      const currentDate = new Date()
+      const startDate = new Date()
+      const monthsToSubtract = parseInt(period)
+      startDate.setMonth(currentDate.getMonth() - monthsToSubtract)
+      
+      const startDateStr = startDate.toISOString().split('T')[0]
+      const endDateStr = currentDate.toISOString().split('T')[0]
+      
+      console.log('💳 Buscando dados de', startDateStr, 'até', endDateStr)
+
+      const { data: periodPaymentMethods } = await supabase
+        .from('sessions')
+        .select('metodo_pagamento, valor')
+        .eq('user_id', user.id)
+        .eq('status', 'realizada')
+        .gte('data', startDateStr)
+        .lte('data', endDateStr)
+        .not('valor', 'is', null)
+        .not('metodo_pagamento', 'is', null)
+
+      console.log('💳 Dados filtrados encontrados:', periodPaymentMethods)
+
+      const canalPayments = {}
+      periodPaymentMethods?.forEach(session => {
+        const metodo = session.metodo_pagamento || 'Não informado'
+        if (!canalPayments[metodo]) {
+          canalPayments[metodo] = 0
+        }
+        canalPayments[metodo] += Number(session.valor) || 0
+      })
+
+      const canalColors = {
+        'pix': '#00D09C',
+        'cartao': '#6366F1', 
+        'dinheiro': '#F59E0B',
+        'transferencia': '#8B5CF6',
+        'Não informado': '#6B7280'
+      }
+
+      const filteredCanalData = Object.entries(canalPayments)
+        .map(([canal, valor]: [string, any]) => ({
+          canal: canal.charAt(0).toUpperCase() + canal.slice(1),
+          valor: valor,
+          color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
+        }))
+        .sort((a, b) => b.valor - a.valor)
+
+      console.log('💳 Dados filtrados processados:', filteredCanalData)
+      setReceitaPorCanal(filteredCanalData)
+
+    } catch (error) {
+      console.error('Erro ao carregar dados do canal:', error)
+    }
   }
 
   const handleNewSession = () => {
@@ -546,6 +606,59 @@ const Dashboard = () => {
   const handleNewPayment = () => {
     setIsNewPaymentOpen(true)
   }
+
+  // Memoized calculations for performance
+  const filteredMonthlyChart = useMemo(() => {
+    const totalMonths = monthlyChart.length;
+    let startIndex = 0;
+    
+    switch(chartPeriod) {
+      case '1':
+        startIndex = totalMonths - 1;
+        break;
+      case '3':
+        startIndex = Math.max(0, totalMonths - 3);
+        break;
+      case '6':
+        startIndex = Math.max(0, totalMonths - 6);
+        break;
+      case '12':
+      default:
+        startIndex = 0;
+        break;
+    }
+    
+    return monthlyChart.slice(startIndex);
+  }, [monthlyChart, chartPeriod])
+
+  const filteredTicketChart = useMemo(() => {
+    const totalMonths = ticketMedioChart.length;
+    let startIndex = 0;
+    
+    switch(ticketPeriod) {
+      case '1':
+        startIndex = totalMonths - 1;
+        break;
+      case '3':
+        startIndex = Math.max(0, totalMonths - 3);
+        break;
+      case '6':
+        startIndex = Math.max(0, totalMonths - 6);
+        break;
+      case '12':
+      default:
+        startIndex = 0;
+        break;
+    }
+    
+    return ticketMedioChart.slice(startIndex);
+  }, [ticketMedioChart, ticketPeriod])
+
+  const ticketMedioAverage = useMemo(() => {
+    const totalRevenue = filteredTicketChart.reduce((sum, item) => sum + (item.ticketMedio * item.sessoes), 0);
+    const totalSessions = filteredTicketChart.reduce((sum, item) => sum + item.sessoes, 0);
+    return totalSessions > 0 ? totalRevenue / totalSessions : 0;
+  }, [filteredTicketChart])
 
   const stats = [
     {
@@ -850,31 +963,10 @@ const Dashboard = () => {
                     <CardContent>
                        <div className="h-64">
                          <ResponsiveContainer width="100%" height="100%">
-                           <BarChart 
-                              data={(() => {
-                                const totalMonths = monthlyChart.length;
-                                let startIndex = 0;
-                                
-                                switch(chartPeriod) {
-                                  case '1':
-                                    startIndex = totalMonths - 1; // Último mês apenas
-                                    break;
-                                  case '3':
-                                    startIndex = Math.max(0, totalMonths - 3); // Últimos 3 meses
-                                    break;
-                                  case '6':
-                                    startIndex = Math.max(0, totalMonths - 6); // Últimos 6 meses
-                                    break;
-                                  case '12':
-                                  default:
-                                    startIndex = 0; // Todos os 12 meses
-                                    break;
-                                }
-                                
-                                return monthlyChart.slice(startIndex);
-                              })()}
-                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                           >
+                            <BarChart 
+                               data={filteredMonthlyChart}
+                              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                            >
                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                              <XAxis 
                                dataKey="mes" 
@@ -1061,32 +1153,11 @@ const Dashboard = () => {
                       <div className="h-80">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
-                              key={`ticket-${ticketPeriod}-${ticketMedioChart.length}`}
-                              data={(() => {
-                                const totalMonths = ticketMedioChart.length;
-                                let startIndex = 0;
-                                
-                                switch(ticketPeriod) {
-                                  case '1':
-                                    startIndex = totalMonths - 1;
-                                    break;
-                                  case '3':
-                                    startIndex = Math.max(0, totalMonths - 3);
-                                    break;
-                                  case '6':
-                                    startIndex = Math.max(0, totalMonths - 6);
-                                    break;
-                                  case '12':
-                                  default:
-                                    startIndex = 0;
-                                    break;
-                                }
-                                
-                                return ticketMedioChart.slice(startIndex);
-                              })()}
-                             margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                           >
-                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                              key={`ticket-${ticketPeriod}-independent`}
+                              data={filteredTicketChart}
+                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                            >
+                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
                              <XAxis 
                                dataKey="mes" 
                                tick={{ fontSize: 12 }} 
@@ -1126,31 +1197,7 @@ const Dashboard = () => {
                       {/* Estatística do ticket médio atual */}
                       <div className="mt-6 pt-6 border-t text-center">
                         <p className="text-3xl font-bold text-secondary">
-                           {(() => {
-                             const totalMonths = ticketMedioChart.length;
-                             let startIndex = 0;
-                             
-                             switch(ticketPeriod) {
-                               case '1':
-                                 startIndex = totalMonths - 1;
-                                 break;
-                               case '3':
-                                 startIndex = Math.max(0, totalMonths - 3);
-                                 break;
-                               case '6':
-                                 startIndex = Math.max(0, totalMonths - 6);
-                                 break;
-                               case '12':
-                               default:
-                                 startIndex = 0;
-                                 break;
-                             }
-                             
-                             const filteredData = ticketMedioChart.slice(startIndex);
-                            const totalRevenue = filteredData.reduce((sum, item) => sum + (item.ticketMedio * item.sessoes), 0);
-                            const totalSessions = filteredData.reduce((sum, item) => sum + item.sessoes, 0);
-                            return formatCurrencyBR(totalSessions > 0 ? totalRevenue / totalSessions : 0);
-                          })()}
+                          {formatCurrencyBR(ticketMedioAverage)}
                         </p>
                         <p className="text-sm text-muted-foreground">Ticket Médio do Período</p>
                       </div>
@@ -1214,16 +1261,16 @@ const Dashboard = () => {
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
-                  <Card className="shadow-soft">
-                    <CardHeader className="pb-2">
+                  <Card className="shadow-soft h-full">
+                    <CardHeader className="pb-3">
                       <div className="flex items-center justify-between">
-                        <div>
+                        <div className="space-y-1">
                           <CardTitle className="flex items-center gap-2">
                             <DollarSign className="w-5 h-5 text-primary" />
                             Receita por Canal de Pagamento
                           </CardTitle>
                           <CardDescription>
-                            Distribuição da receita por método de pagamento
+                            Distribuição da receita por método de pagamento nos últimos {canalPeriod} meses
                           </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -1258,10 +1305,10 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <CardContent className="h-[400px]">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                         {/* Gráfico de Pizza */}
-                        <div className="h-80">
+                        <div className="h-full min-h-[320px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -1290,7 +1337,7 @@ const Dashboard = () => {
                         </div>
                         
                         {/* Lista de Canais */}
-                        <div className="space-y-4">
+                        <div className="space-y-3 flex flex-col justify-center">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
@@ -1313,7 +1360,7 @@ const Dashboard = () => {
                           }) : (
                             <div className="text-center py-8">
                               <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                              <p className="text-muted-foreground">Nenhum pagamento registrado</p>
+                              <p className="text-muted-foreground">Nenhum pagamento registrado no período</p>
                             </div>
                           )}
                         </div>
