@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { FileText, User, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen } from 'lucide-react'
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -22,6 +23,7 @@ interface Client {
   nome: string
   email?: string
   telefone?: string
+  avatar_url?: string
   ativo: boolean
   created_at: string
 }
@@ -99,7 +101,7 @@ export default function Prontuarios() {
       // Carregar clientes
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select('id, nome, email, telefone, ativo, created_at')
+        .select('id, nome, email, telefone, avatar_url, ativo, created_at')
         .eq('ativo', true)
         .order('nome')
 
@@ -249,8 +251,11 @@ export default function Prontuarios() {
           {/* Resumo do cliente */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3">
+                <Avatar className="h-8 w-8">
+                  <AvatarImage src={selectedClient.avatar_url} alt={selectedClient.nome} />
+                  <AvatarFallback>{selectedClient.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</AvatarFallback>
+                </Avatar>
                 Informações do Cliente
               </CardTitle>
             </CardHeader>
@@ -504,16 +509,21 @@ export default function Prontuarios() {
               >
                 <CardHeader>
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <CardTitle className="flex items-center gap-2">
-                        <User className="h-5 w-5" />
-                        {client.nome}
-                      </CardTitle>
-                      {client.email && (
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {client.email}
-                        </p>
-                      )}
+                    <div className="flex items-start gap-3 flex-1">
+                      <Avatar className="h-12 w-12">
+                        <AvatarImage src={client.avatar_url} alt={client.nome} />
+                        <AvatarFallback>{client.nome.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <CardTitle className="text-lg">
+                          {client.nome}
+                        </CardTitle>
+                        {client.email && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {client.email}
+                          </p>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardHeader>
