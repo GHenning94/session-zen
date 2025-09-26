@@ -33,6 +33,32 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
     avatarUrl: ""
   })
 
+  // Phone formatting function
+  const formatPhone = (value: string) => {
+    // Remove all non-numeric characters
+    const numbers = value.replace(/\D/g, '')
+    
+    // Apply mask: (XX) XXXXX-XXXX
+    if (numbers.length <= 2) {
+      return numbers.length > 0 ? `(${numbers}` : ''
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    } else {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+    }
+  }
+
+  // Phone validation function
+  const isValidPhone = (phone: string) => {
+    const numbers = phone.replace(/\D/g, '')
+    return numbers.length === 11 // DDD (2 digits) + 9 digits
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value)
+    setNewClient({...newClient, phone: formatted})
+  }
+
   const loadClients = async () => {
     if (!user) return
     
@@ -70,6 +96,15 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
       toast({
         title: "Erro",
         description: "Digite um email válido",
+        variant: "destructive",
+      })
+      return
+    }
+
+    if (!isValidPhone(newClient.phone)) {
+      toast({
+        title: "Erro",
+        description: "Digite um telefone válido no formato (11) 98919-6789",
         variant: "destructive",
       })
       return
@@ -179,16 +214,16 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
               disabled={!canAddMore}
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="phone">Telefone *</Label>
-            <Input 
-              id="phone" 
-              placeholder="(11) 99999-9999"
-              value={newClient.phone}
-              onChange={(e) => setNewClient({...newClient, phone: e.target.value})}
-              disabled={!canAddMore}
-            />
-          </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="phone">Telefone</Label>
+                  <Input 
+                    id="phone" 
+                    placeholder="(11) 98919-6789"
+                    value={newClient.phone}
+                    onChange={handlePhoneChange}
+                    maxLength={15}
+                  />
+                </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="age">Idade</Label>
