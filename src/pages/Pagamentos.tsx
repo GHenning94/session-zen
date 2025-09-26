@@ -446,34 +446,23 @@ const Pagamentos = () => {
         {/* Payment History */}
         <Card className="shadow-soft">
           <CardHeader>
-            <Collapsible open={activePaymentsExpanded} onOpenChange={setActivePaymentsExpanded}>
-              <CollapsibleTrigger asChild>
-                <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                  <div className="flex items-center gap-2">
-                    {activePaymentsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    <CardTitle>Histórico de Pagamentos</CardTitle>
-                  </div>
-                </Button>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardDescription className="mt-2">
-                  {filteredActivePayments.length} pagamento(s) ativo(s) encontrado(s)
-                </CardDescription>
-              </CollapsibleContent>
-            </Collapsible>
+            <CardTitle>Histórico de Pagamentos</CardTitle>
+            <CardDescription>
+              {filteredPayments.length} pagamento(s) encontrado(s)
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Carregando pagamentos...</p>
               </div>
-            ) : filteredActivePayments.length === 0 ? (
+            ) : filteredPayments.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 Nenhum pagamento encontrado para os filtros selecionados.
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredActivePayments.map((payment) => {
+                {filteredPayments.map((payment) => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
                    return (
@@ -485,327 +474,72 @@ const Pagamentos = () => {
                         <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                           <StatusIcon className="w-5 h-5 text-primary" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium">{payment.client}</p>
-                           <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                             {payment.status === 'pago' ? 'Pago' : payment.status === 'atrasado' ? 'Atrasado' : payment.status === 'cancelado' ? 'Cancelado' : 'Pendente'}
-                           </Badge>
-                          </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Calendar className="w-3 h-3" />
-                            <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                        <div className="flex-1">
+                          <h3 className="font-medium">{payment.client}</h3>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                            </div>
+                            <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                              {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                            </Badge>
                           </div>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-4">
                         <div className="text-right">
-                          <p className="font-bold text-lg">{formatCurrencyBR(payment.value)}</p>
-                          <p className="text-xs text-muted-foreground">{payment.method}</p>
+                          <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-1">
+                            {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
+                            {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
+                            {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
+                            {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
+                            <span className="capitalize">{payment.method}</span>
+                          </div>
                         </div>
-                        
-                        {(payment.status === 'pendente' || payment.status === 'atrasado') && (
-                          <Button 
-                            size="sm" 
-                            onClick={() => openPaymentModal(payment.session_id)}
-                            className="bg-gradient-primary hover:opacity-90"
-                            disabled={isLoading}
-                          >
-                            Marcar como Pago
-                          </Button>
-                        )}
                         
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="sm">
                               <MoreHorizontal className="w-4 h-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                            {hasFeature('hasPDFReports') ? (
-                              <DropdownMenuItem 
-                                onClick={() => generateReceipt(payment)}
-                                disabled={payment.status !== 'pago'}
-                              >
+                          <DropdownMenuContent align="end">
+                            {payment.status === 'pago' && (
+                              <DropdownMenuItem onClick={() => generateReceipt(payment)}>
                                 <Receipt className="w-4 h-4 mr-2" />
-                                {payment.status === 'pago' ? 'Exportar Recibo PDF' : 'Recibo PDF (Marque como pago)'}
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem disabled>
-                                <Receipt className="w-4 h-4 mr-2" />
-                                Recibo PDF (Premium)
+                                Gerar Recibo
                               </DropdownMenuItem>
                             )}
-                            <DropdownMenuItem 
-                              onClick={() => viewSession(payment.session_id)}
-                            >
+                            <DropdownMenuItem onClick={() => viewSession(payment.session_id)}>
                               <Calendar className="w-4 h-4 mr-2" />
                               Ver Sessão
                             </DropdownMenuItem>
+                            {payment.status === 'pendente' && (
+                              <DropdownMenuItem onClick={() => openPaymentModal(payment.session_id)}>
+                                <CheckCircle className="w-4 h-4 mr-2" />
+                                Marcar como Pago
+                              </DropdownMenuItem>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
                     </div>
-                  )
-                })}
-
-                {/* Separador para Pagamentos Cancelados */}
-                {filteredCancelledPayments.length > 0 && (
-                  <Collapsible open={false} onOpenChange={() => {}}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" className="w-full justify-between p-0 h-auto py-6">
-                        <div className="flex items-center gap-2">
-                          <h3 className="text-lg font-semibold">Pagamentos Cancelados ({filteredCancelledPayments.length})</h3>
-                        </div>
-                        <ChevronRight className="h-4 w-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="space-y-4 mt-4">
-                    
-                    {filteredCancelledPayments.map((payment) => {
-                       const StatusIcon = getStatusIcon(payment.status)
-                       
-                       return (
-                       <div key={payment.id} className={cn(
-                         "flex items-center justify-between p-4 border border-border rounded-lg opacity-75",
-                         highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
-                       )}>
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                              <StatusIcon className="w-5 h-5 text-muted-foreground" />
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium text-muted-foreground">{payment.client}</p>
-                                <Badge variant="destructive" className="text-xs">
-                                  Cancelado
-                                </Badge>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Calendar className="w-3 h-3" />
-                                <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <div className="flex items-center gap-4">
-                            <div className="text-right">
-                              <p className="font-bold text-lg text-muted-foreground">{formatCurrencyBR(payment.value)}</p>
-                              <p className="text-xs text-muted-foreground">{payment.method}</p>
-                            </div>
-                            
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                                <DropdownMenuItem 
-                                  onClick={() => viewSession(payment.session_id)}
-                                >
-                                  <Calendar className="w-4 h-4 mr-2" />
-                                  Ver Sessão
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </div>
                    )
-                 })}
-                       </div>
-                     </CollapsibleContent>
-                   </Collapsible>
-                 )}
-               </div>
-             )}
-           </CardContent>
-         </Card>
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
-         {/* Cancelled Payments */}
-         {filteredCancelledPayments.length > 0 && (
-           <Card className="shadow-soft">
-             <CardHeader>
-               <Collapsible open={cancelledPaymentsExpanded} onOpenChange={setCancelledPaymentsExpanded}>
-                 <CollapsibleTrigger asChild>
-                   <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                     <div className="flex items-center gap-2">
-                       {cancelledPaymentsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                       <CardTitle>Pagamentos Cancelados</CardTitle>
-                     </div>
-                   </Button>
-                 </CollapsibleTrigger>
-                 <CollapsibleContent>
-                   <CardDescription className="mt-2">
-                     {filteredCancelledPayments.length} pagamento(s) cancelado(s)
-                   </CardDescription>
-                 </CollapsibleContent>
-               </Collapsible>
-             </CardHeader>
-             <CardContent>
-               {isLoading ? (
-                 <div className="text-center py-8">
-                   <p className="text-muted-foreground">Carregando pagamentos...</p>
-                 </div>
-               ) : (
-                 <div className="space-y-4">
-                   <Collapsible open={cancelledPaymentsExpanded} onOpenChange={setCancelledPaymentsExpanded}>
-                     <CollapsibleContent>
-                       <div className="space-y-4">
-                         {filteredCancelledPayments.map((payment) => {
-                            const StatusIcon = getStatusIcon(payment.status)
-                            
-                            return (
-                            <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-accent/20">
-                               <div className="flex items-center gap-4">
-                                 <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                                   <StatusIcon className="w-5 h-5 text-muted-foreground" />
-                                 </div>
-                                 <div>
-                                   <div className="flex items-center gap-2">
-                                     <p className="font-medium text-muted-foreground">{payment.client}</p>
-                                     <Badge variant="destructive" className="text-xs">
-                                       Cancelado
-                                     </Badge>
-                                   </div>
-                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                     <Calendar className="w-3 h-3" />
-                                     <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
-                                   </div>
-                                 </div>
-                               </div>
-                               
-                               <div className="flex items-center gap-4">
-                                 <div className="text-right">
-                                   <p className="font-bold text-lg text-muted-foreground">{formatCurrencyBR(payment.value)}</p>
-                                   <p className="text-xs text-muted-foreground">{payment.method}</p>
-                                 </div>
-                                 
-                                 <DropdownMenu>
-                                   <DropdownMenuTrigger asChild>
-                                     <Button variant="ghost" size="icon" className="h-8 w-8">
-                                       <MoreHorizontal className="w-4 h-4" />
-                                     </Button>
-                                   </DropdownMenuTrigger>
-                                   <DropdownMenuContent className="bg-background border shadow-lg z-50">
-                                     <DropdownMenuItem 
-                                       onClick={() => viewSession(payment.session_id)}
-                                     >
-                                       <Calendar className="w-4 h-4 mr-2" />
-                                       Ver Sessão
-                                     </DropdownMenuItem>
-                                   </DropdownMenuContent>
-                             </DropdownMenu>
-                           </div>
-                         </div>
-                        )
-                      })}
-                       </div>
-                     </CollapsibleContent>
-                   </Collapsible>
-                 </div>
-               )}
-             </CardContent>
-           </Card>
-         )}
-
-        {/* Payment Methods Summary */}
-        {hasFeature('hasHistory') && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  Resumo Mensal
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span>Janeiro 2024</span>
-                    <span className="font-bold">{formatCurrencyBR(totalReceived)}</span>
-                  </div>
-                  <div className="text-sm text-muted-foreground">
-                    Meta: R$ 5.000,00 ({((totalReceived / 5000) * 100).toFixed(1)}%)
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CreditCard className="w-5 h-5" />
-                  Métodos de Pagamento
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {(() => {
-                    const methodCounts = {
-                      dinheiro: 0,
-                      pix: 0,
-                      cartao: 0,
-                      transferencia: 0
-                    };
-                     
-                     filteredActivePayments
-                       .filter(p => p.status === 'pago')
-                       .forEach(p => {
-                        const method = p.method || 'dinheiro';
-                        if (methodCounts[method as keyof typeof methodCounts] !== undefined) {
-                          methodCounts[method as keyof typeof methodCounts]++;
-                        }
-                      });
-
-                    return (
-                      <>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Banknote className="w-4 h-4" />
-                            <span className="text-sm">Dinheiro</span>
-                          </div>
-                          <span className="font-bold">{methodCounts.dinheiro} pagamentos</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Smartphone className="w-4 h-4" />
-                            <span className="text-sm">PIX</span>
-                          </div>
-                          <span className="font-bold">{methodCounts.pix} pagamentos</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" />
-                            <span className="text-sm">Cartão</span>
-                          </div>
-                          <span className="font-bold">{methodCounts.cartao} pagamentos</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <Building2 className="w-4 h-4" />
-                            <span className="text-sm">Transferência</span>
-                          </div>
-                          <span className="font-bold">{methodCounts.transferencia} pagamentos</span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        <PaymentMethodModal
+          open={paymentModalOpen}
+          onClose={() => setPaymentModalOpen(false)}
+          onConfirm={handlePaymentConfirm}
+        />
       </div>
-
-      <PaymentMethodModal
-        open={paymentModalOpen}
-        onOpenChange={setPaymentModalOpen}
-        onConfirm={handlePaymentConfirm}
-        loading={isLoading}
-      />
     </Layout>
   )
 }

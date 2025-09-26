@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-
 import { Layout } from "@/components/Layout"
 import { 
   Search, 
@@ -18,18 +17,18 @@ import {
   MoreHorizontal,
   Edit2,
   Trash2,
-  Eye,
   UserX,
   UserCheck,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
 import { NewSessionModal } from "@/components/NewSessionModal"
 import { supabase } from "@/integrations/supabase/client"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 const Clientes = () => {
   const { toast } = useToast()
@@ -275,7 +274,7 @@ const Clientes = () => {
     setIsNewClientOpen(true)
   }
 
-  // Filtrar clientes por busca e ordenar por data de criação
+  // Filtrar clientes por busca e ordenar por data de criação (mais recente primeiro)
   const filteredClients = [...clients]
     .filter(client =>
       client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -285,6 +284,13 @@ const Clientes = () => {
     .sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
+
+  // Separar clientes ativos e inativos
+  const activeClients = filteredClients.filter(client => client.ativo !== false)
+  const inactiveClients = filteredClients.filter(client => client.ativo === false)
+
+  // Verificar se pode adicionar mais clientes
+  const canAddMore = canAddClient(activeClients.length)
 
   return (
     <Layout>
@@ -405,7 +411,7 @@ const Clientes = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <Card className="shadow-soft">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Total de Clientes</CardTitle>
+              <CardTitle className="text-lg">Total de Clientes Ativos</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">{activeClients.length}</div>
@@ -458,319 +464,144 @@ const Clientes = () => {
 
         <Card className="shadow-soft">
           <CardHeader>
-                    <CardTitle>Lista de Clientes</CardTitle>
-                    <CardDescription>
-                      {clients.length} cliente(s) encontrado(s)
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {isLoading ? (
-                      <div className="text-center py-8">
-                        <p className="text-muted-foreground">Carregando clientes...</p>
-                      </div>
-                    ) : (
-                      <div className="space-y-6">
-                        {/* Clientes Ativos */}
-                        <Collapsible open={activeClientsExpanded} onOpenChange={setActiveClientsExpanded}>
-                          <CollapsibleTrigger asChild>
-                            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                              <div className="flex items-center gap-2">
-                                {activeClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                                <h3 className="text-lg font-semibold">Clientes Ativos ({activeClients.length})</h3>
-                              </div>
-                            </Button>
-                          </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <div className="space-y-4 mt-4">
-                      {activeClients.filter(client =>
-                        client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        client.telefone?.includes(searchTerm)
-                      ).map((client) => (
-                        <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              <ClientAvatarUpload
-                                clientName={client.nome}
-                                currentAvatarUrl={client.avatar_url}
-                                onAvatarChange={(url) => handleAvatarChange(client.id, url)}
-                                size="sm"
-                                readOnly={true}
-                              />
-                              <div>
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium">{client.nome}</h3>
-                                  <Badge variant="default">Ativo</Badge>
-                                </div>
-                                <div className="text-sm text-muted-foreground space-y-1">
-                                  <div className="flex items-center gap-1">
-                                    <Mail className="w-3 h-3" />
-                                    <span>{client.email}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1">
-                                    <Phone className="w-3 h-3" />
-                                    <span>{client.telefone}</span>
-                                  </div>
-                                  {(() => {
-                                    const clinicalData = client.dados_clinicos || ""
-                                    const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
-                                    const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
-                                    
-                                    return (
-                                      <div className="flex gap-4">
-                                        {ageMatch && (
-                                          <div className="flex items-center gap-1">
-                                            <User className="w-3 h-3" />
-                                            <span>{ageMatch[1]} anos</span>
-                                          </div>
-                                        )}
-                                        {professionMatch && (
-                                          <div className="flex items-center gap-1">
-                                            <span className="text-xs">•</span>
-                                            <span>{professionMatch[1]}</span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    )
-                                  })()}
-                                  {(() => {
-                                    const clinicalData = client.dados_clinicos || ""
-                                    const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
-                                    
-                                    return notesMatch && (
-                                      <div className="mt-2 p-2 bg-muted rounded text-xs">
-                                        <span className="font-medium">Dados clínicos:</span> {notesMatch[1]}
-                                      </div>
-                                    )
-                                  })()}
-                                </div>
-                              </div>
-                            </div>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
-                                  <Calendar className="w-4 h-4 mr-2" />
-                                  Agendar Sessão
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                                  <Edit2 className="w-4 h-4 mr-2" />
-                                  Editar Cliente
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
-                                  <UserX className="w-4 h-4 mr-2" />
-                                  Desativar Cliente
-                                </DropdownMenuItem>
-                                <DropdownMenuItem 
-                                  onClick={() => handleDeleteClient(client.id)}
-                                  className="text-destructive"
-                                >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Excluir Cliente
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+            <CardTitle>Lista de Clientes</CardTitle>
+            <CardDescription>
+              {filteredClients.length} cliente(s) encontrado(s)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">Carregando clientes...</p>
+              </div>
+            ) : filteredClients.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Nenhum cliente encontrado.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredClients.map((client) => {
+                  const clinicalData = client.dados_clinicos || ""
+                  const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
+                  const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
+                  const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
+                  
+                  const age = ageMatch ? ageMatch[1] : ""
+                  const profession = professionMatch ? professionMatch[1] : ""
+                  const notes = notesMatch ? notesMatch[1] : ""
+                  
+                  return (
+                    <div key={client.id} className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-4">
+                          <div className="flex-shrink-0">
+                            <ClientAvatarUpload
+                              clientId={client.id}
+                              clientName={client.nome}
+                              currentAvatarUrl={client.avatar_url}
+                              onAvatarChange={(url) => handleAvatarChange(client.id, url)}
+                              size="md"
+                            />
                           </div>
-                          
-                          {client.dados_clinicos && (
-                            <div className="mt-3 p-3 bg-muted rounded-lg">
-                              <h4 className="font-medium text-sm mb-2">Dados Clínicos</h4>
-                              <p className="text-sm text-muted-foreground whitespace-pre-wrap">{client.dados_clinicos}</p>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-
-                      {activeClients.filter(client =>
-                        client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                        client.telefone?.includes(searchTerm)
-                      ).length === 0 && (
-                        <div className="text-center py-8 text-muted-foreground">
-                          {searchTerm ? 'Nenhum cliente ativo encontrado para a busca.' : 'Nenhum cliente ativo cadastrado.'}
-                        </div>
-                      )}
-                    </div>
-                  </CollapsibleContent>
-                </Collapsible>
-
-                {/* Clientes Inativos */}
-                {inactiveClients.length > 0 && (
-                  <Collapsible open={inactiveClientsExpanded} onOpenChange={setInactiveClientsExpanded}>
-                    <CollapsibleTrigger asChild>
-                      <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                        <div className="flex items-center gap-2">
-                          {inactiveClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                          <h3 className="text-lg font-semibold text-muted-foreground">Clientes Inativos ({inactiveClients.length})</h3>
-                        </div>
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="space-y-4 mt-4">
-                        {inactiveClients.filter(client =>
-                          client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          client.telefone?.includes(searchTerm)
-                        ).map((client) => (
-                          <div key={client.id} className="bg-card p-4 rounded-lg border shadow-sm opacity-75">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center space-x-3">
-                                <ClientAvatarUpload
-                                  clientName={client.nome}
-                                  currentAvatarUrl={client.avatar_url}
-                                  onAvatarChange={(url) => handleAvatarChange(client.id, url)}
-                                  size="sm"
-                                />
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <h3 className="font-medium text-muted-foreground">{client.nome}</h3>
-                                    <Badge variant="secondary">Inativo</Badge>
-                                  </div>
-                                  <div className="text-sm text-muted-foreground space-y-1">
-                                    <div className="flex items-center gap-1">
-                                      <Mail className="w-3 h-3" />
-                                      <span>{client.email}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <Phone className="w-3 h-3" />
-                                      <span>{client.telefone}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MoreHorizontal className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleEditClient(client)}>
-                                    <Edit2 className="w-4 h-4 mr-2" />
-                                    Editar Cliente
-                                  </DropdownMenuItem>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo)}>
-                                    <UserCheck className="w-4 h-4 mr-2" />
-                                    Reativar Cliente
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleDeleteClient(client.id)}
-                                    className="text-destructive"
-                                  >
-                                    <Trash2 className="w-4 h-4 mr-2" />
-                                    Excluir Cliente
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="text-lg font-semibold">{client.nome}</h3>
+                              <Badge variant={client.ativo !== false ? "default" : "secondary"}>
+                                {client.ativo !== false ? "Ativo" : "Inativo"}
+                              </Badge>
                             </div>
                             
-                            {client.dados_clinicos && (
-                              <div className="mt-3 p-3 bg-muted rounded-lg">
-                                <h4 className="font-medium text-sm mb-2">Dados Clínicos</h4>
-                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">{client.dados_clinicos}</p>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
+                              <div className="flex items-center gap-2">
+                                <Mail className="w-4 h-4" />
+                                <span>{client.email}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Phone className="w-4 h-4" />
+                                <span>{client.telefone}</span>
+                              </div>
+                              {age && (
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4" />
+                                  <span>Idade: {age}</span>
+                                </div>
+                              )}
+                              {profession && (
+                                <div className="flex items-center gap-2">
+                                  <User className="w-4 h-4" />
+                                  <span>Profissão: {profession}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            {notes && (
+                              <div className="bg-muted/50 rounded-md p-3 text-sm mb-3">
+                                <strong className="text-muted-foreground">Dados Clínicos:</strong>
+                                <p className="mt-1">{notes}</p>
                               </div>
                             )}
+                            
+                            <div className="text-xs text-muted-foreground">
+                              Cadastrado em {format(new Date(client.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                            </div>
                           </div>
-                        ))}
-
-                        {inactiveClients.filter(client =>
-                          client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          client.telefone?.includes(searchTerm)
-                        ).length === 0 && (
-                          <div className="text-center py-8 text-muted-foreground">
-                            Nenhum cliente inativo encontrado para a busca.
-                          </div>
-                        )}
+                        </div>
+                        
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditClient(client)}>
+                              <Edit2 className="w-4 h-4 mr-2" />
+                              Editar Cliente
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setSelectedClientForSession(client)}>
+                              <Calendar className="w-4 h-4 mr-2" />
+                              Nova Sessão
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={() => handleToggleClientStatus(client.id, client.ativo !== false)}>
+                              {client.ativo !== false ? (
+                                <>
+                                  <UserX className="w-4 h-4 mr-2" />
+                                  Desativar Cliente
+                                </>
+                              ) : (
+                                <>
+                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  Ativar Cliente
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => handleDeleteClient(client.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir Cliente
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
+                    </div>
+                  )
+                })}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {selectedClient && (
-          <Dialog open={!!selectedClient} onOpenChange={() => setSelectedClient(null)}>
-            <DialogContent className="sm:max-w-[500px]">
-              <DialogHeader>
-                <DialogTitle>Detalhes do Cliente</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="text-center space-y-3">
-                  <div className="flex justify-center">
-                    <div className="relative w-20 h-20 rounded-full bg-gradient-primary text-white flex items-center justify-center text-xl font-semibold overflow-hidden">
-                      {selectedClient.avatar_url ? (
-                        <img 
-                          src={selectedClient.avatar_url} 
-                          alt={selectedClient.nome}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <span>{selectedClient.nome.charAt(0).toUpperCase()}</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <h3 className="text-xl font-semibold">{selectedClient.nome}</h3>
-                    <Badge variant={selectedClient.ativo ? "default" : "outline"} 
-                           className={selectedClient.ativo ? "" : "border-yellow-500 text-yellow-600 bg-yellow-50"}>
-                      {selectedClient.ativo ? "Ativo" : "Inativo"}
-                    </Badge>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <p><strong>Email:</strong> {selectedClient.email || "Não informado"}</p>
-                  <p><strong>Telefone:</strong> {selectedClient.telefone || "Não informado"}</p>
-                  
-                  {/* Parse and display individual fields */}
-                  {(() => {
-                    const clinicalData = selectedClient.dados_clinicos || ""
-                    const ageMatch = clinicalData.match(/Idade: ([^\n]+)/)
-                    const professionMatch = clinicalData.match(/Profissão: ([^\n]+)/)
-                    const notesMatch = clinicalData.match(/Observações: ([^\n]+)/)
-                    
-                    return (
-                      <>
-                        {ageMatch && <p><strong>Idade:</strong> {ageMatch[1]}</p>}
-                        {professionMatch && <p><strong>Profissão:</strong> {professionMatch[1]}</p>}
-                        {notesMatch && (
-                          <div className="border-t pt-4">
-                            <p><strong>Observações Iniciais:</strong></p>
-                            <p className="text-muted-foreground text-sm mt-1">
-                              {notesMatch[1]}
-                            </p>
-                          </div>
-                        )}
-                      </>
-                    )
-                  })()}
-                </div>
-              </div>
-            </DialogContent>
-          </Dialog>
-        )}
-
         <NewSessionModal
           open={isNewSessionOpen}
-          onOpenChange={(open) => {
-            setIsNewSessionOpen(open)
-            if (!open) setNewSessionClientId(null)
+          onClose={() => {
+            setIsNewSessionOpen(false)
+            setNewSessionClientId(null)
           }}
           selectedClientId={newSessionClientId}
-          onSessionCreated={() => {
-            toast({
-              title: "Sessão agendada!",
-              description: "A sessão foi agendada com sucesso.",
-            })
-          }}
         />
       </div>
     </Layout>
