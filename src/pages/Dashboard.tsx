@@ -669,7 +669,7 @@ const Dashboard = () => {
       value: formatCurrencyBR(dashboardData.monthlyRevenue),
       change: "+15% vs mês anterior",
       icon: DollarSign,
-      color: "hsl(var(--success))",
+      color: "text-success",
       bgColor: "bg-success/10"
     },
     {
@@ -1215,9 +1215,9 @@ const Dashboard = () => {
                                   <p className="text-sm font-medium truncate flex-1 mr-2">
                                     {client.nome}
                                   </p>
-                                  <p className="text-sm font-bold text-secondary whitespace-nowrap">
-                                    {formatCurrencyBR(client.ticketMedio)}
-                                  </p>
+                  <p className="text-sm font-bold text-success whitespace-nowrap">
+                    {formatCurrencyBR(client.ticketMedio)}
+                  </p>
                                 </div>
                                 <div className="relative">
                                   <div className="w-full bg-muted rounded-full h-2">

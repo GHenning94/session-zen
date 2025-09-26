@@ -114,9 +114,9 @@
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
 
-    /* Success verde otimizado para dark mode - mais brilhante para melhor contraste */
-    --success: 142 71% 55%;
-    --success-foreground: 222.2 84% 4.9%;
+    /* Success verde consistente - mesmo valor do gradiente para manter consistência */
+    --success: 142 71% 45%;
+    --success-foreground: 0 0% 100%;
     --success-light: 142 71% 85%;
     
     /* Use fixed colors in dark mode to prevent changes */
