@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
+import { TextPreview } from '@/components/TextPreview'
 
 interface Client {
   id: string
@@ -414,9 +415,11 @@ export default function Prontuarios() {
                               </Button>
                             </div>
                           </div>
-                          <div 
+                           <TextPreview 
+                            content={evolucao.evolucao}
+                            isHtml={true}
+                            title={`Evolução - ${format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}`}
                             className="prose prose-sm max-w-none"
-                            dangerouslySetInnerHTML={{ __html: evolucao.evolucao }}
                           />
                         </div>
                       ))}

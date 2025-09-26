@@ -19,6 +19,7 @@ import { SessionNoteModal } from '@/components/SessionNoteModal'
 import { SessionEditModal } from '@/components/SessionEditModal'
 import { calculateSessionStatus } from "@/utils/sessionStatusUtils"
 import { useNavigate } from 'react-router-dom'
+import { TextPreview } from '@/components/TextPreview'
 
 interface Session {
   id: string
@@ -512,7 +513,12 @@ export default function Sessoes() {
                               </div>
                               {session.anotacoes && (
                                 <div className="mt-2 text-sm text-muted-foreground bg-muted/50 rounded p-2">
-                                  <strong>Anotações:</strong> {session.anotacoes}
+                                  <strong>Anotações:</strong>
+                                  <TextPreview 
+                                    content={session.anotacoes}
+                                    title={`Anotação - ${session.clients?.nome} - ${formatDateBR(session.data)}`}
+                                    className="mt-1"
+                                  />
                                 </div>
                               )}
                             </div>
@@ -613,9 +619,13 @@ export default function Sessoes() {
                                </Badge>
                              )}
                           </div>
-                          <div className="text-sm text-muted-foreground mb-2">
-                            <div dangerouslySetInnerHTML={{ __html: note.notes }} />
-                          </div>
+                           <div className="text-sm text-muted-foreground mb-2">
+                             <TextPreview 
+                               content={note.notes}
+                               isHtml={true}
+                               title={`Anotação - ${note.clients?.nome} - ${note.sessions ? formatDateBR(note.sessions.data) : 'Data não disponível'}`}
+                             />
+                           </div>
                            <div className="text-xs text-muted-foreground">
                              Criado em {formatDateBR(note.created_at)} às {formatTimeBR(note.created_at)}
                            </div>
