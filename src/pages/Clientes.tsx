@@ -17,6 +17,7 @@ import {
   Pill,
   Filter,
   MessageCircle,
+  Baby,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -666,11 +667,16 @@ const Clientes = () => {
                               <div className="flex items-center gap-2">
                                 <Mail className="w-4 h-4" />
                                 <span>{client.email || "Email não informado"}</span>
-                                {(client.medicamentos && client.medicamentos.length > 0) && (
-                                  <div className="flex items-center justify-center ml-2">
-                                    <Pill className="w-4 h-4 text-red-500" />
-                                  </div>
-                                )}
+                                 {(client.medicamentos && client.medicamentos.length > 0) && (
+                                   <div className="flex items-center justify-center ml-2">
+                                     <Pill className="w-4 h-4 text-red-500" />
+                                   </div>
+                                 )}
+                                 {client.eh_crianca_adolescente && (
+                                   <div className="flex items-center justify-center ml-2">
+                                     <Baby className="w-4 h-4 text-blue-500" />
+                                   </div>
+                                 )}
                               </div>
                               <div className="flex items-center gap-2">
                                 <Phone className="w-4 h-4" />

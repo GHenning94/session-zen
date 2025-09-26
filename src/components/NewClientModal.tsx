@@ -334,13 +334,13 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         </DialogHeader>
         
         {!canAddMore && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm">
+          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm mt-6">
             <p className="text-destructive font-medium">Limite atingido ({clients.length}/{planLimits.maxClients})</p>
             <p className="text-muted-foreground">Faça upgrade do seu plano para adicionar mais clientes.</p>
           </div>
         )}
         
-        <ScrollArea className="max-h-[60vh] pr-4">
+        <ScrollArea className="max-h-[60vh] pr-4 mt-6">
           <div className="grid gap-4 py-4">
             <div className="flex flex-col items-center gap-4">
               <ClientAvatarUpload 

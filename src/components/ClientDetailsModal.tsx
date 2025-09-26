@@ -290,7 +290,7 @@ export const ClientDetailsModal = ({
         </ScrollArea>
 
         {/* Ações */}
-        <div className="flex flex-wrap gap-2 pt-4 border-t">
+        <div className="flex flex-wrap gap-2 pt-4 border-t mt-6">
           <Button
             variant="outline"
             onClick={() => onEdit(client)}
@@ -333,7 +333,6 @@ export const ClientDetailsModal = ({
             className="flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Excluir
           </Button>
         </div>
       </DialogContent>
