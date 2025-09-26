@@ -402,6 +402,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "filled_records_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "filled_records_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -416,6 +423,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      medical_audit_log: {
+        Row: {
+          access_timestamp: string
+          action: string
+          client_id: string
+          field_accessed: string | null
+          id: string
+          ip_address: unknown | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          access_timestamp?: string
+          action: string
+          client_id: string
+          field_accessed?: string | null
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          access_timestamp?: string
+          action?: string
+          client_id?: string
+          field_accessed?: string | null
+          id?: string
+          ip_address?: unknown | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       notification_settings: {
         Row: {
@@ -622,6 +665,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "session_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "session_notes_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -678,13 +728,69 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      clients_safe: {
+        Row: {
+          ativo: boolean | null
+          avatar_url: string | null
+          created_at: string | null
+          dados_clinicos_status: string | null
+          email: string | null
+          historico_status: string | null
+          id: string | null
+          nome: string | null
+          telefone: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          avatar_url?: string | null
+          created_at?: string | null
+          dados_clinicos_status?: never
+          email?: string | null
+          historico_status?: never
+          id?: string | null
+          nome?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          avatar_url?: string | null
+          created_at?: string | null
+          dados_clinicos_status?: never
+          email?: string | null
+          historico_status?: never
+          id?: string | null
+          nome?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      export_client_data_secure: {
+        Args: { p_client_id: string }
+        Returns: Json
+      }
+      get_client_medical_data: {
+        Args: { p_client_id: string }
+        Returns: Json
+      }
       get_public_profile_by_slug: {
         Args: { page_slug: string }
         Returns: Json
@@ -693,6 +799,18 @@ export type Database = {
         Args: { page_slug: string }
         Returns: Json
       }
+      log_medical_data_access: {
+        Args: {
+          p_action: string
+          p_client_id: string
+          p_field_accessed?: string
+        }
+        Returns: undefined
+      }
+      sanitize_medical_text: {
+        Args: { input_text: string }
+        Returns: string
+      }
       sanitize_text: {
         Args: { input_text: string }
         Returns: string
@@ -700,6 +818,14 @@ export type Database = {
       send_session_reminders: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      update_client_medical_data: {
+        Args: {
+          p_client_id: string
+          p_dados_clinicos?: string
+          p_historico?: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
