@@ -56,7 +56,7 @@ export default function Relatorios() {
       title: 'Total de Clientes',
       value: clients.length,
       icon: Users,
-      color: 'text-success'
+      color: 'hsl(var(--success))'
     },
     {
       title: 'Sessões Este Mês',
@@ -68,13 +68,13 @@ export default function Relatorios() {
       title: 'Sessões Realizadas',
       value: realizadas.length,
       icon: BarChart3,
-      color: 'text-success'
+      color: 'hsl(var(--success))'
     },
     {
       title: 'Total Arrecadado',
       value: `R$ ${totalArrecadado.toFixed(2)}`,
       icon: DollarSign,
-      color: 'text-success'
+      color: 'hsl(var(--success))'
     }
   ]
 
