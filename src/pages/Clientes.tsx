@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
 import { 
   Search, 
@@ -19,6 +20,7 @@ import {
   Trash2,
   UserX,
   UserCheck,
+  Filter,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
@@ -42,6 +44,7 @@ const Clientes = () => {
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<string>("todos")
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -274,13 +277,19 @@ const Clientes = () => {
     setIsNewClientOpen(true)
   }
 
-  // Filtrar clientes por busca e ordenar por data de criação (mais recente primeiro)
+  // Filtrar clientes por busca, status e ordenar por data de criação (mais recente primeiro)
   const filteredClients = [...clients]
-    .filter(client =>
-      client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.telefone?.includes(searchTerm)
-    )
+    .filter(client => {
+      const matchesSearch = client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        client.telefone?.includes(searchTerm)
+      
+      const matchesStatus = statusFilter === "todos" || 
+        (statusFilter === "ativo" && client.ativo !== false) ||
+        (statusFilter === "inativo" && client.ativo === false)
+      
+      return matchesSearch && matchesStatus
+    })
     .sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     })
@@ -458,6 +467,19 @@ const Clientes = () => {
                   className="pl-9"
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Filter className="w-4 h-4 text-muted-foreground" />
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="ativo">Ativo</SelectItem>
+                    <SelectItem value="inativo">Inativo</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </CardHeader>
         </Card>
@@ -491,24 +513,32 @@ const Clientes = () => {
                   const notes = notesMatch ? notesMatch[1] : ""
                   
                   return (
-                    <div key={client.id} className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4">
-                          <div className="flex-shrink-0">
-                            <ClientAvatarUpload
-                              clientName={client.nome}
-                              currentAvatarUrl={client.avatar_url}
-                              onAvatarChange={(url) => handleAvatarChange(client.id, url)}
-                              size="md"
-                            />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold">{client.nome}</h3>
-                              <Badge variant={client.ativo !== false ? "default" : "secondary"}>
-                                {client.ativo !== false ? "Ativo" : "Inativo"}
-                              </Badge>
-                            </div>
+                     <div key={client.id} className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                       <div className="flex items-start justify-between">
+                         <div className="flex items-start space-x-4">
+                           <div className="flex-shrink-0">
+                             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                               {client.avatar_url ? (
+                                 <img 
+                                   src={client.avatar_url} 
+                                   alt={client.nome} 
+                                   className="w-full h-full rounded-full object-cover"
+                                 />
+                               ) : (
+                                 <User className="w-6 h-6 text-muted-foreground" />
+                               )}
+                             </div>
+                           </div>
+                           <div className="flex-1 min-w-0">
+                             <div className="flex items-center gap-2 mb-2">
+                               <h3 className="text-lg font-semibold">{client.nome}</h3>
+                               <Badge 
+                                 variant={client.ativo !== false ? "default" : "secondary"}
+                                 className={client.ativo === false ? "bg-yellow-500 text-yellow-900 hover:bg-yellow-500/80" : ""}
+                               >
+                                 {client.ativo !== false ? "Ativo" : "Inativo"}
+                               </Badge>
+                             </div>
                             
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground mb-3">
                               <div className="flex items-center gap-2">
@@ -566,12 +596,12 @@ const Clientes = () => {
                               {client.ativo !== false ? (
                                 <>
                                   <UserX className="w-4 h-4 mr-2" />
-                                  Desativar Cliente
+                                  <span className="text-yellow-600">Desativar Cliente</span>
                                 </>
                               ) : (
                                 <>
                                   <UserCheck className="w-4 h-4 mr-2" />
-                                  Ativar Cliente
+                                  <span className="text-yellow-600">Ativar Cliente</span>
                                 </>
                               )}
                             </DropdownMenuItem>
