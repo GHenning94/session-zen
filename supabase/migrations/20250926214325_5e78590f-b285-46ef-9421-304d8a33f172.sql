@@ -1,0 +1,21 @@
+-- Add new fields to clients table to support complete patient registration
+ALTER TABLE public.clients 
+ADD COLUMN IF NOT EXISTS cpf TEXT,
+ADD COLUMN IF NOT EXISTS data_nascimento DATE,
+ADD COLUMN IF NOT EXISTS endereco TEXT,
+ADD COLUMN IF NOT EXISTS pais TEXT,
+ADD COLUMN IF NOT EXISTS genero TEXT,
+ADD COLUMN IF NOT EXISTS profissao TEXT,
+ADD COLUMN IF NOT EXISTS plano_saude TEXT,
+ADD COLUMN IF NOT EXISTS tratamento TEXT,
+ADD COLUMN IF NOT EXISTS medicamentos TEXT[],
+ADD COLUMN IF NOT EXISTS contato_emergencia_1_nome TEXT,
+ADD COLUMN IF NOT EXISTS contato_emergencia_1_telefone TEXT,
+ADD COLUMN IF NOT EXISTS contato_emergencia_2_nome TEXT,
+ADD COLUMN IF NOT EXISTS contato_emergencia_2_telefone TEXT,
+ADD COLUMN IF NOT EXISTS nome_pai TEXT,
+ADD COLUMN IF NOT EXISTS telefone_pai TEXT,
+ADD COLUMN IF NOT EXISTS nome_mae TEXT,
+ADD COLUMN IF NOT EXISTS telefone_mae TEXT,
+ADD COLUMN IF NOT EXISTS eh_crianca_adolescente BOOLEAN DEFAULT FALSE,
+ADD COLUMN IF NOT EXISTS emergencia_igual_pais BOOLEAN DEFAULT FALSE;

@@ -4,11 +4,14 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
-import { Plus } from "lucide-react"
+import { Plus, Zap, ArrowUpRight, Trash2 } from "lucide-react"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
 
 interface NewClientModalProps {
@@ -23,6 +26,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
   const { planLimits, canAddClient } = useSubscription()
   const [isLoading, setIsLoading] = useState(false)
   const [clients, setClients] = useState<any[]>([])
+  const [isQuickRegistration, setIsQuickRegistration] = useState(true)
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -30,8 +34,27 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
     profession: "",
     age: "",
     notes: "",
-    avatarUrl: ""
+    avatarUrl: "",
+    cpf: "",
+    dataNascimento: "",
+    endereco: "",
+    pais: "",
+    genero: "",
+    planoSaude: "",
+    tratamento: "",
+    medicamentos: [] as string[],
+    contatoEmergencia1Nome: "",
+    contatoEmergencia1Telefone: "",
+    contatoEmergencia2Nome: "",
+    contatoEmergencia2Telefone: "",
+    nomePai: "",
+    telefonePai: "",
+    nomeMae: "",
+    telefoneMae: "",
+    ehCriancaAdolescente: false,
+    emergenciaIgualPais: false
   })
+  const [currentMedicamento, setCurrentMedicamento] = useState("")
 
   // Phone formatting function
   const formatPhone = (value: string) => {
@@ -81,26 +104,79 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
   }, [open, user])
 
 
+  const addMedicamento = () => {
+    if (currentMedicamento.trim()) {
+      setNewClient({
+        ...newClient,
+        medicamentos: [...newClient.medicamentos, currentMedicamento.trim()]
+      })
+      setCurrentMedicamento("")
+    }
+  }
+
+  const removeMedicamento = (index: number) => {
+    setNewClient({
+      ...newClient,
+      medicamentos: newClient.medicamentos.filter((_, i) => i !== index)
+    })
+  }
+
+  const resetForm = () => {
+    setNewClient({
+      name: "",
+      email: "",
+      phone: "",
+      profession: "",
+      age: "",
+      notes: "",
+      avatarUrl: "",
+      cpf: "",
+      dataNascimento: "",
+      endereco: "",
+      pais: "",
+      genero: "",
+      planoSaude: "",
+      tratamento: "",
+      medicamentos: [],
+      contatoEmergencia1Nome: "",
+      contatoEmergencia1Telefone: "",
+      contatoEmergencia2Nome: "",
+      contatoEmergencia2Telefone: "",
+      nomePai: "",
+      telefonePai: "",
+      nomeMae: "",
+      telefoneMae: "",
+      ehCriancaAdolescente: false,
+      emergenciaIgualPais: false
+    })
+    setCurrentMedicamento("")
+    setIsQuickRegistration(true)
+  }
+
   const handleSaveClient = async () => {
     if (!user) return
 
-    if (!newClient.name || !newClient.email || !newClient.phone) {
+    if (!newClient.name || (!isQuickRegistration && !newClient.email) || !newClient.phone) {
       toast({
         title: "Erro",
-        description: "Preencha pelo menos nome, email e telefone",
+        description: isQuickRegistration 
+          ? "Preencha pelo menos nome e telefone" 
+          : "Preencha pelo menos nome, email e telefone",
         variant: "destructive",
       })
       return
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(newClient.email)) {
-      toast({
-        title: "Erro",
-        description: "Digite um email válido",
-        variant: "destructive",
-      })
-      return
+    if (!isQuickRegistration && newClient.email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!emailRegex.test(newClient.email)) {
+        toast({
+          title: "Erro",
+          description: "Digite um email válido",
+          variant: "destructive",
+        })
+        return
+      }
     }
 
     if (!isValidPhone(newClient.phone)) {
@@ -124,16 +200,37 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
     setIsLoading(true)
     
     try {
+      const clientData = {
+        user_id: user.id,
+        nome: newClient.name,
+        email: newClient.email || null,
+        telefone: newClient.phone,
+        avatar_url: newClient.avatarUrl || null,
+        cpf: newClient.cpf || null,
+        data_nascimento: newClient.dataNascimento || null,
+        endereco: newClient.endereco || null,
+        pais: newClient.pais || null,
+        genero: newClient.genero || null,
+        profissao: newClient.profession || null,
+        plano_saude: newClient.planoSaude || null,
+        tratamento: newClient.tratamento || null,
+        medicamentos: newClient.medicamentos.length > 0 ? newClient.medicamentos : null,
+        contato_emergencia_1_nome: newClient.contatoEmergencia1Nome || null,
+        contato_emergencia_1_telefone: newClient.contatoEmergencia1Telefone || null,
+        contato_emergencia_2_nome: newClient.contatoEmergencia2Nome || null,
+        contato_emergencia_2_telefone: newClient.contatoEmergencia2Telefone || null,
+        nome_pai: newClient.nomePai || null,
+        telefone_pai: newClient.telefonePai || null,
+        nome_mae: newClient.nomeMae || null,
+        telefone_mae: newClient.telefoneMae || null,
+        eh_crianca_adolescente: newClient.ehCriancaAdolescente,
+        emergencia_igual_pais: newClient.emergenciaIgualPais,
+        dados_clinicos: newClient.notes ? `Observações: ${newClient.notes}` : null
+      }
+
       const { error } = await supabase
         .from('clients')
-        .insert([{
-          user_id: user.id,
-          nome: newClient.name,
-          email: newClient.email,
-          telefone: newClient.phone,
-          avatar_url: newClient.avatarUrl,
-          dados_clinicos: `Profissão: ${newClient.profession}\nIdade: ${newClient.age}\nObservações: ${newClient.notes}`
-        }])
+        .insert([clientData])
 
       if (error) throw error
 
@@ -142,7 +239,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
         description: "Cliente adicionado com sucesso!",
       })
 
-      setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "", avatarUrl: "" })
+      resetForm()
       onOpenChange(false)
       
       if (onClientAdded) {
@@ -168,15 +265,32 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="w-5 h-5 text-primary" />
-            Cadastrar Novo Cliente
+            Adicionar Paciente
           </DialogTitle>
-          <DialogDescription>
-            Preencha os dados básicos do paciente
-          </DialogDescription>
+          <div className="flex items-center gap-4">
+            <Button
+              variant={isQuickRegistration ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsQuickRegistration(true)}
+              className="flex items-center gap-2"
+            >
+              <Zap className="w-4 h-4" />
+              Cadastro rápido
+            </Button>
+            <Button
+              variant={!isQuickRegistration ? "default" : "outline"}
+              size="sm"
+              onClick={() => setIsQuickRegistration(false)}
+              className="flex items-center gap-2"
+            >
+              <ArrowUpRight className="w-4 h-4" />
+              Cadastro completo
+            </Button>
+          </div>
         </DialogHeader>
         
         {!canAddMore && (
@@ -186,89 +300,334 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
           </div>
         )}
         
-        <div className="grid gap-4 py-4">
-          <div className="flex flex-col items-center gap-4">
-            <ClientAvatarUpload 
-              clientName={newClient.name || "Novo Cliente"}
-              currentAvatarUrl={newClient.avatarUrl}
-              onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
-              size="lg"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="name">Nome Completo *</Label>
-            <Input 
-              id="name" 
-              placeholder="Nome do paciente"
-              value={newClient.name}
-              onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-              disabled={!canAddMore}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="email">E-mail *</Label>
-            <Input 
-              id="email" 
-              type="email" 
-              placeholder="email@exemplo.com"
-              value={newClient.email}
-              onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-              disabled={!canAddMore}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="phone">Telefone *</Label>
-            <Input 
-              id="phone" 
-              placeholder="(11) 98919-6789"
-              value={newClient.phone}
-              onChange={handlePhoneChange}
-              maxLength={15}
-              disabled={!canAddMore}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+        <ScrollArea className="max-h-[60vh] pr-4">
+          <div className="grid gap-4 py-4">
+            <div className="flex flex-col items-center gap-4">
+              <ClientAvatarUpload 
+                clientName={newClient.name || "Novo Cliente"}
+                currentAvatarUrl={newClient.avatarUrl}
+                onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
+                size="lg"
+              />
+            </div>
+
+            {!isQuickRegistration && (
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="crianca-adolescente" 
+                  checked={newClient.ehCriancaAdolescente}
+                  onCheckedChange={(checked) => 
+                    setNewClient({...newClient, ehCriancaAdolescente: checked as boolean})
+                  }
+                  disabled={!canAddMore}
+                />
+                <Label htmlFor="crianca-adolescente">Criança/Adolescente</Label>
+              </div>
+            )}
+
             <div className="grid gap-2">
-              <Label htmlFor="age">Idade</Label>
+              <Label htmlFor="name">Nome *</Label>
               <Input 
-                id="age" 
-                type="number" 
-                placeholder="30"
-                value={newClient.age}
-                onChange={(e) => setNewClient({...newClient, age: e.target.value})}
+                id="name" 
+                placeholder="Digite o nome"
+                value={newClient.name}
+                onChange={(e) => setNewClient({...newClient, name: e.target.value})}
                 disabled={!canAddMore}
               />
             </div>
+
+            {!isQuickRegistration && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="cpf">CPF</Label>
+                  <Input 
+                    id="cpf" 
+                    placeholder="Digite o CPF"
+                    value={newClient.cpf}
+                    onChange={(e) => setNewClient({...newClient, cpf: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="data-nascimento">Data de Nascimento</Label>
+                  <Input 
+                    id="data-nascimento" 
+                    type="date"
+                    placeholder="dd/mm/aaaa"
+                    value={newClient.dataNascimento}
+                    onChange={(e) => setNewClient({...newClient, dataNascimento: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email"
+                    placeholder="Digite o email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+              </>
+            )}
+
             <div className="grid gap-2">
-              <Label htmlFor="profession">Profissão</Label>
+              <Label htmlFor="phone">Telefone *</Label>
+              <div className="grid grid-cols-3 gap-2">
+                <Select defaultValue="+55">
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+55">🇧🇷 +55 (Brasil)</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input 
+                  id="phone" 
+                  placeholder="Digite o telefone"
+                  value={newClient.phone}
+                  onChange={handlePhoneChange}
+                  maxLength={15}
+                  disabled={!canAddMore}
+                  className="col-span-2"
+                />
+              </div>
+            </div>
+
+            {!isQuickRegistration && newClient.ehCriancaAdolescente && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="nome-pai">Nome do Pai</Label>
+                    <Input 
+                      id="nome-pai" 
+                      placeholder="Digite o nome do pai"
+                      value={newClient.nomePai}
+                      onChange={(e) => setNewClient({...newClient, nomePai: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="telefone-pai">Telefone do Pai</Label>
+                    <Input 
+                      id="telefone-pai" 
+                      placeholder="Digite o telefone do pai"
+                      value={newClient.telefonePai}
+                      onChange={(e) => setNewClient({...newClient, telefonePai: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="nome-mae">Nome da Mãe</Label>
+                    <Input 
+                      id="nome-mae" 
+                      placeholder="Digite o nome da mãe"
+                      value={newClient.nomeMae}
+                      onChange={(e) => setNewClient({...newClient, nomeMae: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="telefone-mae">Telefone da Mãe</Label>
+                    <Input 
+                      id="telefone-mae" 
+                      placeholder="Digite o telefone da mãe"
+                      value={newClient.telefoneMae}
+                      onChange={(e) => setNewClient({...newClient, telefoneMae: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="emergencia-igual-pais" 
+                    checked={newClient.emergenciaIgualPais}
+                    onCheckedChange={(checked) => 
+                      setNewClient({...newClient, emergenciaIgualPais: checked as boolean})
+                    }
+                    disabled={!canAddMore}
+                  />
+                  <Label htmlFor="emergencia-igual-pais">Contato de emergência igual ao contato de pai e mãe</Label>
+                </div>
+              </>
+            )}
+
+            {!isQuickRegistration && !newClient.ehCriancaAdolescente && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="emergencia1-nome">Nome Contato Emergência 1</Label>
+                    <Input 
+                      id="emergencia1-nome" 
+                      placeholder="Digite o nome"
+                      value={newClient.contatoEmergencia1Nome}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia1Nome: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="emergencia1-telefone">Telefone Contato de Emergência 1</Label>
+                    <Input 
+                      id="emergencia1-telefone" 
+                      placeholder="Digite o telefone de emergência 1"
+                      value={newClient.contatoEmergencia1Telefone}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia1Telefone: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="emergencia2-nome">Nome Contato Emergência 2</Label>
+                    <Input 
+                      id="emergencia2-nome" 
+                      placeholder="Digite o nome"
+                      value={newClient.contatoEmergencia2Nome}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia2Nome: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="emergencia2-telefone">Telefone Contato de Emergência 2</Label>
+                    <Input 
+                      id="emergencia2-telefone" 
+                      placeholder="Digite o telefone de emergência 2"
+                      value={newClient.contatoEmergencia2Telefone}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia2Telefone: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            <div className="grid gap-2">
+              <Label htmlFor="endereco">Endereço</Label>
               <Input 
-                id="profession" 
-                placeholder="Engenheiro"
-                value={newClient.profession}
-                onChange={(e) => setNewClient({...newClient, profession: e.target.value})}
+                id="endereco" 
+                placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
+                value={newClient.endereco}
+                onChange={(e) => setNewClient({...newClient, endereco: e.target.value})}
                 disabled={!canAddMore}
               />
             </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="pais">País</Label>
+              <Input 
+                id="pais" 
+                placeholder="Digite para buscar..."
+                value={newClient.pais}
+                onChange={(e) => setNewClient({...newClient, pais: e.target.value})}
+                disabled={!canAddMore}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="genero">Gênero</Label>
+                <Input 
+                  id="genero" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.genero}
+                  onChange={(e) => setNewClient({...newClient, genero: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="profissao">Profissão</Label>
+                <Input 
+                  id="profissao" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.profession}
+                  onChange={(e) => setNewClient({...newClient, profession: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="plano-saude">Plano de Saúde</Label>
+                <Input 
+                  id="plano-saude" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.planoSaude}
+                  onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="tratamento">Tratamento</Label>
+                <Input 
+                  id="tratamento" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.tratamento}
+                  onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="medicamento">Medicamento</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="medicamento" 
+                  placeholder="Digite para buscar..."
+                  value={currentMedicamento}
+                  onChange={(e) => setCurrentMedicamento(e.target.value)}
+                  disabled={!canAddMore}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addMedicamento}
+                  disabled={!currentMedicamento.trim() || !canAddMore}
+                  className="bg-gradient-primary hover:opacity-90 text-white"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Adicionar Medicamento
+                </Button>
+              </div>
+              {newClient.medicamentos.length > 0 && (
+                <div className="space-y-2 mt-2">
+                  {newClient.medicamentos.map((med, index) => (
+                    <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
+                      <span className="text-sm">{med}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeMedicamento(index)}
+                        disabled={!canAddMore}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="notes">Observações Iniciais</Label>
-            <Textarea 
-              id="notes" 
-              placeholder="Motivo da consulta, observações importantes..." 
-              className="resize-none"
-              value={newClient.notes}
-              onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
-              disabled={!canAddMore}
-            />
-          </div>
-        </div>
+        </ScrollArea>
         
         <div className="flex justify-end gap-3">
           <Button 
             variant="outline" 
             onClick={() => {
               onOpenChange(false)
-              setNewClient({ name: "", email: "", phone: "", profession: "", age: "", notes: "", avatarUrl: "" })
+              resetForm()
             }}
           >
             Cancelar

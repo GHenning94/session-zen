@@ -102,39 +102,96 @@ export type Database = {
         Row: {
           ativo: boolean
           avatar_url: string | null
+          contato_emergencia_1_nome: string | null
+          contato_emergencia_1_telefone: string | null
+          contato_emergencia_2_nome: string | null
+          contato_emergencia_2_telefone: string | null
+          cpf: string | null
           created_at: string | null
           dados_clinicos: string | null
+          data_nascimento: string | null
+          eh_crianca_adolescente: boolean | null
           email: string | null
+          emergencia_igual_pais: boolean | null
+          endereco: string | null
+          genero: string | null
           historico: string | null
           id: string
+          medicamentos: string[] | null
           nome: string
+          nome_mae: string | null
+          nome_pai: string | null
+          pais: string | null
+          plano_saude: string | null
+          profissao: string | null
           telefone: string | null
+          telefone_mae: string | null
+          telefone_pai: string | null
+          tratamento: string | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           ativo?: boolean
           avatar_url?: string | null
+          contato_emergencia_1_nome?: string | null
+          contato_emergencia_1_telefone?: string | null
+          contato_emergencia_2_nome?: string | null
+          contato_emergencia_2_telefone?: string | null
+          cpf?: string | null
           created_at?: string | null
           dados_clinicos?: string | null
+          data_nascimento?: string | null
+          eh_crianca_adolescente?: boolean | null
           email?: string | null
+          emergencia_igual_pais?: boolean | null
+          endereco?: string | null
+          genero?: string | null
           historico?: string | null
           id?: string
+          medicamentos?: string[] | null
           nome: string
+          nome_mae?: string | null
+          nome_pai?: string | null
+          pais?: string | null
+          plano_saude?: string | null
+          profissao?: string | null
           telefone?: string | null
+          telefone_mae?: string | null
+          telefone_pai?: string | null
+          tratamento?: string | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           ativo?: boolean
           avatar_url?: string | null
+          contato_emergencia_1_nome?: string | null
+          contato_emergencia_1_telefone?: string | null
+          contato_emergencia_2_nome?: string | null
+          contato_emergencia_2_telefone?: string | null
+          cpf?: string | null
           created_at?: string | null
           dados_clinicos?: string | null
+          data_nascimento?: string | null
+          eh_crianca_adolescente?: boolean | null
           email?: string | null
+          emergencia_igual_pais?: boolean | null
+          endereco?: string | null
+          genero?: string | null
           historico?: string | null
           id?: string
+          medicamentos?: string[] | null
           nome?: string
+          nome_mae?: string | null
+          nome_pai?: string | null
+          pais?: string | null
+          plano_saude?: string | null
+          profissao?: string | null
           telefone?: string | null
+          telefone_mae?: string | null
+          telefone_pai?: string | null
+          tratamento?: string | null
           updated_at?: string | null
           user_id?: string
         }
