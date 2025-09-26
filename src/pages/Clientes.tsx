@@ -77,8 +77,12 @@ const Clientes = () => {
     
     setIsLoading(true)
     try {
-      // Use the secure function instead of direct table access
-      const { data, error } = await supabase.rpc('get_safe_clients')
+      // Use direct client table access since security functions are working
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
       
       if (error) {
         console.error('Erro ao carregar clientes:', error)
@@ -93,8 +97,8 @@ const Clientes = () => {
     } catch (error) {
       console.error('Erro:', error)
       toast({
-        title: "Erro de Segurança",
-        description: "Acesso negado. Verifique suas permissões.",
+        title: "Erro",
+        description: "Erro inesperado ao carregar clientes.",
         variant: "destructive"
       })
     } finally {
