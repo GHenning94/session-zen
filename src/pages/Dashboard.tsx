@@ -137,111 +137,82 @@ const Dashboard = () => {
 
   const loadDashboardData = async () => {
     try {
-      if (dashboardLoaded) {
-        console.log('🚀 Dashboard em cache, otimizando carregamento...')
+      // Check cache first
+      const cacheKey = `dashboard_${user?.id}`
+      const cached = localStorage.getItem(cacheKey)
+      const cacheTime = localStorage.getItem(`${cacheKey}_time`)
+      
+      if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 300000) {
+        console.log('🚀 Loading from cache...')
+        const data = JSON.parse(cached)
+        setDashboardData(data.dashboardData)
+        setUpcomingSessions(data.upcomingSessions)
+        setRecentPayments(data.recentPayments)
+        setRecentClients(data.recentClients)
+        setMonthlyChart(data.monthlyChart)
+        setTicketMedioChart(data.ticketMedioChart)
+        setTopClients(data.topClients)
+        setClientTicketMedio(data.clientTicketMedio)
+        setReceitaPorCanal(data.receitaPorCanal)
+        setDynamicReminders(data.dynamicReminders)
+        setDashboardLoaded(true)
+        return
       }
       
-      console.log('🔄 Carregando dados do dashboard...')
+      console.log('🔄 Loading fresh dashboard data...')
       
-      // Carregar sessões de hoje
       const today = new Date().toISOString().split('T')[0]
-      console.log('📅 Data de hoje:', today)
       
-      const { data: todaySessions } = await supabase
-        .from('sessions')
-        .select('*, clients(nome)')
-        .eq('user_id', user?.id)
-        .eq('data', today)
-        .order('horario')
+      // Parallel queries for better performance
+      const [
+        todaySessionsResult,
+        clientsCountResult,
+        monthlyPaymentsResult,
+        pendingSessionsResult,
+        upcomingDataResult,
+        paymentsDataResult,
+        recentClientsDataResult,
+        allClientsWithPaymentsResult,
+        allPaymentMethodsResult
+      ] = await Promise.all([
+        supabase.from('sessions').select('*, clients(nome)').eq('user_id', user?.id).eq('data', today).order('horario'),
+        supabase.from('clients').select('*', { count: 'exact', head: true }).eq('user_id', user?.id),
+        supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
+        supabase.from('sessions').select('valor, data, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
+        supabase.from('sessions').select('*, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(10),
+        supabase.from('sessions').select('*, clients(nome)').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(4),
+        supabase.from('clients').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
+        supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null)
+      ])
       
-      console.log('📊 Sessões de hoje:', todaySessions)
+      const todaySessions = todaySessionsResult.data
+      const clientsCount = clientsCountResult.count
 
-      // Carregar total de clientes ativos
-      const { count: clientsCount } = await supabase
-        .from('clients')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user?.id)
-
-      // Carregar receita do mês atual
-      const currentMonth = new Date().toISOString().slice(0, 7)
-      console.log('📊 Mês atual para receita:', currentMonth)
-      
-      // Calcular primeiro dia do próximo mês para usar como limite superior
-      const currentDate = new Date()
-      const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1)
-      const nextMonthStr = nextMonth.toISOString().slice(0, 10)
-      
-      const { data: monthlyPayments } = await supabase
-        .from('sessions')
-        .select('valor')
-        .eq('user_id', user?.id)
-        .eq('status', 'realizada')
-        .gte('data', `${currentMonth}-01`)
-        .lt('data', nextMonthStr)
-
-      console.log('💰 Pagamentos mensais encontrados:', monthlyPayments)
+      const monthlyPayments = monthlyPaymentsResult.data
       const monthlyRevenue = monthlyPayments?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-      console.log('💰 Receita mensal calculada:', monthlyRevenue)
-
-      // Calcular valores a receber (sessões não pagas/atrasadas)
-      const { data: pendingSessions } = await supabase
-        .from('sessions')
-        .select('valor, data, status')
-        .eq('user_id', user?.id)
-        .in('status', ['agendada'])
-        .lt('data', new Date().toISOString().split('T')[0])
-
-      console.log('💸 Sessões pendentes encontradas:', pendingSessions)
+      
+      const pendingSessions = pendingSessionsResult.data
       const pendingRevenue = pendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-      console.log('💸 Receita pendente calculada:', pendingRevenue)
 
-      // Carregar próximas sessões (apenas futuras - hoje em diante)
       const now = new Date()
-      const todayStr = now.toISOString().split('T')[0]
       const currentTime = now.toTimeString().slice(0, 5)
       
-      console.log('🔍 Buscando próximas sessões a partir de:', todayStr, 'hora atual:', currentTime)
-      
-      const { data: upcomingData } = await supabase
-        .from('sessions')
-        .select('*, clients(nome, avatar_url)')
-        .eq('user_id', user?.id)
-        .eq('status', 'agendada')
-        .gte('data', todayStr)
-        .order('data')
-        .order('horario')
-        .limit(10)
-      
-      // Filtrar sessões futuras (hoje após horário atual ou datas futuras)
+      const upcomingData = upcomingDataResult.data
       const filteredUpcoming = upcomingData?.filter(session => {
         const sessionDate = session.data
         const sessionTime = session.horario
         
-        if (sessionDate > todayStr) {
-          return true // Sessões de datas futuras
-        } else if (sessionDate === todayStr) {
-          return sessionTime >= currentTime // Sessões de hoje no horário atual ou após
+        if (sessionDate > today) {
+          return true
+        } else if (sessionDate === today) {
+          return sessionTime >= currentTime
         }
         return false
       }).slice(0, 4)
       
-      console.log('📅 Sessões futuras encontradas:', filteredUpcoming)
-
-      // Carregar pagamentos recentes
-      const { data: paymentsData } = await supabase
-        .from('sessions')
-        .select('*, clients(nome)')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(4)
-
-      // Carregar clientes recentes
-      const { data: recentClientsData } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false })
-        .limit(5)
+      const paymentsData = paymentsDataResult.data
+      const recentClientsData = recentClientsDataResult.data
 
       // Dados do gráfico mensal - sempre buscar últimos 12 meses
       console.log('📊 Carregando dados do gráfico para 12 meses')
@@ -336,17 +307,7 @@ const Dashboard = () => {
       
       console.log('📊 Dados finais de ticket médio:', ticketMedioData)
 
-      // Calcular top 5 clientes que mais pagam
-      console.log('👥 Carregando top clientes...')
-      const { data: allClientsWithPayments } = await supabase
-        .from('sessions')
-        .select('client_id, valor, clients(nome, avatar_url)')
-        .eq('user_id', user?.id)
-        .eq('status', 'realizada')
-        .not('client_id', 'is', null)
-        .not('valor', 'is', null)
-
-      console.log('👥 Sessões com clientes encontradas:', allClientsWithPayments)
+      const allClientsWithPayments = allClientsWithPaymentsResult.data
 
       const clientPayments = {}
       allClientsWithPayments?.forEach(session => {
@@ -393,17 +354,7 @@ const Dashboard = () => {
 
       console.log('📊 Ticket médio por cliente calculado:', clientTicketMedioData)
 
-      // Calcular receita por canal de pagamento
-      console.log('💳 Carregando receita por canal de pagamento...')
-      const { data: allPaymentMethods } = await supabase
-        .from('sessions')
-        .select('metodo_pagamento, valor')
-        .eq('user_id', user?.id)
-        .eq('status', 'realizada')
-        .not('valor', 'is', null)
-        .not('metodo_pagamento', 'is', null)
-
-      console.log('💳 Métodos de pagamento encontrados:', allPaymentMethods)
+      const allPaymentMethods = allPaymentMethodsResult.data
 
       const canalPayments = {}
       allPaymentMethods?.forEach(session => {
@@ -501,11 +452,28 @@ const Dashboard = () => {
       setDynamicReminders(reminders)
       setDashboardLoaded(true)
 
+      // Cache the data
+      const cacheData = {
+        dashboardData,
+        upcomingSessions: filteredUpcoming,
+        recentPayments: paymentsData,
+        recentClients: recentClientsData,
+        monthlyChart: chartData,
+        ticketMedioChart: ticketMedioData,
+        topClients: topClientsData,
+        clientTicketMedio: clientTicketMedioData,
+        receitaPorCanal: receitaPorCanalData,
+        dynamicReminders: reminders
+      }
+      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
+      localStorage.setItem(`${cacheKey}_time`, Date.now().toString())
+
       console.log('✅ Todos os dados foram atualizados no estado:')
       console.log('📊 Monthly Chart:', chartData.length, 'itens')
       console.log('📈 Ticket Médio Chart:', ticketMedioData.length, 'itens')
       console.log('👑 Top Clients:', topClientsData.length, 'itens')
       console.log('📊 Client Ticket Médio:', clientTicketMedioData.length, 'itens')
+      console.log('💾 Dashboard cached successfully!')
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
@@ -525,12 +493,26 @@ const Dashboard = () => {
     // Only affects ticket chart - no reloading needed
   }
 
-  const handleCanalPeriodChange = async (period: '1' | '3' | '6' | '12') => {
+  const handleCanalPeriodChange = useCallback(async (period: '1' | '3' | '6' | '12') => {
     console.log('💳 Mudando período dos canais para:', period)
     setCanalPeriod(period)
+    
+    if (!user) return
+    
+    const monthsToQuery = parseInt(period)
+    const cacheKey = `canal_${user.id}_${period}`
+    const cached = localStorage.getItem(cacheKey)
+    const cacheTime = localStorage.getItem(`${cacheKey}_time`)
+    
+    if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 180000) {
+      console.log('🚀 Loading canal data from cache...')
+      setReceitaPorCanal(JSON.parse(cached))
+      return
+    }
+    
     // Load filtered data for pie chart
     await loadCanalData(period)
-  }
+  }, [user])
 
   // Load canal data with period filter
   const loadCanalData = async (period: '1' | '3' | '6' | '12') => {
@@ -589,6 +571,11 @@ const Dashboard = () => {
 
       console.log('💳 Dados filtrados processados:', filteredCanalData)
       setReceitaPorCanal(filteredCanalData)
+      
+      // Cache the data
+      const cacheKey = `canal_${user.id}_${period}`
+      localStorage.setItem(cacheKey, JSON.stringify(filteredCanalData))
+      localStorage.setItem(`${cacheKey}_time`, Date.now().toString())
 
     } catch (error) {
       console.error('Erro ao carregar dados do canal:', error)
@@ -1262,15 +1249,15 @@ const Dashboard = () => {
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
-                    <CardHeader className="pb-3">
+                    <CardHeader className="pb-1">
                       <div className="flex items-center justify-between">
-                        <div className="space-y-1">
-                          <CardTitle className="flex items-center gap-2">
+                        <div className="space-y-0.5">
+                          <CardTitle className="flex items-center gap-2 text-base">
                             <DollarSign className="w-5 h-5 text-primary" />
-                            Receita por Canal de Pagamento
+                            Receita por Canal
                           </CardTitle>
-                          <CardDescription>
-                            Distribuição da receita por método de pagamento nos últimos {canalPeriod} meses
+                          <CardDescription className="text-sm">
+                            Distribuição da receita por método de pagamento
                           </CardDescription>
                         </div>
                         <div className="flex gap-2">
@@ -1305,10 +1292,10 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[400px]">
+                    <CardContent className="h-[340px] p-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                         {/* Gráfico de Pizza */}
-                        <div className="h-full min-h-[320px]">
+                        <div className="h-full min-h-[280px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
