@@ -69,18 +69,19 @@ export function TextPreview({ content, isHtml = false, title = "Visualização C
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl w-[90vw] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
           </DialogHeader>
           <div className="mt-4">
             {isHtml ? (
               <div 
-                className="prose prose-sm max-w-none whitespace-pre-wrap"
+                className="prose prose-sm max-w-none whitespace-pre-wrap break-words overflow-wrap-anywhere"
                 dangerouslySetInnerHTML={{ __html: content }}
+                style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
               />
             ) : (
-              <div className="whitespace-pre-wrap text-sm leading-relaxed">
+              <div className="whitespace-pre-wrap text-sm leading-relaxed break-words overflow-wrap-anywhere" style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                 {content}
               </div>
             )}
