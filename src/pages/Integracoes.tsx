@@ -22,7 +22,13 @@ const Integracoes = () => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const { data: profileData, error: profileError } = await supabase.from('profiles').select('*').eq('user_id', user.id).single();
+      // Carregar dados básicos do perfil (sem informações financeiras sensíveis)
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, plano, subscription_plan, created_at, updated_at')
+        .eq('user_id', user.id)
+        .single();
+      
       if (profileError) throw profileError;
 
       const { data: configData, error: configError } = await supabase.from('configuracoes').select('*').eq('user_id', user.id).single();
