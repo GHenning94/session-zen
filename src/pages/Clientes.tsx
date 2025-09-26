@@ -76,11 +76,8 @@ const Clientes = () => {
     
     setIsLoading(true)
     try {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
+      // Use the secure function instead of direct table access
+      const { data, error } = await supabase.rpc('get_safe_clients')
       
       if (error) {
         console.error('Erro ao carregar clientes:', error)
@@ -94,6 +91,11 @@ const Clientes = () => {
       }
     } catch (error) {
       console.error('Erro:', error)
+      toast({
+        title: "Erro de Segurança",
+        description: "Acesso negado. Verifique suas permissões.",
+        variant: "destructive"
+      })
     } finally {
       setIsLoading(false)
     }
@@ -370,7 +372,7 @@ const Clientes = () => {
       return matchesSearch && matchesStatus
     })
     .sort((a, b) => {
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      return new Date(b.created_at || b.view_accessed_at).getTime() - new Date(a.created_at || a.view_accessed_at).getTime()
     })
 
   // Separar clientes ativos e inativos
@@ -624,7 +626,8 @@ const Clientes = () => {
             ) : (
               <div className="space-y-4">
                 {filteredClients.map((client) => {
-                  const hasMedications = client.medicamentos && client.medicamentos.length > 0
+                  // Check if client has medications based on secure status
+                  const hasMedications = client.has_medical_data === true
                   
                   return (
                     <div 

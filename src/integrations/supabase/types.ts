@@ -817,12 +817,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           dados_clinicos_status?: never
-          email?: string | null
+          email?: never
           has_medical_data?: never
           historico_status?: never
           id?: string | null
           nome?: string | null
-          telefone?: string | null
+          telefone?: never
           updated_at?: string | null
           user_id?: string | null
           view_accessed_at?: never
@@ -832,12 +832,12 @@ export type Database = {
           avatar_url?: string | null
           created_at?: string | null
           dados_clinicos_status?: never
-          email?: string | null
+          email?: never
           has_medical_data?: never
           historico_status?: never
           id?: string | null
           nome?: string | null
-          telefone?: string | null
+          telefone?: never
           updated_at?: string | null
           user_id?: string | null
           view_accessed_at?: never
@@ -907,6 +907,10 @@ export type Database = {
       sanitize_text: {
         Args: { input_text: string }
         Returns: string
+      }
+      secure_client_data_access_validator: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       secure_client_query_validator: {
         Args: { requested_user_id: string }
