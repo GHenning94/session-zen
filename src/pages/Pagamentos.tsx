@@ -194,6 +194,15 @@ const Pagamentos = () => {
     const startDate = new Date()
     
     switch (filterPeriod) {
+      case "hoje":
+        // Apenas hoje
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        return payments.filter(payment => {
+          const paymentDate = new Date(payment.date)
+          paymentDate.setHours(0, 0, 0, 0)
+          return paymentDate.getTime() === today.getTime()
+        })
       case "semana":
         startDate.setDate(now.getDate() - 7)
         break
@@ -404,7 +413,7 @@ const Pagamentos = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">
-                {paidCount > 0 ? ((paidCount / (paidCount + pendingCount)) * 100).toFixed(1) : 0}%
+                {(paidCount + pendingCount + lateCount) > 0 ? ((paidCount / (paidCount + pendingCount + lateCount)) * 100).toFixed(1) : 0}%
               </div>
               <p className="text-sm text-muted-foreground">Pagamentos em dia</p>
             </CardContent>
@@ -436,6 +445,7 @@ const Pagamentos = () => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="hoje">Hoje</SelectItem>
                     <SelectItem value="semana">Últimos 7 dias</SelectItem>
                     <SelectItem value="mes">Último mês</SelectItem>
                     <SelectItem value="trimestre">Último trimestre</SelectItem>
