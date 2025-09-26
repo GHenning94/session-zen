@@ -132,7 +132,7 @@ const Pagamentos = () => {
       return {
         id: session.id,
         client: getClientName(session.client_id),
-        date: session.data,
+        date: session.data, // Mantém no formato ISO para consistência
         time: session.horario,
         value: session.valor || 0,
         status: status,

@@ -496,10 +496,10 @@ export default function Sessoes() {
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                <div className="flex items-center gap-1">
-                                  <Calendar className="w-3 h-3" />
-                                  <span>{format(new Date(session.data), "dd/MM/yyyy", { locale: ptBR })}</span>
-                                </div>
+                                 <div className="flex items-center gap-1">
+                                   <Calendar className="w-3 h-3" />
+                                   <span>{formatDateBR(session.data)}</span>
+                                 </div>
                                 <div className="flex items-center gap-1">
                                   <Clock className="w-3 h-3" />
                                   <span>{formatTimeBR(session.horario)}</span>
@@ -607,18 +607,18 @@ export default function Sessoes() {
                           <div className="flex items-center gap-2 mb-2">
                             <FileText className="w-4 h-4 text-primary" />
                             <h3 className="font-medium">{note.clients?.nome || 'Cliente não encontrado'}</h3>
-                            {note.sessions && (
-                              <Badge variant="outline" className="text-xs">
-                                {format(new Date(note.sessions.data), "dd/MM/yyyy", { locale: ptBR })} às {formatTimeBR(note.sessions.horario)}
-                              </Badge>
-                            )}
+                             {note.sessions && (
+                               <Badge variant="outline" className="text-xs">
+                                 {formatDateBR(note.sessions.data)} às {formatTimeBR(note.sessions.horario)}
+                               </Badge>
+                             )}
                           </div>
                           <div className="text-sm text-muted-foreground mb-2">
                             <div dangerouslySetInnerHTML={{ __html: note.notes }} />
                           </div>
-                          <div className="text-xs text-muted-foreground">
-                            Criado em {format(new Date(note.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                          </div>
+                           <div className="text-xs text-muted-foreground">
+                             Criado em {formatDateBR(note.created_at)} às {formatTimeBR(note.created_at)}
+                           </div>
                         </div>
                         
                         <DropdownMenu>
