@@ -455,28 +455,28 @@ const Clientes = () => {
 
         <Card className="shadow-soft">
           <CardHeader>
-            <CardTitle>Lista de Clientes</CardTitle>
-            <CardDescription>
-              {clients.length} cliente(s) encontrado(s)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoading ? (
-              <div className="text-center py-8">
-                <p className="text-muted-foreground">Carregando clientes...</p>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                {/* Clientes Ativos */}
-                <Collapsible open={activeClientsExpanded} onOpenChange={setActiveClientsExpanded}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="w-full justify-between p-0 h-auto">
-                      <div className="flex items-center gap-2">
-                        <h3 className="text-lg font-semibold">Clientes Ativos ({activeClients.length})</h3>
+                    <CardTitle>Lista de Clientes</CardTitle>
+                    <CardDescription>
+                      {clients.length} cliente(s) encontrado(s)
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {isLoading ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">Carregando clientes...</p>
                       </div>
-                      {activeClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                    </Button>
-                  </CollapsibleTrigger>
+                    ) : (
+                      <div className="space-y-6">
+                        {/* Clientes Ativos */}
+                        <Collapsible open={activeClientsExpanded} onOpenChange={setActiveClientsExpanded}>
+                          <CollapsibleTrigger asChild>
+                            <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                              <div className="flex items-center gap-2">
+                                {activeClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                                <h3 className="text-lg font-semibold">Clientes Ativos ({activeClients.length})</h3>
+                              </div>
+                            </Button>
+                          </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="space-y-4 mt-4">
                       {activeClients.filter(client =>
@@ -602,9 +602,9 @@ const Clientes = () => {
                     <CollapsibleTrigger asChild>
                       <Button variant="ghost" className="w-full justify-between p-0 h-auto">
                         <div className="flex items-center gap-2">
+                          {inactiveClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                           <h3 className="text-lg font-semibold text-muted-foreground">Clientes Inativos ({inactiveClients.length})</h3>
                         </div>
-                        {inactiveClientsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       </Button>
                     </CollapsibleTrigger>
                     <CollapsibleContent>

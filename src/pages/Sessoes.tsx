@@ -68,6 +68,11 @@ export default function Sessoes() {
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
   
+  // Estados para collapsible sections
+  const [activeSessionsExpanded, setActiveSessionsExpanded] = useState(true)
+  const [cancelledSessionsExpanded, setCancelledSessionsExpanded] = useState(false)
+  const [noShowSessionsExpanded, setNoShowSessionsExpanded] = useState(false)
+  
   // Estados para filtros
   const [filters, setFilters] = useState({
     status: '',
@@ -544,13 +549,13 @@ export default function Sessoes() {
         {activeTab === 'sessions' && (
           <div className="space-y-6">
             {/* Sessões Ativas */}
-            <Collapsible open={true} onOpenChange={() => {}}>
+            <Collapsible open={activeSessionsExpanded} onOpenChange={setActiveSessionsExpanded}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-0 h-auto mb-4">
                   <div className="flex items-center gap-2">
+                    {activeSessionsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <h3 className="text-lg font-semibold">Sessões Ativas ({filteredActiveSessions.length})</h3>
                   </div>
-                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -731,13 +736,13 @@ export default function Sessoes() {
 
             {/* Sessões Canceladas */}
             {filteredCancelledSessions.length > 0 && (
-              <Collapsible open={false} onOpenChange={() => {}}>
+              <Collapsible open={cancelledSessionsExpanded} onOpenChange={setCancelledSessionsExpanded}>
                 <CollapsibleTrigger asChild>
                   <Button variant="ghost" className="w-full justify-between p-0 h-auto py-6">
                     <div className="flex items-center gap-2">
+                      {cancelledSessionsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                       <h3 className="text-lg font-semibold">Sessões Canceladas ({filteredCancelledSessions.length})</h3>
                     </div>
-                    <ChevronRight className="h-4 w-4" />
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent>
@@ -772,7 +777,126 @@ export default function Sessoes() {
                                 <span className="text-sm font-medium text-muted-foreground">
                                   {formatCurrencyBR(session.valor)}
                                 </span>
+            )}
+
+            {/* Sessões com Faltas */}
+            {filteredNoShowSessions.length > 0 && (
+              <Collapsible open={noShowSessionsExpanded} onOpenChange={setNoShowSessionsExpanded}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-0 h-auto py-6">
+                    <div className="flex items-center gap-2">
+                      {noShowSessionsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      <h3 className="text-lg font-semibold">Sessões com Faltas ({filteredNoShowSessions.length})</h3>
+                    </div>
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="space-y-4 mt-4">
+                    {filteredNoShowSessions.map((session) => (
+                      <Card key={session.id} className="bg-yellow-50/50 border-yellow-200">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                <User className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{session.clients?.nome}</span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Calendar className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">
+                                  {formatDateBR(session.data)}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm">{formatTimeBR(session.horario)}</span>
+                              </div>
+                              
+                              <Badge variant="outline" className="border-yellow-400 text-yellow-700">
+                                {getStatusLabel(session.status)}
+                              </Badge>
+                              
+                              {session.valor && (
+                                <span className="text-sm font-medium text-muted-foreground line-through">
+                                  {formatCurrencyBR(session.valor)}
+                                </span>
                               )}
+                            </div>
+                            
+                            <div className="flex gap-2">
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleEditSession(session)}
+                              >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editar
+                              </Button>
+                              
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="bg-background border shadow-lg z-50">
+                                  <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Ver na Agenda
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
+                                    <CreditCard className="h-4 w-4 mr-2" />
+                                    Ver Pagamento
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                                        <Trash2 className="h-4 w-4 mr-2" />
+                                        <span className="text-destructive">Excluir</span>
+                                      </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Excluir Sessão</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Tem certeza que deseja excluir permanentemente esta sessão? Esta ação não pode ser desfeita.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Voltar</AlertDialogCancel>
+                                        <AlertDialogAction
+                                          onClick={() => handleDeleteSession(session.id)}
+                                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                        >
+                                          Excluir Permanentemente
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          </div>
+                          
+                          {session.anotacoes && (
+                            <div className="mt-3 p-3 bg-muted rounded-lg">
+                              <div className="flex items-center gap-2 mb-2">
+                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">Anotações</span>
+                              </div>
+                              <p className="text-sm text-muted-foreground">{session.anotacoes}</p>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            )}
                             </div>
                             
                             <div className="flex gap-2">

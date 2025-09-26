@@ -106,7 +106,7 @@ export const SessionNoteModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
           <DialogTitle>
             {editingNote ? 'Editar Anotação' : `Adicionar Anotação - ${session?.clients?.nome || editingNote?.clients?.nome}`}
@@ -116,12 +116,14 @@ export const SessionNoteModal = ({
         <div className="space-y-4">
           <div>
             <Label htmlFor="notes">Anotação da Sessão</Label>
-            <RichTextEditor
-              value={notes}
-              onChange={setNotes}
-              placeholder="Digite suas observações sobre a sessão..."
-              className="mt-2"
-            />
+            <div className="mt-2 max-h-[400px] overflow-y-auto">
+              <RichTextEditor
+                value={notes}
+                onChange={setNotes}
+                placeholder="Digite suas observações sobre a sessão..."
+                className="min-h-[200px]"
+              />
+            </div>
           </div>
 
           <div className="flex gap-2 justify-end">

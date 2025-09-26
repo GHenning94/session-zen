@@ -49,6 +49,8 @@ const Pagamentos = () => {
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
+  const [activePaymentsExpanded, setActivePaymentsExpanded] = useState(true)
+  const [cancelledPaymentsExpanded, setCancelledPaymentsExpanded] = useState(false)
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -447,13 +449,13 @@ const Pagamentos = () => {
         {/* Payment History */}
         <Card className="shadow-soft">
           <CardHeader>
-            <Collapsible open={true} onOpenChange={() => {}}>
+            <Collapsible open={activePaymentsExpanded} onOpenChange={setActivePaymentsExpanded}>
               <CollapsibleTrigger asChild>
                 <Button variant="ghost" className="w-full justify-between p-0 h-auto">
                   <div className="flex items-center gap-2">
+                    {activePaymentsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
                     <CardTitle>Histórico de Pagamentos</CardTitle>
                   </div>
-                  <ChevronDown className="h-4 w-4" />
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -616,14 +618,101 @@ const Pagamentos = () => {
                     </div>
                    )
                  })}
-                      </div>
-                    </CollapsibleContent>
-                  </Collapsible>
-                )}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                       </div>
+                     </CollapsibleContent>
+                   </Collapsible>
+                 )}
+               </div>
+             )}
+           </CardContent>
+         </Card>
+
+         {/* Cancelled Payments */}
+         {filteredCancelledPayments.length > 0 && (
+           <Card className="shadow-soft">
+             <CardHeader>
+               <Collapsible open={cancelledPaymentsExpanded} onOpenChange={setCancelledPaymentsExpanded}>
+                 <CollapsibleTrigger asChild>
+                   <Button variant="ghost" className="w-full justify-between p-0 h-auto">
+                     <div className="flex items-center gap-2">
+                       {cancelledPaymentsExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                       <CardTitle>Pagamentos Cancelados</CardTitle>
+                     </div>
+                   </Button>
+                 </CollapsibleTrigger>
+                 <CollapsibleContent>
+                   <CardDescription className="mt-2">
+                     {filteredCancelledPayments.length} pagamento(s) cancelado(s)
+                   </CardDescription>
+                 </CollapsibleContent>
+               </Collapsible>
+             </CardHeader>
+             <CardContent>
+               {isLoading ? (
+                 <div className="text-center py-8">
+                   <p className="text-muted-foreground">Carregando pagamentos...</p>
+                 </div>
+               ) : (
+                 <div className="space-y-4">
+                   <Collapsible open={cancelledPaymentsExpanded} onOpenChange={setCancelledPaymentsExpanded}>
+                     <CollapsibleContent>
+                       <div className="space-y-4">
+                         {filteredCancelledPayments.map((payment) => {
+                            const StatusIcon = getStatusIcon(payment.status)
+                            
+                            return (
+                            <div key={payment.id} className="flex items-center justify-between p-4 border border-border rounded-lg bg-accent/20">
+                               <div className="flex items-center gap-4">
+                                 <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
+                                   <StatusIcon className="w-5 h-5 text-muted-foreground" />
+                                 </div>
+                                 <div>
+                                   <div className="flex items-center gap-2">
+                                     <p className="font-medium text-muted-foreground">{payment.client}</p>
+                                     <Badge variant="destructive" className="text-xs">
+                                       Cancelado
+                                     </Badge>
+                                   </div>
+                                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                     <Calendar className="w-3 h-3" />
+                                     <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                                   </div>
+                                 </div>
+                               </div>
+                               
+                               <div className="flex items-center gap-4">
+                                 <div className="text-right">
+                                   <p className="font-bold text-lg text-muted-foreground">{formatCurrencyBR(payment.value)}</p>
+                                   <p className="text-xs text-muted-foreground">{payment.method}</p>
+                                 </div>
+                                 
+                                 <DropdownMenu>
+                                   <DropdownMenuTrigger asChild>
+                                     <Button variant="ghost" size="icon" className="h-8 w-8">
+                                       <MoreHorizontal className="w-4 h-4" />
+                                     </Button>
+                                   </DropdownMenuTrigger>
+                                   <DropdownMenuContent className="bg-background border shadow-lg z-50">
+                                     <DropdownMenuItem 
+                                       onClick={() => viewSession(payment.session_id)}
+                                     >
+                                       <Calendar className="w-4 h-4 mr-2" />
+                                       Ver Sessão
+                                     </DropdownMenuItem>
+                                   </DropdownMenuContent>
+                             </DropdownMenu>
+                           </div>
+                         </div>
+                        )
+                      })}
+                       </div>
+                     </CollapsibleContent>
+                   </Collapsible>
+                 </div>
+               )}
+             </CardContent>
+           </Card>
+         )}
 
         {/* Payment Methods Summary */}
         {hasFeature('hasHistory') && (

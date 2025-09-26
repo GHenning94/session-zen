@@ -2,18 +2,17 @@
  * Calcula o status correto de uma sessão baseado na data, horário e status atual
  */
 export const calculateSessionStatus = (data: string, horario: string, currentStatus?: string): string => {
-  // Se já foi marcada como realizada, cancelada ou falta, manter o status
-  if (currentStatus === 'realizada' || currentStatus === 'cancelada' || currentStatus === 'falta') {
+  // Se já foi marcada como cancelada ou falta, manter o status
+  if (currentStatus === 'cancelada' || currentStatus === 'falta') {
     return currentStatus
   }
   
   const sessionDateTime = new Date(`${data}T${horario}`)
   const currentDateTime = new Date()
   
-  // Se passou da data/hora, deveria ter sido realizada
+  // Se passou da data/hora, marcar automaticamente como realizada
   if (sessionDateTime < currentDateTime) {
-    // Se ainda está como 'agendada', provavelmente está atrasada para ser marcada
-    return 'agendada' // Manter como agendada para o usuário decidir se foi realizada ou não
+    return 'realizada'
   }
   
   // Se é no futuro, está agendada

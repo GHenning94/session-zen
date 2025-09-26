@@ -39,8 +39,10 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
           style={{
             backgroundColor: 'white',
             borderRadius: '6px',
-            minHeight: '120px'
+            minHeight: '200px',
+            maxWidth: '100%'
           }}
+          bounds={'.modal-content'}
         />
       </div>
     )
