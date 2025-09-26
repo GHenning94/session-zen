@@ -1093,16 +1093,11 @@ const Dashboard = () => {
                 {/* Gráfico de Ticket Médio */}
                 <div className="col-span-full">
                   <Card className="shadow-soft">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
-                        <div>
-                          <CardTitle className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-primary" />
-                            Evolução do Ticket Médio
-                          </CardTitle>
-                          <CardDescription>
-                            Ticket médio por sessão ao longo do tempo
-                          </CardDescription>
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-primary" />
+                          <CardTitle>Ticket Médio</CardTitle>
                         </div>
                         <div className="flex gap-2">
                           <Button 
@@ -1135,9 +1130,12 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
+                      <CardDescription>
+                        Ticket médio por sessão ao longo do tempo
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-80">
+                      <div className="h-64">
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
                               key={`ticket-${ticketPeriod}-independent`}
@@ -1249,16 +1247,11 @@ const Dashboard = () => {
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
-                    <CardHeader className="pb-1">
+                    <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
-                        <div className="space-y-0.5">
-                          <CardTitle className="flex items-center gap-2 text-base">
-                            <DollarSign className="w-5 h-5 text-primary" />
-                            Receita por Canal
-                          </CardTitle>
-                          <CardDescription className="text-sm">
-                            Distribuição da receita por método de pagamento
-                          </CardDescription>
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-5 h-5 text-primary" />
+                          <CardTitle>Receita por Canal</CardTitle>
                         </div>
                         <div className="flex gap-2">
                           <Button 
@@ -1291,8 +1284,11 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
+                      <CardDescription>
+                        Distribuição da receita por método de pagamento
+                      </CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[340px] p-4">
+                    <CardContent className="h-[280px] p-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                         {/* Gráfico de Pizza */}
                         <div className="h-full min-h-[280px]">
