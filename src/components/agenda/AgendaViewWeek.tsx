@@ -109,7 +109,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
       case 'agendada':
         return 'bg-primary/10 text-primary border-primary/20'
       case 'realizada':
-        return { backgroundColor: 'hsl(142 71% 45% / 0.1)', color: 'hsl(142 71% 45%)', borderColor: 'hsl(142 71% 45% / 0.2)' }
+        return { backgroundColor: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', borderColor: 'hsl(var(--success) / 0.2)' }
       case 'cancelada':
         return 'bg-red-100 text-red-800 border-red-200'
       default:

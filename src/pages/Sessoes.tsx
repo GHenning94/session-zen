@@ -354,7 +354,7 @@ export default function Sessoes() {
           
           <Card>
             <CardContent className="p-4">
-              <div className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>{stats.realizadas}</div>
+              <div className="text-2xl font-bold text-success">{stats.realizadas}</div>
               <p className="text-xs text-muted-foreground">Realizadas</p>
             </CardContent>
           </Card>
@@ -382,7 +382,7 @@ export default function Sessoes() {
           
           <Card>
             <CardContent className="p-4">
-               <div className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>
+               <div className="text-2xl font-bold text-success">
                 {formatCurrencyBR(stats.totalFaturado)}
               </div>
               <p className="text-xs text-muted-foreground">Total Faturado</p>

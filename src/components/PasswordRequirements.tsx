@@ -1,4 +1,5 @@
 import { Check, X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface PasswordRequirementsProps {
   password: string
@@ -37,11 +38,11 @@ export const PasswordRequirements = ({ password }: PasswordRequirementsProps) =>
           return (
             <div key={index} className="flex items-center gap-2 text-sm">
               {isValid ? (
-                <Check className="w-4 h-4" style={{ color: 'hsl(142 71% 45%)' }} />
+                <Check className="w-4 h-4 text-success" />
               ) : (
                 <X className="w-4 h-4 text-muted-foreground" />
               )}
-              <span className={isValid ? "" : "text-muted-foreground"} style={isValid ? { color: 'hsl(142 71% 45%)' } : {}}>
+              <span className={cn(isValid ? "text-success" : "text-muted-foreground")}>
                 {req.text}
               </span>
             </div>

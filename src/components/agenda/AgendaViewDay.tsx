@@ -116,7 +116,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
       case 'agendada':
         return 'bg-blue-100 text-blue-800 border-blue-200'
       case 'realizada':
-        return { backgroundColor: 'hsl(142 71% 45% / 0.1)', color: 'hsl(142 71% 45%)', borderColor: 'hsl(142 71% 45% / 0.2)' }
+        return { backgroundColor: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', borderColor: 'hsl(var(--success) / 0.2)' }
       case 'cancelada':
         return 'bg-red-100 text-red-800 border-red-200'
       default:
@@ -210,7 +210,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                             </div>
                             <div className="flex items-center gap-1">
                               {session.valor && (
-                                <span className="text-xs font-medium" style={{ color: 'hsl(142 71% 45%)' }}>
+                                <span className="text-xs font-medium text-success">
                                   R$ {Number(session.valor).toFixed(2)}
                                 </span>
                               )}

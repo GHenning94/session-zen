@@ -51,7 +51,7 @@ export const GoogleAdsSetup = () => {
         <div className="flex items-center gap-2">
           <Settings className="h-5 w-5" />
           <CardTitle>Google Ads</CardTitle>
-          {isConfigured && <Badge variant="default" className="text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Configurado</Badge>}
+          {isConfigured && <Badge variant="default" className="bg-success text-success-foreground">Configurado</Badge>}
         </div>
         <CardDescription>
           Configure o rastreamento de conversões do Google Ads para otimizar suas campanhas
@@ -97,8 +97,8 @@ export const GoogleAdsSetup = () => {
             
             {isConfigured && (
               <div className="flex items-center gap-2">
-                <CheckCircle className="h-4 w-4" style={{ color: 'hsl(142 71% 45%)' }} />
-                <span className="text-sm" style={{ color: 'hsl(142 71% 45%)' }}>Google Ads configurado com sucesso</span>
+                <CheckCircle className="h-4 w-4 text-success" />
+                <span className="text-sm text-success">Google Ads configurado com sucesso</span>
               </div>
             )}
           </div>

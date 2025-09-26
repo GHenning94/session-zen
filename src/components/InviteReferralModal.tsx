@@ -109,7 +109,7 @@ export const InviteReferralModal = ({ open, onOpenChange }: InviteReferralModalP
                   <div className="text-sm text-muted-foreground">Convites Enviados</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>{referralStats.acceptedInvites}</div>
+                  <div className="text-2xl font-bold text-success">{referralStats.acceptedInvites}</div>
                   <div className="text-sm text-muted-foreground">Inscrições</div>
                 </div>
                 <div>
