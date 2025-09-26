@@ -39,8 +39,10 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
     const numbers = value.replace(/\D/g, '')
     
     // Apply mask: (XX) XXXXX-XXXX
-    if (numbers.length <= 2) {
-      return numbers.length > 0 ? `(${numbers}` : ''
+    if (numbers.length === 0) {
+      return ''
+    } else if (numbers.length <= 2) {
+      return `(${numbers}`
     } else if (numbers.length <= 7) {
       return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
     } else {
