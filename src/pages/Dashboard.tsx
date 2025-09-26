@@ -1288,10 +1288,10 @@ const Dashboard = () => {
                         Distribuição da receita por método de pagamento
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[240px] p-4">
+                    <CardContent className="h-[360px] p-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                         {/* Gráfico de Pizza */}
-                        <div className="h-full min-h-[200px]">
+                        <div className="h-full min-h-[300px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
