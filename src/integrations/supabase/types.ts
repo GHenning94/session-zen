@@ -459,13 +459,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "filled_records_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "filled_records_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -722,13 +715,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "session_notes_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients_safe"
-            referencedColumns: ["id"]
-          },
-          {
             foreignKeyName: "session_notes_session_id_fkey"
             columns: ["session_id"]
             isOneToOne: false
@@ -785,13 +771,6 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "sessions_client_id_fkey"
-            columns: ["client_id"]
-            isOneToOne: false
-            referencedRelation: "clients_safe"
-            referencedColumns: ["id"]
-          },
         ]
       }
     }
@@ -811,36 +790,6 @@ export type Database = {
           updated_at: string | null
           user_id: string | null
           view_accessed_at: string | null
-        }
-        Insert: {
-          ativo?: boolean | null
-          avatar_url?: string | null
-          created_at?: string | null
-          dados_clinicos_status?: never
-          email?: never
-          has_medical_data?: never
-          historico_status?: never
-          id?: string | null
-          nome?: string | null
-          telefone?: never
-          updated_at?: string | null
-          user_id?: string | null
-          view_accessed_at?: never
-        }
-        Update: {
-          ativo?: boolean | null
-          avatar_url?: string | null
-          created_at?: string | null
-          dados_clinicos_status?: never
-          email?: never
-          has_medical_data?: never
-          historico_status?: never
-          id?: string | null
-          nome?: string | null
-          telefone?: never
-          updated_at?: string | null
-          user_id?: string | null
-          view_accessed_at?: never
         }
         Relationships: []
       }
@@ -879,6 +828,10 @@ export type Database = {
           user_id: string
           view_accessed_at: string
         }[]
+      }
+      get_clients_safe_security_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       get_public_profile_by_slug: {
         Args: { page_slug: string }
