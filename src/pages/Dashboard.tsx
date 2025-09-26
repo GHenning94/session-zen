@@ -176,12 +176,12 @@ const Dashboard = () => {
         allPaymentMethodsResult
       ] = await Promise.all([
         supabase.from('sessions').select('*, clients(nome)').eq('user_id', user?.id).eq('data', today).order('horario'),
-        supabase.from('clients').select('*', { count: 'exact', head: true }).eq('user_id', user?.id),
+        supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         supabase.from('sessions').select('valor, data, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
         supabase.from('sessions').select('*, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(10),
         supabase.from('sessions').select('*, clients(nome)').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(4),
-        supabase.from('clients').select('*').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
         supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null)
       ])

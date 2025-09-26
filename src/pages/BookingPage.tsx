@@ -161,17 +161,35 @@ const BookingPage = () => {
     }
     setIsBooking(true)
     try {
-      const { data: newClient } = await supabase.from('clients').insert([{ user_id: profile.user_id, nome: clientData.nome, email: clientData.email, telefone: clientData.telefone, dados_clinicos: clientData.observacoes }]).select().single()
-      if (!newClient) throw new Error("Falha ao criar cliente");
-      
-      await supabase.from('sessions').insert([{ user_id: profile.user_id, client_id: newClient.id, data: selectedDate, horario: selectedTime, status: 'agendada', valor: config.valor_padrao || 0 }])
+      // Usar edge function segura ao invés de inserção direta
+      const { data, error } = await supabase.functions.invoke('create-public-booking', {
+        body: {
+          slug: slug,
+          clientData: {
+            nome: clientData.nome,
+            email: clientData.email,
+            telefone: clientData.telefone,
+            observacoes: clientData.observacoes
+          },
+          sessionData: {
+            data: selectedDate,
+            horario: selectedTime
+          }
+        }
+      })
+
+      if (error || !data?.success) {
+        throw new Error(data?.error || 'Erro ao processar agendamento')
+      }
+
       toast({ title: "Agendamento realizado!", description: "Sua sessão foi agendada com sucesso." })
       setClientData({ nome: "", email: "", telefone: "", observacoes: "" })
       setSelectedDate("")
       setSelectedTime("")
     } catch (error) {
       console.error('Erro ao agendar:', error)
-      toast({ title: "Erro", description: "Não foi possível realizar o agendamento.", variant: "destructive" })
+      const errorMessage = error instanceof Error ? error.message : "Não foi possível realizar o agendamento."
+      toast({ title: "Erro", description: errorMessage, variant: "destructive" })
     } finally {
       setIsBooking(false)
     }
