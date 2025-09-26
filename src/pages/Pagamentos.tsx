@@ -18,8 +18,10 @@ import {
   Smartphone,
   Building2,
   Banknote,
+  Search,
 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Input } from "@/components/ui/input"
 
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -40,6 +42,7 @@ const Pagamentos = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [filterPeriod, setFilterPeriod] = useState("todos")
   const [filterStatus, setFilterStatus] = useState("todos")
+  const [filterName, setFilterName] = useState("")
   const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [profiles, setProfiles] = useState<any[]>([])
@@ -212,9 +215,11 @@ const Pagamentos = () => {
 
   // Filtrar e ordenar pagamentos
   const allPayments = getSessionPayments()
-  const filteredPayments = filterByPeriod(allPayments).filter(payment => 
-    filterStatus === "todos" || payment.status === filterStatus
-  ).sort((a, b) => {
+  const filteredPayments = filterByPeriod(allPayments).filter(payment => {
+    const statusMatch = filterStatus === "todos" || payment.status === filterStatus
+    const nameMatch = filterName === "" || payment.client.toLowerCase().includes(filterName.toLowerCase())
+    return statusMatch && nameMatch
+  }).sort((a, b) => {
     const dateA = new Date(`${a.date} ${a.time}`)
     const dateB = new Date(`${b.date} ${b.time}`)
     return dateB.getTime() - dateA.getTime()
@@ -409,7 +414,20 @@ const Pagamentos = () => {
         {/* Filters */}
         <Card className="shadow-soft">
           <CardHeader>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Nome:</label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar cliente..."
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    className="w-[200px] pl-9"
+                  />
+                </div>
+              </div>
+              
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">Período:</label>
                 <Select value={filterPeriod} onValueChange={setFilterPeriod}>
@@ -517,7 +535,7 @@ const Pagamentos = () => {
                               <Calendar className="w-4 h-4 mr-2" />
                               Ver Sessão
                             </DropdownMenuItem>
-                            {payment.status === 'pendente' && (
+                            {(payment.status === 'pendente' || payment.status === 'atrasado') && (
                               <DropdownMenuItem onClick={() => openPaymentModal(payment.session_id)}>
                                 <CheckCircle className="w-4 h-4 mr-2" />
                                 Marcar como Pago
