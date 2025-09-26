@@ -10,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth"
 import RichTextEditor from "./RichTextEditor"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { getSessionStatusColor, getSessionStatusLabel } from "@/utils/sessionStatusUtils"
+import { getSessionStatusColor, getSessionStatusLabel, calculateSessionStatus } from "@/utils/sessionStatusUtils"
+import { formatDateBR } from "@/utils/formatters"
 import { Badge } from "@/components/ui/badge"
 
 interface EvolucaoModalProps {
@@ -101,8 +102,15 @@ export const EvolucaoModal = ({
         throw error
       }
       
+      // Aplicar o mesmo cálculo de status que é usado na página de sessões
+      const updatedSessions = (data || []).map(session => ({
+        ...session,
+        status: calculateSessionStatus(session.data, session.horario, session.status)
+      }))
+      
       console.log('Sessões encontradas:', data)
-      setSessions(data || [])
+      console.log('Sessões com status atualizados:', updatedSessions)
+      setSessions(updatedSessions)
     } catch (error) {
       console.error('Erro ao carregar sessões:', error)
       toast({
@@ -267,7 +275,7 @@ export const EvolucaoModal = ({
                     <SelectItem key={session.id} value={session.id}>
                       <div className="flex items-center justify-between w-full">
                         <span>
-                          {format(new Date(session.data), "dd/MM/yyyy", { locale: ptBR })} às {session.horario}
+                          {formatDateBR(session.data)} às {session.horario}
                         </span>
                         <Badge variant={getSessionStatusColor(session.status)} className="ml-2">
                           {getSessionStatusLabel(session.status)}
@@ -279,7 +287,7 @@ export const EvolucaoModal = ({
               </Select>
               {evolucao.session_id && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Sessão de {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })} às {evolucao.horario_sessao}
+                  Sessão de {formatDateBR(evolucao.data_sessao)} às {evolucao.horario_sessao}
                 </p>
               )}
             </div>
@@ -291,7 +299,7 @@ export const EvolucaoModal = ({
               <Label>Sessão Vinculada</Label>
               <div className="p-3 bg-muted rounded-md">
                 <p className="text-sm">
-                  {format(new Date(sessionData.data), "dd/MM/yyyy", { locale: ptBR })} às {sessionData.horario}
+                  {formatDateBR(sessionData.data)} às {sessionData.horario}
                 </p>
               </div>
             </div>
