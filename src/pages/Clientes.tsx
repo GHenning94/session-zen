@@ -496,7 +496,6 @@ const Clientes = () => {
                         <div className="flex items-start space-x-4">
                           <div className="flex-shrink-0">
                             <ClientAvatarUpload
-                              clientId={client.id}
                               clientName={client.nome}
                               currentAvatarUrl={client.avatar_url}
                               onAvatarChange={(url) => handleAvatarChange(client.id, url)}
@@ -597,11 +596,13 @@ const Clientes = () => {
 
         <NewSessionModal
           open={isNewSessionOpen}
-          onClose={() => {
+          onOpenChange={setIsNewSessionOpen}
+          selectedClientId={newSessionClientId}
+          onSessionCreated={() => {
             setIsNewSessionOpen(false)
             setNewSessionClientId(null)
+            loadClients()
           }}
-          selectedClientId={newSessionClientId}
         />
       </div>
     </Layout>

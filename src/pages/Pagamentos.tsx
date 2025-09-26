@@ -536,7 +536,7 @@ const Pagamentos = () => {
 
         <PaymentMethodModal
           open={paymentModalOpen}
-          onClose={() => setPaymentModalOpen(false)}
+          onOpenChange={setPaymentModalOpen}
           onConfirm={handlePaymentConfirm}
         />
       </div>

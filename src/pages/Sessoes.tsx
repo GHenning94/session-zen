@@ -651,18 +651,19 @@ export default function Sessoes() {
 
         {/* Modals */}
         <SessionNoteModal
-          open={noteModalOpen}
-          onClose={() => setNoteModalOpen(false)}
           session={selectedSession}
-          onSuccess={loadData}
+          open={noteModalOpen}
+          onOpenChange={setNoteModalOpen}
+          onNoteCreated={loadData}
           editingNote={editingNote}
         />
         
         <SessionEditModal
-          open={editModalOpen}
-          onClose={() => setEditModalOpen(false)}
           session={selectedSession}
-          onSuccess={loadData}
+          clients={clients}
+          open={editModalOpen}
+          onOpenChange={setEditModalOpen}
+          onSessionUpdated={loadData}
         />
       </div>
     </Layout>
