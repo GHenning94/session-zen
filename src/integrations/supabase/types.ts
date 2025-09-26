@@ -862,6 +862,24 @@ export type Database = {
         Args: { client_id: string }
         Returns: Json
       }
+      get_clients_safe_data: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          ativo: boolean
+          avatar_url: string
+          created_at: string
+          dados_clinicos_status: string
+          email: string
+          has_medical_data: boolean
+          historico_status: string
+          id: string
+          nome: string
+          telefone: string
+          updated_at: string
+          user_id: string
+          view_accessed_at: string
+        }[]
+      }
       get_public_profile_by_slug: {
         Args: { page_slug: string }
         Returns: Json
@@ -926,6 +944,10 @@ export type Database = {
           p_dados_clinicos?: string
           p_historico?: string
         }
+        Returns: boolean
+      }
+      validate_clients_safe_security: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
     }
