@@ -363,6 +363,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               <Label htmlFor="crianca-adolescente">Criança/Adolescente</Label>
             </div>
 
+            {/* NOME - sempre primeiro */}
             <div className="grid gap-2">
               <Label htmlFor="name">Nome *</Label>
               <Input 
@@ -374,6 +375,47 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               />
             </div>
 
+            {/* CAMPOS DO CADASTRO COMPLETO - CPF, Data Nascimento, Email */}
+            {!isQuickRegistration && (
+              <>
+                <div className="grid gap-2">
+                  <Label htmlFor="cpf">CPF:</Label>
+                  <Input 
+                    id="cpf" 
+                    placeholder="Digite o CPF"
+                    value={newClient.cpf}
+                    onChange={(e) => setNewClient({...newClient, cpf: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="data-nascimento">Data de Nascimento:</Label>
+                  <Input 
+                    id="data-nascimento" 
+                    type="date"
+                    placeholder="dd/mm/aaaa"
+                    value={newClient.dataNascimento}
+                    onChange={(e) => setNewClient({...newClient, dataNascimento: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email:</Label>
+                  <Input 
+                    id="email" 
+                    type="email"
+                    placeholder="Digite o email"
+                    value={newClient.email}
+                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+              </>
+            )}
+
+            {/* TELEFONE - sempre segundo para cadastro rápido */}
             <div className="grid gap-2">
               <Label htmlFor="phone">Telefone *</Label>
               <div className="grid grid-cols-3 gap-2">
@@ -397,6 +439,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               </div>
             </div>
 
+            {/* CAMPOS ESPECÍFICOS PARA CRIANÇA/ADOLESCENTE */}
             {newClient.ehCriancaAdolescente && (
               <>
                 <div className="grid grid-cols-2 gap-4">
@@ -456,29 +499,138 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   />
                   <Label htmlFor="emergencia-igual-pais">Contato de emergência igual ao contato de pai e mãe</Label>
                 </div>
+              </>
+            )}
 
-                <div className="grid gap-2">
-                  <Label htmlFor="endereco">Endereço:</Label>
-                  <Input 
-                    id="endereco" 
-                    placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
-                    value={newClient.endereco}
-                    onChange={(e) => setNewClient({...newClient, endereco: e.target.value})}
-                    disabled={!canAddMore}
-                  />
+            {/* CAMPOS CONTATOS DE EMERGÊNCIA - Cadastro completo e adultos OU criança sem checkbox marcado */}
+            {!isQuickRegistration && !newClient.ehCriancaAdolescente && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-1-nome">Nome Contato Emergência 1:</Label>
+                    <Input 
+                      id="contato-emergencia-1-nome" 
+                      placeholder="Digite o nome"
+                      value={newClient.contatoEmergencia1Nome}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia1Nome: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-1-telefone">Telefone Contato de Emergência 1:</Label>
+                    <Input 
+                      id="contato-emergencia-1-telefone" 
+                      placeholder="Digite o telefone de emergência 1"
+                      value={newClient.contatoEmergencia1Telefone}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia1Telefone: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
                 </div>
 
-                <div className="grid gap-2">
-                  <Label htmlFor="pais">País:</Label>
-                  <Input 
-                    id="pais" 
-                    placeholder="Digite para buscar..."
-                    value={newClient.pais}
-                    onChange={(e) => setNewClient({...newClient, pais: e.target.value})}
-                    disabled={!canAddMore}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-2-nome">Nome Contato Emergência 2:</Label>
+                    <Input 
+                      id="contato-emergencia-2-nome" 
+                      placeholder="Digite o nome"
+                      value={newClient.contatoEmergencia2Nome}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia2Nome: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-2-telefone">Telefone Contato de Emergência 2:</Label>
+                    <Input 
+                      id="contato-emergencia-2-telefone" 
+                      placeholder="Digite o telefone de emergência 2"
+                      value={newClient.contatoEmergencia2Telefone}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia2Telefone: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* CAMPOS CONTATOS DE EMERGÊNCIA PARA CRIANÇA - Cadastro completo apenas se checkbox NÃO estiver marcado */}
+            {!isQuickRegistration && newClient.ehCriancaAdolescente && !newClient.emergenciaIgualPais && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-1-nome">Nome Contato Emergência 1:</Label>
+                    <Input 
+                      id="contato-emergencia-1-nome" 
+                      placeholder="Digite o nome"
+                      value={newClient.contatoEmergencia1Nome}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia1Nome: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-1-telefone">Telefone Contato de Emergência 1:</Label>
+                    <Input 
+                      id="contato-emergencia-1-telefone" 
+                      placeholder="Digite o telefone de emergência 1"
+                      value={newClient.contatoEmergencia1Telefone}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia1Telefone: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
                 </div>
 
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-2-nome">Nome Contato Emergência 2:</Label>
+                    <Input 
+                      id="contato-emergencia-2-nome" 
+                      placeholder="Digite o nome"
+                      value={newClient.contatoEmergencia2Nome}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia2Nome: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="contato-emergencia-2-telefone">Telefone Contato de Emergência 2:</Label>
+                    <Input 
+                      id="contato-emergencia-2-telefone" 
+                      placeholder="Digite o telefone de emergência 2"
+                      value={newClient.contatoEmergencia2Telefone}
+                      onChange={(e) => setNewClient({...newClient, contatoEmergencia2Telefone: formatPhone(e.target.value)})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* ENDEREÇO - sempre terceiro para cadastro rápido */}
+            <div className="grid gap-2">
+              <Label htmlFor="endereco">Endereço:</Label>
+              <Input 
+                id="endereco" 
+                placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
+                value={newClient.endereco}
+                onChange={(e) => setNewClient({...newClient, endereco: e.target.value})}
+                disabled={!canAddMore}
+              />
+            </div>
+
+            {/* PAÍS - sempre quarto para cadastro rápido */}
+            <div className="grid gap-2">
+              <Label htmlFor="pais">País:</Label>
+              <Input 
+                id="pais" 
+                placeholder="Digite para buscar..."
+                value={newClient.pais}
+                onChange={(e) => setNewClient({...newClient, pais: e.target.value})}
+                disabled={!canAddMore}
+              />
+            </div>
+
+            {/* GÊNERO E PROFISSÃO - lado a lado para ADULTOS */}
+            {!newClient.ehCriancaAdolescente && (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="genero">Gênero:</Label>
                   <Input 
@@ -489,208 +641,99 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                     disabled={!canAddMore}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="plano-saude">Plano de Saúde:</Label>
-                    <Input 
-                      id="plano-saude" 
-                      placeholder="Digite para buscar..."
-                      value={newClient.planoSaude}
-                      onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
-                      disabled={!canAddMore}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="tratamento">Tratamento:</Label>
-                    <Input 
-                      id="tratamento" 
-                      placeholder="Digite para buscar..."
-                      value={newClient.tratamento}
-                      onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
-                      disabled={!canAddMore}
-                    />
-                  </div>
-                </div>
-
                 <div className="grid gap-2">
-                  <Label htmlFor="medicamento">Medicamento:</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      id="medicamento" 
-                      placeholder="Digite para buscar..."
-                      value={currentMedicamento}
-                      onChange={(e) => setCurrentMedicamento(e.target.value)}
-                      disabled={!canAddMore}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addMedicamento}
-                      disabled={!currentMedicamento.trim() || !canAddMore}
-                      className="bg-gradient-primary hover:opacity-90 text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Medicamento
-                    </Button>
-                  </div>
-                  {newClient.medicamentos.length > 0 && (
-                    <div className="space-y-2 mt-2">
-                      {newClient.medicamentos.map((med, index) => (
-                        <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
-                          <span className="text-sm">{med}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeMedicamento(index)}
-                            disabled={!canAddMore}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </>
-            )}
-
-            {!isQuickRegistration && (
-              <>
-                <div className="grid gap-2">
-                  <Label htmlFor="cpf">CPF</Label>
+                  <Label htmlFor="profissao">Profissão:</Label>
                   <Input 
-                    id="cpf" 
-                    placeholder="Digite o CPF"
-                    value={newClient.cpf}
-                    onChange={(e) => setNewClient({...newClient, cpf: e.target.value})}
-                    disabled={!canAddMore}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="data-nascimento">Data de Nascimento</Label>
-                  <Input 
-                    id="data-nascimento" 
-                    type="date"
-                    placeholder="dd/mm/aaaa"
-                    value={newClient.dataNascimento}
-                    onChange={(e) => setNewClient({...newClient, dataNascimento: e.target.value})}
-                    disabled={!canAddMore}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email"
-                    placeholder="Digite o email"
-                    value={newClient.email}
-                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                    disabled={!canAddMore}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="endereco">Endereço</Label>
-                  <Input 
-                    id="endereco" 
-                    placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
-                    value={newClient.endereco}
-                    onChange={(e) => setNewClient({...newClient, endereco: e.target.value})}
-                    disabled={!canAddMore}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label htmlFor="pais">País</Label>
-                  <Input 
-                    id="pais" 
+                    id="profissao" 
                     placeholder="Digite para buscar..."
-                    value={newClient.pais}
-                    onChange={(e) => setNewClient({...newClient, pais: e.target.value})}
+                    value={newClient.profession}
+                    onChange={(e) => setNewClient({...newClient, profession: e.target.value})}
                     disabled={!canAddMore}
                   />
                 </div>
+              </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="genero">Gênero</Label>
-                    <Input 
-                      id="genero" 
-                      placeholder="Digite para buscar..."
-                      value={newClient.genero}
-                      onChange={(e) => setNewClient({...newClient, genero: e.target.value})}
-                      disabled={!canAddMore}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="profissao">Profissão</Label>
-                    <Input 
-                      id="profissao" 
-                      placeholder="Digite para buscar..."
-                      value={newClient.profession}
-                      onChange={(e) => setNewClient({...newClient, profession: e.target.value})}
-                      disabled={!canAddMore}
-                    />
-                  </div>
-                </div>
+            {/* GÊNERO para CRIANÇA - linha separada */}
+            {newClient.ehCriancaAdolescente && (
+              <div className="grid gap-2">
+                <Label htmlFor="genero">Gênero:</Label>
+                <Input 
+                  id="genero" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.genero}
+                  onChange={(e) => setNewClient({...newClient, genero: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="plano-saude">Plano de Saúde</Label>
-                    <Input 
-                      id="plano-saude" 
-                      placeholder="Digite para buscar..."
-                      value={newClient.planoSaude}
-                      onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
-                      disabled={!canAddMore}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="tratamento">Tratamento</Label>
-                    <Input 
-                      id="tratamento" 
-                      placeholder="Digite para buscar..."
-                      value={newClient.tratamento}
-                      onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
-                      disabled={!canAddMore}
-                    />
-                  </div>
-                </div>
-
+            {/* PLANO DE SAÚDE E TRATAMENTO - lado a lado para ADULTOS apenas */}
+            {!newClient.ehCriancaAdolescente && (
+              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="medicamento">Medicamento</Label>
-                  <div className="flex gap-2">
-                    <Input 
-                      id="medicamento" 
-                      placeholder="Digite para buscar..."
-                      value={currentMedicamento}
-                      onChange={(e) => setCurrentMedicamento(e.target.value)}
-                      disabled={!canAddMore}
-                      className="flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addMedicamento}
-                      disabled={!currentMedicamento.trim() || !canAddMore}
-                      className="bg-gradient-primary hover:opacity-90 text-white"
-                    >
-                      <Plus className="w-4 h-4 mr-2" />
-                      Adicionar Medicamento
-                    </Button>
-                  </div>
-                  {newClient.medicamentos.length > 0 && (
-                    <div className="space-y-2 mt-2">
+                  <Label htmlFor="plano-saude">Plano de Saúde:</Label>
+                  <Input 
+                    id="plano-saude" 
+                    placeholder="Digite para buscar..."
+                    value={newClient.planoSaude}
+                    onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="tratamento">Tratamento:</Label>
+                  <Input 
+                    id="tratamento" 
+                    placeholder="Digite para buscar..."
+                    value={newClient.tratamento}
+                    onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
+                    disabled={!canAddMore}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* MEDICAMENTOS - apenas para ADULTOS */}
+            {!newClient.ehCriancaAdolescente && (
+              <div className="grid gap-2">
+                <Label htmlFor="medicamento">Medicamento:</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="medicamento" 
+                    placeholder="Digite para buscar..."
+                    value={currentMedicamento}
+                    onChange={(e) => setCurrentMedicamento(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addMedicamento()
+                      }
+                    }}
+                    disabled={!canAddMore}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addMedicamento}
+                    disabled={!canAddMore || !currentMedicamento.trim()}
+                    className="bg-gradient-primary hover:opacity-90"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Adicionar Medicamento
+                  </Button>
+                </div>
+
+                {newClient.medicamentos.length > 0 && (
+                  <div className="mt-2">
+                    <Label className="text-sm text-muted-foreground mb-2 block">
+                      Medicamentos adicionados:
+                    </Label>
+                    <div className="space-y-2">
                       {newClient.medicamentos.map((med, index) => (
                         <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
                           <span className="text-sm">{med}</span>
                           <Button
-                            type="button"
                             variant="ghost"
                             size="sm"
                             onClick={() => removeMedicamento(index)}
@@ -701,77 +744,25 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                         </div>
                       ))}
                     </div>
-                  )}
-                </div>
-
-                {!newClient.ehCriancaAdolescente && (
-                  <>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="emergencia1-nome">Nome Contato Emergência 1</Label>
-                        <Input 
-                          id="emergencia1-nome" 
-                          placeholder="Digite o nome"
-                          value={newClient.contatoEmergencia1Nome}
-                          onChange={(e) => setNewClient({...newClient, contatoEmergencia1Nome: e.target.value})}
-                          disabled={!canAddMore}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="emergencia1-telefone">Telefone Contato de Emergência 1</Label>
-                        <Input 
-                          id="emergencia1-telefone" 
-                          placeholder="Digite o telefone de emergência 1"
-                          value={newClient.contatoEmergencia1Telefone}
-                          onChange={(e) => setNewClient({...newClient, contatoEmergencia1Telefone: formatPhone(e.target.value)})}
-                          disabled={!canAddMore}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="emergencia2-nome">Nome Contato Emergência 2</Label>
-                        <Input 
-                          id="emergencia2-nome" 
-                          placeholder="Digite o nome"
-                          value={newClient.contatoEmergencia2Nome}
-                          onChange={(e) => setNewClient({...newClient, contatoEmergencia2Nome: e.target.value})}
-                          disabled={!canAddMore}
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="emergencia2-telefone">Telefone Contato de Emergência 2</Label>
-                        <Input 
-                          id="emergencia2-telefone" 
-                          placeholder="Digite o telefone de emergência 2"
-                          value={newClient.contatoEmergencia2Telefone}
-                          onChange={(e) => setNewClient({...newClient, contatoEmergencia2Telefone: formatPhone(e.target.value)})}
-                          disabled={!canAddMore}
-                        />
-                      </div>
-                    </div>
-                  </>
+                  </div>
                 )}
-              </>
+              </div>
             )}
+
           </div>
         </ScrollArea>
-        
+
         <div className="flex justify-end gap-3">
-          <Button 
-            variant="outline" 
-            onClick={() => {
-              onOpenChange(false)
-              resetForm()
-            }}
-          >
+          <Button variant="outline" onClick={() => {
+            resetForm()
+            onOpenChange(false)
+          }}>
             Cancelar
           </Button>
           <Button 
             className="bg-gradient-primary hover:opacity-90" 
             onClick={handleSaveClient}
-            disabled={isLoading || !canAddMore}
+            disabled={isLoading}
           >
             {isLoading ? "Salvando..." : (editingClient ? "Salvar Alterações" : "Cadastrar Cliente")}
           </Button>

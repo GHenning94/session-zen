@@ -631,11 +631,8 @@ const Clientes = () => {
             ) : (
               <div className="space-y-4">
                 {filteredClients.map((client) => {
-                  // Check if client has medications based on secure status
-                  const hasMedications = client.has_medical_data === true
-                  
                   return (
-                    <div 
+                    <div
                       key={client.id} 
                       className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
                       onClick={() => handleClientClick(client)}
@@ -669,11 +666,9 @@ const Clientes = () => {
                               <div className="flex items-center gap-2">
                                 <Mail className="w-4 h-4" />
                                 <span>{client.email || "Email não informado"}</span>
-                                {hasMedications && (
-                                  <div className="w-6 h-6 rounded-full bg-yellow-500 flex items-center justify-center ml-2">
-                                    <div className="w-4 h-4 relative">
-                                      <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-white border border-gray-300"></div>
-                                    </div>
+                                {(client.medicamentos && client.medicamentos.length > 0) && (
+                                  <div className="flex items-center justify-center ml-2">
+                                    <Pill className="w-4 h-4 text-red-500" />
                                   </div>
                                 )}
                               </div>
