@@ -87,6 +87,7 @@ export const EvolucaoModal = ({
 
   const loadClientSessions = async () => {
     try {
+      console.log('Carregando sessões para cliente:', clientId, 'usuário:', user?.id)
       const { data, error } = await supabase
         .from('sessions')
         .select('id, data, horario, status')
@@ -95,10 +96,20 @@ export const EvolucaoModal = ({
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
 
-      if (error) throw error
+      if (error) {
+        console.error('Erro na query:', error)
+        throw error
+      }
+      
+      console.log('Sessões encontradas:', data)
       setSessions(data || [])
     } catch (error) {
       console.error('Erro ao carregar sessões:', error)
+      toast({
+        title: "Aviso",
+        description: "Não foi possível carregar as sessões do cliente.",
+        variant: "default",
+      })
     }
   }
 

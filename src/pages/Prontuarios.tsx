@@ -424,20 +424,26 @@ export default function Prontuarios() {
                            <div className="flex items-center justify-between mb-2">
                              <div className="flex items-center gap-2">
                                <Calendar className="h-4 w-4 text-primary" />
-                               <span className="font-medium">
-                                 {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}
-                               </span>
-                               {evolucao.session && (
-                                 <>
-                                   <span className="text-muted-foreground">às {evolucao.session.horario}</span>
-                                   <Badge variant={getSessionStatusColor(evolucao.session.status)} className="text-xs">
-                                     {getSessionStatusLabel(evolucao.session.status)}
-                                   </Badge>
-                                 </>
-                               )}
-                               <Badge variant="outline" className="text-xs">
-                                 {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                               </Badge>
+                               <div className="flex items-center gap-2">
+                                 <span className="text-xs text-muted-foreground">Sessão:</span>
+                                 <span className="font-medium">
+                                   {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}
+                                 </span>
+                                 {evolucao.session && (
+                                   <>
+                                     <span className="text-muted-foreground">às {evolucao.session.horario}</span>
+                                     <Badge variant={getSessionStatusColor(evolucao.session.status)} className="text-xs">
+                                       {getSessionStatusLabel(evolucao.session.status)}
+                                     </Badge>
+                                   </>
+                                 )}
+                               </div>
+                               <div className="flex items-center gap-1 ml-4">
+                                 <span className="text-xs text-muted-foreground">Criada em:</span>
+                                 <Badge variant="outline" className="text-xs">
+                                   {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                                 </Badge>
+                               </div>
                              </div>
                             <div className="flex gap-2">
                               <Button 
