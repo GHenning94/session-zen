@@ -59,6 +59,32 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded }: NewClientM
     setNewClient({...newClient, phone: formatted})
   }
 
+  // Phone formatting function
+  const formatPhone = (value: string) => {
+    // Remove all non-numeric characters
+    const numbers = value.replace(/\D/g, '')
+    
+    // Apply mask: (XX) XXXXX-XXXX
+    if (numbers.length <= 2) {
+      return numbers.length > 0 ? `(${numbers}` : ''
+    } else if (numbers.length <= 7) {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    } else {
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+    }
+  }
+
+  // Phone validation function
+  const isValidPhone = (phone: string) => {
+    const numbers = phone.replace(/\D/g, '')
+    return numbers.length === 11 // DDD (2 digits) + 9 digits
+  }
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formatted = formatPhone(e.target.value)
+    setNewClient({...newClient, phone: formatted})
+  }
+
   const loadClients = async () => {
     if (!user) return
     
