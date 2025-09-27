@@ -1356,7 +1356,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Coluna da Direita */}
-          <div className="space-y-6">
+          <div className="space-y-6 flex flex-col h-full">
             {/* Upgrade de Plano */}
             <Card className="shadow-soft">
               <CardContent className="p-6">
@@ -1365,7 +1365,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Top 5 Clientes que Mais Pagam */}
-            <Card className="shadow-soft">
+            <Card className="shadow-soft flex-1">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
@@ -1375,7 +1375,7 @@ const Dashboard = () => {
                   Clientes que mais geraram receita
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-full">
                 <div className="space-y-4">
                   {topClients.length > 0 ? topClients.map((client, index) => (
                     <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative">
@@ -1423,7 +1423,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft">
+            <Card className="shadow-soft flex-1">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
@@ -1433,7 +1433,7 @@ const Dashboard = () => {
                   Últimos clientes adicionados
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="h-full">
                 <div className="space-y-3">
                   {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
                     <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
