@@ -398,152 +398,17 @@ const Clientes = () => {
               Gerencie seus pacientes e acompanhe seu progresso
             </p>
           </div>
-          <Dialog open={isNewClientOpen} onOpenChange={setIsNewClientOpen}>
-            <DialogTrigger asChild>
-              <Button 
-                className="bg-gradient-primary hover:opacity-90"
-                disabled={!canAddMore}
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Novo Cliente {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{editingClient ? "Editar Cliente" : "Cadastrar Novo Cliente"}</DialogTitle>
-                <DialogDescription>
-                  Preencha os dados básicos do paciente
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="flex flex-col items-center gap-4">
-                  <ClientAvatarUpload 
-                    clientName={newClient.name || "Novo Cliente"}
-                    currentAvatarUrl={newClient.avatarUrl}
-                    onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
-                    size="lg"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nome Completo</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Nome do paciente"
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">E-mail</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="email@exemplo.com"
-                    value={newClient.email}
-                    onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input 
-                    id="phone" 
-                    placeholder="(11) 99999-9999"
-                    value={newClient.phone}
-                    onChange={(e) => {
-                      const formatPhone = (value: string) => {
-                        const numbers = value.replace(/\D/g, '')
-                        if (numbers.length === 0) {
-                          return ''
-                        } else if (numbers.length <= 2) {
-                          return `(${numbers}`
-                        } else if (numbers.length <= 7) {
-                          return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
-                        } else {
-                          return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
-                        }
-                      }
-                      const formatted = formatPhone(e.target.value)
-                      setNewClient({...newClient, phone: formatted})
-                    }}
-                    maxLength={15}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="age">Idade</Label>
-                    <Input 
-                      id="age" 
-                      type="number" 
-                      placeholder="30"
-                      value={newClient.age}
-                      onChange={(e) => setNewClient({...newClient, age: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="profession">Profissão</Label>
-                    <Input 
-                      id="profession" 
-                      placeholder="Engenheiro"
-                      value={newClient.profession}
-                      onChange={(e) => setNewClient({...newClient, profession: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="notes">Observações Iniciais</Label>
-                  <Textarea 
-                    id="notes" 
-                    placeholder="Motivo da consulta, observações importantes..." 
-                    className="resize-none"
-                    value={newClient.notes}
-                    onChange={(e) => setNewClient({...newClient, notes: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => {
-                  setIsNewClientOpen(false)
-                  setEditingClient(null)
-                  setNewClient({
-                    name: "",
-                    email: "",
-                    phone: "",
-                    profession: "",
-                    age: "",
-                    notes: "",
-                    avatarUrl: "",
-                    cpf: "",
-                    dataNascimento: "",
-                    endereco: "",
-                    pais: "",
-                    genero: "",
-                    planoSaude: "",
-                    tratamento: "",
-                    medicamentos: [],
-                    contatoEmergencia1Nome: "",
-                    contatoEmergencia1Telefone: "",
-                    contatoEmergencia2Nome: "",
-                    contatoEmergencia2Telefone: "",
-                    nomePai: "",
-                    telefonePai: "",
-                    nomeMae: "",
-                    telefoneMae: "",
-                    ehCriancaAdolescente: false,
-                    emergenciaIgualPais: false
-                  })
-                }}>
-                  Cancelar
-                </Button>
-                <Button 
-                  className="bg-gradient-primary hover:opacity-90" 
-                  onClick={handleSaveClient}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Salvando..." : (editingClient ? "Atualizar Cliente" : "Cadastrar Cliente")}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            className="bg-gradient-primary hover:opacity-90"
+            disabled={!canAddMore}
+            onClick={() => {
+              setEditingClient(null) // Limpar estado de edição para novo cliente
+              setIsNewClientOpen(true)
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Novo Cliente {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
+          </Button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

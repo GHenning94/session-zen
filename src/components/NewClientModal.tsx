@@ -133,6 +133,9 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         // Reset form when not editing (opening for new client)
         resetForm()
       }
+    } else {
+      // Reset form when modal closes to ensure clean state for next opening
+      resetForm()
     }
   }, [open, user, editingClient])
 
@@ -314,7 +317,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             <Plus className="w-5 h-5 text-primary" />
             {editingClient ? "Editar Paciente" : "Adicionar Paciente"}
           </DialogTitle>
-          <div className="flex items-center gap-4 mt-6">
+          <div className="flex items-center gap-4 mt-8">
             <Button
               variant={isQuickRegistration ? "default" : "outline"}
               size="sm"
