@@ -129,6 +129,9 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           ehCriancaAdolescente: editingClient.eh_crianca_adolescente || false,
           emergenciaIgualPais: editingClient.emergencia_igual_pais || false
         })
+      } else {
+        // Reset form when not editing (opening for new client)
+        resetForm()
       }
     }
   }, [open, user, editingClient])
@@ -311,7 +314,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             <Plus className="w-5 h-5 text-primary" />
             {editingClient ? "Editar Paciente" : "Adicionar Paciente"}
           </DialogTitle>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mt-6">
             <Button
               variant={isQuickRegistration ? "default" : "outline"}
               size="sm"
@@ -668,86 +671,82 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               </div>
             )}
 
-            {/* PLANO DE SAÚDE E TRATAMENTO - lado a lado para ADULTOS apenas */}
-            {!newClient.ehCriancaAdolescente && (
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="plano-saude">Plano de Saúde:</Label>
-                  <Input 
-                    id="plano-saude" 
-                    placeholder="Digite para buscar..."
-                    value={newClient.planoSaude}
-                    onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
-                    disabled={!canAddMore}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="tratamento">Tratamento:</Label>
-                  <Input 
-                    id="tratamento" 
-                    placeholder="Digite para buscar..."
-                    value={newClient.tratamento}
-                    onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
-                    disabled={!canAddMore}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* MEDICAMENTOS - apenas para ADULTOS */}
-            {!newClient.ehCriancaAdolescente && (
+            {/* PLANO DE SAÚDE E TRATAMENTO - lado a lado para TODOS */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="medicamento">Medicamento:</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="medicamento" 
-                    placeholder="Digite para buscar..."
-                    value={currentMedicamento}
-                    onChange={(e) => setCurrentMedicamento(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        addMedicamento()
-                      }
-                    }}
-                    disabled={!canAddMore}
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    onClick={addMedicamento}
-                    disabled={!canAddMore || !currentMedicamento.trim()}
-                    className="bg-gradient-primary hover:opacity-90"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Adicionar Medicamento
-                  </Button>
-                </div>
-
-                {newClient.medicamentos.length > 0 && (
-                  <div className="mt-2">
-                    <Label className="text-sm text-muted-foreground mb-2 block">
-                      Medicamentos adicionados:
-                    </Label>
-                    <div className="space-y-2">
-                      {newClient.medicamentos.map((med, index) => (
-                        <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
-                          <span className="text-sm">{med}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => removeMedicamento(index)}
-                            disabled={!canAddMore}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <Label htmlFor="plano-saude">Plano de Saúde:</Label>
+                <Input 
+                  id="plano-saude" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.planoSaude}
+                  onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
+                  disabled={!canAddMore}
+                />
               </div>
-            )}
+              <div className="grid gap-2">
+                <Label htmlFor="tratamento">Tratamento:</Label>
+                <Input 
+                  id="tratamento" 
+                  placeholder="Digite para buscar..."
+                  value={newClient.tratamento}
+                  onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+            </div>
+
+            {/* MEDICAMENTOS - para TODOS */}
+            <div className="grid gap-2">
+              <Label htmlFor="medicamento">Medicamento:</Label>
+              <div className="flex gap-2">
+                <Input 
+                  id="medicamento" 
+                  placeholder="Digite para buscar..."
+                  value={currentMedicamento}
+                  onChange={(e) => setCurrentMedicamento(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      addMedicamento()
+                    }
+                  }}
+                  disabled={!canAddMore}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={addMedicamento}
+                  disabled={!canAddMore || !currentMedicamento.trim()}
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  <Plus className="w-4 h-4" />
+                  Adicionar Medicamento
+                </Button>
+              </div>
+
+              {newClient.medicamentos.length > 0 && (
+                <div className="mt-2">
+                  <Label className="text-sm text-muted-foreground mb-2 block">
+                    Medicamentos adicionados:
+                  </Label>
+                  <div className="space-y-2">
+                    {newClient.medicamentos.map((med, index) => (
+                      <div key={index} className="flex items-center justify-between bg-muted p-2 rounded">
+                        <span className="text-sm">{med}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeMedicamento(index)}
+                          disabled={!canAddMore}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
 
           </div>
         </ScrollArea>
