@@ -675,6 +675,36 @@ export type Database = {
         }
         Relationships: []
       }
+      registration_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          token: string
+          used: boolean
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at: string
+          id?: string
+          token: string
+          used?: boolean
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used?: boolean
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       session_notes: {
         Row: {
           client_id: string
@@ -798,6 +828,10 @@ export type Database = {
       can_access_client_safe_view: {
         Args: { client_user_id: string }
         Returns: boolean
+      }
+      cleanup_expired_registration_tokens: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       export_client_data_secure: {
         Args: { p_client_id: string }

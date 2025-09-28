@@ -40,5 +40,14 @@ verify_jwt = true
 [functions.stripe-webhook]
 verify_jwt = false
 
+[functions.generate-registration-token]
+verify_jwt = true
+
+[functions.register-client-via-token]
+verify_jwt = false
+
+[functions.validate-registration-token]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true

@@ -18,6 +18,7 @@ import {
   Filter,
   MessageCircle,
   Baby,
+  Link,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -25,6 +26,7 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
 import { ClientDetailsModal } from "@/components/ClientDetailsModal"
 import { NewClientModal } from "@/components/NewClientModal"
+import { GenerateRegistrationLinkModal } from "@/components/GenerateRegistrationLinkModal"
 import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -398,17 +400,25 @@ const Clientes = () => {
               Gerencie seus pacientes e acompanhe seu progresso
             </p>
           </div>
-          <Button 
-            className="bg-gradient-primary hover:opacity-90"
-            disabled={!canAddMore}
-            onClick={() => {
-              setEditingClient(null) // Limpar estado de edição para novo cliente
-              setIsNewClientOpen(true)
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" />
-            Novo Cliente {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
-          </Button>
+          <div className="flex gap-2">
+            <GenerateRegistrationLinkModal>
+              <Button variant="outline">
+                <Link className="w-4 h-4 mr-2" />
+                Gerar Link
+              </Button>
+            </GenerateRegistrationLinkModal>
+            <Button 
+              className="bg-gradient-primary hover:opacity-90"
+              disabled={!canAddMore}
+              onClick={() => {
+                setEditingClient(null) // Limpar estado de edição para novo cliente
+                setIsNewClientOpen(true)
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Novo Cliente {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

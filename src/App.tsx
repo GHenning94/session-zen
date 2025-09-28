@@ -34,6 +34,7 @@ import Estudos from "@/pages/Estudos";
 import RedesSociais from "@/pages/RedesSociais";
 import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import Suporte from "@/pages/Suporte";
+import PublicRegistration from "@/pages/PublicRegistration";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -161,6 +162,7 @@ const App = () => (
                       <BookingPage />
                     </Suspense>
                   } />
+                  <Route path="/register/:token" element={<PublicRegistration />} />
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={
                     <Suspense fallback={<PageLoading />}>
