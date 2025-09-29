@@ -108,7 +108,7 @@ serve(async (req) => {
 
     console.log('[REGISTER-CLIENT] Client created successfully:', newClient.id);
 
-    // Mark token as used
+    // Mark token as used with client reference
     const { error: updateTokenError } = await supabase
       .from('registration_tokens')
       .update({ 

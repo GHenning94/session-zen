@@ -52,6 +52,46 @@ serve(async (req) => {
 
     console.log('[GENERATE-TOKEN] User authenticated:', user.id);
 
+    // Parse request body to check for forceNew flag
+    const requestBody = await req.json().catch(() => ({}));
+    const forceNew = requestBody.forceNew || false;
+
+    // Check if there's already a valid token for this user (unless forcing new)
+    if (!forceNew) {
+      const { data: existingToken, error: existingError } = await supabase
+        .from('registration_tokens')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('used', false)
+        .gt('expires_at', new Date().toISOString())
+        .single();
+
+      if (existingToken && !existingError) {
+        console.log('[GENERATE-TOKEN] Returning existing valid token');
+        
+        // Get professional name for the response
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('nome')
+          .eq('user_id', user.id)
+          .single();
+
+        const registrationUrl = `${req.headers.get('origin') || 'https://therapypro.lovable.app'}/register/${existingToken.token}`;
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            token: existingToken.token,
+            registrationUrl,
+            expiresAt: existingToken.expires_at,
+            professionalName: profile?.nome || 'Profissional',
+            isExisting: true
+          }),
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
     // Generate a secure token
     const tokenBytes = new Uint8Array(32);
     crypto.getRandomValues(tokenBytes);
@@ -61,17 +101,17 @@ serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    console.log('[GENERATE-TOKEN] Generating token for user:', user.id);
+    console.log('[GENERATE-TOKEN] Generating new token for user:', user.id);
 
-    // Clean up old expired tokens for this user
-    const { error: cleanupError } = await supabase
+    // Revoke old tokens by marking them as used
+    const { error: revokeError } = await supabase
       .from('registration_tokens')
-      .delete()
+      .update({ used: true, used_at: new Date().toISOString() })
       .eq('user_id', user.id)
-      .lt('expires_at', new Date().toISOString());
+      .eq('used', false);
 
-    if (cleanupError) {
-      console.log('[GENERATE-TOKEN] Cleanup warning:', cleanupError);
+    if (revokeError) {
+      console.log('[GENERATE-TOKEN] Warning: Could not revoke old tokens:', revokeError);
     }
 
     // Insert new token
@@ -111,7 +151,8 @@ serve(async (req) => {
         token,
         registrationUrl,
         expiresAt: expiresAt.toISOString(),
-        professionalName: profile?.nome || 'Profissional'
+        professionalName: profile?.nome || 'Profissional',
+        isExisting: false
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

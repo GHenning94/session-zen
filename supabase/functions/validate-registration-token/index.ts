@@ -41,14 +41,23 @@ serve(async (req) => {
     // Check if token exists and is valid
     const { data: tokenData, error: tokenError } = await supabase
       .from('registration_tokens')
-      .select(`
-        *,
-        profiles!registration_tokens_user_id_fkey(nome)
-      `)
+      .select('*')
       .eq('token', token)
       .eq('used', false)
       .gt('expires_at', new Date().toISOString())
       .single();
+
+    // Get professional name separately if token is valid
+    let professionalName = 'Profissional';
+    if (tokenData && !tokenError) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nome')
+        .eq('user_id', tokenData.user_id)
+        .single();
+      
+      professionalName = profile?.nome || 'Profissional';
+    }
 
     if (tokenError || !tokenData) {
       console.log('[VALIDATE-TOKEN] Invalid token:', tokenError);
@@ -66,7 +75,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         valid: true,
-        professionalName: tokenData.profiles?.nome || 'Profissional',
+        professionalName,
         expiresAt: tokenData.expires_at
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

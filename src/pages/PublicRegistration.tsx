@@ -97,6 +97,8 @@ const PublicRegistration = () => {
           setProfessionalName(data.professionalName || 'Profissional')
         } else {
           setIsValid(false)
+          // Show specific error messages based on the error
+          console.log('Token validation failed:', data.error)
         }
         setIsLoading(false)
       } catch (error) {
@@ -191,7 +193,7 @@ const PublicRegistration = () => {
             <User className="w-12 h-12 mx-auto text-destructive" />
             <h1 className="text-2xl font-bold">Link Inválido</h1>
             <p className="text-muted-foreground">
-              Este link de cadastro é inválido ou já foi usado.
+              Este link de cadastro é inválido, expirado ou já foi usado.
             </p>
             <Button onClick={() => navigate('/')} variant="outline">
               Voltar ao Início
