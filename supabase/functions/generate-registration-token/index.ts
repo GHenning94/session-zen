@@ -56,6 +56,15 @@ serve(async (req) => {
     const requestBody = await req.json().catch(() => ({}));
     const forceNew = requestBody.forceNew || false;
 
+    // Get professional name for the response
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    const professionalName = profile?.nome || 'Profissional';
+
     // Check if there's already a valid token for this user (unless forcing new)
     if (!forceNew) {
       const { data: existingToken, error: existingError } = await supabase
@@ -64,17 +73,10 @@ serve(async (req) => {
         .eq('user_id', user.id)
         .eq('used', false)
         .gt('expires_at', new Date().toISOString())
-        .single();
+        .maybeSingle();
 
       if (existingToken && !existingError) {
         console.log('[GENERATE-TOKEN] Returning existing valid token');
-        
-        // Get professional name for the response
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('nome')
-          .eq('user_id', user.id)
-          .single();
 
         const registrationUrl = `${req.headers.get('origin') || 'https://therapypro.lovable.app'}/register/${existingToken.token}`;
 
@@ -84,11 +86,26 @@ serve(async (req) => {
             token: existingToken.token,
             registrationUrl,
             expiresAt: existingToken.expires_at,
-            professionalName: profile?.nome || 'Profissional',
+            professionalName,
             isExisting: true
           }),
           { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
+      }
+    }
+
+    console.log('[GENERATE-TOKEN] Generating new token for user:', user.id);
+
+    // If forcing new, revoke all old tokens by marking them as used
+    if (forceNew) {
+      const { error: revokeError } = await supabase
+        .from('registration_tokens')
+        .update({ used: true, used_at: new Date().toISOString() })
+        .eq('user_id', user.id)
+        .eq('used', false);
+
+      if (revokeError) {
+        console.log('[GENERATE-TOKEN] Warning: Could not revoke old tokens:', revokeError);
       }
     }
 
@@ -101,19 +118,6 @@ serve(async (req) => {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    console.log('[GENERATE-TOKEN] Generating new token for user:', user.id);
-
-    // Revoke old tokens by marking them as used
-    const { error: revokeError } = await supabase
-      .from('registration_tokens')
-      .update({ used: true, used_at: new Date().toISOString() })
-      .eq('user_id', user.id)
-      .eq('used', false);
-
-    if (revokeError) {
-      console.log('[GENERATE-TOKEN] Warning: Could not revoke old tokens:', revokeError);
-    }
-
     // Insert new token
     const { data: tokenData, error: insertError } = await supabase
       .from('registration_tokens')
@@ -124,9 +128,9 @@ serve(async (req) => {
         used: false
       }])
       .select()
-      .single();
+      .maybeSingle();
 
-    if (insertError) {
+    if (insertError || !tokenData) {
       console.error('[GENERATE-TOKEN] Database insert error:', insertError);
       return new Response(
         JSON.stringify({ error: 'Failed to generate token' }),
@@ -136,13 +140,6 @@ serve(async (req) => {
 
     console.log('[GENERATE-TOKEN] Token generated successfully');
 
-    // Get professional name for the response
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('nome')
-      .eq('user_id', user.id)
-      .single();
-
     const registrationUrl = `${req.headers.get('origin') || 'https://therapypro.lovable.app'}/register/${token}`;
 
     return new Response(
@@ -151,7 +148,7 @@ serve(async (req) => {
         token,
         registrationUrl,
         expiresAt: expiresAt.toISOString(),
-        professionalName: profile?.nome || 'Profissional',
+        professionalName,
         isExisting: false
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

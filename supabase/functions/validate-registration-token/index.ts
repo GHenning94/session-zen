@@ -13,9 +13,9 @@ serve(async (req) => {
   }
 
   try {
-    // Initialize Supabase client
+    // Initialize Supabase client with SERVICE_ROLE_KEY for RLS bypass
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Get token from URL params or request body
@@ -31,50 +31,94 @@ serve(async (req) => {
 
     if (!token) {
       return new Response(
-        JSON.stringify({ error: 'Token é obrigatório' }),
+        JSON.stringify({ 
+          status: 'invalid',
+          error: 'Token é obrigatório' 
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('[VALIDATE-TOKEN] Validating token:', token);
 
-    // Check if token exists and is valid
+    // Rate limiting check
+    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const { data: rateLimitCheck } = await supabase.rpc('check_rate_limit', {
+      p_ip: clientIp,
+      p_endpoint: 'validate-registration-token',
+      p_max_requests: 20,
+      p_window_minutes: 1
+    });
+
+    if (!rateLimitCheck) {
+      console.log('[VALIDATE-TOKEN] Rate limit exceeded for IP:', clientIp);
+      return new Response(
+        JSON.stringify({ 
+          status: 'rate_limited',
+          error: 'Muitas requisições. Tente novamente em alguns instantes.' 
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if token exists
     const { data: tokenData, error: tokenError } = await supabase
       .from('registration_tokens')
       .select('*')
       .eq('token', token)
-      .eq('used', false)
-      .gt('expires_at', new Date().toISOString())
-      .single();
-
-    // Get professional name separately if token is valid
-    let professionalName = 'Profissional';
-    if (tokenData && !tokenError) {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('nome')
-        .eq('user_id', tokenData.user_id)
-        .single();
-      
-      professionalName = profile?.nome || 'Profissional';
-    }
+      .maybeSingle();
 
     if (tokenError || !tokenData) {
-      console.log('[VALIDATE-TOKEN] Invalid token:', tokenError);
+      console.log('[VALIDATE-TOKEN] Token not found:', tokenError);
       return new Response(
         JSON.stringify({ 
-          valid: false,
-          error: 'Token inválido ou expirado' 
+          status: 'not_found',
+          error: 'Link inválido ou expirado' 
         }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    // Check if token was already used
+    if (tokenData.used) {
+      console.log('[VALIDATE-TOKEN] Token already used:', token);
+      return new Response(
+        JSON.stringify({ 
+          status: 'used',
+          error: 'Este link já foi utilizado.' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Check if token is expired
+    const now = new Date();
+    const expiresAt = new Date(tokenData.expires_at);
+    if (expiresAt <= now) {
+      console.log('[VALIDATE-TOKEN] Token expired:', token);
+      return new Response(
+        JSON.stringify({ 
+          status: 'expired',
+          error: 'Link inválido ou expirado' 
+        }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get professional name
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', tokenData.user_id)
+      .maybeSingle();
+
+    const professionalName = profile?.nome || 'Profissional';
+
     console.log('[VALIDATE-TOKEN] Valid token for professional:', tokenData.user_id);
 
     return new Response(
       JSON.stringify({
-        valid: true,
+        status: 'valid',
         professionalName,
         expiresAt: tokenData.expires_at
       }),
@@ -85,7 +129,7 @@ serve(async (req) => {
     console.error('[VALIDATE-TOKEN] Unexpected error:', error);
     return new Response(
       JSON.stringify({ 
-        valid: false,
+        status: 'error',
         error: 'Erro interno do servidor' 
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

@@ -46,110 +46,73 @@ serve(async (req) => {
     // Parse request body
     const { token, clientData }: { token: string; clientData: ClientData } = await req.json();
 
-    if (!token || !clientData || !clientData.nome) {
+    if (!token || !clientData) {
+      console.log('[REGISTER-CLIENT] Missing token or clientData');
       return new Response(
-        JSON.stringify({ error: 'Token and client data with name are required' }),
+        JSON.stringify({ error: 'Token e dados do cliente são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     console.log('[REGISTER-CLIENT] Processing registration for token:', token);
 
-    // Validate token and get professional info
-    const { data: tokenData, error: tokenError } = await supabase
-      .from('registration_tokens')
-      .select('*')
-      .eq('token', token)
-      .eq('used', false)
-      .gt('expires_at', new Date().toISOString())
-      .single();
+    // Rate limiting check
+    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const { data: rateLimitCheck } = await supabase.rpc('check_rate_limit', {
+      p_ip: clientIp,
+      p_endpoint: 'register-client-via-token',
+      p_max_requests: 10,
+      p_window_minutes: 1
+    });
 
-    if (tokenError || !tokenData) {
-      console.log('[REGISTER-CLIENT] Invalid or expired token:', tokenError);
+    if (!rateLimitCheck) {
+      console.log('[REGISTER-CLIENT] Rate limit exceeded for IP:', clientIp);
       return new Response(
-        JSON.stringify({ error: 'Token inválido ou expirado' }),
+        JSON.stringify({ error: 'Muitas requisições. Tente novamente em alguns instantes.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Basic validation of required fields
+    if (!clientData.nome || !clientData.email) {
+      console.log('[REGISTER-CLIENT] Missing required fields');
+      return new Response(
+        JSON.stringify({ error: 'Nome e email são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const professionalId = tokenData.user_id;
-    console.log('[REGISTER-CLIENT] Valid token for professional:', professionalId);
+    // Call the transactional RPC function to register client
+    const { data: result, error: rpcError } = await supabase.rpc('register_client_from_token', {
+      p_token: token,
+      p_client_data: clientData
+    });
 
-    // Get professional info
-    const { data: professional } = await supabase
-      .from('profiles')
-      .select('nome')
-      .eq('user_id', professionalId)
-      .single();
-
-    // Prepare client data for insertion
-    const clientDataForDB = {
-      ...clientData,
-      user_id: professionalId,
-      ativo: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    };
-
-    // Insert client into database
-    const { data: newClient, error: clientError } = await supabase
-      .from('clients')
-      .insert([clientDataForDB])
-      .select()
-      .single();
-
-    if (clientError) {
-      console.error('[REGISTER-CLIENT] Error inserting client:', clientError);
+    if (rpcError) {
+      console.error('[REGISTER-CLIENT] RPC error:', rpcError);
+      
+      // Check if it's a token validation error
+      if (rpcError.message?.includes('inválido') || rpcError.message?.includes('expirado') || rpcError.message?.includes('utilizado')) {
+        return new Response(
+          JSON.stringify({ error: rpcError.message }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: 'Erro ao cadastrar cliente' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('[REGISTER-CLIENT] Client created successfully:', newClient.id);
-
-    // Mark token as used with client reference
-    const { error: updateTokenError } = await supabase
-      .from('registration_tokens')
-      .update({ 
-        used: true,
-        used_at: new Date().toISOString()
-      })
-      .eq('id', tokenData.id);
-
-    if (updateTokenError) {
-      console.log('[REGISTER-CLIENT] Warning: Could not mark token as used:', updateTokenError);
-    }
-
-    // Create notification for professional
-    const notificationTitle = 'Novo Cliente Cadastrado';
-    const notificationContent = `${clientData.nome} se cadastrou através do seu link de cadastro público.`;
-
-    const { error: notificationError } = await supabase
-      .from('notifications')
-      .insert([{
-        user_id: professionalId,
-        titulo: notificationTitle,
-        conteudo: notificationContent
-      }]);
-
-    if (notificationError) {
-      console.log('[REGISTER-CLIENT] Warning: Could not create notification:', notificationError);
-    } else {
-      console.log('[REGISTER-CLIENT] Notification created for professional');
-    }
+    console.log('[REGISTER-CLIENT] Registration completed successfully:', result);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: 'Cadastro realizado com sucesso! O profissional será notificado.',
-        client: {
-          id: newClient.id,
-          nome: newClient.nome
-        },
-        professional: {
-          nome: professional?.nome || 'Profissional'
-        }
+        message: result.message,
+        professionalName: result.professional_name,
+        clientId: result.client_id
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

@@ -42,10 +42,11 @@ const PublicRegistration = () => {
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isValid, setIsValid] = useState(false)
+  const [tokenStatus, setTokenStatus] = useState<'valid' | 'used' | 'expired' | 'not_found' | 'error'>('valid')
   const [professionalName, setProfessionalName] = useState("")
   const [isSuccess, setIsSuccess] = useState(false)
   const [isCompleteForm, setIsCompleteForm] = useState(false)
+  const [errorMessage, setErrorMessage] = useState('')
 
   const [formData, setFormData] = useState<ClientData>({
     nome: "",
@@ -75,7 +76,8 @@ const PublicRegistration = () => {
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
-        setIsValid(false)
+        setTokenStatus('not_found')
+        setErrorMessage('Link inválido ou expirado')
         setIsLoading(false)
         return
       }
@@ -86,24 +88,27 @@ const PublicRegistration = () => {
         })
 
         if (error) {
-          console.error('Token validation error:', error)
-          setIsValid(false)
-          setIsLoading(false)
-          return
-        }
-
-        if (data.valid) {
-          setIsValid(true)
-          setProfessionalName(data.professionalName || 'Profissional')
+          console.error('Error validating token:', error)
+          setTokenStatus('error')
+          setErrorMessage('Erro ao validar link')
         } else {
-          setIsValid(false)
-          // Show specific error messages based on the error
-          console.log('Token validation failed:', data.error)
+          setTokenStatus(data.status)
+          
+          if (data.status === 'valid') {
+            setProfessionalName(data.professionalName || 'Profissional')
+          } else if (data.status === 'used') {
+            setErrorMessage('Este link já foi utilizado.')
+          } else if (data.status === 'expired' || data.status === 'not_found') {
+            setErrorMessage('Link inválido ou expirado')
+          } else {
+            setErrorMessage(data.error || 'Erro ao validar link')
+          }
         }
-        setIsLoading(false)
       } catch (error) {
-        console.error('Token validation error:', error)
-        setIsValid(false)
+        console.error('Error validating token:', error)
+        setTokenStatus('error')
+        setErrorMessage('Erro ao validar link')
+      } finally {
         setIsLoading(false)
       }
     }
@@ -185,15 +190,20 @@ const PublicRegistration = () => {
     )
   }
 
-  if (!isValid) {
+  if (tokenStatus !== 'valid') {
     return (
       <div className="min-h-screen bg-gradient-radial from-primary/20 via-background to-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="text-center p-8 space-y-4">
             <User className="w-12 h-12 mx-auto text-destructive" />
-            <h1 className="text-2xl font-bold">Link Inválido</h1>
-            <p className="text-muted-foreground">
-              Este link de cadastro é inválido, expirado ou já foi usado.
+            <h1 className="text-2xl font-bold">
+              {tokenStatus === 'used' ? 'Link Já Utilizado' : 'Link Inválido'}
+            </h1>
+            <p className="text-muted-foreground">{errorMessage}</p>
+            <p className="text-sm text-muted-foreground">
+              {tokenStatus === 'used' 
+                ? 'Este link já foi usado para cadastrar um paciente.' 
+                : 'Entre em contato com o profissional para obter um novo link.'}
             </p>
             <Button onClick={() => navigate('/')} variant="outline">
               Voltar ao Início

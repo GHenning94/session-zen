@@ -3,9 +3,10 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Link, Copy, Clock, Shield } from "lucide-react"
+import { Link, Copy, Clock, Shield, AlertCircle, UserPlus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 interface GenerateRegistrationLinkModalProps {
   children: React.ReactNode
@@ -15,54 +16,58 @@ export const GenerateRegistrationLinkModal = ({ children }: GenerateRegistration
   const [isOpen, setIsOpen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [linkData, setLinkData] = useState<{
-    url: string
+    token: string
+    registrationUrl: string
     expiresAt: string
     professionalName: string
-    isExisting?: boolean
+    isExisting: boolean
   } | null>(null)
-  const [isCheckingExisting, setIsCheckingExisting] = useState(false)
   const { toast } = useToast()
 
   const generateLink = async (forceNew = false) => {
+    setIsGenerating(true)
+    
     try {
-      setIsGenerating(true)
+      const { data: { session } } = await supabase.auth.getSession()
       
-      // If forcing new, first revoke existing tokens
-      if (forceNew) {
-        await supabase.functions.invoke('generate-registration-token', {
-          body: { forceNew: true }
+      if (!session) {
+        toast({
+          title: "Erro",
+          description: "Você precisa estar autenticado para gerar links",
+          variant: "destructive"
         })
+        return
       }
-      
+
       const { data, error } = await supabase.functions.invoke('generate-registration-token', {
-        body: {}
+        body: { forceNew }
       })
 
-      if (error) {
-        console.error('Error generating link:', error)
-        throw new Error(error.message || 'Erro ao gerar link')
-      }
+      if (error) throw error
 
-      if (data.success) {
-        setLinkData({
-          url: data.registrationUrl,
-          expiresAt: data.expiresAt,
-          professionalName: data.professionalName,
-          isExisting: data.isExisting
-        })
-        
+      setLinkData(data)
+      
+      if (forceNew) {
         toast({
-          title: forceNew ? "Novo link gerado!" : "Link gerado com sucesso!",
-          description: "O link de cadastro está pronto para ser compartilhado.",
+          title: "Sucesso",
+          description: "Novo link gerado! O link anterior foi revogado.",
+        })
+      } else if (data.isExisting) {
+        toast({
+          title: "Link encontrado",
+          description: "Link existente carregado!",
         })
       } else {
-        throw new Error(data.error || 'Erro desconhecido')
+        toast({
+          title: "Sucesso",
+          description: "Link de cadastro gerado!",
+        })
       }
-    } catch (error: any) {
-      console.error('Error:', error)
+    } catch (error) {
+      console.error('Error generating link:', error)
       toast({
-        title: "Erro ao gerar link",
-        description: error.message || "Não foi possível gerar o link de cadastro.",
+        title: "Erro",
+        description: "Erro ao gerar link de cadastro",
         variant: "destructive"
       })
     } finally {
@@ -70,82 +75,34 @@ export const GenerateRegistrationLinkModal = ({ children }: GenerateRegistration
     }
   }
 
-  const copyToClipboard = async () => {
-    if (linkData?.url) {
-      try {
-        await navigator.clipboard.writeText(linkData.url)
-        toast({
-          title: "Link copiado!",
-          description: "O link foi copiado para a área de transferência.",
-        })
-      } catch (error) {
-        toast({
-          title: "Erro ao copiar",
-          description: "Não foi possível copiar o link.",
-          variant: "destructive"
-        })
-      }
+  const copyToClipboard = () => {
+    if (linkData?.registrationUrl) {
+      navigator.clipboard.writeText(linkData.registrationUrl)
+      toast({
+        title: "Sucesso",
+        description: "Link copiado para a área de transferência!",
+      })
     }
   }
 
   const formatExpirationDate = (dateString: string) => {
     const date = new Date(dateString)
-    return date.toLocaleDateString('pt-BR', { 
-      day: '2-digit', 
-      month: '2-digit', 
+    return date.toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
       year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     })
   }
 
-  const checkExistingLink = async () => {
-    try {
-      setIsCheckingExisting(true)
-      
-      const { data, error } = await supabase.functions.invoke('generate-registration-token', {
-        body: {}
-      })
-
-      if (error) {
-        console.error('Error checking existing link:', error)
-        return
-      }
-
-      if (data.success) {
-        setLinkData({
-          url: data.registrationUrl,
-          expiresAt: data.expiresAt,
-          professionalName: data.professionalName,
-          isExisting: data.isExisting
-        })
-        
-        if (data.isExisting) {
-          toast({
-            title: "Link encontrado!",
-            description: "Você já possui um link válido. Use-o ou gere um novo.",
-          })
-        } else {
-          toast({
-            title: "Link gerado com sucesso!",
-            description: "O link de cadastro está pronto para ser compartilhado.",
-          })
-        }
-      }
-    } catch (error: any) {
-      console.error('Error:', error)
-    } finally {
-      setIsCheckingExisting(false)
-    }
-  }
-
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open)
     if (open) {
-      // Check for existing link when opening
-      checkExistingLink()
+      // Load existing link when modal opens
+      generateLink(false)
     } else {
-      // Reset state when closing
+      // Clear link data when modal closes
       setLinkData(null)
     }
   }
@@ -162,120 +119,81 @@ export const GenerateRegistrationLinkModal = ({ children }: GenerateRegistration
             Gerar Link de Cadastro Público
           </DialogTitle>
           <DialogDescription>
-            Crie um link seguro para que seus pacientes possam se cadastrar diretamente na sua agenda.
+            Gere um link seguro para que pacientes possam se cadastrar diretamente.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {!linkData ? (
+        <div className="space-y-4">
+          {linkData ? (
             <div className="space-y-4">
-              {isCheckingExisting && (
-                <div className="text-center p-4">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
-                  <p className="text-sm text-muted-foreground mt-2">Verificando links existentes...</p>
-                </div>
-              )}
-              
-              {!isCheckingExisting && (
-                <>
-                  <div className="bg-muted/50 p-4 rounded-lg space-y-3">
-                    <div className="flex items-start gap-3">
-                      <Shield className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-sm">Segurança</h4>
-                        <p className="text-sm text-muted-foreground">
-                          Cada link é único e seguro, vinculado exclusivamente à sua conta.
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-start gap-3">
-                      <Clock className="w-5 h-5 text-primary mt-0.5" />
-                      <div>
-                        <h4 className="font-semibold text-sm">Validade</h4>
-                        <p className="text-sm text-muted-foreground">
-                          O link expira automaticamente em 30 dias para sua segurança.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+              <Alert>
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Link {linkData.isExisting ? "Ativo" : "Gerado"}</AlertTitle>
+                <AlertDescription>
+                  <strong>Cada link só pode ser usado uma única vez — crie 1 link por paciente.</strong>
+                  {linkData.isExisting && " Este é um link ativo existente que ainda não foi utilizado."}
+                </AlertDescription>
+              </Alert>
 
-                  <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <p className="text-sm text-orange-800 font-medium">
-                      ⚠️ Importante: Cada link só pode ser usado uma única vez — crie 1 link por paciente.
-                    </p>
-                  </div>
-
-                  <Button 
-                    onClick={() => generateLink(false)} 
-                    disabled={isGenerating}
-                    className="w-full bg-gradient-primary hover:opacity-90"
+              <div className="space-y-2">
+                <Label>Link de Cadastro</Label>
+                <div className="flex gap-2">
+                  <Input
+                    value={linkData.registrationUrl}
+                    readOnly
+                    className="flex-1"
+                  />
+                  <Button
+                    onClick={copyToClipboard}
+                    variant="outline"
+                    size="icon"
                   >
-                    {isGenerating ? 'Gerando...' : 'Gerar Link de Cadastro'}
+                    <Copy className="h-4 w-4" />
                   </Button>
-                </>
-              )}
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <div className={`${linkData.isExisting ? 'bg-blue-50 border-blue-200' : 'bg-green-50 border-green-200'} border rounded-lg p-4`}>
-                <h4 className={`font-semibold mb-2 ${linkData.isExisting ? 'text-blue-800' : 'text-green-800'}`}>
-                  {linkData.isExisting ? 'Link válido encontrado!' : 'Link gerado com sucesso!'}
-                </h4>
-                <p className={`text-sm ${linkData.isExisting ? 'text-blue-700' : 'text-green-700'}`}>
-                  {linkData.isExisting 
-                    ? 'Você já possui um link válido. Compartilhe este link com seus pacientes.'
-                    : 'Compartilhe este link com seus pacientes para que eles possam se cadastrar diretamente.'
-                  }
-                </p>
+                </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="registration-link">Link de Cadastro</Label>
-                <div className="flex gap-2">
-                  <Input
-                    id="registration-link"
-                    value={linkData.url}
-                    readOnly
-                    className="font-mono text-sm"
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={copyToClipboard}
-                  >
-                    <Copy className="w-4 h-4" />
-                  </Button>
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>Válido até: {formatExpirationDate(linkData.expiresAt)}</span>
+                </div>
+                
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <UserPlus className="h-4 w-4" />
+                  <span>Profissional: {linkData.professionalName}</span>
                 </div>
               </div>
 
-              <div className="bg-muted/50 p-3 rounded-lg text-sm">
-                <p><strong>Válido até:</strong> {formatExpirationDate(linkData.expiresAt)}</p>
-                <p className="text-muted-foreground mt-1">
-                  Após o cadastro, você receberá uma notificação e o cliente aparecerá automaticamente na sua lista.
-                </p>
-                <p className="text-orange-600 font-medium mt-2">
-                  ⚠️ Este link só pode ser usado uma única vez por paciente.
-                </p>
-              </div>
+              <Alert variant="default">
+                <Shield className="h-4 w-4" />
+                <AlertTitle>Segurança e Validade</AlertTitle>
+                <AlertDescription>
+                  Este link permanece válido por 30 dias ou até que um paciente conclua o cadastro. 
+                  Apenas abrir o link NÃO o invalida - o link só expira quando o cadastro é finalizado.
+                </AlertDescription>
+              </Alert>
 
               <div className="flex gap-2">
-                <Button 
-                  onClick={() => generateLink(true)} 
+                <Button
+                  onClick={() => generateLink(true)}
                   variant="outline"
                   className="flex-1"
                   disabled={isGenerating}
                 >
-                  {isGenerating ? 'Gerando...' : 'Gerar Novo Link'}
+                  {isGenerating ? "Gerando..." : "Gerar Novo Link"}
                 </Button>
-                <Button 
+                <Button
                   onClick={() => setIsOpen(false)}
                   className="flex-1"
                 >
                   Fechar
                 </Button>
               </div>
+            </div>
+          ) : (
+            <div className="flex items-center justify-center p-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           )}
         </div>
