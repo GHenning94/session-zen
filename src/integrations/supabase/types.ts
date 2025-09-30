@@ -326,6 +326,27 @@ export type Database = {
         }
         Relationships: []
       }
+      edge_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          ip: unknown
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          ip: unknown
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          ip?: unknown
+        }
+        Relationships: []
+      }
       events: {
         Row: {
           category: string | null
@@ -683,6 +704,7 @@ export type Database = {
           token: string
           used: boolean
           used_at: string | null
+          used_by_client_id: string | null
           user_id: string
         }
         Insert: {
@@ -692,6 +714,7 @@ export type Database = {
           token: string
           used?: boolean
           used_at?: string | null
+          used_by_client_id?: string | null
           user_id: string
         }
         Update: {
@@ -701,6 +724,7 @@ export type Database = {
           token?: string
           used?: boolean
           used_at?: string | null
+          used_by_client_id?: string | null
           user_id?: string
         }
         Relationships: []
@@ -829,6 +853,15 @@ export type Database = {
         Args: { client_user_id: string }
         Returns: boolean
       }
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_ip: unknown
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: boolean
+      }
       cleanup_expired_registration_tokens: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -904,6 +937,10 @@ export type Database = {
           p_field_accessed?: string
         }
         Returns: undefined
+      }
+      register_client_from_token: {
+        Args: { p_client_data: Json; p_token: string }
+        Returns: Json
       }
       sanitize_medical_text: {
         Args: { input_text: string }
