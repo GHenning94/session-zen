@@ -5,7 +5,7 @@ import { Clock, User, Trash, Plus } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { cn } from '@/lib/utils'
+import { cn, formatClientName } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
 import { useInterval } from 'react-use'
 
@@ -201,10 +201,10 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                 <Clock className="h-3 w-3" />
                                 <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
                               </div>
-                              <div className="flex items-center gap-1">
-                                <User className="h-3 w-3" />
+                              <div className="flex items-center gap-1 min-w-0">
+                                <User className="h-3 w-3 flex-shrink-0" />
                                 <span className="text-xs truncate">
-                                  {clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado'}
+                                  {formatClientName(clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado')}
                                 </span>
                               </div>
                             </div>

@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
-import { cn } from '@/lib/utils'
+import { cn, formatClientName } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
 
 interface Session {
@@ -258,10 +258,10 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                     <span className="text-[10px] font-medium">{formatTimeBR(session.horario)}</span>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-1 mt-0.5">
-                                  <User className="h-2.5 w-2.5" />
+                                <div className="flex items-center gap-1 mt-0.5 min-w-0">
+                                  <User className="h-2.5 w-2.5 flex-shrink-0" />
                                   <span className="text-[10px] truncate">
-                                    {clients.find(c => c.id === session.client_id)?.nome || 'N/A'}
+                                    {formatClientName(clients.find(c => c.id === session.client_id)?.nome || 'N/A')}
                                   </span>
                                 </div>
                                 

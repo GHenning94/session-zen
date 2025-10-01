@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Clock, User, Trash } from "lucide-react"
-import { cn } from "@/lib/utils"
+import { cn, formatClientName } from "@/lib/utils"
 import { addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { formatTimeBR } from "@/utils/formatters"
@@ -164,13 +164,13 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                     >
                       <div className="flex items-center gap-2 text-xs">
                         <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
+                          <Clock className="h-3 w-3 flex-shrink-0" />
                           <span>{formatTimeBR(session.horario)}</span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <User className="h-3 w-3" />
+                        <div className="flex items-center gap-1 min-w-0">
+                          <User className="h-3 w-3 flex-shrink-0" />
                           <span className="truncate">
-                            {getClientName(session.client_id)}
+                            {formatClientName(getClientName(session.client_id))}
                           </span>
                         </div>
                       </div>
