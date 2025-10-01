@@ -56,17 +56,21 @@ serve(async (req) => {
 
     console.log('[REGISTER-CLIENT] Processing registration for token:', token);
 
-    // Rate limiting check
-    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const { data: rateLimitCheck } = await supabase.rpc('check_rate_limit', {
-      p_ip: clientIp,
+    // Rate limiting check with safe IP parsing
+    const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+    const clientIp = (rawIp.split(',')[0] || '').trim();
+    const safeIp = clientIp && /^(\d{1,3}\.){3}\d{1,3}$|^::1$|^[a-fA-F0-9:]+$/.test(clientIp) ? clientIp : '0.0.0.0';
+    const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+      p_ip: safeIp,
       p_endpoint: 'register-client-via-token',
       p_max_requests: 10,
       p_window_minutes: 1
     });
 
-    if (!rateLimitCheck) {
-      console.log('[REGISTER-CLIENT] Rate limit exceeded for IP:', clientIp);
+    if (rateLimitError) {
+      console.log('[REGISTER-CLIENT] Rate limit check error, allowing request:', rateLimitError);
+    } else if (!rateLimitCheck) {
+      console.log('[REGISTER-CLIENT] Rate limit exceeded for IP:', safeIp);
       return new Response(
         JSON.stringify({ error: 'Muitas requisições. Tente novamente em alguns instantes.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
