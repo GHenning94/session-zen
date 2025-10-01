@@ -196,19 +196,13 @@ const Dashboard = () => {
       const pendingRevenue = pendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
 
       const now = new Date()
-      const currentTime = now.toTimeString().slice(0, 5)
       
       const upcomingData = upcomingDataResult.data
       const filteredUpcoming = upcomingData?.filter(session => {
-        const sessionDate = session.data
-        const sessionTime = session.horario
-        
-        if (sessionDate > today) {
-          return true
-        } else if (sessionDate === today) {
-          return sessionTime >= currentTime
-        }
-        return false
+        // Criar datetime completo da sessão para comparação precisa
+        const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+        // Comparar com o momento atual
+        return sessionDateTime >= now
       }).slice(0, 4)
       
       const paymentsData = paymentsDataResult.data
