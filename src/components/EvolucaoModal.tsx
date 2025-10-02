@@ -26,6 +26,7 @@ interface EvolucaoModalProps {
     data: string
     horario: string
   }
+  initialContent?: string
 }
 
 export const EvolucaoModal = ({ 
@@ -35,7 +36,8 @@ export const EvolucaoModal = ({
   clientName, 
   onEvolucaoCreated,
   existingEvolucao,
-  sessionData
+  sessionData,
+  initialContent
 }: EvolucaoModalProps) => {
   const { toast } = useToast()
   const { user } = useAuth()
@@ -64,7 +66,7 @@ export const EvolucaoModal = ({
         data_sessao: sessionData.data,
         horario_sessao: sessionData.horario,
         session_id: sessionData.id,
-        evolucao: ''
+        evolucao: initialContent || ''
       })
       setInputMode('session')
     } else {
@@ -73,11 +75,11 @@ export const EvolucaoModal = ({
         data_sessao: today,
         horario_sessao: '',
         session_id: '',
-        evolucao: ''
+        evolucao: initialContent || ''
       })
       setInputMode('manual')
     }
-  }, [existingEvolucao, sessionData, open])
+  }, [existingEvolucao, sessionData, initialContent, open])
 
   // Carregar sessões do cliente quando o modal abre
   useEffect(() => {

@@ -17,6 +17,9 @@ import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 import { SessionNoteModal } from '@/components/SessionNoteModal'
 import { SessionEditModal } from '@/components/SessionEditModal'
+import { SessionDetailsModal } from '@/components/SessionDetailsModal'
+import { EvolucaoModal } from '@/components/EvolucaoModal'
+import { formatClientName } from '@/lib/utils'
 import { calculateSessionStatus } from "@/utils/sessionStatusUtils"
 import { useNavigate } from 'react-router-dom'
 import { TextPreview } from '@/components/TextPreview'
@@ -65,8 +68,12 @@ export default function Sessoes() {
   // Estados para modais
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
+  const [evolucaoModalOpen, setEvolucaoModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
+  const [selectedNoteForEvolucao, setSelectedNoteForEvolucao] = useState<SessionNote | null>(null)
+  const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -242,6 +249,40 @@ export default function Sessoes() {
     setEditModalOpen(true)
   }
 
+  const handleSessionClick = (session: Session) => {
+    setSelectedSession(session)
+    setDetailsModalOpen(true)
+  }
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      const { error } = await supabase
+        .from('session_notes')
+        .delete()
+        .eq('id', noteId)
+
+      if (error) throw error
+
+      toast({
+        title: "Lembrete excluído",
+        description: "O lembrete foi excluído com sucesso.",
+      })
+      await loadData()
+    } catch (error) {
+      console.error('Erro ao excluir lembrete:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir o lembrete.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleIncluirNoProntuario = (note: SessionNote) => {
+    setSelectedNoteForEvolucao(note)
+    setEvolucaoModalOpen(true)
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'realizada': return 'default'
@@ -338,7 +379,7 @@ export default function Sessoes() {
               variant={activeTab === 'notes' ? 'default' : 'outline'}
               onClick={() => setActiveTab('notes')}
             >
-              Anotações
+              Lembretes
             </Button>
           </div>
         </div>
@@ -483,106 +524,52 @@ export default function Sessoes() {
                 ) : (
                   <div className="space-y-4">
                     {filteredSessions.map((session) => (
-                      <div key={session.id} className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors">
+                      <div 
+                        key={session.id} 
+                        className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => handleSessionClick(session)}
+                      >
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                              <User className="w-5 h-5 text-primary" />
+                          <div className="flex items-center space-x-4 flex-1">
+                            <div className="flex-shrink-0">
+                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
+                                <User className="w-6 h-6 text-muted-foreground" />
+                              </div>
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-medium">{session.clients?.nome || 'Cliente não encontrado'}</h3>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-lg font-semibold">{formatClientName(session.clients?.nome || 'Cliente não encontrado')}</h3>
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
                               </div>
-                              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                 <div className="flex items-center gap-1">
-                                   <Calendar className="w-3 h-3" />
-                                   <span>{formatDateBR(session.data)}</span>
-                                 </div>
-                                <div className="flex items-center gap-1">
-                                  <Clock className="w-3 h-3" />
-                                  <span>{formatTimeBR(session.horario)}</span>
-                                </div>
-                                {session.valor && (
-                                  <div className="flex items-center gap-1">
-                                    <span>{formatCurrencyBR(session.valor)}</span>
+                              <div className="text-sm text-muted-foreground space-y-1">
+                                <div className="flex items-center gap-4">
+                                  <div className="flex items-center gap-2">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>{formatDateBR(session.data)}</span>
                                   </div>
-                                )}
+                                  <div className="flex items-center gap-2">
+                                    <Clock className="w-4 h-4" />
+                                    <span>{formatTimeBR(session.horario)}</span>
+                                  </div>
+                                  {session.valor && (
+                                    <span className="font-medium">{formatCurrencyBR(session.valor)}</span>
+                                  )}
+                                </div>
                               </div>
                               {session.anotacoes && (
                                 <div className="mt-2 text-sm text-muted-foreground bg-muted/50 rounded p-2">
-                                  <strong>Anotações:</strong>
+                                  <strong>Observações Iniciais:</strong>
                                   <TextPreview 
                                     content={session.anotacoes}
-                                    title={`Anotação - ${session.clients?.nome} - ${formatDateBR(session.data)}`}
+                                    title={`Observações - ${session.clients?.nome} - ${formatDateBR(session.data)}`}
                                     className="mt-1"
                                   />
                                 </div>
                               )}
                             </div>
                           </div>
-                          
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => handleViewSession(session.id)}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                Ver na Agenda
-                              </DropdownMenuItem>
-                              
-                              {session.status !== 'cancelada' && session.status !== 'realizada' && (
-                                <DropdownMenuItem onClick={() => handleEditSession(session)}>
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Editar Sessão
-                                </DropdownMenuItem>
-                              )}
-                              
-                              <DropdownMenuItem onClick={() => handleAddNote(session)}>
-                                <StickyNote className="w-4 h-4 mr-2" />
-                                Adicionar Anotação
-                              </DropdownMenuItem>
-                              
-                              {session.status === 'realizada' && session.valor && (
-                                <DropdownMenuItem onClick={() => handleViewPayment(session.id)}>
-                                  <CreditCard className="w-4 h-4 mr-2" />
-                                  Ver Pagamento
-                                </DropdownMenuItem>
-                              )}
-                              
-                              {session.status === 'agendada' && (
-                                <>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleCancelSession(session.id)}
-                                    className="text-destructive"
-                                  >
-                                    <X className="w-4 h-4 mr-2" />
-                                    Cancelar Sessão
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem 
-                                    onClick={() => handleMarkNoShow(session.id)}
-                                    className="text-warning"
-                                  >
-                                    <AlertTriangle className="w-4 h-4 mr-2" />
-                                    Marcar como Falta
-                                  </DropdownMenuItem>
-                                </>
-                              )}
-                              
-                              <DropdownMenuItem 
-                                onClick={() => handleDeleteSession(session.id)}
-                                className="text-destructive"
-                              >
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Excluir Sessão
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </div>
                       </div>
                     ))}
@@ -597,12 +584,12 @@ export default function Sessoes() {
         {activeTab === 'notes' && (
           <Card className="shadow-soft">
             <CardHeader>
-              <CardTitle>Anotações de Sessões</CardTitle>
+              <CardTitle>Lembretes de sessões</CardTitle>
             </CardHeader>
             <CardContent>
               {filteredNotes.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhuma anotação encontrada.
+                  Nenhum lembrete encontrado.
                 </div>
               ) : (
                 <div className="space-y-4">
@@ -612,7 +599,7 @@ export default function Sessoes() {
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-2">
                             <FileText className="w-4 h-4 text-primary" />
-                            <h3 className="font-medium">{note.clients?.nome || 'Cliente não encontrado'}</h3>
+                            <h3 className="font-medium">{formatClientName(note.clients?.nome || 'Cliente não encontrado')}</h3>
                              {note.sessions && (
                                <Badge variant="outline" className="text-xs">
                                  {formatDateBR(note.sessions.data)} às {formatTimeBR(note.sessions.horario)}
@@ -623,33 +610,45 @@ export default function Sessoes() {
                              <TextPreview 
                                content={note.notes}
                                isHtml={true}
-                               title={`Anotação - ${note.clients?.nome} - ${note.sessions ? formatDateBR(note.sessions.data) : 'Data não disponível'}`}
+                               title={`Lembrete - ${note.clients?.nome} - ${note.sessions ? formatDateBR(note.sessions.data) : 'Data não disponível'}`}
                              />
                            </div>
-                           <div className="text-xs text-muted-foreground">
+                           <div className="text-xs text-muted-foreground mb-3">
                              Criado em {formatDateBR(note.created_at)} às {formatTimeBR(note.created_at)}
+                           </div>
+                           
+                           {/* Botões de ação */}
+                           <div className="flex gap-2">
+                             <Button
+                               variant="outline"
+                               size="sm"
+                               onClick={() => handleIncluirNoProntuario(note)}
+                             >
+                               <FileText className="w-4 h-4 mr-2" />
+                               Incluir no prontuário
+                             </Button>
                            </div>
                         </div>
                         
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleEditNote(note)}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Editar Anotação
-                            </DropdownMenuItem>
-                            {note.sessions && (
-                              <DropdownMenuItem onClick={() => handleViewSession(note.session_id)}>
-                                <Eye className="w-4 h-4 mr-2" />
-                                Ver Sessão
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        {/* Ícones de ação */}
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEditNote(note)}
+                            title="Editar lembrete"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteNoteId(note.id)}
+                            title="Excluir lembrete"
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -660,6 +659,19 @@ export default function Sessoes() {
         )}
 
         {/* Modals */}
+        <SessionDetailsModal
+          session={selectedSession}
+          open={detailsModalOpen}
+          onOpenChange={setDetailsModalOpen}
+          onEdit={handleEditSession}
+          onDelete={handleDeleteSession}
+          onCancel={handleCancelSession}
+          onMarkNoShow={handleMarkNoShow}
+          onViewAgenda={handleViewSession}
+          onViewPayment={handleViewPayment}
+          onAddNote={handleAddNote}
+        />
+
         <SessionNoteModal
           session={selectedSession}
           open={noteModalOpen}
@@ -675,6 +687,52 @@ export default function Sessoes() {
           onOpenChange={setEditModalOpen}
           onSessionUpdated={loadData}
         />
+
+        <EvolucaoModal
+          open={evolucaoModalOpen}
+          onOpenChange={setEvolucaoModalOpen}
+          clientId={selectedNoteForEvolucao?.client_id || ''}
+          clientName={selectedNoteForEvolucao?.clients?.nome || ''}
+          onEvolucaoCreated={() => {
+            loadData()
+            toast({
+              title: "Lembrete incluído no prontuário",
+              description: "O lembrete foi adicionado como evolução no prontuário.",
+            })
+          }}
+          sessionData={selectedNoteForEvolucao && selectedNoteForEvolucao.sessions ? {
+            id: selectedNoteForEvolucao.session_id,
+            data: selectedNoteForEvolucao.sessions.data,
+            horario: selectedNoteForEvolucao.sessions.horario
+          } : undefined}
+          initialContent={selectedNoteForEvolucao?.notes || ''}
+        />
+
+        {/* Diálogo de confirmação para excluir lembrete */}
+        <AlertDialog open={!!deleteNoteId} onOpenChange={(open) => !open && setDeleteNoteId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir este lembrete? Esta ação não pode ser desfeita.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  if (deleteNoteId) {
+                    handleDeleteNote(deleteNoteId)
+                    setDeleteNoteId(null)
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   )
