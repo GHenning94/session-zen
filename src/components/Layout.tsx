@@ -26,13 +26,13 @@ export function Layout({ children }: LayoutProps) {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm flex items-center justify-between px-6">
+          {/* Header moderno */}
+          <header className="h-16 bg-card/70 backdrop-blur-md border-b border-border/50 flex items-center justify-between px-8">
             <div className="flex items-center gap-4">
-              <SidebarTrigger className="h-8 w-8" />
+              <SidebarTrigger className="h-9 w-9 rounded-lg hover:bg-accent transition-colors" />
               <div>
-                <h1 className="text-lg font-semibold">TherapyPro</h1>
-                <p className="text-xs text-muted-foreground">Sistema de Gestão Profissional</p>
+                <h1 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">TherapyPro</h1>
+                <p className="text-xs text-muted-foreground">Gestão Profissional</p>
               </div>
             </div>
             
@@ -43,7 +43,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto">
+          <main className="flex-1 p-8 overflow-auto">
             {children}
           </main>
         </div>

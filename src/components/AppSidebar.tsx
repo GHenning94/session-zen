@@ -128,13 +128,15 @@ export function AppSidebar() {
   const isActive = (path: string) => currentPath === path
   const getNavClasses = ({ isActive }: { isActive: boolean }) =>
     isActive 
-      ? "bg-primary/10 text-primary border-r-2 border-primary font-medium" 
-      : "hover:bg-accent transition-colors"
+      ? "bg-primary text-primary-foreground font-semibold shadow-sm rounded-xl" 
+      : "hover:bg-sidebar-accent/70 transition-all duration-200 rounded-xl"
 
   const isCollapsed = state === "collapsed"
+  const shouldShowPremiumBanner = currentPlan === 'basico' || !currentPlan
 
-  // Show banner for basic and pro plans (always show for testing)
-  const shouldShowPremiumBanner = true // Changed for testing - normally: (currentPlan === 'basico' || currentPlan === 'pro')
+  // Separar Configurações dos outros itens
+  const mainMenuItems = menuItems.filter(item => item.url !== '/configuracoes')
+  const settingsItem = menuItems.find(item => item.url === '/configuracoes')
 
   const handleSignOut = async () => {
     try {
@@ -155,40 +157,24 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className={isCollapsed ? "w-20" : "w-64"}
+      className="border-none m-3 rounded-2xl shadow-medium overflow-hidden"
       collapsible="icon"
     >
-      <SidebarHeader className="border-b border-border p-3">
-        <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
-          <div className={`${isCollapsed ? 'w-10 h-10' : 'w-8 h-8'} bg-gradient-to-br from-primary to-primary/80 rounded-lg flex items-center justify-center shadow-lg`}>
-            <Stethoscope className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'} text-white`} />
-          </div>
-          {!isCollapsed && (
-            <div>
-              <h2 className="font-semibold text-sm">TherapyPro</h2>
-              <p className="text-xs text-muted-foreground">SaaS Profissional</p>
-            </div>
-          )}
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent>
+      <SidebarContent className="pt-6">
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => {
+            <SidebarMenu className="space-y-1 px-3">
+              {mainMenuItems.map((item) => {
                 const isDevPage = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink 
-                        to={item.url} 
-                        className={getNavClasses}
-                      >
-                        <item.icon className={`w-4 h-4 ${isDevPage ? 'text-muted-foreground' : ''}`} />
+                    <SidebarMenuButton asChild className={`h-11 ${getNavClasses({ isActive: isActive(item.url) })}`}>
+                      <NavLink to={item.url} end>
+                        <item.icon className={`h-5 w-5 ${isDevPage ? 'text-muted-foreground' : ''}`} />
                         {!isCollapsed && (
-                          <span className={isDevPage ? 'text-muted-foreground' : ''}>{item.title}</span>
+                          <span className={`text-sm ${isDevPage ? 'text-muted-foreground' : ''}`}>
+                            {item.title}
+                          </span>
                         )}
                       </NavLink>
                     </SidebarMenuButton>
@@ -200,22 +186,36 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border">
-        <div className={`${isCollapsed ? 'p-2 flex justify-center' : 'p-4 pb-2'}`}>
-          <PremiumBanner shouldShow={shouldShowPremiumBanner} />
-        </div>
+      <SidebarFooter className="pb-4 px-3 space-y-3">
+        {shouldShowPremiumBanner && !isCollapsed && (
+          <div className="px-2">
+            <PremiumBanner shouldShow={shouldShowPremiumBanner} />
+          </div>
+        )}
         
-        <div className={`border-t border-border ${isCollapsed ? 'p-2 flex justify-center' : 'p-4'}`}>
-          <Button 
-            variant="ghost" 
-            size={isCollapsed ? "icon" : "sm"}
-            className={`${isCollapsed ? 'w-10 h-10' : 'w-full justify-start'} text-muted-foreground hover:text-foreground`}
-            onClick={handleSignOut}
-          >
-            <LogOut className={`${isCollapsed ? 'w-5 h-5' : 'w-4 h-4'}`} />
-            {!isCollapsed && <span className="ml-2">Sair</span>}
-          </Button>
-        </div>
+        <SidebarMenu className="space-y-1">
+          {/* Configurações fixo no final */}
+          {settingsItem && (
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild className={`h-11 ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
+                <NavLink to={settingsItem.url} end>
+                  <settingsItem.icon className="h-5 w-5" />
+                  {!isCollapsed && <span className="text-sm">{settingsItem.title}</span>}
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+          
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              onClick={handleSignOut} 
+              className="h-11 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
+            >
+              <LogOut className="h-5 w-5" />
+              {!isCollapsed && <span className="text-sm">Sair</span>}
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarFooter>
     </Sidebar>
   )
