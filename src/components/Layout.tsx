@@ -26,14 +26,10 @@ export function Layout({ children }: LayoutProps) {
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
-          {/* Header moderno */}
-          <header className="h-16 bg-card/70 backdrop-blur-md border-b border-border/50 flex items-center justify-between px-8">
+          {/* Header transparente */}
+          <header className="h-16 bg-transparent flex items-center justify-between px-8">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="h-9 w-9 rounded-lg hover:bg-accent transition-colors" />
-              <div>
-                <h1 className="text-lg font-bold bg-gradient-primary bg-clip-text text-transparent">TherapyPro</h1>
-                <p className="text-xs text-muted-foreground">Gestão Profissional</p>
-              </div>
             </div>
             
             <div className="flex items-center gap-3">

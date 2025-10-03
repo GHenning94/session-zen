@@ -99,8 +99,8 @@
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
-    /* Cards com contraste sutil no dark mode */
-    --card: 222 47% 15%;
+    /* Cards com maior contraste no dark mode para destaque */
+    --card: 222 47% 18%;
     --card-foreground: 210 40% 98%;
 
     /* Popovers */

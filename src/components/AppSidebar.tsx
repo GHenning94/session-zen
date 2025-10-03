@@ -4,8 +4,6 @@ import {
   CreditCard, 
   Settings, 
   LayoutDashboard,
-  LogOut,
-  Stethoscope,
   FileBarChart,
   BookOpen,
   CalendarCheck,
@@ -15,7 +13,8 @@ import {
   Share2,
   Globe,
   Plug,
-  HelpCircle
+  HelpCircle,
+  Sparkles
 } from "lucide-react"
 import { NavLink, useLocation, useNavigate } from "react-router-dom"
 
@@ -33,9 +32,6 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar"
-import { Button } from "@/components/ui/button"
-import { useAuth } from "@/hooks/useAuth"
-import { toast } from "@/hooks/use-toast"
 import { PremiumBanner } from "@/components/PremiumBanner"
 import { useSubscription } from "@/hooks/useSubscription"
 
@@ -120,8 +116,6 @@ import { useSubscription } from "@/hooks/useSubscription"
 export function AppSidebar() {
   const { state } = useSidebar()
   const location = useLocation()
-  const navigate = useNavigate()
-  const { signOut, user } = useAuth()
   const { currentPlan } = useSubscription()
   const currentPath = location.pathname
 
@@ -138,39 +132,43 @@ export function AppSidebar() {
   const mainMenuItems = menuItems.filter(item => item.url !== '/configuracoes')
   const settingsItem = menuItems.find(item => item.url === '/configuracoes')
 
-  const handleSignOut = async () => {
-    try {
-      await signOut()
-      toast({
-        title: "Logout realizado",
-        description: "Você foi desconectado com sucesso.",
-      })
-      navigate("/")
-    } catch (error) {
-      toast({
-        title: "Erro",
-        description: "Erro ao fazer logout.",
-        variant: "destructive",
-      })
-    }
-  }
-
   return (
     <Sidebar
-      className="border-none m-3 rounded-2xl shadow-medium overflow-hidden"
+      className="border-none m-3 rounded-2xl shadow-medium overflow-hidden flex flex-col max-h-[calc(100vh-24px)]"
       collapsible="icon"
     >
-      <SidebarContent className="pt-6">
+      {/* Header com Logo */}
+      <SidebarHeader className="px-3 pt-4 pb-2">
+        {!isCollapsed ? (
+          <div className="flex items-center gap-2 px-2">
+            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-base font-bold bg-gradient-primary bg-clip-text text-transparent">TherapyPro</h1>
+              <p className="text-[10px] text-muted-foreground">Gestão Profissional</p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center">
+            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+          </div>
+        )}
+      </SidebarHeader>
+
+      <SidebarContent className="flex-1 overflow-y-auto">
         <SidebarGroup>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1 px-3">
+            <SidebarMenu className="space-y-0.5 px-3">
               {mainMenuItems.map((item) => {
                 const isDevPage = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild className={`h-11 ${getNavClasses({ isActive: isActive(item.url) })}`}>
+                    <SidebarMenuButton asChild className={`h-9 ${getNavClasses({ isActive: isActive(item.url) })}`}>
                       <NavLink to={item.url} end>
-                        <item.icon className={`h-5 w-5 ${isDevPage ? 'text-muted-foreground' : ''}`} />
+                        <item.icon className={`h-4 w-4 ${isDevPage ? 'text-muted-foreground' : ''}`} />
                         {!isCollapsed && (
                           <span className={`text-sm ${isDevPage ? 'text-muted-foreground' : ''}`}>
                             {item.title}
@@ -186,36 +184,27 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="pb-4 px-3 space-y-3">
-        {shouldShowPremiumBanner && !isCollapsed && (
-          <div className="px-2">
-            <PremiumBanner shouldShow={shouldShowPremiumBanner} />
-          </div>
-        )}
-        
-        <SidebarMenu className="space-y-1">
-          {/* Configurações fixo no final */}
+      <SidebarFooter className="pb-3 px-3 space-y-2">
+        {/* Configurações fixo antes do banner */}
+        <SidebarMenu>
           {settingsItem && (
             <SidebarMenuItem>
-              <SidebarMenuButton asChild className={`h-11 ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
+              <SidebarMenuButton asChild className={`h-9 ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
                 <NavLink to={settingsItem.url} end>
-                  <settingsItem.icon className="h-5 w-5" />
+                  <settingsItem.icon className="h-4 w-4" />
                   {!isCollapsed && <span className="text-sm">{settingsItem.title}</span>}
                 </NavLink>
               </SidebarMenuButton>
             </SidebarMenuItem>
           )}
-          
-          <SidebarMenuItem>
-            <SidebarMenuButton 
-              onClick={handleSignOut} 
-              className="h-11 rounded-xl hover:bg-destructive/10 hover:text-destructive transition-all duration-200"
-            >
-              <LogOut className="h-5 w-5" />
-              {!isCollapsed && <span className="text-sm">Sair</span>}
-            </SidebarMenuButton>
-          </SidebarMenuItem>
         </SidebarMenu>
+        
+        {/* Banner Premium */}
+        {shouldShowPremiumBanner && (
+          <div className={isCollapsed ? "" : "px-2"}>
+            <PremiumBanner shouldShow={shouldShowPremiumBanner} />
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   )

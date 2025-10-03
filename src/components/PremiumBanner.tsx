@@ -26,11 +26,11 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
         variant="ghost"
         size="icon"
         data-animate="true"
-        className="premium-banner-mini animated-premium w-10 h-10 isolate overflow-hidden rounded-lg"
+        className="premium-banner-mini animated-premium w-8 h-8 isolate overflow-hidden rounded-lg p-0"
         onClick={handleUpgrade}
         title="Torne-se Premium"
       >
-        <Crown className="w-5 h-5 text-white relative z-10" />
+        <Crown className="w-4 h-4 text-white relative z-10" />
       </Button>
     )
   }
@@ -39,14 +39,14 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
     <Button
       variant="ghost"
       data-animate="true"
-      className="premium-banner animated-premium w-full h-12 isolate overflow-hidden group"
+      className="premium-banner animated-premium w-full h-10 isolate overflow-hidden group"
       onClick={handleUpgrade}
     >
-      <div className="flex items-center gap-3 relative z-10">
-        <Crown className="w-5 h-5 text-white" />
+      <div className="flex items-center gap-2 relative z-10">
+        <Crown className="w-4 h-4 text-white" />
         <div className="text-left">
           <div className="text-white font-semibold text-xs">Torne-se Premium</div>
-          <div className="text-white/80 text-[10px]">Desbloqueie recursos exclusivos</div>
+          <div className="text-white/80 text-[10px]">Desbloqueie recursos</div>
         </div>
       </div>
     </Button>
