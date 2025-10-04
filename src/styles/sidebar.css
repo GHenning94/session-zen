@@ -1,0 +1,34 @@
+/* Sidebar customizations - garantir centralização e visibilidade */
+
+/* Garantir que elementos não sejam cortados */
+[data-sidebar="sidebar"] {
+  overflow: visible !important;
+}
+
+/* Garantir visibilidade do banner premium */
+.premium-banner,
+.premium-banner-mini {
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: flex !important;
+}
+
+/* Remover animações que causam flicker */
+.premium-banner {
+  transition: none !important;
+}
+
+/* Centralização perfeita dos itens do menu */
+[data-sidebar="menu-button"] {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Garantir que ícones não sejam cortados */
+[data-sidebar="menu-button"] svg,
+[data-sidebar="menu-button"] img {
+  display: block;
+  object-fit: contain;
+  flex-shrink: 0;
+}
