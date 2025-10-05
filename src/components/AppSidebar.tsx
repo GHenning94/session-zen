@@ -14,10 +14,9 @@ import {
   Globe,
   Plug,
   HelpCircle,
-  Sparkles
+  Stethoscope
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
-import { useState, useEffect } from "react"
 
 import {
   Sidebar,
@@ -33,6 +32,7 @@ import {
 } from "@/components/ui/sidebar"
 import { PremiumBanner } from "@/components/PremiumBanner"
 import { useSubscription } from "@/hooks/useSubscription"
+import { Badge } from "@/components/ui/badge"
 
   const menuItems = [
     {
@@ -118,16 +118,8 @@ export function AppSidebar() {
   const { currentPlan } = useSubscription()
   const currentPath = location.pathname
 
-  // Estado local para controlar banner premium e prevenir desaparecimento durante loading
-  const [showBanner, setShowBanner] = useState(true)
-
-  useEffect(() => {
-    if (currentPlan === 'pro' || currentPlan === 'premium') {
-      setShowBanner(false)
-    } else if (currentPlan === 'basico') {
-      setShowBanner(true)
-    }
-  }, [currentPlan])
+  // Mostrar banner apenas se não for pro ou premium
+  const showBanner = currentPlan !== 'pro' && currentPlan !== 'premium'
 
   const isActive = (path: string) => currentPath === path
   const getNavClasses = ({ isActive }: { isActive: boolean }) =>
@@ -145,13 +137,18 @@ export function AppSidebar() {
     <Sidebar
       className="border-none m-3 rounded-2xl shadow-medium overflow-hidden flex flex-col max-h-[calc(100vh-24px)]"
       collapsible="icon"
+      style={{
+        // @ts-ignore - CSS variable for collapsed width
+        '--sidebar-width': '16rem',
+        '--sidebar-width-icon': '4.5rem'
+      } as React.CSSProperties}
     >
       {/* Header com Logo */}
       <SidebarHeader className="px-3 pt-4 pb-2">
         {!isCollapsed ? (
           <div className="flex items-center gap-2 px-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shrink-0 shadow-primary">
+              <Stethoscope className="w-6 h-6 text-white" />
             </div>
             <div>
               <h1 className="text-base font-bold bg-gradient-primary bg-clip-text text-transparent">TherapyPro</h1>
@@ -160,8 +157,8 @@ export function AppSidebar() {
           </div>
         ) : (
           <div className="flex justify-center w-full">
-            <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
-              <Sparkles className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-primary flex items-center justify-center shadow-primary">
+              <Stethoscope className="w-6 h-6 text-white" />
             </div>
           </div>
         )}
@@ -172,16 +169,23 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5 px-3">
               {mainMenuItems.map((item) => {
-                const isDevPage = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
+                const isComingSoon = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild className={`h-9 ${getNavClasses({ isActive: isActive(item.url) })}`}>
-                      <NavLink to={item.url} end className="flex items-center justify-start">
-                        <item.icon className={`h-5 w-5 ${isDevPage ? 'text-muted-foreground' : ''} ${isCollapsed ? 'mx-auto' : ''}`} />
-                        {!isCollapsed && (
-                          <span className={`text-sm ml-3 ${isDevPage ? 'text-muted-foreground' : ''}`}>
-                            {item.title}
-                          </span>
+                      <NavLink to={item.url} end className="flex items-center justify-between w-full">
+                        <div className="flex items-center">
+                          <item.icon className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : ''}`} />
+                          {!isCollapsed && (
+                            <span className="text-sm ml-3">
+                              {item.title}
+                            </span>
+                          )}
+                        </div>
+                        {!isCollapsed && isComingSoon && (
+                          <Badge variant="success" className="ml-2 text-[10px] px-2 py-0.5">
+                            Em breve
+                          </Badge>
                         )}
                       </NavLink>
                     </SidebarMenuButton>
@@ -195,18 +199,16 @@ export function AppSidebar() {
 
       <SidebarFooter className="pb-3 px-3 space-y-2">
         {/* Banner Premium - ANTES de Configurações */}
-        {showBanner && (
-          <div className={isCollapsed ? "flex justify-center" : ""}>
-            <PremiumBanner shouldShow={showBanner} />
-          </div>
-        )}
+        <div className={isCollapsed ? "flex justify-center" : ""}>
+          <PremiumBanner shouldShow={showBanner} />
+        </div>
         
         {/* Configurações fixo */}
         <SidebarMenu>
           {settingsItem && (
             <SidebarMenuItem>
               <SidebarMenuButton asChild className={`h-9 ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
-                <NavLink to={settingsItem.url} end className="flex items-center justify-start">
+                <NavLink to={settingsItem.url} end className="flex items-center">
                   <settingsItem.icon className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : ''}`} />
                   {!isCollapsed && <span className="text-sm ml-3">{settingsItem.title}</span>}
                 </NavLink>
