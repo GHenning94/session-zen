@@ -1,0 +1,51 @@
+/* --- EFEITO DE FUNDO ANIMADO (BLOBS) PARA PÁGINA DE LOGIN --- */
+
+.background-animation-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.3;
+  will-change: transform;
+}
+
+/* EFEITO DA DIREITA (igual à seção de planos) */
+.blob-1 {
+  width: 450px;
+  height: 450px;
+  top: 20%;
+  right: -15%;
+  background: hsl(var(--primary));
+  animation: move-blob-dynamic-3 22s ease-in-out infinite alternate;
+}
+
+.blob-2 {
+  width: 350px;
+  height: 350px;
+  top: 60%;
+  right: -5%;
+  background: hsl(var(--primary-glow));
+  animation: move-blob-dynamic-4 20s ease-in-out -7s infinite alternate;
+}
+
+@keyframes move-blob-dynamic-3 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-100px, 50px) scale(1.1); }
+  100% { transform: translate(50px, 150px) scale(0.9); }
+}
+
+@keyframes move-blob-dynamic-4 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(80px, -120px) scale(0.8); }
+  100% { transform: translate(-40px, 80px) scale(1.2); }
+}

@@ -1,0 +1,110 @@
+/* Estilos e animações para a Landing Page - Versão Final */
+
+.landing-page-wrapper {
+  background-color: hsl(var(--background));
+  overflow-x: hidden;
+}
+
+/* --- EFEITO DE FUNDO ANIMADO (BLOBS) --- */
+.hero-features-wrapper, .plans-faq-wrapper { position: relative; }
+.background-animation-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+.blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.3; will-change: transform; }
+.blob-1 { width: 500px; height: 500px; top: 25%; left: -20%; background: hsl(var(--primary)); animation: move-blob-dynamic 20s ease-in-out infinite alternate; }
+.blob-2 { width: 400px; height: 400px; top: 40%; left: -5%; background: hsl(var(--primary-glow)); animation: move-blob-dynamic-2 18s ease-in-out -5s infinite alternate; }
+.blob-3 { width: 450px; height: 450px; top: 20%; right: -15%; background: hsl(var(--primary)); animation: move-blob-dynamic-3 22s ease-in-out infinite alternate; }
+.blob-4 { width: 350px; height: 350px; top: 60%; right: -5%; background: hsl(var(--primary-glow)); animation: move-blob-dynamic-4 20s ease-in-out -7s infinite alternate; }
+@keyframes move-blob-dynamic { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(100px, 80px) scale(1.2); } 100% { transform: translate(-50px, 150px) scale(0.9); } }
+@keyframes move-blob-dynamic-2 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-80px, 120px) scale(0.8); } 100% { transform: translate(40px, -50px) scale(1.1); } }
+@keyframes move-blob-dynamic-3 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-100px, 50px) scale(1.1); } 100% { transform: translate(50px, 150px) scale(0.9); } }
+@keyframes move-blob-dynamic-4 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(80px, -120px) scale(0.8); } 100% { transform: translate(-40px, 80px) scale(1.2); } }
+
+/* --- MÁSCARA DE TRANSIÇÃO DE SEÇÃO --- */
+.section-fade-mask {
+  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+}
+
+/* --- EFEITO DE GRADIENTE ANIMADO (CTA) --- */
+.cta-animated-background { background: linear-gradient(-45deg, hsl(var(--primary-glow)), hsl(var(--primary)), hsl(221, 83%, 43%), hsl(var(--primary-glow))); background-size: 400% 400%; animation: background-pan-fast 16s linear infinite; }
+@keyframes background-pan-fast { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
+/* --- SEÇÃO DE FUNCIONALIDADES (SCROLL HORIZONTAL) --- */
+.features-scroll-wrapper { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
+.features-scroll-wrapper::-webkit-scrollbar { display: none; }
+.feature-card-large { flex: 0 0 300px; height: 400px; position: relative; overflow: hidden; border-radius: 1rem; background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted) / 0.5)); border: 1px solid hsl(var(--border) / 0.5); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.feature-card-large:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
+.feature-card-large .icon-bg { position: absolute; bottom: -2rem; right: -2rem; font-size: 8rem; opacity: 0.05; color: hsl(var(--primary)); transition: transform 0.4s ease; }
+.feature-card-large:hover .icon-bg { transform: scale(1.2) rotate(10deg); }
+
+
+/* --- SEÇÃO "SISTEMA EM AÇÃO" (IMAGEM COM ANIMAÇÃO) --- */
+.image-slide-container {
+  overflow: hidden;
+  border-radius: 0.75rem;
+  /* Sombra começa invisível */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0);
+  transition: none;
+}
+.fade-in-section.is-visible .image-slide-container {
+  animation: grow-shadow 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation-delay: 200ms;
+}
+.image-slide-container img {
+  width: 100%;
+  height: auto;
+  display: block;
+  transform: translateX(-100%);
+  opacity: 0;
+  transition: none;
+}
+.fade-in-section.is-visible .image-slide-left img {
+  animation: slide-in-left 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation-delay: 200ms;
+}
+.fade-in-section.is-visible .image-slide-right img {
+  transform: translateX(100%);
+  animation: slide-in-right 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  animation-delay: 200ms;
+}
+@keyframes slide-in-left { to { transform: translateX(0%); opacity: 1; } }
+@keyframes slide-in-right { to { transform: translateX(0%); opacity: 1; } }
+@keyframes grow-shadow { to { box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05); } }
+
+
+/* --- SEÇÃO DE PROFISSIONAIS (MARQUEE) --- */
+.marquee { position: relative; width: 100vw; max-width: 100%; left: 50%; transform: translateX(-50%); overflow: hidden; padding: 1rem 0; }
+.marquee::before, .marquee::after { content: ''; position: absolute; top: 0; bottom: 0; width: 5rem; z-index: 2; }
+.marquee::before { left: 0; background-image: linear-gradient(to right, hsl(var(--background)), transparent); }
+.marquee::after { right: 0; background-image: linear-gradient(to left, hsl(var(--background)), transparent); }
+.marquee-track { display: flex; flex-shrink: 0; gap: 1rem; min-width: max-content; animation: marquee-scroll 40s linear infinite; padding: 1rem 0; }
+.marquee-track.reverse { animation-direction: reverse; }
+@keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; border-radius: 9999px; font-size: 1.125rem; font-weight: 500; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0; }
+.marquee-item:hover { transform: scale(1.05); box-shadow: var(--shadow-large); }
+.marquee-item.light { background-color: hsl(var(--muted)); color: hsl(var(--foreground)); }
+.marquee-item.dark { background-image: var(--gradient-primary); color: hsl(var(--primary-foreground)); box-shadow: var(--shadow-medium); }
+.marquee-item svg { width: 1.25rem; height: 1.25rem; }
+
+/* --- SEÇÃO DE DEPOIMENTOS (GRID ALINHADO) --- */
+.testimonial-card {
+  background-color: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+.testimonial-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
+
+/* --- Animações de Scroll --- */
+.fade-in-section {}
+.fade-in-section.is-visible .fade-in-item { opacity: 0; transform: translateY(20px); animation: item-fade-in 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
+@keyframes item-fade-in { to { opacity: 1; transform: translateY(0); } }
+.fade-in-section.is-visible .fade-in-item:nth-child(1) { animation-delay: 100ms; }
+.fade-in-section.is-visible .fade-in-item:nth-child(2) { animation-delay: 200ms; }
+.fade-in-section.is-visible .fade-in-item:nth-child(3) { animation-delay: 300ms; }
+.fade-in-section.is-visible .fade-in-item:nth-child(4) { animation-delay: 400ms; }
+.fade-in-section.is-visible .fade-in-item:nth-child(5) { animation-delay: 500ms; }
+.fade-in-section.is-visible .fade-in-item:nth-child(6) { animation-delay: 600ms; }
