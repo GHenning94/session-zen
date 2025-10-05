@@ -212,3 +212,10 @@
 .animate-crown-glow {
   animation: crown-glow 2s ease-in-out infinite;
 }
+
+/* Correção Definitiva para Arredondamento da Sidebar */
+@layer components {
+  .sidebar-button-shape {
+    border-radius: 0.4rem !important; /* Valor intermediário perfeito */
+  }
+}

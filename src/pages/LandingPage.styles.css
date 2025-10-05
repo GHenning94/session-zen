@@ -18,37 +18,53 @@
 @keyframes move-blob-dynamic-3 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-100px, 50px) scale(1.1); } 100% { transform: translate(50px, 150px) scale(0.9); } }
 @keyframes move-blob-dynamic-4 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(80px, -120px) scale(0.8); } 100% { transform: translate(-40px, 80px) scale(1.2); } }
 
-/* --- MÁSCARA DE TRANSIÇÃO DE SEÇÃO --- */
-.section-fade-mask {
-  -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-  mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+/* --- MÁSCARA DE TRANSIÇÃO DE SEÇÃO (SÓ PARA TELAS MAIORES) --- */
+@media (min-width: 1024px) {
+  .section-fade-mask {
+    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
+  }
 }
+
 
 /* --- EFEITO DE GRADIENTE ANIMADO (CTA) --- */
 .cta-animated-background { background: linear-gradient(-45deg, hsl(var(--primary-glow)), hsl(var(--primary)), hsl(221, 83%, 43%), hsl(var(--primary-glow))); background-size: 400% 400%; animation: background-pan-fast 16s linear infinite; }
 @keyframes background-pan-fast { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
 /* --- SEÇÃO DE FUNCIONALIDADES (SCROLL HORIZONTAL) --- */
-.features-scroll-wrapper { overflow-x: auto; -ms-overflow-style: none; scrollbar-width: none; }
-.features-scroll-wrapper::-webkit-scrollbar { display: none; }
-.feature-card-large { flex: 0 0 300px; height: 400px; position: relative; overflow: hidden; border-radius: 1rem; background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted) / 0.5)); border: 1px solid hsl(var(--border) / 0.5); transition: transform 0.3s ease, box-shadow 0.3s ease; }
+.horizontal-scroll-section {
+  overflow: hidden;
+}
+.scroll-track {
+  width: max-content;
+  display: flex;
+  gap: 2rem;
+  padding: 0; 
+}
+.feature-card-large {
+  flex: 0 0 320px;
+  height: 420px;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted) / 0.5));
+  border: 1px solid hsl(var(--border) / 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
 .feature-card-large:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
 .feature-card-large .icon-bg { position: absolute; bottom: -2rem; right: -2rem; font-size: 8rem; opacity: 0.05; color: hsl(var(--primary)); transition: transform 0.4s ease; }
 .feature-card-large:hover .icon-bg { transform: scale(1.2) rotate(10deg); }
 
 
-/* --- SEÇÃO "SISTEMA EM AÇÃO" (IMAGEM COM ANIMAÇÃO) --- */
+/* --- SEÇÃO "SISTEMA EM AÇÃO" (IMAGEM COM ANIMAÇÃO + ESTILO APPLE) --- */
 .image-slide-container {
   overflow: hidden;
-  border-radius: 0.75rem;
-  /* Sombra começa invisível */
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0);
+  border-radius: 1.5rem; /* Mais arredondado */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03); /* Sombra mais suave */
   transition: none;
+  background-color: hsl(var(--card)); /* Fundo suave para contraste */
 }
-.fade-in-section.is-visible .image-slide-container {
-  animation: grow-shadow 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-  animation-delay: 200ms;
-}
+.fade-in-section.is-visible .image-slide-container { animation: grow-shadow 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
 .image-slide-container img {
   width: 100%;
   height: auto;
@@ -56,27 +72,79 @@
   transform: translateX(-100%);
   opacity: 0;
   transition: none;
+  border-radius: 1.5rem; /* Imagem também arredondada */
 }
-.fade-in-section.is-visible .image-slide-left img {
-  animation: slide-in-left 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-  animation-delay: 200ms;
-}
-.fade-in-section.is-visible .image-slide-right img {
-  transform: translateX(100%);
-  animation: slide-in-right 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards;
-  animation-delay: 200ms;
-}
+.fade-in-section.is-visible .image-slide-left img { animation: slide-in-left 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
+.fade-in-section.is-visible .image-slide-right img { transform: translateX(100%); animation: slide-in-right 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
 @keyframes slide-in-left { to { transform: translateX(0%); opacity: 1; } }
 @keyframes slide-in-right { to { transform: translateX(0%); opacity: 1; } }
-@keyframes grow-shadow { to { box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1), 0 5px 10px rgba(0, 0, 0, 0.05); } }
+@keyframes grow-shadow { to { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03); } }
+
+/* Novos estilos para o container de texto */
+.feature-description-container {
+  padding: 2rem; /* Espaçamento interno */
+  background-color: hsl(var(--background)); /* Fundo para a área de texto */
+  border-radius: 1.5rem; /* Arredondamento */
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03); /* Sombra sutil */
+}
+.feature-description-container .icon-wrapper {
+  width: 4rem; /* Ícone um pouco maior */
+  height: 4rem;
+  background: linear-gradient(45deg, hsl(var(--primary)/0.15), hsl(var(--primary)/0.05)); /* Gradiente sutil */
+  border-radius: 1rem; /* Mais arredondado */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem; /* Mais espaço */
+}
+.feature-description-container .icon-wrapper svg {
+  width: 2.25rem; /* Tamanho do SVG */
+  height: 2.25rem;
+  color: hsl(var(--primary));
+}
+.feature-description-container h3 {
+  font-size: 2.5rem; /* Título maior */
+  font-weight: 700; /* Mais bold */
+  color: hsl(var(--foreground));
+  margin-bottom: 1rem;
+  line-height: 1.2; /* Ajuste para espaçamento de linha */
+}
+.feature-description-container p {
+  font-size: 1.35rem; /* Texto maior */
+  line-height: 1.6; /* Melhor legibilidade */
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 2rem;
+}
+.feature-description-container ul li {
+  font-size: 1.15rem; /* Itens da lista */
+  color: hsl(var(--foreground));
+}
+.feature-description-container ul li svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: hsl(var(--green-accent)); /* Usar um verde mais suave, se disponível */
+}
 
 
 /* --- SEÇÃO DE PROFISSIONAIS (MARQUEE) --- */
-.marquee { position: relative; width: 100vw; max-width: 100%; left: 50%; transform: translateX(-50%); overflow: hidden; padding: 1rem 0; }
-.marquee::before, .marquee::after { content: ''; position: absolute; top: 0; bottom: 0; width: 5rem; z-index: 2; }
-.marquee::before { left: 0; background-image: linear-gradient(to right, hsl(var(--background)), transparent); }
-.marquee::after { right: 0; background-image: linear-gradient(to left, hsl(var(--background)), transparent); }
-.marquee-track { display: flex; flex-shrink: 0; gap: 1rem; min-width: max-content; animation: marquee-scroll 40s linear infinite; padding: 1rem 0; }
+.marquee-container {
+  position: relative;
+}
+.marquee-container::before,
+.marquee-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 5rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.marquee-container::before { left: 0; background-image: linear-gradient(to right, hsl(var(--background)), transparent); }
+.marquee-container::after { right: 0; background-image: linear-gradient(to left, hsl(var(--background)), transparent); }
+
+.marquee { overflow: hidden; }
+.marquee-track { display: flex; flex-shrink: 0; gap: 1.5rem; min-width: max-content; animation: marquee-scroll 40s linear infinite; padding: 1rem 0; }
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .marquee-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; border-radius: 9999px; font-size: 1.125rem; font-weight: 500; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0; }
@@ -86,16 +154,7 @@
 .marquee-item svg { width: 1.25rem; height: 1.25rem; }
 
 /* --- SEÇÃO DE DEPOIMENTOS (GRID ALINHADO) --- */
-.testimonial-card {
-  background-color: hsl(var(--card));
-  border: 1px solid hsl(var(--border));
-  border-radius: 1rem;
-  padding: 1.5rem;
-  box-shadow: var(--shadow-soft);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-  display: flex;
-  flex-direction: column;
-}
+.testimonial-card { background-color: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 1rem; padding: 1.5rem; box-shadow: var(--shadow-soft); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; }
 .testimonial-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
 
 /* --- Animações de Scroll --- */

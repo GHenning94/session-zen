@@ -7,16 +7,22 @@ import {
   Stethoscope, Calendar, Users, DollarSign, TrendingUp,
   CheckCircle, ArrowRight, Brain, Heart, Shield, Clock,
   GraduationCap, Target, BookOpen, Activity, BarChart3,
-  MessageCircle, ChevronDown
+  MessageCircle, ChevronDown, Lock, Mail, Globe, BarChart,
+  Gift
 } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { useColorTheme } from "@/hooks/useColorTheme"
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useLayoutEffect } from "react"
 import { CookieNotice } from "@/components/CookieNotice"
+
+// Importações do GSAP
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
 import "./LandingPage.styles.css"
 
-// --- HOOK E COMPONENTES AUXILIARES ---
+// --- HOOKS E COMPONENTES AUXILIARES ---
 
 const useIntersectionObserver = (options) => {
   const [elementRef, setElementRef] = useState(null);
@@ -62,6 +68,8 @@ const FaqItem = ({ question, answer }) => {
 // --- COMPONENTE PRINCIPAL ---
 
 const LandingPage = () => {
+  gsap.registerPlugin(ScrollTrigger); 
+
   const navigate = useNavigate()
   const { resetToDefaultColors } = useColorTheme()
   const [displayText, setDisplayText] = useState("")
@@ -72,7 +80,10 @@ const LandingPage = () => {
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
-  // Efeito de tema e cores
+  const sectionPinRef = useRef(null);
+  const trackContainerRef = useRef(null);
+  const trackRef = useRef(null);
+
   useEffect(() => {
     document.documentElement.classList.remove('dark')
     document.documentElement.classList.add('light')
@@ -82,7 +93,6 @@ const LandingPage = () => {
     return () => { document.body.style.colorScheme = '' }
   }, [resetToDefaultColors])
 
-  // Efeito de digitação
   useEffect(() => {
     const word = words[currentWordIndex]
     let timeout: NodeJS.Timeout
@@ -103,12 +113,47 @@ const LandingPage = () => {
     }
     return () => clearTimeout(timeout)
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete])
+  
+  useLayoutEffect(() => {
+    const mediaQuery = window.matchMedia('(min-width: 1024px)');
+    if (!mediaQuery.matches) return;
+
+    let ctx = gsap.context(() => {
+      const track = trackRef.current;
+      const container = trackContainerRef.current;
+      if (!track || !container) return;
+      
+      const scrollDistance = track.scrollWidth - container.clientWidth;
+      
+      if (scrollDistance > 0) {
+        gsap.to(track, {
+          x: -scrollDistance,
+          ease: "none",
+          scrollTrigger: {
+            trigger: sectionPinRef.current,
+            start: "top top",
+            end: () => `+=${scrollDistance}`,
+            scrub: true,
+            pin: true,
+            invalidateOnRefresh: true,
+          },
+        });
+      }
+    }, sectionPinRef);
+
+    return () => ctx.revert();
+  }, []);
+
 
   const features = [
     { icon: Calendar, title: "Agendamento Inteligente", description: "Otimize sua rotina com uma agenda clara, evitando conflitos e maximizando seu tempo." },
     { icon: Users, title: "Gestão de Clientes", description: "Centralize informações, histórico e progresso dos pacientes em um prontuário seguro e de fácil acesso." },
     { icon: DollarSign, title: "Controle Financeiro", description: "Acompanhe pagamentos, despesas e sua receita de forma automatizada e sem complicações." },
-    { icon: TrendingUp, title: "Relatórios Estratégicos", description: "Obtenha insights valiosos sobre o crescimento da sua prática com dados claros e objetivos." }
+    { icon: TrendingUp, title: "Relatórios Estratégicos", description: "Obtenha insights valiosos sobre o crescimento da sua prática com dados claros e objetivos." },
+    { icon: Lock, title: "Prontuários Seguros", description: "Dados criptografados e em conformidade com as normas de segurança para sua tranquilidade." },
+    { icon: Gift, title: "Programa de Indicação", description: "Acreditamos no poder da comunidade. Indique o TherapyPro para colegas e receba uma comissão a cada nova assinatura gerada." },
+    { icon: Globe, title: "Página Pública", description: "Crie uma página profissional para que novos clientes possam te encontrar e agendar uma consulta." },
+    { icon: BarChart, title: "Metas e Evolução", description: "Acompanhe o progresso dos seus clientes com gráficos e anotações de evolução." }
   ]
 
   const professionals = [
@@ -119,11 +164,11 @@ const LandingPage = () => {
   
   const testimonials = [
     { name: "Dr. Ana Costa", role: "Psicóloga Clínica", text: "O TherapyPro revolucionou a gestão do meu consultório. Agora tenho mais tempo para focar no que realmente importa: meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=1" },
-    { name: "Juliana Pereira", role: "Terapeuta Ocupacional", text: "Excelente ferramenta! A gestão de agendamentos e o histórico de clientes são funcionalidades que me economizam horas toda semana.", imgSrc: "https://i.pravatar.cc/150?img=25" },
-    { name: "Carlos Martins", role: "Psicanalista", text: "A plataforma é intuitiva, segura e completa. Os relatórios financeiros me deram uma visão clara do crescimento da minha prática.", imgSrc: "https://i.pravatar.cc/150?img=32" },
-    { name: "Dr. Ricardo Souza", role: "Psiquiatra", text: "A segurança dos prontuários era minha maior preocupação. Com o TherapyPro, sinto total confiança na proteção dos dados dos meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=60" },
-    { name: "Mariana Lima", role: "Coach de Carreira", text: "Uso para gerenciar meus clientes e pagamentos. É simples, direto e muito eficiente. Recomendo!", imgSrc: "https://i.pravatar.cc/150?img=47" },
-    { name: "Fernando Guimarães", role: "Terapeuta Holístico", text: "O suporte é incrível e a plataforma está sempre evoluindo. Sinto que minhas sugestões são ouvidas.", imgSrc: "https://i.pravatar.cc/150?img=51" },
+    { name: "Juliana Pereira", role: "Terapeuta Ocupacional", text: "Excelente ferramenta! A gestão de agendamentos e o histórico de clientes são funcionalidades que me economizam horas toda semana.", imgSrc: "https://i.pravatar.cc/150?img=26" },
+    { name: "Carlos Martins", role: "Psicanalista", text: "A plataforma é intuitiva, segura e completa. Os relatórios financeiros me deram uma visão clara do crescimento da minha prática.", imgSrc: "https://i.pravatar.cc/150?img=33" },
+    { name: "Dr. Ricardo Souza", role: "Psiquiatra", text: "A segurança dos prontuários era minha maior preocupação. Com o TherapyPro, sinto total confiança na proteção dos dados dos meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=68" },
+    { name: "Mariana Lima", role: "Coach de Carreira", text: "Uso para gerenciar meus clientes e pagamentos. É simples, direto e muito eficiente. Recomendo!", imgSrc: "https://i.pravatar.cc/150?img=49" },
+    { name: "Fernando Guimarães", role: "Terapeuta Holístico", text: "O suporte é incrível e a plataforma está sempre evoluindo. Sinto que minhas sugestões são ouvidas.", imgSrc: "https://i.pravatar.cc/150?img=53" },
   ]
   
   const faqItems = [
@@ -162,11 +207,12 @@ const LandingPage = () => {
             </AnimateOnScroll>
           </section>
 
-          <section className="py-20 bg-transparent relative z-10">
-            <AnimateOnScroll className="max-w-7xl mx-auto">
+          <section ref={sectionPinRef} className="py-20 bg-transparent relative z-10 horizontal-scroll-section">
+            <div ref={trackContainerRef} className="max-w-7xl mx-auto">
               <div className="text-center mb-16 px-4"><h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Uma plataforma, todas as ferramentas</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Tudo que você precisa para uma gestão profissional e eficiente.</p></div>
-              <div className="features-scroll-wrapper pb-8 -mx-4 sm:-mx-6 lg:-mx-8">
-                <div className="flex gap-8 px-4 sm:px-6 lg:px-8 w-max">
+              
+              <div className="hidden lg:flex items-center h-[500px]">
+                <div ref={trackRef} className="scroll-track px-4 sm:px-6 lg:px-8">
                   {features.map((feature, index) => (
                     <div key={index} className="feature-card-large p-8 flex flex-col">
                       <feature.icon className="icon-bg" strokeWidth={0.5} />
@@ -175,15 +221,27 @@ const LandingPage = () => {
                       <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                     </div>
                   ))}
-                  <div className="flex-shrink-0 w-4 sm:w-6 lg:w-8" />
                 </div>
               </div>
-            </AnimateOnScroll>
+
+              <div className="block lg:hidden px-4 sm:px-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+                  {features.map((feature, index) => (
+                    <div key={index} className="feature-card-large p-8 flex flex-col h-auto">
+                      <feature.icon className="icon-bg" strokeWidth={0.5} />
+                      <div className="w-14 h-14 bg-gradient-primary rounded-2xl flex items-center justify-center mb-6 shadow-primary"><feature.icon className="w-7 h-7 text-white" /></div>
+                      <h3 className="text-2xl font-bold text-foreground mb-3">{feature.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </section>
         </div>
 
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
-          <AnimateOnScroll className="max-w-7xl mx-auto">
+          <AnimateOnScroll className="max-w-7xl mx-auto marquee-container">
             <div className="text-center mb-16 space-y-4"><h2 className="text-3xl sm:text-4xl font-bold text-foreground">Criado para todos os profissionais do cuidado</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Desenvolvido para psicólogos, terapeutas, coaches e todos que dedicam suas vidas a ajudar os outros.</p></div>
             <div className="space-y-4">
               <div className="marquee"><div className="marquee-track">{[...professionals, ...professionals].map((prof, index) => (<div key={index} className={`marquee-item ${index % 2 === 0 ? 'dark' : 'light'}`}><prof.icon /><span>{prof.name}</span></div>))}</div></div>
@@ -199,35 +257,38 @@ const LandingPage = () => {
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Interface profissional e intuitiva, desenvolvida para otimizar sua prática clínica.</p>
             </AnimateOnScroll>
             <div className="space-y-20">
-              <AnimateOnScroll className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div className="order-2 lg:order-1 space-y-6">
-                  <div className="flex items-center gap-3"><div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center"><BarChart3 className="w-6 h-6 text-primary" /></div><h3 className="text-2xl font-bold">Dashboard Inteligente</h3></div>
-                  <p className="text-lg text-muted-foreground leading-relaxed">Visualize todas as métricas importantes da sua prática em um só lugar. Acompanhe receita mensal, sessões realizadas e estatísticas de crescimento.</p>
+              <AnimateOnScroll className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center"> {/* Aumentei o gap */}
+                <div className="order-2 lg:order-1 feature-description-container">
+                  <div className="icon-wrapper"><BarChart3 /></div>
+                  <h3>Dashboard Inteligente</h3>
+                  <p>Visualize todas as métricas importantes da sua prática em um só lugar. Acompanhe receita mensal, sessões realizadas e estatísticas de crescimento com uma clareza sem precedentes.</p>
                   <ul className="space-y-3">
-                    <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Métricas em tempo real</span></li>
-                    <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Gráficos de produtividade</span></li>
+                    <li className="flex items-center gap-3"><CheckCircle /><span>Métricas em tempo real</span></li>
+                    <li className="flex items-center gap-3"><CheckCircle /><span>Gráficos de produtividade</span></li>
                   </ul>
                 </div>
                 <div className="order-1 lg:order-2 image-slide-container image-slide-right"><img src="/dashboard.png" alt="Dashboard do TherapyPro" /></div>
               </AnimateOnScroll>
-              <AnimateOnScroll className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+              <AnimateOnScroll className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
                 <div className="image-slide-container image-slide-left"><img src="/agenda.png" alt="Agenda do TherapyPro" /></div>
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3"><div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center"><Calendar className="w-6 h-6 text-primary" /></div><h3 className="text-2xl font-bold">Agenda Avançada</h3></div>
-                  <p className="text-lg text-muted-foreground leading-relaxed">Gerencie seus agendamentos com facilidade, visualize por dia, semana ou mês e sincronize com o Google Calendar.</p>
+                <div className="feature-description-container">
+                  <div className="icon-wrapper"><Calendar /></div>
+                  <h3>Agenda Avançada</h3>
+                  <p>Gerencie seus agendamentos com facilidade e precisão. Visualize por dia, semana ou mês e sincronize automaticamente com o Google Calendar para nunca perder um compromisso.</p>
                   <ul className="space-y-3">
-                    <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Arrastar e soltar para reagendar</span></li>
-                    <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Integração com Google Calendar</span></li>
+                    <li className="flex items-center gap-3"><CheckCircle /><span>Arrastar e soltar para reagendar</span></li>
+                    <li className="flex items-center gap-3"><CheckCircle /><span>Integração com Google Calendar</span></li>
                   </ul>
                 </div>
               </AnimateOnScroll>
-              <AnimateOnScroll className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-                <div className="order-2 lg:order-1 space-y-6">
-                  <div className="flex items-center gap-3"><div className="w-12 h-12 rounded-xl flex items-center justify-center bg-green-100"><Users className="w-6 h-6 text-green-700" /></div><h3 className="text-2xl font-bold">Gestão Completa de Clientes</h3></div>
-                  <p className="text-lg text-muted-foreground leading-relaxed">Mantenha fichas completas com histórico de sessões e anotações clínicas, tudo em um lugar seguro.</p>
+              <AnimateOnScroll className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+                <div className="order-2 lg:order-1 feature-description-container">
+                  <div className="icon-wrapper bg-green-100"><Users className="text-green-700" /></div>
+                  <h3>Gestão Completa de Clientes</h3>
+                  <p>Mantenha fichas completas com histórico detalhado de sessões e anotações clínicas. Tudo armazenado de forma segura e acessível, com total privacidade.</p>
                   <ul className="space-y-3">
-                    <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Fichas clínicas completas</span></li>
-                    <li className="flex items-center gap-3"><CheckCircle className="w-5 h-5 text-green-500" /><span>Segurança e privacidade total</span></li>
+                    <li className="flex items-center gap-3"><CheckCircle /><span>Fichas clínicas completas</span></li>
+                    <li className="flex items-center gap-3"><CheckCircle /><span>Segurança e privacidade total</span></li>
                   </ul>
                 </div>
                 <div className="order-1 lg:order-2 image-slide-container image-slide-right"><img src="/clientes.png" alt="Gestão de clientes do TherapyPro" /></div>
@@ -239,7 +300,7 @@ const LandingPage = () => {
         <section className="py-20 px-4 sm:px-6 lg:px-8 bg-background">
           <AnimateOnScroll className="max-w-7xl mx-auto">
             <div className="text-center mb-16"><h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Aprovado por quem usa todos os dias</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Confiança construída com resultados reais.</p></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
               {testimonials.map((testimonial, index) => (
                 <div key={index} className="fade-in-item">
                   <div className="testimonial-card h-full">
