@@ -42,11 +42,17 @@ const ChatBot = () => {
     try {
       console.log('Enviando mensagem para Gemini:', userMessage)
       
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      if (!anonKey) {
+        throw new Error('Configuração do sistema incompleta. Por favor, contate o suporte.');
+      }
+
       const response = await fetch(`https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/gemini-assistant`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4'}`,
+          'Authorization': `Bearer ${anonKey}`,
         },
         body: JSON.stringify({ message: userMessage }),
       })

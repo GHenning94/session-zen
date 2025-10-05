@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Camera, Upload, Loader2, X } from "lucide-react";
@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { ImageCropper } from "@/components/ImageCropper";
 import { compressImageWithProgress, getOptimalCompressionSettings } from "@/utils/imageCompression";
+import { getSignedUrl } from "@/utils/storageUtils";
 
 interface ClientAvatarUploadProps {
   clientName?: string;
@@ -30,12 +31,26 @@ export const ClientAvatarUpload = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [displayUrl, setDisplayUrl] = useState<string>("");
 
   const sizeClasses = {
     sm: "w-12 h-12",
     md: "w-16 h-16", 
     lg: "w-24 h-24"
   };
+
+  // Generate signed URL when avatar URL changes
+  useEffect(() => {
+    const loadSignedUrl = async () => {
+      if (currentAvatarUrl) {
+        const signedUrl = await getSignedUrl(currentAvatarUrl);
+        setDisplayUrl(signedUrl || "");
+      } else {
+        setDisplayUrl("");
+      }
+    };
+    loadSignedUrl();
+  }, [currentAvatarUrl]);
 
   const getInitials = (name: string) => {
     return name
@@ -76,10 +91,10 @@ export const ClientAvatarUpload = ({
     setShowCropper(true);
   };
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    // ImageCropper already handles compression and upload
-    // Just update the avatar URL
-    onAvatarChange(croppedImageUrl);
+  const handleCropComplete = async (uploadedPath: string) => {
+    // ImageCropper returns the storage path, not a URL
+    // For private storage, we store the path and use signed URLs when displaying
+    onAvatarChange(uploadedPath);
     setShowCropper(false);
     
     toast({
@@ -95,7 +110,7 @@ export const ClientAvatarUpload = ({
         onClick={readOnly ? undefined : () => fileInputRef.current?.click()}
       >
         <Avatar className={sizeClasses[size]}>
-          <AvatarImage src={currentAvatarUrl} alt={clientName} />
+          <AvatarImage src={displayUrl} alt={clientName} />
           <AvatarFallback className="bg-gradient-card text-primary font-medium">
             {getInitials(clientName)}
           </AvatarFallback>
