@@ -76,13 +76,12 @@ export function AppSidebar() {
       style={{
         // @ts-ignore
         '--sidebar-width': '16rem',
-        '--sidebar-width-icon': '3.75rem'
+        '--sidebar-width-icon': '4.5rem'
       } as React.CSSProperties}
     >
       <SidebarHeader className="px-3 pt-4 pb-4">
         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-          {/* CORREÇÃO: Usando rounded-xl para igualar ao banner */}
-          <div className="w-9 h-9 bg-gradient-primary flex items-center justify-center shrink-0 shadow-primary rounded-xl">
+          <div className="w-10 h-10 bg-gradient-primary flex items-center justify-center shrink-0 shadow-primary rounded-xl">
             <Stethoscope className="h-5 w-5 text-white" />
           </div>
           {!isCollapsed && (
@@ -110,7 +109,7 @@ export function AppSidebar() {
                       </div>
                     </div>
                     {!isCollapsed && isComingSoon && (
-                      <Badge variant="secondary" className="text-[9px] px-1.5 py-0 whitespace-nowrap">
+                      <Badge variant="success" className="text-[9px] px-1.5 py-0 whitespace-nowrap">
                         Em breve
                       </Badge>
                     )}
