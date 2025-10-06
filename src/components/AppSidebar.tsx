@@ -76,7 +76,7 @@ export function AppSidebar() {
       style={{
         // @ts-ignore
         '--sidebar-width': '16rem',
-        '--sidebar-width-icon': '5rem'
+        '--sidebar-width-icon': '3.5rem'
       } as React.CSSProperties}
     >
       <SidebarHeader className="px-3 pt-4 pb-4">
@@ -98,14 +98,12 @@ export function AppSidebar() {
           {menuItems.map((item) => {
             const isComingSoon = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
             return (
-            <SidebarMenuItem key={item.title}>
+              <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild className={`h-9 rounded-xl ${getNavClasses({ isActive: isActive(item.url) })}`}>
                   <NavLink to={item.url} end className="flex items-center justify-between w-full">
-                    <div className="flex items-center flex-1 overflow-hidden">
-                      <div className={`flex items-center w-full ${isCollapsed ? 'justify-center' : ''}`}>
-                        <item.icon className="h-5 w-5 shrink-0" />
-                        {!isCollapsed && <span className="text-sm ml-3 truncate">{item.title}</span>}
-                      </div>
+                    <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : 'flex-1 overflow-hidden'}`}>
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {!isCollapsed && <span className="text-sm ml-3 truncate">{item.title}</span>}
                     </div>
                     {!isCollapsed && isComingSoon && (
                       <Badge variant="success" className="text-[9px] px-1.5 py-0 whitespace-nowrap">
@@ -128,8 +126,8 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className={`h-9 rounded-xl ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
-              <NavLink to={settingsItem.url} end className="flex items-center">
-                <div className={`flex items-center w-full ${isCollapsed ? 'justify-center' : ''}`}>
+              <NavLink to={settingsItem.url} end className="flex items-center w-full">
+                <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : ''}`}>
                   <settingsItem.icon className="h-5 w-5 shrink-0" />
                   {!isCollapsed && <span className="text-sm ml-3">{settingsItem.title}</span>}
                 </div>

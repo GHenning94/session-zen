@@ -53,7 +53,7 @@ const Login = () => {
     setIsLoading(true)
     
     try {
-      const { error } = await signIn(formData.email, formData.password)
+      const { error } = await signIn(formData.email, formData.password, turnstileToken || undefined)
       
       if (error) {
         toast({ title: "Erro no login", description: error.message || "Credenciais inválidas", variant: "destructive" })
@@ -88,7 +88,7 @@ const Login = () => {
     setIsLoading(true)
     
     try {
-      const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession })
+      const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession }, turnstileToken || undefined)
       
       if (error) {
         toast({ title: "Erro no cadastro", description: error.message || "Não foi possível criar a conta", variant: "destructive" })
