@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Brain, Heart, Check, X } from "lucide-react"
+import { Turnstile } from "@marsidev/react-turnstile"
 import "./Login.styles.css" // Importa o CSS isolado para esta página
 
 const Login = () => {
@@ -16,6 +17,7 @@ const Login = () => {
   const { signIn, signUp } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     profession: 'psicologo',
@@ -42,6 +44,12 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!turnstileToken) {
+      toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
+      return
+    }
+    
     setIsLoading(true)
     
     try {
@@ -62,6 +70,11 @@ const Login = () => {
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!turnstileToken) {
+      toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
+      return
+    }
     
     if (formData.password !== formData.confirmPassword) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
@@ -140,7 +153,15 @@ const Login = () => {
                     <Label htmlFor="password">Senha</Label>
                     <Input id="password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} required />
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading}>{isLoading ? "Entrando..." : "Entrar"}</Button>
+                  <div className="flex justify-center">
+                    <Turnstile
+                      siteKey="0x4AAAAAAB43UmamQYOA5yfH"
+                      onSuccess={(token) => setTurnstileToken(token)}
+                      onError={() => setTurnstileToken(null)}
+                      onExpire={() => setTurnstileToken(null)}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading || !turnstileToken}>{isLoading ? "Entrando..." : "Entrar"}</Button>
                   <div className="text-center">
                     <button type="button" className="text-sm text-primary hover:underline" onClick={async () => {
                       if (!formData.email) {
@@ -214,7 +235,15 @@ const Login = () => {
                     <Input id="confirm-password" type="password" placeholder="Confirme sua senha" value={formData.confirmPassword} onChange={(e) => handleInputChange('confirmPassword', e.target.value)} required />
                     {formData.confirmPassword && formData.password !== formData.confirmPassword && (<p className="text-sm text-red-500">As senhas não coincidem</p>)}
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading}>{isLoading ? "Criando conta..." : "Criar Conta"}</Button>
+                  <div className="flex justify-center">
+                    <Turnstile
+                      siteKey="0x4AAAAAAB43UmamQYOA5yfH"
+                      onSuccess={(token) => setTurnstileToken(token)}
+                      onError={() => setTurnstileToken(null)}
+                      onExpire={() => setTurnstileToken(null)}
+                    />
+                  </div>
+                  <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading || !turnstileToken}>{isLoading ? "Criando conta..." : "Criar Conta"}</Button>
                 </form>
               </TabsContent>
             </CardContent>

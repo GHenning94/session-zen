@@ -26,11 +26,11 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
         variant="ghost"
         size="icon"
         data-animate="true"
-        className="premium-banner-mini animated-premium w-10 h-10 isolate overflow-hidden rounded-xl p-0 flex items-center justify-center"
+        className="premium-banner-mini animated-premium w-9 h-9 isolate overflow-hidden rounded-xl p-0 flex items-center justify-center"
         onClick={handleUpgrade}
         title="Torne-se Premium"
       >
-        <Crown className="w-6 h-6 text-white relative z-10" />
+        <Crown className="w-5 h-5 text-white relative z-10" />
       </Button>
     )
   }

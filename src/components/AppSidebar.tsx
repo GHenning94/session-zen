@@ -76,12 +76,12 @@ export function AppSidebar() {
       style={{
         // @ts-ignore
         '--sidebar-width': '16rem',
-        '--sidebar-width-icon': '4.5rem'
+        '--sidebar-width-icon': '5rem'
       } as React.CSSProperties}
     >
       <SidebarHeader className="px-3 pt-4 pb-4">
         <div className={`flex items-center gap-3 ${isCollapsed ? 'justify-center' : ''}`}>
-          <div className="w-10 h-10 bg-gradient-primary flex items-center justify-center shrink-0 shadow-primary rounded-xl">
+          <div className="w-9 h-9 bg-gradient-primary flex items-center justify-center shrink-0 shadow-primary rounded-xl">
             <Stethoscope className="h-5 w-5 text-white" />
           </div>
           {!isCollapsed && (
@@ -98,9 +98,8 @@ export function AppSidebar() {
           {menuItems.map((item) => {
             const isComingSoon = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
             return (
-              <SidebarMenuItem key={item.title}>
-                {/* CORREÇÃO: Usando rounded-xl para igualar ao banner */}
-                <SidebarMenuButton asChild className={`h-9 justify-center lg:justify-start rounded-xl ${getNavClasses({ isActive: isActive(item.url) })}`}>
+            <SidebarMenuItem key={item.title}>
+                <SidebarMenuButton asChild className={`h-9 rounded-xl ${getNavClasses({ isActive: isActive(item.url) })}`}>
                   <NavLink to={item.url} end className="flex items-center justify-between w-full">
                     <div className="flex items-center flex-1 overflow-hidden">
                       <div className={`flex items-center w-full ${isCollapsed ? 'justify-center' : ''}`}>
@@ -128,7 +127,7 @@ export function AppSidebar() {
         
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className={`h-9 justify-center lg:justify-start rounded-xl ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
+            <SidebarMenuButton asChild className={`h-9 rounded-xl ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
               <NavLink to={settingsItem.url} end className="flex items-center">
                 <div className={`flex items-center w-full ${isCollapsed ? 'justify-center' : ''}`}>
                   <settingsItem.icon className="h-5 w-5 shrink-0" />
