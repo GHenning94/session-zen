@@ -3,55 +3,119 @@
 .landing-page-wrapper {
   background-color: hsl(var(--background));
   overflow-x: hidden;
+  position: relative;
+  z-index: 1; 
 }
 
-/* --- EFEITO DE FUNDO ANIMADO (BLOBS) --- */
+/* --- EFEITO DE ESFERAS FLUTUANTES --- */
+.floating-spheres {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: -1;
+  margin: 0;
+  padding: 0;
+}
+
+.floating-spheres li {
+  position: absolute;
+  display: block;
+  list-style: none;
+  background: hsl(var(--primary) / 0.2);
+  animation: float-up 25s linear infinite;
+  bottom: -150px;
+  border-radius: 50%;
+  filter: blur(1px);
+}
+
+.floating-spheres li:nth-child(1) { left: 25%; width: 25px; height: 25px; animation-delay: 0s; }
+.floating-spheres li:nth-child(2) { left: 10%; width: 10px; height: 10px; animation-delay: -2s; animation-duration: 12s; }
+.floating-spheres li:nth-child(3) { left: 70%; width: 8px; height: 8px; animation-delay: -4s; }
+.floating-spheres li:nth-child(4) { left: 40%; width: 30px; height: 30px; animation-delay: -7s; animation-duration: 18s; }
+.floating-spheres li:nth-child(5) { left: 65%; width: 12px; height: 12px; animation-delay: -3s; }
+.floating-spheres li:nth-child(6) { left: 85%; width: 35px; height: 35px; animation-delay: -5s; background: hsl(var(--primary) / 0.1); }
+
+
+@keyframes float-up {
+  0% { transform: translateY(0) rotate(0deg); opacity: 0; border-radius: 50%; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; border-radius: 40%; }
+}
+
+/* --- BUBBLES --- */
 .hero-features-wrapper, .plans-faq-wrapper { position: relative; }
 .background-animation-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.3; will-change: transform; }
-.blob-1 { width: 500px; height: 500px; top: 25%; left: -20%; background: hsl(var(--primary)); animation: move-blob-dynamic 20s ease-in-out infinite alternate; }
-.blob-2 { width: 400px; height: 400px; top: 40%; left: -5%; background: hsl(var(--primary-glow)); animation: move-blob-dynamic-2 18s ease-in-out -5s infinite alternate; }
-.blob-3 { width: 450px; height: 450px; top: 20%; right: -15%; background: hsl(var(--primary)); animation: move-blob-dynamic-3 22s ease-in-out infinite alternate; }
-.blob-4 { width: 350px; height: 350px; top: 60%; right: -5%; background: hsl(var(--primary-glow)); animation: move-blob-dynamic-4 20s ease-in-out -7s infinite alternate; }
-@keyframes move-blob-dynamic { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(100px, 80px) scale(1.2); } 100% { transform: translate(-50px, 150px) scale(0.9); } }
-@keyframes move-blob-dynamic-2 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-80px, 120px) scale(0.8); } 100% { transform: translate(40px, -50px) scale(1.1); } }
-@keyframes move-blob-dynamic-3 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-100px, 50px) scale(1.1); } 100% { transform: translate(50px, 150px) scale(0.9); } }
-@keyframes move-blob-dynamic-4 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(80px, -120px) scale(0.8); } 100% { transform: translate(-40px, 80px) scale(1.2); } }
 
-/* --- MÁSCARA DE TRANSIÇÃO DE SEÇÃO (SÓ PARA TELAS MAIORES) --- */
+.blob-3 { width: 450px; height: 450px; top: 20%; right: -15%; background: hsl(var(--primary)); animation: move-blob-dynamic-3 22s ease-in-out infinite alternate; }
+
+@keyframes move-blob-dynamic-3 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-100px, 50px) scale(1.1); } 100% { transform: translate(50px, 150px) scale(0.9); } }
+
+/* --- FADES NAS DIVISÓRIAS --- */
 @media (min-width: 1024px) {
+  /* Máscara da seção hero */
   .section-fade-mask {
     -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
     mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
   }
+  
+  /* Fade ABAIXO dos Depoimentos (no topo da seção de Planos) */
+  .plans-faq-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 150px;
+    background: linear-gradient(to bottom, hsl(var(--background)) 20%, transparent);
+    pointer-events: none;
+    z-index: 5;
+  }
+  
+  /* === FADE ADICIONADO AQUI === */
+  /* Fade para CIMA no final das seções (Home e antes do CTA) */
+  #inicio::after,
+  .plans-faq-wrapper::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 150px;
+      background: linear-gradient(to top, hsl(var(--background)) 20%, transparent);
+      pointer-events: none;
+      z-index: 5;
+  }
 }
-
 
 /* --- EFEITO DE GRADIENTE ANIMADO (CTA) --- */
 .cta-animated-background {
-  border-radius: 1.5rem; /* Cantos arredondados */
-  padding: 5rem 1rem; /* Espaçamento interno para o conteúdo */
+  border-radius: 1.5rem;
+  padding: 5rem 1rem;
   background: linear-gradient(-45deg, hsl(var(--primary-glow)), hsl(var(--primary)), hsl(221, 83%, 43%), hsl(var(--primary-glow)));
   background-size: 400% 400%;
-  animation: background-pan-fast 10s linear infinite; /* Velocidade aumentada de 16s para 10s */
+  animation: background-pan-fast 10s linear infinite;
 }
 @keyframes background-pan-fast { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-/* --- SEÇÃO DE FUNCIONALIDADES (SCROLL HORIZONTAL) --- */
-.horizontal-scroll-section {
-  /* overflow: hidden; */ /* REMOVIDO para consertar o corte dos cards no hover */
-}
+/* --- SEÇÃO DE FUNCIONALIDADES (SCROLL) --- */
 .scroll-track {
   width: max-content;
   display: flex;
   gap: 2rem;
-  padding: 0; 
-  /* Esconde a barra de rolagem nativa */
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none;  /* IE and Edge */
+  padding: 0 calc(50vw - 160px); 
 }
-.scroll-track::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, and Opera */
+.scroll-track-mobile {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scroll-track-mobile::-webkit-scrollbar {
+  display: none;
 }
 
 .feature-card-large {
@@ -62,20 +126,56 @@
   border-radius: 1rem;
   background: linear-gradient(160deg, hsl(var(--card)), hsl(var(--muted) / 0.5));
   border: 1px solid hsl(var(--border) / 0.5);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: box-shadow 0.3s ease;
+  transform-origin: center center;
+  will-change: transform;
 }
-.feature-card-large:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
+.feature-card-large:hover { box-shadow: var(--shadow-large); }
 .feature-card-large .icon-bg { position: absolute; bottom: -2rem; right: -2rem; font-size: 8rem; opacity: 0.05; color: hsl(var(--primary)); transition: transform 0.4s ease; }
 .feature-card-large:hover .icon-bg { transform: scale(1.2) rotate(10deg); }
 
+.fade-edges {
+  position: relative;
+}
+.fade-edges::before,
+.fade-edges::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8rem;
+  z-index: 2;
+  pointer-events: none;
+}
+.fade-edges::before {
+  left: 0;
+  background-image: linear-gradient(to right, hsl(var(--background)), transparent);
+}
+.fade-edges::after {
+  right: 0;
+  background-image: linear-gradient(to left, hsl(var(--background)), transparent);
+}
 
-/* --- SEÇÃO "SISTEMA EM AÇÃO" (IMAGEM COM ANIMAÇÃO + ESTILO APPLE) --- */
+.center-highlight-outline {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: calc(320px * 1.1 + 16px);
+  height: calc(380px * 1.1 + 16px);
+  transform: translate(-50%, -50%);
+  border-radius: 1.5rem;
+  box-shadow: 0 0 0 2px hsl(var(--primary) / 0.8), 0 0 20px 5px hsl(var(--primary) / 0.2);
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* --- O RESTANTE DO CSS --- */
 .image-slide-container {
   overflow: hidden;
-  border-radius: 1.5rem; /* Mais arredondado */
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03); /* Sombra mais suave */
+  border-radius: 1.5rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03);
   transition: none;
-  background-color: hsl(var(--card)); /* Fundo suave para contraste */
+  background-color: hsl(var(--card));
 }
 .fade-in-section.is-visible .image-slide-container { animation: grow-shadow 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
 .image-slide-container img {
@@ -85,7 +185,7 @@
   transform: translateX(-100%);
   opacity: 0;
   transition: none;
-  border-radius: 1.5rem; /* Imagem também arredondada */
+  border-radius: 1.5rem;
 }
 .fade-in-section.is-visible .image-slide-left img { animation: slide-in-left 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
 .fade-in-section.is-visible .image-slide-right img { transform: translateX(100%); animation: slide-in-right 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
@@ -93,53 +193,50 @@
 @keyframes slide-in-right { to { transform: translateX(0%); opacity: 1; } }
 @keyframes grow-shadow { to { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03); } }
 
-/* Novos estilos para o container de texto */
 .feature-description-container {
-  padding: 2rem; /* Espaçamento interno */
-  background-color: hsl(var(--background)); /* Fundo para a área de texto */
-  border-radius: 1.5rem; /* Arredondamento */
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03); /* Sombra sutil */
+  padding: 2rem;
+  background-color: hsl(var(--background));
+  border-radius: 1.5rem;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
 }
 .feature-description-container .icon-wrapper {
-  width: 4rem; /* Ícone um pouco maior */
+  width: 4rem;
   height: 4rem;
-  background: linear-gradient(45deg, hsl(var(--primary)/0.15), hsl(var(--primary)/0.05)); /* Gradiente sutil */
-  border-radius: 1rem; /* Mais arredondado */
+  background: linear-gradient(45deg, hsl(var(--primary)/0.15), hsl(var(--primary)/0.05));
+  border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 1.5rem; /* Mais espaço */
+  margin-bottom: 1.5rem;
 }
 .feature-description-container .icon-wrapper svg {
-  width: 2.25rem; /* Tamanho do SVG */
+  width: 2.25rem;
   height: 2.25rem;
   color: hsl(var(--primary));
 }
 .feature-description-container h3 {
-  font-size: 2.5rem; /* Título maior */
-  font-weight: 700; /* Mais bold */
+  font-size: 2.5rem;
+  font-weight: 700;
   color: hsl(var(--foreground));
   margin-bottom: 1rem;
-  line-height: 1.2; /* Ajuste para espaçamento de linha */
+  line-height: 1.2;
 }
 .feature-description-container p {
-  font-size: 1.35rem; /* Texto maior */
-  line-height: 1.6; /* Melhor legibilidade */
+  font-size: 1.35rem;
+  line-height: 1.6;
   color: hsl(var(--muted-foreground));
   margin-bottom: 2rem;
 }
 .feature-description-container ul li {
-  font-size: 1.15rem; /* Itens da lista */
+  font-size: 1.15rem;
   color: hsl(var(--foreground));
 }
 .feature-description-container ul li svg {
   width: 1.25rem;
   height: 1.25rem;
-  color: hsl(var(--green-accent)); /* Usar um verde mais suave, se disponível */
+  color: hsl(var(--green-accent));
 }
 
-
-/* --- SEÇÃO DE PROFISSIONAIS (MARQUEE) --- */
 .marquee-container {
   position: relative;
 }
@@ -166,11 +263,9 @@
 .marquee-item.dark { background-image: var(--gradient-primary); color: hsl(var(--primary-foreground)); box-shadow: var(--shadow-medium); }
 .marquee-item svg { width: 1.25rem; height: 1.25rem; }
 
-/* --- SEÇÃO DE DEPOIMENTOS (GRID ALINHADO) --- */
 .testimonial-card { background-color: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 1rem; padding: 1.5rem; box-shadow: var(--shadow-soft); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; }
 .testimonial-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
 
-/* --- Animações de Scroll --- */
 .fade-in-section {}
 .fade-in-section.is-visible .fade-in-item { opacity: 0; transform: translateY(20px); animation: item-fade-in 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
 @keyframes item-fade-in { to { opacity: 1; transform: translateY(0); } }
@@ -181,19 +276,14 @@
 .fade-in-section.is-visible .fade-in-item:nth-child(5) { animation-delay: 500ms; }
 .fade-in-section.is-visible .fade-in-item:nth-child(6) { animation-delay: 600ms; }
 
-
-/* --- COMPONENTE DE SLIDER DE COMPARAÇÃO CUSTOMIZADO (VERSÃO FINAL E POLIDA) --- */
 .custom-compare-slider {
   position: relative;
   overflow: hidden;
   border-radius: 1.5rem;
-  /* Sombra mais suave para evitar a linha preta em cima */
   box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.05), 0 4px 6px -4px rgb(0 0 0 / 0.05);
   line-height: 0;
-  /* Proporção da imagem para dar altura ao container */
   aspect-ratio: 16 / 9; 
 }
-
 .custom-compare-slider .image-container {
   position: absolute;
   top: 0;
@@ -202,7 +292,6 @@
   height: 100%;
   pointer-events: none;
 }
-
 .custom-compare-slider .image-container img {
   width: 100%;
   height: 100%;
@@ -211,9 +300,8 @@
   position: absolute;
   top: 0;
   left: 0;
-  transform: scale(1.005); /* Aumenta a imagem em 0.5% para cobrir as bordas */
+  transform: scale(1.005);
 }
-
 .custom-compare-slider .slider-input {
   -webkit-appearance: none;
   appearance: none;
@@ -228,16 +316,13 @@
   cursor: ew-resize;
   z-index: 10;
 }
-
-/* Esconde a "bolinha" padrão do slider, pois teremos nossa própria barra */
 .custom-compare-slider .slider-input::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 40px; /* Largura da área de "pega" da barra */
+  width: 40px;
   height: 100%;
   background: transparent;
 }
-
 .custom-compare-slider .slider-input::-moz-range-thumb {
   width: 40px;
   height: 100%;
@@ -245,7 +330,6 @@
   border: none;
   border-radius: 0;
 }
-
 .slider-handle {
   position: absolute;
   top: 0;
@@ -259,9 +343,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(4px); /* Efeito de vidro fosco */
+  backdrop-filter: blur(4px);
 }
-
 .slider-handle .handle-icon {
   width: 40px;
   height: 40px;
@@ -272,111 +355,26 @@
   align-items: center;
   justify-content: center;
   color: hsl(var(--primary));
-  flex-shrink: 0; /* Impede que o ícone seja esticado */
+  flex-shrink: 0;
 }
-
-/* --- NOVO FOOTER MODERNO --- */
 
 .site-footer {
   background-color: hsl(var(--muted));
   padding: 4rem 0;
 }
-
 .footer-link {
   color: hsl(var(--muted-foreground));
   transition: color 0.2s ease-in-out;
 }
-
 .footer-link:hover {
   color: hsl(var(--primary));
 }
-
 .footer-social-link {
   color: hsl(var(--muted-foreground));
   transition: color 0.2s ease-in-out, transform 0.2s ease-in-out;
   display: inline-block;
 }
-
 .footer-social-link:hover {
   color: hsl(var(--primary));
   transform: scale(1.1);
-}
-
-/* --- SCROLLBAR HORIZONTAL CUSTOMIZADA (VERSÃO DEFINITIVA) --- */
-
-.fade-edges {
-  position: relative;
-}
-.fade-edges::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 5rem;
-  z-index: 2;
-  pointer-events: none;
-  right: 0;
-  background-image: linear-gradient(to left, hsl(var(--background)), transparent);
-}
-
-.custom-scrollbar-container {
-  height: 24px;
-  display: flex;
-  align-items: center;
-  opacity: 1;
-  visibility: visible;
-  transition: opacity 0.3s ease, visibility 0.3s ease;
-  pointer-events: none;
-  position: relative;
-}
-
-.custom-scrollbar-container::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3rem;
-  background: linear-gradient(to right, hsl(var(--background)), transparent);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.custom-scrollbar-container::after {
-  content: '';
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 3rem;
-  background: linear-gradient(to left, hsl(var(--background)), transparent);
-  z-index: 1;
-  pointer-events: none;
-}
-
-.custom-scrollbar-container.visible {
-  opacity: 1;
-  visibility: visible;
-}
-
-.custom-scrollbar-track {
-  width: 100%;
-  height: 8px;
-  background-color: transparent;
-  position: relative;
-  z-index: 2;
-}
-
-.custom-scrollbar-thumb {
-  height: 8px;
-  background-color: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
-  position: absolute;
-  top: 0;
-  left: 0;
-  transition: background-color 0.2s ease;
-}
-
-.custom-scrollbar-thumb:hover {
-  background-color: hsl(var(--muted-foreground) / 0.5);
 }

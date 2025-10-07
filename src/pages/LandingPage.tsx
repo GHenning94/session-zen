@@ -24,6 +24,7 @@ import depoisImg from '../assets/depois.webp';
 // Importações do GSAP
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { Flip } from "gsap/Flip";
 
 import "./LandingPage.styles.css"
 
@@ -69,6 +70,13 @@ const FaqItem = ({ question, answer }) => {
   );
 };
 
+// --- COMPONENTE PARA O EFEITO DE FUNDO ---
+const FloatingSpheresBackground = () => (
+  <ul className="floating-spheres">
+    {Array.from({ length: 6 }).map((_, i) => <li key={i}></li>)}
+  </ul>
+);
+
 
 // --- COMPONENTE PRINCIPAL ---
 
@@ -85,18 +93,11 @@ const LandingPage = () => {
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
-  // --- NOVO ESTADO PARA O SLIDER ---
   const [sliderPosition, setSliderPosition] = useState(50);
 
   const sectionPinRef = useRef(null);
-  const trackContainerRef = useRef(null);
   const trackRef = useRef(null);
-  
-  // --- Refs para a barra de rolagem ---
-  const scrollbarContainerRef = useRef<HTMLDivElement>(null);
-  const scrollbarTrackRef = useRef<HTMLDivElement>(null);
-  const scrollbarThumbRef = useRef<HTMLDivElement>(null);
-  
+
   useEffect(() => {
     document.documentElement.classList.remove('dark')
     document.documentElement.classList.add('light')
@@ -133,65 +134,37 @@ const LandingPage = () => {
   
     let ctx = gsap.context(() => {
       const track = trackRef.current;
-      const container = trackContainerRef.current;
-      const scrollbarTrack = scrollbarTrackRef.current;
-      const scrollbarThumb = scrollbarThumbRef.current;
-  
-      if (!track || !container || !scrollbarTrack || !scrollbarThumb) return;
-  
-      const scrollDistance = track.scrollWidth - container.clientWidth;
-  
-      if (scrollDistance > 0) {
-        
-        const tl = gsap.timeline({ paused: true });
-        
-        const barWidth = 48; // Largura da barrinha
-        const ballSize = 8;
-        const trackWidth = scrollbarTrack.clientWidth;
-        const maxThumbPosition = trackWidth - barWidth;
+      if (!track) return;
+      
+      const cards = gsap.utils.toArray(".feature-card-large");
+      if (cards.length === 0) return;
 
-        // ESTÁGIOS DA ANIMAÇÃO:
-        tl.fromTo(scrollbarThumb, 
-          { width: ballSize, height: ballSize, borderRadius: '50%', scale: 0, x: 0 },
-          { scale: 1, duration: 0.3, ease: 'power2.out' }
-        );
-        tl.to(scrollbarThumb, 
-          { width: barWidth, borderRadius: '4px', duration: 0.4, ease: 'power2.inOut' },
-          "+=0.1"
-        );
-        tl.to(scrollbarThumb, 
-          { x: maxThumbPosition, ease: 'none', duration: 2 }
-        );
-        tl.to(scrollbarThumb, 
-          { width: ballSize, borderRadius: '50%', duration: 0.4, ease: 'power2.inOut' }
-        );
-        tl.to(scrollbarThumb, 
-          { scale: 0, duration: 0.3, ease: 'power2.in' }
-        );
+      const totalScroll = track.scrollWidth - window.innerWidth;
 
-        // Animação principal de rolagem dos cards
-        gsap.to(track, {
-          x: -scrollDistance,
-          ease: "none",
-          scrollTrigger: {
-            trigger: sectionPinRef.current,
-            start: "top top",
-            end: () => `+=${scrollDistance}`,
-            scrub: 1.5,
-            pin: true,
-            invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              tl.progress(self.progress);
-            },
-            onToggle: (self) => {
-              gsap.to(scrollbarContainerRef.current, { 
-                  opacity: self.isActive ? 1 : 0, 
-                  duration: 0.3 
-              });
-            },
+      gsap.to(track, {
+        x: -totalScroll,
+        ease: "none",
+        scrollTrigger: {
+          trigger: sectionPinRef.current,
+          pin: true,
+          scrub: 1.8,
+          end: () => `+=${totalScroll}`,
+          invalidateOnRefresh: true,
+          onUpdate: (self) => {
+            const viewportCenter = window.innerWidth / 2;
+            cards.forEach((card) => {
+              const cardRect = card.getBoundingClientRect();
+              const cardCenter = cardRect.left + cardRect.width / 2;
+              const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
+              const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
+              gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
+            });
           },
-        });
-      }
+        },
+      });
+      
+      ScrollTrigger.refresh();
+
     }, sectionPinRef);
   
     return () => ctx.revert();
@@ -243,6 +216,8 @@ const LandingPage = () => {
 
   return (
     <div className="landing-page-wrapper">
+      <FloatingSpheresBackground />
+      
       <header className="border-b border-border/20 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -265,8 +240,7 @@ const LandingPage = () => {
       </header>
 
       <main>
-        <div id="inicio" className="hero-features-wrapper section-fade-mask">
-          <div className="background-animation-container"><div className="blob blob-1"></div><div className="blob blob-2"></div></div>
+        <div id="inicio" className="hero-features-wrapper">
           <section className="pt-16 pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
             <AnimateOnScroll className="max-w-3xl mx-auto text-center">
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4"><div className="text-center">Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span></div><div className="text-center">com facilidade</div></h1>
@@ -274,46 +248,44 @@ const LandingPage = () => {
               <div className="flex flex-col sm:flex-row gap-4 justify-center"><Button size="lg" className="bg-gradient-primary hover:opacity-90 text-lg px-8 py-6 text-white shadow-primary hover:shadow-elegant transition-all" onClick={() => handleGetStarted()}>Comece a usar gratuitamente <ArrowRight className="w-5 h-5 ml-2" /></Button></div>
             </AnimateOnScroll>
           </section>
-
-          <section id="funcionalidades" ref={sectionPinRef} className="py-16 bg-transparent relative z-10">
-            <div ref={trackContainerRef} className="max-w-7xl mx-auto">
-              <div className="text-center mb-16 px-4"><h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Uma plataforma, todas as ferramentas</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Tudo que você precisa para uma gestão profissional e eficiente.</p></div>
-              
-              <div className="hidden lg:flex items-center h-[500px] overflow-hidden fade-edges">
-                <div ref={trackRef} className="scroll-track px-4 sm:px-6 lg:px-8">
-                  {features.map((feature, index) => (
-                    <div key={index} className="feature-card-large p-8 flex flex-col shadow-md">
-                      <feature.icon className="icon-bg" strokeWidth={0.5} />
-                      <div className="w-14 h-14 bg-gradient-primary rounded-2xl flex items-center justify-center mb-6 shadow-primary"><feature.icon className="w-7 h-7 text-white" /></div>
-                      <h3 className="text-2xl font-bold text-foreground mb-3">{feature.title}</h3>
-                      <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* VERSÃO MOBILE COM SCROLL NATIVO */}
-              <div className="block lg:hidden px-4 sm:px-6">
-                <div className="flex gap-8 overflow-x-auto pb-4 scroll-track">
-                  {features.map((feature, index) => (
-                    <div key={index} className="feature-card-large p-8 flex flex-col h-auto shadow-md">
-                      <feature.icon className="icon-bg" strokeWidth={0.5} />
-                      <div className="w-14 h-14 bg-gradient-primary rounded-2xl flex items-center justify-center mb-6 shadow-primary"><feature.icon className="w-7 h-7 text-white" /></div>
-                      <h3 className="text-2xl font-bold text-foreground mb-3">{feature.title}</h3>
-                      <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-             {/* --- BARRA DE ROLAGEM CUSTOMIZADA (DENTRO DA SEÇÃO PINADA) --- */}
-            <div ref={scrollbarContainerRef} className="custom-scrollbar-container hidden lg:flex mt-8 max-w-xs mx-auto">
-              <div ref={scrollbarTrackRef} className="custom-scrollbar-track">
-                <div ref={scrollbarThumbRef} className="custom-scrollbar-thumb" />
-              </div>
-            </div>
-          </section>
         </div>
+
+        <section id="funcionalidades" ref={sectionPinRef} className="py-16 bg-background relative h-[100vh] flex flex-col justify-center">
+          <div className="max-w-7xl mx-auto w-full text-center mb-16 px-4 relative z-10">
+            <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Uma plataforma, todas as ferramentas</h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Tudo que você precisa para uma gestão profissional e eficiente.</p>
+          </div>
+          
+          <div className="relative w-full h-[450px] flex items-center">
+            <div className="center-highlight-outline"></div>
+
+            <div className="hidden lg:flex items-center h-full w-full fade-edges overflow-hidden">
+              <div ref={trackRef} className="scroll-track">
+                {features.map((feature, index) => (
+                  <div key={index} className="feature-card-large p-8 flex flex-col shadow-md">
+                    <feature.icon className="icon-bg" strokeWidth={0.5} />
+                    <div className="w-14 h-14 bg-gradient-primary rounded-2xl flex items-center justify-center mb-6 shadow-primary"><feature.icon className="w-7 h-7 text-white" /></div>
+                    <h3 className="text-2xl font-bold text-foreground mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="block lg:hidden px-4 sm:px-6">
+              <div className="flex gap-8 overflow-x-auto pb-4 scroll-track">
+                {features.map((feature, index) => (
+                  <div key={index} className="feature-card-large p-8 flex flex-col h-auto shadow-md">
+                    <feature.icon className="icon-bg" strokeWidth={0.5} />
+                    <div className="w-14 h-14 bg-gradient-primary rounded-2xl flex items-center justify-center mb-6 shadow-primary"><feature.icon className="w-7 h-7 text-white" /></div>
+                    <h3 className="text-2xl font-bold text-foreground mb-3">{feature.title}</h3>
+                    <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
 
         <section className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
           <AnimateOnScroll className="max-w-7xl mx-auto marquee-container">
@@ -372,7 +344,6 @@ const LandingPage = () => {
           </div>
         </section>
 
-        {/* --- NOVA SEÇÃO DO SLIDER --- */}
         <section className="py-16 bg-background">
           <div className="container mx-auto px-4">
             <AnimateOnScroll className="text-center mb-16">
@@ -384,11 +355,9 @@ const LandingPage = () => {
             
             <AnimateOnScroll className="max-w-5xl mx-auto">
               <div className="custom-compare-slider">
-                {/* Imagem de Fundo (Escuro) */}
                 <div className="image-container">
                     <img src={depoisImg} alt="Dashboard no tema escuro" />
                 </div>
-                {/* Imagem de Cima (Claro) que será cortada */}
                 <div 
                   className="image-container"
                   style={{
@@ -398,7 +367,6 @@ const LandingPage = () => {
                   <img src={antesImg} alt="Dashboard no tema claro" />
                 </div>
                 
-                {/* A Linha e Ícone do Slider */}
                 <div 
                   className="slider-handle"
                   style={{ left: `${sliderPosition}%` }}
@@ -408,7 +376,6 @@ const LandingPage = () => {
                   </div>
                 </div>
                 
-                {/* O Input invisível que controla o efeito */}
                 <input 
                   type="range" 
                   min="0" 
@@ -422,9 +389,10 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section id="depoimentos" className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
+        <section id="depoimentos" className="py-16 px-4 sm:px-6 lg:px-8 bg-background relative">
           <AnimateOnScroll className="max-w-7xl mx-auto">
             <div className="text-center mb-16"><h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Aprovado por quem usa todos os dias</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Confiança construída com resultados reais.</p></div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
               {testimonials.map((testimonial, index) => (
                 <div key={index} className="fade-in-item">
@@ -438,11 +406,11 @@ const LandingPage = () => {
                 </div>
               ))}
             </div>
+
           </AnimateOnScroll>
         </section>
 
         <div id="planos" className="plans-faq-wrapper">
-          <div className="background-animation-container"><div className="blob blob-3"></div><div className="blob blob-4"></div></div>
           <section className="py-16 px-4 sm:px-6 lg:px-8 bg-transparent relative z-10">
             <AnimateOnScroll className="max-w-5xl mx-auto">
               <div className="text-center mb-16">
@@ -452,7 +420,8 @@ const LandingPage = () => {
                   <Label htmlFor="billing-cycle" className={`${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'} transition-colors`}>Mensal</Label>
                   <Switch id="billing-cycle" checked={billingCycle === 'annually'} onCheckedChange={(checked) => setBillingCycle(checked ? 'annually' : 'monthly')} />
                   <Label htmlFor="billing-cycle" className={`${billingCycle === 'annually' ? 'text-foreground' : 'text-muted-foreground'} transition-colors`}>Anual</Label>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">Economize 2 meses</Badge>
+                  {/* === ALTERAÇÃO AQUI === */}
+                  <Badge variant="secondary" className="bg-green-100 text-green-700 transition-colors hover:bg-green-700 hover:text-white">Economize 2 meses</Badge>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -480,7 +449,7 @@ const LandingPage = () => {
                 ))}
               </div>
               <div className="text-center mt-12">
-                <Button variant="outline">Comparar planos</Button>
+                <Button variant="outline" className="text-base px-8 py-3 h-auto">Comparar planos</Button>
               </div>
             </AnimateOnScroll>
           </section>
@@ -509,7 +478,6 @@ const LandingPage = () => {
       <footer className="site-footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between gap-8 text-center md:text-left">
-            {/* Coluna da Marca */}
             <div className="space-y-4 flex flex-col items-center md:items-start">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
@@ -525,9 +493,7 @@ const LandingPage = () => {
               </div>
             </div>
 
-            {/* Grupo de Links da Direita */}
             <div className="flex flex-col items-center text-center gap-8 sm:flex-row sm:items-start sm:text-left sm:gap-16 md:gap-24">
-              {/* Coluna de Navegação */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground tracking-wider uppercase">Navegação</h3>
                 <ul className="grid grid-cols-3 gap-x-12 gap-y-3">
@@ -543,7 +509,6 @@ const LandingPage = () => {
                 </ul>
               </div>
 
-              {/* Coluna Legal e Suporte */}
               <div className="space-y-4">
                 <h3 className="text-sm font-semibold text-foreground tracking-wider uppercase">Recursos</h3>
                 <ul className="space-y-3">
@@ -555,7 +520,6 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* Linha de Copyright Definitiva */}
           <div className="mt-8 pt-4 border-t border-border/50 text-center text-xs text-muted-foreground">
             <p className="m-0">© 2025 TherapyPro. Todos os direitos reservados.</p>
           </div>
