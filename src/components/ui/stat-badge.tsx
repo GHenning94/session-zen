@@ -7,9 +7,9 @@ const statBadgeVariants = cva(
   {
     variants: {
       variant: {
-        high: "bg-destructive/10 text-destructive",
-        medium: "bg-warning/10 text-warning",
-        low: "bg-success/10 text-success",
+        high: "bg-destructive text-white",
+        medium: "bg-warning text-white",
+        low: "bg-success text-white",
         default: "bg-muted text-muted-foreground",
       },
     },

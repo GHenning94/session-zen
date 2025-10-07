@@ -257,11 +257,11 @@ const Pagamentos = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'pago': return 'default'
-      case 'pendente': return 'secondary'
+      case 'pago': return 'success'
+      case 'pendente': return 'warning'
       case 'atrasado': return 'destructive'
       case 'cancelado': return 'destructive'
-      default: return 'secondary'
+      default: return 'warning'
     }
   }
 

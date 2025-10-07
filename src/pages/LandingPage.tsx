@@ -415,7 +415,7 @@ const LandingPage = () => {
                   max="100" 
                   value={sliderPosition}
                   className="slider-input"
-                  onInput={(e) => setSliderPosition(Number(e.target.value))}
+                  onInput={(e) => setSliderPosition(Number((e.target as HTMLInputElement).value))}
                 />
               </div>
             </AnimateOnScroll>
@@ -556,9 +556,8 @@ const LandingPage = () => {
           </div>
 
           {/* Linha de Copyright Definitiva */}
-          <div className="mt-16 pt-8 border-t border-border/50 text-center text-xs text-muted-foreground">
-            <p className="m-0">© 2025 TherapyPro</p>
-            <p className="m-0">Todos os direitos reservados.</p>
+          <div className="mt-8 pt-4 border-t border-border/50 text-center text-xs text-muted-foreground">
+            <p className="m-0">© 2025 TherapyPro. Todos os direitos reservados.</p>
           </div>
 
         </div>

@@ -323,9 +323,34 @@
   height: 24px;
   display: flex;
   align-items: center;
-  opacity: 0;
-  visibility: hidden;
+  opacity: 1;
+  visibility: visible;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+  pointer-events: none;
+  position: relative;
+}
+
+.custom-scrollbar-container::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  background: linear-gradient(to right, hsl(var(--background)), transparent);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.custom-scrollbar-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 3rem;
+  background: linear-gradient(to left, hsl(var(--background)), transparent);
+  z-index: 1;
   pointer-events: none;
 }
 
@@ -339,13 +364,19 @@
   height: 8px;
   background-color: transparent;
   position: relative;
+  z-index: 2;
 }
 
 .custom-scrollbar-thumb {
   height: 8px;
-  background-color: hsl(var(--border)); /* Cinza mais claro */
+  background-color: hsl(var(--muted-foreground) / 0.3);
   border-radius: 4px;
   position: absolute;
   top: 0;
   left: 0;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.5);
 }
