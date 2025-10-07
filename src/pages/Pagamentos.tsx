@@ -30,6 +30,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { generateReceiptPDF } from "@/utils/receiptGenerator"
 import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
+import { PaymentDetailsModal } from "@/components/PaymentDetailsModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { calculatePaymentStatus } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
@@ -48,7 +49,9 @@ const Pagamentos = () => {
   const [profiles, setProfiles] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
+  const [selectedPayment, setSelectedPayment] = useState<any | null>(null)
   const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
 
   // Carregar dados do Supabase
@@ -259,7 +262,7 @@ const Pagamentos = () => {
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'destructive'
+      case 'atrasado': return 'secondary'
       case 'cancelado': return 'destructive'
       default: return 'warning'
     }
@@ -494,10 +497,17 @@ const Pagamentos = () => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
                    return (
-                   <div key={payment.id} className={cn(
-                     "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors",
-                     highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
-                   )}>
+                   <div 
+                     key={payment.id} 
+                     className={cn(
+                       "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                       highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                     )}
+                     onClick={() => {
+                       setSelectedPayment(payment)
+                       setDetailsModalOpen(true)
+                     }}
+                   >
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                           <StatusIcon className="w-5 h-5 text-primary" />
@@ -566,6 +576,15 @@ const Pagamentos = () => {
           open={paymentModalOpen}
           onOpenChange={setPaymentModalOpen}
           onConfirm={handlePaymentConfirm}
+        />
+
+        <PaymentDetailsModal
+          open={detailsModalOpen}
+          onOpenChange={setDetailsModalOpen}
+          payment={selectedPayment}
+          onGenerateReceipt={generateReceipt}
+          onViewSession={viewSession}
+          onMarkAsPaid={openPaymentModal}
         />
       </div>
     </Layout>

@@ -18,7 +18,7 @@ export const Header = ({ title, subtitle, children }: HeaderProps) => {
         )}
       </div>
       
-      <div className="flex items-center gap-4 h-10">
+      <div className="flex items-center gap-4 h-[52px]">
         {children}
         <SmartSyncIndicator />
         <NotificationDropdown />

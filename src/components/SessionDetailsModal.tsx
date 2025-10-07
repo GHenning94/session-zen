@@ -49,10 +49,10 @@ export const SessionDetailsModal = ({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'realizada': return 'default'
+      case 'realizada': return 'info'
       case 'agendada': return 'secondary'
       case 'cancelada': return 'destructive'
-      case 'falta': return 'outline'
+      case 'falta': return 'warning'
       default: return 'outline'
     }
   }
@@ -72,8 +72,16 @@ export const SessionDetailsModal = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-              <User className="w-8 h-8 text-muted-foreground" />
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+              {session.clients?.avatar_url ? (
+                <img 
+                  src={session.clients.avatar_url} 
+                  alt={session.clients.nome} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-8 h-8 text-muted-foreground" />
+              )}
             </div>
             <div className="flex-1">
               <DialogTitle className="text-2xl">{session.clients?.nome || 'Cliente não encontrado'}</DialogTitle>
@@ -109,12 +117,12 @@ export const SessionDetailsModal = ({
                     <p className="font-medium">{formatCurrencyBR(session.valor)}</p>
                   </div>
                 )}
-                {session.metodo_pagamento && (
-                  <div>
-                    <label className="text-sm text-muted-foreground">Método de Pagamento</label>
-                    <p className="font-medium capitalize">{session.metodo_pagamento}</p>
-                  </div>
-                )}
+                <div>
+                  <label className="text-sm text-muted-foreground">Método de Pagamento</label>
+                  <p className="font-medium capitalize">
+                    {session.status === 'agendada' ? 'A definir' : (session.metodo_pagamento || 'Não informado')}
+                  </p>
+                </div>
               </div>
             </div>
 

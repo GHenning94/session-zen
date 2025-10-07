@@ -47,10 +47,10 @@ export const calculatePaymentStatus = (sessionData: string, sessionHorario: stri
  */
 export const getSessionStatusColor = (status: string) => {
   switch (status) {
-    case 'realizada': return 'default'
+    case 'realizada': return 'info'
     case 'agendada': return 'secondary'
     case 'cancelada': return 'destructive'
-    case 'falta': return 'outline'
+    case 'falta': return 'warning'
     default: return 'outline'
   }
 }
