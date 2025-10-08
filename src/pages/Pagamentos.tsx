@@ -12,15 +12,12 @@ import {
   AlertCircle,
   CheckCircle,
   Clock,
-  MoreHorizontal,
-  Receipt,
+  Search,
   CreditCard,
   Smartphone,
   Building2,
   Banknote,
-  Search,
 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 
 import { useToast } from "@/hooks/use-toast"
@@ -556,32 +553,6 @@ const Pagamentos = () => {
                             <span className="capitalize">{payment.method}</span>
                           </div>
                         </div>
-                        
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {payment.status === 'pago' && (
-                              <DropdownMenuItem onClick={() => generateReceipt(payment)}>
-                                <Receipt className="w-4 h-4 mr-2" />
-                                Gerar Recibo
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => viewSession(payment.session_id)}>
-                              <Calendar className="w-4 h-4 mr-2" />
-                              Ver Sessão
-                            </DropdownMenuItem>
-                            {(payment.status === 'pendente' || payment.status === 'atrasado') && (
-                              <DropdownMenuItem onClick={() => openPaymentModal(payment.session_id)}>
-                                <CheckCircle className="w-4 h-4 mr-2" />
-                                Marcar como Pago
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
                     </div>
                    )
@@ -601,9 +572,9 @@ const Pagamentos = () => {
           open={detailsModalOpen}
           onOpenChange={setDetailsModalOpen}
           payment={selectedPayment}
-          onGenerateReceipt={generateReceipt}
-          onViewSession={viewSession}
-          onMarkAsPaid={openPaymentModal}
+          onGenerateReceipt={handleGenerateReceipt}
+          onViewSession={handleViewSession}
+          onMarkAsPaid={handleMarkAsPaidFromModal}
         />
       </div>
     </Layout>
