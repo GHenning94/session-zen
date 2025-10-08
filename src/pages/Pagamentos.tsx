@@ -131,15 +131,17 @@ const Pagamentos = () => {
   const getSessionPayments = () => {
     return sessions.map(session => {
       const status = calculatePaymentStatus(session.data, session.horario, session.status)
+      const client = clients.find(c => c.id === session.client_id)
       
       return {
         id: session.id,
         client: getClientName(session.client_id),
-        date: session.data, // Mantém no formato ISO para consistência
+        client_avatar: client?.avatar_url,
+        date: session.data,
         time: session.horario,
         value: session.valor || 0,
         status: status,
-        method: session.metodo_pagamento || 'dinheiro',
+        method: session.metodo_pagamento || 'A definir',
         session_id: session.id,
         session_status: session.status
       }
@@ -180,6 +182,23 @@ const Pagamentos = () => {
   const openPaymentModal = (sessionId: string) => {
     setSelectedSessionId(sessionId)
     setPaymentModalOpen(true)
+  }
+
+  const openDetailsModal = (payment: any) => {
+    setSelectedPayment(payment)
+    setDetailsModalOpen(true)
+  }
+
+  const handleGenerateReceipt = (payment: any) => {
+    generateReceipt(payment)
+  }
+
+  const handleViewSession = (sessionId: string) => {
+    viewSession(sessionId)
+  }
+
+  const handleMarkAsPaidFromModal = (sessionId: string) => {
+    openPaymentModal(sessionId)
   }
 
   const handlePaymentConfirm = async (method: string) => {
@@ -262,7 +281,7 @@ const Pagamentos = () => {
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'secondary'
+      case 'atrasado': return 'info'
       case 'cancelado': return 'destructive'
       default: return 'warning'
     }

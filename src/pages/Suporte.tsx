@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import WhatsAppButton from "@/components/WhatsAppButton"
 import { 
   HelpCircle, 
   MessageCircle, 
@@ -411,6 +412,9 @@ export default function Suporte() {
           </form>
         </DialogContent>
       </Dialog>
+      
+      {/* WhatsApp Button - only show on Suporte page */}
+      <WhatsAppButton show={true} />
     </Layout>
   )
 }

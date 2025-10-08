@@ -100,15 +100,15 @@
     --foreground: 210 40% 98%;
 
     /* Cards com maior contraste no dark mode para destaque */
-    --card: 222 47% 18%;
+    --card: 222 47% 16%;
     --card-foreground: 210 40% 98%;
 
     /* Popovers */
     --popover: 222 47% 15%;
     --popover-foreground: 210 40% 98%;
 
-    /* Primary azul vibrante mantém a mesma energia */
-    --primary: 221 83% 53%;
+    /* Primary azul mais claro no dark mode para melhor destaque */
+    --primary: 221 83% 63%;
     --primary-foreground: 0 0% 100%;
     --primary-light: 221 83% 25%;
     --primary-glow: 221 83% 65%;
@@ -142,25 +142,25 @@
     --destructive-fixed: 0 72% 51%;
     --warning-fixed: 38 92% 50%;
 
-    /* Bordas no dark mode */
-    --border: 222 47% 20%;
-    --input: 222 47% 20%;
-    --ring: 221 83% 53%;
+    /* Bordas no dark mode - mais visíveis */
+    --border: 222 47% 25%;
+    --input: 222 47% 25%;
+    --ring: 221 83% 63%;
     
     /* Sidebar dark com tom elegante */
     --sidebar-background: 222 47% 13%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary: 221 83% 63%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 47% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 222 47% 20%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-border: 222 47% 25%;
+    --sidebar-ring: 221 83% 63%;
 
     /* Gradientes vibrantes no dark mode */
-    --gradient-primary: linear-gradient(135deg, hsl(221 83% 53%), hsl(221 83% 43%));
+    --gradient-primary: linear-gradient(135deg, hsl(221 83% 63%), hsl(221 83% 53%));
     --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 26%));
-    --gradient-card: linear-gradient(145deg, hsl(222 47% 15%), hsl(222 47% 17%));
+    --gradient-card: linear-gradient(145deg, hsl(222 47% 16%), hsl(222 47% 18%));
     --gradient-purple: linear-gradient(135deg, hsl(271 81% 56%), hsl(271 81% 46%));
     --gradient-cyan: linear-gradient(135deg, hsl(189 94% 43%), hsl(189 94% 33%));
     --gradient-emerald: linear-gradient(135deg, hsl(160 84% 39%), hsl(160 84% 29%));
@@ -169,8 +169,8 @@
     --shadow-soft: 0 1px 3px 0 hsl(0 0% 0% / 0.3);
     --shadow-medium: 0 4px 12px 0 hsl(0 0% 0% / 0.4);
     --shadow-large: 0 12px 24px -4px hsl(0 0% 0% / 0.5);
-    --shadow-primary: 0 8px 24px -4px hsl(221 83% 53% / 0.36);
-    --shadow-elegant: 0 20px 40px -12px hsl(221 83% 53% / 0.28);
+    --shadow-primary: 0 8px 24px -4px hsl(221 83% 63% / 0.36);
+    --shadow-elegant: 0 20px 40px -12px hsl(221 83% 63% / 0.28);
     --shadow-glow: 0 0 40px hsl(221 83% 65% / 0.4);
   }
 }

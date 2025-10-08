@@ -695,14 +695,19 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => (
+        {stats.map((stat, index) => (
             <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className={`w-8 h-8 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                  <stat.icon className={`w-4 h-4 ${stat.color}`} />
+                <div className={`w-10 h-10 rounded-full ${
+                  index === 0 ? 'bg-primary' : 
+                  index === 1 ? 'bg-success' : 
+                  index === 2 ? 'bg-success' : 
+                  'bg-warning'
+                } flex items-center justify-center`}>
+                  <stat.icon className="w-5 h-5 text-white" />
                 </div>
               </CardHeader>
               <CardContent>
@@ -828,14 +833,14 @@ const Dashboard = () => {
                       displayStatus = 'pendente'
                     }
 
-                    const getStatusColor = (status: string) => {
-                      switch (status) {
-                        case 'pago': return 'success'
-                        case 'pendente': return 'warning'
-                        case 'atrasado': return 'destructive'
-                        default: return 'warning'
-                      }
-                    }
+      const getStatusColor = (status: string) => {
+        switch (status) {
+          case 'pago': return 'success'
+          case 'pendente': return 'warning'
+          case 'atrasado': return 'info'
+          default: return 'warning'
+        }
+      }
                     
                     return (
                       <div 

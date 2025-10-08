@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { 
   Calendar,
   Clock,
@@ -12,7 +12,8 @@ import {
   Building2,
   Banknote,
   Receipt,
-  CheckCircle
+  CheckCircle,
+  User
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 
@@ -39,7 +40,7 @@ export const PaymentDetailsModal = ({
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'secondary'
+      case 'atrasado': return 'info'
       case 'cancelado': return 'destructive'
       default: return 'warning'
     }
@@ -70,9 +71,18 @@ export const PaymentDetailsModal = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-card flex items-center justify-center">
-              <DollarSign className="w-8 h-8 text-primary" />
-            </div>
+            {payment.client_avatar ? (
+              <Avatar className="w-16 h-16">
+                <AvatarImage src={payment.client_avatar} alt={payment.client} />
+                <AvatarFallback>
+                  <User className="w-8 h-8" />
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <div className="w-16 h-16 rounded-full bg-gradient-card flex items-center justify-center">
+                <User className="w-8 h-8 text-primary" />
+              </div>
+            )}
             <div className="flex-1">
               <DialogTitle className="text-2xl">{payment.client}</DialogTitle>
               <div className="flex items-center gap-2 mt-1">

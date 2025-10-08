@@ -147,21 +147,22 @@ const LandingPage = () => {
         scrollTrigger: {
           trigger: sectionPinRef.current,
           pin: true,
-          scrub: 1.8,
-          end: () => `+=${totalScroll}`,
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            const viewportCenter = window.innerWidth / 2;
-            cards.forEach((card) => {
-              const cardRect = card.getBoundingClientRect();
-              const cardCenter = cardRect.left + cardRect.width / 2;
-              const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
-              const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
-              gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
-            });
-          },
+        scrub: 1.8,
+        end: () => `+=${totalScroll}`,
+        invalidateOnRefresh: true,
+        onUpdate: (self) => {
+          const viewportCenter = window.innerWidth / 2;
+          cards.forEach((card) => {
+            const cardElement = card as HTMLElement;
+            const cardRect = cardElement.getBoundingClientRect();
+            const cardCenter = cardRect.left + cardRect.width / 2;
+            const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
+            const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
+            gsap.to(cardElement, { scale: scale, ease: "power1.out", duration: 0.5 });
+          });
         },
-      });
+      },
+    });
       
       ScrollTrigger.refresh();
 

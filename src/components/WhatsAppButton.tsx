@@ -1,13 +1,18 @@
-import { MessageCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
-const WhatsAppButton = () => {
+interface WhatsAppButtonProps {
+  show?: boolean
+}
+
+const WhatsAppButton = ({ show = false }: WhatsAppButtonProps) => {
   const handleWhatsAppClick = () => {
     const phoneNumber = "+5511945539883"
     const message = "Olá! Preciso de ajuda com o TherapyPro."
     const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`
     window.open(whatsappUrl, '_blank')
   }
+
+  if (!show) return null
 
   return (
     <div className="fixed bottom-6 right-6 z-50">
