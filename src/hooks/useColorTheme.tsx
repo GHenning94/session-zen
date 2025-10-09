@@ -10,12 +10,8 @@ export const useColorTheme = () => {
   const { user } = useAuth()
   const location = useLocation()
 
-  const applyBrandColor = useCallback((colorValue: string) => {
-    // Only apply colors if user is logged in and not on landing page
-    if (!user || location.pathname === '/') {
-      return
-    }
-
+  // Direct color application without guards (for internal use)
+  const directApplyColor = useCallback((colorValue: string) => {
     // Ensure we're working with HSL format
     const cleanColor = colorValue.replace(/[^\d\s%]/g, '').trim()
     
@@ -35,15 +31,20 @@ export const useColorTheme = () => {
       const gradient = `linear-gradient(135deg, hsl(${h} ${s}% ${l}%), hsl(${h} ${s}% ${darkerL}%))`
       document.documentElement.style.setProperty('--gradient-primary', gradient)
     }
-  }, [user, location.pathname])
+  }, [])
+
+  const applyBrandColor = useCallback((colorValue: string) => {
+    // Don't apply custom colors on landing page
+    if (location.pathname === '/') {
+      return
+    }
+    directApplyColor(colorValue)
+  }, [location.pathname, directApplyColor])
 
   const resetToDefaultColors = useCallback(() => {
     // Reset to default blue for landing page
-    document.documentElement.style.setProperty('--primary', DEFAULT_COLOR)
-    document.documentElement.style.setProperty('--sidebar-primary', DEFAULT_COLOR)
-    document.documentElement.style.setProperty('--primary-glow', '217 91% 60%')
-    document.documentElement.style.setProperty('--gradient-primary', 'linear-gradient(135deg, hsl(217 91% 45%), hsl(217 91% 35%))')
-  }, [])
+    directApplyColor(DEFAULT_COLOR)
+  }, [directApplyColor])
 
   const saveBrandColor = async (colorValue: string) => {
     if (!user) return false
@@ -67,6 +68,12 @@ export const useColorTheme = () => {
   }
 
   useLayoutEffect(() => {
+    // CRITICAL: Apply default colors IMMEDIATELY and SYNCHRONOUSLY
+    // This ensures colors are always present, even for new accounts
+    if (location.pathname !== '/') {
+      directApplyColor(DEFAULT_COLOR)
+    }
+    
     const loadUserColor = async () => {
       // If on landing page, always reset to default and don't apply any custom color
       if (location.pathname === '/') {
@@ -75,15 +82,11 @@ export const useColorTheme = () => {
       }
 
       if (!user) {
-        // For non-logged users not on landing page, apply default color
-        applyBrandColor(DEFAULT_COLOR)
+        // For non-logged users not on landing page, default already applied above
         return
       }
 
       try {
-        // First apply default immediately to prevent missing colors
-        applyBrandColor(DEFAULT_COLOR)
-        
         // Then load user's custom color if they have one
         const { data } = await supabase
           .from('configuracoes')
@@ -94,15 +97,15 @@ export const useColorTheme = () => {
         if (data?.brand_color) {
           applyBrandColor(data.brand_color)
         }
+        // If no custom color, keep the default that was already applied
       } catch (error) {
         console.error('Error loading user color:', error)
-        // Ensure default is applied even on error
-        applyBrandColor(DEFAULT_COLOR)
+        // Default is already applied, so no need to do anything
       }
     }
 
     loadUserColor()
-  }, [user, applyBrandColor, resetToDefaultColors, location.pathname])
+  }, [user, applyBrandColor, resetToDefaultColors, location.pathname, directApplyColor])
 
   return { applyBrandColor, saveBrandColor, resetToDefaultColors }
 }

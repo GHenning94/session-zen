@@ -23,6 +23,7 @@ import { formatClientName } from '@/lib/utils'
 import { calculateSessionStatus } from "@/utils/sessionStatusUtils"
 import { useNavigate } from 'react-router-dom'
 import { TextPreview } from '@/components/TextPreview'
+import { getSignedUrl } from '@/utils/storageUtils'
 
 interface Session {
   id: string
@@ -36,6 +37,7 @@ interface Session {
     nome: string
     avatar_url?: string
   }
+  avatar_signed_url?: string
 }
 
 interface SessionNote {
@@ -66,6 +68,7 @@ export default function Sessoes() {
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'sessions' | 'notes'>('sessions')
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({})
   
   // Estados para modais
   const [noteModalOpen, setNoteModalOpen] = useState(false)
@@ -92,11 +95,55 @@ export default function Sessoes() {
     }
   }, [user])
 
+  // Generate signed URLs for avatars
+  useEffect(() => {
+    const loadAvatarUrls = async () => {
+      const urls: Record<string, string> = {}
+      
+      // Collect all unique avatar URLs from sessions
+      const sessionAvatars = sessions
+        .filter(s => s.clients?.avatar_url)
+        .map(s => s.clients!.avatar_url!)
+      
+      // Collect all unique avatar URLs from notes
+      const noteAvatars = sessionNotes
+        .filter(n => n.clients?.avatar_url)
+        .map(n => n.clients!.avatar_url!)
+      
+      // Collect all unique avatar URLs from clients
+      const clientAvatars = clients
+        .filter(c => c.avatar_url)
+        .map(c => c.avatar_url)
+      
+      const allAvatars = [...new Set([...sessionAvatars, ...noteAvatars, ...clientAvatars])]
+      
+      // Generate signed URLs for each unique avatar
+      await Promise.all(
+        allAvatars.map(async (avatarUrl) => {
+          try {
+            const signedUrl = await getSignedUrl(avatarUrl)
+            if (signedUrl) {
+              urls[avatarUrl] = signedUrl
+            }
+          } catch (error) {
+            console.error('Error generating signed URL for avatar:', error)
+          }
+        })
+      )
+      
+      setAvatarUrls(urls)
+    }
+    
+    if (sessions.length > 0 || sessionNotes.length > 0 || clients.length > 0) {
+      loadAvatarUrls()
+    }
+  }, [sessions, sessionNotes, clients])
+
   const loadData = async () => {
     try {
       setLoading(true)
       
-      // Carregar sessões
+      // Carregar sessões com avatares
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select(`
@@ -580,12 +627,19 @@ export default function Sessoes() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4 flex-1">
                             <div className="flex-shrink-0">
-                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
-                                {session.clients?.avatar_url ? (
+                              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+                                {session.clients?.avatar_url && avatarUrls[session.clients.avatar_url] ? (
                                   <img 
-                                    src={session.clients.avatar_url} 
+                                    src={avatarUrls[session.clients.avatar_url]} 
                                     alt={session.clients.nome} 
-                                    className="w-full h-full rounded-full object-cover"
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none'
+                                      const parent = e.currentTarget.parentElement
+                                      if (parent) {
+                                        parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6 text-muted-foreground"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'
+                                      }
+                                    }}
                                   />
                                 ) : (
                                   <User className="w-6 h-6 text-muted-foreground" />
