@@ -81,16 +81,22 @@ export const useColorTheme = () => {
       }
 
       try {
+        // First apply default immediately to prevent missing colors
+        applyBrandColor(DEFAULT_COLOR)
+        
+        // Then load user's custom color if they have one
         const { data } = await supabase
           .from('configuracoes')
           .select('brand_color')
           .eq('user_id', user.id)
           .maybeSingle()
 
-        const colorToApply = data?.brand_color || DEFAULT_COLOR
-        applyBrandColor(colorToApply)
+        if (data?.brand_color) {
+          applyBrandColor(data.brand_color)
+        }
       } catch (error) {
         console.error('Error loading user color:', error)
+        // Ensure default is applied even on error
         applyBrandColor(DEFAULT_COLOR)
       }
     }

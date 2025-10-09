@@ -14,6 +14,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthRedirect } from "@/components/AuthRedirect";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Importações diretas para páginas principais (sem loading)
 import Dashboard from "@/pages/Dashboard";
@@ -54,21 +55,22 @@ const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
 }
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="light"
-      storageKey="theme"
-      disableTransitionOnChange
-    >
-      <TooltipProvider>
-        <AuthProvider>
-          <SubscriptionProvider>
-            <RealtimeSyncProvider>
-              <BrowserRouter>
-                <AnalyticsWrapper>
-                  <AuthRedirect />
-                  <Routes>
+  <ErrorBoundary>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider
+        attribute="class"
+        defaultTheme="light"
+        storageKey="theme"
+        disableTransitionOnChange
+      >
+        <TooltipProvider>
+          <AuthProvider>
+            <SubscriptionProvider>
+              <RealtimeSyncProvider>
+                <BrowserRouter>
+                  <AnalyticsWrapper>
+                    <AuthRedirect />
+                    <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
@@ -180,6 +182,7 @@ const App = () => (
       </TooltipProvider>
     </ThemeProvider>
   </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

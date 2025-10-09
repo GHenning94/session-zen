@@ -772,15 +772,25 @@ const Dashboard = () => {
                           </p>
                        </div>
                      </div>
-                      <div className="text-right">
-                         <p className="font-medium">{formatDateBR(session.data)}</p>
-                        <Badge 
-                          variant={session.status === 'realizada' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {session.status || 'agendada'}
-                        </Badge>
-                      </div>
+                       <div className="text-right">
+                          <p className="font-medium">{formatDateBR(session.data)}</p>
+                         <Badge 
+                           variant={
+                             session.status === 'realizada' ? 'success' :
+                             session.status === 'agendada' ? 'info' :
+                             session.status === 'cancelada' ? 'destructive' :
+                             session.status === 'falta' ? 'warning' :
+                             'info'
+                           }
+                           className="text-xs"
+                         >
+                           {session.status === 'realizada' ? 'Realizada' :
+                            session.status === 'agendada' ? 'Agendada' :
+                            session.status === 'cancelada' ? 'Cancelada' :
+                            session.status === 'falta' ? 'Falta' :
+                            'Agendada'}
+                         </Badge>
+                       </div>
                    </div>
                 )) : (
                   <div className="flex items-center justify-center h-full">
@@ -837,7 +847,7 @@ const Dashboard = () => {
         switch (status) {
           case 'pago': return 'success'
           case 'pendente': return 'warning'
-          case 'atrasado': return 'info'
+          case 'atrasado': return 'secondary'
           default: return 'warning'
         }
       }

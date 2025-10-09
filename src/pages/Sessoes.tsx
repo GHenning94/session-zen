@@ -222,22 +222,49 @@ export default function Sessoes() {
   }
 
   const handleViewSession = (sessionId: string) => {
-    const session = sessions.find(s => s.id === sessionId)
-    if (session) {
-      navigate(`/agenda?highlight=${sessionId}&date=${session.data}`)
-    } else {
-      navigate('/agenda')
+    try {
+      const session = sessions.find(s => s.id === sessionId)
+      if (session) {
+        navigate(`/agenda?highlight=${sessionId}&date=${session.data}`)
+      } else {
+        navigate('/agenda')
+      }
+    } catch (error) {
+      console.error('Error navigating to session:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível navegar para a sessão.",
+        variant: "destructive",
+      })
     }
   }
 
   const handleViewPayment = (sessionId: string) => {
-    navigate(`/pagamentos?highlight=${sessionId}`)
+    try {
+      navigate(`/pagamentos?highlight=${sessionId}`)
+    } catch (error) {
+      console.error('Error navigating to payment:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível navegar para o pagamento.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleAddNote = (session: Session) => {
-    setSelectedSession(session)
-    setEditingNote(null)
-    setNoteModalOpen(true)
+    try {
+      setSelectedSession(session)
+      setEditingNote(null)
+      setNoteModalOpen(true)
+    } catch (error) {
+      console.error('Error opening note modal:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir o modal de lembrete.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleEditNote = (note: SessionNote) => {
@@ -247,13 +274,31 @@ export default function Sessoes() {
   }
 
   const handleEditSession = (session: Session) => {
-    setSelectedSession(session)
-    setEditModalOpen(true)
+    try {
+      setSelectedSession(session)
+      setEditModalOpen(true)
+    } catch (error) {
+      console.error('Error opening edit modal:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir o modal de edição.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleSessionClick = (session: Session) => {
-    setSelectedSession(session)
-    setDetailsModalOpen(true)
+    try {
+      setSelectedSession(session)
+      setDetailsModalOpen(true)
+    } catch (error) {
+      console.error('Error opening session details:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível abrir os detalhes da sessão.",
+        variant: "destructive",
+      })
+    }
   }
 
   const handleDeleteNote = async (noteId: string) => {
@@ -287,8 +332,8 @@ export default function Sessoes() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'realizada': return 'info'
-      case 'agendada': return 'secondary'
+      case 'realizada': return 'success'
+      case 'agendada': return 'info'
       case 'cancelada': return 'destructive'
       case 'falta': return 'warning'
       default: return 'outline'
