@@ -43,6 +43,19 @@ export const calculatePaymentStatus = (sessionData: string, sessionHorario: stri
 }
 
 /**
+ * Retorna a cor/variante do badge para o status de pagamento
+ */
+export const getPaymentStatusColor = (status: string) => {
+  switch (status) {
+    case 'pago': return 'success'
+    case 'pendente': return 'warning'
+    case 'atrasado': return 'purple'
+    case 'cancelado': return 'destructive'
+    default: return 'outline'
+  }
+}
+
+/**
  * Retorna a cor/variante do badge para o status da sessão
  */
 export const getSessionStatusColor = (status: string) => {

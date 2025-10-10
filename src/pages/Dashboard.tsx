@@ -57,16 +57,17 @@ const Dashboard = () => {
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
 
   // Optimized loading with caching
-  const loadDashboardDataOptimized = useCallback(async () => {
+  const loadDashboardDataOptimized = useCallback(async (forceFresh = false) => {
     if (!user) return
     
     try {
-      if (dashboardLoaded) {
+      if (dashboardLoaded && !forceFresh) {
         console.log('🚀 Dashboard em cache, otimizando carregamento...')
+        return
       }
       
-      console.log('🔄 Carregando dados do dashboard...')
-      await loadDashboardData()
+      console.log('🔄 Carregando dados do dashboard...', forceFresh ? '(FORCE FRESH)' : '')
+      await loadDashboardData(forceFresh)
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
     }
@@ -88,8 +89,7 @@ const Dashboard = () => {
       if (user) {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-          setDashboardLoaded(false) // Force refresh
-          loadDashboardDataOptimized()
+          loadDashboardDataOptimized(true) // Force fresh
         }, 300) // Debounce for 300ms
       }
     }
@@ -124,25 +124,41 @@ const Dashboard = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         () => {
-          setDashboardLoaded(false) // Force refresh
-          loadDashboardDataOptimized()
+          loadDashboardDataOptimized(true) // Force fresh
+        }
+      )
+      .subscribe()
+      
+    const clientsChannel = supabase
+      .channel('dashboard-clients')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'clients',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          loadDashboardDataOptimized(true) // Force fresh
         }
       )
       .subscribe()
 
     return () => {
       supabase.removeChannel(sessionsChannel)
+      supabase.removeChannel(clientsChannel)
     }
   }, [user, loadDashboardDataOptimized])
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (forceFresh = false) => {
     try {
-      // Check cache first
+      // Check cache first (unless force fresh)
       const cacheKey = `dashboard_${user?.id}`
       const cached = localStorage.getItem(cacheKey)
       const cacheTime = localStorage.getItem(`${cacheKey}_time`)
       
-      if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 300000) {
+      // Reduce cache time to 30 seconds for critical sections
+      if (!forceFresh && cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
         console.log('🚀 Loading from cache...')
         const data = JSON.parse(cached)
         setDashboardData(data.dashboardData)
@@ -175,12 +191,12 @@ const Dashboard = () => {
         allClientsWithPaymentsResult,
         allPaymentMethodsResult
       ] = await Promise.all([
-        supabase.from('sessions').select('*, clients(nome)').eq('user_id', user?.id).eq('data', today).order('horario'),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         supabase.from('sessions').select('valor, data, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
-        supabase.from('sessions').select('*, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(10),
-        supabase.from('sessions').select('*, clients(nome)').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(4),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(10),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
         supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
         supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null)
@@ -847,7 +863,7 @@ const Dashboard = () => {
         switch (status) {
           case 'pago': return 'success'
           case 'pendente': return 'warning'
-          case 'atrasado': return 'secondary'
+          case 'atrasado': return 'purple'
           default: return 'warning'
         }
       }

@@ -278,7 +278,7 @@ const Pagamentos = () => {
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'info'
+      case 'atrasado': return 'purple'
       case 'cancelado': return 'destructive'
       default: return 'warning'
     }
@@ -409,7 +409,7 @@ const Pagamentos = () => {
               <AlertCircle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">{lateCount}</div>
+              <div className="text-2xl font-bold text-[hsl(var(--purple))]">{lateCount}</div>
               <p className="text-sm text-muted-foreground">Pagamentos atrasados</p>
             </CardContent>
           </Card>

@@ -31,6 +31,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useNavigate } from 'react-router-dom'
+import { generateAvatarSignedUrls } from "@/utils/avatarUtils"
 
 const Clientes = () => {
   console.log("Clientes component is loading - build system test")
@@ -46,6 +47,7 @@ const Clientes = () => {
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("todos")
+  const [avatarUrls, setAvatarUrls] = useState<Record<string, string>>({})
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -96,6 +98,13 @@ const Clientes = () => {
         })
       } else {
         setClients(data || [])
+        
+        // Generate signed URLs for all avatars
+        const avatarPaths = (data || []).map(client => client.avatar_url).filter(Boolean)
+        if (avatarPaths.length > 0) {
+          const signed = await generateAvatarSignedUrls(avatarPaths)
+          setAvatarUrls(signed)
+        }
       }
     } catch (error) {
       console.error('Erro:', error)
@@ -515,11 +524,11 @@ const Clientes = () => {
                     >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-4 flex-1">
-                        <div className="flex-shrink-0">
+                         <div className="flex-shrink-0">
                             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                              {client.avatar_url ? (
+                              {client.avatar_url && avatarUrls[client.avatar_url] ? (
                                 <img 
-                                  src={client.avatar_url} 
+                                  src={avatarUrls[client.avatar_url]} 
                                   alt={client.nome} 
                                   className="w-full h-full rounded-full object-cover"
                                   onError={(e) => {

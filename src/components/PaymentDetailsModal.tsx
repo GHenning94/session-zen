@@ -40,9 +40,9 @@ export const PaymentDetailsModal = ({
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'secondary'
+      case 'atrasado': return 'purple'
       case 'cancelado': return 'destructive'
-      default: return 'warning'
+      default: return 'outline'
     }
   }
 

@@ -21,6 +21,8 @@ const badgeVariants = cva(
           "border-transparent bg-warning text-white hover:bg-warning/90",
         info:
           "border-transparent bg-primary text-white hover:bg-primary/90",
+        purple:
+          "border-transparent bg-[hsl(var(--purple))] text-[hsl(var(--purple-foreground))] hover:bg-[hsl(var(--purple))]/90",
       },
     },
     defaultVariants: {

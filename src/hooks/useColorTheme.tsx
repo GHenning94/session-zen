@@ -6,14 +6,114 @@ import { useLocation } from 'react-router-dom'
 
 const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 
+// Helper functions for color conversion
+const hexToHsl = (hex: string): string => {
+  // Remove # if present
+  hex = hex.replace('#', '')
+  
+  // Convert to RGB
+  const r = parseInt(hex.substring(0, 2), 16) / 255
+  const g = parseInt(hex.substring(2, 4), 16) / 255
+  const b = parseInt(hex.substring(4, 6), 16) / 255
+  
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  let h = 0, s = 0, l = (max + min) / 2
+  
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
+      case g: h = ((b - r) / d + 2) / 6; break
+      case b: h = ((r - g) / d + 4) / 6; break
+    }
+  }
+  
+  h = Math.round(h * 360)
+  s = Math.round(s * 100)
+  l = Math.round(l * 100)
+  
+  return `${h} ${s}% ${l}%`
+}
+
+const rgbToHsl = (rgb: string): string => {
+  const match = rgb.match(/\d+/g)
+  if (!match || match.length < 3) return DEFAULT_COLOR
+  
+  const r = parseInt(match[0]) / 255
+  const g = parseInt(match[1]) / 255
+  const b = parseInt(match[2]) / 255
+  
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  let h = 0, s = 0, l = (max + min) / 2
+  
+  if (max !== min) {
+    const d = max - min
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min)
+    
+    switch (max) {
+      case r: h = ((g - b) / d + (g < b ? 6 : 0)) / 6; break
+      case g: h = ((b - r) / d + 2) / 6; break
+      case b: h = ((r - g) / d + 4) / 6; break
+    }
+  }
+  
+  h = Math.round(h * 360)
+  s = Math.round(s * 100)
+  l = Math.round(l * 100)
+  
+  return `${h} ${s}% ${l}%`
+}
+
+// Normalize any color format to HSL triplet "H S% L%"
+const normalizeToHslTriplet = (value: string): string => {
+  if (!value) return DEFAULT_COLOR
+  
+  const trimmed = value.trim()
+  
+  // Already in HSL triplet format "H S% L%"
+  if (/^\d+\s+\d+%\s+\d+%$/.test(trimmed)) {
+    return trimmed
+  }
+  
+  // HEX format
+  if (trimmed.startsWith('#')) {
+    return hexToHsl(trimmed)
+  }
+  
+  // RGB format
+  if (trimmed.startsWith('rgb')) {
+    return rgbToHsl(trimmed)
+  }
+  
+  // HSL function format "hsl(H, S%, L%)"
+  const hslMatch = trimmed.match(/hsl\((\d+),\s*(\d+)%,\s*(\d+)%\)/)
+  if (hslMatch) {
+    return `${hslMatch[1]} ${hslMatch[2]}% ${hslMatch[3]}%`
+  }
+  
+  // Try to extract numbers and percentages
+  const numbers = trimmed.match(/\d+/g)
+  if (numbers && numbers.length >= 3) {
+    return `${numbers[0]} ${numbers[1]}% ${numbers[2]}%`
+  }
+  
+  console.warn('Could not normalize color:', value, '- using default')
+  return DEFAULT_COLOR
+}
+
 export const useColorTheme = () => {
   const { user } = useAuth()
   const location = useLocation()
 
   // Direct color application without guards (for internal use)
   const directApplyColor = useCallback((colorValue: string) => {
-    // Ensure we're working with HSL format
-    const cleanColor = colorValue.replace(/[^\d\s%]/g, '').trim()
+    // Normalize to HSL triplet format
+    const normalizedColor = normalizeToHslTriplet(colorValue)
+    const cleanColor = normalizedColor.replace(/[^\d\s%]/g, '').trim()
     
     // Update CSS custom properties
     document.documentElement.style.setProperty('--primary', cleanColor)
@@ -50,14 +150,17 @@ export const useColorTheme = () => {
     if (!user) return false
 
     try {
+      // Always normalize and save as HSL triplet
+      const normalized = normalizeToHslTriplet(colorValue)
+      
       const { error } = await supabase
         .from('configuracoes')
-        .update({ brand_color: colorValue })
+        .update({ brand_color: normalized })
         .eq('user_id', user.id)
 
       if (error) throw error
 
-      applyBrandColor(colorValue)
+      applyBrandColor(normalized)
       toast.success('Cor da plataforma atualizada com sucesso!')
       return true
     } catch (error) {
@@ -95,7 +198,9 @@ export const useColorTheme = () => {
           .maybeSingle()
 
         if (data?.brand_color) {
-          applyBrandColor(data.brand_color)
+          // Normalize before applying to ensure consistent format
+          const normalized = normalizeToHslTriplet(data.brand_color)
+          applyBrandColor(normalized)
         }
         // If no custom color, keep the default that was already applied
       } catch (error) {

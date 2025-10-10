@@ -112,6 +112,8 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
         return { backgroundColor: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', borderColor: 'hsl(var(--success) / 0.2)' }
       case 'cancelada':
         return 'bg-destructive/10 text-destructive border-destructive/20'
+      case 'falta':
+        return 'bg-warning/10 text-warning border-warning/20'
       default:
         return 'bg-muted text-muted-foreground border-border'
     }
