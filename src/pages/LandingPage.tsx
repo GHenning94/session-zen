@@ -1,36 +1,41 @@
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Label } from "@/components/ui/label"
-import { Switch } from "@/components/ui/switch"
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { 
   Stethoscope, Calendar, Users, DollarSign, TrendingUp,
   CheckCircle, ArrowRight, Brain, Heart, Shield, Clock,
   GraduationCap, Target, BookOpen, Activity, BarChart3,
   MessageCircle, ChevronDown, Lock, Mail, Globe, BarChart,
-  Gift, ChevronsLeftRight, Instagram, Linkedin, Twitter
-} from "lucide-react"
-import { useNavigate } from "react-router-dom"
-import { useAuth } from "@/hooks/useAuth"
-import { useColorTheme } from "@/hooks/useColorTheme"
-import { useState, useEffect, useRef, useLayoutEffect } from "react"
-import { CookieNotice } from "@/components/CookieNotice"
+  Gift, ChevronsLeftRight, Instagram, Linkedin, Twitter,
+  Sparkles, ChevronsRight,
+  Play, Pause // Ícones para o player de vídeo
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/hooks/useAuth";
+import { useColorTheme } from "@/hooks/useColorTheme";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { CookieNotice } from "@/components/CookieNotice";
 
-// --- NOVAS IMPORTAÇÕES ---
 import antesImg from '../assets/antes.webp';
 import depoisImg from '../assets/depois.webp';
+import supabaseLogo from '../assets/supabase_logo.webp';
+import stripeLogo from '../assets/stripe_logo.webp';
+import googleLogo from '../assets/google_logo.webp';
+import cloudflareLogo from '../assets/cloudflare_logo.webp';
 
 
-// Importações do GSAP
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollToPlugin } from "gsap/ScrollToPlugin";
 import { Flip } from "gsap/Flip";
 
-import "./LandingPage.styles.css"
+import "./LandingPage.styles.css";
 
 // --- HOOKS E COMPONENTES AUXILIARES ---
 
-const useIntersectionObserver = (options) => {
+const useIntersectionObserver = (options: any) => {
   const [elementRef, setElementRef] = useState(null);
   const [entry, setEntry] = useState(null);
 
@@ -45,7 +50,7 @@ const useIntersectionObserver = (options) => {
   return [setElementRef, entry];
 };
 
-const AnimateOnScroll = ({ children, className = '', id = '' }) => {
+const AnimateOnScroll = ({ children, className = '', id = '' }: any) => {
   const [ref, entry] = useIntersectionObserver({ threshold: 0.1 });
   const isVisible = entry?.isIntersecting;
   return (
@@ -55,7 +60,7 @@ const AnimateOnScroll = ({ children, className = '', id = '' }) => {
   );
 };
 
-const FaqItem = ({ question, answer }) => {
+const FaqItem = ({ question, answer }: any) => {
   const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="border-b border-border/50">
@@ -70,63 +75,59 @@ const FaqItem = ({ question, answer }) => {
   );
 };
 
-// --- COMPONENTE PARA O EFEITO DE FUNDO ---
-const FloatingSpheresBackground = () => (
-  <ul className="floating-spheres">
-    {Array.from({ length: 6 }).map((_, i) => <li key={i}></li>)}
-  </ul>
-);
-
-
 // --- COMPONENTE PRINCIPAL ---
 
 const LandingPage = () => {
-  gsap.registerPlugin(ScrollTrigger); 
+  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin); 
 
-  const navigate = useNavigate()
-  const { resetToDefaultColors } = useColorTheme()
-  const [displayText, setDisplayText] = useState("")
-  const [currentWordIndex, setCurrentWordIndex] = useState(0)
-  const [currentCharIndex, setCurrentCharIndex] = useState(0)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [waitingToDelete, setWaitingToDelete] = useState(false)
-  const words = ["atendimentos", "agendamentos", "ganhos", "clientes"]
+  const navigate = useNavigate();
+  const { resetToDefaultColors } = useColorTheme();
+  const [displayText, setDisplayText] = useState("");
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentCharIndex, setCurrentCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [waitingToDelete, setWaitingToDelete] = useState(false);
+  const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
 
   const sectionPinRef = useRef(null);
   const trackRef = useRef(null);
+  const stackingPinRef = useRef(null);
+  
+  const [player, setPlayer] = useState<any>(null);
+  const [isPlaying, setIsPlaying] = useState(true);
 
   useEffect(() => {
-    document.documentElement.classList.remove('dark')
-    document.documentElement.classList.add('light')
-    document.documentElement.setAttribute('data-theme', 'light')
-    document.body.style.colorScheme = 'light'
-    resetToDefaultColors()
-    return () => { document.body.style.colorScheme = '' }
-  }, [resetToDefaultColors])
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.body.style.colorScheme = 'light';
+    resetToDefaultColors();
+    return () => { document.body.style.colorScheme = '' };
+  }, [resetToDefaultColors]);
 
   useEffect(() => {
-    const word = words[currentWordIndex]
-    let timeout: NodeJS.Timeout
+    const word = words[currentWordIndex];
+    let timeout: NodeJS.Timeout;
     if (waitingToDelete) {
-      timeout = setTimeout(() => { setWaitingToDelete(false); setIsDeleting(true); }, 2000)
+      timeout = setTimeout(() => { setWaitingToDelete(false); setIsDeleting(true); }, 2000);
     } else if (isDeleting) {
       if (currentCharIndex > 0) {
-        timeout = setTimeout(() => { setCurrentCharIndex(prev => prev - 1); setDisplayText(word.substring(0, currentCharIndex - 1)); }, 75)
+        timeout = setTimeout(() => { setCurrentCharIndex(prev => prev - 1); setDisplayText(word.substring(0, currentCharIndex - 1)); }, 75);
       } else {
         setIsDeleting(false); setCurrentWordIndex(prev => (prev + 1) % words.length);
       }
     } else {
       if (currentCharIndex < word.length) {
-        timeout = setTimeout(() => { setCurrentCharIndex(prev => prev + 1); setDisplayText(word.substring(0, currentCharIndex + 1)); }, 150)
+        timeout = setTimeout(() => { setCurrentCharIndex(prev => prev + 1); setDisplayText(word.substring(0, currentCharIndex + 1)); }, 150);
       } else if (!waitingToDelete) {
         setWaitingToDelete(true);
       }
     }
-    return () => clearTimeout(timeout)
-  }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete])
+    return () => clearTimeout(timeout);
+  }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
@@ -136,33 +137,49 @@ const LandingPage = () => {
       const track = trackRef.current;
       if (!track) return;
       
-      const cards = gsap.utils.toArray(".feature-card-large");
-      if (cards.length === 0) return;
+      const allCards = gsap.utils.toArray<HTMLElement>(".feature-card-large");
+      if (allCards.length < 2) return;
+      
+      const featureCards = allCards.slice(1, -1);
 
+      const cardWidth = 320;
+      const gap = 32;
+      const offset = cardWidth + gap;
+      
       const totalScroll = track.scrollWidth - window.innerWidth;
+      const animationDistance = totalScroll - (2 * offset);
 
-      gsap.to(track, {
-        x: -totalScroll,
-        ease: "none",
-        scrollTrigger: {
-          trigger: sectionPinRef.current,
-          pin: true,
-        scrub: 1.8,
-        end: () => `+=${totalScroll}`,
-        invalidateOnRefresh: true,
-        onUpdate: (self) => {
-          const viewportCenter = window.innerWidth / 2;
-          cards.forEach((card) => {
-            const cardElement = card as HTMLElement;
-            const cardRect = cardElement.getBoundingClientRect();
-            const cardCenter = cardRect.left + cardRect.width / 2;
-            const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
-            const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
-            gsap.to(cardElement, { scale: scale, ease: "power1.out", duration: 0.5 });
-          });
+      gsap.fromTo(track,
+        {
+          x: -offset
         },
-      },
-    });
+        {
+          x: -(totalScroll - offset),
+          ease: "none",
+          scrollTrigger: {
+            trigger: sectionPinRef.current,
+            pin: true,
+            scrub: 1.8,
+            start: `top top`,
+            end: () => `+=${animationDistance}`,
+            invalidateOnRefresh: true,
+            onUpdate: (self: any) => {
+              const viewportCenter = window.innerWidth / 2;
+              
+              featureCards.forEach((card) => {
+                const cardRect = card.getBoundingClientRect();
+                const cardCenter = cardRect.left + cardRect.width / 2;
+                const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
+                const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
+                gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
+              });
+
+              gsap.to(allCards[0], { scale: 0.8, ease: "power1.out", duration: 0.5 });
+              gsap.to(allCards[allCards.length - 1], { scale: 0.8, ease: "power1.out", duration: 0.5 });
+            },
+          },
+        }
+      );
       
       ScrollTrigger.refresh();
 
@@ -171,23 +188,78 @@ const LandingPage = () => {
     return () => ctx.revert();
   }, []);
 
+  useLayoutEffect(() => {
+    const pinEl = stackingPinRef.current;
+    if (!pinEl) return;
+    
+    const cards = gsap.utils.toArray<HTMLElement>(".stacking-card");
+    if (cards.length === 0) return;
+    
+    let ctx = gsap.context(() => {
+      gsap.set(cards[0], { yPercent: 0, opacity: 1 });
+      gsap.set(cards.slice(1), { yPercent: 100, opacity: 0 });
+
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          trigger: pinEl,
+          pin: true,
+          start: "top top",
+          end: "+=2000",
+          scrub: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+      
+      timeline.to({}, { duration: 0.2 });
+
+      timeline.to(cards[0], {
+        scale: 0.90, 
+        yPercent: -10, 
+        ease: "power2.inOut"
+      });
+      timeline.to(cards[1], {
+        yPercent: 0,
+        opacity: 1,
+        ease: "power2.inOut"
+      }, "<"); 
+
+      timeline.to({}, { duration: 0.5 });
+      
+      timeline.to(cards[1], {
+        scale: 0.95, 
+        yPercent: -5, 
+        ease: "power2.inOut"
+      });
+      timeline.to(cards[2], {
+        yPercent: 0,
+        opacity: 1,
+        ease: "power2.inOut"
+      }, "<");
+
+    }, stackingPinRef);
+    
+    return () => ctx.revert();
+  }, []);
+
+  const handleScrollToFeatures = () => {
+    gsap.to(window, { duration: 1.2, scrollTo: "#funcionalidades", ease: "power2.inOut" });
+  };
+
 
   const features = [
+    { icon: Globe, title: "Página Pública", description: "Crie uma página profissional para que novos clientes possam te encontrar e agendar uma consulta." },
     { icon: Calendar, title: "Agendamento Inteligente", description: "Otimize sua rotina com uma agenda clara, evitando conflitos e maximizando seu tempo." },
     { icon: Users, title: "Gestão de Clientes", description: "Centralize informações, histórico e progresso dos pacientes em um prontuário seguro e de fácil acesso." },
     { icon: DollarSign, title: "Controle Financeiro", description: "Acompanhe pagamentos, despesas e sua receita de forma automatizada e sem complicações." },
-    { icon: TrendingUp, title: "Relatórios Estratégicos", description: "Obtenha insights valiosos sobre o crescimento da sua prática com dados claros e objetivos." },
+    { icon: BarChart, title: "Metas e Evolução", description: "Acompanhe o progresso dos seus clientes com gráficos e anotações de evolução." },
     { icon: Lock, title: "Prontuários Seguros", description: "Dados criptografados e em conformidade com as normas de segurança para sua tranquilidade." },
-    { icon: Gift, title: "Programa de Indicação", description: "Acreditamos no poder da comunidade. Indique o TherapyPro para colegas e receba uma comissão a cada nova assinatura gerada." },
-    { icon: Globe, title: "Página Pública", description: "Crie uma página profissional para que novos clientes possam te encontrar e agendar uma consulta." },
-    { icon: BarChart, title: "Metas e Evolução", description: "Acompanhe o progresso dos seus clientes com gráficos e anotações de evolução." }
-  ]
+  ];
 
   const professionals = [
     { name: "Psicólogos", icon: Brain }, { name: "Psicanalistas", icon: BookOpen }, { name: "Terapeutas", icon: Heart },
     { name: "Coaches", icon: Target }, { name: "Psiquiatras", icon: Activity }, { name: "Terapeutas Ocupacionais", icon: GraduationCap },
     { name: "Consultores", icon: MessageCircle }, { name: "Mentores", icon: Shield },
-  ]
+  ];
   
   const testimonials = [
     { name: "Dr. Ana Costa", role: "Psicóloga Clínica", text: "O TherapyPro revolucionou a gestão do meu consultório. Agora tenho mais tempo para focar no que realmente importa: meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=1" },
@@ -196,7 +268,7 @@ const LandingPage = () => {
     { name: "Dr. Ricardo Souza", role: "Psiquiatra", text: "A segurança dos prontuários era minha maior preocupação. Com o TherapyPro, sinto total confiança na proteção dos dados dos meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=68" },
     { name: "Mariana Lima", role: "Coach de Carreira", text: "Uso para gerenciar meus clientes e pagamentos. É simples, direto e muito eficiente. Recomendo!", imgSrc: "https://i.pravatar.cc/150?img=49" },
     { name: "Fernando Guimarães", role: "Terapeuta Holístico", text: "O suporte é incrível e a plataforma está sempre evoluindo. Sinto que minhas sugestões são ouvidas.", imgSrc: "https://i.pravatar.cc/150?img=53" },
-  ]
+  ];
   
   const faqItems = [
     { question: "O TherapyPro é seguro para os dados dos meus pacientes?", answer: "Sim. A segurança é nossa prioridade máxima. Utilizamos criptografia de ponta para proteger todos os dados e seguimos as melhores práticas de segurança, em conformidade com as normas de proteção de dados." },
@@ -209,16 +281,43 @@ const LandingPage = () => {
     { name: "Básico", price: { monthly: "R$ 0", annually: "R$ 0" }, period: { monthly: "/mês", annually: "/ano" }, description: "Ideal para começar", features: ["Até 4 sessões por cliente", "Agendamento básico", "Suporte por email"], highlighted: false, cta: "Acessar", planId: "basico" },
     { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 299,90" }, period: { monthly: "/mês", annually: "/ano" }, subtext: "equivale a R$ 24,99/mês", description: "Para profissionais em crescimento", features: ["Até 20 clientes", "Sessões ilimitadas", "Histórico básico", "Agendamento online", "Suporte prioritário"], highlighted: false, cta: "Assinar Profissional", planId: "pro" },
     { name: "Premium", price: { monthly: "R$ 59,90", annually: "R$ 599,90" }, period: { monthly: "/mês", annually: "/ano" }, subtext: "equivale a R$ 49,99/mês", description: "Máximo poder e recursos", features: ["Clientes ilimitados", "Histórico completo", "Relatórios em PDF", "Integração WhatsApp", "Backup automático"], highlighted: true, cta: "Assinar Premium", planId: "premium" }
-  ]
+  ];
+
+  const systemInActionFeatures = [
+    {
+      icon: BarChart3,
+      title: "Dashboard Inteligente",
+      description: "Visualize todas as métricas importantes da sua prática em um só lugar. Acompanhe receita mensal, sessões realizadas e estatísticas de crescimento com uma clareza sem precedentes.",
+      features: ["Métricas em tempo real", "Gráficos de produtividade"],
+    },
+    {
+      icon: Calendar,
+      title: "Agenda Avançada",
+      description: "Gerencie seus agendamentos com facilidade e precisão. Visualize por dia, semana ou mês e sincronize automaticamente com o Google Calendar para nunca perder um compromisso.",
+      features: ["Arrastar e soltar para reagendar", "Integração com Google Calendar"],
+    },
+    {
+      icon: Users,
+      title: "Gestão Completa de Clientes",
+      description: "Mantenha fichas completas com histórico detalhado de sessões e anotações clínicas. Tudo armazenado de forma segura e acessível, com total privacidade.",
+      features: ["Fichas clínicas completas", "Segurança e privacidade total"],
+    }
+  ];
 
   const handleGetStarted = (planId?: string) => {
     navigate(planId === 'basico' || !planId ? '/login' : `/upgrade?plan=${planId}`);
   };
 
+  // ESTILO PARA OS LOGOS - APLICADO DIRETAMENTE AQUI PARA GARANTIR QUE FUNCIONE
+  const techLogoStyle = {
+    height: '28px',
+    width: 'auto',
+    opacity: '0.6',
+    filter: 'grayscale(100%) brightness(1.2)'
+  };
+
   return (
     <div className="landing-page-wrapper">
-      <FloatingSpheresBackground />
-      
       <header className="border-b border-border/20 backdrop-blur-sm sticky top-0 z-50 bg-background/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -241,12 +340,48 @@ const LandingPage = () => {
       </header>
 
       <main>
-        <div id="inicio" className="hero-features-wrapper">
-          <section className="pt-16 pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
-            <AnimateOnScroll className="max-w-3xl mx-auto text-center">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4"><div className="text-center">Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span></div><div className="text-center">com facilidade</div></h1>
-              <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center"><Button size="lg" className="bg-gradient-primary hover:opacity-90 text-lg px-8 py-6 text-white shadow-primary hover:shadow-elegant transition-all" onClick={() => handleGetStarted()}>Comece a usar gratuitamente <ArrowRight className="w-5 h-5 ml-2" /></Button></div>
+        <div className="home-video-wrapper">
+          <div className="background-animation-container">
+            <div className="blob blob-1"></div>
+          </div>
+
+          <div id="inicio" className="hero-features-wrapper">
+            <section className="pt-16 pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
+              <AnimateOnScroll className="max-w-3xl mx-auto text-center">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4"><div className="text-center">Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span></div><div className="text-center">com facilidade</div></h1>
+                <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center"><Button size="lg" className="bg-gradient-primary hover:opacity-90 text-lg px-8 py-6 text-white shadow-primary hover:shadow-elegant transition-all" onClick={() => handleGetStarted()}>Comece a usar gratuitamente <ArrowRight className="w-5 h-5 ml-2" /></Button></div>
+              </AnimateOnScroll>
+            </section>
+          </div>
+
+          <section id="video-apresentacao" className="bg-background">
+            <AnimateOnScroll className="max-w-5xl mx-auto text-center">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Conheça o TherapyPro em Ação</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
+                Veja como nossa plataforma pode transformar a gestão do seu consultório em menos de 2 minutos.
+              </p>
+              <div className="video-player-container">
+                <iframe
+                  src="https://www.youtube.com/embed/_nGgpa5NLOg?si=3ES6z-h31F519C3o&autoplay=1&mute=1&loop=1&playlist=_nGgpa5NLOg&controls=1"
+                  title="YouTube video player"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen>
+                </iframe>
+              </div>
+              
+              {/* ALTERAÇÃO: TÍTULO REMOVIDO E ESTILO APLICADO DIRETAMENTE NOS LOGOS */}
+              <div className="mt-12">
+                <div className="tech-logos">
+                  <div className="flex justify-center items-center gap-8 md:gap-12">
+                    <img src={googleLogo} alt="Google" style={techLogoStyle} />
+                    <img src={stripeLogo} alt="Stripe" style={techLogoStyle} />
+                    <img src={supabaseLogo} alt="Supabase" style={techLogoStyle} />
+                    <img src={cloudflareLogo} alt="Cloudflare" style={techLogoStyle} />
+                  </div>
+                </div>
+              </div>
             </AnimateOnScroll>
           </section>
         </div>
@@ -262,6 +397,12 @@ const LandingPage = () => {
 
             <div className="hidden lg:flex items-center h-full w-full fade-edges overflow-hidden">
               <div ref={trackRef} className="scroll-track">
+                
+                <div className="feature-card-large scroll-placeholder-card">
+                  <ChevronsRight className="w-10 h-10 mb-4 text-muted-foreground/50" />
+                  <h3 className="text-xl font-medium text-muted-foreground">Deslize para descobrir</h3>
+                </div>
+
                 {features.map((feature, index) => (
                   <div key={index} className="feature-card-large p-8 flex flex-col shadow-md">
                     <feature.icon className="icon-bg" strokeWidth={0.5} />
@@ -270,6 +411,12 @@ const LandingPage = () => {
                     <p className="text-muted-foreground leading-relaxed">{feature.description}</p>
                   </div>
                 ))}
+
+                <div className="feature-card-large scroll-placeholder-card">
+                  <Sparkles className="w-10 h-10 mb-4 text-muted-foreground/50" />
+                  <h3 className="text-xl font-medium text-muted-foreground">E muito mais por vir...</h3>
+                </div>
+
               </div>
             </div>
 
@@ -298,49 +445,29 @@ const LandingPage = () => {
           </AnimateOnScroll>
         </section>
         
-        <section id="sistema-em-acao" className="py-16 bg-background">
-          <div className="container mx-auto px-4">
-            <AnimateOnScroll className="text-center mb-16">
+        <section id="sistema-em-acao" className="sistema-em-acao-section">
+          <div ref={stackingPinRef} className="stacking-container">
+            <div className="stacking-title">
               <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Veja o sistema em ação</h2>
               <p className="text-xl text-muted-foreground max-w-3xl mx-auto">Interface profissional e intuitiva, desenvolvida para otimizar sua prática clínica.</p>
-            </AnimateOnScroll>
-            <div className="space-y-16">
-              <AnimateOnScroll id="dashboard" className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="order-2 lg:order-1 feature-description-container">
-                  <div className="icon-wrapper"><BarChart3 /></div>
-                  <h3>Dashboard Inteligente</h3>
-                  <p>Visualize todas as métricas importantes da sua prática em um só lugar. Acompanhe receita mensal, sessões realizadas e estatísticas de crescimento com uma clareza sem precedentes.</p>
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-3"><CheckCircle /><span>Métricas em tempo real</span></li>
-                    <li className="flex items-center gap-3"><CheckCircle /><span>Gráficos de produtividade</span></li>
-                  </ul>
-                </div>
-                <div className="order-1 lg:order-2 image-slide-container image-slide-right"><img src="/dashboard.png" alt="Dashboard do TherapyPro" /></div>
-              </AnimateOnScroll>
-              <AnimateOnScroll id="agenda" className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="image-slide-container image-slide-left"><img src="/agenda.png" alt="Agenda do TherapyPro" /></div>
-                <div className="feature-description-container">
-                  <div className="icon-wrapper"><Calendar /></div>
-                  <h3>Agenda Avançada</h3>
-                  <p>Gerencie seus agendamentos com facilidade e precisão. Visualize por dia, semana ou mês e sincronize automaticamente com o Google Calendar para nunca perder um compromisso.</p>
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-3"><CheckCircle /><span>Arrastar e soltar para reagendar</span></li>
-                    <li className="flex items-center gap-3"><CheckCircle /><span>Integração com Google Calendar</span></li>
-                  </ul>
-                </div>
-              </AnimateOnScroll>
-              <AnimateOnScroll id="clientes" className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
-                <div className="order-2 lg:order-1 feature-description-container">
-                  <div className="icon-wrapper bg-green-100"><Users className="text-green-700" /></div>
-                  <h3>Gestão Completa de Clientes</h3>
-                  <p>Mantenha fichas completas com histórico detalhado de sessões e anotações clínicas. Tudo armazenado de forma segura e acessível, com total privacidade.</p>
-                  <ul className="space-y-3">
-                    <li className="flex items-center gap-3"><CheckCircle /><span>Fichas clínicas completas</span></li>
-                    <li className="flex items-center gap-3"><CheckCircle /><span>Segurança e privacidade total</span></li>
-                  </ul>
-                </div>
-                <div className="order-1 lg:order-2 image-slide-container image-slide-right"><img src="/clientes.png" alt="Gestão de clientes do TherapyPro" /></div>
-              </AnimateOnScroll>
+            </div>
+            
+            <div className="cards-wrapper">
+              {systemInActionFeatures.map((feature, index) => {
+                const Icon = feature.icon;
+                return (
+                  <div key={index} className="stacking-card">
+                    <div className="icon-wrapper"><Icon /></div>
+                    <h3>{feature.title}</h3>
+                    <p>{feature.description}</p>
+                    <ul className="space-y-3">
+                      {feature.features.map((item, i) => (
+                        <li key={i}><CheckCircle /><span>{item}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </section>
@@ -421,7 +548,6 @@ const LandingPage = () => {
                   <Label htmlFor="billing-cycle" className={`${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'} transition-colors`}>Mensal</Label>
                   <Switch id="billing-cycle" checked={billingCycle === 'annually'} onCheckedChange={(checked) => setBillingCycle(checked ? 'annually' : 'monthly')} />
                   <Label htmlFor="billing-cycle" className={`${billingCycle === 'annually' ? 'text-foreground' : 'text-muted-foreground'} transition-colors`}>Anual</Label>
-                  {/* === ALTERAÇÃO AQUI === */}
                   <Badge variant="secondary" className="bg-green-100 text-green-700 transition-colors hover:bg-green-700 hover:text-white">Economize 2 meses</Badge>
                 </div>
               </div>
@@ -521,7 +647,7 @@ const LandingPage = () => {
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-border/50 text-center text-xs text-muted-foreground">
+          <div className="mt-8 pt-4 border-t border-border/50 text-center text-xs text-muted-foreground relative z-10">
             <p className="m-0">© 2025 TherapyPro. Todos os direitos reservados.</p>
           </div>
 

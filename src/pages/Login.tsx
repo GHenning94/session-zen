@@ -106,7 +106,8 @@ const Login = () => {
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
       {/* Efeito de Fundo Animado */}
       <div className="background-animation-container">
-        <div className="blob blob-1"></div>
+        {/* A LINHA ABAIXO FOI REMOVIDA */}
+        {/* <div className="blob blob-1"></div> */}
         <div className="blob blob-2"></div>
       </div>
 

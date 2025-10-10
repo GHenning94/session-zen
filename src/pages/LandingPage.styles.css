@@ -2,69 +2,120 @@
 
 .landing-page-wrapper {
   background-color: hsl(var(--background));
-  overflow-x: hidden;
+  overflow: clip;
   position: relative;
   z-index: 1; 
 }
 
-/* --- EFEITO DE ESFERAS FLUTUANTES --- */
-.floating-spheres {
-  position: fixed;
+/* ======================================================= */
+/* SOLUÇÃO FINAL DO BLOB (AGORA INVADINDO AS SEÇÕES)     */
+/* ======================================================= */
+
+.home-video-wrapper { 
+  position: relative;
+}
+
+.background-animation-container { 
+  position: absolute; 
+  top: 0; 
+  left: 0; 
+  width: 100%; 
+  height: 100%; 
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden; /* Corta o blob se ele sair deste contêiner maior */
+}
+
+.blob { 
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  will-change: transform;
+}
+
+.blob-1 {
+  width: 900px;   /* ALTERAÇÃO: Aumentado */
+  height: 900px;  /* ALTERAÇÃO: Aumentado */
+  top: 90%;
+  left: -15%;
+  transform: translateY(-50%);
+  background: hsl(var(--primary));
+  opacity: 0.15;
+  animation: move-blob-dynamic-1 22s ease-in-out infinite alternate;
+}
+
+@keyframes move-blob-dynamic-1 {
+  0% { transform: translateY(-50%) translate(0, 0) scale(1); }
+  50% { transform: translateY(-50%) translate(40px, -60px) scale(1.1); }
+  100% { transform: translateY(-50%) translate(-40px, 60px) scale(0.9); }
+}
+
+/* ======================================================= */
+/* NOVA SEÇÃO DE VÍDEO                                   */
+/* ======================================================= */
+
+#video-apresentacao {
+  padding: 6rem 1rem;
+}
+
+.video-player-container {
+  max-width: 1024px;
+  margin: 0 auto;
+  border-radius: 1.5rem;
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15), 0 0 15px rgba(0,0,0,0.05);
+  overflow: hidden;
+  border: 1px solid hsl(var(--border) / 0.5);
+  transform: translateZ(0);
+  position: relative;
+  padding-top: 56.25%; /* Proporção 16:9 */
+}
+
+.video-player-container #youtube-player,
+.video-player-container iframe {
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: -1;
-  margin: 0;
-  padding: 0;
 }
 
-.floating-spheres li {
+.video-controls {
   position: absolute;
-  display: block;
-  list-style: none;
-  background: hsl(var(--primary) / 0.2);
-  animation: float-up 25s linear infinite;
-  bottom: -150px;
-  border-radius: 50%;
-  filter: blur(1px);
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.3s ease;
 }
 
-.floating-spheres li:nth-child(1) { left: 25%; width: 25px; height: 25px; animation-delay: 0s; }
-.floating-spheres li:nth-child(2) { left: 10%; width: 10px; height: 10px; animation-delay: -2s; animation-duration: 12s; }
-.floating-spheres li:nth-child(3) { left: 70%; width: 8px; height: 8px; animation-delay: -4s; }
-.floating-spheres li:nth-child(4) { left: 40%; width: 30px; height: 30px; animation-delay: -7s; animation-duration: 18s; }
-.floating-spheres li:nth-child(5) { left: 65%; width: 12px; height: 12px; animation-delay: -3s; }
-.floating-spheres li:nth-child(6) { left: 85%; width: 35px; height: 35px; animation-delay: -5s; background: hsl(var(--primary) / 0.1); }
-
-
-@keyframes float-up {
-  0% { transform: translateY(0) rotate(0deg); opacity: 0; border-radius: 50%; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-100vh) rotate(720deg); opacity: 0; border-radius: 40%; }
+.video-player-container:hover .video-controls {
+  opacity: 1;
 }
 
-/* --- BUBBLES --- */
-.hero-features-wrapper, .plans-faq-wrapper { position: relative; }
-.background-animation-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
-.blob { position: absolute; border-radius: 50%; filter: blur(100px); opacity: 0.3; will-change: transform; }
+.play-pause-btn {
+  background-color: hsla(0, 0%, 100%, 0.2);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid hsla(0, 0%, 100%, 0.3);
+  border-radius: 9999px;
+  width: 4rem;
+  height: 4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
 
-.blob-3 { width: 450px; height: 450px; top: 20%; right: -15%; background: hsl(var(--primary)); animation: move-blob-dynamic-3 22s ease-in-out infinite alternate; }
+.play-pause-btn:hover {
+  background-color: hsla(0, 0%, 100%, 0.3);
+}
 
-@keyframes move-blob-dynamic-3 { 0% { transform: translate(0, 0) scale(1); } 50% { transform: translate(-100px, 50px) scale(1.1); } 100% { transform: translate(50px, 150px) scale(0.9); } }
 
 /* --- FADES NAS DIVISÓRIAS --- */
 @media (min-width: 1024px) {
-  /* Máscara da seção hero */
-  .section-fade-mask {
-    -webkit-mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-    mask-image: linear-gradient(to bottom, black 85%, transparent 100%);
-  }
-  
-  /* Fade ABAIXO dos Depoimentos (no topo da seção de Planos) */
   .plans-faq-wrapper::before {
     content: '';
     position: absolute;
@@ -77,8 +128,6 @@
     z-index: 5;
   }
   
-  /* === FADE ADICIONADO AQUI === */
-  /* Fade para CIMA no final das seções (Home e antes do CTA) */
   #inicio::after,
   .plans-faq-wrapper::after {
       content: '';
@@ -134,6 +183,24 @@
 .feature-card-large .icon-bg { position: absolute; bottom: -2rem; right: -2rem; font-size: 8rem; opacity: 0.05; color: hsl(var(--primary)); transition: transform 0.4s ease; }
 .feature-card-large:hover .icon-bg { transform: scale(1.2) rotate(10deg); }
 
+
+/* CARD PLACEHOLDER PARA INÍCIO E FIM DO SCROLL */
+.scroll-placeholder-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 2rem;
+}
+.scroll-placeholder-card:hover {
+  box-shadow: none !important;
+}
+
+
 .fade-edges {
   position: relative;
 }
@@ -167,74 +234,6 @@
   box-shadow: 0 0 0 2px hsl(var(--primary) / 0.8), 0 0 20px 5px hsl(var(--primary) / 0.2);
   pointer-events: none;
   z-index: 3;
-}
-
-/* --- O RESTANTE DO CSS --- */
-.image-slide-container {
-  overflow: hidden;
-  border-radius: 1.5rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03);
-  transition: none;
-  background-color: hsl(var(--card));
-}
-.fade-in-section.is-visible .image-slide-container { animation: grow-shadow 1.2s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
-.image-slide-container img {
-  width: 100%;
-  height: auto;
-  display: block;
-  transform: translateX(-100%);
-  opacity: 0;
-  transition: none;
-  border-radius: 1.5rem;
-}
-.fade-in-section.is-visible .image-slide-left img { animation: slide-in-left 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
-.fade-in-section.is-visible .image-slide-right img { transform: translateX(100%); animation: slide-in-right 1.0s cubic-bezier(0.23, 1, 0.32, 1) forwards; animation-delay: 200ms; }
-@keyframes slide-in-left { to { transform: translateX(0%); opacity: 1; } }
-@keyframes slide-in-right { to { transform: translateX(0%); opacity: 1; } }
-@keyframes grow-shadow { to { box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 5px 15px rgba(0, 0, 0, 0.03); } }
-
-.feature-description-container {
-  padding: 2rem;
-  background-color: hsl(var(--background));
-  border-radius: 1.5rem;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
-}
-.feature-description-container .icon-wrapper {
-  width: 4rem;
-  height: 4rem;
-  background: linear-gradient(45deg, hsl(var(--primary)/0.15), hsl(var(--primary)/0.05));
-  border-radius: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1.5rem;
-}
-.feature-description-container .icon-wrapper svg {
-  width: 2.25rem;
-  height: 2.25rem;
-  color: hsl(var(--primary));
-}
-.feature-description-container h3 {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: hsl(var(--foreground));
-  margin-bottom: 1rem;
-  line-height: 1.2;
-}
-.feature-description-container p {
-  font-size: 1.35rem;
-  line-height: 1.6;
-  color: hsl(var(--muted-foreground));
-  margin-bottom: 2rem;
-}
-.feature-description-container ul li {
-  font-size: 1.15rem;
-  color: hsl(var(--foreground));
-}
-.feature-description-container ul li svg {
-  width: 1.25rem;
-  height: 1.25rem;
-  color: hsl(var(--green-accent));
 }
 
 .marquee-container {
@@ -377,4 +376,94 @@
 .footer-social-link:hover {
   color: hsl(var(--primary));
   transform: scale(1.1);
+}
+
+.sistema-em-acao-section {
+  min-height: 100vh;
+  padding: 4rem 1rem;
+}
+
+.stacking-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.stacking-title {
+  text-align: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  flex-shrink: 0;
+}
+
+.cards-wrapper {
+  position: relative;
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden;
+}
+
+.stacking-card {
+  position: absolute;
+  width: 100%;
+  max-width: 64rem;
+  aspect-ratio: 16 / 9;
+  padding: 3rem 3.5rem;
+  background: hsl(var(--card));
+  border-radius: 1.5rem;
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 25px 50px -12px rgba(0,0,0,0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  will-change: transform;
+}
+
+.stacking-card .icon-wrapper {
+  width: 4rem;
+  height: 4rem;
+  background: linear-gradient(45deg, hsl(var(--primary)/0.15), hsl(var(--primary)/0.05));
+  border-radius: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.5rem;
+}
+.stacking-card .icon-wrapper svg {
+  width: 2.25rem;
+  height: 2.25rem;
+  color: hsl(var(--primary));
+}
+.stacking-card h3 {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+  margin-bottom: 1rem;
+  line-height: 1.2;
+}
+.stacking-card p {
+  font-size: 1.125rem;
+  line-height: 1.7;
+  color: hsl(var(--muted-foreground));
+  margin-bottom: 2rem;
+}
+.stacking-card ul {
+  list-style: none;
+  padding: 0;
+}
+.stacking-card ul li {
+  font-size: 1rem;
+  color: hsl(var(--foreground));
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.stacking-card ul li svg {
+  width: 1.25rem;
+  height: 1.25rem;
+  color: #22c55e;
+  flex-shrink: 0;
 }
