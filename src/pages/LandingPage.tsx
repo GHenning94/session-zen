@@ -9,8 +9,9 @@ import {
   GraduationCap, Target, BookOpen, Activity, BarChart3,
   MessageCircle, ChevronDown, Lock, Mail, Globe, BarChart,
   Gift, ChevronsLeftRight, Instagram, Linkedin, Twitter,
-  Sparkles, ChevronsRight,
-  Play, Pause // Ícones para o player de vídeo
+  Sparkles, ChevronsRight, Mouse,
+  Play, Pause,
+  Database, ShieldCheck
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
@@ -204,7 +205,7 @@ const LandingPage = () => {
           trigger: pinEl,
           pin: true,
           start: "top top",
-          end: "+=2000",
+          end: "+=1200",
           scrub: 1,
           invalidateOnRefresh: true,
         },
@@ -223,7 +224,7 @@ const LandingPage = () => {
         ease: "power2.inOut"
       }, "<"); 
 
-      timeline.to({}, { duration: 0.5 });
+      timeline.to({}, { duration: 0.2 });
       
       timeline.to(cards[1], {
         scale: 0.95, 
@@ -308,12 +309,11 @@ const LandingPage = () => {
     navigate(planId === 'basico' || !planId ? '/login' : `/upgrade?plan=${planId}`);
   };
 
-  // ESTILO PARA OS LOGOS - APLICADO DIRETAMENTE AQUI PARA GARANTIR QUE FUNCIONE
   const techLogoStyle = {
-    height: '28px',
+    height: '36px',
     width: 'auto',
-    opacity: '0.6',
-    filter: 'grayscale(100%) brightness(1.2)'
+    opacity: '0.2',
+    filter: 'grayscale(100%)'
   };
 
   return (
@@ -350,14 +350,19 @@ const LandingPage = () => {
               <AnimateOnScroll className="max-w-3xl mx-auto text-center">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4"><div className="text-center">Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span></div><div className="text-center">com facilidade</div></h1>
                 <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center"><Button size="lg" className="bg-gradient-primary hover:opacity-90 text-lg px-8 py-6 text-white shadow-primary hover:shadow-elegant transition-all" onClick={() => handleGetStarted()}>Comece a usar gratuitamente <ArrowRight className="w-5 h-5 ml-2" /></Button></div>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <Button size="lg" className="bg-gradient-primary hover:opacity-90 text-lg px-8 py-6 text-white shadow-primary hover:shadow-elegant transition-all" onClick={() => handleGetStarted()}>Comece a usar gratuitamente <ArrowRight className="w-5 h-5 ml-2" /></Button>
+                </div>
+
+                <Mouse className="scroll-down-mouse mt-20" />
+
               </AnimateOnScroll>
             </section>
           </div>
 
           <section id="video-apresentacao" className="bg-background">
             <AnimateOnScroll className="max-w-5xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Conheça o TherapyPro em Ação</h2>
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Conheça o TherapyPro</h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
                 Veja como nossa plataforma pode transformar a gestão do seu consultório em menos de 2 minutos.
               </p>
@@ -371,8 +376,7 @@ const LandingPage = () => {
                 </iframe>
               </div>
               
-              {/* ALTERAÇÃO: TÍTULO REMOVIDO E ESTILO APLICADO DIRETAMENTE NOS LOGOS */}
-              <div className="mt-12">
+              <div className="mt-20">
                 <div className="tech-logos">
                   <div className="flex justify-center items-center gap-8 md:gap-12">
                     <img src={googleLogo} alt="Google" style={techLogoStyle} />
@@ -421,7 +425,7 @@ const LandingPage = () => {
             </div>
 
             <div className="block lg:hidden px-4 sm:px-6">
-              <div className="flex gap-8 overflow-x-auto pb-4 scroll-track">
+              <div className="flex gap-8 overflow-x-auto pb-4 scroll-track-mobile">
                 {features.map((feature, index) => (
                   <div key={index} className="feature-card-large p-8 flex flex-col h-auto shadow-md">
                     <feature.icon className="icon-bg" strokeWidth={0.5} />
@@ -434,13 +438,18 @@ const LandingPage = () => {
             </div>
           </div>
         </section>
-
-        <section className="py-16 px-4 sm:px-6 lg:px-8 bg-background">
-          <AnimateOnScroll className="max-w-7xl mx-auto marquee-container">
-            <div className="text-center mb-16 space-y-4"><h2 className="text-3xl sm:text-4xl font-bold text-foreground">Criado para todos os profissionais do cuidado</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Desenvolvido para psicólogos, terapeutas, coaches e todos que dedicam suas vidas a ajudar os outros.</p></div>
-            <div className="space-y-4">
-              <div className="marquee"><div className="marquee-track">{[...professionals, ...professionals].map((prof, index) => (<div key={index} className={`marquee-item ${index % 2 === 0 ? 'dark' : 'light'}`}><prof.icon /><span>{prof.name}</span></div>))}</div></div>
-              <div className="marquee"><div className="marquee-track reverse">{[...professionals.slice().reverse(), ...professionals.slice().reverse()].map((prof, index) => (<div key={index} className={`marquee-item ${index % 2 === 0 ? 'light' : 'dark'}`}><prof.icon /><span>{prof.name}</span></div>))}</div></div>
+        
+        <section className="py-16 bg-background">
+          <AnimateOnScroll>
+            <div className="text-center mb-16 space-y-4 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground">Criado para todos os profissionais do cuidado</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Desenvolvido para psicólogos, terapeutas, coaches e todos que dedicam suas vidas a ajudar os outros.</p>
+            </div>
+            <div className="marquee-container">
+              <div className="space-y-4">
+                <div className="marquee"><div className="marquee-track">{[...professionals, ...professionals].map((prof, index) => (<div key={index} className={`marquee-item ${index % 2 === 0 ? 'dark' : 'light'}`}><prof.icon /><span>{prof.name}</span></div>))}</div></div>
+                <div className="marquee"><div className="marquee-track reverse">{[...professionals.slice().reverse(), ...professionals.slice().reverse()].map((prof, index) => (<div key={index} className={`marquee-item ${index % 2 === 0 ? 'light' : 'dark'}`}><prof.icon /><span>{prof.name}</span></div>))}</div></div>
+              </div>
             </div>
           </AnimateOnScroll>
         </section>
@@ -604,51 +613,69 @@ const LandingPage = () => {
 
       <footer className="site-footer">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row justify-between gap-8 text-center md:text-left">
-            <div className="space-y-4 flex flex-col items-center md:items-start">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
-                  <Stethoscope className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold text-foreground">TherapyPro</span>
-              </div>
-              <p className="text-muted-foreground text-sm max-w-xs">A plataforma completa para profissionais do cuidado.</p>
-              <div className="flex space-x-4 pt-2">
-                <a href="#" className="footer-social-link"><Instagram size={20} /></a>
-                <a href="#" className="footer-social-link"><Twitter size={20} /></a>
-                <a href="#" className="footer-social-link"><Linkedin size={20} /></a>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center text-center gap-8 sm:flex-row sm:items-start sm:text-left sm:gap-16 md:gap-24">
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground tracking-wider uppercase">Navegação</h3>
-                <ul className="grid grid-cols-3 gap-x-12 gap-y-3">
-                  <li><a href="#inicio" className="footer-link">Início</a></li>
-                  <li><a href="#planos" className="footer-link">Planos</a></li>
-                  <li><a href="#dashboard" className="footer-link">Dashboard</a></li>
-                  <li><a href="#funcionalidades" className="footer-link">Funcionalidades</a></li>
-                  <li><a href="#faq" className="footer-link">FAQ</a></li>
-                  <li><a href="#agenda" className="footer-link">Agenda</a></li>
-                  <li><a href="#sistema-em-acao" className="footer-link">Sistema</a></li>
-                  <li><a href="#depoimentos" className="footer-link">Depoimentos</a></li>
-                  <li><a href="#clientes" className="footer-link">Clientes</a></li>
-                </ul>
-              </div>
-
-              <div className="space-y-4">
-                <h3 className="text-sm font-semibold text-foreground tracking-wider uppercase">Recursos</h3>
-                <ul className="space-y-3">
-                  <li><a href="https://wa.me/5511945539883" target="_blank" rel="noopener noreferrer" className="footer-link">Suporte</a></li>
-                  <li><a href="/termos" className="footer-link">Termos de Serviço</a></li>
-                  <li><a href="/privacidade" className="footer-link">Política de Privacidade</a></li>
-                </ul>
+          
+          <div className="footer-top-section">
+            <div className="footer-newsletter">
+              <h3 className="text-lg font-semibold text-foreground">Fique por dentro das novidades</h3>
+              <p className="text-sm text-muted-foreground mt-2">Receba dicas e atualizações para otimizar sua prática profissional.</p>
+              <div className="footer-newsletter-form mt-4">
+                <input type="email" placeholder="Seu melhor e-mail" className="footer-newsletter-input" />
+                <Button size="icon" className="footer-newsletter-button rounded-full">
+                  <ArrowRight className="w-5 h-5" />
+                </Button>
               </div>
             </div>
           </div>
 
-          <div className="mt-8 pt-4 border-t border-border/50 text-center text-xs text-muted-foreground relative z-10">
-            <p className="m-0">© 2025 TherapyPro. Todos os direitos reservados.</p>
+          {/* ALTERAÇÃO: Nova estrutura centralizada */}
+          <div className="py-8 mb-8 border-b border-border/50 flex flex-col items-center gap-8">
+            {/* Logo e Descrição Centralizados */}
+            <div className="flex flex-col items-center text-center">
+              <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
+                    <Stethoscope className="w-6 h-6 text-white" />
+                  </div>
+                  <span className="text-xl font-bold text-foreground">TherapyPro</span>
+              </div>
+              <p className="text-muted-foreground text-sm max-w-xs mt-4">
+                  A plataforma completa para profissionais do cuidado.
+              </p>
+            </div>
+            {/* Links de Recursos Centralizados e Horizontais */}
+            <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
+              <li><a href="https://wa.me/5511945539883" target="_blank" rel="noopener noreferrer" className="footer-link">Suporte</a></li>
+              <li><a href="/termos" className="footer-link">Termos de Serviço</a></li>
+              <li><a href="/privacidade" className="footer-link">Política de Privacidade</a></li>
+            </ul>
+          </div>
+
+          <div className="footer-bottom-bar">
+            <p className="text-xs text-muted-foreground">© 2025 TherapyPro. Todos os direitos reservados.</p>
+            
+            <div className="footer-security-tags">
+              <div className="security-tag">
+                <Lock size={14} />
+                <span>Conexão Segura SSL</span>
+              </div>
+              <div className="security-tag">
+                <ShieldCheck size={14} />
+                <span>Pagamentos por Stripe</span>
+              </div>
+              <div className="security-tag">
+                <Database size={14} />
+                <span>Hospedado na Supabase</span>
+              </div>
+              <div className="security-tag">
+                <BookOpen size={14} />
+                <span>Conformidade LGPD</span>
+              </div>
+            </div>
+
+            <div className="flex space-x-4">
+              <a href="#" className="footer-social-link"><Instagram size={20} /></a>
+              <a href="#" className="footer-social-link"><Twitter size={20} /></a>
+              <a href="#" className="footer-social-link"><Linkedin size={20} /></a>
+            </div>
           </div>
 
         </div>
