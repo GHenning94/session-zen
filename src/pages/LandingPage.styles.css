@@ -23,7 +23,7 @@
   height: 100%; 
   z-index: 0;
   pointer-events: none;
-  overflow: hidden; /* Corta o blob se ele sair deste contêiner maior */
+  overflow: hidden;
 }
 
 .blob { 
@@ -37,7 +37,7 @@
   width: 1350px;
   height: 1350px;
   top: 90%;
-  left: -10%;     /* ALTERAÇÃO: Trazido mais para a direita */
+  left: -10%;
   transform: translateY(-50%);
   background: hsl(var(--primary));
   opacity: 0.15;
@@ -79,7 +79,8 @@
 /* ======================================================= */
 
 #video-apresentacao {
-  padding: 6rem 1rem 2rem;
+  padding: 0 1rem 6rem;
+  margin-top: -8rem; 
 }
 
 .video-player-container {
@@ -91,7 +92,7 @@
   border: 1px solid hsl(var(--border) / 0.5);
   transform: translateZ(0);
   position: relative;
-  padding-top: 56.25%; /* Proporção 16:9 */
+  padding-top: 56.25%;
 }
 
 .video-player-container #youtube-player,
@@ -103,11 +104,17 @@
   height: 100%;
 }
 
+/* --- ESTILOS PARA CONTROLES PERSONALIZADOS --- */
 .video-controls {
   position: absolute;
-  bottom: 1.5rem;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  padding: 1rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
   z-index: 10;
   opacity: 0;
   transition: opacity 0.3s ease;
@@ -117,25 +124,71 @@
   opacity: 1;
 }
 
-.play-pause-btn {
-  background-color: hsla(0, 0%, 100%, 0.2);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border: 1px solid hsla(0, 0%, 100%, 0.3);
-  border-radius: 9999px;
-  width: 4rem;
-  height: 4rem;
+.control-button {
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: white;
-  cursor: pointer;
   transition: background-color 0.2s ease;
 }
-
-.play-pause-btn:hover {
-  background-color: hsla(0, 0%, 100%, 0.3);
+.control-button:hover {
+  background-color: rgba(255, 255, 255, 0.2);
 }
+
+.time-display {
+  color: white;
+  font-size: 0.875rem;
+  min-width: 40px;
+  text-align: center;
+}
+
+.progress-bar {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.progress-bar::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 15px;
+  height: 15px;
+  background: hsl(var(--primary));
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.progress-bar::-moz-range-thumb {
+  width: 15px;
+  height: 15px;
+  background: hsl(var(--primary));
+  border-radius: 50%;
+  cursor: pointer;
+  border: none;
+}
+
+/* NOVO: Overlay para pausar/tocar vídeo com um clique */
+.video-click-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* Deixa um espaço na parte inferior para não interferir com a barra de progresso */
+  bottom: 60px; /* Ajuste este valor se a altura da sua barra de controles mudar */
+  z-index: 5;
+  cursor: pointer;
+}
+/* --- FIM DOS ESTILOS --- */
 
 
 /* --- FADES NAS DIVISÓRIAS --- */

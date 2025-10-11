@@ -10,7 +10,7 @@ import {
   MessageCircle, ChevronDown, Lock, Mail, Globe, BarChart,
   Gift, ChevronsLeftRight, Instagram, Linkedin, Twitter,
   Sparkles, ChevronsRight, Mouse,
-  Play, Pause,
+  Play, Pause, Volume2, VolumeX,
   Database, ShieldCheck
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
@@ -34,11 +34,22 @@ import { Flip } from "gsap/Flip";
 
 import "./LandingPage.styles.css";
 
+// --- INÍCIO: CORREÇÃO DE TIPAGEM DO TYPESCRIPT ---
+// Este bloco avisa ao TypeScript sobre o objeto YT e a função da API do YouTube na window.
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady?: () => void;
+  }
+}
+// --- FIM: CORREÇÃO DE TIPAGEM DO TYPESCRIPT ---
+
+
 // --- HOOKS E COMPONENTES AUXILIARES ---
 
-const useIntersectionObserver = (options: any) => {
-  const [elementRef, setElementRef] = useState(null);
-  const [entry, setEntry] = useState(null);
+const useIntersectionObserver = (options: IntersectionObserverInit) => {
+  const [elementRef, setElementRef] = useState<Element | null>(null);
+  const [entry, setEntry] = useState<IntersectionObserverEntry | null>(null);
 
   useEffect(() => {
     const observer = new IntersectionObserver(([entry]) => {
@@ -48,8 +59,9 @@ const useIntersectionObserver = (options: any) => {
     return () => { if (elementRef) observer.unobserve(elementRef) };
   }, [elementRef, options]);
 
-  return [setElementRef, entry];
+  return [setElementRef, entry] as const;
 };
+
 
 const AnimateOnScroll = ({ children, className = '', id = '' }: any) => {
   const [ref, entry] = useIntersectionObserver({ threshold: 0.1 });
@@ -97,8 +109,127 @@ const LandingPage = () => {
   const trackRef = useRef(null);
   const stackingPinRef = useRef(null);
   
-  const [player, setPlayer] = useState<any>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const playerRef = useRef<any>(null);
+  const [videoContainerRef, videoEntry] = useIntersectionObserver({ threshold: 0.5 });
+  const videoId = "_nGgpa5NLOg";
+  const [isPlayerReady, setIsPlayerReady] = useState(false);
+  
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState("0:00");
+  const [currentTime, setCurrentTime] = useState("0:00");
+  
+  const [userHasPaused, setUserHasPaused] = useState(false);
+
+  const formatTime = (timeInSeconds: number) => {
+    const minutes = Math.floor(timeInSeconds / 60);
+    const seconds = Math.floor(timeInSeconds % 60);
+    return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+  };
+
+  useEffect(() => {
+    const onYouTubeIframeAPIReady = () => {
+      if (playerRef.current) return;
+      
+      playerRef.current = new window.YT.Player('youtube-player', {
+        videoId: videoId,
+        playerVars: {
+          autoplay: 0, controls: 0, mute: 1, loop: 1,
+          playlist: videoId, showinfo: 0, modestbranding: 1, rel: 0
+        },
+        events: {
+          'onReady': (event: any) => {
+            event.target.mute();
+            setDuration(formatTime(event.target.getDuration()));
+            setIsPlayerReady(true);
+          },
+          'onStateChange': (event: any) => {
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              setIsPlaying(true);
+            } else {
+              setIsPlaying(false);
+            }
+          }
+        }
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      onYouTubeIframeAPIReady();
+    } else {
+      window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+      const script = document.getElementById('youtube-iframe-api');
+      if (!script) {
+        const tag = document.createElement('script');
+        tag.src = "https://www.youtube.com/iframe_api";
+        tag.id = 'youtube-iframe-api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+      }
+    }
+  }, []);
+  
+  useEffect(() => {
+    const player = playerRef.current;
+    if (isPlayerReady && player) {
+      if (videoEntry?.isIntersecting) {
+        if (!userHasPaused) {
+          player.playVideo();
+        }
+      } else {
+        player.pauseVideo();
+      }
+    }
+  }, [videoEntry, isPlayerReady, userHasPaused]);
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPlaying && isPlayerReady) {
+      interval = setInterval(() => {
+        const player = playerRef.current;
+        const currentTimeVal = player.getCurrentTime();
+        const durationVal = player.getDuration();
+        if (durationVal > 0) {
+          setProgress((currentTimeVal / durationVal) * 100);
+          setCurrentTime(formatTime(currentTimeVal));
+        }
+      }, 500);
+    }
+    return () => clearInterval(interval);
+  }, [isPlaying, isPlayerReady]);
+  
+  const handlePlayPause = () => {
+    if (!isPlayerReady) return;
+    if (isPlaying) {
+      playerRef.current?.pauseVideo();
+      setUserHasPaused(true);
+    } else {
+      playerRef.current?.playVideo();
+      setUserHasPaused(false);
+    }
+  };
+
+  const handleMuteToggle = () => {
+    if (!isPlayerReady) return;
+    if (isMuted) {
+      playerRef.current?.unMute();
+      setIsMuted(false);
+    } else {
+      playerRef.current?.mute();
+      setIsMuted(true);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!isPlayerReady) return;
+    const newProgress = Number(e.target.value);
+    setProgress(newProgress);
+    const durationVal = playerRef.current.getDuration();
+    const seekToTime = (durationVal * newProgress) / 100;
+    playerRef.current.seekTo(seekToTime);
+  };
+
 
   useEffect(() => {
     document.documentElement.classList.remove('dark');
@@ -346,7 +477,7 @@ const LandingPage = () => {
           </div>
 
           <div id="inicio" className="hero-features-wrapper">
-            <section className="pt-16 pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
+            <section className="min-h-screen flex flex-col justify-center pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
               <AnimateOnScroll className="max-w-3xl mx-auto text-center">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4"><div className="text-center">Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span></div><div className="text-center">com facilidade</div></h1>
                 <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
@@ -361,19 +492,28 @@ const LandingPage = () => {
           </div>
 
           <section id="video-apresentacao" className="bg-background">
-            <AnimateOnScroll className="max-w-5xl mx-auto text-center">
-              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Conheça o TherapyPro</h2>
-              <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-12">
-                Veja como nossa plataforma pode transformar a gestão do seu consultório em menos de 2 minutos.
-              </p>
-              <div className="video-player-container">
-                <iframe
-                  src="https://www.youtube.com/embed/_nGgpa5NLOg?si=3ES6z-h31F519C3o&autoplay=1&mute=1&loop=1&playlist=_nGgpa5NLOg&controls=1"
-                  title="YouTube video player"
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                  allowFullScreen>
-                </iframe>
+            <div className="max-w-5xl mx-auto text-center">
+              <div ref={videoContainerRef} className="video-player-container">
+                <div id="youtube-player"></div>
+                <div className="video-click-overlay" onClick={handlePlayPause}></div>
+                <div className="video-controls">
+                  <button onClick={handlePlayPause} className="control-button">
+                    {isPlaying ? <Pause size={20} /> : <Play size={20} />}
+                  </button>
+                  <span className="time-display">{currentTime}</span>
+                  <input
+                    type="range"
+                    min="0"
+                    max="100"
+                    value={progress}
+                    onInput={handleSeek}
+                    className="progress-bar"
+                  />
+                  <span className="time-display">{duration}</span>
+                  <button onClick={handleMuteToggle} className="control-button">
+                    {isMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                  </button>
+                </div>
               </div>
               
               <div className="mt-20">
@@ -386,7 +526,7 @@ const LandingPage = () => {
                   </div>
                 </div>
               </div>
-            </AnimateOnScroll>
+            </div>
           </section>
         </div>
 
@@ -627,9 +767,7 @@ const LandingPage = () => {
             </div>
           </div>
 
-          {/* ALTERAÇÃO: Nova estrutura centralizada */}
           <div className="py-8 mb-8 border-b border-border/50 flex flex-col items-center gap-8">
-            {/* Logo e Descrição Centralizados */}
             <div className="flex flex-col items-center text-center">
               <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-primary">
@@ -641,7 +779,6 @@ const LandingPage = () => {
                   A plataforma completa para profissionais do cuidado.
               </p>
             </div>
-            {/* Links de Recursos Centralizados e Horizontais */}
             <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm">
               <li><a href="https://wa.me/5511945539883" target="_blank" rel="noopener noreferrer" className="footer-link">Suporte</a></li>
               <li><a href="/termos" className="footer-link">Termos de Serviço</a></li>
