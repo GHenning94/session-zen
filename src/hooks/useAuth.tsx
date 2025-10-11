@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   }, [])
 
   const signUp = async (email: string, password: string, metadata?: any, captchaToken?: string) => {
-    const redirectUrl = `${window.location.origin}/`
+    const redirectUrl = `${window.location.origin}/auth/confirm`
     
     const { error } = await supabase.auth.signUp({
       email,

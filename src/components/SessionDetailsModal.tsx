@@ -19,6 +19,7 @@ import {
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface SessionDetailsModalProps {
   open: boolean
@@ -45,6 +46,8 @@ export const SessionDetailsModal = ({
   onViewPayment,
   onAddNote
 }: SessionDetailsModalProps) => {
+  const { avatarUrl } = useAvatarUrl(session?.clients?.avatar_url)
+  
   if (!session) return null
 
   const getStatusColor = (status: string) => {
@@ -73,15 +76,18 @@ export const SessionDetailsModal = ({
         <DialogHeader>
           <div className="flex items-center gap-4">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-              {session.clients?.avatar_url ? (
+              {avatarUrl ? (
                 <img 
-                  src={session.clients.avatar_url} 
+                  src={avatarUrl} 
                   alt={session.clients.nome} 
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                    e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                  }}
                 />
-              ) : (
-                <User className="w-8 h-8 text-muted-foreground" />
-              )}
+              ) : null}
+              <User className={`w-8 h-8 text-muted-foreground ${avatarUrl ? 'hidden' : ''}`} />
             </div>
             <div className="flex-1">
               <DialogTitle className="text-2xl">{session.clients?.nome || 'Cliente não encontrado'}</DialogTitle>

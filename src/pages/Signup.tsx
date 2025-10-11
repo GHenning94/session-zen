@@ -15,6 +15,8 @@ const Signup = () => {
   const [nome, setNome] = useState('')
   const [profissao, setProfissao] = useState('Psicólogo')
   const [isLoading, setIsLoading] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const { toast } = useToast()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -99,15 +101,8 @@ const Signup = () => {
           sessionStorage.setItem('pending_referral', referralId)
         }
 
-        toast({
-          title: "Conta criada com sucesso!",
-          description: referralId ? 
-            "Bem-vindo ao TherapyPro! Seu desconto de 20% será aplicado no primeiro mês." :
-            "Bem-vindo ao TherapyPro. Escolha seu plano para continuar.",
-        })
-        
-        // Redirecionar para página de upgrade/planos
-        navigate('/upgrade')
+        // Mostrar tela de sucesso com opção de reenviar
+        setShowSuccess(true)
       }
     } catch (error: any) {
       console.error('Erro no cadastro:', error)
@@ -119,6 +114,92 @@ const Signup = () => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleResendConfirmation = async () => {
+    if (resendCooldown > 0) return
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email
+      })
+
+      if (error) throw error
+
+      toast({
+        title: "E-mail reenviado!",
+        description: "Verifique sua caixa de entrada.",
+      })
+
+      // Cooldown de 60 segundos
+      setResendCooldown(60)
+      const interval = setInterval(() => {
+        setResendCooldown((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval)
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+    } catch (error: any) {
+      toast({
+        title: "Erro ao reenviar",
+        description: error.message || "Não foi possível reenviar o e-mail.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Tela de sucesso após cadastro
+  if (showSuccess) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl">
+            <CardHeader className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                  <UserPlus className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">Conta Criada!</CardTitle>
+                <CardDescription className="mt-4">
+                  Enviamos um link de confirmação para <strong>{email}</strong>
+                </CardDescription>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Clique no link para confirmar seu e-mail e acessar a plataforma.
+                </p>
+              </div>
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              <Button
+                onClick={handleResendConfirmation}
+                variant="outline"
+                className="w-full"
+                disabled={resendCooldown > 0}
+              >
+                {resendCooldown > 0 
+                  ? `Reenviar em ${resendCooldown}s` 
+                  : 'Reenviar Link'}
+              </Button>
+
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/login')}
+                className="w-full"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para Login
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
   }
 
   return (

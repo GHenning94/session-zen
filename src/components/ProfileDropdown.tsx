@@ -30,6 +30,7 @@ import { ThemeToggle } from "./ThemeToggle"
 import { ProfessionSelector } from "./ProfessionSelector"
 import { ColorPicker } from "./ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface Profile {
   nome: string
@@ -57,6 +58,9 @@ export const ProfileDropdown = () => {
   const [showProfessionSelector, setShowProfessionSelector] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  
+  // Hook para gerenciar avatar com signed URL
+  const { avatarUrl } = useAvatarUrl(profile.avatar_url)
 
   const passwordRequirements = [
     {
@@ -379,7 +383,7 @@ export const ProfileDropdown = () => {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="sm" className="h-8 w-8 rounded-full p-0">
             <Avatar className="h-8 w-8">
-              <AvatarImage src={profile.avatar_url} alt={profile.nome} />
+              <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
               <AvatarFallback>
                 <User className="w-4 h-4" />
               </AvatarFallback>
@@ -421,7 +425,7 @@ export const ProfileDropdown = () => {
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Avatar className="h-20 w-20">
-                    <AvatarImage src={profile.avatar_url} alt={profile.nome} />
+                    <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
                     <AvatarFallback>
                       <User className="w-10 h-10" />
                     </AvatarFallback>

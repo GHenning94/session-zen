@@ -36,6 +36,7 @@ import RedesSociais from "@/pages/RedesSociais";
 import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import Suporte from "@/pages/Suporte";
 import PublicRegistration from "@/pages/PublicRegistration";
+import AuthConfirm from "@/pages/AuthConfirm";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -74,6 +75,7 @@ const App = () => (
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
+                  <Route path="/auth/confirm" element={<AuthConfirm />} />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Dashboard />

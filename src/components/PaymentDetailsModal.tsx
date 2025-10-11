@@ -16,6 +16,7 @@ import {
   User
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface PaymentDetailsModalProps {
   open: boolean
@@ -34,6 +35,8 @@ export const PaymentDetailsModal = ({
   onViewSession,
   onMarkAsPaid
 }: PaymentDetailsModalProps) => {
+  const { avatarUrl } = useAvatarUrl(payment?.client_avatar)
+  
   if (!payment) return null
 
   const getStatusColor = (status: string) => {
@@ -71,18 +74,12 @@ export const PaymentDetailsModal = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-4">
-            {payment.client_avatar ? (
-              <Avatar className="w-16 h-16">
-                <AvatarImage src={payment.client_avatar} alt={payment.client} />
-                <AvatarFallback>
-                  <User className="w-8 h-8" />
-                </AvatarFallback>
-              </Avatar>
-            ) : (
-              <div className="w-16 h-16 rounded-full bg-gradient-card flex items-center justify-center">
-                <User className="w-8 h-8 text-primary" />
-              </div>
-            )}
+            <Avatar className="w-16 h-16">
+              <AvatarImage src={avatarUrl || undefined} alt={payment.client} />
+              <AvatarFallback>
+                <User className="w-8 h-8" />
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1">
               <DialogTitle className="text-2xl">{payment.client}</DialogTitle>
               <div className="flex items-center gap-2 mt-1">
