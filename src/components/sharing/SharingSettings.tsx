@@ -13,6 +13,7 @@ import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X } from "luci
 import { useToast } from "@/hooks/use-toast" 
 import { ImageCropper } from "@/components/ImageCropper"
 import { ImageUpload } from "@/components/sharing/ImageUpload"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface SharingSettingsProps {
   settings: Record<string, any>;
@@ -29,6 +30,7 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
   const [selectedImageForCrop, setSelectedImageForCrop] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
   const bookingLink = `https://therapypro.app.br/agendar/slug/${settings.slug || ''}`
+  const { avatarUrl } = useAvatarUrl(settings.public_avatar_url)
 
   const generateSlug = (name: string) => {
     return name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9\s-]/g, '').trim().replace(/\s+/g, '-').replace(/-+/g, '-')
@@ -121,7 +123,7 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                     onClick={() => fileInputRef.current?.click()}
                   >
                     <Avatar className="h-16 w-16">
-                      <AvatarImage src={settings.public_avatar_url} alt="Foto pública" />
+                      <AvatarImage src={avatarUrl || undefined} alt="Foto pública" />
                       <AvatarFallback>
                         <User className="w-8 h-8" />
                       </AvatarFallback>

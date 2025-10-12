@@ -53,60 +53,79 @@ const Dashboard = () => {
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
-  const [dashboardLoaded, setDashboardLoaded] = useState(false)
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
+  
+  // Granular cache timestamps (in milliseconds)
+  const [cacheTimestamps, setCacheTimestamps] = useState({
+    upcomingSessions: 0,
+    recentPayments: 0,
+    recentClients: 0,
+    dashboardStats: 0,
+    charts: 0
+  })
 
-  // Optimized loading with caching
-  const loadDashboardDataOptimized = useCallback(async (forceFresh = false) => {
+  // Invalidate specific cache sections
+  const invalidateCache = useCallback((sections: Array<keyof typeof cacheTimestamps>) => {
+    setCacheTimestamps(prev => {
+      const updated = { ...prev }
+      sections.forEach(section => {
+        updated[section] = 0
+      })
+      return updated
+    })
+  }, [])
+
+  // Optimized loading with granular caching
+  const loadDashboardDataOptimized = useCallback(async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>) => {
     if (!user) return
     
     try {
-      if (dashboardLoaded && !forceFresh) {
-        console.log('🚀 Dashboard em cache, otimizando carregamento...')
-        return
-      }
-      
-      console.log('🔄 Carregando dados do dashboard...', forceFresh ? '(FORCE FRESH)' : '')
-      await loadDashboardData(forceFresh)
+      console.log('🔄 Carregando dados do dashboard...', forceFresh ? '(FORCE FRESH)' : '', sections || 'ALL')
+      await loadDashboardData(forceFresh, sections)
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
     }
-  }, [user, dashboardLoaded])
+  }, [user])
 
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
-    if (user && !dashboardLoaded) {
+    if (user) {
       console.log('👤 Usuário encontrado, carregando dados...')
       loadDashboardDataOptimized()
     }
-  }, [user, loadDashboardDataOptimized, dashboardLoaded])
+  }, [user, loadDashboardDataOptimized])
 
   // Optimized event listeners with debouncing
   useEffect(() => {
     let timeoutId: NodeJS.Timeout
 
-    const handleDataChange = () => {
+    const handleDataChange = (sections?: Array<keyof typeof cacheTimestamps>) => {
       if (user) {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-          loadDashboardDataOptimized(true) // Force fresh
+          invalidateCache(sections || ['upcomingSessions', 'recentPayments', 'recentClients', 'dashboardStats', 'charts'])
+          loadDashboardDataOptimized(true, sections) // Force fresh
         }, 300) // Debounce for 300ms
       }
     }
 
-    window.addEventListener('storage', handleDataChange)
-    window.addEventListener('focus', handleDataChange)
-    window.addEventListener('clientAdded', handleDataChange)
-    window.addEventListener('paymentAdded', handleDataChange)
-    window.addEventListener('sessionAdded', handleDataChange)
+    const handleClientAdded = () => handleDataChange(['recentClients', 'dashboardStats'])
+    const handleSessionAdded = () => handleDataChange(['upcomingSessions', 'dashboardStats'])
+    const handlePaymentAdded = () => handleDataChange(['recentPayments', 'dashboardStats'])
+
+    window.addEventListener('storage', () => handleDataChange())
+    window.addEventListener('focus', () => handleDataChange())
+    window.addEventListener('clientAdded', handleClientAdded)
+    window.addEventListener('paymentAdded', handlePaymentAdded)
+    window.addEventListener('sessionAdded', handleSessionAdded)
     
     return () => {
       clearTimeout(timeoutId)
-      window.removeEventListener('storage', handleDataChange)
-      window.removeEventListener('focus', handleDataChange)
-      window.removeEventListener('clientAdded', handleDataChange)
-      window.removeEventListener('paymentAdded', handleDataChange)
-      window.removeEventListener('sessionAdded', handleDataChange)
+      window.removeEventListener('storage', () => handleDataChange())
+      window.removeEventListener('focus', () => handleDataChange())
+      window.removeEventListener('clientAdded', handleClientAdded)
+      window.removeEventListener('paymentAdded', handlePaymentAdded)
+      window.removeEventListener('sessionAdded', handleSessionAdded)
     }
   }, [user, loadDashboardDataOptimized])
 
@@ -124,7 +143,8 @@ const Dashboard = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         () => {
-          loadDashboardDataOptimized(true) // Force fresh
+          invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats'])
+          loadDashboardDataOptimized(true, ['upcomingSessions', 'recentPayments', 'dashboardStats'])
         }
       )
       .subscribe()
@@ -139,7 +159,8 @@ const Dashboard = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         () => {
-          loadDashboardDataOptimized(true) // Force fresh
+          invalidateCache(['recentClients', 'dashboardStats'])
+          loadDashboardDataOptimized(true, ['recentClients', 'dashboardStats'])
         }
       )
       .subscribe()
@@ -150,30 +171,35 @@ const Dashboard = () => {
     }
   }, [user, loadDashboardDataOptimized])
 
-  const loadDashboardData = async (forceFresh = false) => {
+  const loadDashboardData = async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>) => {
     try {
-      // Check cache first (unless force fresh)
-      const cacheKey = `dashboard_${user?.id}`
-      const cached = localStorage.getItem(cacheKey)
-      const cacheTime = localStorage.getItem(`${cacheKey}_time`)
+      const now = Date.now()
+      const CACHE_TIMES = {
+        upcomingSessions: 30000, // 30s
+        recentPayments: 30000, // 30s
+        recentClients: 60000, // 60s
+        dashboardStats: 60000, // 60s
+        charts: 300000 // 5min
+      }
       
-      // Reduce cache time to 30 seconds for critical sections
-      if (!forceFresh && cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 30000) {
-        console.log('🚀 Loading from cache...')
-        const data = JSON.parse(cached)
-        setDashboardData(data.dashboardData)
-        setUpcomingSessions(data.upcomingSessions)
-        setRecentPayments(data.recentPayments)
-        setRecentClients(data.recentClients)
-        setMonthlyChart(data.monthlyChart)
-        setTicketMedioChart(data.ticketMedioChart)
-        setTopClients(data.topClients)
-        setClientTicketMedio(data.clientTicketMedio)
-        setReceitaPorCanal(data.receitaPorCanal)
-        setDynamicReminders(data.dynamicReminders)
-        setDashboardLoaded(true)
+      // Check which sections need loading
+      const needsLoad = (section: keyof typeof cacheTimestamps) => {
+        if (forceFresh) return !sections || sections.includes(section)
+        return now - cacheTimestamps[section] > CACHE_TIMES[section]
+      }
+      
+      const loadUpcoming = needsLoad('upcomingSessions')
+      const loadPayments = needsLoad('recentPayments')
+      const loadClients = needsLoad('recentClients')
+      const loadStats = needsLoad('dashboardStats')
+      const loadCharts = needsLoad('charts')
+      
+      if (!loadUpcoming && !loadPayments && !loadClients && !loadStats && !loadCharts) {
+        console.log('🚀 All sections cached, skipping load')
         return
       }
+      
+      console.log('🔄 Loading sections:', { loadUpcoming, loadPayments, loadClients, loadStats, loadCharts })
       
       console.log('🔄 Loading fresh dashboard data...')
       
@@ -211,14 +237,14 @@ const Dashboard = () => {
       const pendingSessions = pendingSessionsResult.data
       const pendingRevenue = pendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
 
-      const now = new Date()
+      const nowDate = new Date()
       
       const upcomingData = upcomingDataResult.data
       const filteredUpcoming = upcomingData?.filter(session => {
         // Criar datetime completo da sessão para comparação precisa
         const sessionDateTime = new Date(`${session.data}T${session.horario}`)
         // Comparar com o momento atual
-        return sessionDateTime >= now
+        return sessionDateTime >= nowDate
       }).slice(0, 4)
       
       const paymentsData = paymentsDataResult.data
@@ -403,7 +429,7 @@ const Dashboard = () => {
         const [year, month, day] = nextSession.data.split('-')
         const sessionDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
         const sessionTime = new Date(`${nextSession.data}T${nextSession.horario}`)
-        const isToday = sessionDate.toDateString() === now.toDateString()
+        const isToday = sessionDate.toDateString() === nowDate.toDateString()
         
         if (isToday) {
           reminders.push(`${nextSession.clients?.nome || 'Cliente'} tem consulta às ${new Date(`2000-01-01T${nextSession.horario}`).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} hoje`)
@@ -460,23 +486,17 @@ const Dashboard = () => {
       setReceitaPorCanal(receitaPorCanalData)
       setCanalDataCache(receitaPorCanalData) // Cache all canal data for filtering
       setDynamicReminders(reminders)
-      setDashboardLoaded(true)
-
-      // Cache the data
-      const cacheData = {
-        dashboardData,
-        upcomingSessions: filteredUpcoming,
-        recentPayments: paymentsData,
-        recentClients: recentClientsData,
-        monthlyChart: chartData,
-        ticketMedioChart: ticketMedioData,
-        topClients: topClientsData,
-        clientTicketMedio: clientTicketMedioData,
-        receitaPorCanal: receitaPorCanalData,
-        dynamicReminders: reminders
-      }
-      localStorage.setItem(cacheKey, JSON.stringify(cacheData))
-      localStorage.setItem(`${cacheKey}_time`, Date.now().toString())
+      
+      // Update cache timestamps for loaded sections
+      setCacheTimestamps(prev => {
+        const updated = { ...prev }
+        if (loadStats) updated.dashboardStats = now
+        if (loadUpcoming) updated.upcomingSessions = now
+        if (loadPayments) updated.recentPayments = now
+        if (loadClients) updated.recentClients = now
+        if (loadCharts) updated.charts = now
+        return updated
+      })
 
       console.log('✅ Todos os dados foram atualizados no estado:')
       console.log('📊 Monthly Chart:', chartData.length, 'itens')

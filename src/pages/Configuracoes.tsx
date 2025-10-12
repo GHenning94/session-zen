@@ -235,6 +235,9 @@ const Configuracoes = () => {
                   <div className="space-y-2">
                     <Label>E-mail</Label>
                     <Input type="email" value={settings.email || ''} disabled />
+                    <p className="text-xs text-muted-foreground">
+                      Para alterar seu e-mail, entre em contato com o suporte
+                    </p>
                   </div>
                   <div className="space-y-2">
                     <Label>Telefone</Label>

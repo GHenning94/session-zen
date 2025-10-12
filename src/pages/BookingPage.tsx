@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle, Calendar } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 const BookingPage = () => {
   const { slug } = useParams<{ slug?: string }>()
@@ -28,6 +29,7 @@ const BookingPage = () => {
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [clientData, setClientData] = useState({ nome: "", email: "", telefone: "", observacoes: "" })
+  const { avatarUrl } = useAvatarUrl(profile?.public_avatar_url)
 
   // Force light theme and default colors for public booking page
   useEffect(() => {
@@ -236,8 +238,15 @@ const BookingPage = () => {
               {config.logo_url && (
                 <img src={config.logo_url} alt="Logo" className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
               )}
-              {profile.public_avatar_url && config.show_photo && (
-                <img src={profile.public_avatar_url} alt={profile.nome} className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
+              {avatarUrl && config.show_photo && (
+                <img 
+                  src={avatarUrl} 
+                  alt={profile.nome} 
+                  className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none'
+                  }}
+                />
               )}
               <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: config.brand_color }}>
                 {config.page_title || `${profile.nome}`}
