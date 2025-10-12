@@ -44,6 +44,11 @@ export const getSignedUrl = async (
       }
     }
 
+    // Normalize 'user-uploads/' prefix if present
+    if (filePath.startsWith('user-uploads/')) {
+      filePath = filePath.replace(/^user-uploads\//, '');
+    }
+
     const { data, error } = await supabase.storage
       .from('user-uploads')
       .createSignedUrl(filePath, expiresIn);
@@ -74,9 +79,12 @@ export const getSignedUrls = async (
     const paths = filePaths.filter(Boolean);
     if (paths.length === 0) return [];
 
+    // Normalize any paths that include the bucket prefix
+    const normalizedPaths = paths.map(p => p.replace(/^user-uploads\//, ''));
+
     const { data, error } = await supabase.storage
       .from('user-uploads')
-      .createSignedUrls(paths, expiresIn);
+      .createSignedUrls(normalizedPaths, expiresIn);
 
     if (error) {
       console.error('Error creating signed URLs:', error);

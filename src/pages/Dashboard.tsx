@@ -91,7 +91,7 @@ const Dashboard = () => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
     if (user) {
       console.log('👤 Usuário encontrado, carregando dados...')
-      loadDashboardDataOptimized()
+      loadDashboardDataOptimized(true)
     }
   }, [user, loadDashboardDataOptimized])
 

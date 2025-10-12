@@ -23,6 +23,7 @@ import {
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface ClientDetailsModalProps {
   open: boolean
@@ -45,6 +46,7 @@ export const ClientDetailsModal = ({
 }: ClientDetailsModalProps) => {
   if (!client) return null
 
+  const { avatarUrl } = useAvatarUrl(client?.avatar_url)
   const hasMedications = client.medicamentos && client.medicamentos.length > 0
 
   return (
@@ -52,12 +54,17 @@ export const ClientDetailsModal = ({
       <DialogContent className="sm:max-w-[600px] max-h-[90vh]">
         <DialogHeader>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-              {client.avatar_url ? (
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center overflow-hidden">
+              {avatarUrl ? (
                 <img 
-                  src={client.avatar_url} 
-                  alt={client.nome} 
+                  src={avatarUrl}
+                  alt={client.nome}
                   className="w-full h-full rounded-full object-cover"
+                  loading="lazy"
+                  decoding="async"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).style.display = 'none'
+                  }}
                 />
               ) : (
                 <User className="w-8 h-8 text-muted-foreground" />
