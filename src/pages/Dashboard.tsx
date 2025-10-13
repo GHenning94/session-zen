@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { ClientAvatar } from "@/components/ClientAvatar"
 import { 
   Calendar, 
   Users, 
@@ -792,12 +793,11 @@ const Dashboard = () => {
                      onClick={() => navigate(`/agenda?highlight=${session.id}&date=${session.data}`)}
                    >
                       <div className="flex items-center gap-4">
-                        <Avatar className="w-12 h-12">
-                          <AvatarImage src={session.clients?.avatar_url} alt={session.clients?.nome} />
-                          <AvatarFallback className="bg-gradient-card text-primary text-sm font-medium">
-                            {session.clients?.nome ? session.clients.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                          </AvatarFallback>
-                        </Avatar>
+                        <ClientAvatar 
+                          avatarPath={session.clients?.avatar_url}
+                          clientName={session.clients?.nome || 'Cliente'}
+                          size="lg"
+                        />
                         <div>
                           <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
                           <p className="text-sm text-muted-foreground">
@@ -1437,12 +1437,11 @@ const Dashboard = () => {
                         </div>
                       )}
                       
-                      <Avatar className="w-12 h-12">
-                        <AvatarImage src={client.avatar_url} alt={client.nome} />
-                        <AvatarFallback className="bg-gradient-card text-primary font-medium">
-                          {client.nome ? client.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                        </AvatarFallback>
-                      </Avatar>
+                      <ClientAvatar 
+                        avatarPath={client.avatar_url}
+                        clientName={client.nome}
+                        size="lg"
+                      />
                       
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{client.nome}</p>
@@ -1482,12 +1481,11 @@ const Dashboard = () => {
                 <div className="space-y-3">
                   {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
                     <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={client.avatar_url} alt={client.nome} />
-                        <AvatarFallback className="bg-gradient-card text-primary font-medium text-sm">
-                          {client.nome ? client.nome.split(' ').map((n: string) => n[0]).join('') : 'CL'}
-                        </AvatarFallback>
-                      </Avatar>
+                    <ClientAvatar 
+                      avatarPath={client.avatar_url}
+                      clientName={client.nome}
+                      size="md"
+                    />
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{client.nome}</p>
                         <p className="text-sm text-muted-foreground">

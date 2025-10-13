@@ -142,12 +142,9 @@ export const ImageCropper = ({
         throw error
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-uploads')
-        .getPublicUrl(fileName)
-
-      onCropComplete(publicUrl)
+      // Return storage path (private bucket). Consumers must use signed URLs to display.
+      const storagePath = `user-uploads/${fileName}`
+      onCropComplete(storagePath)
       onClose()
       toast({
         title: "Imagem recortada",

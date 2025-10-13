@@ -9,13 +9,10 @@ export const generateAvatarSignedUrls = async (avatarUrls: string[]): Promise<Re
   
   await Promise.all(
     uniqueUrls.map(async (url) => {
-      if (url && url.startsWith('user-uploads/')) {
+      try {
         const signedUrl = await getSignedUrl(url, 3600)
-        if (signedUrl) {
-          signedUrls[url] = signedUrl
-        }
-      } else if (url) {
-        // If it's already a full URL or doesn't need signing
+        signedUrls[url] = signedUrl || url
+      } catch {
         signedUrls[url] = url
       }
     })
