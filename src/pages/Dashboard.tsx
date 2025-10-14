@@ -477,8 +477,27 @@ const Dashboard = () => {
         completionRate: 94
       })
 
-      setUpcomingSessions(filteredUpcoming || [])
-      setRecentPayments(paymentsData || [])
+      // NOVO: Ordenar upcoming sessions e recent payments pela próxima data/hora
+      const sortedUpcoming = (filteredUpcoming || []).sort((a, b) => {
+        const now = new Date()
+        const dateTimeA = new Date(`${a.data}T${a.horario}`)
+        const dateTimeB = new Date(`${b.data}T${b.horario}`)
+        const diffA = Math.abs(dateTimeA.getTime() - now.getTime())
+        const diffB = Math.abs(dateTimeB.getTime() - now.getTime())
+        return diffA - diffB
+      })
+      
+      const sortedPayments = (paymentsData || []).sort((a, b) => {
+        const now = new Date()
+        const dateTimeA = new Date(`${a.data}T${a.horario}`)
+        const dateTimeB = new Date(`${b.data}T${b.horario}`)
+        const diffA = Math.abs(dateTimeA.getTime() - now.getTime())
+        const diffB = Math.abs(dateTimeB.getTime() - now.getTime())
+        return diffA - diffB
+      })
+      
+      setUpcomingSessions(sortedUpcoming)
+      setRecentPayments(sortedPayments)
       setRecentClients(recentClientsData || [])
       setMonthlyChart(chartData)
       setTicketMedioChart(ticketMedioData)

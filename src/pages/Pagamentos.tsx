@@ -241,16 +241,24 @@ const Pagamentos = () => {
     })
   }
 
-  // Filtrar e ordenar pagamentos
+  // Filtrar e ordenar pagamentos pela próxima data/hora (mais próxima do agora primeiro)
   const allPayments = getSessionPayments()
   const filteredPayments = filterByPeriod(allPayments).filter(payment => {
     const statusMatch = filterStatus === "todos" || payment.status === filterStatus
     const nameMatch = filterName === "" || payment.client.toLowerCase().includes(filterName.toLowerCase())
     return statusMatch && nameMatch
   }).sort((a, b) => {
-    const dateA = new Date(`${a.date} ${a.time}`)
-    const dateB = new Date(`${b.date} ${b.time}`)
-    return dateB.getTime() - dateA.getTime()
+    // NOVO: Ordenar pela sessão mais próxima da data/hora atual
+    const now = new Date()
+    const dateTimeA = new Date(`${a.date}T${a.time}`)
+    const dateTimeB = new Date(`${b.date}T${b.time}`)
+    
+    // Calcular diferença absoluta com o momento atual
+    const diffA = Math.abs(dateTimeA.getTime() - now.getTime())
+    const diffB = Math.abs(dateTimeB.getTime() - now.getTime())
+    
+    // Ordenar pela menor diferença (mais próxima do agora)
+    return diffA - diffB
   })
 
   const totalReceived = filteredPayments

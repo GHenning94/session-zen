@@ -124,8 +124,9 @@ const PublicRegistration = () => {
   }
 
   const handleMedicamentosChange = (value: string) => {
+    // CORREÇÃO: Não enviar array vazio, enviar array vazio real para evitar '[]'
     const medicamentos = value.split(',').map(med => med.trim()).filter(med => med)
-    handleInputChange('medicamentos', medicamentos)
+    handleInputChange('medicamentos', medicamentos.length > 0 ? medicamentos : [])
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -337,84 +338,99 @@ const PublicRegistration = () => {
                 </div>
               </div>
 
-              {/* Campos do cadastro completo */}
+              {/* CORREÇÃO: Adicionar TODOS os campos em ambos cadastros (exceto foto) */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="genero">Gênero</Label>
+                  <Select value={formData.genero} onValueChange={(value) => handleInputChange('genero', value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="masculino">Masculino</SelectItem>
+                      <SelectItem value="feminino">Feminino</SelectItem>
+                      <SelectItem value="outro">Outro</SelectItem>
+                      <SelectItem value="prefiro-nao-informar">Prefiro não informar</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="profissao">Profissão</Label>
+                  <Input
+                    id="profissao"
+                    value={formData.profissao}
+                    onChange={(e) => handleInputChange('profissao', e.target.value)}
+                  />
+                </div>
+              </div>
+
+              {isCompleteForm && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf">CPF</Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => handleInputChange('cpf', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="pais">País</Label>
+                    <Input
+                      id="pais"
+                      value={formData.pais}
+                      onChange={(e) => handleInputChange('pais', e.target.value)}
+                      placeholder="Digite o país"
+                    />
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <Label htmlFor="endereco">Endereço</Label>
+                <Textarea
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) => handleInputChange('endereco', e.target.value)}
+                  placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
+                  rows={2}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="plano_saude">Plano de Saúde</Label>
+                  <Input
+                    id="plano_saude"
+                    value={formData.plano_saude}
+                    onChange={(e) => handleInputChange('plano_saude', e.target.value)}
+                    placeholder="Digite para buscar..."
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="tratamento">Tratamento</Label>
+                  <Input
+                    id="tratamento"
+                    value={formData.tratamento}
+                    onChange={(e) => handleInputChange('tratamento', e.target.value)}
+                    placeholder="Digite para buscar..."
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="medicamentos">Medicamento:</Label>
+                <Textarea
+                  id="medicamentos"
+                  value={formData.medicamentos.join(', ')}
+                  onChange={(e) => handleMedicamentosChange(e.target.value)}
+                  placeholder="Digite para buscar..."
+                  rows={2}
+                />
+              </div>
+
               {isCompleteForm && (
                 <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="genero">Gênero</Label>
-                      <Select value={formData.genero} onValueChange={(value) => handleInputChange('genero', value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="masculino">Masculino</SelectItem>
-                          <SelectItem value="feminino">Feminino</SelectItem>
-                          <SelectItem value="outro">Outro</SelectItem>
-                          <SelectItem value="prefiro-nao-informar">Prefiro não informar</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="cpf">CPF</Label>
-                      <Input
-                        id="cpf"
-                        value={formData.cpf}
-                        onChange={(e) => handleInputChange('cpf', e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="endereco">Endereço</Label>
-                    <Textarea
-                      id="endereco"
-                      value={formData.endereco}
-                      onChange={(e) => handleInputChange('endereco', e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="profissao">Profissão</Label>
-                      <Input
-                        id="profissao"
-                        value={formData.profissao}
-                        onChange={(e) => handleInputChange('profissao', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="plano_saude">Plano de Saúde</Label>
-                      <Input
-                        id="plano_saude"
-                        value={formData.plano_saude}
-                        onChange={(e) => handleInputChange('plano_saude', e.target.value)}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="medicamentos">Medicamentos (separados por vírgula)</Label>
-                    <Textarea
-                      id="medicamentos"
-                      value={formData.medicamentos.join(', ')}
-                      onChange={(e) => handleMedicamentosChange(e.target.value)}
-                      placeholder="Ex: Fluoxetina 20mg, Rivotril 0.5mg"
-                      rows={2}
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tratamento">Tratamento Atual</Label>
-                    <Textarea
-                      id="tratamento"
-                      value={formData.tratamento}
-                      onChange={(e) => handleInputChange('tratamento', e.target.value)}
-                      rows={2}
-                    />
-                  </div>
-
                   <div className="flex items-center space-x-2">
                     <Switch
                       id="eh_crianca_adolescente"
@@ -425,41 +441,99 @@ const PublicRegistration = () => {
                   </div>
 
                   {formData.eh_crianca_adolescente && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="nome_pai">Nome do Pai</Label>
-                        <Input
-                          id="nome_pai"
-                          value={formData.nome_pai}
-                          onChange={(e) => handleInputChange('nome_pai', e.target.value)}
-                        />
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="nome_pai">Nome do Pai</Label>
+                          <Input
+                            id="nome_pai"
+                            value={formData.nome_pai}
+                            onChange={(e) => handleInputChange('nome_pai', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="telefone_pai">Telefone do Pai</Label>
+                          <Input
+                            id="telefone_pai"
+                            value={formData.telefone_pai}
+                            onChange={(e) => handleInputChange('telefone_pai', e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="telefone_pai">Telefone do Pai</Label>
-                        <Input
-                          id="telefone_pai"
-                          value={formData.telefone_pai}
-                          onChange={(e) => handleInputChange('telefone_pai', e.target.value)}
-                        />
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="nome_mae">Nome da Mãe</Label>
+                          <Input
+                            id="nome_mae"
+                            value={formData.nome_mae}
+                            onChange={(e) => handleInputChange('nome_mae', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="telefone_mae">Telefone da Mãe</Label>
+                          <Input
+                            id="telefone_mae"
+                            value={formData.telefone_mae}
+                            onChange={(e) => handleInputChange('telefone_mae', e.target.value)}
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="nome_mae">Nome da Mãe</Label>
-                        <Input
-                          id="nome_mae"
-                          value={formData.nome_mae}
-                          onChange={(e) => handleInputChange('nome_mae', e.target.value)}
+
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          id="emergencia_igual_pais"
+                          checked={formData.emergencia_igual_pais}
+                          onCheckedChange={(checked) => handleInputChange('emergencia_igual_pais', checked)}
                         />
+                        <Label htmlFor="emergencia_igual_pais">Contato de emergência igual aos pais</Label>
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="telefone_mae">Telefone da Mãe</Label>
-                        <Input
-                          id="telefone_mae"
-                          value={formData.telefone_mae}
-                          onChange={(e) => handleInputChange('telefone_mae', e.target.value)}
-                        />
-                      </div>
-                    </div>
+                    </>
                   )}
+
+                  {!formData.emergencia_igual_pais && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="contato_emergencia_1_nome">Contato Emergência 1 - Nome</Label>
+                          <Input
+                            id="contato_emergencia_1_nome"
+                            value={formData.contato_emergencia_1_nome}
+                            onChange={(e) => handleInputChange('contato_emergencia_1_nome', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="contato_emergencia_1_telefone">Contato Emergência 1 - Telefone</Label>
+                          <Input
+                            id="contato_emergencia_1_telefone"
+                            value={formData.contato_emergencia_1_telefone}
+                            onChange={(e) => handleInputChange('contato_emergencia_1_telefone', e.target.value)}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="contato_emergencia_2_nome">Contato Emergência 2 - Nome</Label>
+                          <Input
+                            id="contato_emergencia_2_nome"
+                            value={formData.contato_emergencia_2_nome}
+                            onChange={(e) => handleInputChange('contato_emergencia_2_nome', e.target.value)}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="contato_emergencia_2_telefone">Contato Emergência 2 - Telefone</Label>
+                          <Input
+                            id="contato_emergencia_2_telefone"
+                            value={formData.contato_emergencia_2_telefone}
+                            onChange={(e) => handleInputChange('contato_emergencia_2_telefone', e.target.value)}
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
