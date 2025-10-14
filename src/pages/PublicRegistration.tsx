@@ -535,27 +535,6 @@ const PublicRegistration = () => {
                 </>
               )}
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="contato_emergencia_1_nome">Contato de Emergência 1 - Nome</Label>
-                      <Input
-                        id="contato_emergencia_1_nome"
-                        value={formData.contato_emergencia_1_nome}
-                        onChange={(e) => handleInputChange('contato_emergencia_1_nome', e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="contato_emergencia_1_telefone">Contato de Emergência 1 - Telefone</Label>
-                      <Input
-                        id="contato_emergencia_1_telefone"
-                        value={formData.contato_emergencia_1_telefone}
-                        onChange={(e) => handleInputChange('contato_emergencia_1_telefone', e.target.value)}
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
-
               <Button 
                 type="submit" 
                 disabled={isSubmitting}

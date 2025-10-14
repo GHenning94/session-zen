@@ -395,7 +395,7 @@ const Dashboard = () => {
 
       const canalPayments = {}
       allPaymentMethods?.forEach(session => {
-        const metodo = session.metodo_pagamento || 'Não informado'
+        const metodo = session.metodo_pagamento || 'A definir'
         if (!canalPayments[metodo]) {
           canalPayments[metodo] = 0
         }
@@ -407,7 +407,7 @@ const Dashboard = () => {
         'cartao': '#6366F1', 
         'dinheiro': '#F59E0B',
         'transferencia': '#8B5CF6',
-        'Não informado': '#6B7280'
+        'A definir': '#6B7280'
       }
 
       const receitaPorCanalData = Object.entries(canalPayments)
@@ -596,7 +596,7 @@ const Dashboard = () => {
 
       const canalPayments = {}
       periodPaymentMethods?.forEach(session => {
-        const metodo = session.metodo_pagamento || 'Não informado'
+        const metodo = session.metodo_pagamento || 'A definir'
         if (!canalPayments[metodo]) {
           canalPayments[metodo] = 0
         }
@@ -608,7 +608,7 @@ const Dashboard = () => {
         'cartao': '#6366F1', 
         'dinheiro': '#F59E0B',
         'transferencia': '#8B5CF6',
-        'Não informado': '#6B7280'
+        'A definir': '#6B7280'
       }
 
       const filteredCanalData = Object.entries(canalPayments)

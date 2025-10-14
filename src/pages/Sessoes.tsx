@@ -373,9 +373,17 @@ export default function Sessoes() {
       return matchesStatus && matchesClient && matchesSearch && matchesDate
     })
     .sort((a, b) => {
-      const dateA = new Date(`${a.data} ${a.horario}`)
-      const dateB = new Date(`${b.data} ${b.horario}`)
-      return dateB.getTime() - dateA.getTime()
+      // NOVO: Ordenar pela sessão mais próxima da data/hora atual
+      const now = new Date()
+      const dateTimeA = new Date(`${a.data}T${a.horario}`)
+      const dateTimeB = new Date(`${b.data}T${b.horario}`)
+      
+      // Calcular diferença absoluta com o momento atual
+      const diffA = Math.abs(dateTimeA.getTime() - now.getTime())
+      const diffB = Math.abs(dateTimeB.getTime() - now.getTime())
+      
+      // Ordenar pela menor diferença (mais próxima do agora)
+      return diffA - diffB
     })
 
   const filteredNotes = sessionNotes.filter(note => {

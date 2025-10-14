@@ -311,66 +311,86 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5 text-primary" />
+      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0">
+        {/* Header com gradiente */}
+        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
+          <DialogTitle className="flex items-center gap-2 text-2xl">
+            <Plus className="w-6 h-6 text-primary" />
             {editingClient ? "Editar Paciente" : "Adicionar Paciente"}
           </DialogTitle>
-          <div className="flex items-center gap-4 mt-8">
+          <p className="text-sm text-muted-foreground mt-2">
+            {isQuickRegistration ? "Cadastro rápido - Apenas informações essenciais" : "Cadastro completo - Todas as informações do paciente"}
+          </p>
+        </div>
+        
+        <div className="p-6">
+          {/* Botões de tipo de cadastro com design melhorado */}
+          <div className="flex items-center gap-3 mb-6">
             <Button
               variant={isQuickRegistration ? "default" : "outline"}
-              size="sm"
+              size="lg"
               onClick={() => setIsQuickRegistration(true)}
-              className="flex items-center gap-2"
+              className={`flex-1 ${isQuickRegistration ? 'shadow-md' : ''}`}
             >
-              <Zap className="w-4 h-4" />
+              <Zap className="w-4 h-4 mr-2" />
               Cadastro rápido
             </Button>
             <Button
               variant={!isQuickRegistration ? "default" : "outline"}
-              size="sm"
+              size="lg"
               onClick={() => setIsQuickRegistration(false)}
-              className="flex items-center gap-2"
+              className={`flex-1 ${!isQuickRegistration ? 'shadow-md' : ''}`}
             >
-              <ArrowUpRight className="w-4 h-4" />
+              <ArrowUpRight className="w-4 h-4 mr-2" />
               Cadastro completo
             </Button>
           </div>
-        </DialogHeader>
-        
-        {!canAddMore && (
-          <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3 text-sm mt-6">
-            <p className="text-destructive font-medium">Limite atingido ({clients.length}/{planLimits.maxClients})</p>
-            <p className="text-muted-foreground">Faça upgrade do seu plano para adicionar mais clientes.</p>
-          </div>
-        )}
-        
-        <ScrollArea className="max-h-[60vh] pr-4 mt-6">
-          <div className="grid gap-4 py-4">
-            <div className="flex flex-col items-center gap-4">
-              <ClientAvatarUpload 
-                clientName={newClient.name || "Novo Cliente"}
-                currentAvatarUrl={newClient.avatarUrl}
-                onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
-                size="lg"
-              />
+          
+          {!canAddMore && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 mb-6">
+              <p className="text-destructive font-semibold">Limite atingido ({clients.length}/{planLimits.maxClients})</p>
+              <p className="text-sm text-muted-foreground">Faça upgrade do seu plano para adicionar mais clientes.</p>
             </div>
+          )}
+          
+          <ScrollArea className="max-h-[55vh] pr-4">
+            <div className="space-y-6">
+              {/* Card de foto do cliente */}
+              <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-xl p-6 border border-border/50">
+                <div className="flex flex-col items-center gap-4">
+                  <ClientAvatarUpload 
+                    clientName={newClient.name || "Novo Cliente"}
+                    currentAvatarUrl={newClient.avatarUrl}
+                    onAvatarChange={(url) => setNewClient({...newClient, avatarUrl: url})}
+                    size="lg"
+                  />
+                  <p className="text-sm text-muted-foreground text-center">
+                    Clique na foto para alterar
+                  </p>
+                </div>
+              </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox 
-                id="crianca-adolescente" 
-                checked={newClient.ehCriancaAdolescente}
-                onCheckedChange={(checked) => 
-                  setNewClient({...newClient, ehCriancaAdolescente: checked as boolean})
-                }
-                disabled={!canAddMore}
-              />
-              <Label htmlFor="crianca-adolescente">Criança/Adolescente</Label>
-            </div>
+              {/* Card de informações do paciente */}
+              <div className="bg-card rounded-xl p-6 border border-border/50 space-y-4 shadow-sm">
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="h-8 w-1 bg-primary rounded-full"></div>
+                  <h3 className="font-semibold text-lg">Informações do Paciente</h3>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <Checkbox 
+                    id="crianca-adolescente" 
+                    checked={newClient.ehCriancaAdolescente}
+                    onCheckedChange={(checked) => 
+                      setNewClient({...newClient, ehCriancaAdolescente: checked as boolean})
+                    }
+                    disabled={!canAddMore}
+                  />
+                  <Label htmlFor="crianca-adolescente">Criança/Adolescente</Label>
+                </div>
 
-            {/* NOME - sempre primeiro */}
-            <div className="grid gap-2">
+                {/* NOME - sempre primeiro */}
+                <div className="grid gap-2">
               <Label htmlFor="name">Nome *</Label>
               <Input 
                 id="name" 
@@ -750,24 +770,29 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 </div>
               )}
             </div>
-
           </div>
         </ScrollArea>
-
-        <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => {
-            resetForm()
-            onOpenChange(false)
-          }}>
-            Cancelar
-          </Button>
-          <Button 
-            className="bg-gradient-primary hover:opacity-90" 
-            onClick={handleSaveClient}
-            disabled={isLoading}
-          >
-            {isLoading ? "Salvando..." : (editingClient ? "Salvar Alterações" : "Cadastrar Cliente")}
-          </Button>
+          
+          {/* Botões de ação com design melhorado */}
+          <div className="flex gap-3 mt-6 pt-6 border-t">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                resetForm()
+                onOpenChange(false)
+              }}
+              className="flex-1"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={handleSaveClient} 
+              disabled={isLoading || !canAddMore}
+              className="flex-1 bg-gradient-primary hover:opacity-90 shadow-md"
+            >
+              {isLoading ? 'Salvando...' : editingClient ? 'Atualizar' : 'Cadastrar Cliente'}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
