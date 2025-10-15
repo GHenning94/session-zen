@@ -353,7 +353,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             </div>
           )}
           
-          <ScrollArea className="max-h-[55vh] pr-4">
+          <ScrollArea className="max-h-[calc(90vh-240px)] pr-4">
             <div className="space-y-6">
               {/* Card de foto do cliente */}
               <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-xl p-6 border border-border/50">
@@ -377,6 +377,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   <h3 className="font-semibold text-lg">Informações do Paciente</h3>
                 </div>
                 
+                {/* Checkbox disponível em ambos os modos */}
                 <div className="flex items-center space-x-2">
                   <Checkbox 
                     id="crianca-adolescente" 

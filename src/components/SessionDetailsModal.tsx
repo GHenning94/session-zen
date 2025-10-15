@@ -126,7 +126,9 @@ export const SessionDetailsModal = ({
                 <div>
                   <label className="text-sm text-muted-foreground">Método de Pagamento</label>
                   <p className="font-medium capitalize">
-                    {session.status === 'agendada' ? 'A definir' : (session.metodo_pagamento || 'Não informado')}
+                    {session.metodo_pagamento === 'A definir' || !session.metodo_pagamento 
+                      ? 'A definir' 
+                      : session.metodo_pagamento}
                   </p>
                 </div>
               </div>

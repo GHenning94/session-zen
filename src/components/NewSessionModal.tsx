@@ -161,7 +161,8 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
         horario: newSession.horario,
         valor: newSession.valor ? parseFloat(newSession.valor) : null,
         anotacoes: newSession.anotacoes,
-        status: 'agendada'
+        status: 'agendada',
+        metodo_pagamento: 'A definir'
       }
 
       const { error } = await supabase

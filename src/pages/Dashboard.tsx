@@ -477,23 +477,45 @@ const Dashboard = () => {
         completionRate: 94
       })
 
-      // NOVO: Ordenar upcoming sessions e recent payments pela próxima data/hora
+      // Ordenar upcoming sessions e recent payments (futuras primeiro, depois passadas)
       const sortedUpcoming = (filteredUpcoming || []).sort((a, b) => {
         const now = new Date()
         const dateTimeA = new Date(`${a.data}T${a.horario}`)
         const dateTimeB = new Date(`${b.data}T${b.horario}`)
-        const diffA = Math.abs(dateTimeA.getTime() - now.getTime())
-        const diffB = Math.abs(dateTimeB.getTime() - now.getTime())
-        return diffA - diffB
+        
+        const isFutureA = dateTimeA >= now
+        const isFutureB = dateTimeB >= now
+        
+        // Sessões futuras vêm primeiro
+        if (isFutureA && !isFutureB) return -1
+        if (!isFutureA && isFutureB) return 1
+        
+        // Se ambas são futuras ou ambas são passadas, ordenar pela mais próxima
+        if (isFutureA && isFutureB) {
+          return dateTimeA.getTime() - dateTimeB.getTime() // Mais próxima primeiro
+        } else {
+          return dateTimeB.getTime() - dateTimeA.getTime() // Mais recente primeiro
+        }
       })
       
       const sortedPayments = (paymentsData || []).sort((a, b) => {
         const now = new Date()
         const dateTimeA = new Date(`${a.data}T${a.horario}`)
         const dateTimeB = new Date(`${b.data}T${b.horario}`)
-        const diffA = Math.abs(dateTimeA.getTime() - now.getTime())
-        const diffB = Math.abs(dateTimeB.getTime() - now.getTime())
-        return diffA - diffB
+        
+        const isFutureA = dateTimeA >= now
+        const isFutureB = dateTimeB >= now
+        
+        // Pagamentos futuros vêm primeiro
+        if (isFutureA && !isFutureB) return -1
+        if (!isFutureA && isFutureB) return 1
+        
+        // Se ambos são futuros ou ambos são passados, ordenar pela mais próxima
+        if (isFutureA && isFutureB) {
+          return dateTimeA.getTime() - dateTimeB.getTime() // Mais próximo primeiro
+        } else {
+          return dateTimeB.getTime() - dateTimeA.getTime() // Mais recente primeiro
+        }
       })
       
       setUpcomingSessions(sortedUpcoming)
