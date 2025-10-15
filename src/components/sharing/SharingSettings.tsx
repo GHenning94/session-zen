@@ -74,8 +74,13 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
     setShowImageCropper(true)
   }
 
-  const handleCropComplete = (croppedImageUrl: string) => {
-    onSettingsChange('public_avatar_url', croppedImageUrl)
+  const handleCropComplete = (storagePath: string) => {
+    // ImageCropper agora retorna o caminho do storage privado
+    onSettingsChange('public_avatar_url', storagePath)
+    toast({
+      title: "Sucesso",
+      description: "Foto atualizada com sucesso!",
+    })
   }
 
   return (
