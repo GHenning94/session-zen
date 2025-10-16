@@ -40,6 +40,7 @@ const Pagamentos = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [filterPeriod, setFilterPeriod] = useState("todos")
   const [filterStatus, setFilterStatus] = useState("todos")
+  const [filterMethod, setFilterMethod] = useState("todos")
   const [filterName, setFilterName] = useState("")
   const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
@@ -130,6 +131,11 @@ const Pagamentos = () => {
       const status = calculatePaymentStatus(session.data, session.horario, session.status)
       const client = clients.find(c => c.id === session.client_id)
       
+      // Se o status do pagamento é pendente, atrasado ou cancelado, o método deve ser sempre "A definir"
+      const method = (status === 'pendente' || status === 'atrasado' || status === 'cancelado') 
+        ? 'A definir' 
+        : (session.metodo_pagamento || 'A definir')
+      
       return {
         id: session.id,
         client: getClientName(session.client_id),
@@ -138,7 +144,7 @@ const Pagamentos = () => {
         time: session.horario,
         value: session.valor || 0,
         status: status,
-        method: session.metodo_pagamento || 'A definir',
+        method: method,
         session_id: session.id,
         session_status: session.status
       }
@@ -246,7 +252,8 @@ const Pagamentos = () => {
   const filteredPayments = filterByPeriod(allPayments).filter(payment => {
     const statusMatch = filterStatus === "todos" || payment.status === filterStatus
     const nameMatch = filterName === "" || payment.client.toLowerCase().includes(filterName.toLowerCase())
-    return statusMatch && nameMatch
+    const methodMatch = filterMethod === "todos" || payment.method === filterMethod
+    return statusMatch && nameMatch && methodMatch
   }).sort((a, b) => {
     const now = new Date()
     const dateTimeA = new Date(`${a.date}T${a.time}`)
@@ -265,6 +272,17 @@ const Pagamentos = () => {
     } else {
       return dateTimeB.getTime() - dateTimeA.getTime() // Mais recente primeiro
     }
+  })
+
+  // Separar pagamentos em futuros e passados
+  const now = new Date()
+  const futurePayments = filteredPayments.filter(payment => {
+    const paymentDateTime = new Date(`${payment.date}T${payment.time}`)
+    return paymentDateTime >= now
+  })
+  const pastPayments = filteredPayments.filter(payment => {
+    const paymentDateTime = new Date(`${payment.date}T${payment.time}`)
+    return paymentDateTime < now
   })
 
   const totalReceived = filteredPayments
@@ -492,12 +510,30 @@ const Pagamentos = () => {
                   <SelectTrigger className="w-[120px]">
                     <SelectValue />
                   </SelectTrigger>
-                    <SelectContent>
-                     <SelectItem value="todos">Todos</SelectItem>
-                     <SelectItem value="pago">Pagos</SelectItem>
-                     <SelectItem value="pendente">Pendentes</SelectItem>
-                     <SelectItem value="atrasado">Atrasados</SelectItem>
-                   </SelectContent>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="pago">Pagos</SelectItem>
+                    <SelectItem value="pendente">Pendentes</SelectItem>
+                    <SelectItem value="atrasado">Atrasados</SelectItem>
+                    <SelectItem value="cancelado">Cancelados</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Canal:</label>
+                <Select value={filterMethod} onValueChange={setFilterMethod}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="cartao">Cartão</SelectItem>
+                    <SelectItem value="transferencia">Transferência</SelectItem>
+                    <SelectItem value="A definir">A definir</SelectItem>
+                  </SelectContent>
                 </Select>
               </div>
             </div>
@@ -522,8 +558,82 @@ const Pagamentos = () => {
                 Nenhum pagamento encontrado para os filtros selecionados.
               </div>
             ) : (
-              <div className="space-y-4">
-                {filteredPayments.map((payment) => {
+              <div className="space-y-8">
+                {/* Pagamentos de Sessões Futuras */}
+                {futurePayments.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-px bg-border flex-1" />
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        Pagamentos de Sessões Futuras
+                      </h3>
+                      <div className="h-px bg-border flex-1" />
+                    </div>
+                    <div className="space-y-4">
+                      {futurePayments.map((payment) => {
+                        const StatusIcon = getStatusIcon(payment.status)
+                        
+                        return (
+                          <div 
+                            key={payment.id} 
+                            className={cn(
+                              "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                              highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                            )}
+                            onClick={() => {
+                              setSelectedPayment(payment)
+                              setDetailsModalOpen(true)
+                            }}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
+                                <StatusIcon className="w-5 h-5 text-primary" />
+                              </div>
+                              <div className="flex-1">
+                                <h3 className="font-medium">{payment.client}</h3>
+                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-3 h-3" />
+                                    <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                                  </div>
+                                  <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                                    {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center gap-4">
+                              <div className="text-right">
+                                <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
+                                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                  {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
+                                  {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
+                                  {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
+                                  {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
+                                  <span className="capitalize">{payment.method}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Pagamentos de Sessões Passadas */}
+                {pastPayments.length > 0 && (
+                  <div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <div className="h-px bg-border flex-1" />
+                      <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                        Pagamentos de Sessões Passadas
+                      </h3>
+                      <div className="h-px bg-border flex-1" />
+                    </div>
+                    <div className="space-y-4">
+                      {pastPayments.map((payment) => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
                    return (
@@ -569,8 +679,11 @@ const Pagamentos = () => {
                         </div>
                       </div>
                     </div>
-                   )
-                })}
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

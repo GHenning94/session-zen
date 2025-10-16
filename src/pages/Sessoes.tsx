@@ -392,6 +392,17 @@ export default function Sessoes() {
       }
     })
 
+  // Separar sessões em futuras e passadas
+  const now = new Date()
+  const futureSessions = filteredSessions.filter(session => {
+    const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+    return sessionDateTime >= now
+  })
+  const pastSessions = filteredSessions.filter(session => {
+    const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+    return sessionDateTime < now
+  })
+
   const filteredNotes = sessionNotes.filter(note => {
     const clientMatches = !filters.client || filters.client === "all" || note.client_id === filters.client
     const searchMatches = !filters.search || 
@@ -587,8 +598,84 @@ export default function Sessoes() {
                     Nenhuma sessão encontrada.
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    {filteredSessions.map((session) => (
+                  <div className="space-y-8">
+                    {/* Sessões Futuras */}
+                    {futureSessions.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="h-px bg-border flex-1" />
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                            Sessões Futuras
+                          </h3>
+                          <div className="h-px bg-border flex-1" />
+                        </div>
+                        <div className="space-y-4">
+                          {futureSessions.map((session) => (
+                            <div 
+                              key={session.id} 
+                              className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                              onClick={() => handleSessionClick(session)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center space-x-4 flex-1">
+                                  <ClientAvatar 
+                                    avatarPath={session.clients?.avatar_url}
+                                    clientName={session.clients?.nome || 'Cliente'}
+                                    size="lg"
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 mb-2">
+                                      <h3 className="text-lg font-semibold">{formatClientName(session.clients?.nome || 'Cliente não encontrado')}</h3>
+                                      <Badge variant={getStatusColor(session.status)}>
+                                        {getStatusLabel(session.status)}
+                                      </Badge>
+                                    </div>
+                                    <div className="text-sm text-muted-foreground space-y-1">
+                                      <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                          <Calendar className="w-4 h-4" />
+                                          <span>{formatDateBR(session.data)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                          <Clock className="w-4 h-4" />
+                                          <span>{formatTimeBR(session.horario)}</span>
+                                        </div>
+                                        {session.valor && (
+                                          <span className="font-medium">{formatCurrencyBR(session.valor)}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                    {session.anotacoes && (
+                                      <div className="mt-2 text-sm text-muted-foreground bg-muted/50 rounded p-2">
+                                        <strong>Observações Iniciais:</strong>
+                                        <TextPreview 
+                                          content={session.anotacoes}
+                                          title={`Observações - ${session.clients?.nome} - ${formatDateBR(session.data)}`}
+                                          className="mt-1"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Sessões Passadas */}
+                    {pastSessions.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-4">
+                          <div className="h-px bg-border flex-1" />
+                          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                            Sessões Passadas
+                          </h3>
+                          <div className="h-px bg-border flex-1" />
+                        </div>
+                        <div className="space-y-4">
+                          {pastSessions.map((session) => (
                       <div 
                         key={session.id} 
                         className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
@@ -636,8 +723,11 @@ export default function Sessoes() {
                             </div>
                           </div>
                         </div>
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    ))}
+                    )}
                   </div>
                 )}
               </CardContent>

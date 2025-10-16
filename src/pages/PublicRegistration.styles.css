@@ -1,0 +1,51 @@
+/* Blob effects para página de registro público */
+
+.blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Blob effect no canto direito (similar ao Login) */
+.blob-right-1 {
+  width: 450px;
+  height: 450px;
+  top: 15%;
+  right: -15%;
+  background: hsl(217 91% 60%);
+  opacity: 0.15;
+  animation: move-blob-right-1 22s ease-in-out infinite alternate;
+}
+
+.blob-right-2 {
+  width: 350px;
+  height: 350px;
+  top: 35%;
+  right: -5%;
+  background: hsl(217 91% 70%);
+  opacity: 0.12;
+  animation: move-blob-right-2 20s ease-in-out -7s infinite alternate;
+}
+
+@keyframes move-blob-right-1 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-100px, 50px) scale(1.1); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+@keyframes move-blob-right-2 {
+  0% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(80px, -120px) scale(0.8); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* Força tema claro na página de registro */
+.light {
+  color-scheme: light;
+}
+
+.light * {
+  color-scheme: light;
+}

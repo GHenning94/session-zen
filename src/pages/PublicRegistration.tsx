@@ -9,7 +9,8 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { Loader2, User, CheckCircle } from "lucide-react"
+import { Loader2, User, CheckCircle, Stethoscope } from "lucide-react"
+import "./PublicRegistration.styles.css"
 
 interface ClientData {
   nome: string;
@@ -235,24 +236,30 @@ const PublicRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-radial from-primary/20 via-background to-background">
+    <div className="min-h-screen bg-gradient-radial from-primary/20 via-background to-background light relative overflow-hidden">
+      {/* Blob effect no canto direito */}
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="blob blob-right-1"></div>
+        <div className="blob blob-right-2"></div>
+      </div>
+
       {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b">
+      <div className="bg-white/80 backdrop-blur-sm border-b relative z-10">
         <div className="container mx-auto px-4 py-6 text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <User className="w-8 h-8 text-primary" />
-            <h1 className="text-2xl font-bold">TherapyPro</h1>
+            <Stethoscope className="w-8 h-8 text-primary" />
+            <h1 className="text-2xl font-bold text-gray-900">TherapyPro</h1>
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto px-4 py-8 max-w-2xl relative z-10">
         {/* Welcome Message */}
-        <Card className="mb-6 shadow-soft">
+        <Card className="mb-6 shadow-soft bg-white">
           <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-2">Bem-vindo ao Cadastro de Paciente</h2>
-            <p className="text-muted-foreground">
+            <h2 className="text-xl font-semibold mb-2 text-gray-900">Bem-vindo ao Cadastro de Paciente</h2>
+            <p className="text-gray-600">
               Olá! Você foi convidado(a) por <strong>{professionalName}</strong> para preencher seu cadastro.
               <br />Por favor, complete os dados abaixo.
             </p>
@@ -260,7 +267,7 @@ const PublicRegistration = () => {
         </Card>
 
         {/* Form Type Toggle */}
-        <Card className="mb-6 shadow-soft">
+        <Card className="mb-6 shadow-soft bg-white">
           <CardContent className="p-4">
             <div className="flex items-center justify-center space-x-4">
               <Button 
@@ -284,36 +291,48 @@ const PublicRegistration = () => {
         </Card>
 
         {/* Registration Form */}
-        <Card className="shadow-soft">
+        <Card className="shadow-soft bg-white">
           <CardHeader>
-            <CardTitle>
+            <CardTitle className="text-gray-900">
               {isCompleteForm ? "Cadastro Completo" : "Cadastro Rápido"}
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="text-gray-600">
               Preencha suas informações pessoais
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
+              {/* Checkbox Criança/Adolescente - Sempre visível */}
+              <div className="flex items-center space-x-2 pb-2 border-b">
+                <Switch
+                  id="eh_crianca_adolescente"
+                  checked={formData.eh_crianca_adolescente}
+                  onCheckedChange={(checked) => handleInputChange('eh_crianca_adolescente', checked)}
+                />
+                <Label htmlFor="eh_crianca_adolescente" className="text-gray-900">É criança ou adolescente</Label>
+              </div>
+
               {/* Campos obrigatórios sempre visíveis */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nome">Nome Completo *</Label>
+                  <Label htmlFor="nome" className="text-gray-900">Nome Completo *</Label>
                   <Input
                     id="nome"
                     value={formData.nome}
                     onChange={(e) => handleInputChange('nome', e.target.value)}
                     required
+                    className="bg-white text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email *</Label>
+                  <Label htmlFor="email" className="text-gray-900">Email *</Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
                     required
+                    className="bg-white text-gray-900"
                   />
                 </div>
               </div>

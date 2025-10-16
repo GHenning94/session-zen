@@ -311,7 +311,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0">
+      <DialogContent className="sm:max-w-[800px] max-h-[85vh] p-0 flex flex-col">
         {/* Header com gradiente */}
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border-b">
           <DialogTitle className="flex items-center gap-2 text-2xl">
@@ -323,7 +323,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           </p>
         </div>
         
-        <div className="p-6">
+        <div className="p-6 flex-1 min-h-0 flex flex-col">
           {/* Botões de tipo de cadastro com design melhorado */}
           <div className="flex items-center gap-3 mb-6">
             <Button
@@ -353,8 +353,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             </div>
           )}
           
-          <ScrollArea className="max-h-[calc(90vh-240px)] pr-4">
-            <div className="space-y-6">
+          <ScrollArea className="flex-1 -mx-6 px-6">
+            <div className="space-y-6 pr-4">
               {/* Card de foto do cliente */}
               <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-xl p-6 border border-border/50">
                 <div className="flex flex-col items-center gap-4">
