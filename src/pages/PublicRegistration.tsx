@@ -302,16 +302,6 @@ const PublicRegistration = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
-              {/* Checkbox Criança/Adolescente - Sempre visível */}
-              <div className="flex items-center space-x-2 pb-2 border-b">
-                <Switch
-                  id="eh_crianca_adolescente"
-                  checked={formData.eh_crianca_adolescente}
-                  onCheckedChange={(checked) => handleInputChange('eh_crianca_adolescente', checked)}
-                />
-                <Label htmlFor="eh_crianca_adolescente" className="text-gray-900">É criança ou adolescente</Label>
-              </div>
-
               {/* Campos obrigatórios sempre visíveis */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -448,18 +438,18 @@ const PublicRegistration = () => {
                 />
               </div>
 
-              {isCompleteForm && (
-                <>
-                  <div className="flex items-center space-x-2">
-                    <Switch
-                      id="eh_crianca_adolescente"
-                      checked={formData.eh_crianca_adolescente}
-                      onCheckedChange={(checked) => handleInputChange('eh_crianca_adolescente', checked)}
-                    />
-                    <Label htmlFor="eh_crianca_adolescente">É criança ou adolescente</Label>
-                  </div>
+              {/* Switch Criança/Adolescente - Sempre visível em ambos os modos */}
+              <div className="flex items-center space-x-2 py-2 border-t">
+                <Switch
+                  id="eh_crianca_adolescente"
+                  checked={formData.eh_crianca_adolescente}
+                  onCheckedChange={(checked) => handleInputChange('eh_crianca_adolescente', checked)}
+                />
+                <Label htmlFor="eh_crianca_adolescente" className="text-gray-900">É criança ou adolescente</Label>
+              </div>
 
-                  {formData.eh_crianca_adolescente && (
+              {/* Campos específicos para criança/adolescente */}
+              {isCompleteForm && formData.eh_crianca_adolescente && (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -510,7 +500,8 @@ const PublicRegistration = () => {
                     </>
                   )}
 
-                  {!formData.emergencia_igual_pais && (
+              {/* Contatos de emergência - apenas no formulário completo */}
+              {isCompleteForm && !formData.emergencia_igual_pais && (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -551,10 +542,8 @@ const PublicRegistration = () => {
                       </div>
                     </>
                   )}
-                </>
-              )}
 
-              <Button 
+              <Button
                 type="submit" 
                 disabled={isSubmitting}
                 className="w-full bg-gradient-primary hover:opacity-90"

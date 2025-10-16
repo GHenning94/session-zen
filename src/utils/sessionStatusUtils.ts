@@ -26,8 +26,14 @@ export const calculatePaymentStatus = (sessionData: string, sessionHorario: stri
   const sessionDateTime = new Date(`${sessionData}T${sessionHorario}`)
   const currentDateTime = new Date()
   
-  if (sessionStatus === 'cancelada' || sessionStatus === 'falta') {
+  // Apenas sessões canceladas devem ter pagamento cancelado
+  if (sessionStatus === 'cancelada') {
     return 'cancelado'
+  }
+  
+  // Sessões com falta devem ter pagamento pendente
+  if (sessionStatus === 'falta') {
+    return 'pendente'
   }
   
   if (sessionStatus === 'realizada') {

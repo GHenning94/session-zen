@@ -131,10 +131,11 @@ const Pagamentos = () => {
       const status = calculatePaymentStatus(session.data, session.horario, session.status)
       const client = clients.find(c => c.id === session.client_id)
       
-      // Se o status do pagamento é pendente, atrasado ou cancelado, o método deve ser sempre "A definir"
-      const method = (status === 'pendente' || status === 'atrasado' || status === 'cancelado') 
+      // Se o método de pagamento não foi definido ou é "A definir", mantém "A definir"
+      // Caso contrário, usa o método definido pelo profissional
+      const method = (!session.metodo_pagamento || session.metodo_pagamento === 'A definir')
         ? 'A definir' 
-        : (session.metodo_pagamento || 'A definir')
+        : session.metodo_pagamento
       
       return {
         id: session.id,
