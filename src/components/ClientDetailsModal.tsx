@@ -304,7 +304,7 @@ export const ClientDetailsModal = ({
             className="flex items-center gap-2"
           >
             <Edit2 className="w-4 h-4" />
-            Editar Cliente
+            Editar
           </Button>
           
           <Button
@@ -313,7 +313,7 @@ export const ClientDetailsModal = ({
             className="flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
-            Abrir Prontuário
+            Prontuário
           </Button>
           
           <Button

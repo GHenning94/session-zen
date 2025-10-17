@@ -311,7 +311,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[800px] max-h-[90vh] p-0 flex flex-col">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
         {/* Header com gradiente - mais compacto */}
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -323,7 +323,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           </p>
         </div>
         
-        <div className="p-4 flex-1 min-h-0 flex flex-col">
+        <div className="p-6 flex-1 overflow-hidden flex flex-col">
           {/* Botões de tipo de cadastro - mais compactos */}
           <div className="flex items-center gap-2 mb-4">
             <Button
@@ -353,8 +353,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             </div>
           )}
           
-          <ScrollArea className="flex-1 -mx-4 px-4">
-            <div className="space-y-4 pr-2">
+          <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(90vh - 250px)' }}>
+            <div className="space-y-4">
               {/* Card de foto do cliente - mais compacto */}
               <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-4 border border-border/50">
                 <div className="flex flex-col items-center gap-2">
@@ -370,7 +370,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 </div>
               </div>
 
-              {/* Card de informações do paciente - mais compacto */}
+              {/* Card de informações do paciente - Layout de 2 colunas */}
               <div className="bg-card rounded-lg p-4 border border-border/50 space-y-3 shadow-sm">
                 <div className="flex items-center gap-2 mb-2">
                   <div className="h-6 w-1 bg-primary rounded-full"></div>
@@ -378,7 +378,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 </div>
                 
                 {/* Checkbox disponível em ambos os modos */}
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 mb-3">
                   <Checkbox 
                     id="crianca-adolescente" 
                     checked={newClient.ehCriancaAdolescente}
@@ -390,21 +390,71 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   <Label htmlFor="crianca-adolescente">Criança/Adolescente</Label>
                 </div>
 
-                {/* NOME - sempre primeiro */}
-                <div className="grid gap-2">
-                  <Label htmlFor="name">Nome *</Label>
-                  <Input 
-                    id="name" 
-                    placeholder="Digite o nome"
-                    value={newClient.name}
-                    onChange={(e) => setNewClient({...newClient, name: e.target.value})}
-                    disabled={!canAddMore}
-                  />
+                {/* LAYOUT DE 2 COLUNAS - NOME E TELEFONE */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="name">Nome *</Label>
+                    <Input 
+                      id="name" 
+                      placeholder="Digite o nome"
+                      value={newClient.name}
+                      onChange={(e) => setNewClient({...newClient, name: e.target.value})}
+                      disabled={!canAddMore}
+                    />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="phone">Telefone *</Label>
+                    <div className="flex gap-2">
+                      <Select defaultValue="+55">
+                        <SelectTrigger className="w-[100px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="+55">🇧🇷 +55</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Input 
+                        id="phone" 
+                        placeholder="(11) 98765-4321"
+                        value={newClient.phone}
+                        onChange={handlePhoneChange}
+                        maxLength={15}
+                        disabled={!canAddMore}
+                        className="flex-1"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                {/* CAMPOS DO CADASTRO COMPLETO - CPF, Data Nascimento, Email */}
+                {/* CAMPOS DO CADASTRO COMPLETO - Email, CPF, Data Nascimento */}
                 {!isQuickRegistration && (
                   <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="email">Email:</Label>
+                        <Input 
+                          id="email" 
+                          type="email"
+                          placeholder="Digite o email"
+                          value={newClient.email}
+                          onChange={(e) => setNewClient({...newClient, email: e.target.value})}
+                          disabled={!canAddMore}
+                        />
+                      </div>
+
+                      <div className="grid gap-2">
+                        <Label htmlFor="data-nascimento">Data de Nascimento:</Label>
+                        <Input 
+                          id="data-nascimento" 
+                          type="date"
+                          value={newClient.dataNascimento}
+                          onChange={(e) => setNewClient({...newClient, dataNascimento: e.target.value})}
+                          disabled={!canAddMore}
+                        />
+                      </div>
+                    </div>
+
                     <div className="grid gap-2">
                       <Label htmlFor="cpf">CPF:</Label>
                       <Input 
@@ -415,56 +465,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                         disabled={!canAddMore}
                       />
                     </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="data-nascimento">Data de Nascimento:</Label>
-                      <Input 
-                        id="data-nascimento" 
-                        type="date"
-                        placeholder="dd/mm/aaaa"
-                        value={newClient.dataNascimento}
-                        onChange={(e) => setNewClient({...newClient, dataNascimento: e.target.value})}
-                        disabled={!canAddMore}
-                      />
-                    </div>
-
-                    <div className="grid gap-2">
-                      <Label htmlFor="email">Email:</Label>
-                      <Input 
-                        id="email" 
-                        type="email"
-                        placeholder="Digite o email"
-                        value={newClient.email}
-                        onChange={(e) => setNewClient({...newClient, email: e.target.value})}
-                        disabled={!canAddMore}
-                      />
-                    </div>
                   </>
                 )}
-
-                {/* TELEFONE - sempre segundo para cadastro rápido */}
-                <div className="grid gap-2">
-                  <Label htmlFor="phone">Telefone *</Label>
-                  <div className="grid grid-cols-3 gap-2">
-                    <Select defaultValue="+55">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="+55">🇧🇷 +55 (Brasil)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input 
-                      id="phone" 
-                      placeholder="Digite o telefone"
-                      value={newClient.phone}
-                      onChange={handlePhoneChange}
-                      maxLength={15}
-                      disabled={!canAddMore}
-                      className="col-span-2"
-                    />
-                  </div>
-                </div>
 
                 {/* CAMPOS ESPECÍFICOS PARA CRIANÇA/ADOLESCENTE */}
                 {newClient.ehCriancaAdolescente && (
@@ -631,28 +633,28 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               </>
             )}
 
-            {/* ENDEREÇO - sempre terceiro para cadastro rápido */}
-            <div className="grid gap-2">
-              <Label htmlFor="endereco">Endereço:</Label>
-              <Input 
-                id="endereco" 
-                placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
-                value={newClient.endereco}
-                onChange={(e) => setNewClient({...newClient, endereco: e.target.value})}
-                disabled={!canAddMore}
-              />
-            </div>
-
-            {/* PAÍS - sempre quarto para cadastro rápido */}
-            <div className="grid gap-2">
-              <Label htmlFor="pais">País:</Label>
-              <Input 
-                id="pais" 
-                placeholder="Digite para buscar..."
-                value={newClient.pais}
-                onChange={(e) => setNewClient({...newClient, pais: e.target.value})}
-                disabled={!canAddMore}
-              />
+            {/* ENDEREÇO E PAÍS - 2 colunas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="endereco">Endereço:</Label>
+                <Input 
+                  id="endereco" 
+                  placeholder="CEP / Bairro etc (opcional)"
+                  value={newClient.endereco}
+                  onChange={(e) => setNewClient({...newClient, endereco: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="pais">País:</Label>
+                <Input 
+                  id="pais" 
+                  placeholder="Digite o país"
+                  value={newClient.pais}
+                  onChange={(e) => setNewClient({...newClient, pais: e.target.value})}
+                  disabled={!canAddMore}
+                />
+              </div>
             </div>
 
             {/* GÊNERO E PROFISSÃO - lado a lado para ADULTOS */}
@@ -662,7 +664,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   <Label htmlFor="genero">Gênero:</Label>
                   <Input 
                     id="genero" 
-                    placeholder="Digite para buscar..."
+                    placeholder="Selecione o gênero"
                     value={newClient.genero}
                     onChange={(e) => setNewClient({...newClient, genero: e.target.value})}
                     disabled={!canAddMore}
@@ -672,7 +674,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   <Label htmlFor="profissao">Profissão:</Label>
                   <Input 
                     id="profissao" 
-                    placeholder="Digite para buscar..."
+                    placeholder="Digite a profissão"
                     value={newClient.profession}
                     onChange={(e) => setNewClient({...newClient, profession: e.target.value})}
                     disabled={!canAddMore}
@@ -687,7 +689,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 <Label htmlFor="genero">Gênero:</Label>
                 <Input 
                   id="genero" 
-                  placeholder="Digite para buscar..."
+                  placeholder="Selecione o gênero"
                   value={newClient.genero}
                   onChange={(e) => setNewClient({...newClient, genero: e.target.value})}
                   disabled={!canAddMore}
@@ -701,7 +703,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 <Label htmlFor="plano-saude">Plano de Saúde:</Label>
                 <Input 
                   id="plano-saude" 
-                  placeholder="Digite para buscar..."
+                  placeholder="Digite o plano"
                   value={newClient.planoSaude}
                   onChange={(e) => setNewClient({...newClient, planoSaude: e.target.value})}
                   disabled={!canAddMore}
@@ -711,7 +713,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 <Label htmlFor="tratamento">Tratamento:</Label>
                 <Input 
                   id="tratamento" 
-                  placeholder="Digite para buscar..."
+                  placeholder="Digite o tratamento"
                   value={newClient.tratamento}
                   onChange={(e) => setNewClient({...newClient, tratamento: e.target.value})}
                   disabled={!canAddMore}

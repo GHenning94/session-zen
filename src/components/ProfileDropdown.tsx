@@ -409,152 +409,163 @@ export const ProfileDropdown = () => {
       </DropdownMenu>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
             <DialogDescription>
               Atualize suas informações pessoais aqui.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label>Foto</Label>
-              <div className="flex justify-center">
-                <div 
-                  className="relative group cursor-pointer"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Avatar className="h-20 w-20">
-                    <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
-                    <AvatarFallback>
-                      <User className="w-10 h-10" />
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <Camera className="w-6 h-6 text-white" />
+          <div className="overflow-y-auto flex-1 px-1">
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Foto</Label>
+                <div className="flex justify-center">
+                  <div 
+                    className="relative group cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Avatar className="h-20 w-20">
+                      <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
+                      <AvatarFallback>
+                        <User className="w-10 h-10" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Camera className="w-6 h-6 text-white" />
+                    </div>
+                    
+                    {profile.avatar_url && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setProfile(prev => ({ ...prev, avatar_url: '' }));
+                        }}
+                      >
+                        <X className="w-3 h-3" />
+                      </Button>
+                    )}
                   </div>
-                  
-                  {profile.avatar_url && (
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="absolute -top-1 -right-1 h-6 w-6 rounded-full p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setProfile(prev => ({ ...prev, avatar_url: '' }));
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleFileUpload}
+                  />
+                </div>
+              </div>
+              
+              {/* LAYOUT DE 2 COLUNAS - Nome e Email */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    value={profile.nome}
+                    onChange={(e) => setProfile(prev => ({ ...prev, nome: e.target.value }))}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">E-mail</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+              
+              {/* LAYOUT DE 2 COLUNAS - Profissão e Cor */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="profissao">Profissão</Label>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-10"
+                    onClick={() => setShowProfessionSelector(true)}
+                  >
+                    {profile.profissao || "Selecionar profissão"}
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Cor da Plataforma</Label>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start h-10"
+                    onClick={() => setShowColorPicker(true)}
+                  >
+                    <div 
+                      className="w-4 h-4 rounded-full mr-2 border border-border"
+                      style={{ backgroundColor: `hsl(${profile.brand_color || '217 91% 45%'})` }}
+                    />
+                    Personalizar cores
+                  </Button>
+                </div>
+              </div>
+              
+              {/* LAYOUT DE 2 COLUNAS - Senhas */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Nova Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => {
+                        setNewPassword(e.target.value)
+                        setShowPasswordRequirements(e.target.value.length > 0)
                       }}
-                    >
-                      <X className="w-3 h-3" />
-                    </Button>
+                      onFocus={() => setShowPasswordRequirements(newPassword.length > 0)}
+                      onBlur={() => setShowPasswordRequirements(false)}
+                      placeholder="Deixe em branco"
+                    />
+                    {showPasswordRequirements && (
+                      <div className="absolute top-full left-0 mt-2 w-full p-4 bg-background border border-border rounded-lg shadow-lg z-50">
+                        <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
+                        <div className="space-y-1">
+                          {passwordRequirements.map((req, index) => {
+                            const isValid = req.test(newPassword)
+                            return (
+                              <div key={index} className="flex items-center gap-2 text-sm">
+                                {isValid ? (
+                                  <Check className="w-4 h-4 text-success" />
+                                ) : (
+                                  <X className="w-4 h-4 text-muted-foreground" />
+                                )}
+                                <span className={isValid ? "text-success" : "text-muted-foreground"}>
+                                  {req.text}
+                                </span>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
+                  <Input
+                    id="confirmPassword"
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a senha"
+                  />
+                  {confirmPassword && newPassword !== confirmPassword && (
+                    <p className="text-sm text-destructive">As senhas não coincidem</p>
                   )}
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleFileUpload}
-                />
               </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome</Label>
-              <Input
-                id="nome"
-                value={profile.nome}
-                onChange={(e) => setProfile(prev => ({ ...prev, nome: e.target.value }))}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="profissao">Profissão</Label>
-              <Button
-                variant="outline"
-                className="w-full justify-start h-10"
-                onClick={() => setShowProfessionSelector(true)}
-              >
-                {profile.profissao || "Selecionar profissão"}
-              </Button>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Cor da Plataforma</Label>
-              <Button
-                variant="outline"
-                className="w-full justify-start h-10"
-                onClick={() => setShowColorPicker(true)}
-              >
-                <div 
-                  className="w-4 h-4 rounded-full mr-2 border border-border"
-                  style={{ backgroundColor: `hsl(${profile.brand_color || '217 91% 45%'})` }}
-                />
-                Personalizar cores
-              </Button>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="newPassword">Nova Senha</Label>
-              <div className="relative">
-                <Input
-                  id="newPassword"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => {
-                    setNewPassword(e.target.value)
-                    setShowPasswordRequirements(e.target.value.length > 0)
-                  }}
-                  onFocus={() => setShowPasswordRequirements(newPassword.length > 0)}
-                  onBlur={() => setShowPasswordRequirements(false)}
-                  placeholder="Deixe em branco para manter a atual"
-                />
-                {showPasswordRequirements && (
-                  <div className="absolute top-full left-0 mt-2 w-full p-4 bg-background border border-border rounded-lg shadow-lg z-50">
-                    <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
-                    <div className="space-y-1">
-                      {passwordRequirements.map((req, index) => {
-                        const isValid = req.test(newPassword)
-                        return (
-                          <div key={index} className="flex items-center gap-2 text-sm">
-                            {isValid ? (
-                              <Check className="w-4 h-4 text-success" />
-                            ) : (
-                              <X className="w-4 h-4 text-muted-foreground" />
-                            )}
-                            <span className={isValid ? "text-success" : "text-muted-foreground"}>
-                              {req.text}
-                            </span>
-                          </div>
-                        )
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Confirme a nova senha"
-              />
-              {confirmPassword && newPassword !== confirmPassword && (
-                <p className="text-sm text-destructive">As senhas não coincidem</p>
-              )}
             </div>
           </div>
           <DialogFooter>

@@ -301,8 +301,8 @@ const PublicRegistration = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-96 overflow-y-auto">
-              {/* Campos obrigatórios sempre visíveis */}
+            <form onSubmit={handleSubmit} className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+              {/* SEMPRE VISÍVEL EM AMBOS OS MODOS - Nome e Telefone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome" className="text-gray-900">Nome Completo *</Label>
@@ -315,44 +315,87 @@ const PublicRegistration = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-900">Email *</Label>
+                  <Label htmlFor="telefone" className="text-gray-900">Telefone *</Label>
                   <Input
-                    id="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => handleInputChange('telefone', e.target.value)}
                     required
                     className="bg-white text-gray-900"
                   />
                 </div>
               </div>
 
+              {/* CAMPOS COMPLETOS - Email e Data Nascimento */}
+              {isCompleteForm && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email" className="text-gray-900">Email:</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="bg-white text-gray-900"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="data_nascimento" className="text-gray-900">Data de Nascimento:</Label>
+                    <Input
+                      id="data_nascimento"
+                      type="date"
+                      value={formData.data_nascimento}
+                      onChange={(e) => handleInputChange('data_nascimento', e.target.value)}
+                      className="bg-white text-gray-900"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {isCompleteForm && (
+                <div className="grid gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="cpf" className="text-gray-900">CPF:</Label>
+                    <Input
+                      id="cpf"
+                      value={formData.cpf}
+                      onChange={(e) => handleInputChange('cpf', e.target.value)}
+                      className="bg-white text-gray-900"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* SEMPRE VISÍVEL - Endereço e País */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="telefone">Telefone</Label>
+                  <Label htmlFor="endereco" className="text-gray-900">Endereço:</Label>
                   <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => handleInputChange('telefone', e.target.value)}
+                    id="endereco"
+                    value={formData.endereco}
+                    onChange={(e) => handleInputChange('endereco', e.target.value)}
+                    placeholder="CEP / Bairro etc (opcional)"
+                    className="bg-white text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="data_nascimento">Data de Nascimento</Label>
+                  <Label htmlFor="pais" className="text-gray-900">País:</Label>
                   <Input
-                    id="data_nascimento"
-                    type="date"
-                    value={formData.data_nascimento}
-                    onChange={(e) => handleInputChange('data_nascimento', e.target.value)}
+                    id="pais"
+                    value={formData.pais}
+                    onChange={(e) => handleInputChange('pais', e.target.value)}
+                    placeholder="Digite o país"
+                    className="bg-white text-gray-900"
                   />
                 </div>
               </div>
 
-              {/* CORREÇÃO: Adicionar TODOS os campos em ambos cadastros (exceto foto) */}
+              {/* SEMPRE VISÍVEL - Gênero e Profissão */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="genero">Gênero</Label>
+                  <Label htmlFor="genero" className="text-gray-900">Gênero:</Label>
                   <Select value={formData.genero} onValueChange={(value) => handleInputChange('genero', value)}>
-                    <SelectTrigger>
+                    <SelectTrigger className="bg-white text-gray-900">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -364,81 +407,54 @@ const PublicRegistration = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="profissao">Profissão</Label>
+                  <Label htmlFor="profissao" className="text-gray-900">Profissão:</Label>
                   <Input
                     id="profissao"
                     value={formData.profissao}
                     onChange={(e) => handleInputChange('profissao', e.target.value)}
+                    className="bg-white text-gray-900"
                   />
                 </div>
               </div>
 
-              {isCompleteForm && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cpf">CPF</Label>
-                    <Input
-                      id="cpf"
-                      value={formData.cpf}
-                      onChange={(e) => handleInputChange('cpf', e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pais">País</Label>
-                    <Input
-                      id="pais"
-                      value={formData.pais}
-                      onChange={(e) => handleInputChange('pais', e.target.value)}
-                      placeholder="Digite o país"
-                    />
-                  </div>
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="endereco">Endereço</Label>
-                <Textarea
-                  id="endereco"
-                  value={formData.endereco}
-                  onChange={(e) => handleInputChange('endereco', e.target.value)}
-                  placeholder="Digite o endereço completo: CEP / Bairro etc (opcional)"
-                  rows={2}
-                />
-              </div>
-
+              {/* SEMPRE VISÍVEL - Plano de Saúde e Tratamento */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="plano_saude">Plano de Saúde</Label>
+                  <Label htmlFor="plano_saude" className="text-gray-900">Plano de Saúde:</Label>
                   <Input
                     id="plano_saude"
                     value={formData.plano_saude}
                     onChange={(e) => handleInputChange('plano_saude', e.target.value)}
-                    placeholder="Digite para buscar..."
+                    placeholder="Digite o plano"
+                    className="bg-white text-gray-900"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="tratamento">Tratamento</Label>
+                  <Label htmlFor="tratamento" className="text-gray-900">Tratamento:</Label>
                   <Input
                     id="tratamento"
                     value={formData.tratamento}
                     onChange={(e) => handleInputChange('tratamento', e.target.value)}
-                    placeholder="Digite para buscar..."
+                    placeholder="Digite o tratamento"
+                    className="bg-white text-gray-900"
                   />
                 </div>
               </div>
 
+              {/* SEMPRE VISÍVEL - Medicamentos */}
               <div className="space-y-2">
-                <Label htmlFor="medicamentos">Medicamento:</Label>
+                <Label htmlFor="medicamentos" className="text-gray-900">Medicamento:</Label>
                 <Textarea
                   id="medicamentos"
                   value={formData.medicamentos.join(', ')}
                   onChange={(e) => handleMedicamentosChange(e.target.value)}
-                  placeholder="Digite para buscar..."
+                  placeholder="Separe por vírgula"
                   rows={2}
+                  className="bg-white text-gray-900"
                 />
               </div>
 
-              {/* Switch Criança/Adolescente - Sempre visível em ambos os modos */}
+              {/* Switch Criança/Adolescente - SEMPRE visível em ambos os modos */}
               <div className="flex items-center space-x-2 py-2 border-t">
                 <Switch
                   id="eh_crianca_adolescente"

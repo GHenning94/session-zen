@@ -131,11 +131,12 @@ const Pagamentos = () => {
       const status = calculatePaymentStatus(session.data, session.horario, session.status)
       const client = clients.find(c => c.id === session.client_id)
       
-      // Se o método de pagamento não foi definido ou é "A definir", mantém "A definir"
-      // Caso contrário, usa o método definido pelo profissional
-      const method = (!session.metodo_pagamento || session.metodo_pagamento === 'A definir')
-        ? 'A definir' 
-        : session.metodo_pagamento
+      // CORREÇÃO: Pagamentos pendentes, atrasados e cancelados devem ter canal "A definir"
+      let method = session.metodo_pagamento || 'A definir'
+      
+      if (status === 'pendente' || status === 'atrasado' || status === 'cancelado') {
+        method = 'A definir'
+      }
       
       return {
         id: session.id,
@@ -155,19 +156,31 @@ const Pagamentos = () => {
   const markAsPaid = async (sessionId: string, paymentMethod: string) => {
     setIsLoading(true)
     try {
+      // CORREÇÃO: Buscar sessão para verificar se é futura
+      const session = sessions.find(s => s.id === sessionId)
+      if (!session) throw new Error('Sessão não encontrada')
+      
+      const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+      const now = new Date()
+      const isFuture = sessionDateTime >= now
+      
+      // Se a sessão é futura, apenas atualizar o método de pagamento, sem mudar o status
+      const updateData = isFuture 
+        ? { metodo_pagamento: paymentMethod }
+        : { status: 'realizada', metodo_pagamento: paymentMethod }
+      
       const { error } = await supabase
         .from('sessions')
-        .update({ 
-          status: 'realizada',
-          metodo_pagamento: paymentMethod
-        })
+        .update(updateData)
         .eq('id', sessionId)
       
       if (error) throw error
       
       toast({
         title: "Pagamento Confirmado",
-        description: "O pagamento foi marcado como recebido.",
+        description: isFuture 
+          ? "O pagamento foi registrado para a sessão futura."
+          : "O pagamento foi marcado como recebido.",
       })
       
       await loadData()
