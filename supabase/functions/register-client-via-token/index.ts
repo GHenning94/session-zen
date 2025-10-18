@@ -29,6 +29,7 @@ interface ClientData {
   contato_emergencia_2_telefone?: string;
   pais?: string;
   emergencia_igual_pais?: boolean;
+  avatar_url?: string;
 }
 
 serve(async (req) => {

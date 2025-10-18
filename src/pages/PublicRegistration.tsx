@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { Loader2, User, CheckCircle, Stethoscope } from "lucide-react"
+import { PublicAvatarUpload } from "@/components/PublicAvatarUpload"
 import "./PublicRegistration.styles.css"
 
 interface ClientData {
@@ -35,6 +36,7 @@ interface ClientData {
   contato_emergencia_2_telefone: string;
   pais: string;
   emergencia_igual_pais: boolean;
+  avatar_url: string;
 }
 
 const PublicRegistration = () => {
@@ -72,6 +74,7 @@ const PublicRegistration = () => {
     contato_emergencia_2_telefone: "",
     pais: "",
     emergencia_igual_pais: false,
+    avatar_url: "",
   })
 
   useEffect(() => {
@@ -302,6 +305,21 @@ const PublicRegistration = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4 max-h-[500px] overflow-y-auto pr-2">
+              {/* Card de foto do cliente */}
+              <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-4 border border-border/50">
+                <div className="flex flex-col items-center gap-2">
+                  <PublicAvatarUpload 
+                    clientName={formData.nome || "Novo Cliente"}
+                    currentAvatarUrl={formData.avatar_url}
+                    onAvatarChange={(url) => handleInputChange('avatar_url', url)}
+                    size="md"
+                  />
+                  <p className="text-xs text-muted-foreground text-center">
+                    Clique na foto para adicionar/alterar
+                  </p>
+                </div>
+              </div>
+
               {/* SEMPRE VISÍVEL EM AMBOS OS MODOS - Nome e Telefone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -464,8 +482,8 @@ const PublicRegistration = () => {
                 <Label htmlFor="eh_crianca_adolescente" className="text-gray-900">É criança ou adolescente</Label>
               </div>
 
-              {/* Campos específicos para criança/adolescente */}
-              {isCompleteForm && formData.eh_crianca_adolescente && (
+              {/* Campos específicos para criança/adolescente - AGORA APARECEM EM AMBOS OS MODOS */}
+              {formData.eh_crianca_adolescente && (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -516,8 +534,8 @@ const PublicRegistration = () => {
                     </>
                   )}
 
-              {/* Contatos de emergência - apenas no formulário completo */}
-              {isCompleteForm && !formData.emergencia_igual_pais && (
+              {/* Contatos de emergência - apenas no formulário completo e se NÃO for criança com emergência igual pais */}
+              {isCompleteForm && !formData.eh_crianca_adolescente && (
                     <>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -556,8 +574,55 @@ const PublicRegistration = () => {
                           />
                         </div>
                       </div>
-                    </>
-                  )}
+                     </>
+                   )}
+
+              {/* Contatos de emergência para criança se não marcou emergência igual pais */}
+              {isCompleteForm && formData.eh_crianca_adolescente && !formData.emergencia_igual_pais && (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contato_emergencia_1_nome_child">Contato Emergência 1 - Nome</Label>
+                      <Input
+                        id="contato_emergencia_1_nome_child"
+                        value={formData.contato_emergencia_1_nome}
+                        onChange={(e) => handleInputChange('contato_emergencia_1_nome', e.target.value)}
+                        className="bg-white text-gray-900"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contato_emergencia_1_telefone_child">Contato Emergência 1 - Telefone</Label>
+                      <Input
+                        id="contato_emergencia_1_telefone_child"
+                        value={formData.contato_emergencia_1_telefone}
+                        onChange={(e) => handleInputChange('contato_emergencia_1_telefone', e.target.value)}
+                        className="bg-white text-gray-900"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="contato_emergencia_2_nome_child">Contato Emergência 2 - Nome</Label>
+                      <Input
+                        id="contato_emergencia_2_nome_child"
+                        value={formData.contato_emergencia_2_nome}
+                        onChange={(e) => handleInputChange('contato_emergencia_2_nome', e.target.value)}
+                        className="bg-white text-gray-900"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="contato_emergencia_2_telefone_child">Contato Emergência 2 - Telefone</Label>
+                      <Input
+                        id="contato_emergencia_2_telefone_child"
+                        value={formData.contato_emergencia_2_telefone}
+                        onChange={(e) => handleInputChange('contato_emergencia_2_telefone', e.target.value)}
+                        className="bg-white text-gray-900"
+                      />
+                    </div>
+                  </div>
+                </>
+              )}
 
               <Button
                 type="submit" 
