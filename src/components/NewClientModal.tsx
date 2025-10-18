@@ -311,7 +311,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 flex flex-col">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 flex flex-col min-h-0">
         {/* Header com gradiente - mais compacto */}
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -323,7 +323,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           </p>
         </div>
         
-        <div className="p-6 flex-1 flex flex-col">
+        <div className="p-6 flex-1 flex flex-col min-h-0">
           {/* Botões de tipo de cadastro - mais compactos */}
           <div className="flex items-center gap-2 mb-4">
             <Button
@@ -354,7 +354,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           )}
           
           <div 
-            className="flex-1 overflow-y-auto pr-3 h-[calc(90vh-220px)]"
+            className="flex-1 overflow-y-auto pr-3 min-h-0"
             style={{ WebkitOverflowScrolling: 'touch' }}
           >
             <div className="space-y-4">
