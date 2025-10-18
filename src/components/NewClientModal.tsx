@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ScrollArea } from "@/components/ui/scroll-area"
+
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -311,7 +311,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 flex flex-col overflow-hidden">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 flex flex-col">
         {/* Header com gradiente - mais compacto */}
         <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
@@ -323,7 +323,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           </p>
         </div>
         
-        <div className="p-6 flex-1 overflow-hidden flex flex-col">
+        <div className="p-6 flex-1 flex flex-col">
           {/* Botões de tipo de cadastro - mais compactos */}
           <div className="flex items-center gap-2 mb-4">
             <Button
@@ -353,7 +353,10 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             </div>
           )}
           
-          <ScrollArea className="flex-1 pr-4" style={{ maxHeight: 'calc(90vh - 250px)' }}>
+          <div 
+            className="flex-1 overflow-y-auto pr-3 h-[calc(90vh-220px)]"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             <div className="space-y-4">
               {/* Card de foto do cliente - mais compacto */}
               <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-lg p-4 border border-border/50">
@@ -775,7 +778,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 </div>
               </div>
             </div>
-          </ScrollArea>
+          </div>
           
           {/* Botões de ação - mais compactos */}
           <div className="flex gap-2 mt-4 pt-4 border-t">
