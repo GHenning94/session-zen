@@ -235,6 +235,28 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     setIsLoading(true)
     
     try {
+      // Check for duplicate email only for new clients and when email is provided
+      if (!editingClient && newClient.email) {
+        const { data: existingClients, error: checkError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('email', newClient.email)
+          .limit(1);
+
+        if (checkError) throw checkError;
+
+        if (existingClients && existingClients.length > 0) {
+          toast({
+            title: "E-mail já cadastrado",
+            description: "Já existe um cliente cadastrado com este e-mail.",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+      }
+
       const clientData = {
         user_id: user.id,
         nome: newClient.name,

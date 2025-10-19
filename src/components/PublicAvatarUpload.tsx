@@ -77,7 +77,9 @@ export const PublicAvatarUpload = ({
       .getPublicUrl(uploadedPath);
     
     if (data?.publicUrl) {
-      onAvatarChange(data.publicUrl);
+      // Add timestamp to force image refresh
+      const urlWithTimestamp = `${data.publicUrl}?t=${Date.now()}`;
+      onAvatarChange(urlWithTimestamp);
       setShowCropper(false);
       
       toast({

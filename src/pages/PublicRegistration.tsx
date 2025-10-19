@@ -136,10 +136,10 @@ const PublicRegistration = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!formData.nome || !formData.email) {
+    if (!formData.nome || !formData.telefone) {
       toast({
         title: "Campos obrigatórios",
-        description: "Por favor, preencha pelo menos o nome e e-mail.",
+        description: "Por favor, preencha pelo menos o nome e telefone.",
         variant: "destructive"
       })
       return
