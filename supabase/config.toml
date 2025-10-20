@@ -49,5 +49,23 @@ verify_jwt = false
 [functions.validate-registration-token]
 verify_jwt = false
 
+[functions.2fa-setup-email]
+verify_jwt = true
+
+[functions.2fa-setup-authenticator]
+verify_jwt = true
+
+[functions.2fa-generate-backup-codes]
+verify_jwt = true
+
+[functions.2fa-send-email-code]
+verify_jwt = false
+
+[functions.2fa-verify-code]
+verify_jwt = false
+
+[functions.2fa-request-reset]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true

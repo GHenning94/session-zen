@@ -26,6 +26,7 @@ import { NewSessionModal } from "@/components/NewSessionModal"
 import { NewClientModal } from "@/components/NewClientModal"
 import { NewPaymentModal } from "@/components/NewPaymentModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
+import { ActionableNotificationsBanner } from "@/components/ActionableNotificationsBanner"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 
 const Dashboard = () => {
@@ -770,6 +771,9 @@ const Dashboard = () => {
             Nova Sessão
           </Button>
         </div>
+
+        {/* Actionable Notifications Banner */}
+        <ActionableNotificationsBanner />
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

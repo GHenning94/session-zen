@@ -29,6 +29,7 @@ import { ImageCropper } from "./ImageCropper"
 import { ThemeToggle } from "./ThemeToggle"
 import { ProfessionSelector } from "./ProfessionSelector"
 import { ColorPicker } from "./ColorPicker"
+import { TwoFactorSettings } from "./TwoFactorSettings"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
@@ -565,6 +566,12 @@ export const ProfileDropdown = () => {
                     <p className="text-sm text-destructive">As senhas não coincidem</p>
                   )}
                 </div>
+              </div>
+
+              {/* Seção de Autenticação de Dois Fatores */}
+              <div className="space-y-4 pt-6 border-t">
+                <h3 className="text-lg font-semibold">Segurança</h3>
+                <TwoFactorSettings />
               </div>
             </div>
           </div>
