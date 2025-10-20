@@ -827,6 +827,120 @@ export type Database = {
           },
         ]
       }
+      user_2fa_backup_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          id: string
+          used: boolean | null
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          id?: string
+          used?: boolean | null
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          id?: string
+          used?: boolean | null
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_2fa_email_codes: {
+        Row: {
+          code: string
+          created_at: string | null
+          expires_at: string
+          id: string
+          used: boolean | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          used?: boolean | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          used?: boolean | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_2fa_reset_requests: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          expires_at: string
+          id: string
+          reset_token: string
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          expires_at: string
+          id?: string
+          reset_token: string
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          expires_at?: string
+          id?: string
+          reset_token?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_2fa_settings: {
+        Row: {
+          authenticator_2fa_enabled: boolean | null
+          authenticator_secret: string | null
+          created_at: string | null
+          email_2fa_enabled: boolean | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          authenticator_2fa_enabled?: boolean | null
+          authenticator_secret?: string | null
+          created_at?: string | null
+          email_2fa_enabled?: boolean | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          authenticator_2fa_enabled?: boolean | null
+          authenticator_secret?: string | null
+          created_at?: string | null
+          email_2fa_enabled?: boolean | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -885,6 +999,10 @@ export type Database = {
           p_window_minutes?: number
         }
         Returns: boolean
+      }
+      cleanup_expired_2fa_codes: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       cleanup_expired_registration_tokens: {
         Args: Record<PropertyKey, never>
