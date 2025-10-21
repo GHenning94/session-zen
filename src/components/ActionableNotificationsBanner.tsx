@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { use2FA } from '@/hooks/use2FA';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
+import { useProfileModal } from '@/contexts/ProfileModalContext';
 
 interface ActionableNotification {
   id: string;
@@ -20,6 +21,7 @@ export const ActionableNotificationsBanner = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { has2FAConfigured, loading: loading2FA } = use2FA();
+  const profileModal = useProfileModal();
   const [visible, setVisible] = useState(true);
   const [notifications, setNotifications] = useState<ActionableNotification[]>([]);
 
@@ -77,7 +79,12 @@ export const ActionableNotificationsBanner = () => {
   };
 
   const handleAction = (route: string) => {
-    navigate(route);
+    if (route === '/configuracoes?tab=security') {
+      // Open profile modal to security tab
+      profileModal.openToSecurity();
+    } else {
+      navigate(route);
+    }
   };
 
   if (!visible || notifications.length === 0) {

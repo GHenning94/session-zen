@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes'
 import { AuthProvider } from '@/hooks/useAuth'
 import { SubscriptionProvider } from '@/hooks/useSubscription'
 import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
+import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
 import LandingPage from "@/pages/LandingPage";
@@ -68,10 +69,11 @@ const App = () => (
           <AuthProvider>
             <SubscriptionProvider>
               <RealtimeSyncProvider>
-                <BrowserRouter>
-                  <AnalyticsWrapper>
-                    <AuthRedirect />
-                    <Routes>
+                <ProfileModalProvider>
+                  <BrowserRouter>
+                    <AnalyticsWrapper>
+                      <AuthRedirect />
+                      <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
@@ -178,12 +180,13 @@ const App = () => (
               </BrowserRouter>
               <Toaster />
               <Sonner />
-            </RealtimeSyncProvider>
-          </SubscriptionProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
+            </ProfileModalProvider>
+          </RealtimeSyncProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </TooltipProvider>
+  </ThemeProvider>
+</QueryClientProvider>
   </ErrorBoundary>
 );
 

@@ -32,6 +32,7 @@ import { ColorPicker } from "./ColorPicker"
 import { TwoFactorSettings } from "./TwoFactorSettings"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { useProfileModal } from "@/contexts/ProfileModalContext"
 
 interface Profile {
   nome: string
@@ -46,6 +47,7 @@ export const ProfileDropdown = () => {
   const navigate = useNavigate()
   const { setTheme } = useTheme()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
+  const profileModalContext = useProfileModal()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '' })
   const [loading, setLoading] = useState(false)
@@ -59,9 +61,27 @@ export const ProfileDropdown = () => {
   const [showProfessionSelector, setShowProfessionSelector] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const securitySectionRef = useRef<HTMLDivElement>(null)
   
   // Hook para gerenciar avatar com signed URL
   const { avatarUrl } = useAvatarUrl(profile.avatar_url)
+  
+  // Sync with context
+  useEffect(() => {
+    if (profileModalContext.isOpen && !isModalOpen) {
+      setIsModalOpen(true)
+    }
+  }, [profileModalContext.isOpen])
+  
+  // Scroll to security section when requested
+  useEffect(() => {
+    if (isModalOpen && profileModalContext.shouldScrollToSecurity && securitySectionRef.current) {
+      setTimeout(() => {
+        securitySectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        profileModalContext.resetScrollFlag()
+      }, 300)
+    }
+  }, [isModalOpen, profileModalContext.shouldScrollToSecurity])
 
   const passwordRequirements = [
     {
@@ -355,6 +375,7 @@ export const ProfileDropdown = () => {
         description: "Suas informações foram atualizadas com sucesso.",
       })
       setIsModalOpen(false)
+      profileModalContext.close()
       setNewPassword('')
       setConfirmPassword('')
     } catch (error) {
@@ -409,7 +430,10 @@ export const ProfileDropdown = () => {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={(open) => {
+        setIsModalOpen(open);
+        if (!open) profileModalContext.close();
+      }}>
         <DialogContent className="sm:max-w-[700px] max-h-[90vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
@@ -569,7 +593,7 @@ export const ProfileDropdown = () => {
               </div>
 
               {/* Seção de Autenticação de Dois Fatores */}
-              <div className="space-y-4 pt-6 border-t">
+              <div ref={securitySectionRef} className="space-y-4 pt-6 border-t">
                 <h3 className="text-lg font-semibold">Segurança</h3>
                 <TwoFactorSettings />
               </div>
