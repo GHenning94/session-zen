@@ -2,6 +2,8 @@ import { useState } from "react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
+import { TwoFactorVerification } from "@/components/TwoFactorVerification"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -18,6 +20,10 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [show2FA, setShow2FA] = useState(false)
+  const [pending2FAEmail, setPending2FAEmail] = useState('')
+  const [requires2FAEmail, setRequires2FAEmail] = useState(false)
+  const [requires2FAAuthenticator, setRequires2FAAuthenticator] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     profession: 'psicologo',
@@ -53,18 +59,58 @@ const Login = () => {
     setIsLoading(true)
     
     try {
-      const { error } = await signIn(formData.email, formData.password, turnstileToken || undefined)
+      // Try to sign in first
+      const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
+      })
       
-      if (error) {
-        toast({ title: "Erro no login", description: error.message || "Credenciais inválidas", variant: "destructive" })
-      } else {
+      // If sign in successful, check for 2FA
+      if (!signInError && signInData.user) {
+        const { data: settings } = await supabase
+          .from('user_2fa_settings')
+          .select('email_2fa_enabled, authenticator_2fa_enabled')
+          .eq('user_id', signInData.user.id)
+          .single()
+        
+        if (settings && (settings.email_2fa_enabled || settings.authenticator_2fa_enabled)) {
+          // Sign out immediately and show 2FA screen
+          await supabase.auth.signOut()
+          setPending2FAEmail(formData.email)
+          setRequires2FAEmail(settings.email_2fa_enabled || false)
+          setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
+          setShow2FA(true)
+          setIsLoading(false)
+          return
+        }
+        
+        // No 2FA, login successful
         toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
         navigate("/dashboard", { state: { fromLogin: true } })
+      } else if (signInError) {
+        toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
       }
     } catch (error) {
       toast({ title: "Erro", description: "Algo deu errado. Tente novamente.", variant: "destructive" })
     } finally {
       setIsLoading(false)
+    }
+  }
+  
+  const handle2FASuccess = async () => {
+    // User verified 2FA, now do the actual login
+    try {
+      const { error } = await signIn(formData.email, formData.password, turnstileToken || undefined)
+      if (error) {
+        toast({ title: "Erro no login", description: error.message, variant: "destructive" })
+        setShow2FA(false)
+      } else {
+        toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
+        navigate("/dashboard", { state: { fromLogin: true } })
+      }
+    } catch (error) {
+      toast({ title: "Erro", description: "Algo deu errado", variant: "destructive" })
+      setShow2FA(false)
     }
   }
 
@@ -91,7 +137,16 @@ const Login = () => {
       const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession }, turnstileToken || undefined)
       
       if (error) {
-        toast({ title: "Erro no cadastro", description: error.message || "Não foi possível criar a conta", variant: "destructive" })
+        // Check for duplicate email error
+        if (error.message.includes('already registered') || error.message.includes('User already registered')) {
+          toast({ 
+            title: "E-mail já está em uso", 
+            description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.", 
+            variant: "destructive" 
+          })
+        } else {
+          toast({ title: "Erro no cadastro", description: error.message || "Não foi possível criar a conta", variant: "destructive" })
+        }
       } else {
         toast({ title: "Conta criada com sucesso!", description: "Verifique seu email para confirmar a conta." })
       }
@@ -100,6 +155,24 @@ const Login = () => {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  // Show 2FA verification screen
+  if (show2FA) {
+    return (
+      <TwoFactorVerification 
+        email={pending2FAEmail}
+        requiresEmail={requires2FAEmail}
+        requiresAuthenticator={requires2FAAuthenticator}
+        onVerified={handle2FASuccess}
+        onCancel={() => {
+          setShow2FA(false)
+          setPending2FAEmail('')
+          setRequires2FAEmail(false)
+          setRequires2FAAuthenticator(false)
+        }}
+      />
+    )
   }
 
   return (

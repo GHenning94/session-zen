@@ -88,6 +88,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         translatedError.message = 'A senha é muito fraca. Use pelo menos 6 caracteres com letras e números.'
       } else if (error.message.includes('Signup is disabled')) {
         translatedError.message = 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.'
+      } else if (error.message.includes('User already registered') || error.message.includes('already registered')) {
+        translatedError.message = 'Este e-mail já está em uso. Tente fazer login ou use outro e-mail.'
       }
       
       return { error: translatedError }

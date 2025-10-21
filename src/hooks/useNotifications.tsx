@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { useToast } from "@/hooks/use-toast"
+import { useBrowserNotifications } from "@/hooks/useBrowserNotifications"
 
 interface Notification {
   id: string
@@ -15,6 +16,7 @@ interface Notification {
 export const useNotifications = () => {
   const { user } = useAuth()
   const { toast } = useToast()
+  const { showNotification } = useBrowserNotifications()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -74,7 +76,8 @@ export const useNotifications = () => {
             setNotifications(prev => [newNotification, ...prev])
             setUnreadCount(prev => prev + 1)
             
-            // Removido toast para evitar spam de notificações
+            // Show browser notification
+            showNotification(newNotification.titulo, newNotification.conteudo)
           } else if (payload.eventType === 'UPDATE') {
             const updatedNotification = payload.new as Notification
             setNotifications(prev => 

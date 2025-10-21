@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ClientAvatar } from "@/components/ClientAvatar"
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
 import { 
   Calendar, 
   Users, 
@@ -757,6 +758,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
+      <NotificationPermissionBanner />
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
