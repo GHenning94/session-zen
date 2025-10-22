@@ -58,14 +58,19 @@ verify_jwt = true
 [functions.2fa-generate-backup-codes]
 verify_jwt = true
 
+# --- CORREÇÃO DE SEGURANÇA ABAIXO ---
+# Essas funções agora são chamadas por um usuário logado
+# e DEVEM verificar o token.
+
 [functions.2fa-send-email-code]
-verify_jwt = false
+verify_jwt = true # <-- MUDADO DE 'false'
 
 [functions.2fa-verify-code]
-verify_jwt = false
+verify_jwt = true # <-- MUDADO DE 'false'
 
 [functions.2fa-request-reset]
 verify_jwt = false
+# --- FIM DA CORREREÇÃO ---
 
 [edge_runtime]
 enabled = true
