@@ -12,31 +12,38 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Obter a ID do usuário do contexto (injetado pelo Supabase via verify_jwt: true)
-    const clientContext = req.headers.get('x-supabase-client-context');
-    if (!clientContext) throw new Error('Unauthorized: No client context');
-    
-    const context = JSON.parse(clientContext);
-    const userId = context.user?.id;
-    if (!userId) throw new Error('Unauthorized: No user ID in context');
-
-    // 2. Criar o cliente Admin (Service Role)
+    // 1. Criar UM cliente admin (Service Role), tal como no check-subscription
     const supabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
+
+    // 2. Obter o cabeçalho de autorização, tal como no check-subscription
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    // 3. Obter o token, tal como no check-subscription
+    const token = authHeader.replace("Bearer ", "");
     
+    // 4. Obter o utilizador a partir do token, tal como no check-subscription
+    const { data: userData, error: userError } = await supabaseAdminClient.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user?.id) throw new Error("User not authenticated");
+
+
+    // Agora o resto da lógica (que está correta)
     const { enable } = await req.json();
 
-    // 3. Usar 'upsert' (atualiza se existe, insere se não existe)
-    // É mais seguro e eficiente do que 'select' e depois 'update'/'insert'
     const { error: upsertError } = await supabaseAdminClient
       .from('user_2fa_settings')
       .upsert({
-        user_id: userId,
+        user_id: user.id,
         email_2fa_enabled: enable,
       }, {
-        onConflict: 'user_id' // Garante que atualize o registro existente
+        onConflict: 'user_id' // Garante que atualize o registo existente
       });
 
     if (upsertError) throw upsertError;
