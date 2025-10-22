@@ -21,6 +21,27 @@ export const use2FA = () => {
     }
   }, [user]);
 
+  // INÍCIO DA CORREÇÃO: Função helper para chamadas autenticadas
+  const invokeAuthenticatedFunction = async (functionName: string, body: object) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      toast({ 
+        title: "Erro de Autenticação", 
+        description: "Sua sessão expirou. Por favor, faça login novamente.", 
+        variant: "destructive" 
+      });
+      throw new Error("Usuário não autenticado");
+    }
+
+    // Define o token de autenticação para a próxima chamada
+    supabase.functions.setAuth(session.access_token);
+    
+    // Executa a chamada
+    return supabase.functions.invoke(functionName, { body });
+  };
+  // FIM DA CORREÇÃO
+
   const loadSettings = async () => {
     try {
       const { data, error } = await supabase
@@ -44,8 +65,9 @@ export const use2FA = () => {
 
   const toggleEmail2FA = async (enable: boolean) => {
     try {
-      const { error } = await supabase.functions.invoke('2fa-setup-email', {
-        body: { enable },
+      // CORRIGIDO: Usa a função helper
+      const { error } = await invokeAuthenticatedFunction('2fa-setup-email', {
+        enable,
       });
 
       if (error) throw error;
@@ -69,8 +91,9 @@ export const use2FA = () => {
 
   const generateAuthenticator = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('2fa-setup-authenticator', {
-        body: { action: 'generate' },
+      // CORRIGIDO: Usa a função helper
+      const { data, error } = await invokeAuthenticatedFunction('2fa-setup-authenticator', {
+        action: 'generate',
       });
 
       if (error) throw error;
@@ -88,8 +111,9 @@ export const use2FA = () => {
 
   const verifyAndEnableAuthenticator = async (code: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('2fa-setup-authenticator', {
-        body: { action: 'verify', enable: true, code },
+      // CORRIGIDO: Usa a função helper
+      const { data, error } = await invokeAuthenticatedFunction('2fa-setup-authenticator', {
+        action: 'verify', enable: true, code,
       });
 
       if (error) {
@@ -121,8 +145,9 @@ export const use2FA = () => {
 
   const disableAuthenticator = async () => {
     try {
-      const { error } = await supabase.functions.invoke('2fa-setup-authenticator', {
-        body: { action: 'disable' },
+      // CORRIGIDO: Usa a função helper
+      const { error } = await invokeAuthenticatedFunction('2fa-setup-authenticator', {
+        action: 'disable',
       });
 
       if (error) throw error;
@@ -144,7 +169,8 @@ export const use2FA = () => {
 
   const generateBackupCodes = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('2fa-generate-backup-codes');
+      // CORRIGIDO: Usa a função helper
+      const { data, error } = await invokeAuthenticatedFunction('2fa-generate-backup-codes', {});
 
       if (error) throw error;
 
