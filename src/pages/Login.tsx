@@ -65,7 +65,10 @@ const Login = () => {
       // Try to sign in first
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        options: {
+          captchaToken: turnstileToken
+        }
       })
       
       // Handle CAPTCHA-specific errors
@@ -75,7 +78,7 @@ const Login = () => {
           description: 'Por favor, recarregue a verificação e tente novamente',
           variant: 'destructive',
         })
-        setCaptchaKey(prev => prev + 1)
+        setCaptchaKey(prev => prev + 1) // Esta é a lógica de reset correta
         setTurnstileToken(null)
         setIsLoading(false)
         return
@@ -160,6 +163,14 @@ const Login = () => {
             description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.", 
             variant: "destructive" 
           })
+        } else if (error.message.includes('captcha')) { // Adicionado para segurança
+           toast({
+            title: 'Erro na verificação de segurança',
+            description: 'Por favor, recarregue a verificação e tente novamente',
+            variant: 'destructive',
+          })
+          setCaptchaKey(prev => prev + 1)
+          setTurnstileToken(null)
         } else {
           toast({ title: "Erro no cadastro", description: error.message || "Não foi possível criar a conta", variant: "destructive" })
         }
@@ -248,10 +259,10 @@ const Login = () => {
                       key={captchaKey}
                       siteKey={TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setTurnstileToken(token)}
+                      // CORREÇÃO AQUI (removido setCaptchaKey)
                       onError={() => {
                         console.debug('Turnstile error')
                         setTurnstileToken(null)
-                        setCaptchaKey(prev => prev + 1)
                       }}
                       onExpire={() => setTurnstileToken(null)}
                     />
@@ -335,10 +346,10 @@ const Login = () => {
                       key={captchaKey}
                       siteKey={TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setTurnstileToken(token)}
+                      // CORREÇÃO AQUI (removido setCaptchaKey)
                       onError={() => {
                         console.debug('Turnstile error')
                         setTurnstileToken(null)
-                        setCaptchaKey(prev => prev + 1)
                       }}
                       onExpire={() => setTurnstileToken(null)}
                     />
