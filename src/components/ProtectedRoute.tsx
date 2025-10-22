@@ -1,28 +1,30 @@
-import { ReactNode, useState, useEffect } from 'react'; // Adicionado useState, useEffect
-import { Navigate, useLocation } from 'react-router-dom'; // Adicionado useLocation
+import { ReactNode, useState, useEffect } from 'react';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client'; // Importar supabase
+import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: ReactNode;
 }
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { user, loading: authLoading, session: authSession } = useAuth(); // Usar a sessão do hook
+  const { user, loading: authLoading } = useAuth(); // Não precisamos mais da session aqui
   const location = useLocation();
   const [aalStatus, setAalStatus] = useState<'loading' | 'aal1' | 'aal2+'>('loading');
+  const [initialCheckComplete, setInitialCheckComplete] = useState(false);
 
   useEffect(() => {
-    // Verifica o nível AAL quando o utilizador ou a sessão mudam
+    // Verifica o nível AAL de forma assíncrona
     const checkAal = async () => {
-      setAalStatus('loading'); // Começa a verificar
+      setAalStatus('loading'); // Reinicia a verificação
       if (!user) {
-        setAalStatus('aal2+'); // Se não há utilizador, não precisa de 2FA (será redirecionado de qualquer forma)
+        setAalStatus('aal2+'); // Sem user, não há AAL
+        setInitialCheckComplete(true);
         return;
       }
 
-      // Tenta obter a sessão mais recente para o AAL mais atualizado
       try {
+        // Busca a sessão MAIS RECENTE para obter o AAL
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
 
@@ -30,35 +32,31 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         console.log('🔒 ProtectedRoute: AAL Check:', currentAal);
 
         if (currentAal === 'aal1') {
-          setAalStatus('aal1'); // Utilizador logado mas 2FA pendente
+          setAalStatus('aal1');
         } else {
-          setAalStatus('aal2+'); // Utilizador totalmente autenticado (aal2 ou sem aal)
+          setAalStatus('aal2+'); // aal2 ou null/undefined
         }
       } catch (error) {
         console.error("🔒 ProtectedRoute: Erro ao buscar sessão para verificar AAL:", error);
-        // Em caso de erro, por segurança, assume que precisa verificar (força login)
-        // ou poderia tentar usar o authSession como fallback
-         const fallbackAal = (authSession?.user as any)?.aal;
-         if (fallbackAal === 'aal1') {
-           setAalStatus('aal1');
-         } else {
-           // Se der erro e o fallback não for aal1, permite o acesso (com um aviso)
-           console.warn("🔒 ProtectedRoute: Permitindo acesso apesar do erro na busca de sessão.");
-           setAalStatus('aal2+');
-           // Alternativamente, poderia redirecionar para login aqui por segurança total
-           // setAalStatus('aal1'); // Forçaria login
-         }
+        // Em caso de erro, assume aal1 por segurança para forçar login
+        setAalStatus('aal1');
+      } finally {
+         setInitialCheckComplete(true);
       }
     };
 
-    if (!authLoading) { // Só verifica AAL depois que o useAuth carregou
+    if (!authLoading) {
       checkAal();
+    } else {
+      setInitialCheckComplete(false);
+      setAalStatus('loading');
     }
+  // Re-verifica se o user ou authLoading mudam
+  }, [user, authLoading]); // Removido authSession e location.pathname daqui
 
-  }, [user, authLoading, authSession, location.pathname]); // Re-verifica se a rota mudar
-
-  // Estado de Carregamento (do useAuth ou da verificação AAL)
-  if (authLoading || aalStatus === 'loading') {
+  // --- ESTADO DE CARREGAMENTO ---
+  if (authLoading || !initialCheckComplete) {
+    console.log('🔒 ProtectedRoute: Loading...', { authLoading, initialCheckComplete });
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -66,16 +64,40 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // Se não há utilizador OU se precisa de 2FA -> Redireciona para /login
-  if (!user || aalStatus === 'aal1') {
-    console.log(`🔒 ProtectedRoute: Acesso negado. Redirecionando para /login. User: ${!!user}, AAL Status: ${aalStatus}`);
-    // Guarda a página que o utilizador tentou aceder para redirecionar de volta após login
+  // --- LÓGICA DE REDIRECIONAMENTO ---
+
+  // 1. Se NÃO há usuário -> Redireciona para /login
+  if (!user) {
+    console.log(`🔒 ProtectedRoute: Acesso negado (No User). Redirecionando para /login.`);
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // Se chegou aqui, o utilizador existe e está totalmente autenticado
-  console.log('🔒 ProtectedRoute: Acesso permitido.');
-  return <>{children}</>;
+  // --- CORREÇÃO DEFINITIVA ---
+  // 2. Se HÁ usuário, verificamos se o acesso é permitido:
+  //    Permitido se:
+  //    a) O AAL NÃO é 'aal1' (ou seja, já está totalmente autenticado)
+  //    OU
+  //    b) Acabou de vir do processo de login bem-sucedido (flag fromLogin)
+  const isFullyAuthenticated = aalStatus !== 'aal1';
+  const justLoggedIn = location.state?.fromLogin === true;
+
+  if (isFullyAuthenticated || justLoggedIn) {
+    console.log('🔒 ProtectedRoute: Acesso Permitido.', { user: !!user, aalStatus, justLoggedIn });
+    // Limpa o estado 'fromLogin' para evitar problemas se o usuário navegar
+    // de volta para cá sem passar pelo login novamente (opcional, mas boa prática)
+    if (justLoggedIn) {
+        const state = { ...location.state };
+        delete state.fromLogin;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        history.replaceState(state, ''); // Usando history API diretamente ou via hook do router
+    }
+    return <>{children}</>;
+  } else {
+    // Se chegou aqui, significa que: user existe, AAL é 'aal1', E NÃO veio do login.
+    console.log(`🔒 ProtectedRoute: Acesso negado (AAL1 detected, not immediately after login). Redirecionando para /login.`);
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  // --- FIM DA CORREÇÃO ---
 };
 
 export default ProtectedRoute;

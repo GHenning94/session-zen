@@ -23,10 +23,7 @@ export const AuthRedirect = () => {
       return;
     }
 
-    // REGRA 2: Se HÁ usuário (seja aal1 ou aal2) -> NÃO FAZ NADA AQUI.
-    // Deixamos o Login.tsx lidar com o fluxo se estiver em /login.
-    // Deixamos as rotas protegidas carregarem se estiver nelas.
-    // Isso evita redirecionar para /dashboard se for aal1 e evita deslogar se for aal2.
+    // REGRA 2: Se HÁ usuário -> NÃO FAZ NADA AQUI.
     if (user) {
         console.log('🔀 AuthRedirect (Simplificado): Usuário existe. Nenhuma ação de redirecionamento necessária a partir daqui.');
         return;
