@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-// Não precisamos mais do supabase client aqui
 
 export const AuthRedirect = () => {
-  const { user, loading } = useAuth(); // Só precisamos saber se há um usuário
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -16,48 +15,38 @@ export const AuthRedirect = () => {
       return;
     }
 
-    // --- LÓGICA SIMPLIFICADA ---
+    // --- LÓGICA FINAL ---
 
-    // CASO 1: Usuário NÃO está logado
+    // REGRA 1: Se estiver na página de Login, NÃO FAÇA NADA. Deixe Login.tsx controlar.
+    if (location.pathname === '/login') {
+      console.log('🔀 AuthRedirect: On /login page. Doing nothing, letting Login.tsx handle flow.');
+      return;
+    }
+
+    // REGRA 2: Se NÃO estiver logado E tentar acessar rota protegida, vá para /login.
     if (!user) {
-      // Se ele tentar acessar uma rota protegida (ex: /dashboard), mande para /login
-      // (Você pode adicionar mais rotas protegidas aqui se precisar)
-      if (location.pathname.startsWith('/dashboard')) {
+      // (Adicione mais rotas protegidas se necessário)
+      if (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/agenda')) {
         console.log('🔀 AuthRedirect: No user, accessing protected route. Redirecting to /login.');
         navigate('/login', { replace: true });
         return;
       }
-      // Se não está logado e não está em rota protegida, deixe onde está.
       console.log('🔀 AuthRedirect: No user, staying on public route:', location.pathname);
       return;
     }
 
-    // CASO 2: Usuário ESTÁ logado
-    if (user) {
-      // Se ele está logado e tenta ir para /login (ex: digitou URL, clicou Voltar)
-      // E NÃO está vindo imediatamente do processo de login (para evitar conflito com 2FA)
-      // Mandamos ele para o dashboard.
-      // A checagem !location.state?.fromLogin previne o redirect logo após o signInWithPassword
-      if (location.pathname === '/login' && !location.state?.fromLogin) {
-         console.log('🔀 AuthRedirect: User is logged in and landed on /login. Redirecting to /dashboard.');
-         navigate('/dashboard', { replace: true });
-         return;
-      }
-
-      // Se ele está logado e acabou de fazer login vindo da Landing Page ('/')
-      // Mandamos ele para o dashboard.
-      if (location.pathname === '/' && location.state?.fromLogin) {
-        console.log('🔀 AuthRedirect: user just logged in from Landing Page, redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
-        return;
-      }
-
-       // Em todos os outros casos (logado no dashboard, logado no /login esperando 2FA, etc.)
-       // Deixe o usuário onde está. O Login.tsx cuidará do fluxo pós-login/2FA.
-       console.log('🔀 AuthRedirect: User is logged in, no redirect needed from:', location.pathname);
+    // REGRA 3: Se ESTIVER logado E tentar acessar '/' (landing page), vá para /dashboard.
+    // (Isso assume que usuários logados não devem ver a landing page)
+    if (user && location.pathname === '/') {
+       console.log('🔀 AuthRedirect: User is logged in and landed on /. Redirecting to /dashboard.');
+       navigate('/dashboard', { replace: true });
+       return;
     }
 
-  }, [user, loading, location.pathname, location.state, navigate]); // Removido authSession
+    // Em todos os outros casos (logado no dashboard, etc.), deixe onde está.
+    console.log('🔀 AuthRedirect: User is logged in, no special redirect needed from:', location.pathname);
+
+  }, [user, loading, location.pathname, navigate]); // Removido location.state
 
   return null;
 }
