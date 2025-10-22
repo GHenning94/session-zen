@@ -78,14 +78,17 @@ serve(async (req) => {
       );
     }
 
+    // --- INÍCIO DA CORREÇÃO ---
     // Basic validation of required fields
-    if (!clientData.nome || !clientData.email) {
-      console.log('[REGISTER-CLIENT] Missing required fields');
+    // Corrigido para verificar 'telefone' em vez de 'email'
+    if (!clientData.nome || !clientData.telefone) {
+      console.log('[REGISTER-CLIENT] Missing required fields (nome or telefone)');
       return new Response(
-        JSON.stringify({ error: 'Nome e email são obrigatórios' }),
+        JSON.stringify({ error: 'Nome e telefone são obrigatórios' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+    // --- FIM DA CORREÇÃO ---
 
     // Call the transactional RPC function to register client
     const { data: result, error: rpcError } = await supabase.rpc('register_client_from_token', {
