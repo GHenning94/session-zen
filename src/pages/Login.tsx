@@ -16,12 +16,12 @@ import "./Login.styles.css"
 
 const Login = () => {
   const navigate = useNavigate()
-  const { signUp } = useAuth() 
+  const { signUp } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [captchaKey, setCaptchaKey] = useState(0)
-  
+
   const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
   const [show2FA, setShow2FA] = useState(false)
   const [pending2FAEmail, setPending2FAEmail] = useState('')
@@ -53,15 +53,16 @@ const Login = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!turnstileToken) {
       toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
       return
     }
-    
+
     setIsLoading(true)
-    
+
     try {
+      console.log('Tentando login para:', formData.email); // Log 1
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -69,8 +70,9 @@ const Login = () => {
           captchaToken: turnstileToken
         }
       })
-      
+
       if (signInError?.message?.includes('captcha')) {
+        console.error('Erro de Captcha:', signInError); // Log 2
         toast({
           title: 'Erro na verificação de segurança',
           description: 'Por favor, recarregue a verificação e tente novamente',
@@ -81,54 +83,75 @@ const Login = () => {
         setIsLoading(false)
         return
       }
-      
-      if (!signInError && signInData.user) {
-        const { data: settings } = await supabase
+
+      console.log('Resultado do Login:', { signInData, signInError }); // Log 3
+
+      if (!signInError && signInData?.user) { // Adicionado '?' para segurança
+        console.log('Login bem-sucedido, verificando configurações 2FA para user ID:', signInData.user.id); // Log 4
+
+        // --- INÍCIO DA ADIÇÃO DE LOGS ---
+        const { data: settings, error: settingsError } = await supabase
           .from('user_2fa_settings')
           .select('email_2fa_enabled, authenticator_2fa_enabled')
           .eq('user_id', signInData.user.id)
           .single()
-        
+
+        console.log('Resultado da consulta user_2fa_settings:', { settings, settingsError }); // Log 5: MAIS IMPORTANTE
+
+        if (settingsError) {
+          console.error('Erro ao buscar configurações 2FA:', settingsError);
+          toast({ title: "Erro", description: "Não foi possível verificar as configurações de segurança.", variant: "destructive" });
+          // Decide o que fazer aqui - talvez deslogar? Ou permitir acesso? Por segurança, talvez parar.
+          // await supabase.auth.signOut(); // Descomente se quiser deslogar em caso de erro
+          setIsLoading(false);
+          return;
+        }
+        // --- FIM DA ADIÇÃO DE LOGS ---
+
         if (settings && (settings.email_2fa_enabled || settings.authenticator_2fa_enabled)) {
-          // CORREÇÃO DO LOOP: NÃO FAZEMOS SIGNOUT
-          // await supabase.auth.signOut() // <-- REMOVIDO
-          
+          console.log('2FA está ATIVO. Mostrando modal.'); // Log 6
           setPending2FAEmail(formData.email)
           setRequires2FAEmail(settings.email_2fa_enabled || false)
           setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
-          setShow2FA(true) // Apenas mostramos o modal
+          setShow2FA(true)
           setIsLoading(false)
           return
         }
-        
+
+        console.log('2FA está INATIVO ou não encontrado. Redirecionando para dashboard.'); // Log 7
         toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
         navigate("/dashboard", { state: { fromLogin: true } })
-      
+
       } else if (signInError) {
+        console.error('Erro de Login:', signInError); // Log 8
         toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
+      } else {
+        // Caso estranho onde não houve erro mas não veio usuário
+        console.error('Login não retornou erro nem usuário.'); // Log 9
+        toast({ title: "Erro no login", description: "Credenciais inválidas", variant: "destructive" })
       }
     } catch (error: any) {
+      console.error('Erro inesperado no handleLogin:', error); // Log 10
       toast({ title: "Erro", description: error.message || "Algo deu errado. Tente novamente.", variant: "destructive" })
     } finally {
       setIsLoading(false)
     }
   }
-  
+
   const handle2FASuccess = async () => {
-    // CORREÇÃO DO LOOP: NÃO FAZEMOS LOGIN DE NOVO
-    // Apenas redirecionamos.
+    console.log('handle2FASuccess chamado. Redirecionando para dashboard.'); // Log 11
     toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
     navigate("/dashboard", { state: { fromLogin: true } })
   }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!turnstileToken) {
       toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
       return
     }
-    
+
     if (formData.password !== formData.confirmPassword) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
@@ -137,21 +160,21 @@ const Login = () => {
       toast({ title: "Senha inválida", description: "A senha deve atender a todos os requisitos listados.", variant: "destructive" })
       return
     }
-    
+
     setIsLoading(true)
-    
+
     try {
       const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession }, turnstileToken || undefined)
-      
+
       if (error) {
         if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-          toast({ 
-            title: "E-mail já está em uso", 
-            description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.", 
-            variant: "destructive" 
+          toast({
+            title: "E-mail já está em uso",
+            description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.",
+            variant: "destructive"
           })
         } else if (error.message.includes('captcha')) {
-           toast({
+          toast({
             title: 'Erro na verificação de segurança',
             description: 'Por favor, recarregue a verificação e tente novamente',
             variant: 'destructive',
@@ -173,7 +196,7 @@ const Login = () => {
 
   if (show2FA) {
     return (
-      <TwoFactorVerification 
+      <TwoFactorVerification
         email={pending2FAEmail}
         requiresEmail={requires2FAEmail}
         requiresAuthenticator={requires2FAAuthenticator}
@@ -190,6 +213,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
+      {/* Restante do JSX inalterado */}
       <div className="background-animation-container">
         <div className="blob blob-2"></div>
       </div>
