@@ -13,7 +13,6 @@ serve(async (req) => {
 
   try {
     // 1. Obter a ID do usuário do contexto (injetado pelo Supabase via verify_jwt: true)
-    // O Supabase injeta o usuário no 'client-context'
     const clientContext = req.headers.get('x-supabase-client-context');
     if (!clientContext) throw new Error('Unauthorized: No client context');
     
