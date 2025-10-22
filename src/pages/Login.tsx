@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Brain, Heart, Check, X } from "lucide-react"
 import { Turnstile } from "@marsidev/react-turnstile"
-import "./Login.styles.css"
+import "./Login.styles.css" // Importa o CSS isolado para esta página
 
 const Login = () => {
   const navigate = useNavigate()
@@ -89,18 +89,14 @@ const Login = () => {
       if (!signInError && signInData?.user) {
         console.log('Login bem-sucedido, verificando configurações 2FA para user ID:', signInData.user.id);
 
-        // --- INÍCIO DA CORREÇÃO ---
-        // Alterado de .single() para .limit(1) para obter um array
         const { data: settingsArray, error: settingsError } = await supabase
           .from('user_2fa_settings')
           .select('email_2fa_enabled, authenticator_2fa_enabled')
           .eq('user_id', signInData.user.id)
-          .limit(1); // Retorna [] se não encontrar, em vez de {}
+          .limit(1);
 
-        // Pegamos o primeiro item do array (ou null se estiver vazio)
         const settings = settingsArray && settingsArray.length > 0 ? settingsArray[0] : null;
-        console.log('Resultado da consulta user_2fa_settings:', { settings, settingsError }); // Log agora mostrará null ou o objeto
-        // --- FIM DA CORREÇÃO ---
+        console.log('Resultado da consulta user_2fa_settings:', { settings, settingsError });
 
 
         if (settingsError) {
@@ -110,15 +106,15 @@ const Login = () => {
           return;
         }
 
-        // Esta condição agora funciona corretamente, pois 'settings' será null se não encontrado
         if (settings && (settings.email_2fa_enabled || settings.authenticator_2fa_enabled)) {
           console.log('2FA está ATIVO. Mostrando modal.');
           setPending2FAEmail(formData.email)
           setRequires2FAEmail(settings.email_2fa_enabled || false)
           setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
           setShow2FA(true)
-          setIsLoading(false)
-          return
+          // IMPORTANTE: Não colocamos setIsLoading(false) aqui,
+          // pois a tela vai mudar para o modal de 2FA.
+          return // Retorna para não executar o código abaixo
         }
 
         console.log('2FA está INATIVO ou não encontrado. Redirecionando para dashboard.');
@@ -136,6 +132,8 @@ const Login = () => {
       console.error('Erro inesperado no handleLogin:', error);
       toast({ title: "Erro", description: error.message || "Algo deu errado. Tente novamente.", variant: "destructive" })
     } finally {
+      // Garantir que loading seja false se não mostramos o modal
+      // Se mostramos o modal, ele já deu 'return' antes
       setIsLoading(false)
     }
   }
@@ -147,13 +145,12 @@ const Login = () => {
   }
 
   const handleRegister = async (e: React.FormEvent) => {
+    // ... (código do handleRegister permanece o mesmo) ...
     e.preventDefault()
-
     if (!turnstileToken) {
       toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
       return
     }
-
     if (formData.password !== formData.confirmPassword) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
@@ -162,25 +159,14 @@ const Login = () => {
       toast({ title: "Senha inválida", description: "A senha deve atender a todos os requisitos listados.", variant: "destructive" })
       return
     }
-
     setIsLoading(true)
-
     try {
       const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession }, turnstileToken || undefined)
-
       if (error) {
         if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-          toast({
-            title: "E-mail já está em uso",
-            description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.",
-            variant: "destructive"
-          })
+          toast({ title: "E-mail já está em uso", description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.", variant: "destructive" })
         } else if (error.message.includes('captcha')) {
-          toast({
-            title: 'Erro na verificação de segurança',
-            description: 'Por favor, recarregue a verificação e tente novamente',
-            variant: 'destructive',
-          })
+          toast({ title: 'Erro na verificação de segurança', description: 'Por favor, recarregue a verificação e tente novamente', variant: 'destructive', })
           setCaptchaKey(prev => prev + 1)
           setTurnstileToken(null)
         } else {
@@ -196,26 +182,34 @@ const Login = () => {
     }
   }
 
+  // --- CORREÇÃO DE ESTILO APLICADA AQUI ---
   if (show2FA) {
     return (
-      <TwoFactorVerification
-        email={pending2FAEmail}
-        requiresEmail={requires2FAEmail}
-        requiresAuthenticator={requires2FAAuthenticator}
-        onVerified={handle2FASuccess}
-        onCancel={() => {
-          setShow2FA(false)
-          setPending2FAEmail('')
-          setRequires2FAEmail(false)
-          setRequires2FAAuthenticator(false)
-        }}
-      />
-    )
+      <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
+        <div className="background-animation-container">
+          <div className="blob blob-2"></div>
+        </div>
+        <div className="relative z-10 w-full max-w-md space-y-6">
+          <TwoFactorVerification
+            email={pending2FAEmail}
+            requiresEmail={requires2FAEmail}
+            requiresAuthenticator={requires2FAAuthenticator}
+            onVerified={handle2FASuccess}
+            onCancel={() => {
+              setShow2FA(false)
+              setPending2FAEmail('')
+              setRequires2FAEmail(false)
+              setRequires2FAAuthenticator(false)
+            }}
+          />
+        </div>
+      </div>
+    );
   }
 
+  // O return principal (quando show2FA é false)
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
-      {/* Restante do JSX inalterado */}
       <div className="background-animation-container">
         <div className="blob blob-2"></div>
       </div>
@@ -294,7 +288,8 @@ const Login = () => {
               </TabsContent>
               <TabsContent value="register" className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
-                  <div className="space-y-2">
+                  {/* ... (código do formulário de registro permanece o mesmo) ... */}
+                   <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input id="name" type="text" placeholder="Seu nome" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
                   </div>
