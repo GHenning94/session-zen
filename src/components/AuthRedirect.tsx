@@ -35,13 +35,12 @@ export const AuthRedirect = () => {
       }
     };
     fetchAal();
-  }, [user, authSession]); // Re-busca AAL se user ou authSession mudar
+  }, [user, authSession]);
 
 
   useEffect(() => {
     console.log('🔀 AuthRedirect: checking auth state', { user: !!user, loading, pathname: location.pathname, currentAal });
 
-    // Espera carregar user E AAL ter um valor definido (não undefined)
     if (loading || currentAal === undefined) {
       console.log('🔀 AuthRedirect: still loading user or AAL, waiting...');
       return;
@@ -67,16 +66,16 @@ export const AuthRedirect = () => {
     // REGRA 3: Se ESTIVER logado...
     if (user) {
       // --- CORREÇÃO DA REGRA 3a ---
-      // Só redireciona para /login se precisar de 2FA (aal1)
-      // E ESTIVER TENTANDO ACESSAR UMA ROTA PROTEGIDA DIRETAMENTE (sem vir do login)
-      if (currentAal === 'aal1' && !location.state?.fromLogin && location.pathname !== '/login') {
-        console.log('🔀 AuthRedirect: User needs 2FA (aal1), not on /login, and did not come from login process. Redirecting to /login.');
-        supabase.auth.signOut().catch(e => console.error("Error signing out in AuthRedirect (aal1):", e));
+      // Redireciona para /login se precisar de 2FA (aal1)
+      // E ESTIVER TENTANDO ACESSAR UMA ROTA PROTEGIDA DIRETAMENTE
+      // REMOVIDO o signOut daqui. Apenas redireciona.
+      if (currentAal === 'aal1' && location.pathname !== '/login') { // Simplificado: Se AAL1 e não está no login, volta pro login
+        console.log('🔀 AuthRedirect: User needs 2FA (aal1) but is not on /login. Redirecting to /login.');
+        // supabase.auth.signOut().catch(e => console.error("Error signing out in AuthRedirect:", e)); // <-- REMOVIDO
         navigate('/login', { replace: true });
         return;
       }
-      // Se currentAal é 'aal1' mas location.state.fromLogin é true, significa que
-      // estamos no meio do fluxo Login -> Modal, então NÃO redirecionamos aqui.
+      // --- FIM DA CORREÇÃO ---
 
       // REGRA 3b: Totalmente autenticado e tenta acessar '/', vá para /dashboard.
       if (currentAal !== 'aal1' && location.pathname === '/') {
@@ -88,7 +87,7 @@ export const AuthRedirect = () => {
 
     console.log('🔀 AuthRedirect: User is logged in, no special redirect needed from:', location.pathname);
 
-  }, [user, loading, location.pathname, navigate, currentAal, authSession, location.state]); // Adicionado location.state
+  }, [user, loading, location.pathname, navigate, currentAal, authSession]); // Removido location.state que não era necessário aqui
 
   return null;
 }
