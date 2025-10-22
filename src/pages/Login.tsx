@@ -62,7 +62,7 @@ const Login = () => {
     setIsLoading(true)
 
     try {
-      console.log('Tentando login para:', formData.email); // Log 1
+      console.log('Tentando login para:', formData.email);
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -72,7 +72,7 @@ const Login = () => {
       })
 
       if (signInError?.message?.includes('captcha')) {
-        console.error('Erro de Captcha:', signInError); // Log 2
+        console.error('Erro de Captcha:', signInError);
         toast({
           title: 'Erro na verificação de segurança',
           description: 'Por favor, recarregue a verificação e tente novamente',
@@ -84,32 +84,35 @@ const Login = () => {
         return
       }
 
-      console.log('Resultado do Login:', { signInData, signInError }); // Log 3
+      console.log('Resultado do Login:', { signInData, signInError });
 
-      if (!signInError && signInData?.user) { // Adicionado '?' para segurança
-        console.log('Login bem-sucedido, verificando configurações 2FA para user ID:', signInData.user.id); // Log 4
+      if (!signInError && signInData?.user) {
+        console.log('Login bem-sucedido, verificando configurações 2FA para user ID:', signInData.user.id);
 
-        // --- INÍCIO DA ADIÇÃO DE LOGS ---
-        const { data: settings, error: settingsError } = await supabase
+        // --- INÍCIO DA CORREÇÃO ---
+        // Alterado de .single() para .limit(1) para obter um array
+        const { data: settingsArray, error: settingsError } = await supabase
           .from('user_2fa_settings')
           .select('email_2fa_enabled, authenticator_2fa_enabled')
           .eq('user_id', signInData.user.id)
-          .single()
+          .limit(1); // Retorna [] se não encontrar, em vez de {}
 
-        console.log('Resultado da consulta user_2fa_settings:', { settings, settingsError }); // Log 5: MAIS IMPORTANTE
+        // Pegamos o primeiro item do array (ou null se estiver vazio)
+        const settings = settingsArray && settingsArray.length > 0 ? settingsArray[0] : null;
+        console.log('Resultado da consulta user_2fa_settings:', { settings, settingsError }); // Log agora mostrará null ou o objeto
+        // --- FIM DA CORREÇÃO ---
+
 
         if (settingsError) {
           console.error('Erro ao buscar configurações 2FA:', settingsError);
           toast({ title: "Erro", description: "Não foi possível verificar as configurações de segurança.", variant: "destructive" });
-          // Decide o que fazer aqui - talvez deslogar? Ou permitir acesso? Por segurança, talvez parar.
-          // await supabase.auth.signOut(); // Descomente se quiser deslogar em caso de erro
           setIsLoading(false);
           return;
         }
-        // --- FIM DA ADIÇÃO DE LOGS ---
 
+        // Esta condição agora funciona corretamente, pois 'settings' será null se não encontrado
         if (settings && (settings.email_2fa_enabled || settings.authenticator_2fa_enabled)) {
-          console.log('2FA está ATIVO. Mostrando modal.'); // Log 6
+          console.log('2FA está ATIVO. Mostrando modal.');
           setPending2FAEmail(formData.email)
           setRequires2FAEmail(settings.email_2fa_enabled || false)
           setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
@@ -118,20 +121,19 @@ const Login = () => {
           return
         }
 
-        console.log('2FA está INATIVO ou não encontrado. Redirecionando para dashboard.'); // Log 7
+        console.log('2FA está INATIVO ou não encontrado. Redirecionando para dashboard.');
         toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
         navigate("/dashboard", { state: { fromLogin: true } })
 
       } else if (signInError) {
-        console.error('Erro de Login:', signInError); // Log 8
+        console.error('Erro de Login:', signInError);
         toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
       } else {
-        // Caso estranho onde não houve erro mas não veio usuário
-        console.error('Login não retornou erro nem usuário.'); // Log 9
+        console.error('Login não retornou erro nem usuário.');
         toast({ title: "Erro no login", description: "Credenciais inválidas", variant: "destructive" })
       }
     } catch (error: any) {
-      console.error('Erro inesperado no handleLogin:', error); // Log 10
+      console.error('Erro inesperado no handleLogin:', error);
       toast({ title: "Erro", description: error.message || "Algo deu errado. Tente novamente.", variant: "destructive" })
     } finally {
       setIsLoading(false)
@@ -139,7 +141,7 @@ const Login = () => {
   }
 
   const handle2FASuccess = async () => {
-    console.log('handle2FASuccess chamado. Redirecionando para dashboard.'); // Log 11
+    console.log('handle2FASuccess chamado. Redirecionando para dashboard.');
     toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
     navigate("/dashboard", { state: { fromLogin: true } })
   }
