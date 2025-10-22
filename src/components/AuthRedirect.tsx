@@ -1,70 +1,63 @@
 import { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client'; // Import Supabase client
+// Não precisamos mais do supabase client aqui
 
 export const AuthRedirect = () => {
-  const { user, loading, session: authSession } = useAuth();
+  const { user, loading } = useAuth(); // Só precisamos saber se há um usuário
   const navigate = useNavigate();
   const location = useLocation();
 
   useEffect(() => {
-    const checkAuthAndRedirect = async () => {
-      console.log('🔀 AuthRedirect: checking auth state', { user: !!user, loading, pathname: location.pathname });
+    console.log('🔀 AuthRedirect: checking auth state', { user: !!user, loading, pathname: location.pathname });
 
-      if (loading) {
-        console.log('🔀 AuthRedirect: still loading, waiting...');
+    if (loading) {
+      console.log('🔀 AuthRedirect: still loading, waiting...');
+      return;
+    }
+
+    // --- LÓGICA SIMPLIFICADA ---
+
+    // CASO 1: Usuário NÃO está logado
+    if (!user) {
+      // Se ele tentar acessar uma rota protegida (ex: /dashboard), mande para /login
+      // (Você pode adicionar mais rotas protegidas aqui se precisar)
+      if (location.pathname.startsWith('/dashboard')) {
+        console.log('🔀 AuthRedirect: No user, accessing protected route. Redirecting to /login.');
+        navigate('/login', { replace: true });
         return;
       }
+      // Se não está logado e não está em rota protegida, deixe onde está.
+      console.log('🔀 AuthRedirect: No user, staying on public route:', location.pathname);
+      return;
+    }
 
-      let currentSession = authSession;
-      if (!currentSession && user) {
-        const { data } = await supabase.auth.getSession();
-        currentSession = data.session;
-        console.log('🔀 AuthRedirect: Fetched session manually', { currentSession });
+    // CASO 2: Usuário ESTÁ logado
+    if (user) {
+      // Se ele está logado e tenta ir para /login (ex: digitou URL, clicou Voltar)
+      // E NÃO está vindo imediatamente do processo de login (para evitar conflito com 2FA)
+      // Mandamos ele para o dashboard.
+      // A checagem !location.state?.fromLogin previne o redirect logo após o signInWithPassword
+      if (location.pathname === '/login' && !location.state?.fromLogin) {
+         console.log('🔀 AuthRedirect: User is logged in and landed on /login. Redirecting to /dashboard.');
+         navigate('/dashboard', { replace: true });
+         return;
       }
 
-      const userAal = (currentSession?.user as any)?.aal;
-      const needs2FA = userAal === 'aal1';
-      console.log('🔀 AuthRedirect: Needs 2FA check:', { needs2FA, aal: userAal });
-
-      // --- LOG ADICIONAL PARA VERIFICAR A LÓGICA DE REDIRECIONAMENTO ---
-      if (user && location.pathname === '/login') {
-          console.log('🔀 AuthRedirect: Verificando /login redirect.', { needs2FA });
-          if (needs2FA) {
-              console.log('🔀 AuthRedirect: DECISÃO -> Ficar no /login por causa do needs2FA.');
-          } else {
-              console.log('🔀 AuthRedirect: DECISÃO -> Redirecionar para /dashboard porque needs2FA é false.');
-          }
-      }
-      // --- FIM DO LOG ADICIONAL ---
-
-
-      if (user && location.pathname === '/' && location.state?.fromLogin && !needs2FA) {
-        console.log('🔀 AuthRedirect: user logged in on landing page, redirecting to dashboard');
+      // Se ele está logado e acabou de fazer login vindo da Landing Page ('/')
+      // Mandamos ele para o dashboard.
+      if (location.pathname === '/' && location.state?.fromLogin) {
+        console.log('🔀 AuthRedirect: user just logged in from Landing Page, redirecting to dashboard');
         navigate('/dashboard', { replace: true });
         return;
       }
 
-      if (user && location.pathname === '/login' && !needs2FA) {
-        console.log('🔀 AuthRedirect: user logged in on login page (fully authenticated), redirecting to dashboard');
-        navigate('/dashboard', { replace: true });
-        return;
-      }
+       // Em todos os outros casos (logado no dashboard, logado no /login esperando 2FA, etc.)
+       // Deixe o usuário onde está. O Login.tsx cuidará do fluxo pós-login/2FA.
+       console.log('🔀 AuthRedirect: User is logged in, no redirect needed from:', location.pathname);
+    }
 
-      if (user && location.pathname === '/login' && needs2FA) {
-        console.log('🔀 AuthRedirect: user logged in on login page but needs 2FA, staying on login page to show modal');
-        return;
-      }
-
-      if (!user && !loading) {
-        console.log('🔀 AuthRedirect: no user detected, staying on current page:', location.pathname);
-      }
-    };
-
-    checkAuthAndRedirect();
-
-  }, [user, loading, authSession, location.pathname, location.state, navigate]);
+  }, [user, loading, location.pathname, location.state, navigate]); // Removido authSession
 
   return null;
 }
