@@ -72,12 +72,20 @@ interface SubscriptionProviderProps {
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
   const { user } = useAuth()
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>('basico')
-  const [isLoading, setIsLoading] = useState(false)
+  
+  // --- INÍCIO DA CORREÇÃO 1 ---
+  // Deve começar como 'true' para esperar a verificação inicial
+  const [isLoading, setIsLoading] = useState(true)
+  // --- FIM DA CORREÇÃO 1 ---
 
   // Check subscription status
   const checkSubscription = async () => {
     if (!user) {
       setCurrentPlan('basico')
+      // --- INÍCIO DA CORREÇÃO 2 ---
+      // Se não há usuário, terminamos de carregar
+      setIsLoading(false)
+      // --- FIM DA CORREÇÃO 2 ---
       return
     }
 
@@ -89,7 +97,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       if (error) {
         console.error('Error checking subscription:', error)
         setCurrentPlan('basico')
-        return
+        return // O finally vai setar isLoading(false)
       }
 
       console.log('✅ Subscription data:', data)

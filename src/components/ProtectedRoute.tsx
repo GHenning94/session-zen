@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-// Não precisamos mais do supabase client aqui
+// --- INÍCIO DA CORREÇÃO ---
+import { useSubscription } from '@/hooks/useSubscription'; 
+// --- FIM DA CORREÇÃO ---
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -9,11 +11,17 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
+  // --- INÍCIO DA CORREÇÃO ---
+  const { isLoading: subLoading } = useSubscription();
   const location = useLocation();
 
+  // O app está carregando se o Auth OU a Assinatura estiverem carregando
+  const isLoading = authLoading || subLoading;
+  // --- FIM DA CORREÇÃO ---
+
   // --- ESTADO DE CARREGAMENTO INICIAL ---
-  if (authLoading) {
-    console.log('🔒 ProtectedRoute (Ultra Simples): Loading...');
+  if (isLoading) { // Modificado para usar o isLoading combinado
+    console.log('🔒 ProtectedRoute: Loading auth or subscription...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
@@ -31,8 +39,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   // 2. Se HÁ usuário -> Permite acesso
-  //    Confiamos que o Login.tsx só nos enviou para cá APÓS completar o 2FA.
-  console.log('🔒 ProtectedRoute (Ultra Simples): Acesso Permitido (User exists).');
+  console.log('🔒 ProtectedRoute (Ultra Simples): Acesso Permitido (User exists & subscription loaded).');
   return <>{children}</>;
 
 };
