@@ -114,35 +114,37 @@ serve(async (req) => {
   }
 
   try {
+    // --- INÍCIO DA CORREÇÃO ---
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
+    // Extrai o token do cabeçalho
+    const token = authHeader.replace('Bearer ', '');
 
+    // 1. Crie o cliente Admin usando a SERVICE_ROLE_KEY
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // MUDADO DE ANON_KEY
+      // Removido o { global: { headers } } pois não é necessário para o admin client
     );
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    // 2. Obtenha o usuário usando o token com o cliente admin
+    const { data: { user }, error: userError } = await supabase.auth.admin.getUserByToken(token);
+    // --- FIM DA CORREÇÃO ---
+
     if (userError || !user) {
       console.error('Auth error:', userError);
-      throw new Error('Unauthorized');
+      throw new Error('Unauthorized'); // O token é inválido ou expirado
     }
 
     const { action, enable, code } = await req.json();
 
     if (action === 'generate') {
-      // Generate new secret and QR code
+      // O restante do seu código já estava correto
       const secret = generateSecret();
       const qrCodeURL = generateQRCodeURL(user.email!, secret);
 
-      // Store secret temporarily (not enabled yet)
       const { data: settings, error: settingsError } = await supabase
         .from('user_2fa_settings')
         .select('*')
@@ -171,7 +173,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     } else if (action === 'verify') {
-      // Verify code and enable if correct
       const { data: settings } = await supabase
         .from('user_2fa_settings')
         .select('authenticator_secret')
@@ -186,7 +187,6 @@ serve(async (req) => {
         );
       }
 
-      // Verify TOTP code
       if (!code || code.length !== 6) {
         return new Response(
           JSON.stringify({ error: 'Código deve ter 6 dígitos' }),
@@ -204,7 +204,6 @@ serve(async (req) => {
         );
       }
 
-      // Enable authenticator 2FA
       const { error: updateError } = await supabase
         .from('user_2fa_settings')
         .update({ authenticator_2fa_enabled: enable })
