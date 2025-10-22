@@ -15,7 +15,24 @@ interface TwoFactorVerificationProps {
   onCancel: () => void;
 }
 
-export const TwoFactorVerification = ({
+// --- FUNÇÃO HELPER PARA CHAMADAS AUTENTICADAS ---
+const invokeAuthenticatedFunction = async (functionName: string, body: object) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  if (!session) {
+    toast({ 
+      title: "Erro de Autenticação", 
+      description: "Sua sessão expirou. Por favor, tente fazer login novamente.", 
+      variant: "destructive" 
+    });
+    throw new Error("Usuário não autenticado");
+  }
+
+  supabase.functions.setAuth(session.access_token);
+  return supabase.functions.invoke(functionName, { body });
+};
+
+export const TwoFactorVerification = ({ // <-- Export está correto aqui
   email,
   requiresEmail,
   requiresAuthenticator,
@@ -32,8 +49,8 @@ export const TwoFactorVerification = ({
   const sendEmailCode = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase.functions.invoke('2fa-send-email-code', {
-        body: { email },
+      const { data, error } = await invokeAuthenticatedFunction('2fa-send-email-code', {
+        email,
       });
 
       if (error) throw error;
@@ -57,14 +74,11 @@ export const TwoFactorVerification = ({
   const handleVerify = async () => {
     try {
       setLoading(true);
-
-      const { data, error } = await supabase.functions.invoke('2fa-verify-code', {
-        body: {
-          email,
-          emailCode: requiresEmail && !useBackupCode ? emailCode : undefined,
-          authenticatorCode: requiresAuthenticator && !useBackupCode ? authenticatorCode : undefined,
-          backupCode: useBackupCode ? backupCode : undefined,
-        },
+      const { data, error } = await invokeAuthenticatedFunction('2fa-verify-code', {
+        email,
+        emailCode: requiresEmail && !useBackupCode ? emailCode : undefined,
+        authenticatorCode: requiresAuthenticator && !useBackupCode ? authenticatorCode : undefined,
+        backupCode: useBackupCode ? backupCode : undefined,
       });
 
       if (error) throw error;
@@ -78,7 +92,7 @@ export const TwoFactorVerification = ({
       } else {
         toast({
           title: 'Código(s) inválido(s)',
-          description: 'Verifique os códigos inseridos e tente novamente',
+          description: data.error || 'Verifique os códigos inseridos e tente novamente',
           variant: 'destructive',
         });
       }
@@ -134,7 +148,6 @@ export const TwoFactorVerification = ({
                 </div>
               </div>
             )}
-
             {requiresAuthenticator && (
               <div className="space-y-2">
                 <Label htmlFor="authenticator-code" className="flex items-center gap-2">
@@ -168,7 +181,6 @@ export const TwoFactorVerification = ({
             />
           </div>
         )}
-
         <div className="space-y-2 pt-2">
           <Button
             onClick={handleVerify}
@@ -177,7 +189,6 @@ export const TwoFactorVerification = ({
           >
             {loading ? 'Verificando...' : 'Verificar'}
           </Button>
-
           <Button
             variant="ghost"
             onClick={() => setUseBackupCode(!useBackupCode)}
@@ -185,7 +196,6 @@ export const TwoFactorVerification = ({
           >
             {useBackupCode ? 'Usar código normal' : 'Usar código de backup'}
           </Button>
-
           <Button
             variant="outline"
             onClick={onCancel}
@@ -194,7 +204,6 @@ export const TwoFactorVerification = ({
             Cancelar
           </Button>
         </div>
-
         <div className="text-center pt-4">
           <Button
             variant="link"
