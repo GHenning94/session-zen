@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Mail, Smartphone, Key } from 'lucide-react';
+import { Mail, Smartphone, Key, Loader2 } from 'lucide-react'; // Adicionado Loader2
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+// Removido useNavigate
 
 interface TwoFactorVerificationProps {
   email: string;
@@ -15,24 +16,23 @@ interface TwoFactorVerificationProps {
   onCancel: () => void;
 }
 
-// --- FUNÇÃO HELPER PARA CHAMADAS AUTENTICADAS ---
+// Helper para chamadas AUTENTICADAS (para send-code e verify-code)
 const invokeAuthenticatedFunction = async (functionName: string, body: object) => {
   const { data: { session } } = await supabase.auth.getSession();
-  
   if (!session) {
-    toast({ 
-      title: "Erro de Autenticação", 
-      description: "Sua sessão expirou. Por favor, tente fazer login novamente.", 
-      variant: "destructive" 
-    });
+    toast({ title: "Erro de Autenticação", description: "Sua sessão expirou.", variant: "destructive" });
     throw new Error("Usuário não autenticado");
   }
-
   supabase.functions.setAuth(session.access_token);
   return supabase.functions.invoke(functionName, { body });
 };
 
-export const TwoFactorVerification = ({ // <-- Export está correto aqui
+// Helper para chamadas PÚBLICAS (para request-reset)
+const invokePublicFunction = async (functionName: string, body: object) => {
+  return supabase.functions.invoke(functionName, { body });
+};
+
+export const TwoFactorVerification = ({
   email,
   requiresEmail,
   requiresAuthenticator,
@@ -44,35 +44,26 @@ export const TwoFactorVerification = ({ // <-- Export está correto aqui
   const [backupCode, setBackupCode] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingReset, setLoadingReset] = useState(false); // Novo estado
   const [emailCodeSent, setEmailCodeSent] = useState(false);
+  // Removido navigate
 
   const sendEmailCode = async () => {
     try {
       setLoading(true);
-      const { data, error } = await invokeAuthenticatedFunction('2fa-send-email-code', {
-        email,
-      });
-
+      const { data, error } = await invokeAuthenticatedFunction('2fa-send-email-code', { email, });
       if (error) throw error;
-
       setEmailCodeSent(true);
-      toast({
-        title: 'Código enviado',
-        description: 'Verifique seu e-mail para o código de verificação',
-      });
+      toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação', });
     } catch (error: any) {
-      toast({
-        title: 'Erro',
-        description: error.message,
-        variant: 'destructive',
-      });
+      toast({ title: 'Erro', description: error.message, variant: 'destructive', });
     } finally {
       setLoading(false);
     }
   };
 
   const handleVerify = async () => {
-    try {
+     try {
       setLoading(true);
       const { data, error } = await invokeAuthenticatedFunction('2fa-verify-code', {
         email,
@@ -80,30 +71,54 @@ export const TwoFactorVerification = ({ // <-- Export está correto aqui
         authenticatorCode: requiresAuthenticator && !useBackupCode ? authenticatorCode : undefined,
         backupCode: useBackupCode ? backupCode : undefined,
       });
+      if (error) throw error;
+      if (data.success) {
+        toast({ title: 'Verificação bem-sucedida', description: 'Você será redirecionado em instantes', });
+        onVerified();
+      } else {
+        toast({ title: 'Código(s) inválido(s)', description: data.error || 'Verifique os códigos inseridos e tente novamente', variant: 'destructive', });
+      }
+    } catch (error: any) {
+      toast({ title: 'Erro', description: error.message, variant: 'destructive', });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRequestReset = async () => {
+    setLoadingReset(true);
+    try {
+      const { data, error } = await invokePublicFunction('2fa-request-reset', {
+        email: email,
+      });
 
       if (error) throw error;
 
       if (data.success) {
         toast({
-          title: 'Verificação bem-sucedida',
-          description: 'Você será redirecionado em instantes',
+          title: 'Verifique seu E-mail',
+          description: data.message || 'Um link para redefinir seu 2FA foi enviado.',
+          duration: 10000,
         });
-        onVerified();
+        await supabase.auth.signOut(); // Desloga
+        onCancel(); // Limpa a UI e volta ao login
       } else {
-        toast({
-          title: 'Código(s) inválido(s)',
-          description: data.error || 'Verifique os códigos inseridos e tente novamente',
-          variant: 'destructive',
-        });
+         toast({
+           title: 'Erro ao solicitar redefinição',
+           description: data.error || 'Não foi possível iniciar a redefinição.',
+           variant: 'destructive',
+         });
       }
+
     } catch (error: any) {
+      console.error("Erro ao solicitar reset 2FA:", error);
       toast({
         title: 'Erro',
-        description: error.message,
+        description: error.message || 'Não foi possível iniciar a redefinição.',
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setLoadingReset(false);
     }
   };
 
@@ -184,7 +199,7 @@ export const TwoFactorVerification = ({ // <-- Export está correto aqui
         <div className="space-y-2 pt-2">
           <Button
             onClick={handleVerify}
-            disabled={loading || (requiresEmail && !emailCodeSent && !useBackupCode)}
+            disabled={loading || loadingReset || (requiresEmail && !emailCodeSent && !useBackupCode)}
             className="w-full"
           >
             {loading ? 'Verificando...' : 'Verificar'}
@@ -192,13 +207,15 @@ export const TwoFactorVerification = ({ // <-- Export está correto aqui
           <Button
             variant="ghost"
             onClick={() => setUseBackupCode(!useBackupCode)}
+            disabled={loadingReset}
             className="w-full"
           >
             {useBackupCode ? 'Usar código normal' : 'Usar código de backup'}
           </Button>
           <Button
             variant="outline"
-            onClick={onCancel}
+            onClick={onCancel} // Chama a função onCancel (que desloga) do Login.tsx
+            disabled={loadingReset}
             className="w-full"
           >
             Cancelar
@@ -208,10 +225,10 @@ export const TwoFactorVerification = ({ // <-- Export está correto aqui
           <Button
             variant="link"
             className="text-sm text-muted-foreground"
-            onClick={() => {
-              window.location.href = '/reset-2fa';
-            }}
+            onClick={handleRequestReset} // Chama a nova função
+            disabled={loadingReset}
           >
+            {loadingReset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Perdeu o acesso ao 2FA?
           </Button>
         </div>

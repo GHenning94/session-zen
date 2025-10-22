@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react" // Adicionado useEffect
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "@/hooks/use-toast"
@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Brain, Heart, Check, X } from "lucide-react"
 import { Turnstile } from "@marsidev/react-turnstile"
-import "./Login.styles.css" // Importa o CSS isolado para esta página
+import "./Login.styles.css"
 
 const Login = () => {
   const navigate = useNavigate()
@@ -34,6 +34,23 @@ const Login = () => {
     password: '',
     confirmPassword: ''
   })
+
+  useEffect(() => {
+    let isMounted = true;
+    const cleanup = () => {
+      if (show2FA) {
+        console.log('Login component unmounting while 2FA modal was expected. Signing out.');
+        supabase.auth.signOut().catch(error => {
+           console.error("Erro ao deslogar durante unmount do Login:", error);
+        });
+      }
+    };
+    return () => {
+      isMounted = false;
+      cleanup();
+    };
+  }, [show2FA]);
+
 
   const passwordRequirements = [
     { text: "Pelo menos 8 caracteres", test: (pwd: string) => pwd.length >= 8 },
@@ -80,7 +97,7 @@ const Login = () => {
         })
         setCaptchaKey(prev => prev + 1)
         setTurnstileToken(null)
-        setIsLoading(false)
+        setIsLoading(false); // Seta loading false aqui
         return
       }
 
@@ -102,7 +119,7 @@ const Login = () => {
         if (settingsError) {
           console.error('Erro ao buscar configurações 2FA:', settingsError);
           toast({ title: "Erro", description: "Não foi possível verificar as configurações de segurança.", variant: "destructive" });
-          setIsLoading(false);
+          setIsLoading(false); // Seta loading false aqui
           return;
         }
 
@@ -112,29 +129,33 @@ const Login = () => {
           setRequires2FAEmail(settings.email_2fa_enabled || false)
           setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
           setShow2FA(true)
-          // IMPORTANTE: Não colocamos setIsLoading(false) aqui,
-          // pois a tela vai mudar para o modal de 2FA.
-          return // Retorna para não executar o código abaixo
+          // Intencionalmente NÃO setamos isLoading false aqui, pois a UI vai mudar
+          return
         }
 
         console.log('2FA está INATIVO ou não encontrado. Redirecionando para dashboard.');
         toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
         navigate("/dashboard", { state: { fromLogin: true } })
+        // Não precisamos setar isLoading false aqui, pois a navegação desmontará o componente
 
       } else if (signInError) {
         console.error('Erro de Login:', signInError);
         toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
+        setIsLoading(false); // Seta loading false aqui
       } else {
         console.error('Login não retornou erro nem usuário.');
         toast({ title: "Erro no login", description: "Credenciais inválidas", variant: "destructive" })
+        setIsLoading(false); // Seta loading false aqui
       }
     } catch (error: any) {
       console.error('Erro inesperado no handleLogin:', error);
       toast({ title: "Erro", description: error.message || "Algo deu errado. Tente novamente.", variant: "destructive" })
+      setIsLoading(false); // Seta loading false no catch geral
     } finally {
-      // Garantir que loading seja false se não mostramos o modal
-      // Se mostramos o modal, ele já deu 'return' antes
-      setIsLoading(false)
+      // --- CORREÇÃO ---
+      // Removida a lógica complexa que causava erro de escopo.
+      // setIsLoading(false) agora é tratado nos blocos try/catch acima.
+      // --- FIM DA CORREÇÃO ---
     }
   }
 
@@ -145,12 +166,13 @@ const Login = () => {
   }
 
   const handleRegister = async (e: React.FormEvent) => {
-    // ... (código do handleRegister permanece o mesmo) ...
     e.preventDefault()
+
     if (!turnstileToken) {
       toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
       return
     }
+
     if (formData.password !== formData.confirmPassword) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
@@ -159,14 +181,25 @@ const Login = () => {
       toast({ title: "Senha inválida", description: "A senha deve atender a todos os requisitos listados.", variant: "destructive" })
       return
     }
+
     setIsLoading(true)
+
     try {
       const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession }, turnstileToken || undefined)
+
       if (error) {
         if (error.message.includes('already registered') || error.message.includes('User already registered')) {
-          toast({ title: "E-mail já está em uso", description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.", variant: "destructive" })
+          toast({
+            title: "E-mail já está em uso",
+            description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.",
+            variant: "destructive"
+          })
         } else if (error.message.includes('captcha')) {
-          toast({ title: 'Erro na verificação de segurança', description: 'Por favor, recarregue a verificação e tente novamente', variant: 'destructive', })
+          toast({
+            title: 'Erro na verificação de segurança',
+            description: 'Por favor, recarregue a verificação e tente novamente',
+            variant: 'destructive',
+          })
           setCaptchaKey(prev => prev + 1)
           setTurnstileToken(null)
         } else {
@@ -182,7 +215,6 @@ const Login = () => {
     }
   }
 
-  // --- CORREÇÃO DE ESTILO APLICADA AQUI ---
   if (show2FA) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
@@ -195,11 +227,22 @@ const Login = () => {
             requiresEmail={requires2FAEmail}
             requiresAuthenticator={requires2FAAuthenticator}
             onVerified={handle2FASuccess}
-            onCancel={() => {
-              setShow2FA(false)
-              setPending2FAEmail('')
-              setRequires2FAEmail(false)
-              setRequires2FAAuthenticator(false)
+            onCancel={async () => {
+              try {
+                await supabase.auth.signOut();
+                toast({
+                  title: 'Login cancelado',
+                  description: 'Você precisa completar a verificação 2FA para entrar.',
+                });
+              } catch (error) {
+                 console.error("Erro ao deslogar no cancelamento do 2FA:", error);
+              } finally {
+                setShow2FA(false)
+                setPending2FAEmail('')
+                setRequires2FAEmail(false)
+                setRequires2FAAuthenticator(false)
+                setIsLoading(false); // Garante que botão Entrar não fique travado
+              }
             }}
           />
         </div>
@@ -207,7 +250,6 @@ const Login = () => {
     );
   }
 
-  // O return principal (quando show2FA é false)
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
       <div className="background-animation-container">
@@ -288,7 +330,7 @@ const Login = () => {
               </TabsContent>
               <TabsContent value="register" className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
-                  {/* ... (código do formulário de registro permanece o mesmo) ... */}
+                  {/* Formulário de Registro (Inalterado) */}
                    <div className="space-y-2">
                     <Label htmlFor="name">Nome Completo</Label>
                     <Input id="name" type="text" placeholder="Seu nome" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
