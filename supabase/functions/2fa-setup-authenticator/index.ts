@@ -1,7 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { encode as base32Encode } from "https://deno.land/std@0.190.0/encoding/base32.ts";
-import { createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -24,30 +23,41 @@ function generateQRCodeURL(email: string, secret: string): string {
   return `otpauth://totp/${encodeURIComponent(label)}?${params}`;
 }
 
-function verifyTOTP(secret: string, token: string): boolean {
+async function verifyTOTP(secret: string, token: string): Promise<boolean> {
   try {
     const epoch = Math.floor(Date.now() / 1000);
     const timeStep = 30;
     const window = 1; // Allow ±1 time step for clock drift
     
     // Decode base32 secret
-    const decoder = new TextDecoder();
     const secretBytes = base32Decode(secret);
+    
+    // Import key for HMAC-SHA1
+    const key = await crypto.subtle.importKey(
+      'raw',
+      secretBytes,
+      { name: 'HMAC', hash: 'SHA-1' },
+      false,
+      ['sign']
+    );
     
     // Check current time window and adjacent windows
     for (let i = -window; i <= window; i++) {
       const time = Math.floor(epoch / timeStep) + i;
-      const timeHex = time.toString(16).padStart(16, '0');
-      const timeBytes = new Uint8Array(8);
       
-      for (let j = 0; j < 8; j++) {
-        timeBytes[j] = parseInt(timeHex.substr(j * 2, 2), 16);
-      }
+      // Create counter buffer (8 bytes, big-endian)
+      const counter = new ArrayBuffer(8);
+      const view = new DataView(counter);
+      view.setUint32(4, time, false); // Big-endian
       
       // Generate HMAC-SHA1
-      const hmac = createHmac('sha1', secretBytes);
-      hmac.update(timeBytes);
-      const hash = new Uint8Array(hmac.digest());
+      const signature = await crypto.subtle.sign(
+        'HMAC',
+        key,
+        counter
+      );
+      
+      const hash = new Uint8Array(signature);
       
       // Dynamic truncation
       const offset = hash[hash.length - 1] & 0x0f;
@@ -184,7 +194,7 @@ serve(async (req) => {
         );
       }
 
-      const isValid = verifyTOTP(settings.authenticator_secret, code);
+      const isValid = await verifyTOTP(settings.authenticator_secret, code);
       
       if (!isValid) {
         console.error('Invalid TOTP code for user:', user.id);
