@@ -82,7 +82,6 @@ export const TwoFactorSettings = () => {
     }
   };
 
-  // --- INÍCIO DA CORREÇÃO (Numerar Códigos) ---
   const getNumberedCodes = (codes: string[]) => {
     return codes.map((code, index) => `${index + 1}. ${code}`);
   };
@@ -106,7 +105,6 @@ export const TwoFactorSettings = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
-  // --- FIM DA CORREÇÃO ---
 
   if (loading) {
     return <div>Carregando...</div>;
@@ -157,7 +155,9 @@ export const TwoFactorSettings = () => {
               <div className="flex items-center gap-3">
                 <Smartphone className="h-5 w-5 text-muted-foreground" />
                 <div>
-                  <Label className="font-medium">Google Authenticator</Label>
+                  {/* --- INÍCIO DA CORREÇÃO --- */}
+                  <Label className="font-medium">Autenticador</Label>
+                  {/* --- FIM DA CORREÇÃO --- */}
                   <p className="text-sm text-muted-foreground">
                     Use um aplicativo de autenticação
                   </p>
@@ -183,9 +183,11 @@ export const TwoFactorSettings = () => {
             </div>
             {settings?.authenticator_2fa_enabled && (
               <Alert>
+                {/* --- INÍCIO DA CORREÇÃO --- */}
                 <AlertDescription>
-                  Ativo: Use o Google Authenticator para gerar códigos
+                  Ativo: Use o aplicativo de autenticação para gerar os códigos
                 </AlertDescription>
+                {/* --- FIM DA CORREÇÃO --- */}
               </Alert>
             )}
           </div>
@@ -220,9 +222,9 @@ export const TwoFactorSettings = () => {
       <Dialog open={showAuthenticatorSetup} onOpenChange={setShowAuthenticatorSetup}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Configurar Google Authenticator</DialogTitle>
+            <DialogTitle>Configurar Aplicativo Autenticador</DialogTitle>
             <DialogDescription>
-              Configure o Google Authenticator ou outro aplicativo TOTP para autenticação de dois fatores.
+              Configure um aplicativo autenticador (TOTP) para autenticação de dois fatores.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
@@ -294,7 +296,6 @@ export const TwoFactorSettings = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            {/* --- INÍCIO DA CORREÇÃO (Numerar Códigos) --- */}
             <div className="grid grid-cols-2 gap-2 p-4 bg-muted rounded-lg">
               {generatedCodes.map((code, index) => (
                 <code key={index} className="text-sm font-mono flex gap-2">
@@ -303,7 +304,6 @@ export const TwoFactorSettings = () => {
                 </code>
               ))}
             </div>
-            {/* --- FIM DA CORREÇÃO --- */}
             <div className="flex gap-2">
               <Button
                 variant="outline"
