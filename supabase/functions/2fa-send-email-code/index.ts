@@ -97,7 +97,7 @@ serve(async (req: Request) => {
           subject: `Seu código de login TherapyPro: ${code}`,
           from: {
             name: 'TherapyPro',
-            email: 'nao-responda@therapyproapp.com.br',
+            email: 'nao-responda@therapypro.app.br',
           },
           to: [
             { email: user.email }
