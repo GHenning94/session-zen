@@ -11,36 +11,32 @@ export const AuthRedirect = () => {
 
   useEffect(() => {
     const fetchAal = async () => {
-      // Prioriza a sessão do hook se já estiver atualizada
-      if (user && authSession) {
-        const userAal = (authSession.user as any)?.aal;
-        // Se a sessão do hook ainda mostra aal1, busca de novo para pegar a mais recente
-        if (userAal === 'aal1') {
-           console.log('🔀 AuthRedirect: AuthSession shows aal1, fetching latest session...');
-           const { data } = await supabase.auth.getSession();
-           const latestAal = (data.session?.user as any)?.aal;
-           setCurrentAal(latestAal);
-           console.log('🔀 AuthRedirect: AAL fetched manually after hook showed aal1:', latestAal);
-        } else {
-          setCurrentAal(userAal);
-          console.log('🔀 AuthRedirect: AAL from authSession:', userAal);
-        }
-      } else if (user && !authSession) {
-         const { data } = await supabase.auth.getSession();
-         const userAal = (data.session?.user as any)?.aal;
-         setCurrentAal(userAal);
-         console.log('🔀 AuthRedirect: AAL fetched manually (no authSession):', userAal);
-      } else {
-        setCurrentAal(null);
+      // Tenta obter o AAL da forma mais atualizada possível
+      let latestAal: string | null | undefined = undefined;
+      const { data } = await supabase.auth.getSession(); // Busca sempre a sessão mais recente
+      latestAal = (data.session?.user as any)?.aal;
+
+      // Se a sessão mais recente não tiver AAL (ex: após verifyOtp), verifica a do hook
+      if (latestAal === undefined && authSession) {
+         latestAal = (authSession.user as any)?.aal;
       }
+
+      setCurrentAal(latestAal);
+      console.log('🔀 AuthRedirect: AAL determined:', latestAal);
     };
-    fetchAal();
-  }, [user, authSession]);
+
+    if (user) { // Só busca AAL se houver usuário
+      fetchAal();
+    } else {
+      setCurrentAal(null); // Limpa AAL se não há usuário
+    }
+  }, [user, authSession]); // Reavalia AAL quando user ou authSession mudam
 
 
   useEffect(() => {
-    console.log('🔀 AuthRedirect: checking auth state', { user: !!user, loading, pathname: location.pathname, currentAal });
+    console.log('🔀 AuthRedirect: checking auth state', { user: !!user, loading, pathname: location.pathname, currentAal, fromLogin: location.state?.fromLogin });
 
+    // Espera carregar user E AAL ter um valor definido
     if (loading || currentAal === undefined) {
       console.log('🔀 AuthRedirect: still loading user or AAL, waiting...');
       return;
@@ -67,15 +63,18 @@ export const AuthRedirect = () => {
     if (user) {
       // --- CORREÇÃO DA REGRA 3a ---
       // Redireciona para /login se precisar de 2FA (aal1)
-      // E ESTIVER TENTANDO ACESSAR UMA ROTA PROTEGIDA DIRETAMENTE
-      // REMOVIDO o signOut daqui. Apenas redireciona.
-      if (currentAal === 'aal1' && location.pathname !== '/login') { // Simplificado: Se AAL1 e não está no login, volta pro login
-        console.log('🔀 AuthRedirect: User needs 2FA (aal1) but is not on /login. Redirecting to /login.');
-        // supabase.auth.signOut().catch(e => console.error("Error signing out in AuthRedirect:", e)); // <-- REMOVIDO
+      // E NÃO estiver vindo diretamente do processo de login (fromLogin)
+      if (currentAal === 'aal1' && !location.state?.fromLogin) {
+        console.log('🔀 AuthRedirect: User needs 2FA (aal1), not coming from login. Redirecting to /login.');
+        // Não precisamos deslogar aqui, apenas redirecionar
         navigate('/login', { replace: true });
         return;
       }
+      // Se currentAal é 'aal1' MAS location.state.fromLogin é TRUE,
+      // significa que estamos INDO para o dashboard logo após o 2FA.
+      // Neste caso, NÃO fazemos nada e permitimos o acesso.
       // --- FIM DA CORREÇÃO ---
+
 
       // REGRA 3b: Totalmente autenticado e tenta acessar '/', vá para /dashboard.
       if (currentAal !== 'aal1' && location.pathname === '/') {
@@ -87,7 +86,7 @@ export const AuthRedirect = () => {
 
     console.log('🔀 AuthRedirect: User is logged in, no special redirect needed from:', location.pathname);
 
-  }, [user, loading, location.pathname, navigate, currentAal, authSession]); // Removido location.state que não era necessário aqui
+  }, [user, loading, location.pathname, navigate, currentAal, authSession, location.state]); // Adicionado location.state
 
   return null;
 }
