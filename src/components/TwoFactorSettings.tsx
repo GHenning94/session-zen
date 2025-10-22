@@ -82,8 +82,14 @@ export const TwoFactorSettings = () => {
     }
   };
 
+  // --- INÍCIO DA CORREÇÃO (Numerar Códigos) ---
+  const getNumberedCodes = (codes: string[]) => {
+    return codes.map((code, index) => `${index + 1}. ${code}`);
+  };
+
   const copyBackupCodes = () => {
-    navigator.clipboard.writeText(generatedCodes.join('\n'));
+    const numberedCodes = getNumberedCodes(generatedCodes).join('\n');
+    navigator.clipboard.writeText(numberedCodes);
     toast({
       title: 'Copiado!',
       description: 'Códigos de backup copiados para a área de transferência',
@@ -91,7 +97,8 @@ export const TwoFactorSettings = () => {
   };
 
   const downloadBackupCodes = () => {
-    const blob = new Blob([generatedCodes.join('\n')], { type: 'text/plain' });
+    const numberedCodes = getNumberedCodes(generatedCodes).join('\n');
+    const blob = new Blob([numberedCodes], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -99,6 +106,7 @@ export const TwoFactorSettings = () => {
     a.click();
     URL.revokeObjectURL(url);
   };
+  // --- FIM DA CORREÇÃO ---
 
   if (loading) {
     return <div>Carregando...</div>;
@@ -286,13 +294,16 @@ export const TwoFactorSettings = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            {/* --- INÍCIO DA CORREÇÃO (Numerar Códigos) --- */}
             <div className="grid grid-cols-2 gap-2 p-4 bg-muted rounded-lg">
               {generatedCodes.map((code, index) => (
-                <code key={index} className="text-sm font-mono">
-                  {code}
+                <code key={index} className="text-sm font-mono flex gap-2">
+                  <span className="flex-shrink-0 w-6 text-right text-muted-foreground">{index + 1}.</span>
+                  <span className="font-semibold">{code}</span>
                 </code>
               ))}
             </div>
+            {/* --- FIM DA CORREÇÃO --- */}
             <div className="flex gap-2">
               <Button
                 variant="outline"
