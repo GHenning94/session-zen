@@ -12,59 +12,35 @@ serve(async (req) => {
   }
 
   try {
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      throw new Error('Missing authorization header');
-    }
+    // 1. Obter a ID do usuário do contexto (injetado pelo Supabase via verify_jwt: true)
+    // O Supabase injeta o usuário no 'client-context'
+    const clientContext = req.headers.get('x-supabase-client-context');
+    if (!clientContext) throw new Error('Unauthorized: No client context');
+    
+    const context = JSON.parse(clientContext);
+    const userId = context.user?.id;
+    if (!userId) throw new Error('Unauthorized: No user ID in context');
 
-    const supabase = createClient(
+    // 2. Criar o cliente Admin (Service Role)
+    const supabaseAdminClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: authHeader },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     );
-
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) {
-      console.error('Auth error:', userError);
-      throw new Error('Unauthorized');
-    }
-
+    
     const { enable } = await req.json();
 
-    // Get or create 2FA settings
-    const { data: settings, error: settingsError } = await supabase
+    // 3. Usar 'upsert' (atualiza se existe, insere se não existe)
+    // É mais seguro e eficiente do que 'select' e depois 'update'/'insert'
+    const { error: upsertError } = await supabaseAdminClient
       .from('user_2fa_settings')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
+      .upsert({
+        user_id: userId,
+        email_2fa_enabled: enable,
+      }, {
+        onConflict: 'user_id' // Garante que atualize o registro existente
+      });
 
-    if (settingsError && settingsError.code !== 'PGRST116') {
-      throw settingsError;
-    }
-
-    if (!settings) {
-      // Create settings if they don't exist
-      const { error: createError } = await supabase
-        .from('user_2fa_settings')
-        .insert({
-          user_id: user.id,
-          email_2fa_enabled: enable,
-        });
-
-      if (createError) throw createError;
-    } else {
-      // Update existing settings
-      const { error: updateError } = await supabase
-        .from('user_2fa_settings')
-        .update({ email_2fa_enabled: enable })
-        .eq('user_id', user.id);
-
-      if (updateError) throw updateError;
-    }
+    if (upsertError) throw upsertError;
 
     return new Response(
       JSON.stringify({ success: true, message: `2FA por e-mail ${enable ? 'ativado' : 'desativado'} com sucesso` }),
