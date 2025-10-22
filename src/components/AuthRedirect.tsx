@@ -24,12 +24,20 @@ export const AuthRedirect = () => {
         console.log('🔀 AuthRedirect: Fetched session manually', { currentSession });
       }
 
-      // --- INÍCIO DA CORREÇÃO ---
-      // Usando 'as any' para acessar 'aal' e satisfazer o TypeScript
       const userAal = (currentSession?.user as any)?.aal;
       const needs2FA = userAal === 'aal1';
       console.log('🔀 AuthRedirect: Needs 2FA check:', { needs2FA, aal: userAal });
-      // --- FIM DA CORREÇÃO ---
+
+      // --- LOG ADICIONAL PARA VERIFICAR A LÓGICA DE REDIRECIONAMENTO ---
+      if (user && location.pathname === '/login') {
+          console.log('🔀 AuthRedirect: Verificando /login redirect.', { needs2FA });
+          if (needs2FA) {
+              console.log('🔀 AuthRedirect: DECISÃO -> Ficar no /login por causa do needs2FA.');
+          } else {
+              console.log('🔀 AuthRedirect: DECISÃO -> Redirecionar para /dashboard porque needs2FA é false.');
+          }
+      }
+      // --- FIM DO LOG ADICIONAL ---
 
 
       if (user && location.pathname === '/' && location.state?.fromLogin && !needs2FA) {
