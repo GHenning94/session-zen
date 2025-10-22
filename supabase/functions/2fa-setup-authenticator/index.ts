@@ -115,33 +115,39 @@ serve(async (req) => {
 
   try {
     // --- INÍCIO DA CORREÇÃO ---
+    // Esta é a forma correta de autenticar um usuário em uma Edge Function
+    
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Missing authorization header');
     }
-    // Extrai o token do cabeçalho
-    const token = authHeader.replace('Bearer ', '');
 
-    // 1. Crie o cliente Admin usando a SERVICE_ROLE_KEY
+    // 1. Crie o cliente usando a ANON_KEY (chave pública)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '', // MUDADO DE ANON_KEY
-      // Removido o { global: { headers } } pois não é necessário para o admin client
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      {
+        // 2. Passe o token de autorização do usuário para o cliente
+        global: {
+          headers: { Authorization: authHeader },
+        },
+      }
     );
 
-    // 2. Obtenha o usuário usando o token com o cliente admin
-    const { data: { user }, error: userError } = await supabase.auth.admin.getUserByToken(token);
+    // 3. Peça ao Supabase para validar o token e retornar o usuário
+    //    Este cliente agora age em nome desse usuário e respeita o RLS
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
     // --- FIM DA CORREÇÃO ---
 
     if (userError || !user) {
       console.error('Auth error:', userError);
-      throw new Error('Unauthorized'); // O token é inválido ou expirado
+      throw new Error('Unauthorized'); // Este é o erro que voltará
     }
 
     const { action, enable, code } = await req.json();
 
     if (action === 'generate') {
-      // O restante do seu código já estava correto
+      // O resto do código está correto e agora usará o cliente autenticado
       const secret = generateSecret();
       const qrCodeURL = generateQRCodeURL(user.email!, secret);
 
