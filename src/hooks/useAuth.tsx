@@ -2,6 +2,16 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 
+// --- INÍCIO DA CORREÇÃO (TypeScript) ---
+// Estendemos a interface User do Supabase para incluir a propriedade 'aal'
+// que o Supabase usa para controle de 2FA (aal1 = pendente, aal2 = verificado)
+declare module '@supabase/supabase-js' {
+  interface User {
+    aal?: 'aal1' | 'aal2';
+  }
+}
+// --- FIM DA CORREÇÃO (TypeScript) ---
+
 interface AuthContextType {
   user: User | null
   session: Session | null
@@ -37,25 +47,60 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
+  // Helper unificado para processar a sessão e o AAL (Authentication Assurance Level)
+  const processSession = (session: Session | null) => {
+    console.log('useAuth: processando sessão...', { 
+      sessionExists: !!session, 
+      aal: session?.user?.aal // Agora o TypeScript reconhece o 'aal'
+    });
+    
+    setSession(session);
+
+    if (!session) {
+      // Usuário deslogado
+      setUser(null);
+      setLoading(false);
+      console.log('useAuth: estado finalizado: (loading: false, user: null)');
+      return;
+    }
+
+    // Usuário logado, verificar AAL
+    const currentAAL = session.user.aal; // E aqui também
+
+    if (currentAAL === 'aal1') {
+      // AAL1 significa que o usuário passou a senha, mas o 2FA está PENDENTE.
+      // Tratamos isso como "ainda carregando" para bloquear o ProtectedRoute.
+      setUser(session.user); // Deixamos o user (para o Login.tsx ler o email)
+      setLoading(true);      // MAS mantemos loading: true (A CORREÇÃO)
+      console.log('useAuth: estado pendente (AAL1): (loading: true, user: set)');
+    } else {
+      // AAL2 (2FA completo) ou AAL indefinido (2FA não ativado)
+      // Em ambos os casos, o usuário está "totalmente" logado.
+      setUser(session.user);
+      setLoading(false);
+      console.log('useAuth: estado finalizado: (loading: false, user: set)');
+    }
+  };
+
   useEffect(() => {
     console.log('useAuth: setting up auth listeners')
     
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log('useAuth: auth state changed', { event, sessionExists: !!session, userEmail: session?.user?.email })
-        setSession(session)
-        setUser(session?.user ?? null)
-        setLoading(false)
+        console.log(`useAuth: auth state changed (event: ${event})`);
+        
+        // Usa o helper unificado
+        processSession(session)
       }
     )
 
     // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      console.log('useAuth: initial session check', { sessionExists: !!session, userEmail: session?.user?.email })
-      setSession(session)
-      setUser(session?.user ?? null)
-      setLoading(false)
+      console.log('useAuth: initial session check');
+      
+      // Usa o helper unificado
+      processSession(session)
     })
 
     return () => subscription.unsubscribe()
@@ -74,7 +119,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     })
     
-    // Traduzir erros para português
+    // Traduzir erros para português (código inalterado)
     if (error) {
       let translatedError = { ...error }
       
@@ -107,7 +152,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     })
     
-    // Traduzir erros para português
+    // Traduzir erros para português (código inalterado)
     if (error) {
       let translatedError = { ...error }
       
