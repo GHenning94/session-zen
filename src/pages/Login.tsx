@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react" // Adicionado useEffect
+import { useState, useEffect, useRef } from "react" // Adicionado useRef
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { toast } from "@/hooks/use-toast"
@@ -35,31 +35,30 @@ const Login = () => {
     confirmPassword: ''
   })
 
+  // --- CORREÇÃO (FLAG DE SUCESSO DO 2FA) ---
+  const is2FASuccess = useRef(false); 
+  // --- FIM DA CORREÇÃO ---
+
   // --- CORREÇÃO DO ITEM 2 (BROWSER BACK BUTTON) ---
   useEffect(() => {
-    // Flag para rastrear se o componente ainda está montado
-    let isMounted = true;
-
-    // Função de cleanup que será chamada QUANDO o componente Login for desmontado
+    // A função de cleanup será chamada QUANDO o componente Login for desmontado
     const cleanup = () => {
-        // Verificamos se o estado show2FA estava ativo no momento da desmontagem
-        // Usamos uma variável local capturada pelo closure
-        if (show2FA) {
-            console.log('Login component unmounting while 2FA modal was expected. Signing out.');
-            // Se o modal deveria estar visível, deslogamos para invalidar a sessão aal1
+        // Verificamos se o estado show2FA estava ativo (capturado pelo closure)
+        // E (IMPORTANTE) se a flag de sucesso NÃO foi ativada (lendo o valor ATUAL do ref)
+        if (show2FA && !is2FASuccess.current) {
+            console.log('Login component unmounting while 2FA modal was expected AND NOT successful. Signing out.');
+            // Se o modal deveria estar visível E NÃO FOI SUCESSO, deslogamos
             supabase.auth.signOut().catch(error => {
                 console.error("Erro ao deslogar durante unmount do Login:", error);
-                // Ignoramos erros aqui, a intenção é tentar limpar
             });
+        } else if (show2FA && is2FASuccess.current) {
+             console.log('Login component unmounting after successful 2FA. NOT signing out.');
         }
     };
 
     // A função de retorno do useEffect é a função de cleanup
-    return () => {
-      isMounted = false; // Marca como desmontado
-      cleanup();
-    };
-  }, [show2FA]); // Dependência em show2FA para que a função de cleanup capture o valor correto
+    return cleanup;
+  }, [show2FA]); // Dependência em show2FA está correta
   // --- FIM DA CORREÇÃO ---
 
 
@@ -175,6 +174,11 @@ const Login = () => {
 
   const handle2FASuccess = async () => {
     console.log('handle2FASuccess chamado. Redirecionando para dashboard.');
+    
+    // --- CORREÇÃO (AVISA QUE A NAVEGAÇÃO É DE SUCESSO) ---
+    is2FASuccess.current = true;
+    // --- FIM DA CORREÇÃO ---
+
     toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
     navigate("/dashboard", { state: { fromLogin: true } })
   }
