@@ -88,11 +88,18 @@ export const use2FA = () => {
 
   const verifyAndEnableAuthenticator = async (code: string) => {
     try {
-      const { error } = await supabase.functions.invoke('2fa-setup-authenticator', {
+      const { data, error } = await supabase.functions.invoke('2fa-setup-authenticator', {
         body: { action: 'verify', enable: true, code },
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(error.message || 'Erro ao verificar código');
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
+      }
 
       toast({
         title: 'Authenticator configurado',
@@ -102,9 +109,10 @@ export const use2FA = () => {
       await loadSettings();
       return true;
     } catch (error: any) {
+      console.error('verifyAndEnableAuthenticator error:', error);
       toast({
-        title: 'Erro',
-        description: error.message,
+        title: 'Erro ao verificar código',
+        description: error.message || 'Verifique o código e tente novamente',
         variant: 'destructive',
       });
       return false;

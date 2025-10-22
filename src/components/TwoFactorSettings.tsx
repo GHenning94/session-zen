@@ -49,11 +49,23 @@ export const TwoFactorSettings = () => {
   };
 
   const handleVerifyAuthenticator = async () => {
+    if (!verificationCode || verificationCode.length !== 6) {
+      toast({
+        title: 'Código inválido',
+        description: 'Digite um código de 6 dígitos',
+        variant: 'destructive',
+      })
+      return
+    }
+
     const success = await verifyAndEnableAuthenticator(verificationCode);
     if (success) {
       setShowAuthenticatorSetup(false);
+      setQrCodeURL(null);
+      setSecret(null);
       setVerificationCode('');
-      // Generate backup codes after enabling authenticator
+      
+      // Auto-generate backup codes after successful activation
       const codes = await generateBackupCodes();
       if (codes.length > 0) {
         setGeneratedCodes(codes);
@@ -202,39 +214,64 @@ export const TwoFactorSettings = () => {
           <DialogHeader>
             <DialogTitle>Configurar Google Authenticator</DialogTitle>
             <DialogDescription>
-              Escaneie o QR Code com seu aplicativo de autenticação
+              Configure o Google Authenticator ou outro aplicativo TOTP para autenticação de dois fatores.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
+            <p className="text-sm text-muted-foreground mb-4">
+              1. Instale um aplicativo autenticador (Google Authenticator, Authy, etc.)
+            </p>
+            
             {qrCodeURL && (
               <div className="flex flex-col items-center gap-4">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeURL)}`}
-                  alt="QR Code"
-                  className="w-48 h-48"
-                />
-                <div className="text-sm text-muted-foreground text-center">
-                  <p>Ou insira este código manualmente:</p>
-                  <code className="block mt-2 p-2 bg-muted rounded">
+                <div className="bg-white p-4 rounded-lg border-2 border-muted">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrCodeURL)}`}
+                    alt="QR Code"
+                    className="w-48 h-48"
+                  />
+                </div>
+                
+                <p className="text-sm text-muted-foreground">
+                  2. Escaneie o QR code acima com seu aplicativo
+                </p>
+                
+                <div className="w-full">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Ou digite manualmente esta chave:
+                  </p>
+                  <code className="block p-3 bg-muted rounded text-sm break-all font-mono select-all">
                     {secret}
                   </code>
                 </div>
               </div>
             )}
-            <div className="space-y-2">
-              <Label htmlFor="verification-code">Código de Verificação</Label>
-              <Input
-                id="verification-code"
-                type="text"
-                placeholder="000000"
-                value={verificationCode}
-                onChange={(e) => setVerificationCode(e.target.value)}
-                maxLength={6}
-              />
+            
+            <div className="space-y-4 mt-6">
+              <div>
+                <Label htmlFor="verification-code">3. Digite o código do aplicativo</Label>
+                <Input
+                  id="verification-code"
+                  type="text"
+                  placeholder="000000"
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  maxLength={6}
+                  className="text-center text-2xl tracking-widest font-mono"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Digite o código de 6 dígitos exibido no seu aplicativo
+                </p>
+              </div>
+              
+              <Button 
+                onClick={handleVerifyAuthenticator} 
+                className="w-full"
+                disabled={verificationCode.length !== 6}
+              >
+                Verificar e Ativar
+              </Button>
             </div>
-            <Button onClick={handleVerifyAuthenticator} className="w-full">
-              Verificar e Ativar
-            </Button>
           </div>
         </DialogContent>
       </Dialog>

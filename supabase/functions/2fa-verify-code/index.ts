@@ -1,10 +1,84 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createHmac } from "https://deno.land/std@0.190.0/node/crypto.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+function verifyTOTP(secret: string, token: string): boolean {
+  try {
+    const epoch = Math.floor(Date.now() / 1000);
+    const timeStep = 30;
+    const window = 1; // Allow ±1 time step for clock drift
+    
+    // Decode base32 secret
+    const secretBytes = base32Decode(secret);
+    
+    // Check current time window and adjacent windows
+    for (let i = -window; i <= window; i++) {
+      const time = Math.floor(epoch / timeStep) + i;
+      const timeHex = time.toString(16).padStart(16, '0');
+      const timeBytes = new Uint8Array(8);
+      
+      for (let j = 0; j < 8; j++) {
+        timeBytes[j] = parseInt(timeHex.substr(j * 2, 2), 16);
+      }
+      
+      // Generate HMAC-SHA1
+      const hmac = createHmac('sha1', secretBytes);
+      hmac.update(timeBytes);
+      const hash = new Uint8Array(hmac.digest());
+      
+      // Dynamic truncation
+      const offset = hash[hash.length - 1] & 0x0f;
+      const code = (
+        ((hash[offset] & 0x7f) << 24) |
+        ((hash[offset + 1] & 0xff) << 16) |
+        ((hash[offset + 2] & 0xff) << 8) |
+        (hash[offset + 3] & 0xff)
+      ) % 1000000;
+      
+      const expectedToken = code.toString().padStart(6, '0');
+      
+      if (expectedToken === token) {
+        return true;
+      }
+    }
+    
+    return false;
+  } catch (error) {
+    console.error('TOTP verification error:', error);
+    return false;
+  }
+}
+
+function base32Decode(base32: string): Uint8Array {
+  const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  let bits = 0;
+  let value = 0;
+  let index = 0;
+  const output = new Uint8Array(Math.floor((base32.length * 5) / 8));
+  
+  for (let i = 0; i < base32.length; i++) {
+    const char = base32.charAt(i).toUpperCase();
+    if (char === '=') break;
+    
+    const val = alphabet.indexOf(char);
+    if (val === -1) continue;
+    
+    value = (value << 5) | val;
+    bits += 5;
+    
+    if (bits >= 8) {
+      output[index++] = (value >>> (bits - 8)) & 255;
+      bits -= 8;
+    }
+  }
+  
+  return output.slice(0, index);
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -61,10 +135,9 @@ serve(async (req) => {
 
     // Verify authenticator code if enabled
     if (settings.authenticator_2fa_enabled && authenticatorCode) {
-      // TODO: Implement TOTP verification
-      // For now, accept any 6-digit code for testing
-      if (/^\d{6}$/.test(authenticatorCode)) {
-        authenticatorVerified = true;
+      if (settings.authenticator_secret && /^\d{6}$/.test(authenticatorCode)) {
+        authenticatorVerified = verifyTOTP(settings.authenticator_secret, authenticatorCode);
+        console.log('TOTP verification result:', authenticatorVerified);
       }
     }
 

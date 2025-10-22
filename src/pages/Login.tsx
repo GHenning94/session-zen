@@ -20,6 +20,11 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
+  const [captchaKey, setCaptchaKey] = useState(0)
+  
+  // Use test keys in development/preview environments
+  const isDev = window.location.hostname === 'localhost' || window.location.hostname.includes('lovableproject.com')
+  const TURNSTILE_SITE_KEY = isDev ? '1x00000000000000000000AA' : '0x4AAAAAAB43UmamQYOA5yfH'
   const [show2FA, setShow2FA] = useState(false)
   const [pending2FAEmail, setPending2FAEmail] = useState('')
   const [requires2FAEmail, setRequires2FAEmail] = useState(false)
@@ -64,6 +69,19 @@ const Login = () => {
         email: formData.email,
         password: formData.password
       })
+      
+      // Handle CAPTCHA-specific errors
+      if (signInError?.message?.includes('captcha')) {
+        toast({
+          title: 'Erro na verificação de segurança',
+          description: 'Por favor, recarregue a verificação e tente novamente',
+          variant: 'destructive',
+        })
+        setCaptchaKey(prev => prev + 1)
+        setTurnstileToken(null)
+        setIsLoading(false)
+        return
+      }
       
       // If sign in successful, check for 2FA
       if (!signInError && signInData.user) {
@@ -229,9 +247,14 @@ const Login = () => {
                   </div>
                   <div className="flex justify-center">
                     <Turnstile
-                      siteKey="0x4AAAAAAB43UmamQYOA5yfH"
+                      key={captchaKey}
+                      siteKey={TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setTurnstileToken(token)}
-                      onError={() => setTurnstileToken(null)}
+                      onError={() => {
+                        console.debug('Turnstile error')
+                        setTurnstileToken(null)
+                        setCaptchaKey(prev => prev + 1)
+                      }}
                       onExpire={() => setTurnstileToken(null)}
                     />
                   </div>
@@ -311,9 +334,14 @@ const Login = () => {
                   </div>
                   <div className="flex justify-center">
                     <Turnstile
-                      siteKey="0x4AAAAAAB43UmamQYOA5yfH"
+                      key={captchaKey}
+                      siteKey={TURNSTILE_SITE_KEY}
                       onSuccess={(token) => setTurnstileToken(token)}
-                      onError={() => setTurnstileToken(null)}
+                      onError={() => {
+                        console.debug('Turnstile error')
+                        setTurnstileToken(null)
+                        setCaptchaKey(prev => prev + 1)
+                      }}
                       onExpire={() => setTurnstileToken(null)}
                     />
                   </div>
