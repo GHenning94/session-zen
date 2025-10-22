@@ -22,9 +22,7 @@ const Login = () => {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [captchaKey, setCaptchaKey] = useState(0)
   
-  // Use test keys in development/preview environments
-  const isDev = window.location.hostname === 'localhost' || window.location.hostname.includes('lovableproject.com')
-  const TURNSTILE_SITE_KEY = isDev ? '1x00000000000000000000AA' : '0x4AAAAAAB43UmamQYOA5yfH'
+  const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
   const [show2FA, setShow2FA] = useState(false)
   const [pending2FAEmail, setPending2FAEmail] = useState('')
   const [requires2FAEmail, setRequires2FAEmail] = useState(false)
