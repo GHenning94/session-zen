@@ -1,4 +1,4 @@
-import { serve, ServerRequest } from "https://deno.land/std@0.190.0/http/server.ts";
+import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
@@ -10,6 +10,7 @@ function generateOTP(): string {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
+// Função para obter um token de acesso do SendPulse
 async function getSendPulseToken(clientId: string, clientSecret: string): Promise<string> {
   const response = await fetch("https://api.sendpulse.com/oauth/access_token", {
     method: 'POST',
@@ -28,13 +29,14 @@ async function getSendPulseToken(clientId: string, clientSecret: string): Promis
   return data.access_token;
 }
 
-// --- TIPO ADICIONADO ---
-serve(async (req: Request) => {
+
+serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
+    // 1. Obter as chaves do SendPulse (que você adicionou ao Supabase)
     const spApiClientId = Deno.env.get('SENDPULSE_API_ID') ?? '';
     const spApiSecret = Deno.env.get('SENDPULSE_API_SECRET') ?? '';
 
@@ -42,6 +44,7 @@ serve(async (req: Request) => {
       throw new Error('SendPulse API credentials are not set');
     }
 
+    // 2. Usar o padrão de autenticação que JÁ FUNCIONA
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
@@ -56,6 +59,7 @@ serve(async (req: Request) => {
     const user = userData.user;
     if (!user?.id || !user?.email) throw new Error("User not authenticated or email not available");
 
+    // 3. Verificar se o 2FA por e-mail está ativado (lógica inalterada)
     const { data: settings } = await supabase
       .from('user_2fa_settings')
       .select('email_2fa_enabled')
@@ -66,9 +70,10 @@ serve(async (req: Request) => {
       throw new Error('Email 2FA not enabled');
     }
 
+    // 4. Gerar e armazenar OTP (lógica inalterada)
     const code = generateOTP();
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10); // 10 minutes expiry
 
     await supabase.from('user_2fa_email_codes').insert({
       user_id: user.id,
@@ -77,12 +82,23 @@ serve(async (req: Request) => {
       used: false,
     });
 
+    // 5. Obter o token de acesso do SendPulse
     console.log("Authenticating with SendPulse...");
     const spAccessToken = await getSendPulseToken(spApiClientId, spApiSecret);
 
+    // 6. Enviar o e-mail usando SendPulse
     console.log(`Sending 2FA Code to ${user.email} via SendPulse...`);
     
-    const emailHtml = `... (HTML do e-mail inalterado) ...`; // (O HTML é o mesmo de antes)
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Olá,</h2>
+        <p>Seu código de verificação de dois fatores é:</p>
+        <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${code}</p>
+        <p>Este código expira em 10 minutos.</p>
+        <p>Se você não solicitou este código, pode ignorar este e-mail com segurança.</p>
+        <p>Atenciosamente,<br>Equipe TherapyPro</p>
+      </div>
+    `;
 
     const sendEmailResponse = await fetch("https://api.sendpulse.com/smtp/emails", {
       method: 'POST',
@@ -97,6 +113,9 @@ serve(async (req: Request) => {
           subject: `Seu código de login TherapyPro: ${code}`,
           from: {
             name: 'TherapyPro',
+            // --- ATUALIZE AQUI ---
+            // Coloque o e-mail que você verificou no SendPulse.
+            // (Pode ser o seu e-mail de login, ex: guilhermehenning123@gmail.com)
             email: 'nao-responda@therapypro.app.br',
           },
           to: [
@@ -121,11 +140,9 @@ serve(async (req: Request) => {
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   } catch (error) {
-    console.error('Error in 2fa-send-e-mail-code:', error);
-    // --- TIPO ADICIONADO ---
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    console.error('Error in 2fa-send-email-code:', error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ error: error.message }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
