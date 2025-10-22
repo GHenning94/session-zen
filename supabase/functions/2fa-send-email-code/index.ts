@@ -16,24 +16,29 @@ serve(async (req) => {
   }
 
   try {
-    // 1. Obter a ID e o email do usuário do contexto (injetado pelo Supabase)
-    const clientContext = req.headers.get('x-supabase-client-context');
-    if (!clientContext) throw new Error('Unauthorized: No client context');
-    
-    const context = JSON.parse(clientContext);
-    const user = context.user;
-    if (!user?.id || !user?.email) throw new Error('Unauthorized: User context invalid');
-
-    // 2. Criar o cliente Admin (Service Role)
+    // 1. Criar o cliente Admin (Service Role)
     const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
+
+    // 2. Obter o cabeçalho de autorização, tal como no check-subscription
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      throw new Error('Missing authorization header');
+    }
+
+    // 3. Obter o token, tal como no check-subscription
+    const token = authHeader.replace("Bearer ", "");
     
-    // 3. NÃO precisamos mais listar todos os usuários!
-    // Nós já temos o 'user.id' e 'user.email'
-    
-    // 4. Check if email 2FA is enabled (usando o user.id seguro)
+    // 4. Obter o utilizador a partir do token, tal como no check-subscription
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user?.id || !user?.email) throw new Error("User not authenticated or email not available");
+
+    // 5. Check if email 2FA is enabled
+    // (Esta lógica é do seu arquivo original, mas agora usa o user.id seguro)
     const { data: settings } = await supabase
       .from('user_2fa_settings')
       .select('email_2fa_enabled')
@@ -41,7 +46,7 @@ serve(async (req) => {
       .single();
 
     if (!settings?.email_2fa_enabled) {
-      throw new Error('Email 2FA not enabled for this user');
+      throw new Error('Email 2FA not enabled');
     }
 
     // Generate OTP
@@ -58,8 +63,7 @@ serve(async (req) => {
     });
 
     // TODO: Send email with code (integrate with Resend if available)
-    // 5. Usar o 'user.email' seguro do contexto
-    console.log(`2FA Code for ${user.email}: ${code}`); 
+    console.log(`2FA Code for ${user.email}: ${code}`);
 
     return new Response(
       JSON.stringify({ 
