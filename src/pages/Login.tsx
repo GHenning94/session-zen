@@ -12,7 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Brain, Heart, Check, X } from "lucide-react"
 import { Turnstile } from "@marsidev/react-turnstile"
-import "./Login.styles.css"
+import "./Login.styles.css" // Importa o CSS isolado para esta página
 
 const Login = () => {
   const navigate = useNavigate()
@@ -35,21 +35,32 @@ const Login = () => {
     confirmPassword: ''
   })
 
+  // --- CORREÇÃO DO ITEM 2 (BROWSER BACK BUTTON) ---
   useEffect(() => {
+    // Flag para rastrear se o componente ainda está montado
     let isMounted = true;
+
+    // Função de cleanup que será chamada QUANDO o componente Login for desmontado
     const cleanup = () => {
-      if (show2FA) {
-        console.log('Login component unmounting while 2FA modal was expected. Signing out.');
-        supabase.auth.signOut().catch(error => {
-           console.error("Erro ao deslogar durante unmount do Login:", error);
-        });
-      }
+        // Verificamos se o estado show2FA estava ativo no momento da desmontagem
+        // Usamos uma variável local capturada pelo closure
+        if (show2FA) {
+            console.log('Login component unmounting while 2FA modal was expected. Signing out.');
+            // Se o modal deveria estar visível, deslogamos para invalidar a sessão aal1
+            supabase.auth.signOut().catch(error => {
+                console.error("Erro ao deslogar durante unmount do Login:", error);
+                // Ignoramos erros aqui, a intenção é tentar limpar
+            });
+        }
     };
+
+    // A função de retorno do useEffect é a função de cleanup
     return () => {
-      isMounted = false;
+      isMounted = false; // Marca como desmontado
       cleanup();
     };
-  }, [show2FA]);
+  }, [show2FA]); // Dependência em show2FA para que a função de cleanup capture o valor correto
+  // --- FIM DA CORREÇÃO ---
 
 
   const passwordRequirements = [
@@ -78,6 +89,8 @@ const Login = () => {
 
     setIsLoading(true)
 
+    let shouldShow2FAModal = false; // Flag para controlar o estado final
+
     try {
       console.log('Tentando login para:', formData.email);
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
@@ -97,7 +110,7 @@ const Login = () => {
         })
         setCaptchaKey(prev => prev + 1)
         setTurnstileToken(null)
-        setIsLoading(false); // Seta loading false aqui
+        // setIsLoading(false) é tratado no finally
         return
       }
 
@@ -119,43 +132,44 @@ const Login = () => {
         if (settingsError) {
           console.error('Erro ao buscar configurações 2FA:', settingsError);
           toast({ title: "Erro", description: "Não foi possível verificar as configurações de segurança.", variant: "destructive" });
-          setIsLoading(false); // Seta loading false aqui
+          // setIsLoading(false) é tratado no finally
           return;
         }
 
         if (settings && (settings.email_2fa_enabled || settings.authenticator_2fa_enabled)) {
           console.log('2FA está ATIVO. Mostrando modal.');
+          shouldShow2FAModal = true; // Marca que o modal deve ser mostrado
           setPending2FAEmail(formData.email)
           setRequires2FAEmail(settings.email_2fa_enabled || false)
           setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
           setShow2FA(true)
-          // Intencionalmente NÃO setamos isLoading false aqui, pois a UI vai mudar
+          // Intencionalmente NÃO setamos isLoading false aqui
           return
         }
 
         console.log('2FA está INATIVO ou não encontrado. Redirecionando para dashboard.');
         toast({ title: "Login realizado com sucesso!", description: "Redirecionando para o dashboard..." })
         navigate("/dashboard", { state: { fromLogin: true } })
-        // Não precisamos setar isLoading false aqui, pois a navegação desmontará o componente
+        // Navegação desmonta o componente, não precisa setIsLoading
 
       } else if (signInError) {
         console.error('Erro de Login:', signInError);
         toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
-        setIsLoading(false); // Seta loading false aqui
+        // setIsLoading(false) é tratado no finally
       } else {
         console.error('Login não retornou erro nem usuário.');
         toast({ title: "Erro no login", description: "Credenciais inválidas", variant: "destructive" })
-        setIsLoading(false); // Seta loading false aqui
+        // setIsLoading(false) é tratado no finally
       }
     } catch (error: any) {
       console.error('Erro inesperado no handleLogin:', error);
       toast({ title: "Erro", description: error.message || "Algo deu errado. Tente novamente.", variant: "destructive" })
-      setIsLoading(false); // Seta loading false no catch geral
+      // setIsLoading(false) é tratado no finally
     } finally {
-      // --- CORREÇÃO ---
-      // Removida a lógica complexa que causava erro de escopo.
-      // setIsLoading(false) agora é tratado nos blocos try/catch acima.
-      // --- FIM DA CORREÇÃO ---
+      // Seta isLoading como false APENAS se o modal 2FA NÃO for ser mostrado
+      if (!shouldShow2FAModal) {
+        setIsLoading(false);
+      }
     }
   }
 
@@ -227,29 +241,40 @@ const Login = () => {
             requiresEmail={requires2FAEmail}
             requiresAuthenticator={requires2FAAuthenticator}
             onVerified={handle2FASuccess}
+            // --- CORREÇÃO DO ITEM 1 (CANCELAR PISCANDO) ---
             onCancel={async () => {
+              let signedOut = false;
               try {
                 await supabase.auth.signOut();
+                signedOut = true;
                 toast({
                   title: 'Login cancelado',
                   description: 'Você precisa completar a verificação 2FA para entrar.',
                 });
               } catch (error) {
                  console.error("Erro ao deslogar no cancelamento do 2FA:", error);
+                 toast({ title: 'Erro', description: 'Não foi possível encerrar a sessão completamente.', variant: 'destructive'});
               } finally {
+                // Limpa o estado
                 setShow2FA(false)
                 setPending2FAEmail('')
                 setRequires2FAEmail(false)
                 setRequires2FAAuthenticator(false)
-                setIsLoading(false); // Garante que botão Entrar não fique travado
+                setIsLoading(false);
+
+                // Navega explicitamente para /login APÓS tentar o signOut
+                console.log('Navegando para /login após cancelamento do 2FA.');
+                navigate('/login', { replace: true });
               }
             }}
+            // --- FIM DA CORREÇÃO ---
           />
         </div>
       </div>
     );
   }
 
+  // O return principal (quando show2FA é false)
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
       <div className="background-animation-container">
