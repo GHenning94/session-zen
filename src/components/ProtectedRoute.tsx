@@ -1,9 +1,7 @@
 import { ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-// --- INÍCIO DA CORREÇÃO ---
 import { useSubscription } from '@/hooks/useSubscription'; 
-// --- FIM DA CORREÇÃO ---
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -11,16 +9,14 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  // --- INÍCIO DA CORREÇÃO ---
-  const { isLoading: subLoading } = useSubscription();
+  const { isLoading: subLoading } = useSubscription(); // Espera o hook de assinatura
   const location = useLocation();
 
-  // O app está carregando se o Auth OU a Assinatura estiverem carregando
+  // O app está carregando se o Auth OU a Assinatura (inicial) estiverem carregando
   const isLoading = authLoading || subLoading;
-  // --- FIM DA CORREÇÃO ---
 
   // --- ESTADO DE CARREGAMENTO INICIAL ---
-  if (isLoading) { // Modificado para usar o isLoading combinado
+  if (isLoading) {
     console.log('🔒 ProtectedRoute: Loading auth or subscription...');
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -34,7 +30,6 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   // 1. Se NÃO há usuário -> Redireciona para /login
   if (!user) {
     console.log(`🔒 ProtectedRoute (Ultra Simples): Acesso negado (No User). Redirecionando para /login.`);
-    // Guarda a página original para redirecionar de volta depois
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 

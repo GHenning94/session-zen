@@ -1,7 +1,6 @@
-import { createContext, useContext, ReactNode } from 'react'
+import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
-import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 export type SubscriptionPlan = 'basico' | 'pro' | 'premium'
 
@@ -46,6 +45,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   }
 }
 
+
 interface SubscriptionContextType {
   currentPlan: SubscriptionPlan
   planLimits: PlanLimits
@@ -53,7 +53,7 @@ interface SubscriptionContextType {
   canAddSession: (currentSessionCount: number) => boolean
   hasFeature: (feature: keyof PlanLimits) => boolean
   showUpgradeModal: () => void
-  checkSubscription: () => Promise<void> // Agora isso é o 'refetch'
+  checkSubscription: () => Promise<void>
   isLoading: boolean
 }
 
@@ -71,63 +71,55 @@ interface SubscriptionProviderProps {
   children: ReactNode
 }
 
-// --- INÍCIO DA GRANDE CORREÇÃO (React Query) ---
-
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
   const { user } = useAuth()
-  const queryClient = useQueryClient()
+  const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>('basico')
+  // Começa como 'true' para esperar a verificação inicial
+  const [isLoading, setIsLoading] = useState(true)
 
-  // Esta é a função que busca os dados
-  const fetchSubscription = async () => {
-    if (!user) {
-      console.log('🔄 Subscription check: No user, defaulting to basic.');
-      return { subscription_tier: 'basico' }; // Retorna o objeto padrão
-    }
-
-    console.log('🔄 Checking subscription status (Slow API call)...')
-    const { data, error } = await supabase.functions.invoke('check-subscription')
-    
-    if (error) {
-      console.error('Error checking subscription:', error)
-      throw new Error(error.message); // Deixe o React Query lidar com o erro
-    }
-
-    console.log('✅ Subscription data:', data)
-    return data;
-  }
-
-  // Usamos useQuery para gerenciar o estado
-  const { data: subscriptionData, isLoading, refetch } = useQuery({
-    // A 'queryKey' identifica unicamente esta busca
-    queryKey: ['subscription', user?.id], 
-    
-    // A 'queryFn' é a função que busca
-    queryFn: fetchSubscription,
-    
-    // 'enabled' garante que só rode se o user existir
-    enabled: !!user,
-    
-    // 'staleTime' define o cache. 5 minutos.
-    // O usuário não verá 'loading' por 5 minutos, mesmo se focar a aba.
-    staleTime: 1000 * 60 * 5, // 5 minutos de cache
-    
-    // 'refetchOnWindowFocus: false' é o seu pedido!
-    // Não vai recarregar ao mudar de aba.
-    refetchOnWindowFocus: false,
-    
-    // 'retry: 1' Tenta 1 vez se falhar.
-    retry: 1,
-
-    // 'initialData' garante que o plano seja 'basico' antes de tudo
-    initialData: { subscription_tier: 'basico' }
-  });
-
-  // A função para o resto do app chamar e forçar uma atualização
+  // Check subscription status
   const checkSubscription = async () => {
-    await refetch();
+    if (!user) {
+      setCurrentPlan('basico')
+      setIsLoading(false) // Se não há usuário, terminamos de carregar
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      console.log('🔄 Checking subscription status (Slow API call)...')
+      const { data, error } = await supabase.functions.invoke('check-subscription')
+      
+      if (error) {
+        console.error('Error checking subscription:', error)
+        setCurrentPlan('basico')
+        return // O finally vai setar isLoading(false)
+      }
+
+      console.log('✅ Subscription data:', data)
+      if (data?.subscription_tier) {
+        setCurrentPlan(data.subscription_tier as SubscriptionPlan)
+      } else {
+        setCurrentPlan('basico')
+      }
+    } catch (error) {
+      console.error('Error calling check-subscription:', error)
+      setCurrentPlan('basico')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const currentPlan = (subscriptionData?.subscription_tier as SubscriptionPlan) || 'basico'
+  // Check subscription when user changes
+  useEffect(() => {
+    console.log('useSubscription: user ID changed, checking subscription.');
+    checkSubscription()
+  // --- INÍCIO DA CORREÇÃO ---
+  // Mude a dependência de [user] para [user?.id]
+  // Isso impede que o useEffect rode a cada re-foco da aba!
+  }, [user?.id])
+  // --- FIM DA CORREÇÃO ---
+
   const planLimits = PLAN_LIMITS[currentPlan]
 
   const canAddClient = (currentClientCount: number) => {
@@ -143,6 +135,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   }
 
   const showUpgradeModal = () => {
+    // Implementar modal de upgrade
     window.open('/upgrade', '_blank')
   }
 
@@ -154,11 +147,10 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       canAddSession,
       hasFeature,
       showUpgradeModal,
-      checkSubscription, // A função de refetch
-      isLoading // O isLoading do useQuery
+      checkSubscription,
+      isLoading
     }}>
       {children}
     </SubscriptionContext.Provider>
   )
 }
-// --- FIM DA GRANDE CORREÇÃO (React Query) ---
