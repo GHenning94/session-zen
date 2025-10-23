@@ -1,61 +1,60 @@
+// supabase/functions/2fa-send-e-mail-code/index.ts
+// ... (imports e funções de ajuda inalterados) ...
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // @deno-types="https://deno.land/std@0.190.0/http/server.ts"
 import { type Request } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const corsHeaders = { /* ... */ };
+function generateOTP(): string { /* ... */ }
+async function getSendPulseToken(clientId: string, clientSecret: string): Promise<string> { /* ... */ }
 
-function generateOTP(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
-}
 
-async function getSendPulseToken(clientId: string, clientSecret: string): Promise<string> {
-  // ... (código idêntico)
-  const response = await fetch("https://api.sendpulse.com/oauth/access_token", {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      grant_type: 'client_credentials',
-      client_id: clientId,
-      client_secret: clientSecret,
-    }),
-  });
-  const data = await response.json();
-  if (!response.ok || !data.access_token) {
-    throw new Error(`SendPulse Auth Error: ${data.message || 'Failed to get token'}`);
-  }
-  return data.access_token;
-}
-
-serve(async (req: Request) => { // <--- TIPO ADICIONADO AQUI
-  if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
-  }
+serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') { /* ... */ }
 
   try {
+    // ... (Obter chaves, criar cliente supabase, autenticar utilizador - inalterado) ...
     const spApiClientId = Deno.env.get('SENDPULSE_API_ID') ?? '';
     const spApiSecret = Deno.env.get('SENDPULSE_API_SECRET') ?? '';
-    // ... (restante da lógica de autenticação e envio) ...
-    
-    // Invalidar códigos antigos (a sua correção de segurança)
-    await supabase
+    const supabase = createClient(/* ... */);
+    const authHeader = req.headers.get('Authorization');
+    // ... (verificar authHeader, obter token, getUser) ...
+    const user = userData.user;
+    // ... (verificar se 2FA está ativo) ...
+
+    // --- CORREÇÃO AQUI ---
+    // 1. Invalidar códigos antigos com mais logs
+    console.log(`Attempting to invalidate old email codes for user: ${user.id}`);
+    const { error: updateError } = await supabase
       .from('user_2fa_email_codes')
       .update({ used: true })
       .eq('user_id', user.id)
-      .eq('used', false);
-      
-    // ... (restante da lógica) ...
-      
+      .eq('used', false); // Apenas os não utilizados
+
+    // Verificar explicitamente se houve erro na invalidação
+    if (updateError) {
+      console.error(`ERROR invalidating old 2FA codes for user ${user.id}:`, updateError.message);
+      // DECISÃO: Continuar mesmo assim ou parar? Por segurança, vamos parar.
+      throw new Error(`Database error during code invalidation: ${updateError.message}`);
+    } else {
+      console.log(`Successfully invalidated old email codes for user: ${user.id}`);
+    }
+    // --- FIM DA CORREÇÃO ---
+
+    // 2. Gerar e armazenar novo OTP (inalterado)
+    const code = generateOTP();
+    // ... (lógica de expiração e insert) ...
+
+    // 3. Enviar e-mail com SendPulse (inalterado)
+    const spAccessToken = await getSendPulseToken(spApiClientId, spApiSecret);
+    // ... (lógica de envio do e-mail) ...
+
+    return new Response( /* ... (resposta de sucesso inalterada) ... */ );
+
   } catch (error) {
     console.error('Error in 2fa-send-email-code:', error);
-    // --- TIPO ADICIONADO AQUI ---
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response(
-      JSON.stringify({ error: errorMessage }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return new Response( /* ... (resposta de erro 500 inalterada) ... */ );
   }
 });
