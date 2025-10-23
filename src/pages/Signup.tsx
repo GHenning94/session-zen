@@ -7,12 +7,11 @@ import { Badge } from "@/components/ui/badge"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
-import { ArrowLeft, UserPlus, Gift, Check, X } from "lucide-react" // Check, X mantidos para requisitos de senha
+import { ArrowLeft, UserPlus, Gift } from "lucide-react"
 
 const Signup = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState(''); // Manter confirmação de senha
   const [nome, setNome] = useState('')
   const [profissao, setProfissao] = useState('Psicólogo')
   const [isLoading, setIsLoading] = useState(false)
@@ -23,10 +22,8 @@ const Signup = () => {
   const [searchParams] = useSearchParams()
   const [referralId, setReferralId] = useState<string | null>(null)
   const [referralUser, setReferralUser] = useState<any>(null)
-  
-  // Captcha removido daqui
 
-  // useEffect e loadReferralUser (Inalterados)
+  // Verificar referral
   useEffect(() => {
     const ref = searchParams.get('ref')
     if (ref) {
@@ -45,95 +42,84 @@ const Signup = () => {
 
       if (!error && data) {
         setReferralUser(data)
-        // Toast do referral pode ser mantido
-        // toast({ ... }) 
+        toast({
+          title: "Convite especial! 🎉",
+          description: `Você foi convidado por ${data.nome}. Ganhe 20% de desconto no primeiro mês!`,
+        })
       }
     } catch (error) {
       console.error('Erro ao carregar dados do convite:', error)
     }
   }
 
-  // Requisitos de senha (Mantidos)
-  const passwordRequirements = [
-    { text: "Pelo menos 8 caracteres", test: (pwd: string) => pwd.length >= 8 },
-    { text: "Uma letra maiúscula", test: (pwd: string) => /[A-Z]/.test(pwd) },
-    { text: "Uma letra minúscula", test: (pwd: string) => /[a-z]/.test(pwd) },
-    { text: "Um número", test: (pwd: string) => /\d/.test(pwd) },
-    { text: "Um caractere especial", test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) }
-  ]
   const validatePassword = (password: string) => {
-    return passwordRequirements.every(req => req.test(password))
+    const requirements = [
+      { test: (pwd: string) => pwd.length >= 8, message: "Pelo menos 8 caracteres" },
+      { test: (pwd: string) => /[A-Z]/.test(pwd), message: "Uma letra maiúscula" },
+      { test: (pwd: string) => /[a-z]/.test(pwd), message: "Uma letra minúscula" },
+      { test: (pwd: string) => /\d/.test(pwd), message: "Um número" },
+      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd), message: "Um caractere especial" }
+    ]
+    
+    return requirements.every(req => req.test(password))
   }
 
-  // --- REVERTIDO PARA supabase.auth.signUp ---
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (password !== confirmPassword) {
-      toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
-      return;
-    }
+    // Validar requisitos da senha
     if (!validatePassword(password)) {
-      toast({ title: "Senha inválida", description: "A senha deve atender a todos os requisitos.", variant: "destructive" })
+      toast({
+        title: "Senha inválida",
+        description: "A senha deve atender a todos os requisitos listados.",
+        variant: "destructive",
+      })
       return
     }
     
     setIsLoading(true)
 
     try {
-      // Voltar a usar a função nativa signUp
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          // O Supabase enviará o e-mail para esta URL (a sua página AuthConfirm)
-          emailRedirectTo: `${window.location.origin}/auth/confirm`, 
+          emailRedirectTo: `${window.location.origin}/`,
           data: {
             nome,
             profissao,
             referral_id: referralId
           }
-          // O captcha é tratado pelo Supabase baseado nas suas configurações
         }
       })
 
-      // O Supabase pode retornar erro se o captcha falhar ou se o e-mail já existir (depende das config)
       if (error) throw error
 
-      if (data.user || data.session === null) { // Supabase retorna session=null se e-mail já existe
+      if (data.user) {
+        // Se há referral, salvar na sessão para processar após escolha do plano
         if (referralId) {
           sessionStorage.setItem('pending_referral', referralId)
         }
-        setShowSuccess(true) // Mostra a tela de sucesso (que diz para verificar o e-mail)
-        toast({ title: "Verifique seu e-mail", description: "Enviamos um link de confirmação para o seu e-mail." })
+
+        // Mostrar tela de sucesso com opção de reenviar
+        setShowSuccess(true)
       }
     } catch (error: any) {
       console.error('Erro no cadastro:', error)
-      // Traduzir o erro mais comum
-      let description = error.message || "Não foi possível criar a conta.";
-      if (error.message.includes('User already registered')) {
-         description = "Este e-mail já está em uso. Tente fazer o login ou recuperar a senha.";
-      } else if (error.message.includes('captcha')) {
-         description = "Falha na verificação de segurança. Tente novamente.";
-      }
-      
       toast({
         title: "Erro no cadastro",
-        description: description,
+        description: error.message || "Não foi possível criar a conta.",
         variant: "destructive"
       })
     } finally {
       setIsLoading(false)
-      // Captcha não precisa ser resetado manualmente aqui
     }
   }
 
-  // Reenvio usa a função nativa 'resend'
   const handleResendConfirmation = async () => {
     if (resendCooldown > 0) return
     
     try {
-      setIsLoading(true); // Usar isLoading para desabilitar o botão
       const { error } = await supabase.auth.resend({
         type: 'signup',
         email: email
@@ -146,6 +132,7 @@ const Signup = () => {
         description: "Verifique sua caixa de entrada.",
       })
 
+      // Cooldown de 60 segundos
       setResendCooldown(60)
       const interval = setInterval(() => {
         setResendCooldown((prev) => {
@@ -162,44 +149,139 @@ const Signup = () => {
         description: error.message || "Não foi possível reenviar o e-mail.",
         variant: "destructive"
       })
-    } finally {
-        setIsLoading(false);
     }
   }
 
-  // Tela de sucesso (Inalterada, mas agora sem Captcha)
+  // Tela de sucesso após cadastro
   if (showSuccess) {
     return (
-      <div className="min-h-screen ..."> {/* Conteúdo inalterado */}
-        <Card className="shadow-xl">
-            <CardHeader> {/* Conteúdo inalterado */} </CardHeader>
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <Card className="shadow-xl">
+            <CardHeader className="text-center space-y-4">
+              <div className="flex justify-center">
+                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
+                  <UserPlus className="w-8 h-8 text-green-600 dark:text-green-400" />
+                </div>
+              </div>
+              <div>
+                <CardTitle className="text-2xl font-bold">Conta Criada!</CardTitle>
+                <CardDescription className="mt-4">
+                  Enviamos um link de confirmação para <strong>{email}</strong>
+                </CardDescription>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Clique no link para confirmar seu e-mail e acessar a plataforma.
+                </p>
+              </div>
+            </CardHeader>
+
             <CardContent className="space-y-4">
-              {/* Captcha removido daqui */}
               <Button
                 onClick={handleResendConfirmation}
                 variant="outline"
                 className="w-full"
-                disabled={resendCooldown > 0 || isLoading} // Usa isLoading
+                disabled={resendCooldown > 0}
               >
-                {isLoading ? "Reenviando..." : (resendCooldown > 0 
+                {resendCooldown > 0 
                   ? `Reenviar em ${resendCooldown}s` 
-                  : 'Reenviar Link')}
+                  : 'Reenviar Link'}
               </Button>
-              {/* ... (Botão Voltar) ... */}
+
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/login')}
+                className="w-full"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para Login
+              </Button>
             </CardContent>
           </Card>
+        </div>
       </div>
     )
   }
 
-  // Formulário Principal (Com confirmação de senha e requisitos)
   return (
-    <div className="min-h-screen ..."> {/* Conteúdo inalterado */}
-       <Card className="shadow-xl">
-          <CardHeader> {/* Conteúdo inalterado */} </CardHeader>
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <Card className="shadow-xl">
+          <CardHeader className="text-center space-y-4">
+            <div className="flex justify-center">
+              <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center">
+                <UserPlus className="w-8 h-8 text-white" />
+              </div>
+            </div>
+            <div>
+              <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
+              <CardDescription>
+                Comece sua jornada profissional no TherapyPro
+              </CardDescription>
+              {referralUser && (
+                <div className="mt-4 p-3 rounded-lg border" 
+                     style={{ 
+                       backgroundColor: 'hsl(142 71% 45% / 0.1)', 
+                       borderColor: 'hsl(142 71% 45% / 0.3)' 
+                     }}>
+                  <div className="flex items-center justify-center gap-2" 
+                       style={{ color: 'hsl(142 71% 35%)' }}>
+                    <Gift className="w-4 h-4" />
+                    <span className="text-sm font-medium">Convite Especial</span>
+                  </div>
+                  <p className="text-xs mt-1" 
+                     style={{ color: 'hsl(142 71% 40%)' }}>
+                    Convidado por <strong>{referralUser.nome}</strong>
+                  </p>
+                  <Badge variant="secondary" className="mt-2 text-xs px-2 py-1" 
+                         style={{ 
+                           backgroundColor: 'hsl(142 71% 45% / 0.2)', 
+                           color: 'hsl(142 71% 35%)' 
+                         }}>
+                    20% OFF no primeiro mês
+                  </Badge>
+                </div>
+              )}
+            </div>
+          </CardHeader>
+
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
-              {/* ... (Campos Nome, Profissão, Email) ... */}
+              <div className="space-y-2">
+                <Label htmlFor="nome">Nome Completo</Label>
+                <Input
+                  id="nome"
+                  type="text"
+                  value={nome}
+                  onChange={(e) => setNome(e.target.value)}
+                  required
+                  placeholder="Seu nome completo"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="profissao">Profissão</Label>
+                <Input
+                  id="profissao"
+                  type="text"
+                  value={profissao}
+                  onChange={(e) => setProfissao(e.target.value)}
+                  required
+                  placeholder="Ex: Psicólogo, Terapeuta, etc."
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="seu@email.com"
+                />
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <Input
@@ -211,40 +293,29 @@ const Signup = () => {
                   placeholder="Sua senha"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar Senha</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                  placeholder="Repita sua senha"
-                />
-                 {confirmPassword && password !== confirmPassword && (<p className="text-sm text-red-500">As senhas não coincidem</p>)}
-              </div>
-              {/* Mostrar requisitos da senha */}
-              {password && (
-                 <div className="space-y-1 pt-1 border-t border-muted/50 mt-4">
-                    <p className="text-xs font-medium text-muted-foreground mb-1">Requisitos da senha:</p>
-                    {passwordRequirements.map((req, index) => {
-                       const isValid = req.test(password);
-                       return ( /* ... (Lógica de exibição inalterada) ... */ );
-                    })}
-                 </div>
-              )}
-              {/* Captcha removido daqui */}
+
               <Button 
                 type="submit" 
                 className="w-full bg-gradient-primary hover:opacity-90"
-                disabled={isLoading} // Não depende mais do captcha token
+                disabled={isLoading}
               >
                 {isLoading ? "Criando conta..." : "Criar Conta"}
               </Button>
             </form>
-             {/* ... (Botão Voltar para Login) ... */}
+
+            <div className="mt-6 text-center">
+              <Button 
+                variant="ghost" 
+                onClick={() => navigate('/login')}
+                className="text-sm"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Voltar para Login
+              </Button>
+            </div>
           </CardContent>
         </Card>
+      </div>
     </div>
   )
 }
