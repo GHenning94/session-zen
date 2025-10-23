@@ -1,7 +1,5 @@
-// src/pages/Login.tsx
 import { useState, useEffect, useRef } from "react"
 import { useNavigate } from "react-router-dom"
-// import { useAuth } from "@/hooks/useAuth" // Não precisamos mais do signUp
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { TwoFactorVerification } from "@/components/TwoFactorVerification"
@@ -11,20 +9,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Stethoscope, Brain, Heart, Check, X, Loader2 } from "lucide-react" // Adicionado Loader2
+import { Stethoscope, Brain, Heart, Check, X, Loader2 } from "lucide-react"
 import { Turnstile } from "@marsidev/react-turnstile"
-import "./Login.styles.css"
+import "./Login.styles.css" // Importa o CSS isolado para esta página
 
 const Login = () => {
   const navigate = useNavigate()
-  // const { signUp } = useAuth() // Removido
   const [isLoading, setIsLoading] = useState(false)
   const [isResettingPassword, setIsResettingPassword] = useState(false); // Para o botão "Esqueci senha"
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
   const [captchaKey, setCaptchaKey] = useState(0)
 
-  const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH' // A sua Site Key (correta)
+  const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH' // A sua Site Key
   const [show2FA, setShow2FA] = useState(false)
   const [pending2FAEmail, setPending2FAEmail] = useState('')
   const [requires2FAEmail, setRequires2FAEmail] = useState(false)
@@ -47,6 +44,8 @@ const Login = () => {
             supabase.auth.signOut().catch(error => {
                 console.error("Erro ao deslogar durante unmount do Login:", error);
             });
+        } else if (show2FA && is2FASuccess.current) {
+             console.log('Login component unmounting after successful 2FA. NOT signing out.');
         }
     };
     return cleanup;
@@ -80,6 +79,7 @@ const Login = () => {
     let shouldShow2FAModal = false;
 
     try {
+      // Usar a função nativa do Supabase para Login
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -88,7 +88,6 @@ const Login = () => {
         }
       })
       
-      // --- INÍCIO DA CORREÇÃO (Erro "Verifique o e-mail") ---
       // Tratar o erro de e-mail não confirmado
       if (signInError) {
         if (signInError.message === 'Email not confirmed') {
@@ -101,14 +100,11 @@ const Login = () => {
           console.error('Erro de Login:', signInError);
           toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
         }
-        setCaptchaKey(prev => prev + 1); // Recarregar captcha no erro
-        setTurnstileToken(null);
-        return; 
+        return; // Parar aqui no erro
       }
-      // --- FIM DA CORREÇÃO ---
 
+      // Se não houve erro, continuar com a lógica do 2FA
       if (signInData?.user) {
-        // ... (Lógica do 2FA - Inalterada)
         const { data: settingsArray, error: settingsError } = await supabase
           .from('user_2fa_settings')
           .select('email_2fa_enabled, authenticator_2fa_enabled')
@@ -117,7 +113,7 @@ const Login = () => {
         const settings = settingsArray && settingsArray.length > 0 ? settingsArray[0] : null;
 
         if (settingsError) {
-          throw settingsError;
+          throw settingsError; // Lançar erro para o catch
         }
 
         if (settings && (settings.email_2fa_enabled || settings.authenticator_2fa_enabled)) {
@@ -126,11 +122,16 @@ const Login = () => {
           setRequires2FAEmail(settings.email_2fa_enabled || false)
           setRequires2FAAuthenticator(settings.authenticator_2fa_enabled || false)
           setShow2FA(true)
+          // Intencionalmente NÃO setamos isLoading false aqui
           return
         }
         
+        // Se não precisa de 2FA, redirecionar
         toast({ title: "Login realizado com sucesso!", description: "Redirecionando..." })
         navigate("/dashboard", { state: { fromLogin: true } })
+      } else {
+          // Caso inesperado onde não há erro mas também não há usuário
+          throw new Error("Resposta de login inesperada.");
       }
     } catch (error: any) {
       console.error('Erro inesperado no handleLogin:', error);
@@ -146,12 +147,11 @@ const Login = () => {
   }
 
   const handle2FASuccess = async () => {
-    is2FASuccess.current = true;
+    is2FASuccess.current = true; // Sinaliza sucesso para o useEffect de cleanup
     toast({ title: "Login realizado com sucesso!", description: "Redirecionando..." })
     navigate("/dashboard", { state: { fromLogin: true } })
   }
 
-  // --- CORREÇÃO (Cadastro Personalizado) ---
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -171,7 +171,7 @@ const Login = () => {
     setIsLoading(true)
 
     try {
-      // Chamar a nossa nova Edge Function
+      // Chamar a nossa nova Edge Function 'custom-signup'
       const { data, error } = await supabase.functions.invoke('custom-signup', {
         body: {
           email: formData.email,
@@ -182,11 +182,15 @@ const Login = () => {
       })
 
       if (error) throw new Error(error.message); // Erros de rede/função
-      if (data.error) throw new Error(data.error); // Erros da nossa lógica
+      // Verificar se a *nossa* função retornou um erro na propriedade 'error'
+      if (data && data.error) throw new Error(data.error);
 
+      // Sucesso!
       toast({ title: "Conta criada com sucesso!", description: "Verifique seu email para confirmar a conta." })
+      // Opcional: Limpar o formulário ou mudar para a aba de login
       
     } catch (error: any) {
+      // Tratar erros específicos da nossa função ou erros gerais
       if (error.message.includes('Conta já existente')) {
         toast({
           title: "E-mail já está em uso",
@@ -196,7 +200,7 @@ const Login = () => {
       } else if (error.message.includes('captcha')) {
         toast({
           title: 'Erro na verificação de segurança',
-          description: error.message,
+          description: error.message, // A mensagem da função já é clara
           variant: 'destructive',
         })
       } else {
@@ -204,13 +208,13 @@ const Login = () => {
       }
     } finally {
       setIsLoading(false)
-      setCaptchaKey(prev => prev + 1) // Recarregar o captcha
+      // Recarregar o captcha após a tentativa de cadastro
+      setCaptchaKey(prev => prev + 1)
       setTurnstileToken(null)
     }
   }
-  // --- FIM DA CORREÇÃO ---
 
-  // ... (Lógica do Modal 2FA - Inalterada)
+  // Lógica do Modal 2FA (Inalterada)
   if (show2FA) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
@@ -229,11 +233,12 @@ const Login = () => {
               } catch (error) {
                  console.error("Erro ao deslogar no cancelamento do 2FA:", error);
               } finally {
+                // Limpa o estado e volta ao login
                 setShow2FA(false)
                 setPending2FAEmail('')
                 setRequires2FAEmail(false)
                 setRequires2FAAuthenticator(false)
-                setIsLoading(false);
+                setIsLoading(false); // Garante que isLoading seja resetado
                 navigate('/login', { replace: true });
               }
             }}
@@ -243,21 +248,59 @@ const Login = () => {
     );
   }
 
-  // ... (JSX do formulário principal)
+  // O return principal (quando show2FA é false)
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
-      {/* ... (Divs de background) ... */}
+      {/* Background Blobs */}
+      <div className="background-animation-container">
+        <div className="blob blob-2"></div>
+      </div>
+      {/* Conteúdo Central */}
       <div className="relative z-10 w-full max-w-md space-y-6">
-        {/* ... (Header e Features) ... */}
+        {/* Header (Logo e Título) */}
+        <div className="text-center space-y-4">
+          <div className="mx-auto w-16 h-16 bg-gradient-primary rounded-2xl flex items-center justify-center shadow-primary">
+            <Stethoscope className="w-8 h-8 text-white" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">TherapyPro</h1>
+            <p className="text-muted-foreground">Sistema completo para profissionais da saúde mental</p>
+          </div>
+        </div>
+        {/* Features */}
+        <div className="grid grid-cols-1 gap-3 mb-6">
+          <div className="flex items-center gap-3 p-3 bg-card/80 rounded-lg border border-border/50 shadow-soft backdrop-blur-sm">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center"><Brain className="w-4 h-4 text-primary" /></div>
+            <div className="text-sm"><p className="font-medium text-foreground">Gestão Completa</p><p className="text-muted-foreground text-xs">Agenda, clientes e pagamentos</p></div>
+          </div>
+          <div className="flex items-center gap-3 p-3 bg-card/80 rounded-lg border border-border/50 shadow-soft backdrop-blur-sm">
+            <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center"><Heart className="w-4 h-4 text-secondary" /></div>
+            <div className="text-sm"><p className="font-medium text-foreground">Foco no Cuidado</p><p className="text-muted-foreground text-xs">Mais tempo para seus pacientes</p></div>
+          </div>
+        </div>
+        {/* Card Principal com Tabs */}
         <Card className="shadow-elegant border-border/50 bg-gradient-card backdrop-blur-sm">
           <Tabs defaultValue="login" className="w-full">
             <CardHeader className="pb-4 bg-transparent">
-              {/* ... (TabsList) ... */}
+              <TabsList className="grid w-full grid-cols-2 bg-muted/50">
+                <TabsTrigger value="login" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Entrar</TabsTrigger>
+                <TabsTrigger value="register" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Criar Conta</TabsTrigger>
+              </TabsList>
             </CardHeader>
             <CardContent className="bg-transparent">
+              {/* Aba de Login */}
               <TabsContent value="login" className="space-y-4">
                 <form onSubmit={handleLogin} className="space-y-4">
-                  {/* ... (Campos de Email e Senha) ... */}
+                  {/* --- OS CAMPOS QUE SUMIRAM --- */}
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">E-mail</Label>
+                    <Input id="login-email" type="email" placeholder="seu@email.com" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Senha</Label>
+                    <Input id="login-password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} required />
+                  </div>
+                  {/* --- FIM DOS CAMPOS --- */}
                   <div className="flex justify-center">
                     <Turnstile
                       key={captchaKey}
@@ -267,9 +310,10 @@ const Login = () => {
                       onExpire={() => setTurnstileToken(null)}
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword || !turnstileToken}>{isLoading ? "Entrando..." : "Entrar"}</Button>
-                  
-                  {/* --- CORREÇÃO (Esqueci minha senha) --- */}
+                  <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword || !turnstileToken}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isLoading ? "Entrando..." : "Entrar"}
+                  </Button>
                   <div className="text-center">
                     <Button
                       type="button"
@@ -278,7 +322,7 @@ const Login = () => {
                       disabled={isLoading || isResettingPassword} // Desabilitar enquanto reseta
                       onClick={async () => {
                         if (!formData.email) {
-                          toast({ title: "Email necessário", description: "Digite seu email primeiro para recuperar a senha.", variant: "destructive" });
+                          toast({ title: "Email necessário", description: "Digite seu email primeiro.", variant: "destructive" });
                           return;
                         }
                         if (!turnstileToken) {
@@ -288,6 +332,7 @@ const Login = () => {
 
                         setIsResettingPassword(true);
                         try {
+                          // Chamar a função 'request-password-reset'
                           const { data, error } = await supabase.functions.invoke('request-password-reset', {
                             body: {
                               email: formData.email,
@@ -296,29 +341,77 @@ const Login = () => {
                           });
 
                           if (error) throw new Error(error.message);
-                          if (data.error) throw new Error(data.error); // Erro da nossa função
+                          if (data && data.error) throw new Error(data.error);
 
-                          toast({ title: "Verifique seu e-mail", description: data.message });
+                          toast({ title: "Verifique seu e-mail", description: data.message || "Link de redefinição enviado." });
                           
                         } catch (err: any) {
                           console.error("Erro ao solicitar redefinição:", err);
-                          toast({ title: "Erro", description: err.message || "Não foi possível enviar o email de recuperação.", variant: "destructive" });
+                          toast({ title: "Erro", description: err.message || "Não foi possível enviar o email.", variant: "destructive" });
                         } finally {
                           setIsResettingPassword(false);
                           setCaptchaKey(prev => prev + 1); // Recarregar o captcha
                           setTurnstileToken(null);
                         }
                       }}>
-                      {isResettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Esqueci minha senha"}
+                      {isResettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {isResettingPassword ? "Enviando..." : "Esqueci minha senha"}
                     </Button>
                   </div>
-                  {/* --- FIM DA CORREÇÃO --- */}
-                  
                 </form>
               </TabsContent>
+              {/* Aba de Registro */}
               <TabsContent value="register" className="space-y-4">
                 <form onSubmit={handleRegister} className="space-y-4">
-                  {/* ... (Formulário de Registro - Inalterado) ... */}
+                   <div className="space-y-2">
+                    <Label htmlFor="register-name">Nome Completo</Label>
+                    <Input id="register-name" type="text" placeholder="Seu nome" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-profession">Profissão</Label>
+                    <Select value={formData.profession} onValueChange={(value) => handleInputChange('profession', value)} required>
+                      <SelectTrigger><SelectValue placeholder="Selecione sua profissão" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="psicologo">Psicólogo(a)</SelectItem>
+                        <SelectItem value="psicanalista">Psicanalista</SelectItem>
+                        <SelectItem value="terapeuta">Terapeuta</SelectItem>
+                        <SelectItem value="coach">Coach</SelectItem>
+                        <SelectItem value="psiquiatra">Psiquiatra</SelectItem>
+                        <SelectItem value="outro">Outro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-email">E-mail</Label>
+                    <Input id="register-email" type="email" placeholder="seu@email.com" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-password">Senha</Label>
+                    <div className="relative">
+                      <Input id="register-password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => { handleInputChange('password', e.target.value); setShowPasswordRequirements(e.target.value.length > 0); }} onFocus={() => setShowPasswordRequirements(formData.password.length > 0)} onBlur={() => setShowPasswordRequirements(false)} required />
+                      {showPasswordRequirements && (
+                        <div className="absolute top-full left-0 mt-2 w-full p-4 bg-background border border-border rounded-lg shadow-lg z-50">
+                          <p className="text-sm font-medium text-foreground mb-2">Requisitos da senha:</p>
+                          <div className="space-y-1">
+                            {passwordRequirements.map((req, index) => {
+                              const isValid = req.test(formData.password);
+                              return (
+                                <div key={index} className="flex items-center gap-2 text-sm">
+                                  {isValid ? <Check className="w-4 h-4 text-green-500" /> : <X className="w-4 h-4 text-muted-foreground" />}
+                                  <span className={isValid ? "text-green-500" : "text-muted-foreground"}>{req.text}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="register-confirm-password">Repetir Senha</Label>
+                    <Input id="register-confirm-password" type="password" placeholder="Confirme sua senha" value={formData.confirmPassword} onChange={(e) => handleInputChange('confirmPassword', e.target.value)} required />
+                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (<p className="text-sm text-red-500">As senhas não coincidem</p>)}
+                  </div>
                   <div className="flex justify-center">
                     <Turnstile
                       key={captchaKey}
@@ -328,13 +421,17 @@ const Login = () => {
                       onExpire={() => setTurnstileToken(null)}
                     />
                   </div>
-                  <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword || !turnstileToken}>{isLoading ? "Criando conta..." : "Criar Conta"}</Button>
+                  <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword || !turnstileToken}>
+                    {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {isLoading ? "Criando conta..." : "Criar Conta"}
+                  </Button>
                 </form>
               </TabsContent>
             </CardContent>
           </Tabs>
         </Card>
-        {/* ... (Footer) ... */}
+        {/* Footer (Termos) */}
+        <p className="text-center text-xs text-muted-foreground">Ao continuar, você concorda com nossos Termos de Uso e Política de Privacidade</p>
       </div>
     </div>
   )
