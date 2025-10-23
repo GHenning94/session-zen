@@ -1,60 +1,157 @@
-// supabase/functions/2fa-send-e-mail-code/index.ts
-// ... (imports e funções de ajuda inalterados) ...
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 // @deno-types="https://deno.land/std@0.190.0/http/server.ts"
 import { type Request } from "https://deno.land/std@0.190.0/http/server.ts";
 
-const corsHeaders = { /* ... */ };
-function generateOTP(): string { /* ... */ }
-async function getSendPulseToken(clientId: string, clientSecret: string): Promise<string> { /* ... */ }
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
+function generateOTP(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+async function getSendPulseToken(clientId: string, clientSecret: string): Promise<string> {
+  const response = await fetch("https://api.sendpulse.com/oauth/access_token", {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: clientId,
+      client_secret: clientSecret,
+    }),
+  });
+
+  const data = await response.json();
+  if (!response.ok || !data.access_token) {
+    throw new Error(`SendPulse Auth Error: ${data.message || 'Failed to get token'}`);
+  }
+  return data.access_token;
+}
 
 serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') { /* ... */ }
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
 
   try {
-    // ... (Obter chaves, criar cliente supabase, autenticar utilizador - inalterado) ...
     const spApiClientId = Deno.env.get('SENDPULSE_API_ID') ?? '';
     const spApiSecret = Deno.env.get('SENDPULSE_API_SECRET') ?? '';
-    const supabase = createClient(/* ... */);
-    const authHeader = req.headers.get('Authorization');
-    // ... (verificar authHeader, obter token, getUser) ...
-    const user = userData.user;
-    // ... (verificar se 2FA está ativo) ...
 
-    // --- CORREÇÃO AQUI ---
-    // 1. Invalidar códigos antigos com mais logs
-    console.log(`Attempting to invalidate old email codes for user: ${user.id}`);
+    if (!spApiClientId || !spApiSecret) {
+      throw new Error('SendPulse API credentials are not set');
+    }
+
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    );
+
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) throw new Error('Missing authorization header');
+    const token = authHeader.replace("Bearer ", "");
+    
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError) throw new Error(`Authentication error: ${userError.message}`);
+    const user = userData.user;
+    if (!user?.id || !user?.email) throw new Error("User not authenticated or email not available");
+
+    const { data: settings } = await supabase
+      .from('user_2fa_settings')
+      .select('email_2fa_enabled')
+      .eq('user_id', user.id)
+      .single();
+
+    if (!settings?.email_2fa_enabled) {
+      throw new Error('Email 2FA not enabled');
+    }
+
+    // --- INÍCIO DA CORREÇÃO ---
+    // 1. Invalidar todos os códigos de e-mail anteriores e não utilizados para este usuário
+    console.log(`Invalidating old email codes for user: ${user.id}`);
     const { error: updateError } = await supabase
       .from('user_2fa_email_codes')
-      .update({ used: true })
+      .update({ used: true }) // Marca como usado
       .eq('user_id', user.id)
-      .eq('used', false); // Apenas os não utilizados
+      .eq('used', false); // Apenas os que ainda não foram usados
 
-    // Verificar explicitamente se houve erro na invalidação
     if (updateError) {
-      console.error(`ERROR invalidating old 2FA codes for user ${user.id}:`, updateError.message);
-      // DECISÃO: Continuar mesmo assim ou parar? Por segurança, vamos parar.
-      throw new Error(`Database error during code invalidation: ${updateError.message}`);
-    } else {
-      console.log(`Successfully invalidated old email codes for user: ${user.id}`);
+      console.error('Error invalidating old codes:', updateError);
+      // Continuamos mesmo se isto falhar, o novo código irá funcionar
     }
     // --- FIM DA CORREÇÃO ---
 
-    // 2. Gerar e armazenar novo OTP (inalterado)
+    // 2. Gerar e armazenar novo OTP
     const code = generateOTP();
-    // ... (lógica de expiração e insert) ...
+    const expiresAt = new Date();
+    expiresAt.setMinutes(expiresAt.getMinutes() + 10);
 
-    // 3. Enviar e-mail com SendPulse (inalterado)
+    await supabase.from('user_2fa_email_codes').insert({
+      user_id: user.id,
+      code,
+      expires_at: expiresAt.toISOString(),
+      used: false,
+    });
+
+    console.log("Authenticating with SendPulse...");
     const spAccessToken = await getSendPulseToken(spApiClientId, spApiSecret);
-    // ... (lógica de envio do e-mail) ...
 
-    return new Response( /* ... (resposta de sucesso inalterada) ... */ );
+    console.log(`Sending 2FA Code to ${user.email} via SendPulse...`);
+    
+    const emailHtml = `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+        <h2>Olá,</h2>
+        <p>Seu código de verificação de dois fatores é:</p>
+        <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${code}</p>
+        <p>Este código expira em 10 minutos.</p>
+        <p>Se você não solicitou este código, pode ignorar este e-mail com segurança.</p>
+        <p>Atenciosamente,<br>Equipe TherapyPro</p>
+      </div>
+    `;
 
+    const sendEmailResponse = await fetch("https://api.sendpulse.com/smtp/emails", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${spAccessToken}`,
+      },
+      body: JSON.stringify({
+        email: {
+          html: emailHtml,
+          text: `Seu código de login TherapyPro é: ${code}`,
+          subject: `Seu código de login TherapyPro: ${code}`,
+          from: {
+            name: 'TherapyPro',
+            email: 'nao-responda@therapypro.app.br',
+          },
+          to: [
+            { email: user.email }
+          ],
+        },
+      }),
+    });
+
+    if (!sendEmailResponse.ok) {
+      const errorData = await sendEmailResponse.json();
+      throw new Error(`SendPulse Email Error: ${errorData.message || 'Failed to send email'}`);
+    }
+    
+    console.log(`Email sent successfully to ${user.email}`);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Código enviado para o e-mail',
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   } catch (error) {
     console.error('Error in 2fa-send-email-code:', error);
     const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
-    return new Response( /* ... (resposta de erro 500 inalterada) ... */ );
+    return new Response(
+      JSON.stringify({ error: errorMessage }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
   }
 });
