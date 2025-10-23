@@ -206,10 +206,10 @@ const Login = () => {
       const { error } = await signUp(formData.email, formData.password, { nome: formData.name, profissao: formData.profession }, turnstileToken || undefined)
 
       if (error) {
-        if (error.message.includes('already registered') || error.message.includes('User already registered') || error.message.includes('Conta já existente')) {
+        if (error.message.includes('already registered') || error.message.includes('User already registered')) {
           toast({
-            title: "Conta já existente",
-            description: "Este e-mail já possui uma conta cadastrada. Por favor, realize o login.",
+            title: "E-mail já está em uso",
+            description: "Este e-mail já possui uma conta cadastrada. Tente fazer login ou use outro e-mail.",
             variant: "destructive"
           })
         } else if (error.message.includes('captcha')) {
@@ -345,7 +345,6 @@ const Login = () => {
                       try {
                         const { supabase } = await import("@/integrations/supabase/client");
                         const { error } = await supabase.auth.resetPasswordForEmail(formData.email, { redirectTo: `${window.location.origin}/reset-password` });
-                        
                         if (error) {
                           toast({ title: "Erro", description: error.message, variant: "destructive" });
                         } else {

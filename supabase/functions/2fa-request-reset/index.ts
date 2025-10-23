@@ -44,59 +44,14 @@ serve(async (req) => {
         completed: false,
       });
 
-      // Send email with reset link via SendPulse
-      const resetLink = `${Deno.env.get('SUPABASE_URL')}/auth/v1/verify?token=${token}&type=2fa_reset`;
-      
-      try {
-        const sendPulseResponse = await fetch('https://api.sendpulse.com/oauth/access_token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            grant_type: 'client_credentials',
-            client_id: Deno.env.get('SENDPULSE_API_ID'),
-            client_secret: Deno.env.get('SENDPULSE_API_SECRET'),
-          }),
-        });
-
-        const authData = await sendPulseResponse.json();
-        
-        if (authData.access_token) {
-          await fetch('https://api.sendpulse.com/smtp/emails', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${authData.access_token}`,
-            },
-            body: JSON.stringify({
-              email: {
-                html: `
-                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-                    <h2 style="color: #333;">Redefinição de Autenticação em Duas Etapas</h2>
-                    <p>Você solicitou a redefinição do seu 2FA.</p>
-                    <p>Clique no botão abaixo para redefinir sua autenticação de dois fatores:</p>
-                    <a href="${resetLink}" style="display: inline-block; padding: 12px 24px; background-color: #4F46E5; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0;">Redefinir 2FA</a>
-                    <p style="color: #666; font-size: 14px;">Este link expira em 1 hora.</p>
-                    <p style="color: #666; font-size: 14px;">Se você não solicitou esta redefinição, ignore este e-mail.</p>
-                  </div>
-                `,
-                text: `Você solicitou a redefinição do seu 2FA. Acesse: ${resetLink}`,
-                subject: 'Redefinição de 2FA - TherapyPro',
-                from: { name: 'TherapyPro', email: 'noreply@therapypro.app' },
-                to: [{ email }],
-              },
-            }),
-          });
-        }
-      } catch (emailError) {
-        console.error('Erro ao enviar email:', emailError);
-      }
-
+      // TODO: Send email with reset link
       console.log(`2FA Reset token for ${email}: ${token}`);
 
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Link de redefinição enviado para o e-mail',
+          // Only for development
           token: Deno.env.get('ENVIRONMENT') === 'development' ? token : undefined
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

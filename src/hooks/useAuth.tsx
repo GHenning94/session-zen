@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const signUp = async (email: string, password: string, metadata?: any, captchaToken?: string) => {
     const redirectUrl = `${window.location.origin}/auth/confirm`
     
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -119,12 +119,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     })
     
-    // Traduzir erros para português
+    // Traduzir erros para português (código inalterado)
     if (error) {
       let translatedError = { ...error }
       
-      if (error.message.includes('User already registered') || error.message.includes('already registered')) {
-        translatedError.message = 'Conta já existente, por favor realize o login'
+      if (error.message.includes('User already registered')) {
+        translatedError.message = 'Este e-mail já está cadastrado. Faça login ou use outro e-mail.'
       } else if (error.message.includes('Password should be at least')) {
         translatedError.message = 'A senha deve ter pelo menos 6 caracteres.'
       } else if (error.message.includes('Unable to validate email address')) {
@@ -133,6 +133,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         translatedError.message = 'A senha é muito fraca. Use pelo menos 6 caracteres com letras e números.'
       } else if (error.message.includes('Signup is disabled')) {
         translatedError.message = 'Cadastro temporariamente desabilitado. Tente novamente mais tarde.'
+      } else if (error.message.includes('User already registered') || error.message.includes('already registered')) {
+        translatedError.message = 'Este e-mail já está em uso. Tente fazer login ou use outro e-mail.'
       }
       
       return { error: translatedError }
