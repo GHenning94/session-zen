@@ -106,8 +106,9 @@ serve(async (req) => {
     throw new Error('Invalid request');
   } catch (error) {
     console.error('Error in 2fa-request-reset:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao solicitar redefinição';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

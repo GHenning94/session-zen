@@ -18,7 +18,7 @@ async function verifyTOTP(secret: string, token: string): Promise<boolean> {
     // Import key for HMAC-SHA1
     const key = await crypto.subtle.importKey(
       'raw',
-      secretBytes,
+      secretBytes.buffer,
       { name: 'HMAC', hash: 'SHA-1' },
       false,
       ['sign']
@@ -189,8 +189,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in 2fa-verify-code:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao verificar código';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }

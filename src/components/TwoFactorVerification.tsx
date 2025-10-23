@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -44,23 +44,35 @@ export const TwoFactorVerification = ({
   const [backupCode, setBackupCode] = useState('');
   const [useBackupCode, setUseBackupCode] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [loadingReset, setLoadingReset] = useState(false); // Novo estado
+  const [loadingReset, setLoadingReset] = useState(false);
   const [emailCodeSent, setEmailCodeSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   // Removido navigate
 
   const sendEmailCode = async () => {
     try {
       setLoading(true);
-      const { data, error } = await invokeAuthenticatedFunction('2fa-send-email-code', { email, });
+      const { data, error } = await invokeAuthenticatedFunction('2fa-send-email-code', { email });
       if (error) throw error;
       setEmailCodeSent(true);
-      toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação', });
+      setResendCooldown(60); // 60 segundos de cooldown
+      toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive', });
+      toast({ title: 'Erro', description: error.message || 'Falha ao enviar código', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
+
+  // Countdown timer
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   const handleVerify = async () => {
      try {
@@ -151,13 +163,21 @@ export const TwoFactorVerification = ({
                     maxLength={6}
                     disabled={!emailCodeSent}
                   />
-                  {!emailCodeSent && (
+                  {!emailCodeSent ? (
                     <Button
                       onClick={sendEmailCode}
                       disabled={loading}
                       variant="outline"
                     >
                       Enviar
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={sendEmailCode}
+                      disabled={loading || resendCooldown > 0}
+                      variant="outline"
+                    >
+                      {resendCooldown > 0 ? `${resendCooldown}s` : 'Reenviar'}
                     </Button>
                   )}
                 </div>

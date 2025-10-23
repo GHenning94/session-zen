@@ -54,8 +54,9 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in 2fa-setup-email:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao configurar 2FA por e-mail';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
