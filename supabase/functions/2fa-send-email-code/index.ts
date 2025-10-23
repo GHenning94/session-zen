@@ -148,7 +148,6 @@ serve(async (req: Request) => {
     );
   } catch (error) {
     console.error('Error in 2fa-send-email-code:', error);
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

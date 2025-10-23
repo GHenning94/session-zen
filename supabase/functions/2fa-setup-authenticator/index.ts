@@ -54,7 +54,7 @@ async function verifyTOTP(secret: string, token: string): Promise<boolean> {
     const secretBytes = base32Decode(secret);
     const key = await crypto.subtle.importKey(
       'raw',
-      secretBytes,
+      secretBytes.buffer,
       { name: 'HMAC', hash: 'SHA-1' },
       false,
       ['sign']
@@ -239,8 +239,9 @@ serve(async (req) => {
     throw new Error('Invalid action');
   } catch (error) {
     console.error('Error in 2fa-setup-authenticator:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro ao configurar authenticator';
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: errorMessage }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
