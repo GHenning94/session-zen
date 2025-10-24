@@ -54,7 +54,7 @@ async function verifyTOTP(secret: string, token: string): Promise<boolean> {
     const secretBytes = base32Decode(secret);
     const key = await crypto.subtle.importKey(
       'raw',
-      secretBytes.buffer,
+      new Uint8Array(secretBytes.buffer),
       { name: 'HMAC', hash: 'SHA-1' },
       false,
       ['sign']

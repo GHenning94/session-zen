@@ -319,39 +319,35 @@ const Login = () => {
                       type="button"
                       variant="link"
                       className="text-sm text-primary hover:underline px-0"
-                      disabled={isLoading || isResettingPassword} // Desabilitar enquanto reseta
+                      disabled={isLoading || isResettingPassword}
                       onClick={async () => {
                         if (!formData.email) {
                           toast({ title: "Email necessário", description: "Digite seu email primeiro.", variant: "destructive" });
                           return;
                         }
-                        if (!turnstileToken) {
-                          toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" });
-                          return;
-                        }
 
                         setIsResettingPassword(true);
                         try {
-                          // Chamar a função 'request-password-reset'
-                          const { data, error } = await supabase.functions.invoke('request-password-reset', {
-                            body: {
-                              email: formData.email,
-                              captchaToken: turnstileToken,
-                            }
+                          const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+                            redirectTo: `${window.location.origin}/`,
                           });
 
-                          if (error) throw new Error(error.message);
-                          if (data && data.error) throw new Error(data.error);
+                          if (error) throw error;
 
-                          toast({ title: "Verifique seu e-mail", description: data.message || "Link de redefinição enviado." });
+                          toast({ 
+                            title: "E-mail enviado!", 
+                            description: "Verifique sua caixa de entrada para redefinir sua senha." 
+                          });
                           
                         } catch (err: any) {
                           console.error("Erro ao solicitar redefinição:", err);
-                          toast({ title: "Erro", description: err.message || "Não foi possível enviar o email.", variant: "destructive" });
+                          toast({ 
+                            title: "Erro", 
+                            description: err.message || "Não foi possível enviar o email.", 
+                            variant: "destructive" 
+                          });
                         } finally {
                           setIsResettingPassword(false);
-                          setCaptchaKey(prev => prev + 1); // Recarregar o captcha
-                          setTurnstileToken(null);
                         }
                       }}>
                       {isResettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
