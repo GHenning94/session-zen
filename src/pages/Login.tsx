@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { TwoFactorVerification } from "@/components/TwoFactorVerification"
+import { Turnstile } from '@marsidev/react-turnstile'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +12,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Brain, Heart, Check, X, Loader2 } from "lucide-react"
 import "./Login.styles.css" // Importa o CSS isolado para esta página
+
+const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -30,6 +33,8 @@ const Login = () => {
   })
 
   const is2FASuccess = useRef(false);
+  const loginFormRef = useRef<HTMLFormElement>(null);
+  const registerFormRef = useRef<HTMLFormElement>(null);
 
   // Correção do Botão Voltar do Navegador (Já implementada)
   useEffect(() => {
@@ -65,14 +70,28 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
 
+    // Capturar o token do Turnstile via FormData
+    const formDataHtml = new FormData(loginFormRef.current!)
+    const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
+    
+    if (!captchaToken) {
+      toast({
+        title: 'Valide o captcha',
+        description: 'Por favor, resolva o captcha para continuar',
+        variant: 'destructive'
+      })
+      return
+    }
+
     setIsLoading(true)
     let shouldShow2FAModal = false;
 
     try {
-      // Usar a função nativa do Supabase para Login
+      // Usar a função nativa do Supabase para Login com captchaToken
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        password: formData.password
+        password: formData.password,
+        options: { captchaToken }
       })
       
       // Tratar o erro de e-mail não confirmado
@@ -148,10 +167,23 @@ const Login = () => {
       return
     }
 
+    // Capturar o token do Turnstile via FormData
+    const formDataHtml = new FormData(registerFormRef.current!)
+    const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
+    
+    if (!captchaToken) {
+      toast({
+        title: 'Valide o captcha',
+        description: 'Por favor, resolva o captcha para continuar',
+        variant: 'destructive'
+      })
+      return
+    }
+
     setIsLoading(true)
 
     try {
-      // Criar conta diretamente com Supabase
+      // Criar conta diretamente com Supabase com captchaToken
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -160,7 +192,8 @@ const Login = () => {
           data: {
             nome: formData.name,
             profissao: formData.profession
-          }
+          },
+          captchaToken
         }
       })
 
@@ -267,16 +300,25 @@ const Login = () => {
             <CardContent className="bg-transparent">
               {/* Aba de Login */}
               <TabsContent value="login" className="space-y-4">
-                <form onSubmit={handleLogin} className="space-y-4">
-                  {/* --- OS CAMPOS QUE SUMIRAM --- */}
+                <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">E-mail</Label>
                     <Input id="login-email" type="email" placeholder="seu@email.com" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required />
                   </div>
-                   <div className="space-y-2">
+                  <div className="space-y-2">
                     <Label htmlFor="login-password">Senha</Label>
                     <Input id="login-password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} required />
                   </div>
+                  
+                  {/* Turnstile Captcha */}
+                  <div className="flex justify-center">
+                    <Turnstile
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onExpire={() => console.log('Turnstile expirou (login)')}
+                      onError={() => console.log('Turnstile erro (login)')}
+                    />
+                  </div>
+                  
                   <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isLoading ? "Entrando..." : "Entrar"}
@@ -293,10 +335,24 @@ const Login = () => {
                           return;
                         }
 
+                        // Capturar o token do Turnstile para reset de senha
+                        const formDataHtml = new FormData(loginFormRef.current!)
+                        const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
+                        
+                        if (!captchaToken) {
+                          toast({
+                            title: 'Valide o captcha',
+                            description: 'Por favor, resolva o captcha para continuar',
+                            variant: 'destructive'
+                          })
+                          return
+                        }
+
                         setIsResettingPassword(true);
                         try {
                           const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
                             redirectTo: `${window.location.origin}/`,
+                            captchaToken
                           });
 
                           if (error) throw error;
@@ -308,9 +364,13 @@ const Login = () => {
                           
                         } catch (err: any) {
                           console.error("Erro ao solicitar redefinição:", err);
+                          const errorMsg = err.message || "Não foi possível enviar o email.";
+                          const translatedMsg = errorMsg.includes('captcha') 
+                            ? 'Falha na verificação do captcha. Tente novamente.' 
+                            : errorMsg;
                           toast({ 
                             title: "Erro", 
-                            description: err.message || "Não foi possível enviar o email.", 
+                            description: translatedMsg, 
                             variant: "destructive" 
                           });
                         } finally {
@@ -325,8 +385,8 @@ const Login = () => {
               </TabsContent>
               {/* Aba de Registro */}
               <TabsContent value="register" className="space-y-4">
-                <form onSubmit={handleRegister} className="space-y-4">
-                   <div className="space-y-2">
+                <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-4">
+                  <div className="space-y-2">
                     <Label htmlFor="register-name">Nome Completo</Label>
                     <Input id="register-name" type="text" placeholder="Seu nome" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} required />
                   </div>
@@ -375,6 +435,16 @@ const Login = () => {
                     <Input id="register-confirm-password" type="password" placeholder="Confirme sua senha" value={formData.confirmPassword} onChange={(e) => handleInputChange('confirmPassword', e.target.value)} required />
                      {formData.confirmPassword && formData.password !== formData.confirmPassword && (<p className="text-sm text-red-500">As senhas não coincidem</p>)}
                   </div>
+                  
+                  {/* Turnstile Captcha */}
+                  <div className="flex justify-center">
+                    <Turnstile
+                      siteKey={TURNSTILE_SITE_KEY}
+                      onExpire={() => console.log('Turnstile expirou (registro)')}
+                      onError={() => console.log('Turnstile erro (registro)')}
+                    />
+                  </div>
+                  
                   <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isLoading ? "Criando conta..." : "Criar Conta"}
