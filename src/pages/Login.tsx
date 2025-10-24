@@ -10,7 +10,6 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Brain, Heart, Check, X, Loader2 } from "lucide-react"
-import { Turnstile } from "@marsidev/react-turnstile"
 import "./Login.styles.css" // Importa o CSS isolado para esta página
 
 const Login = () => {
@@ -18,10 +17,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [isResettingPassword, setIsResettingPassword] = useState(false); // Para o botão "Esqueci senha"
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null)
-  const [captchaKey, setCaptchaKey] = useState(0)
-
-  const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH' // A sua Site Key
   const [show2FA, setShow2FA] = useState(false)
   const [pending2FAEmail, setPending2FAEmail] = useState('')
   const [requires2FAEmail, setRequires2FAEmail] = useState(false)
@@ -70,11 +65,6 @@ const Login = () => {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!turnstileToken) {
-      toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
-      return
-    }
-
     setIsLoading(true)
     let shouldShow2FAModal = false;
 
@@ -82,10 +72,7 @@ const Login = () => {
       // Usar a função nativa do Supabase para Login
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
-        password: formData.password,
-        options: {
-          captchaToken: turnstileToken
-        }
+        password: formData.password
       })
       
       // Tratar o erro de e-mail não confirmado
@@ -140,9 +127,6 @@ const Login = () => {
       if (!shouldShow2FAModal) {
         setIsLoading(false);
       }
-      // Sempre recarregar o captcha após uma tentativa de login
-      setCaptchaKey(prev => prev + 1);
-      setTurnstileToken(null);
     }
   }
 
@@ -155,10 +139,6 @@ const Login = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!turnstileToken) {
-      toast({ title: "Verificação necessária", description: "Complete a verificação de segurança.", variant: "destructive" })
-      return
-    }
     if (formData.password !== formData.confirmPassword) {
       toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" });
       return;
@@ -171,46 +151,43 @@ const Login = () => {
     setIsLoading(true)
 
     try {
-      // Chamar a nossa nova Edge Function 'custom-signup'
-      const { data, error } = await supabase.functions.invoke('custom-signup', {
-        body: {
-          email: formData.email,
-          password: formData.password,
-          metadata: { nome: formData.name, profissao: formData.profession },
-          captchaToken: turnstileToken
+      // Criar conta diretamente com Supabase
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            nome: formData.name,
+            profissao: formData.profession
+          }
         }
       })
 
-      if (error) throw new Error(error.message); // Erros de rede/função
-      // Verificar se a *nossa* função retornou um erro na propriedade 'error'
-      if (data && data.error) throw new Error(data.error);
+      if (error) {
+        // Verificar se o erro é de usuário já existente
+        if (error.message.includes('User already registered')) {
+          throw new Error('Conta já existente');
+        }
+        throw error;
+      }
 
       // Sucesso!
       toast({ title: "Conta criada com sucesso!", description: "Verifique seu email para confirmar a conta." })
-      // Opcional: Limpar o formulário ou mudar para a aba de login
       
     } catch (error: any) {
-      // Tratar erros específicos da nossa função ou erros gerais
-      if (error.message.includes('Conta já existente')) {
+      // Tratar erros específicos
+      if (error.message.includes('Conta já existente') || error.message.includes('already registered')) {
         toast({
           title: "E-mail já está em uso",
           description: "Esta conta já existe. Por favor, realize o login.",
           variant: "destructive"
-        })
-      } else if (error.message.includes('captcha')) {
-        toast({
-          title: 'Erro na verificação de segurança',
-          description: error.message, // A mensagem da função já é clara
-          variant: 'destructive',
         })
       } else {
         toast({ title: "Erro no cadastro", description: error.message || "Não foi possível criar a conta", variant: "destructive" })
       }
     } finally {
       setIsLoading(false)
-      // Recarregar o captcha após a tentativa de cadastro
-      setCaptchaKey(prev => prev + 1)
-      setTurnstileToken(null)
     }
   }
 
@@ -296,21 +273,11 @@ const Login = () => {
                     <Label htmlFor="login-email">E-mail</Label>
                     <Input id="login-email" type="email" placeholder="seu@email.com" value={formData.email} onChange={(e) => handleInputChange('email', e.target.value)} required />
                   </div>
-                  <div className="space-y-2">
+                   <div className="space-y-2">
                     <Label htmlFor="login-password">Senha</Label>
                     <Input id="login-password" type="password" placeholder="••••••••" value={formData.password} onChange={(e) => handleInputChange('password', e.target.value)} required />
                   </div>
-                  {/* --- FIM DOS CAMPOS --- */}
-                  <div className="flex justify-center">
-                    <Turnstile
-                      key={captchaKey}
-                      siteKey={TURNSTILE_SITE_KEY}
-                      onSuccess={(token) => setTurnstileToken(token)}
-                      onError={() => setTurnstileToken(null)}
-                      onExpire={() => setTurnstileToken(null)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword || !turnstileToken}>
+                  <Button type="submit" className="w-full bg-gradient-primary hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isLoading ? "Entrando..." : "Entrar"}
                   </Button>
@@ -406,18 +373,9 @@ const Login = () => {
                   <div className="space-y-2">
                     <Label htmlFor="register-confirm-password">Repetir Senha</Label>
                     <Input id="register-confirm-password" type="password" placeholder="Confirme sua senha" value={formData.confirmPassword} onChange={(e) => handleInputChange('confirmPassword', e.target.value)} required />
-                    {formData.confirmPassword && formData.password !== formData.confirmPassword && (<p className="text-sm text-red-500">As senhas não coincidem</p>)}
+                     {formData.confirmPassword && formData.password !== formData.confirmPassword && (<p className="text-sm text-red-500">As senhas não coincidem</p>)}
                   </div>
-                  <div className="flex justify-center">
-                    <Turnstile
-                      key={captchaKey}
-                      siteKey={TURNSTILE_SITE_KEY}
-                      onSuccess={(token) => setTurnstileToken(token)}
-                      onError={() => setTurnstileToken(null)}
-                      onExpire={() => setTurnstileToken(null)}
-                    />
-                  </div>
-                  <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword || !turnstileToken}>
+                  <Button type="submit" className="w-full bg-gradient-success hover:opacity-90 transition-opacity" disabled={isLoading || isResettingPassword}>
                     {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                     {isLoading ? "Criando conta..." : "Criar Conta"}
                   </Button>
