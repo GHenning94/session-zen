@@ -101,7 +101,7 @@ export function BackNavigationGuard() {
           <AlertDialogAction 
             onClick={handleConfirmLogout}
             className={cn(
-              "bg-transparent border border-border hover:bg-accent hover:text-accent-foreground"
+              "border-2 border-input bg-background hover:bg-accent hover:text-accent-foreground"
             )}
           >
             Sim
