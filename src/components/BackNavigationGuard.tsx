@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
+import { cn } from '@/lib/utils'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,8 +69,9 @@ export function BackNavigationGuard() {
     sessionStorage.removeItem('session_active')
     sessionStorage.removeItem('logout_dialog_shown')
     
-    await signOut()
+    // Navegar ANTES de fazer signOut para evitar flash da tela de login
     navigate('/', { replace: true })
+    await signOut()
   }
 
   const handleCancelLogout = () => {
@@ -90,13 +92,17 @@ export function BackNavigationGuard() {
         <AlertDialogFooter>
           <AlertDialogCancel 
             onClick={handleCancelLogout}
-            className="bg-primary text-primary-foreground hover:bg-primary/90"
+            className={cn(
+              "bg-primary text-primary-foreground hover:bg-primary/90 border-0"
+            )}
           >
             Não
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleConfirmLogout}
-            className="bg-transparent border border-input hover:bg-accent"
+            className={cn(
+              "bg-transparent border border-input hover:bg-accent hover:text-accent-foreground"
+            )}
           >
             Sim
           </AlertDialogAction>
