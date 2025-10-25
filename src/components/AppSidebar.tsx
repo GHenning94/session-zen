@@ -52,7 +52,7 @@ const menuItems = [
 ]
 
 export function AppSidebar() {
-  const { state } = useSidebar()
+  const { state, setOpen, open } = useSidebar()
   const location = useLocation()
   const { currentPlan } = useSubscription()
   const currentPath = location.pathname
@@ -66,6 +66,11 @@ export function AppSidebar() {
     isActive 
       ? "bg-primary text-primary-foreground font-semibold shadow-sm" 
       : "hover:bg-sidebar-accent/70 transition-all duration-200"
+
+  const handleNavClick = (e: React.MouseEvent) => {
+    // Previne que o sidebar mude de estado ao navegar
+    e.stopPropagation()
+  }
 
   const settingsItem = { title: "Configurações", url: "/configuracoes", icon: Settings }
 
@@ -100,7 +105,7 @@ export function AppSidebar() {
             return (
               <SidebarMenuItem key={item.title}>
                 <SidebarMenuButton asChild className={`h-9 rounded-xl ${getNavClasses({ isActive: isActive(item.url) })}`}>
-                  <NavLink to={item.url} end className="flex items-center justify-between w-full">
+                  <NavLink to={item.url} end className="flex items-center justify-between w-full" onClick={handleNavClick}>
                     <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : 'flex-1 overflow-hidden'}`}>
                       <item.icon className="h-5 w-5 shrink-0" />
                       {!isCollapsed && <span className="text-sm ml-3 truncate">{item.title}</span>}
@@ -126,7 +131,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className={`h-9 rounded-xl ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
-              <NavLink to={settingsItem.url} end className="flex items-center w-full">
+              <NavLink to={settingsItem.url} end className="flex items-center w-full" onClick={handleNavClick}>
                 <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : ''}`}>
                   <settingsItem.icon className="h-5 w-5 shrink-0" />
                   {!isCollapsed && <span className="text-sm ml-3">{settingsItem.title}</span>}
