@@ -118,7 +118,8 @@ export const PublicAvatarUpload = ({
   const handleCropComplete = async (croppedImageUrl: string) => {
     setUploading(true)
     try {
-      console.log('[PublicAvatarUpload] Crop completed, storage path:', croppedImageUrl)
+      console.log('[PublicAvatarUpload] ✅ Crop completed, storage path:', croppedImageUrl)
+      console.log('[PublicAvatarUpload] Saved to storage bucket at:', croppedImageUrl)
       
       // Revoke old blob URL to prevent memory leak
       if (previewUrl.startsWith('blob:')) {
@@ -126,21 +127,33 @@ export const PublicAvatarUpload = ({
       }
       
       // Update avatar URL with the storage path
+      console.log('[PublicAvatarUpload] Calling onAvatarChange with path:', croppedImageUrl)
       onAvatarChange(croppedImageUrl)
       
-      // Generate signed URL for preview
+      // Generate signed URL for preview with timestamp for cache-busting
+      const timestamp = Date.now()
+      console.log('[PublicAvatarUpload] Generating signed URL with timestamp:', timestamp)
+      
       const signedUrl = await getSignedUrl(croppedImageUrl, 3600 * 24)
+      console.log('[PublicAvatarUpload] Signed URL generated:', signedUrl ? signedUrl.substring(0, 100) + '...' : 'null')
+      
       if (signedUrl) {
-        setPreviewUrl(`${signedUrl}&t=${Date.now()}`)
-        console.log('[PublicAvatarUpload] Preview updated with signed URL')
+        const urlWithTimestamp = `${signedUrl}&t=${timestamp}`
+        console.log('[PublicAvatarUpload] Setting preview URL with timestamp')
+        setPreviewUrl(urlWithTimestamp)
+      } else {
+        console.warn('[PublicAvatarUpload] ⚠️ No signed URL generated, using original path')
+        setPreviewUrl(`${croppedImageUrl}?t=${timestamp}`)
       }
       
       toast({
         title: 'Avatar atualizado',
         description: 'Sua foto foi atualizada com sucesso.',
       })
+      
+      console.log('[PublicAvatarUpload] ✅ Upload process completed successfully')
     } catch (error) {
-      console.error('[PublicAvatarUpload] Error updating avatar:', error)
+      console.error('[PublicAvatarUpload] ❌ Error updating avatar:', error)
       toast({
         title: 'Erro',
         description: 'Erro ao atualizar avatar.',

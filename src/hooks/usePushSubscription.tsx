@@ -47,53 +47,82 @@ export const usePushSubscription = () => {
   }
 
   const subscribe = useCallback(async () => {
+    console.log('[usePushSubscription] Subscribe called')
+    
     if (!isSupported) {
-      console.log('[usePushSubscription] Push notifications not supported')
+      console.warn('[usePushSubscription] Push notifications not supported')
+      return false
+    }
+
+    // Check PushManager availability
+    if (!('PushManager' in window)) {
+      console.error('[usePushSubscription] PushManager not available')
       return false
     }
 
     setLoading(true)
 
     try {
+      console.log('[usePushSubscription] Requesting notification permission...')
+      
       // Request notification permission
       const permissionResult = await Notification.requestPermission()
+      console.log('[usePushSubscription] Permission result:', permissionResult)
       setPermission(permissionResult)
 
       if (permissionResult !== 'granted') {
-        console.log('[usePushSubscription] Permission denied')
+        console.warn('[usePushSubscription] Permission denied')
         return false
       }
 
-      // Register service worker
+      console.log('[usePushSubscription] Getting service worker registration...')
+      
+      // Register service worker if not already registered
       let registration = await navigator.serviceWorker.getRegistration()
       
       if (!registration) {
-        console.log('[usePushSubscription] Registering service worker...')
+        console.log('[usePushSubscription] No existing registration, registering service worker...')
         registration = await navigator.serviceWorker.register('/sw.js', {
           scope: '/'
         })
+        console.log('[usePushSubscription] Service worker registered')
         await navigator.serviceWorker.ready
+        console.log('[usePushSubscription] Service worker ready')
+      } else {
+        console.log('[usePushSubscription] Using existing service worker registration')
       }
 
+      console.log('[usePushSubscription] Subscribing to push...')
+      
       // Subscribe to push
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
       })
 
-      console.log('[usePushSubscription] Push subscription created:', subscription)
+      console.log('[usePushSubscription] Push subscription created successfully')
+      console.log('[usePushSubscription] Subscription endpoint:', subscription.endpoint)
 
       // Save subscription to Supabase
-      const { data: { user } } = await supabase.auth.getUser()
+      console.log('[usePushSubscription] Getting authenticated user...')
+      const { data: { user }, error: userError } = await supabase.auth.getUser()
+      
+      if (userError) {
+        console.error('[usePushSubscription] Error getting user:', userError)
+        return false
+      }
       
       if (!user) {
-        console.error('[usePushSubscription] No authenticated user')
+        console.error('[usePushSubscription] No authenticated user found')
         return false
       }
 
+      console.log('[usePushSubscription] User authenticated:', user.id)
+      console.log('[usePushSubscription] Saving subscription to Supabase...')
+
       const subscriptionJson = subscription.toJSON()
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('push_subscriptions')
         .upsert({
           user_id: user.id,
@@ -103,18 +132,25 @@ export const usePushSubscription = () => {
         }, {
           onConflict: 'user_id,endpoint'
         })
+        .select()
 
       if (error) {
-        console.error('[usePushSubscription] Error saving subscription:', error)
+        console.error('[usePushSubscription] Error saving subscription to Supabase:', error)
+        console.error('[usePushSubscription] Error details:', JSON.stringify(error, null, 2))
         return false
       }
 
-      console.log('[usePushSubscription] Subscription saved to database')
+      console.log('[usePushSubscription] ✅ Subscription saved successfully to database!')
+      console.log('[usePushSubscription] Saved data:', data)
       setIsSubscribed(true)
       return true
 
     } catch (error) {
-      console.error('[usePushSubscription] Error subscribing:', error)
+      console.error('[usePushSubscription] ❌ Error during subscription process:', error)
+      if (error instanceof Error) {
+        console.error('[usePushSubscription] Error message:', error.message)
+        console.error('[usePushSubscription] Error stack:', error.stack)
+      }
       return false
     } finally {
       setLoading(false)

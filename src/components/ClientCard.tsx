@@ -10,7 +10,19 @@ interface ClientCardProps {
 }
 
 export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps) => {
-  const { avatarUrl } = useAvatarUrl(client.avatar_url)
+  const { avatarUrl, isLoading, hasError } = useAvatarUrl(client.avatar_url)
+  
+  // Log avatar information for debugging
+  if (client.avatar_url) {
+    console.log('[ClientCard] Client avatar info:', {
+      clientId: client.id,
+      clientName: client.nome,
+      avatarPath: client.avatar_url,
+      resolvedUrl: avatarUrl,
+      isLoading,
+      hasError
+    })
+  }
 
   return (
     <div
@@ -21,12 +33,18 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
         <div className="flex items-center space-x-4 flex-1">
           <div className="flex-shrink-0">
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-              {avatarUrl ? (
+              {isLoading ? (
+                <div className="w-6 h-6 animate-pulse bg-muted-foreground/20 rounded-full" />
+              ) : avatarUrl && !hasError ? (
                 <img 
                   src={avatarUrl} 
                   alt={client.nome} 
                   className="w-full h-full rounded-full object-cover"
+                  onLoad={() => {
+                    console.log('[ClientCard] ✅ Image loaded successfully:', avatarUrl.substring(0, 100))
+                  }}
                   onError={(e) => {
+                    console.error('[ClientCard] ❌ Image failed to load:', avatarUrl)
                     const target = e.target as HTMLImageElement
                     target.style.display = 'none'
                     const parent = target.parentElement
