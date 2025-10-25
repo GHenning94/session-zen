@@ -72,5 +72,8 @@ verify_jwt = true # <-- MUDADO DE 'false'
 verify_jwt = false
 # --- FIM DA CORREREÇÃO ---
 
+[functions.push-broadcast]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true

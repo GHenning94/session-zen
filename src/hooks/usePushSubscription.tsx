@@ -3,6 +3,8 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { toast } from 'sonner'
 
+// IMPORTANTE: Esta chave DEVE ser EXATAMENTE a mesma configurada no secret VAPID_PUBLIC_KEY
+// Para atualizar: copie o valor do secret VAPID_PUBLIC_KEY que você acabou de configurar
 const VAPID_PUBLIC_KEY = 'BJ8nZ3cC9v6kNl0D_8gZ4xYq7TfE-2MnLp3rWsK5vQo8HjGf6Ud4Xe3TcRb2Yp1Qs7Vr9Zw0Xj5Kl8Nm6Oo4Pp2Qq3'
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -108,7 +110,16 @@ export const usePushSubscription = () => {
 
         if (permissionResult !== 'granted') {
           console.warn('[usePushSubscription] ⚠️ Permission not granted:', permissionResult)
-          toast.error('Permissão para notificações negada')
+          
+          if (permissionResult === 'denied') {
+            toast.error(
+              'Notificações bloqueadas. Para reativar, acesse as configurações do navegador.',
+              { duration: 6000 }
+            )
+          } else {
+            toast.error('Permissão para notificações não concedida')
+          }
+          
           return false
         }
       } else {
@@ -163,27 +174,39 @@ export const usePushSubscription = () => {
 
       const subscriptionJson = subscription.toJSON()
       
+      // Primeiro, deletar qualquer inscrição antiga para garantir chaves atualizadas
+      console.log('[usePushSubscription] Removing old subscriptions for user...')
+      await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id)
+      
+      // Agora inserir a nova inscrição
       const { data, error } = await supabase
         .from('push_subscriptions')
-        .upsert({
+        .insert({
           user_id: user.id,
           endpoint: subscriptionJson.endpoint!,
           p256dh: subscriptionJson.keys!.p256dh,
           auth: subscriptionJson.keys!.auth,
-        }, {
-          onConflict: 'user_id,endpoint'
         })
         .select()
 
       if (error) {
         console.error('[usePushSubscription] Error saving subscription to Supabase:', error)
         console.error('[usePushSubscription] Error details:', JSON.stringify(error, null, 2))
+        toast.error('Erro ao ativar notificações. Tente novamente.')
         return false
       }
 
       console.log('[usePushSubscription] ✅ Subscription saved successfully to database!')
       console.log('[usePushSubscription] Saved data:', data)
       setIsSubscribed(true)
+      
+      toast.success('Notificações ativadas! Você receberá alertas importantes.', {
+        duration: 4000,
+      })
+      
       return true
 
     } catch (error) {
