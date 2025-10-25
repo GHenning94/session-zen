@@ -148,10 +148,39 @@ const PublicRegistration = () => {
     try {
       setIsSubmitting(true)
 
+      // Sanitizar payload: enviar apenas campos preenchidos
+      const sanitizedData: Partial<ClientData> = {
+        nome: formData.nome.trim(),
+        telefone: formData.telefone.trim()
+      }
+
+      // Adicionar campos opcionais apenas se preenchidos
+      if (formData.avatar_url) sanitizedData.avatar_url = formData.avatar_url
+      if (formData.email?.trim()) sanitizedData.email = formData.email.trim()
+      if (formData.cpf?.trim()) sanitizedData.cpf = formData.cpf.trim()
+      if (formData.data_nascimento?.trim()) sanitizedData.data_nascimento = formData.data_nascimento.trim()
+      if (formData.endereco?.trim()) sanitizedData.endereco = formData.endereco.trim()
+      if (formData.profissao?.trim()) sanitizedData.profissao = formData.profissao.trim()
+      if (formData.genero?.trim()) sanitizedData.genero = formData.genero.trim()
+      if (formData.plano_saude?.trim()) sanitizedData.plano_saude = formData.plano_saude.trim()
+      if (formData.tratamento?.trim()) sanitizedData.tratamento = formData.tratamento.trim()
+      if (formData.eh_crianca_adolescente !== undefined) sanitizedData.eh_crianca_adolescente = formData.eh_crianca_adolescente
+      if (formData.nome_pai?.trim()) sanitizedData.nome_pai = formData.nome_pai.trim()
+      if (formData.telefone_pai?.trim()) sanitizedData.telefone_pai = formData.telefone_pai.trim()
+      if (formData.nome_mae?.trim()) sanitizedData.nome_mae = formData.nome_mae.trim()
+      if (formData.telefone_mae?.trim()) sanitizedData.telefone_mae = formData.telefone_mae.trim()
+      if (formData.medicamentos && formData.medicamentos.length > 0) sanitizedData.medicamentos = formData.medicamentos
+      if (formData.contato_emergencia_1_nome?.trim()) sanitizedData.contato_emergencia_1_nome = formData.contato_emergencia_1_nome.trim()
+      if (formData.contato_emergencia_1_telefone?.trim()) sanitizedData.contato_emergencia_1_telefone = formData.contato_emergencia_1_telefone.trim()
+      if (formData.contato_emergencia_2_nome?.trim()) sanitizedData.contato_emergencia_2_nome = formData.contato_emergencia_2_nome.trim()
+      if (formData.contato_emergencia_2_telefone?.trim()) sanitizedData.contato_emergencia_2_telefone = formData.contato_emergencia_2_telefone.trim()
+      if (formData.pais?.trim()) sanitizedData.pais = formData.pais.trim()
+      if (formData.emergencia_igual_pais !== undefined) sanitizedData.emergencia_igual_pais = formData.emergencia_igual_pais
+
       const { data, error } = await supabase.functions.invoke('register-client-via-token', {
         body: {
           token,
-          clientData: formData
+          clientData: sanitizedData
         }
       })
 
@@ -166,7 +195,7 @@ const PublicRegistration = () => {
           description: "O profissional será notificado sobre seu cadastro.",
         })
       } else {
-        throw new Error(data.error || 'Erro desconhecido')
+        throw new Error(data?.error || 'Erro desconhecido')
       }
     } catch (error: any) {
       console.error('Registration error:', error)

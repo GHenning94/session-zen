@@ -49,20 +49,10 @@ export const useAvatarUrl = (avatarPath: string | null | undefined) => {
       }
     }
 
-    const onVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        // Renova ao voltar ao foco
-        setIsLoading(true)
-        loadAvatar()
-      }
-    }
-
     loadAvatar()
-    document.addEventListener('visibilitychange', onVisibility)
 
     return () => {
       isMounted = false
-      document.removeEventListener('visibilitychange', onVisibility)
       if (refreshTimer.id) clearTimeout(refreshTimer.id)
     }
   }, [avatarPath])

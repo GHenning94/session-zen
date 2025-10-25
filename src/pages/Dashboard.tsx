@@ -135,13 +135,11 @@ const Dashboard = () => {
     }
 
     const onStorage = () => handleDataChange()
-    const onFocus = () => handleDataChange()
     const handleClientAdded = () => handleDataChange(['recentClients', 'dashboardStats'])
     const handleSessionAdded = () => handleDataChange(['upcomingSessions', 'dashboardStats'])
     const handlePaymentAdded = () => handleDataChange(['recentPayments', 'dashboardStats'])
 
     window.addEventListener('storage', onStorage)
-    window.addEventListener('focus', onFocus)
     window.addEventListener('clientAdded', handleClientAdded)
     window.addEventListener('paymentAdded', handlePaymentAdded)
     window.addEventListener('sessionAdded', handleSessionAdded)
@@ -149,7 +147,6 @@ const Dashboard = () => {
     return () => {
       clearTimeout(timeoutId)
       window.removeEventListener('storage', onStorage)
-      window.removeEventListener('focus', onFocus)
       window.removeEventListener('clientAdded', handleClientAdded)
       window.removeEventListener('paymentAdded', handlePaymentAdded)
       window.removeEventListener('sessionAdded', handleSessionAdded)

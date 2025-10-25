@@ -28,15 +28,22 @@ export const useBrowserNotifications = () => {
 
   // Show browser notification
   const showNotification = (title: string, body: string) => {
-    if (!permissionGranted.current || Notification.permission !== 'granted') {
+    // Verificar permissão diretamente
+    if (Notification.permission !== 'granted') {
+      return;
+    }
+
+    // Só mostrar push se a aba não estiver visível (evita duplicidade)
+    if (document.visibilityState === 'visible') {
+      console.log('🔕 Tab visível, push notification não será exibido');
       return;
     }
 
     try {
       const notification = new Notification(title, {
         body,
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
+        icon: '/favicon.png',
+        badge: '/favicon.png',
         tag: 'therapypro-notification',
         requireInteraction: false,
         silent: false
@@ -57,8 +64,9 @@ export const useBrowserNotifications = () => {
 
   // Initialize on mount
   useEffect(() => {
-    if (user && Notification.permission === 'granted') {
+    if ('Notification' in window && Notification.permission === 'granted') {
       permissionGranted.current = true;
+      console.log('✅ Permissão de notificação já concedida');
     }
   }, [user]);
 

@@ -100,7 +100,7 @@ export const PublicAvatarUpload = ({
         onClick={() => fileInputRef.current?.click()}
       >
         <Avatar className={sizeClasses[size]}>
-          <AvatarImage src={currentAvatarUrl} alt={clientName} />
+          <AvatarImage src={selectedImage || currentAvatarUrl} alt={clientName} />
           <AvatarFallback className="bg-gradient-to-br from-primary/20 to-primary/10 text-primary font-medium">
             {getInitials(clientName)}
           </AvatarFallback>
