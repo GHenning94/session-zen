@@ -92,13 +92,13 @@ export function BackNavigationGuard() {
         <AlertDialogFooter>
           <AlertDialogCancel
             onClick={handleCancelLogout}
-            className={buttonVariants({ variant: "default" })}
+            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold h-11 px-6 py-2 transition-all duration-200"
           >
             Não
           </AlertDialogCancel>
           <AlertDialogAction
             onClick={handleConfirmLogout}
-            className={buttonVariants({ variant: "outline" })}
+            className="border-2 border-input bg-background text-foreground hover:bg-accent/10 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold h-11 px-6 py-2 transition-all duration-200"
           >
             Sim
           </AlertDialogAction>
