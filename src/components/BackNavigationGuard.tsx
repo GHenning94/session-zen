@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
-import { Button } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -90,11 +90,17 @@ export function BackNavigationGuard() {
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel asChild>
-            <Button variant="default" onClick={handleCancelLogout}>Não</Button>
+          <AlertDialogCancel
+            onClick={handleCancelLogout}
+            className={buttonVariants({ variant: "default" })}
+          >
+            Não
           </AlertDialogCancel>
-          <AlertDialogAction asChild>
-            <Button variant="outline" onClick={handleConfirmLogout}>Sim</Button>
+          <AlertDialogAction
+            onClick={handleConfirmLogout}
+            className={buttonVariants({ variant: "outline" })}
+          >
+            Sim
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

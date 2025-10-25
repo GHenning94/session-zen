@@ -112,13 +112,9 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
   // Check subscription when user changes
   useEffect(() => {
-    console.log('useSubscription: user ID changed, checking subscription.');
+    console.log('useSubscription: user changed, checking subscription.');
     checkSubscription()
-  // --- INÍCIO DA CORREÇÃO ---
-  // Mude a dependência de [user] para [user?.id]
-  // Isso impede que o useEffect rode a cada re-foco da aba!
-  }, [user?.id])
-  // --- FIM DA CORREÇÃO ---
+  }, [user])
 
   const planLimits = PLAN_LIMITS[currentPlan]
 

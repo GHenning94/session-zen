@@ -54,10 +54,10 @@ const menuItems = [
 export function AppSidebar() {
   const { state, setOpen, open } = useSidebar()
   const location = useLocation()
-  const { currentPlan } = useSubscription()
+  const { currentPlan, isLoading } = useSubscription()
   const currentPath = location.pathname
 
-  const showBanner = currentPlan !== 'pro' && currentPlan !== 'premium'
+  const showBanner = !isLoading && currentPlan === 'basico'
   const isCollapsed = state === "collapsed"
 
   const isActive = (path: string) => currentPath === path
