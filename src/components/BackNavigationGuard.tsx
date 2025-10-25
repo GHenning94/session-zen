@@ -90,13 +90,13 @@ export function BackNavigationGuard() {
         <AlertDialogFooter>
           <AlertDialogCancel 
             onClick={handleCancelLogout}
-            className="bg-transparent hover:bg-accent"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             Não
           </AlertDialogCancel>
           <AlertDialogAction 
             onClick={handleConfirmLogout}
-            className="bg-transparent hover:bg-accent"
+            className="bg-transparent border border-input hover:bg-accent"
           >
             Sim
           </AlertDialogAction>
