@@ -92,7 +92,7 @@ export function BackNavigationGuard() {
         <AlertDialogFooter>
           <AlertDialogCancel
             onClick={handleCancelLogout}
-            className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-primary inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold h-11 px-6 py-2 transition-all duration-200"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground shadow-primary inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl text-sm font-semibold h-11 px-6 py-2 transition-all duration-200"
           >
             Não
           </AlertDialogCancel>
