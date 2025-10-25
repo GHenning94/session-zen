@@ -28,8 +28,16 @@ export const useBrowserNotifications = () => {
 
   // Show browser notification
   const showNotification = (title: string, body: string) => {
+    console.log('🔔 Tentando mostrar push notification:', { 
+      permission: Notification.permission,
+      visibilityState: document.visibilityState,
+      title,
+      body
+    });
+
     // Verificar permissão diretamente
     if (Notification.permission !== 'granted') {
+      console.log('❌ Permissão não concedida para notificações');
       return;
     }
 
@@ -40,6 +48,7 @@ export const useBrowserNotifications = () => {
     }
 
     try {
+      console.log('✅ Criando push notification...');
       const notification = new Notification(title, {
         body,
         icon: '/favicon.png',
@@ -48,6 +57,8 @@ export const useBrowserNotifications = () => {
         requireInteraction: false,
         silent: false
       });
+
+      console.log('✅ Push notification criada com sucesso');
 
       // Auto-close after 5 seconds
       setTimeout(() => notification.close(), 5000);
@@ -58,7 +69,7 @@ export const useBrowserNotifications = () => {
         notification.close();
       };
     } catch (error) {
-      console.error('Erro ao mostrar notificação:', error);
+      console.error('❌ Erro ao mostrar notificação:', error);
     }
   };
 

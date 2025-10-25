@@ -22,41 +22,43 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true)
 
   // Carregar notificações existentes
-  useEffect(() => {
-    const loadNotifications = async () => {
-      if (!user) {
-        setLoading(false)
+  const loadNotifications = async () => {
+    if (!user) {
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('data', { ascending: false })
+        .limit(50)
+
+      if (error) {
+        console.error('Erro ao carregar notificações:', error)
         return
       }
 
-      try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('data', { ascending: false })
-          .limit(50)
-
-        if (error) {
-          console.error('Erro ao carregar notificações:', error)
-          return
-        }
-
-        setNotifications(data || [])
-        setUnreadCount(data?.filter(n => !n.lida).length || 0)
-      } catch (error) {
-        console.error('Erro:', error)
-      } finally {
-        setLoading(false)
-      }
+      setNotifications(data || [])
+      setUnreadCount(data?.filter(n => !n.lida).length || 0)
+    } catch (error) {
+      console.error('Erro:', error)
+    } finally {
+      setLoading(false)
     }
+  }
 
+  useEffect(() => {
     loadNotifications()
   }, [user])
 
   // Configurar realtime subscription
   useEffect(() => {
     if (!user) return
+
+    console.log('✅ Conectando ao canal de notificações...');
 
     const channel = supabase
       .channel('notifications_changes')
@@ -69,7 +71,7 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         (payload) => {
-          console.log('Notification change:', payload)
+          console.log('🔔 Notificação recebida:', payload)
 
           if (payload.eventType === 'INSERT') {
             const newNotification = payload.new as Notification
@@ -104,10 +106,32 @@ export const useNotifications = () => {
       )
       .subscribe()
 
+    // Keepalive: mantém conexão Realtime ativa mesmo em background
+    const keepAliveInterval = setInterval(() => {
+      if (document.visibilityState !== 'visible') {
+        console.log('🔄 Mantendo conexão Realtime ativa em background');
+      }
+    }, 30000); // 30 segundos
+
     return () => {
-      supabase.removeChannel(channel)
+      console.log('🔌 Desconectando canal de notificações');
+      clearInterval(keepAliveInterval);
+      supabase.removeChannel(channel);
     }
   }, [user, toast])
+
+  // Re-carregar notificações quando a aba voltar a ficar visível
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user?.id) {
+        console.log('🔄 Aba reativada, verificando notificações perdidas');
+        loadNotifications();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
 
   // Auto-marcar notificações como lidas quando o dropdown abrir
   const markVisibleAsRead = async () => {

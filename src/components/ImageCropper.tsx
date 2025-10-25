@@ -102,7 +102,7 @@ export const ImageCropper = ({
   )
 
   const handleCropComplete = useCallback(async () => {
-    if (!completedCrop || !imgRef.current || !user) {
+    if (!completedCrop || !imgRef.current) {
       toast({
         title: "Erro",
         description: "Por favor, selecione uma área para recortar.",
@@ -126,8 +126,10 @@ export const ImageCropper = ({
         (progress) => setCompressionProgress(progress)
       )
       
-      // Create unique filename with .webp extension
-      const fileName = `${user.id}/cropped-${Date.now()}.webp`
+      // Create unique filename with .webp extension - use public path if no user
+      const fileName = user 
+        ? `${user.id}/cropped-${Date.now()}.webp`
+        : `public-uploads/cropped-${Date.now()}.webp`
 
       // Upload compressed image to Supabase Storage
       const { data, error } = await supabase.storage

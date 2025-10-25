@@ -51,6 +51,16 @@ const PublicRegistration = () => {
   const [isCompleteForm, setIsCompleteForm] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
+  // Função para formatar telefone durante digitação
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '')
+    if (numbers.length === 0) return ''
+    else if (numbers.length <= 2) return `(${numbers}`
+    else if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+    else if (numbers.length <= 10) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`
+    else return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+  }
+
   const [formData, setFormData] = useState<ClientData>({
     nome: "",
     email: "",
@@ -366,8 +376,9 @@ const PublicRegistration = () => {
                   <Input
                     id="telefone"
                     value={formData.telefone}
-                    onChange={(e) => handleInputChange('telefone', e.target.value)}
+                    onChange={(e) => handleInputChange('telefone', formatPhone(e.target.value))}
                     required
+                    placeholder="(00) 00000-0000"
                     className="bg-white text-gray-900"
                   />
                 </div>
@@ -528,7 +539,8 @@ const PublicRegistration = () => {
                           <Input
                             id="telefone_pai"
                             value={formData.telefone_pai}
-                            onChange={(e) => handleInputChange('telefone_pai', e.target.value)}
+                            onChange={(e) => handleInputChange('telefone_pai', formatPhone(e.target.value))}
+                            placeholder="(00) 00000-0000"
                           />
                         </div>
                       </div>
@@ -547,7 +559,8 @@ const PublicRegistration = () => {
                           <Input
                             id="telefone_mae"
                             value={formData.telefone_mae}
-                            onChange={(e) => handleInputChange('telefone_mae', e.target.value)}
+                            onChange={(e) => handleInputChange('telefone_mae', formatPhone(e.target.value))}
+                            placeholder="(00) 00000-0000"
                           />
                         </div>
                       </div>
@@ -580,7 +593,8 @@ const PublicRegistration = () => {
                           <Input
                             id="contato_emergencia_1_telefone"
                             value={formData.contato_emergencia_1_telefone}
-                            onChange={(e) => handleInputChange('contato_emergencia_1_telefone', e.target.value)}
+                            onChange={(e) => handleInputChange('contato_emergencia_1_telefone', formatPhone(e.target.value))}
+                            placeholder="(00) 00000-0000"
                           />
                         </div>
                       </div>
@@ -599,7 +613,8 @@ const PublicRegistration = () => {
                           <Input
                             id="contato_emergencia_2_telefone"
                             value={formData.contato_emergencia_2_telefone}
-                            onChange={(e) => handleInputChange('contato_emergencia_2_telefone', e.target.value)}
+                            onChange={(e) => handleInputChange('contato_emergencia_2_telefone', formatPhone(e.target.value))}
+                            placeholder="(00) 00000-0000"
                           />
                         </div>
                       </div>
@@ -624,7 +639,8 @@ const PublicRegistration = () => {
                       <Input
                         id="contato_emergencia_1_telefone_child"
                         value={formData.contato_emergencia_1_telefone}
-                        onChange={(e) => handleInputChange('contato_emergencia_1_telefone', e.target.value)}
+                        onChange={(e) => handleInputChange('contato_emergencia_1_telefone', formatPhone(e.target.value))}
+                        placeholder="(00) 00000-0000"
                         className="bg-white text-gray-900"
                       />
                     </div>
@@ -645,7 +661,8 @@ const PublicRegistration = () => {
                       <Input
                         id="contato_emergencia_2_telefone_child"
                         value={formData.contato_emergencia_2_telefone}
-                        onChange={(e) => handleInputChange('contato_emergencia_2_telefone', e.target.value)}
+                        onChange={(e) => handleInputChange('contato_emergencia_2_telefone', formatPhone(e.target.value))}
+                        placeholder="(00) 00000-0000"
                         className="bg-white text-gray-900"
                       />
                     </div>
