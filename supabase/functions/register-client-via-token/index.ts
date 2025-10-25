@@ -78,9 +78,7 @@ serve(async (req) => {
       );
     }
 
-    // --- INÍCIO DA CORREÇÃO ---
     // Basic validation of required fields
-    // Corrigido para verificar 'telefone' em vez de 'email'
     if (!clientData.nome || !clientData.telefone) {
       console.log('[REGISTER-CLIENT] Missing required fields (nome or telefone)');
       return new Response(
@@ -88,7 +86,6 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    // --- FIM DA CORREÇÃO ---
 
     // Call the transactional RPC function to register client
     const { data: result, error: rpcError } = await supabase.rpc('register_client_from_token', {
@@ -114,6 +111,40 @@ serve(async (req) => {
     }
 
     console.log('[REGISTER-CLIENT] Registration completed successfully:', result);
+
+    // Extract user_id from result or query token
+    let userId = null
+    if (result && typeof result === 'object') {
+      userId = (result as any).user_id
+    }
+    
+    if (!userId) {
+      const { data: tokenData } = await supabase
+        .from('registration_tokens')
+        .select('user_id')
+        .eq('token', token)
+        .single()
+      userId = tokenData?.user_id
+    }
+
+    if (userId) {
+      // Create notification for professional about new client registration
+      const { error: notifError } = await supabase
+        .from('notifications')
+        .insert({
+          user_id: userId,
+          titulo: 'Novo paciente cadastrado',
+          conteudo: `${clientData.nome} se cadastrou via link público`,
+          data: new Date().toISOString(),
+          lida: false
+        })
+
+      if (notifError) {
+        console.error('[REGISTER-CLIENT] Error creating notification:', notifError)
+      } else {
+        console.log('[REGISTER-CLIENT] Notification created for professional')
+      }
+    }
 
     return new Response(
       JSON.stringify({

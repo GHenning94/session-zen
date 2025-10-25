@@ -94,7 +94,7 @@ serve(async (req) => {
     }
 
     // Criar sessão
-    const { error: sessionError } = await supabase
+    const { data: newSession, error: sessionError } = await supabase
       .from('sessions')
       .insert([{
         user_id: config.user_id,
@@ -104,6 +104,8 @@ serve(async (req) => {
         status: 'agendada',
         valor: config.valor_padrao || 0
       }])
+      .select()
+      .single()
 
     if (sessionError) {
       console.error('Erro ao criar sessão:', sessionError)
@@ -114,6 +116,23 @@ serve(async (req) => {
         JSON.stringify({ error: 'Erro ao criar sessão' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
+    }
+
+    // Create notification for professional about new booking
+    const { error: notifError } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: config.user_id,
+        titulo: 'Nova sessão agendada',
+        conteudo: `${sanitizedClientData.nome} agendou uma sessão para ${sessionData.data} às ${sessionData.horario}`,
+        data: new Date().toISOString(),
+        lida: false
+      })
+
+    if (notifError) {
+      console.error('Erro ao criar notificação:', notifError)
+    } else {
+      console.log('Notificação criada para profissional sobre novo agendamento')
     }
 
     return new Response(

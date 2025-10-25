@@ -57,6 +57,19 @@ export const ImageCropper = ({
     setCrop(centerAspectCrop(width, height, aspectRatio))
   }, [aspectRatio])
 
+  // Utility function to convert data URL to Blob (Safari fallback)
+  const dataURLToBlob = (dataURL: string): Blob => {
+    const arr = dataURL.split(',')
+    const mime = arr[0].match(/:(.*?);/)?.[1] || 'image/jpeg'
+    const bstr = atob(arr[1])
+    let n = bstr.length
+    const u8arr = new Uint8Array(n)
+    while (n--) {
+      u8arr[n] = bstr.charCodeAt(n)
+    }
+    return new Blob([u8arr], { type: mime })
+  }
+
   const getCroppedImg = useCallback(
     (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
       const canvas = document.createElement('canvas')
@@ -91,7 +104,15 @@ export const ImageCropper = ({
       return new Promise((resolve, reject) => {
         canvas.toBlob((blob) => {
           if (!blob) {
-            reject(new Error('Failed to create blob'))
+            // Safari fallback: use toDataURL instead
+            console.log('[ImageCropper] toBlob returned null, using fallback')
+            try {
+              const dataURL = canvas.toDataURL('image/jpeg', 0.85)
+              const fallbackBlob = dataURLToBlob(dataURL)
+              resolve(fallbackBlob)
+            } catch (error) {
+              reject(new Error('Failed to create blob with fallback'))
+            }
             return
           }
           resolve(blob)
@@ -113,36 +134,52 @@ export const ImageCropper = ({
 
     setLoading(true)
     try {
+      console.log('[ImageCropper] Starting crop process')
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop)
+      console.log('[ImageCropper] Crop successful, blob size:', croppedBlob.size)
       
       // Convert blob to File for compression
       const file = new File([croppedBlob], 'cropped-image.jpg', { type: 'image/jpeg' })
       
-      // Compress the cropped image
-      const compressionSettings = getOptimalCompressionSettings(file)
-      const compressedBlob = await compressImageWithProgress(
-        file, 
-        compressionSettings,
-        (progress) => setCompressionProgress(progress)
-      )
+      let finalBlob = croppedBlob
       
-      // Create unique filename with .webp extension - use public path if no user
+      // Try to compress the cropped image
+      try {
+        const compressionSettings = getOptimalCompressionSettings(file)
+        console.log('[ImageCropper] Compressing with settings:', compressionSettings)
+        const compressedBlob = await compressImageWithProgress(
+          file, 
+          compressionSettings,
+          (progress) => setCompressionProgress(progress)
+        )
+        finalBlob = compressedBlob
+        console.log('[ImageCropper] Compression successful, final size:', finalBlob.size)
+      } catch (compressionError) {
+        console.warn('[ImageCropper] Compression failed, using original cropped blob:', compressionError)
+        // Fallback to cropped blob if compression fails
+      }
+      
+      // Create unique filename - use public path if no user
       const fileName = user 
         ? `${user.id}/cropped-${Date.now()}.webp`
         : `public-uploads/cropped-${Date.now()}.webp`
 
+      console.log('[ImageCropper] Uploading to:', fileName)
+
       // Upload compressed image to Supabase Storage
       const { data, error } = await supabase.storage
         .from('user-uploads')
-        .upload(fileName, compressedBlob, {
+        .upload(fileName, finalBlob, {
           cacheControl: '3600',
           upsert: false
         })
 
       if (error) {
-        console.error('Storage error:', error)
+        console.error('[ImageCropper] Storage error:', error)
         throw error
       }
+
+      console.log('[ImageCropper] Upload successful:', data)
 
       // Return storage path (private bucket). Consumers must use signed URLs to display.
       const storagePath = `user-uploads/${fileName}`
@@ -153,10 +190,10 @@ export const ImageCropper = ({
         description: "Sua imagem foi recortada e salva com sucesso.",
       })
     } catch (error) {
-      console.error('Error cropping image:', error)
+      console.error('[ImageCropper] Error in crop process:', error)
       toast({
         title: "Erro",
-        description: "Erro ao recortar a imagem.",
+        description: "Erro ao recortar a imagem. Tente novamente.",
         variant: "destructive",
       })
     } finally {
