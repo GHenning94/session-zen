@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from "react"
+import { useState, useEffect, useMemo, useCallback, useRef } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -58,6 +58,10 @@ const Dashboard = () => {
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
   
+  // Cooperative cancellation refs
+  const isActiveRef = useRef(true)
+  const requestIdRef = useRef(0)
+  
   // Granular cache timestamps (in milliseconds)
   const [cacheTimestamps, setCacheTimestamps] = useState({
     upcomingSessions: 0,
@@ -80,19 +84,33 @@ const Dashboard = () => {
 
   // Optimized loading with granular caching
   const loadDashboardDataOptimized = useCallback(async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>) => {
-    if (!user) return
+    const requestId = ++requestIdRef.current
+    const isStale = () => !isActiveRef.current || requestId !== requestIdRef.current || !user
+    
+    if (isStale()) return
     
     try {
+      if (isStale()) return
       console.log('🔄 Carregando dados do dashboard...', forceFresh ? '(FORCE FRESH)' : '', sections || 'ALL')
-      await loadDashboardData(forceFresh, sections)
+      await loadDashboardData(forceFresh, sections, isStale)
     } catch (error) {
-      console.error('Erro ao carregar dados do dashboard:', error)
+      if (!isStale()) {
+        console.error('Erro ao carregar dados do dashboard:', error)
+      }
     }
   }, [user])
 
+  // Component lifecycle management
+  useEffect(() => {
+    isActiveRef.current = true
+    return () => {
+      isActiveRef.current = false
+    }
+  }, [])
+
   useEffect(() => {
     console.log('🎯 useEffect principal disparado, user:', user?.id)
-    if (user) {
+    if (user && isActiveRef.current) {
       console.log('👤 Usuário encontrado, carregando dados...')
       loadDashboardDataOptimized(true)
     }
@@ -100,37 +118,43 @@ const Dashboard = () => {
 
   // Optimized event listeners with debouncing
   useEffect(() => {
+    if (!user) return
+
     let timeoutId: NodeJS.Timeout
 
     const handleDataChange = (sections?: Array<keyof typeof cacheTimestamps>) => {
-      if (user) {
+      if (user && isActiveRef.current) {
         clearTimeout(timeoutId)
         timeoutId = setTimeout(() => {
-          invalidateCache(sections || ['upcomingSessions', 'recentPayments', 'recentClients', 'dashboardStats', 'charts'])
-          loadDashboardDataOptimized(true, sections) // Force fresh
-        }, 300) // Debounce for 300ms
+          if (isActiveRef.current) {
+            invalidateCache(sections || ['upcomingSessions', 'recentPayments', 'recentClients', 'dashboardStats', 'charts'])
+            loadDashboardDataOptimized(true, sections)
+          }
+        }, 300)
       }
     }
 
+    const onStorage = () => handleDataChange()
+    const onFocus = () => handleDataChange()
     const handleClientAdded = () => handleDataChange(['recentClients', 'dashboardStats'])
     const handleSessionAdded = () => handleDataChange(['upcomingSessions', 'dashboardStats'])
     const handlePaymentAdded = () => handleDataChange(['recentPayments', 'dashboardStats'])
 
-    window.addEventListener('storage', () => handleDataChange())
-    window.addEventListener('focus', () => handleDataChange())
+    window.addEventListener('storage', onStorage)
+    window.addEventListener('focus', onFocus)
     window.addEventListener('clientAdded', handleClientAdded)
     window.addEventListener('paymentAdded', handlePaymentAdded)
     window.addEventListener('sessionAdded', handleSessionAdded)
     
     return () => {
       clearTimeout(timeoutId)
-      window.removeEventListener('storage', () => handleDataChange())
-      window.removeEventListener('focus', () => handleDataChange())
+      window.removeEventListener('storage', onStorage)
+      window.removeEventListener('focus', onFocus)
       window.removeEventListener('clientAdded', handleClientAdded)
       window.removeEventListener('paymentAdded', handlePaymentAdded)
       window.removeEventListener('sessionAdded', handleSessionAdded)
     }
-  }, [user, loadDashboardDataOptimized])
+  }, [user, loadDashboardDataOptimized, invalidateCache])
 
   // Optimized real-time updates
   useEffect(() => {
@@ -174,7 +198,11 @@ const Dashboard = () => {
     }
   }, [user, loadDashboardDataOptimized])
 
-  const loadDashboardData = async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>) => {
+  const loadDashboardData = async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>, isStale?: () => boolean) => {
+    const checkStale = isStale || (() => !isActiveRef.current || !user)
+    
+    if (checkStale()) return
+    
     try {
       const now = Date.now()
       const CACHE_TIMES = {
@@ -198,13 +226,16 @@ const Dashboard = () => {
       const loadCharts = needsLoad('charts')
       
       if (!loadUpcoming && !loadPayments && !loadClients && !loadStats && !loadCharts) {
-        console.log('🚀 All sections cached, skipping load')
+        if (!checkStale()) console.log('🚀 All sections cached, skipping load')
         return
       }
       
-      console.log('🔄 Loading sections:', { loadUpcoming, loadPayments, loadClients, loadStats, loadCharts })
+      if (checkStale()) return
       
-      console.log('🔄 Loading fresh dashboard data...')
+      if (!checkStale()) {
+        console.log('🔄 Loading sections:', { loadUpcoming, loadPayments, loadClients, loadStats, loadCharts })
+        console.log('🔄 Loading fresh dashboard data...')
+      }
       
       const today = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`
       
@@ -231,6 +262,8 @@ const Dashboard = () => {
         supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null)
       ])
       
+      if (checkStale()) return
+      
       const todaySessions = todaySessionsResult.data
       const clientsCount = clientsCountResult.count
 
@@ -254,10 +287,11 @@ const Dashboard = () => {
       const recentClientsData = recentClientsDataResult.data
 
       // Dados do gráfico mensal - sempre buscar últimos 12 meses
-      console.log('📊 Carregando dados do gráfico para 12 meses')
+      if (!checkStale()) console.log('📊 Carregando dados do gráfico para 12 meses')
       const chartData = []
       
       for (let i = 11; i >= 0; i--) {
+        if (checkStale()) return
         const date = new Date()
         date.setMonth(date.getMonth() - i)
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
@@ -266,7 +300,8 @@ const Dashboard = () => {
         const monthStartStr = monthStart.toISOString().split('T')[0]
         const monthEndStr = monthEnd.toISOString().split('T')[0]
         
-        console.log('📅 Processando mês:', monthStartStr, 'até', monthEndStr)
+        if (checkStale()) return
+        if (!checkStale()) console.log('📅 Processando mês:', monthStartStr, 'até', monthEndStr)
         
         const { data: monthSessions } = await supabase
           .from('sessions')
@@ -285,10 +320,11 @@ const Dashboard = () => {
           .gte('data', monthStartStr)
           .lte('data', monthEndStr)
         
-        console.log(`💰 Sessões do mês ${date.getMonth() + 1}/${date.getFullYear()}:`, monthSessions)
+        if (checkStale()) return
+        if (!checkStale()) console.log(`💰 Sessões do mês ${date.getMonth() + 1}/${date.getFullYear()}:`, monthSessions)
         const revenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
         const pending = monthPendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-        console.log(`💰 Receita calculada: ${revenue}, Pendente: ${pending}`)
+        if (!checkStale()) console.log(`💰 Receita calculada: ${revenue}, Pendente: ${pending}`)
         
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -300,12 +336,14 @@ const Dashboard = () => {
           fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
       }
-      console.log('📊 Dados finais do gráfico:', chartData)
+      if (checkStale()) return
+      if (!checkStale()) console.log('📊 Dados finais do gráfico:', chartData)
 
       // Calcular dados de ticket médio ao longo do tempo
-      console.log('📊 Carregando dados de ticket médio...')
+      if (!checkStale()) console.log('📊 Carregando dados de ticket médio...')
       const ticketMedioData = []
       for (let i = 11; i >= 0; i--) {
+        if (checkStale()) return
         const date = new Date()
         date.setMonth(date.getMonth() - i)
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
@@ -314,7 +352,8 @@ const Dashboard = () => {
         const monthStartStr = monthStart.toISOString().split('T')[0]
         const monthEndStr = monthEnd.toISOString().split('T')[0]
         
-        console.log(`📊 Buscando ticket médio para ${monthStartStr} - ${monthEndStr}`)
+        if (checkStale()) return
+        if (!checkStale()) console.log(`📊 Buscando ticket médio para ${monthStartStr} - ${monthEndStr}`)
         
         const { data: monthSessions } = await supabase
           .from('sessions')
@@ -325,13 +364,14 @@ const Dashboard = () => {
           .lte('data', monthEndStr)
           .not('valor', 'is', null)
         
-        console.log(`📊 Sessões encontradas para ticket médio:`, monthSessions)
+        if (checkStale()) return
+        if (!checkStale()) console.log(`📊 Sessões encontradas para ticket médio:`, monthSessions)
         
         const totalRevenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
         const totalSessions = monthSessions?.length || 0
         const ticketMedio = totalSessions > 0 ? totalRevenue / totalSessions : 0
         
-        console.log(`📊 Ticket médio calculado: ${ticketMedio} (${totalSessions} sessões, ${totalRevenue} total)`)
+        if (!checkStale()) console.log(`📊 Ticket médio calculado: ${ticketMedio} (${totalSessions} sessões, ${totalRevenue} total)`)
         
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -344,7 +384,8 @@ const Dashboard = () => {
         })
       }
       
-      console.log('📊 Dados finais de ticket médio:', ticketMedioData)
+      if (checkStale()) return
+      if (!checkStale()) console.log('📊 Dados finais de ticket médio:', ticketMedioData)
 
       const allClientsWithPayments = allClientsWithPaymentsResult.data
 
@@ -364,7 +405,8 @@ const Dashboard = () => {
         }
       })
 
-      console.log('👥 Pagamentos por cliente processados:', clientPayments)
+      if (checkStale()) return
+      if (!checkStale()) console.log('👥 Pagamentos por cliente processados:', clientPayments)
 
       const topClientsData = Object.entries(clientPayments)
         .map(([clientId, data]: [string, any]) => ({
@@ -378,7 +420,8 @@ const Dashboard = () => {
         .sort((a, b) => b.total - a.total)
         .slice(0, 5)
 
-      console.log('👥 Top 5 clientes calculados:', topClientsData)
+      if (checkStale()) return
+      if (!checkStale()) console.log('👥 Top 5 clientes calculados:', topClientsData)
 
       // Calcular ticket médio por cliente (todos os clientes com sessões)
       const clientTicketMedioData = Object.entries(clientPayments)
@@ -391,7 +434,8 @@ const Dashboard = () => {
         .filter(client => client.sessoes > 0)
         .sort((a, b) => b.ticketMedio - a.ticketMedio)
 
-      console.log('📊 Ticket médio por cliente calculado:', clientTicketMedioData)
+      if (checkStale()) return
+      if (!checkStale()) console.log('📊 Ticket médio por cliente calculado:', clientTicketMedioData)
 
       const allPaymentMethods = allPaymentMethodsResult.data
 
@@ -420,7 +464,8 @@ const Dashboard = () => {
         }))
         .sort((a, b) => b.valor - a.valor)
 
-      console.log('💳 Receita por canal calculada:', receitaPorCanalData)
+      if (checkStale()) return
+      if (!checkStale()) console.log('💳 Receita por canal calculada:', receitaPorCanalData)
 
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
@@ -470,6 +515,8 @@ const Dashboard = () => {
       if (reminders.length === 0) {
         reminders.push('Nenhum lembrete importante no momento')
       }
+
+      if (checkStale()) return
 
       setDashboardData({
         sessionsToday: todaySessions?.length || 0,
@@ -531,6 +578,8 @@ const Dashboard = () => {
       setCanalDataCache(receitaPorCanalData) // Cache all canal data for filtering
       setDynamicReminders(reminders)
       
+      if (checkStale()) return
+      
       // Update cache timestamps for loaded sections
       setCacheTimestamps(prev => {
         const updated = { ...prev }
@@ -542,12 +591,14 @@ const Dashboard = () => {
         return updated
       })
 
-      console.log('✅ Todos os dados foram atualizados no estado:')
-      console.log('📊 Monthly Chart:', chartData.length, 'itens')
-      console.log('📈 Ticket Médio Chart:', ticketMedioData.length, 'itens')
-      console.log('👑 Top Clients:', topClientsData.length, 'itens')
-      console.log('📊 Client Ticket Médio:', clientTicketMedioData.length, 'itens')
-      console.log('💾 Dashboard cached successfully!')
+      if (!checkStale()) {
+        console.log('✅ Todos os dados foram atualizados no estado:')
+        console.log('📊 Monthly Chart:', chartData.length, 'itens')
+        console.log('📈 Ticket Médio Chart:', ticketMedioData.length, 'itens')
+        console.log('👑 Top Clients:', topClientsData.length, 'itens')
+        console.log('📊 Client Ticket Médio:', clientTicketMedioData.length, 'itens')
+        console.log('💾 Dashboard cached successfully!')
+      }
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)

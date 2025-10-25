@@ -114,13 +114,31 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return { error }
   }
 
-  // signOut - limpa cache antes de fazer logout
+  // signOut - limpa cache e conexões antes de fazer logout
   const signOut = async () => {
     // Limpar todo o cache do usuário antes do logout
     if (user?.id) {
+      // Limpar cache de tema
       const cacheKey = `user-theme-cache_${user.id}`
       localStorage.removeItem(cacheKey)
+      
+      // Limpar caches de dados
+      localStorage.removeItem('therapy-clients')
+      localStorage.removeItem('therapy-sessions')
+      localStorage.removeItem('therapy-payments')
+      
+      // Limpar caches de canal por período
+      ;['1', '3', '6', '12'].forEach(period => {
+        localStorage.removeItem(`canal_${user.id}_${period}`)
+        localStorage.removeItem(`canal_${user.id}_${period}_time`)
+      })
     }
+    
+    // Remover todos os canais realtime ativos
+    const channels = supabase.getChannels()
+    channels.forEach(channel => {
+      supabase.removeChannel(channel)
+    })
     
     // Limpar estado imediatamente
     setUser(null)
