@@ -110,11 +110,11 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     }
   }
 
-  // Check subscription when user changes
+  // Check subscription when user ID changes (not on every user object change)
   useEffect(() => {
-    console.log('useSubscription: user changed, checking subscription.');
+    console.log('useSubscription: user ID changed, checking subscription.');
     checkSubscription()
-  }, [user])
+  }, [user?.id])
 
   const planLimits = PLAN_LIMITS[currentPlan]
 

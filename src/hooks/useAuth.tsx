@@ -45,11 +45,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // processSession (Lógica do AAL - Inalterada e Correta)
-  const processSession = (session: Session | null) => {
+  // processSession - agora recebe o evento para evitar loading em TOKEN_REFRESHED
+  const processSession = (session: Session | null, event?: string) => {
     console.log('useAuth: processando sessão...', { 
       sessionExists: !!session, 
-      aal: session?.user?.aal
+      aal: session?.user?.aal,
+      event
     });
     
     setSession(session);
@@ -62,10 +63,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
 
     const currentAAL = session.user.aal;
+    
+    // Se for TOKEN_REFRESHED ou USER_UPDATED, apenas atualiza user/session sem ativar loading
+    if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
+      setUser(session.user);
+      setLoading(false);
+      console.log('useAuth: token refreshed/user updated (mantém loading: false)');
+      return;
+    }
 
     if (currentAAL === 'aal1') {
       setUser(session.user);
-      setLoading(true); // <-- A CORREÇÃO CRÍTICA para o bug dos dados
+      setLoading(true);
       console.log('useAuth: estado pendente (AAL1): (loading: true, user: set)');
     } else {
       setUser(session.user);
@@ -74,13 +83,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  // useEffect de setup (Inalterado e Correto)
+  // useEffect de setup - passa o evento para processSession
   useEffect(() => {
     console.log('useAuth: setting up auth listeners')
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log(`useAuth: auth state changed (event: ${event})`);
-        processSession(session)
+        processSession(session, event)
       }
     )
     supabase.auth.getSession().then(({ data: { session } }) => {

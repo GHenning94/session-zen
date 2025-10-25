@@ -9,11 +9,11 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const { user, loading: authLoading } = useAuth();
-  const { isLoading: subLoading } = useSubscription(); // Espera o hook de assinatura
+  const { isLoading: subLoading } = useSubscription(); // Carrega em paralelo, não bloqueia UI
   const location = useLocation();
 
-  // O app está carregando se o Auth OU a Assinatura (inicial) estiverem carregando
-  const isLoading = authLoading || subLoading;
+  // O app está carregando apenas se Auth estiver carregando (subscription não bloqueia)
+  const isLoading = authLoading;
 
   // --- ESTADO DE CARREGAMENTO INICIAL ---
   if (isLoading) {
