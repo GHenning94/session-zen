@@ -30,7 +30,7 @@ export const cpfSchema = z.string()
   .optional()
   .or(z.literal(''));
 
-// Client registration schema
+// Client registration schema - Apenas NOME e TELEFONE são obrigatórios
 export const clientRegistrationSchema = z.object({
   nome: z.string()
     .trim()
@@ -39,9 +39,12 @@ export const clientRegistrationSchema = z.object({
   
   email: emailSchema.optional().or(z.literal('')),
   
-  telefone: phoneSchema,
+  telefone: z.string()
+    .trim()
+    .min(1, { message: "Telefone é obrigatório" })
+    .max(20, { message: "Telefone deve ter no máximo 20 caracteres" }),
   
-  cpf: cpfSchema,
+  cpf: z.string().trim().optional().or(z.literal('')),
   
   data_nascimento: z.string().optional().or(z.literal('')),
   

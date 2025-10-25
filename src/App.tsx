@@ -42,7 +42,15 @@ import AuthConfirm from "@/pages/AuthConfirm";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // Não recarregar ao voltar para a aba
+      refetchOnReconnect: false,   // Não recarregar ao reconectar
+      staleTime: 5 * 60 * 1000,    // Dados ficam frescos por 5 minutos
+    },
+  },
+});
 
 // Loading component for code splitting
 const PageLoading = () => (

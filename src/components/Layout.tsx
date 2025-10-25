@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
 import WhatsAppButton from "@/components/WhatsAppButton"
+import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
 import { useAuth } from "@/hooks/useAuth"
 import { useUserTheme } from "@/hooks/useUserTheme"
 import { useInstantTheme } from "@/hooks/useInstantTheme"
@@ -61,6 +62,7 @@ export function Layout({ children }: LayoutProps) {
           </main>
         </div>
         <WhatsAppButton />
+        <NotificationPermissionBanner />
       </div>
     </SidebarProvider>
   )

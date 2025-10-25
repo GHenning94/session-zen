@@ -66,6 +66,10 @@ export const PublicAvatarUpload = ({
 
     // Create preview URL for cropper
     const imageUrl = URL.createObjectURL(file);
+    
+    // PREVIEW INSTANTÂNEO: Mostrar a imagem imediatamente antes do crop
+    onAvatarChange(imageUrl);
+    
     setSelectedImage(imageUrl);
     setShowCropper(true);
   };
