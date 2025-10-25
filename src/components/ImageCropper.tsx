@@ -182,7 +182,7 @@ export const ImageCropper = ({
             maxWidth: 800,
             maxHeight: 800,
             quality: 0.85,
-            format: 'image/webp',
+            format: 'webp',
           },
           (progress) => setCompressionProgress(progress)
         )
