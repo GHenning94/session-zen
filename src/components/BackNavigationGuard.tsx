@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate, useLocation, useNavigationType } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   AlertDialog,
@@ -18,6 +18,7 @@ export function BackNavigationGuard() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const navType = useNavigationType()
   const [showDialog, setShowDialog] = useState(false)
   const previousPathRef = useRef(location.pathname)
   const isNavigatingRef = useRef(false)
@@ -40,27 +41,24 @@ export function BackNavigationGuard() {
       return
     }
 
-    // Verificar se:
-    // 1. O usuário está autenticado (session_active está true)
-    // 2. A rota atual é pública (tentando sair)
-    // 3. A rota anterior NÃO era pública (estava dentro da plataforma)
-    // 4. Ainda não mostramos o dialog para esta tentativa
-    const sessionActive = sessionStorage.getItem('session_active') === 'true'
+    // Só interceptar navegações POP (botão voltar/avançar do navegador)
+    const isPop = navType === 'POP'
+    const sessionActive = !!user
     const isCurrentPublic = PUBLIC_ROUTES.includes(currentPath)
     const wasPreviousPrivate = !PUBLIC_ROUTES.includes(previousPath)
     const dialogShown = sessionStorage.getItem('logout_dialog_shown') === 'true'
 
-    if (sessionActive && isCurrentPublic && wasPreviousPrivate && !dialogShown) {
-      // Bloquear a navegação voltando para onde estava
+    if (sessionActive && isPop && isCurrentPublic && wasPreviousPrivate && !dialogShown) {
+      // Bloquear a navegação avançando de volta
       sessionStorage.setItem('logout_dialog_shown', 'true')
-      navigate(-1)
-      // Mostrar o dialog
+      isNavigatingRef.current = true
+      navigate(1) // Anula o back, voltando para a página privada
       setShowDialog(true)
     } else {
       // Atualizar o path anterior para navegações normais
       previousPathRef.current = currentPath
     }
-  }, [location.pathname, navigate, user])
+  }, [location.pathname, navType, user, navigate])
 
   const handleConfirmLogout = async () => {
     setShowDialog(false)

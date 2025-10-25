@@ -15,6 +15,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthRedirect } from "@/components/AuthRedirect";
+import { BackNavigationGuard } from "@/components/BackNavigationGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 // Importações diretas para páginas principais (sem loading)
@@ -73,6 +74,7 @@ const App = () => (
                   <BrowserRouter>
                     <AnalyticsWrapper>
                       <AuthRedirect />
+                      <BackNavigationGuard />
                       <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
