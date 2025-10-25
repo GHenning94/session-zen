@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 
 // IMPORTANTE: Esta chave DEVE ser EXATAMENTE a mesma configurada no secret VAPID_PUBLIC_KEY
 // Para atualizar: copie o valor do secret VAPID_PUBLIC_KEY que você acabou de configurar
-const VAPID_PUBLIC_KEY = 'BJ8nZ3cC9v6kNl0D_8gZ4xYq7TfE-2MnLp3rWsK5vQo8HjGf6Ud4Xe3TcRb2Yp1Qs7Vr9Zw0Xj5Kl8Nm6Oo4Pp2Qq3'
+const VAPID_PUBLIC_KEY = 'BO42fKwRjp3_PQGFeXZ5CeDSAw3YI4iUd_xD9DLjhEDOFnyf7VhhzKp9gir9vzSiIdYWEzDliZlxng0_lFF2luc'
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - base64String.length % 4) % 4)
