@@ -114,8 +114,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return { error }
   }
 
-  // signOut (Inalterada)
+  // signOut - limpa cache antes de fazer logout
   const signOut = async () => {
+    // Limpar todo o cache do usuário antes do logout
+    if (user?.id) {
+      const cacheKey = `user-theme-cache_${user.id}`
+      localStorage.removeItem(cacheKey)
+    }
+    
+    // Limpar estado imediatamente
+    setUser(null)
+    setSession(null)
+    setLoading(false)
+    
     const result = await supabase.auth.signOut()
     return result
   }
