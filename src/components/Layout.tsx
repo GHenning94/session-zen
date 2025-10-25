@@ -12,13 +12,30 @@ interface LayoutProps {
 }
 
 export function Layout({ children }: LayoutProps) {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
   
   // Apply cached theme instantly to prevent flicker
   useInstantTheme(user?.id)
   
   // Load and apply user's theme preference
   useUserTheme()
+  
+  // Show loading state while authenticating
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          <p className="text-sm text-muted-foreground">Carregando...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Only render layout if user is authenticated
+  if (!user) {
+    return null
+  }
   
   return (
     <SidebarProvider>
@@ -43,7 +60,7 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </div>
-        {user && <WhatsAppButton />}
+        <WhatsAppButton />
       </div>
     </SidebarProvider>
   )
