@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
 import WhatsAppButton from "@/components/WhatsAppButton"
+import { BackNavigationGuard } from "@/components/BackNavigationGuard"
 import { useAuth } from "@/hooks/useAuth"
 import { useUserTheme } from "@/hooks/useUserTheme"
 import { useInstantTheme } from "@/hooks/useInstantTheme"
@@ -39,6 +40,7 @@ export function Layout({ children }: LayoutProps) {
   
   return (
     <SidebarProvider>
+      <BackNavigationGuard />
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
