@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { Bell, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useBrowserNotifications } from '@/hooks/useBrowserNotifications';
+import { usePushSubscription } from '@/hooks/usePushSubscription';
 
 export const NotificationPermissionBanner = () => {
   const [show, setShow] = useState(false);
   const { requestPermission, isSupported, permission } = useBrowserNotifications();
+  const { subscribe: subscribePush, isSupported: pushSupported } = usePushSubscription();
 
   useEffect(() => {
     // Only show if notifications are supported and permission is not granted
@@ -20,6 +22,12 @@ export const NotificationPermissionBanner = () => {
 
   const handleAllow = async () => {
     const granted = await requestPermission();
+    
+    // Also subscribe to Web Push if supported
+    if (pushSupported && Notification.permission === 'granted') {
+      await subscribePush();
+    }
+    
     if (granted) {
       setShow(false);
     }

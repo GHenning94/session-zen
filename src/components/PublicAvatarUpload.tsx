@@ -94,11 +94,7 @@ export const PublicAvatarUpload = ({
 
     console.log('[PublicAvatarUpload] File selected:', file.name, file.size)
 
-    // Create preview URL for instant display
-    const blobUrl = URL.createObjectURL(file)
-    setPreviewUrl(blobUrl)
-    console.log('[PublicAvatarUpload] Instant preview set')
-
+    // DO NOT set preview here - wait for crop confirmation
     // Create reader for cropper
     const reader = new FileReader()
     reader.onloadend = () => {
@@ -106,6 +102,17 @@ export const PublicAvatarUpload = ({
       setShowCropper(true)
     }
     reader.readAsDataURL(file)
+  }
+  
+  const handlePreview = (localPreviewUrl: string) => {
+    // Revoke old blob URL to prevent memory leak
+    if (previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl)
+    }
+    
+    // Set local preview immediately after crop
+    setPreviewUrl(localPreviewUrl)
+    console.log('[PublicAvatarUpload] Local preview updated after crop')
   }
 
   const handleCropComplete = async (croppedImageUrl: string) => {
@@ -197,6 +204,7 @@ export const PublicAvatarUpload = ({
         }}
         imageSrc={selectedImage}
         onCropComplete={handleCropComplete}
+        onPreview={handlePreview}
         aspectRatio={1}
         circularCrop={true}
       />

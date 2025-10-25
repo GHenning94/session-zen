@@ -133,6 +133,31 @@ serve(async (req) => {
       console.error('Erro ao criar notificação:', notifError)
     } else {
       console.log('Notificação criada para profissional sobre novo agendamento')
+      
+      // Send Web Push notification
+      try {
+        const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+        const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+        
+        await fetch(`${supabaseUrl}/functions/v1/push-broadcast`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify({
+            user_id: config.user_id,
+            title: 'Nova sessão agendada',
+            body: `${sanitizedClientData.nome} agendou para ${sessionData.data} às ${sessionData.horario}`,
+            url: '/agenda',
+            tag: 'new-session',
+          }),
+        })
+        console.log('[create-booking] Web Push sent')
+      } catch (pushError) {
+        console.error('[create-booking] Error sending Web Push:', pushError)
+        // Non-critical, continue
+      }
     }
 
     return new Response(

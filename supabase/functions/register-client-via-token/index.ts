@@ -143,6 +143,28 @@ serve(async (req) => {
         console.error('[REGISTER-CLIENT] Error creating notification:', notifError)
       } else {
         console.log('[REGISTER-CLIENT] Notification created for professional')
+        
+        // Send Web Push notification
+        try {
+          await fetch(`${supabaseUrl}/functions/v1/push-broadcast`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              user_id: userId,
+              title: 'Novo paciente cadastrado',
+              body: `${clientData.nome} se cadastrou via link público`,
+              url: '/clientes',
+              tag: 'new-client',
+            }),
+          })
+          console.log('[REGISTER-CLIENT] Web Push sent')
+        } catch (pushError) {
+          console.error('[REGISTER-CLIENT] Error sending Web Push:', pushError)
+          // Non-critical, continue
+        }
       }
     }
 

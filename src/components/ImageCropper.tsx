@@ -13,6 +13,7 @@ interface ImageCropperProps {
   onClose: () => void
   imageSrc: string
   onCropComplete: (croppedImageUrl: string) => void
+  onPreview?: (previewUrl: string) => void
   aspectRatio?: number
   circularCrop?: boolean
 }
@@ -41,7 +42,8 @@ export const ImageCropper = ({
   isOpen, 
   onClose, 
   imageSrc, 
-  onCropComplete, 
+  onCropComplete,
+  onPreview,
   aspectRatio = 1,
   circularCrop = true 
 }: ImageCropperProps) => {
@@ -70,6 +72,18 @@ export const ImageCropper = ({
     return new Blob([u8arr], { type: mime })
   }
 
+  const limitCanvasSize = (width: number, height: number, maxSize: number = 1024) => {
+    if (width <= maxSize && height <= maxSize) {
+      return { width, height }
+    }
+    
+    const ratio = Math.min(maxSize / width, maxSize / height)
+    return {
+      width: Math.round(width * ratio),
+      height: Math.round(height * ratio)
+    }
+  }
+
   const getCroppedImg = useCallback(
     (image: HTMLImageElement, crop: PixelCrop): Promise<Blob> => {
       const canvas = document.createElement('canvas')
@@ -81,42 +95,51 @@ export const ImageCropper = ({
 
       const scaleX = image.naturalWidth / image.width
       const scaleY = image.naturalHeight / image.height
-      const pixelRatio = window.devicePixelRatio
 
-      canvas.width = crop.width * pixelRatio * scaleX
-      canvas.height = crop.height * pixelRatio * scaleY
+      // Calculate desired dimensions
+      let desiredWidth = crop.width * scaleX
+      let desiredHeight = crop.height * scaleY
+      
+      // Limit canvas size to prevent memory issues
+      const limited = limitCanvasSize(desiredWidth, desiredHeight, 1024)
+      canvas.width = limited.width
+      canvas.height = limited.height
 
-      ctx.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0)
+      ctx.imageSmoothingEnabled = true
       ctx.imageSmoothingQuality = 'high'
 
       ctx.drawImage(
         image,
         crop.x * scaleX,
         crop.y * scaleY,
-        crop.width * scaleX,
-        crop.height * scaleY,
+        desiredWidth,
+        desiredHeight,
         0,
         0,
-        crop.width * scaleX,
-        crop.height * scaleY,
+        canvas.width,
+        canvas.height
       )
 
-      return new Promise((resolve, reject) => {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            // Safari fallback: use toDataURL instead
-            console.log('[ImageCropper] toBlob returned null, using fallback')
-            try {
-              const dataURL = canvas.toDataURL('image/jpeg', 0.85)
-              const fallbackBlob = dataURLToBlob(dataURL)
-              resolve(fallbackBlob)
-            } catch (error) {
-              reject(new Error('Failed to create blob with fallback'))
+      return new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              console.warn('[ImageCropper] toBlob returned null, using fallback')
+              try {
+                const dataURL = canvas.toDataURL('image/jpeg', 0.95)
+                const fallbackBlob = dataURLToBlob(dataURL)
+                resolve(fallbackBlob)
+              } catch (fallbackError) {
+                console.error('[ImageCropper] Fallback failed:', fallbackError)
+                reject(new Error('Falha ao criar imagem'))
+              }
+              return
             }
-            return
-          }
-          resolve(blob)
-        }, 'image/jpeg', 0.85)
+            resolve(blob)
+          },
+          'image/jpeg',
+          0.95
+        )
       })
     },
     []
@@ -134,56 +157,65 @@ export const ImageCropper = ({
 
     setLoading(true)
     try {
-      console.log('[ImageCropper] Starting crop process')
+      console.log('[ImageCropper] Starting crop process...')
+      
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop)
-      console.log('[ImageCropper] Crop successful, blob size:', croppedBlob.size)
+      console.log('[ImageCropper] Crop successful, size:', croppedBlob.size)
       
-      // Convert blob to File for compression
-      const file = new File([croppedBlob], 'cropped-image.jpg', { type: 'image/jpeg' })
+      // Generate local preview immediately
+      const localPreviewUrl = URL.createObjectURL(croppedBlob)
+      console.log('[ImageCropper] Local preview generated')
       
+      if (onPreview) {
+        onPreview(localPreviewUrl)
+      }
+
+      // Try to compress, but use original if compression fails
       let finalBlob = croppedBlob
+      let fileExtension = 'jpg'
       
-      // Try to compress the cropped image
       try {
-        const compressionSettings = getOptimalCompressionSettings(file)
-        console.log('[ImageCropper] Compressing with settings:', compressionSettings)
-        const compressedBlob = await compressImageWithProgress(
-          file, 
-          compressionSettings,
+        console.log('[ImageCropper] Compressing image...')
+        const compressed = await compressImageWithProgress(
+          new File([croppedBlob], 'avatar.jpg', { type: 'image/jpeg' }),
+          {
+            maxWidth: 800,
+            maxHeight: 800,
+            quality: 0.85,
+            format: 'image/webp',
+          },
           (progress) => setCompressionProgress(progress)
         )
-        finalBlob = compressedBlob
+        finalBlob = compressed
+        fileExtension = 'webp'
         console.log('[ImageCropper] Compression successful, final size:', finalBlob.size)
-      } catch (compressionError) {
-        console.warn('[ImageCropper] Compression failed, using original cropped blob:', compressionError)
-        // Fallback to cropped blob if compression fails
+      } catch (compressError) {
+        console.warn('[ImageCropper] Compression failed, using original crop:', compressError)
+        finalBlob = croppedBlob
+        fileExtension = 'jpg'
       }
-      
-      // Create unique filename - use public path if no user
-      const fileName = user 
-        ? `${user.id}/cropped-${Date.now()}.webp`
-        : `public-uploads/cropped-${Date.now()}.webp`
 
-      console.log('[ImageCropper] Uploading to:', fileName)
+      // Upload to Supabase Storage
+      console.log('[ImageCropper] Uploading to storage...')
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`
+      const filePath = `public-uploads/${fileName}`
 
-      // Upload compressed image to Supabase Storage
-      const { data, error } = await supabase.storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
         .from('user-uploads')
-        .upload(fileName, finalBlob, {
-          cacheControl: '3600',
-          upsert: false
+        .upload(filePath, finalBlob, {
+          contentType: finalBlob.type,
+          upsert: true,
         })
 
-      if (error) {
-        console.error('[ImageCropper] Storage error:', error)
-        throw error
+      if (uploadError) {
+        console.error('[ImageCropper] Upload error:', uploadError)
+        throw uploadError
       }
 
-      console.log('[ImageCropper] Upload successful:', data)
+      console.log('[ImageCropper] Upload successful:', uploadData)
 
-      // Return storage path (private bucket). Consumers must use signed URLs to display.
-      const storagePath = `user-uploads/${fileName}`
-      onCropComplete(storagePath)
+      // Return storage path
+      onCropComplete(filePath)
       onClose()
       toast({
         title: "Imagem recortada",

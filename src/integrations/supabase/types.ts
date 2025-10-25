@@ -64,7 +64,7 @@ export type Database = {
           action: string
           created_at: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           new_values: Json | null
           old_values: Json | null
           record_id: string | null
@@ -76,7 +76,7 @@ export type Database = {
           action: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -88,7 +88,7 @@ export type Database = {
           action?: string
           created_at?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           new_values?: Json | null
           old_values?: Json | null
           record_id?: string | null
@@ -502,7 +502,7 @@ export type Database = {
           client_id: string
           field_accessed: string | null
           id: string
-          ip_address: unknown | null
+          ip_address: unknown
           session_id: string | null
           user_agent: string | null
           user_id: string | null
@@ -513,7 +513,7 @@ export type Database = {
           client_id: string
           field_accessed?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -524,7 +524,7 @@ export type Database = {
           client_id?: string
           field_accessed?: string | null
           id?: string
-          ip_address?: unknown | null
+          ip_address?: unknown
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
@@ -655,6 +655,36 @@ export type Database = {
           subscription_plan?: string | null
           telefone?: string | null
           tipo_conta?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
           updated_at?: string
           user_id?: string
         }
@@ -1000,14 +1030,8 @@ export type Database = {
         }
         Returns: boolean
       }
-      cleanup_expired_2fa_codes: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
-      cleanup_expired_registration_tokens: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      cleanup_expired_2fa_codes: { Args: never; Returns: undefined }
+      cleanup_expired_registration_tokens: { Args: never; Returns: undefined }
       current_user_has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean
@@ -1016,16 +1040,10 @@ export type Database = {
         Args: { p_client_id: string }
         Returns: Json
       }
-      get_client_medical_data: {
-        Args: { p_client_id: string }
-        Returns: Json
-      }
-      get_client_summary: {
-        Args: { client_id: string }
-        Returns: Json
-      }
+      get_client_medical_data: { Args: { p_client_id: string }; Returns: Json }
+      get_client_summary: { Args: { client_id: string }; Returns: Json }
       get_clients_safe_data: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           ativo: boolean
           avatar_url: string
@@ -1042,20 +1060,11 @@ export type Database = {
           view_accessed_at: string
         }[]
       }
-      get_clients_safe_security_status: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      get_public_profile_by_slug: {
-        Args: { page_slug: string }
-        Returns: Json
-      }
-      get_safe_booking_data: {
-        Args: { page_slug: string }
-        Returns: Json
-      }
+      get_clients_safe_security_status: { Args: never; Returns: Json }
+      get_public_profile_by_slug: { Args: { page_slug: string }; Returns: Json }
+      get_safe_booking_data: { Args: { page_slug: string }; Returns: Json }
       get_safe_clients: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           ativo: boolean
           avatar_url: string
@@ -1072,10 +1081,7 @@ export type Database = {
           view_accessed_at: string
         }[]
       }
-      get_security_summary: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      get_security_summary: { Args: never; Returns: Json }
       grant_user_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1109,26 +1115,14 @@ export type Database = {
         }
         Returns: undefined
       }
-      sanitize_medical_text: {
-        Args: { input_text: string }
-        Returns: string
-      }
-      sanitize_text: {
-        Args: { input_text: string }
-        Returns: string
-      }
-      secure_client_data_access_validator: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      sanitize_medical_text: { Args: { input_text: string }; Returns: string }
+      sanitize_text: { Args: { input_text: string }; Returns: string }
+      secure_client_data_access_validator: { Args: never; Returns: boolean }
       secure_client_query_validator: {
         Args: { requested_user_id: string }
         Returns: boolean
       }
-      send_session_reminders: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
-      }
+      send_session_reminders: { Args: never; Returns: undefined }
       update_client_medical_data: {
         Args: {
           p_client_id: string
@@ -1137,10 +1131,7 @@ export type Database = {
         }
         Returns: boolean
       }
-      validate_clients_safe_security: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
+      validate_clients_safe_security: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
