@@ -46,7 +46,7 @@ export const useAvatarUrl = (avatarPath: string | null | undefined) => {
           setIsLoading(false)
           retryCount = 0 // Reset retry count on success
         } else {
-          console.warn('[useAvatarUrl] ⚠️ Failed to generate signed URL, using original path')
+          console.warn('[useAvatarUrl] ⚠️ Failed to generate signed URL')
           
           // Retry logic for storage paths
           if (avatarPath.startsWith('user-uploads/') && retryCount < MAX_RETRIES) {
@@ -56,8 +56,16 @@ export const useAvatarUrl = (avatarPath: string | null | undefined) => {
             return
           }
           
-          setAvatarUrl(avatarPath)
-          setHasError(avatarPath.startsWith('http') && avatarPath.includes('supabase.co'))
+          // Only use external URLs directly, never use storage paths without signed URL
+          if (avatarPath.startsWith('http')) {
+            console.log('[useAvatarUrl] Using external URL directly:', avatarPath.substring(0, 50) + '...')
+            setAvatarUrl(avatarPath)
+            setHasError(avatarPath.includes('supabase.co')) // Mark supabase URLs as potential errors
+          } else {
+            console.error('[useAvatarUrl] ❌ Cannot use storage path without signed URL')
+            setAvatarUrl(null) // Don't use invalid paths
+            setHasError(true)
+          }
           setIsLoading(false)
         }
 

@@ -1,5 +1,7 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
+import { useAuth } from './useAuth'
+import { toast } from 'sonner'
 
 const VAPID_PUBLIC_KEY = 'BJ8nZ3cC9v6kNl0D_8gZ4xYq7TfE-2MnLp3rWsK5vQo8HjGf6Ud4Xe3TcRb2Yp1Qs7Vr9Zw0Xj5Kl8Nm6Oo4Pp2Qq3'
 
@@ -21,10 +23,18 @@ export const usePushSubscription = () => {
   const [isSubscribed, setIsSubscribed] = useState(false)
   const [loading, setLoading] = useState(false)
   const [permission, setPermission] = useState<NotificationPermission>('default')
+  const { user } = useAuth()
+  const autoSubscribeAttempted = useRef(false)
 
   useEffect(() => {
     // Check if Service Worker and Push are supported
     const supported = 'serviceWorker' in navigator && 'PushManager' in window
+    console.log('[usePushSubscription] Browser support check:', {
+      serviceWorker: 'serviceWorker' in navigator,
+      pushManager: 'PushManager' in window,
+      supported
+    })
+    
     setIsSupported(supported)
     
     if (supported && 'Notification' in window) {
@@ -34,7 +44,33 @@ export const usePushSubscription = () => {
     if (supported) {
       checkSubscription()
     }
-  }, [])
+  }, [user])
+
+  // Auto-subscribe if permission is already granted but no subscription exists
+  useEffect(() => {
+    const attemptAutoSubscribe = async () => {
+      if (
+        isSupported &&
+        permission === 'granted' &&
+        !isSubscribed &&
+        !loading &&
+        !autoSubscribeAttempted.current &&
+        user
+      ) {
+        console.log('[usePushSubscription] 🔄 Auto-subscribing (permission already granted)')
+        autoSubscribeAttempted.current = true
+        
+        try {
+          await subscribe()
+          console.log('[usePushSubscription] ✅ Auto-subscribe successful')
+        } catch (error) {
+          console.error('[usePushSubscription] ❌ Auto-subscribe failed:', error)
+        }
+      }
+    }
+
+    attemptAutoSubscribe()
+  }, [isSupported, permission, isSubscribed, loading, user])
 
   const checkSubscription = async () => {
     try {
@@ -63,16 +99,21 @@ export const usePushSubscription = () => {
     setLoading(true)
 
     try {
-      console.log('[usePushSubscription] Requesting notification permission...')
-      
-      // Request notification permission
-      const permissionResult = await Notification.requestPermission()
-      console.log('[usePushSubscription] Permission result:', permissionResult)
-      setPermission(permissionResult)
+      // Request notification permission (skip if already granted)
+      if (Notification.permission !== 'granted') {
+        console.log('[usePushSubscription] 📋 Requesting notification permission...')
+        const permissionResult = await Notification.requestPermission()
+        console.log('[usePushSubscription] Permission result:', permissionResult)
+        setPermission(permissionResult)
 
-      if (permissionResult !== 'granted') {
-        console.warn('[usePushSubscription] Permission denied')
-        return false
+        if (permissionResult !== 'granted') {
+          console.warn('[usePushSubscription] ⚠️ Permission not granted:', permissionResult)
+          toast.error('Permissão para notificações negada')
+          return false
+        }
+      } else {
+        console.log('[usePushSubscription] ✅ Permission already granted, proceeding...')
+        setPermission('granted')
       }
 
       console.log('[usePushSubscription] Getting service worker registration...')
