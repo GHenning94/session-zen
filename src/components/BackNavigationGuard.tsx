@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/hooks/useAuth'
 import {
   AlertDialog,
@@ -12,21 +12,31 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+const PUBLIC_ROUTES = ['/', '/login', '/signup']
+
 export function BackNavigationGuard() {
   const { signOut } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [showDialog, setShowDialog] = useState(false)
 
   useEffect(() => {
-    // Adicionar um estado na história para detectar navegação back
-    window.history.pushState({ authenticated: true }, '')
+    // Marcar o ponto de entrada na sessão autenticada
+    const sessionEntryMarker = 'app_session_entry'
+    
+    // Se ainda não marcamos a entrada da sessão, marcar agora
+    if (!sessionStorage.getItem(sessionEntryMarker)) {
+      sessionStorage.setItem(sessionEntryMarker, 'true')
+      // Adicionar um estado especial no histórico para marcar onde a sessão começou
+      window.history.pushState({ sessionBoundary: true }, '')
+    }
 
     const handlePopState = (event: PopStateEvent) => {
-      // Se o estado não tem a flag authenticated, significa que o usuário
-      // está tentando voltar para uma página pré-login
-      if (!event.state || !event.state.authenticated) {
-        // Prevenir a navegação adicionando o estado novamente
-        window.history.pushState({ authenticated: true }, '')
+      // Se encontrarmos o marcador de sessão, significa que o usuário
+      // está tentando voltar para antes do login
+      if (event.state && event.state.sessionBoundary) {
+        // Bloquear a navegação
+        window.history.pushState({ sessionBoundary: true }, '')
         // Mostrar o diálogo
         setShowDialog(true)
       }
@@ -41,13 +51,14 @@ export function BackNavigationGuard() {
 
   const handleConfirmLogout = async () => {
     setShowDialog(false)
+    // Limpar o marcador de sessão
+    sessionStorage.removeItem('app_session_entry')
     await signOut()
     navigate('/', { replace: true })
   }
 
   const handleCancelLogout = () => {
     setShowDialog(false)
-    // Não precisa fazer nada, já bloqueamos a navegação
   }
 
   return (
