@@ -31,6 +31,7 @@ import { PaymentDetailsModal } from "@/components/PaymentDetailsModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { calculatePaymentStatus } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
+import { PulsingDot } from "@/components/ui/pulsing-dot"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -664,12 +665,13 @@ const Pagamentos = () => {
                     <div className="space-y-4">
                       {futurePayments.map((payment) => {
                         const StatusIcon = getStatusIcon(payment.status)
+                        const needsAttention = payment.status === 'pendente' && new Date(payment.date) < new Date()
                         
                         return (
                            <div 
                              key={payment.id} 
                              className={cn(
-                               "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                               "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative",
                                highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
                              )}
                              onClick={() => {
@@ -677,6 +679,11 @@ const Pagamentos = () => {
                                setDetailsModalOpen(true)
                              }}
                            >
+                             {needsAttention && (
+                               <div className="absolute top-4 left-4">
+                                 <PulsingDot color="destructive" size="md" />
+                               </div>
+                             )}
                              <div className="flex items-center gap-4">
                                <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                                  <StatusIcon className="w-5 h-5 text-primary" />
@@ -731,12 +738,13 @@ const Pagamentos = () => {
                     <div className="space-y-4">
                       {pastPayments.map((payment) => {
                    const StatusIcon = getStatusIcon(payment.status)
+                   const needsAttention = payment.status === 'pendente' && new Date(payment.date) < new Date()
                    
                    return (
                     <div 
                       key={payment.id} 
                       className={cn(
-                        "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                        "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative",
                         highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
                       )}
                       onClick={() => {
@@ -744,6 +752,11 @@ const Pagamentos = () => {
                         setDetailsModalOpen(true)
                       }}
                     >
+                      {needsAttention && (
+                        <div className="absolute top-4 left-4">
+                          <PulsingDot color="destructive" size="md" />
+                        </div>
+                      )}
                        <div className="flex items-center gap-4">
                          <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                            <StatusIcon className="w-5 h-5 text-primary" />

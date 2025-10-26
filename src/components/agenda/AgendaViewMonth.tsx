@@ -7,6 +7,8 @@ import { cn, formatClientName } from "@/lib/utils"
 import { addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { formatTimeBR } from "@/utils/formatters"
+import { PulsingDot } from "@/components/ui/pulsing-dot"
+import { sessionNeedsAttention } from "@/utils/sessionStatusUtils"
 
 interface AgendaViewMonthProps {
   selectedDate: Date
@@ -148,7 +150,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                 <div className="space-y-1">
                   {daySessionsData.slice(0, 3).map((session) => {
                     // Verificar se a sessão precisa de atenção
-                    const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                    const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
                     
                     return (
                     <div
@@ -159,14 +161,18 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       className={cn(
                         "text-xs p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move border border-primary/20",
                         highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
-                        draggedSession === session.id && "opacity-50 scale-95",
-                        needsAttention && "animate-attention-pulse border-warning border-2"
+                        draggedSession === session.id && "opacity-50 scale-95"
                       )}
                       onClick={(e) => {
                         e.stopPropagation()
                         onEditSession(session)
                       }}
                     >
+                      {needsAttention && (
+                        <div className="absolute top-1 left-1 z-10">
+                          <PulsingDot color="warning" size="sm" />
+                        </div>
+                      )}
                       <div className="flex items-center gap-2 text-xs">
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3 flex-shrink-0" />

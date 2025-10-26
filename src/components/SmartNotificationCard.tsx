@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { 
   AlertCircle, 
   Package, 
@@ -32,9 +33,9 @@ const getIcon = (type: SmartNotification['type']) => {
     case 'package_ending':
       return <Package className="h-4 w-4" />
     case 'payment_overdue':
-      return <DollarSign className="h-4 w-4" />
+      return <PulsingDot color="destructive" size="md" />
     case 'recurring_next':
-      return <Repeat className="h-4 w-4" />
+      return <PulsingDot color="warning" size="md" />
     case 'client_inactive':
       return <Clock className="h-4 w-4" />
   }
@@ -75,7 +76,9 @@ export const SmartNotificationCard = ({ notifications }: SmartNotificationCardPr
             key={notification.id}
             className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
           >
-            <div className={`p-2 rounded-full ${
+            <div className={`p-2 rounded-full flex items-center justify-center ${
+              notification.type === 'payment_overdue' ? 'bg-destructive/10' :
+              notification.type === 'recurring_next' ? 'bg-warning/10' :
               notification.priority === 'high' ? 'bg-destructive/10 text-destructive' :
               notification.priority === 'medium' ? 'bg-warning/10 text-warning' :
               'bg-muted text-muted-foreground'
@@ -111,7 +114,7 @@ export const SmartNotificationCard = ({ notifications }: SmartNotificationCardPr
                 }}
                 className="shrink-0"
               >
-                {notification.actionLabel || 'Ver'}
+                Ver
                 <ArrowRight className="h-3 w-3 ml-1" />
               </Button>
             )}

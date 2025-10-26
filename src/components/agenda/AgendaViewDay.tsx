@@ -8,6 +8,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn, formatClientName } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
 import { useInterval } from 'react-use'
+import { PulsingDot } from '@/components/ui/pulsing-dot'
+import { sessionNeedsAttention } from '@/utils/sessionStatusUtils'
 
 interface Session {
   id: string
@@ -183,7 +185,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                 {hourSessions.length > 0 ? (
                   hourSessions.map((session) => {
                     // Verificar se a sessão precisa de atenção
-                    const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                    const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
                     
                     return (
                     <Card 
@@ -191,8 +193,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                       className={cn(
                         "relative group cursor-move transition-all hover:shadow-md", 
                         getStatusColor(session.status),
-                        highlightedSessionId === session.id && "animate-pulse-highlight",
-                        needsAttention && "animate-attention-pulse border-warning border-2"
+                        highlightedSessionId === session.id && "animate-pulse-highlight"
                       )}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
@@ -201,6 +202,11 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                         onEditSession(session)
                       }}
                     >
+                      {needsAttention && (
+                        <div className="absolute top-2 left-2 z-10">
+                          <PulsingDot color="warning" size="sm" />
+                        </div>
+                      )}
                       <CardContent className="p-2">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">

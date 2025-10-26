@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { cn, formatClientName } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
+import { PulsingDot } from '@/components/ui/pulsing-dot'
+import { sessionNeedsAttention } from '@/utils/sessionStatusUtils'
 
 interface Session {
   id: string
@@ -237,7 +239,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                         <div className="space-y-1">
                           {daySessions.map((session) => {
                             // Verificar se a sessão precisa de atenção
-                            const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                            const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
                             
                             return (
                             <Card 
@@ -245,8 +247,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                               className={cn(
                                 "cursor-move group relative transition-all hover:shadow-sm",
                                 getStatusColor(session.status),
-                                highlightedSessionId === session.id && "animate-pulse-highlight",
-                                needsAttention && "animate-attention-pulse border-warning border-2"
+                                highlightedSessionId === session.id && "animate-pulse-highlight"
                               )}
                               draggable
                               onDragStart={(e) => {
@@ -258,6 +259,11 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                 onEditSession(session)
                               }}
                             >
+                              {needsAttention && (
+                                <div className="absolute top-1 left-1 z-10">
+                                  <PulsingDot color="warning" size="sm" />
+                                </div>
+                              )}
                               <CardContent className="p-1.5">
                                 <div className="flex items-center gap-1">
                                   <div className="flex items-center gap-1">

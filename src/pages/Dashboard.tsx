@@ -9,6 +9,7 @@ import { NotificationPermissionBanner } from "@/components/NotificationPermissio
 import { PackageStatusCard } from "@/components/PackageStatusCard"
 import { PaymentStatusCard } from "@/components/PaymentStatusCard"
 import { SmartNotificationCard } from "@/components/SmartNotificationCard"
+import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { 
   Calendar, 
   Users, 
@@ -34,6 +35,7 @@ import { ActionableNotificationsBanner } from "@/components/ActionableNotificati
 import { TutorialButton } from "@/components/TutorialButton"
 import { TutorialModal } from "@/components/TutorialModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { cn } from "@/lib/utils"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -1067,25 +1069,34 @@ const Dashboard = () => {
                    const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
                    
                    return (
-                   <div 
+                   <Card 
                      key={session.id || index} 
-                     className={`flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer ${needsAttention ? 'animate-attention-pulse border-warning' : ''}`}
-                     onClick={() => navigate(`/agenda?highlight=${session.id}&date=${session.data}`)}
+                     className={cn(
+                       "p-4 hover:shadow-md transition-all cursor-pointer relative",
+                       needsAttention && "border-warning/30"
+                     )}
+                     onClick={() => navigate('/agenda')}
                    >
-                      <div className="flex items-center gap-4">
-                        <ClientAvatar 
-                          avatarPath={session.clients?.avatar_url}
-                          clientName={session.clients?.nome || 'Cliente'}
-                          size="lg"
-                        />
-                        <div>
-                          <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {formatTimeBR(session.horario)}
-                          </p>
-                          <p className="text-sm font-medium text-success">
-                            {formatCurrencyBR(session.valor || 0)}
-                          </p>
+                     {needsAttention && (
+                       <div className="absolute top-3 left-3">
+                         <PulsingDot color="warning" size="md" />
+                       </div>
+                     )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 flex-1">
+                          <ClientAvatar 
+                            avatarPath={session.clients?.avatar_url}
+                            clientName={session.clients?.nome || 'Cliente'}
+                            size="lg"
+                          />
+                          <div>
+                            <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {formatTimeBR(session.horario)}
+                            </p>
+                            <p className="text-sm font-medium text-success">
+                              {formatCurrencyBR(session.valor || 0)}
+                            </p>
                        </div>
                      </div>
                        <div className="text-right">
@@ -1108,6 +1119,7 @@ const Dashboard = () => {
                          </Badge>
                         </div>
                     </div>
+                   </Card>
                    )
                  }) : (
                   <div className="flex items-center justify-center h-full">

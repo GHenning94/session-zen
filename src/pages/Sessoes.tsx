@@ -20,11 +20,12 @@ import { SessionModal } from '@/components/SessionModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { formatClientName } from '@/lib/utils'
-import { calculateSessionStatus } from "@/utils/sessionStatusUtils"
+import { calculateSessionStatus, sessionNeedsAttention } from "@/utils/sessionStatusUtils"
 import { useNavigate } from 'react-router-dom'
 import { TextPreview } from '@/components/TextPreview'
 import { ClientAvatar } from '@/components/ClientAvatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { PulsingDot } from '@/components/ui/pulsing-dot'
 
 interface Session {
   id: string
@@ -620,12 +621,20 @@ export default function Sessoes() {
                           <div className="h-px bg-border flex-1" />
                         </div>
                         <div className="space-y-4">
-                          {futureSessions.map((session) => (
+                          {futureSessions.map((session) => {
+                            const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
+                            
+                            return (
                             <div 
                               key={session.id} 
-                              className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                              className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
                               onClick={() => handleSessionClick(session)}
                             >
+                              {needsAttention && (
+                                <div className="absolute top-4 left-4">
+                                  <PulsingDot color="warning" size="md" />
+                                </div>
+                              )}
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4 flex-1">
                                   <ClientAvatar 
@@ -675,7 +684,8 @@ export default function Sessoes() {
                                 </div>
                               </div>
                             </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     )}
@@ -691,12 +701,20 @@ export default function Sessoes() {
                           <div className="h-px bg-border flex-1" />
                         </div>
                         <div className="space-y-4">
-                          {pastSessions.map((session) => (
+                          {pastSessions.map((session) => {
+                            const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
+                            
+                            return (
                       <div 
                         key={session.id} 
-                        className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                        className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
                         onClick={() => handleSessionClick(session)}
                       >
+                        {needsAttention && (
+                          <div className="absolute top-4 left-4">
+                            <PulsingDot color="warning" size="md" />
+                          </div>
+                        )}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4 flex-1">
                             <ClientAvatar 
@@ -746,7 +764,8 @@ export default function Sessoes() {
                           </div>
                         </div>
                             </div>
-                          ))}
+                            )
+                          })}
                         </div>
                       </div>
                     )}
