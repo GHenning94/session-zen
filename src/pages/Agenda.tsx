@@ -16,7 +16,8 @@ import {
   ChevronLeft, 
   ChevronRight,
   RefreshCw,
-  Link
+  Link,
+  Repeat
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -252,13 +253,22 @@ const Agenda = () => {
               Gerencie seus agendamentos e sessões
             </p>
           </div>
-          <Button 
-            className="bg-gradient-primary hover:opacity-90"
-            onClick={() => setIsNewSessionOpen(true)}
-          >
-            <Plus className="w-4 w-4 mr-2" />
-            Nova Sessão
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => window.location.href = '/sessoes-recorrentes'}
+            >
+              <Repeat className="w-4 h-4 mr-2" />
+              Recorrências
+            </Button>
+            <Button 
+              className="bg-gradient-primary hover:opacity-90"
+              onClick={() => setIsNewSessionOpen(true)}
+            >
+              <Plus className="w-4 w-4 mr-2" />
+              Nova Sessão
+            </Button>
+          </div>
         </div>
 
         {/* Session Modal */}

@@ -29,6 +29,7 @@ import Sessoes from "@/pages/Sessoes";
 import PaginaPublica from "@/pages/PaginaPublica";
 import Integracoes from "@/pages/Integracoes";
 import Pacotes from "@/pages/Pacotes";
+import SessoesRecorrentes from "@/pages/SessoesRecorrentes";
 
 // Importações diretas para todas as páginas principais
 import Upgrade from "@/pages/Upgrade";
@@ -122,6 +123,11 @@ const App = () => (
                   <Route path="/pacotes" element={
                     <ProtectedRoute>
                       <Pacotes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/sessoes-recorrentes" element={
+                    <ProtectedRoute>
+                      <SessoesRecorrentes />
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracoes" element={

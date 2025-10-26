@@ -15,7 +15,8 @@ import {
   Plug,
   HelpCircle,
   Stethoscope,
-  Package
+  Package,
+  Repeat
 } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 
@@ -40,6 +41,7 @@ const menuItems = [
     { title: "Agenda", url: "/agenda", icon: Calendar },
     { title: "Clientes", url: "/clientes", icon: Users },
     { title: "Sessões", url: "/sessoes", icon: NotebookPen },
+    { title: "Sessões Recorrentes", url: "/sessoes-recorrentes", icon: Repeat },
     { title: "Pacotes", url: "/pacotes", icon: Package },
     { title: "Pagamentos", url: "/pagamentos", icon: CreditCard },
     { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
