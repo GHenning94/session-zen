@@ -276,6 +276,48 @@ const Pagamentos = () => {
     openPaymentModal(sessionId)
   }
 
+  const handleUpdatePaymentStatus = async (paymentId: string, status: string) => {
+    setIsLoading(true)
+    try {
+      // Verificar se é pagamento de pacote ou sessão
+      const payment = allPayments.find(p => p.id === paymentId)
+      
+      if (payment?.type === 'package') {
+        // Atualizar pagamento de pacote
+        const { error } = await supabase
+          .from('payments')
+          .update({ status })
+          .eq('id', paymentId)
+        
+        if (error) throw error
+      } else {
+        // Atualizar status da sessão
+        const { error } = await supabase
+          .from('sessions')
+          .update({ status: status === 'pago' ? 'realizada' : 'agendada' })
+          .eq('id', paymentId)
+        
+        if (error) throw error
+      }
+      
+      toast({
+        title: "Status Atualizado",
+        description: "O status do pagamento foi atualizado com sucesso.",
+      })
+      
+      await loadData()
+    } catch (error) {
+      console.error('Erro ao atualizar status:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar o status do pagamento.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   const handlePaymentConfirm = async (method: string) => {
     if (selectedSessionId) {
       await markAsPaid(selectedSessionId, method)
@@ -782,6 +824,7 @@ const Pagamentos = () => {
           onGenerateReceipt={handleGenerateReceipt}
           onViewSession={handleViewSession}
           onMarkAsPaid={handleMarkAsPaidFromModal}
+          onUpdatePaymentStatus={handleUpdatePaymentStatus}
         />
       </div>
     </Layout>

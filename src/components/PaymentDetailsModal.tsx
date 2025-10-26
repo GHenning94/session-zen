@@ -13,8 +13,11 @@ import {
   Banknote,
   Receipt,
   CheckCircle,
-  User
+  User,
+  Package
 } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
@@ -25,6 +28,7 @@ interface PaymentDetailsModalProps {
   onGenerateReceipt: (payment: any) => void
   onViewSession: (sessionId: string) => void
   onMarkAsPaid?: (sessionId: string) => void
+  onUpdatePaymentStatus?: (paymentId: string, status: string) => void
 }
 
 export const PaymentDetailsModal = ({
@@ -33,11 +37,15 @@ export const PaymentDetailsModal = ({
   payment,
   onGenerateReceipt,
   onViewSession,
-  onMarkAsPaid
+  onMarkAsPaid,
+  onUpdatePaymentStatus
 }: PaymentDetailsModalProps) => {
   const { avatarUrl } = useAvatarUrl(payment?.client_avatar)
+  const [selectedStatus, setSelectedStatus] = useState(payment?.status || 'pendente')
   
   if (!payment) return null
+
+  const isPackagePayment = payment.type === 'package' || payment.package_id || payment.package_name
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -81,7 +89,15 @@ export const PaymentDetailsModal = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <DialogTitle className="text-2xl">{payment.client}</DialogTitle>
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                {payment.client}
+                {isPackagePayment && (
+                  <Badge variant="info" className="text-[10px] px-2 py-0.5">
+                    <Package className="w-3 h-3 mr-1" />
+                    Pacote
+                  </Badge>
+                )}
+              </DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={getStatusColor(payment.status)}>
                   {getStatusLabel(payment.status)}
@@ -100,14 +116,28 @@ export const PaymentDetailsModal = ({
                 Detalhes do Pagamento
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isPackagePayment && payment.package_name && (
+                  <div className="col-span-2">
+                    <label className="text-sm text-muted-foreground">Pacote</label>
+                    <p className="font-medium">{payment.package_name}</p>
+                  </div>
+                )}
+                {isPackagePayment && payment.package_sessions && (
+                  <div>
+                    <label className="text-sm text-muted-foreground">Sessões</label>
+                    <p className="font-medium">{payment.package_sessions}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm text-muted-foreground">Data</label>
                   <p className="font-medium">{formatDateBR(payment.date)}</p>
                 </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Horário</label>
-                  <p className="font-medium">{formatTimeBR(payment.time)}</p>
-                </div>
+                {!isPackagePayment && payment.time && (
+                  <div>
+                    <label className="text-sm text-muted-foreground">Horário</label>
+                    <p className="font-medium">{formatTimeBR(payment.time)}</p>
+                  </div>
+                )}
                 <div>
                   <label className="text-sm text-muted-foreground">Valor</label>
                   <p className="font-medium text-lg">{formatCurrencyBR(payment.value)}</p>
@@ -119,6 +149,22 @@ export const PaymentDetailsModal = ({
                     <p className="font-medium capitalize">{payment.method}</p>
                   </div>
                 </div>
+                {onUpdatePaymentStatus && (
+                  <div>
+                    <label className="text-sm text-muted-foreground">Status</label>
+                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                      <SelectTrigger className="w-full mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                        <SelectItem value="pago">Pago</SelectItem>
+                        <SelectItem value="atrasado">Atrasado</SelectItem>
+                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -126,7 +172,7 @@ export const PaymentDetailsModal = ({
 
         {/* Ações */}
         <div className="flex flex-wrap gap-2 pt-4 border-t mt-6">
-          {payment.status === 'pago' && (
+          {payment.status === 'pago' && !isPackagePayment && (
             <Button
               variant="outline"
               onClick={() => {
@@ -140,19 +186,35 @@ export const PaymentDetailsModal = ({
             </Button>
           )}
 
-          <Button
-            variant="outline"
-            onClick={() => {
-              onViewSession(payment.session_id)
-              onOpenChange(false)
-            }}
-            className="flex items-center gap-2"
-          >
-            <Calendar className="w-4 h-4" />
-            Ver Sessão
-          </Button>
+          {!isPackagePayment && payment.session_id && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                onViewSession(payment.session_id)
+                onOpenChange(false)
+              }}
+              className="flex items-center gap-2"
+            >
+              <Calendar className="w-4 h-4" />
+              Ver Sessão
+            </Button>
+          )}
 
-          {(payment.status === 'pendente' || payment.status === 'atrasado') && onMarkAsPaid && (
+          {onUpdatePaymentStatus && selectedStatus !== payment.status && (
+            <Button
+              variant="default"
+              onClick={() => {
+                onUpdatePaymentStatus(payment.id, selectedStatus)
+                onOpenChange(false)
+              }}
+              className="flex items-center gap-2"
+            >
+              <CheckCircle className="w-4 h-4" />
+              Atualizar Status
+            </Button>
+          )}
+
+          {!onUpdatePaymentStatus && (payment.status === 'pendente' || payment.status === 'atrasado') && onMarkAsPaid && !isPackagePayment && (
             <Button
               variant="default"
               onClick={() => {

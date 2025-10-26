@@ -116,6 +116,34 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     checkSubscription()
   }, [user?.id])
 
+  // Listen to realtime changes in profile subscription_plan
+  useEffect(() => {
+    if (!user?.id) return
+
+    const channel = supabase
+      .channel('profile_subscription_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload: any) => {
+          console.log('🔔 Profile subscription updated:', payload.new.subscription_plan)
+          if (payload.new.subscription_plan) {
+            setCurrentPlan(payload.new.subscription_plan as SubscriptionPlan)
+          }
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [user?.id])
+
   const planLimits = PLAN_LIMITS[currentPlan]
 
   const canAddClient = (currentClientCount: number) => {
