@@ -80,6 +80,21 @@ const Signup = () => {
     setIsLoading(true)
 
     try {
+      // Verificar se o e-mail já está cadastrado
+      const { data: checkData, error: checkError } = await supabase.functions.invoke('check-email-exists', {
+        body: { email }
+      })
+      
+      if (checkData?.exists) {
+        toast({
+          title: "E-mail já cadastrado",
+          description: "Esta conta já está vinculada ao TherapyPro",
+          variant: "destructive",
+        })
+        setIsLoading(false)
+        return
+      }
+
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

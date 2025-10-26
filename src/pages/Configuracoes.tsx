@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { NotificationSettings } from "@/components/notifications/NotificationSettings"
 import { PaymentMethodCard } from "@/components/PaymentMethodCard"
 import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
+import { SubscriptionInvoices } from "@/components/SubscriptionInvoices"
 
 type AllSettings = Record<string, any>;
 
@@ -330,6 +331,9 @@ const Configuracoes = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Subscription Invoices */}
+            <SubscriptionInvoices />
           </TabsContent>
 
           <TabsContent value="bank-details" className="space-y-6">

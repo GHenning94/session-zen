@@ -75,5 +75,11 @@ verify_jwt = false
 [functions.push-broadcast]
 verify_jwt = false
 
+[functions.get-subscription-invoices]
+verify_jwt = true
+
+[functions.check-email-exists]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true

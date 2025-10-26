@@ -79,16 +79,20 @@ serve(async (req) => {
           if (userId) {
             // Determine plan based on subscription status and price
             let planName = "basico";
+            let planDisplayName = "Básico";
+            let amount = 0;
             
             if (subscription.status === "active" && subscription.items.data.length > 0) {
               const priceId = subscription.items.data[0].price.id;
               const price = await stripe.prices.retrieve(priceId);
-              const amount = price.unit_amount || 0;
+              amount = price.unit_amount || 0;
               
               if (amount <= 2999) {
                 planName = "pro";
+                planDisplayName = "Pro";
               } else {
                 planName = "premium";
+                planDisplayName = "Premium";
               }
             }
 
@@ -103,6 +107,28 @@ serve(async (req) => {
             if (error) {
               console.error("Error updating subscription:", error);
               throw error;
+            }
+
+            // Send renewal notification if this is an update (renewal)
+            if (event.type === "customer.subscription.updated" && subscription.status === "active") {
+              // Get user email
+              const { data: profile } = await supabase
+                .from("profiles")
+                .select("nome")
+                .eq("user_id", userId)
+                .single();
+
+              // Create notification
+              await supabase
+                .from("notifications")
+                .insert({
+                  user_id: userId,
+                  titulo: "Assinatura renovada com sucesso!",
+                  conteudo: `Sua assinatura do plano ${planDisplayName} foi renovada. Valor: R$ ${(amount / 100).toFixed(2)}. Obrigado por continuar conosco!`,
+                  lida: false
+                });
+
+              console.log(`[WEBHOOK] Sent renewal notification to user ${userId}`);
             }
 
             console.log(`[WEBHOOK] Updated user ${userId} subscription to ${planName}`);
