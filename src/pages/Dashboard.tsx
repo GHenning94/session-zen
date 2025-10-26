@@ -244,8 +244,6 @@ const Dashboard = () => {
     }
     
     try {
-      // Garantir loading mínimo de 500ms para exibir skeleton
-      const minLoadTime = shouldShowLoading ? new Promise(resolve => setTimeout(resolve, 500)) : Promise.resolve()
       const now = Date.now()
       const CACHE_TIMES = {
         upcomingSessions: 30000, // 30s
@@ -333,12 +331,26 @@ const Dashboard = () => {
       const paymentsData = paymentsDataResult.data
       const recentClientsData = recentClientsDataResult.data
 
-      // Dados do gráfico mensal - sempre buscar últimos 12 meses
-      if (!checkStale()) console.log('📊 Carregando dados do gráfico para 12 meses')
+      // ✅ OTIMIZAÇÃO: Buscar todos os dados de gráficos com UMA query ao invés de múltiplas
+      const oneYearAgo = new Date()
+      oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
+      const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0]
+      
+      // Buscar todas as sessões do último ano de uma vez
+      const { data: yearSessions } = await supabase
+        .from('sessions')
+        .select('valor, status, data')
+        .eq('user_id', user?.id)
+        .gte('data', oneYearAgoStr)
+        .not('valor', 'is', null)
+      
+      if (checkStale()) return
+      
+      // Processar dados do gráfico mensal em memória (muito mais rápido)
       const chartData = []
+      const ticketMedioData = []
       
       for (let i = 11; i >= 0; i--) {
-        if (checkStale()) return
         const date = new Date()
         date.setMonth(date.getMonth() - i)
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
@@ -347,31 +359,21 @@ const Dashboard = () => {
         const monthStartStr = monthStart.toISOString().split('T')[0]
         const monthEndStr = monthEnd.toISOString().split('T')[0]
         
-        if (checkStale()) return
-        if (!checkStale()) console.log('📅 Processando mês:', monthStartStr, 'até', monthEndStr)
+        // Filtrar sessões do mês em memória
+        const monthSessions = yearSessions?.filter(s => 
+          s.data >= monthStartStr && s.data <= monthEndStr && s.status === 'realizada'
+        ) || []
         
-        const { data: monthSessions } = await supabase
-          .from('sessions')
-          .select('valor')
-          .eq('user_id', user?.id)
-          .eq('status', 'realizada')
-          .gte('data', monthStartStr)
-          .lte('data', monthEndStr)
+        const monthPendingSessions = yearSessions?.filter(s => 
+          s.data >= monthStartStr && s.data <= monthEndStr && s.status === 'agendada'
+        ) || []
         
-        // Buscar sessões pendentes do mesmo período (inclui pendentes + atrasadas)
-        const { data: monthPendingSessions } = await supabase
-          .from('sessions')
-          .select('valor')
-          .eq('user_id', user?.id)
-          .in('status', ['agendada'])
-          .gte('data', monthStartStr)
-          .lte('data', monthEndStr)
+        const revenue = monthSessions.reduce((sum, session) => sum + (session.valor || 0), 0)
+        const pending = monthPendingSessions.reduce((sum, session) => sum + (session.valor || 0), 0)
         
-        if (checkStale()) return
-        if (!checkStale()) console.log(`💰 Sessões do mês ${date.getMonth() + 1}/${date.getFullYear()}:`, monthSessions)
-        const revenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-        const pending = monthPendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-        if (!checkStale()) console.log(`💰 Receita calculada: ${revenue}, Pendente: ${pending}`)
+        const totalRevenue = monthSessions.reduce((sum, session) => sum + (session.valor || 0), 0)
+        const totalSessions = monthSessions.length
+        const ticketMedio = totalSessions > 0 ? totalRevenue / totalSessions : 0
         
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -382,46 +384,6 @@ const Dashboard = () => {
           aReceber: pending,
           fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
-      }
-      if (checkStale()) return
-      if (!checkStale()) console.log('📊 Dados finais do gráfico:', chartData)
-
-      // Calcular dados de ticket médio ao longo do tempo
-      if (!checkStale()) console.log('📊 Carregando dados de ticket médio...')
-      const ticketMedioData = []
-      for (let i = 11; i >= 0; i--) {
-        if (checkStale()) return
-        const date = new Date()
-        date.setMonth(date.getMonth() - i)
-        const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
-        const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
-        
-        const monthStartStr = monthStart.toISOString().split('T')[0]
-        const monthEndStr = monthEnd.toISOString().split('T')[0]
-        
-        if (checkStale()) return
-        if (!checkStale()) console.log(`📊 Buscando ticket médio para ${monthStartStr} - ${monthEndStr}`)
-        
-        const { data: monthSessions } = await supabase
-          .from('sessions')
-          .select('valor')
-          .eq('user_id', user?.id)
-          .eq('status', 'realizada')
-          .gte('data', monthStartStr)
-          .lte('data', monthEndStr)
-          .not('valor', 'is', null)
-        
-        if (checkStale()) return
-        if (!checkStale()) console.log(`📊 Sessões encontradas para ticket médio:`, monthSessions)
-        
-        const totalRevenue = monthSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-        const totalSessions = monthSessions?.length || 0
-        const ticketMedio = totalSessions > 0 ? totalRevenue / totalSessions : 0
-        
-        if (!checkStale()) console.log(`📊 Ticket médio calculado: ${ticketMedio} (${totalSessions} sessões, ${totalRevenue} total)`)
-        
-        const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-        const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
         
         ticketMedioData.push({
           mes: monthNames[date.getMonth()],
@@ -432,7 +394,6 @@ const Dashboard = () => {
       }
       
       if (checkStale()) return
-      if (!checkStale()) console.log('📊 Dados finais de ticket médio:', ticketMedioData)
 
       const allClientsWithPayments = allClientsWithPaymentsResult.data
 
@@ -526,7 +487,8 @@ const Dashboard = () => {
         return remaining <= 2 && remaining > 0
       }).length
 
-      setPackageStats({
+      // Preparar dados de estatísticas de pacotes (não setar ainda)
+      const packageStatsData = {
         totalPackages: packagesData.length,
         activePackages: activePackages.length,
         totalSessions,
@@ -534,22 +496,22 @@ const Dashboard = () => {
         remainingSessions,
         totalRevenue: totalPackageRevenue,
         packagesNearEnd
-      })
+      }
 
-      // Calcular estatísticas de pagamentos
+      // Calcular estatísticas de pagamentos (não setar ainda)
       const allSessionsForPaymentStatus = allSessionsForPaymentStatusResult.data || []
       const paidSessions = allSessionsForPaymentStatus.filter(s => s.status === 'realizada')
       const pendingPaymentSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) >= new Date())
       const overdueSessionsForStats = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) < new Date())
 
-      setPaymentStats({
+      const paymentStatsData = {
         totalPaid: paidSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
         totalPending: pendingPaymentSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
         totalOverdue: overdueSessionsForStats.reduce((sum, s) => sum + (s.valor || 0), 0),
         paidCount: paidSessions.length,
         pendingCount: pendingPaymentSessions.length,
         overdueCount: overdueSessionsForStats.length
-      })
+      }
 
       // Gerar notificações inteligentes
       const notifications: any[] = []
@@ -589,7 +551,7 @@ const Dashboard = () => {
         })
       }
 
-      setSmartNotifications(notifications)
+      // Preparar notificações (não setar ainda)
 
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
@@ -642,13 +604,14 @@ const Dashboard = () => {
 
       if (checkStale()) return
 
-      setDashboardData({
+      // Preparar dashboard data (não setar ainda)
+      const dashboardDataPrepared = {
         sessionsToday: todaySessions?.length || 0,
         activeClients: clientsCount || 0,
         monthlyRevenue,
         pendingRevenue,
         completionRate: 94
-      })
+      }
 
       // Ordenar upcoming sessions e recent payments (futuras primeiro, depois passadas)
       const sortedUpcoming = (filteredUpcoming || []).sort((a, b) => {
@@ -691,6 +654,12 @@ const Dashboard = () => {
         }
       })
       
+      // ✅ ATUALIZAR TODOS OS ESTADOS DE UMA VEZ (BATCH UPDATE)
+      // Isso garante que todos os cards só aparecem quando os dados estão completos
+      setPackageStats(packageStatsData)
+      setPaymentStats(paymentStatsData)
+      setSmartNotifications(notifications)
+      setDashboardData(dashboardDataPrepared)
       setUpcomingSessions(sortedUpcoming)
       setRecentPayments(sortedPayments)
       setRecentClients(recentClientsData || [])
@@ -699,7 +668,7 @@ const Dashboard = () => {
       setTopClients(topClientsData)
       setClientTicketMedio(clientTicketMedioData)
       setReceitaPorCanal(receitaPorCanalData)
-      setCanalDataCache(receitaPorCanalData) // Cache all canal data for filtering
+      setCanalDataCache(receitaPorCanalData)
       setDynamicReminders(reminders)
       
       if (checkStale()) return
@@ -723,15 +692,12 @@ const Dashboard = () => {
         console.log('📊 Client Ticket Médio:', clientTicketMedioData.length, 'itens')
         console.log('💾 Dashboard cached successfully!')
       }
-      
-      // Aguardar tempo mínimo de loading antes de finalizar
-      if (shouldShowLoading) {
-        await minLoadTime
-      }
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
     } finally {
+      // Aguardar um tick para garantir que todos os estados foram atualizados
+      await new Promise(resolve => setTimeout(resolve, 100))
       if (shouldShowLoading) {
         setIsLoading(false)
       }
