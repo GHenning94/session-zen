@@ -594,6 +594,135 @@ export type Database = {
         }
         Relationships: []
       }
+      packages: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          sessoes_consumidas: number | null
+          status: string | null
+          total_sessoes: number
+          updated_at: string | null
+          user_id: string
+          valor_por_sessao: number | null
+          valor_total: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          sessoes_consumidas?: number | null
+          status?: string | null
+          total_sessoes: number
+          updated_at?: string | null
+          user_id: string
+          valor_por_sessao?: number | null
+          valor_total: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          sessoes_consumidas?: number | null
+          status?: string | null
+          total_sessoes?: number
+          updated_at?: string | null
+          user_id?: string
+          valor_por_sessao?: number | null
+          valor_total?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "packages_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          data_pagamento: string | null
+          data_vencimento: string | null
+          id: string
+          metodo_pagamento: string | null
+          observacoes: string | null
+          package_id: string | null
+          session_id: string | null
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          valor: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          id?: string
+          metodo_pagamento?: string | null
+          observacoes?: string | null
+          package_id?: string | null
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          valor: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string | null
+          id?: string
+          metodo_pagamento?: string | null
+          observacoes?: string | null
+          package_id?: string | null
+          session_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           agencia: string | null
@@ -726,6 +855,75 @@ export type Database = {
         }
         Relationships: []
       }
+      recurring_sessions: {
+        Row: {
+          client_id: string
+          created_at: string | null
+          dia_da_semana: number | null
+          google_calendar_sync: boolean | null
+          horario: string
+          id: string
+          parent_session_id: string | null
+          recurrence_count: number | null
+          recurrence_end_date: string | null
+          recurrence_interval: number | null
+          recurrence_type: string
+          status: string | null
+          updated_at: string | null
+          user_id: string
+          valor: number | null
+        }
+        Insert: {
+          client_id: string
+          created_at?: string | null
+          dia_da_semana?: number | null
+          google_calendar_sync?: boolean | null
+          horario: string
+          id?: string
+          parent_session_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_type: string
+          status?: string | null
+          updated_at?: string | null
+          user_id: string
+          valor?: number | null
+        }
+        Update: {
+          client_id?: string
+          created_at?: string | null
+          dia_da_semana?: number | null
+          google_calendar_sync?: boolean | null
+          horario?: string
+          id?: string
+          parent_session_id?: string | null
+          recurrence_count?: number | null
+          recurrence_end_date?: string | null
+          recurrence_interval?: number | null
+          recurrence_type?: string
+          status?: string | null
+          updated_at?: string | null
+          user_id?: string
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "recurring_sessions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_sessions_parent_session_id_fkey"
+            columns: ["parent_session_id"]
+            isOneToOne: false
+            referencedRelation: "sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       registration_tokens: {
         Row: {
           created_at: string
@@ -813,9 +1011,15 @@ export type Database = {
           client_id: string
           created_at: string | null
           data: string
+          google_event_id: string | null
+          google_sync_type: string | null
           horario: string
           id: string
+          is_modified: boolean | null
           metodo_pagamento: string | null
+          package_id: string | null
+          recurring_session_id: string | null
+          session_type: string | null
           status: string | null
           updated_at: string | null
           user_id: string
@@ -826,9 +1030,15 @@ export type Database = {
           client_id: string
           created_at?: string | null
           data: string
+          google_event_id?: string | null
+          google_sync_type?: string | null
           horario: string
           id?: string
+          is_modified?: boolean | null
           metodo_pagamento?: string | null
+          package_id?: string | null
+          recurring_session_id?: string | null
+          session_type?: string | null
           status?: string | null
           updated_at?: string | null
           user_id: string
@@ -839,9 +1049,15 @@ export type Database = {
           client_id?: string
           created_at?: string | null
           data?: string
+          google_event_id?: string | null
+          google_sync_type?: string | null
           horario?: string
           id?: string
+          is_modified?: boolean | null
           metodo_pagamento?: string | null
+          package_id?: string | null
+          recurring_session_id?: string | null
+          session_type?: string | null
           status?: string | null
           updated_at?: string | null
           user_id?: string
@@ -853,6 +1069,20 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_package_id_fkey"
+            columns: ["package_id"]
+            isOneToOne: false
+            referencedRelation: "packages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sessions_recurring_session_id_fkey"
+            columns: ["recurring_session_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_sessions"
             referencedColumns: ["id"]
           },
         ]

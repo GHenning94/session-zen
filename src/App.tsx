@@ -28,6 +28,7 @@ import Relatorios from "@/pages/Relatorios";
 import Sessoes from "@/pages/Sessoes";
 import PaginaPublica from "@/pages/PaginaPublica";
 import Integracoes from "@/pages/Integracoes";
+import Pacotes from "@/pages/Pacotes";
 
 // Importações diretas para todas as páginas principais
 import Upgrade from "@/pages/Upgrade";
@@ -116,6 +117,11 @@ const App = () => (
                   <Route path="/sessoes" element={
                     <ProtectedRoute>
                       <Sessoes />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/pacotes" element={
+                    <ProtectedRoute>
+                      <Pacotes />
                     </ProtectedRoute>
                   } />
                   <Route path="/configuracoes" element={
