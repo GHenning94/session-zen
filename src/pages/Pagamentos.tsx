@@ -157,7 +157,7 @@ const Pagamentos = () => {
         const client = clients.find(c => c.id === session.client_id)
         
         let method = session.metodo_pagamento || 'A definir'
-        if (status === 'pendente' || status === 'atrasado' || status === 'cancelado') {
+        if (status === 'pendente' || status === 'cancelado') {
           method = 'A definir'
         }
         
@@ -183,13 +183,6 @@ const Pagamentos = () => {
       
       // Calcular status do pagamento do pacote
       let status = payment.status || 'pendente'
-      if (payment.data_vencimento) {
-        const dueDate = new Date(payment.data_vencimento)
-        const today = new Date()
-        if (status === 'pendente' && dueDate < today) {
-          status = 'atrasado'
-        }
-      }
       
       return {
         id: payment.id,
@@ -411,24 +404,18 @@ const Pagamentos = () => {
     .filter(p => p.status === 'pendente')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
-  const totalOverdue = filteredPayments
-    .filter(p => p.status === 'atrasado')
-    .reduce((sum, p) => sum + (p.value || 0), 0)
-
   const totalCancelled = filteredPayments
     .filter(p => p.status === 'cancelado')
     .reduce((sum, p) => sum + (p.value || 0), 0)
 
   const paidCount = filteredPayments.filter(p => p.status === 'pago').length
   const pendingCount = filteredPayments.filter(p => p.status === 'pendente').length
-  const lateCount = filteredPayments.filter(p => p.status === 'atrasado').length
   const cancelledCount = filteredPayments.filter(p => p.status === 'cancelado').length
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'purple'
       case 'cancelado': return 'destructive'
       default: return 'warning'
     }
@@ -438,7 +425,6 @@ const Pagamentos = () => {
     switch (status) {
       case 'pago': return CheckCircle
       case 'pendente': return Clock
-      case 'atrasado': return AlertCircle
       default: return Clock
     }
   }
@@ -526,7 +512,7 @@ const Pagamentos = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Recebido</CardTitle>
@@ -552,17 +538,6 @@ const Pagamentos = () => {
               <p className="text-sm text-muted-foreground">{pendingCount} pagamentos pendentes</p>
             </CardContent>
           </Card>
-          
-          <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Atrasados</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-[hsl(var(--purple))]">{lateCount}</div>
-              <p className="text-sm text-muted-foreground">Pagamentos atrasados</p>
-            </CardContent>
-          </Card>
 
           <Card className="shadow-soft">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -582,7 +557,7 @@ const Pagamentos = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold text-primary">
-                {(paidCount + pendingCount + lateCount) > 0 ? ((paidCount / (paidCount + pendingCount + lateCount)) * 100).toFixed(1) : 0}%
+                {(paidCount + pendingCount) > 0 ? ((paidCount / (paidCount + pendingCount)) * 100).toFixed(1) : 0}%
               </div>
               <p className="text-sm text-muted-foreground">Pagamentos em dia</p>
             </CardContent>
@@ -632,7 +607,6 @@ const Pagamentos = () => {
                     <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="pago">Pagos</SelectItem>
                     <SelectItem value="pendente">Pendentes</SelectItem>
-                    <SelectItem value="atrasado">Atrasados</SelectItem>
                     <SelectItem value="cancelado">Cancelados</SelectItem>
                   </SelectContent>
                 </Select>

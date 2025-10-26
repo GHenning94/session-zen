@@ -40,11 +40,7 @@ export const calculatePaymentStatus = (sessionData: string, sessionHorario: stri
     return 'pago'
   }
   
-  // Se passou da data/hora e ainda não foi marcada como realizada
-  if (sessionDateTime < currentDateTime) {
-    return 'atrasado'
-  }
-  
+  // Pagamentos passados ou futuros devem ser marcados como pendentes
   return 'pendente'
 }
 
@@ -55,7 +51,6 @@ export const getPaymentStatusColor = (status: string) => {
   switch (status) {
     case 'pago': return 'success'
     case 'pendente': return 'warning'
-    case 'atrasado': return 'purple'
     case 'cancelado': return 'destructive'
     default: return 'outline'
   }

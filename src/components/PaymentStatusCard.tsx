@@ -1,16 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { DollarSign, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react'
+import { DollarSign, TrendingUp, CheckCircle } from 'lucide-react'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { useNavigate } from 'react-router-dom'
 
 interface PaymentStats {
   totalPaid: number
   totalPending: number
-  totalOverdue: number
   paidCount: number
   pendingCount: number
-  overdueCount: number
 }
 
 interface PaymentStatusCardProps {
@@ -19,7 +17,7 @@ interface PaymentStatusCardProps {
 
 export const PaymentStatusCard = ({ stats }: PaymentStatusCardProps) => {
   const navigate = useNavigate()
-  const totalRevenue = stats.totalPaid + stats.totalPending + stats.totalOverdue
+  const totalRevenue = stats.totalPaid + stats.totalPending
   const paidPercentage = totalRevenue > 0 
     ? Math.round((stats.totalPaid / totalRevenue) * 100) 
     : 0
@@ -47,7 +45,7 @@ export const PaymentStatusCard = ({ stats }: PaymentStatusCardProps) => {
           <p className="text-xs text-muted-foreground">Recebido ({stats.paidCount} pagos)</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 pt-2 border-t">
+        <div className="pt-2 border-t">
           <div className="space-y-1">
             <div className="flex items-center gap-1">
               <CheckCircle className="h-3 w-3 text-warning" />
@@ -58,19 +56,6 @@ export const PaymentStatusCard = ({ stats }: PaymentStatusCardProps) => {
             </p>
             <p className="text-xs text-muted-foreground">
               {stats.pendingCount} {stats.pendingCount === 1 ? 'pagamento' : 'pagamentos'}
-            </p>
-          </div>
-          
-          <div className="space-y-1">
-            <div className="flex items-center gap-1">
-              <AlertTriangle className="h-3 w-3 text-destructive" />
-              <p className="text-xs text-muted-foreground">Atrasado</p>
-            </div>
-            <p className="text-sm font-semibold text-destructive">
-              {formatCurrencyBR(stats.totalOverdue)}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              {stats.overdueCount} {stats.overdueCount === 1 ? 'pagamento' : 'pagamentos'}
             </p>
           </div>
         </div>

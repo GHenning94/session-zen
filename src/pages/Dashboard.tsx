@@ -74,10 +74,8 @@ const Dashboard = () => {
   const [paymentStats, setPaymentStats] = useState({
     totalPaid: 0,
     totalPending: 0,
-    totalOverdue: 0,
     paidCount: 0,
-    pendingCount: 0,
-    overdueCount: 0
+    pendingCount: 0
   })
   const [smartNotifications, setSmartNotifications] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -504,22 +502,20 @@ const Dashboard = () => {
       // Calcular estatísticas de pagamentos (não setar ainda)
       const allSessionsForPaymentStatus = allSessionsForPaymentStatusResult.data || []
       const paidSessions = allSessionsForPaymentStatus.filter(s => s.status === 'realizada')
-      const pendingPaymentSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) >= new Date())
+      const pendingPaymentSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada')
       const overdueSessionsForStats = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) < new Date())
 
       const paymentStatsData = {
         totalPaid: paidSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
         totalPending: pendingPaymentSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
-        totalOverdue: overdueSessionsForStats.reduce((sum, s) => sum + (s.valor || 0), 0),
         paidCount: paidSessions.length,
-        pendingCount: pendingPaymentSessions.length,
-        overdueCount: overdueSessionsForStats.length
+        pendingCount: pendingPaymentSessions.length
       }
 
       // Gerar notificações inteligentes
       const notifications: any[] = []
 
-      // Notificação: Pagamentos pendentes/atrasados
+      // Notificação: Pagamentos pendentes
       if (overdueSessionsForStats.length > 0) {
         const overdueAmount = overdueSessionsForStats.reduce((sum, s) => sum + (Number(s.valor) || 0), 0)
         notifications.push({
@@ -528,7 +524,7 @@ const Dashboard = () => {
           priority: 'high' as const,
           title: 'Pagamentos pendentes',
           message: `${overdueSessionsForStats.length} sessão${overdueSessionsForStats.length > 1 ? 'ões' : ''} com pagamento pendente`,
-          actionUrl: '/pagamentos?status=atrasado',
+          actionUrl: '/pagamentos?status=pendente',
           actionLabel: 'Ver Pagamentos',
           metadata: { count: overdueSessionsForStats.length, amount: overdueAmount }
         })
@@ -1145,13 +1141,10 @@ const Dashboard = () => {
                     const sessionDateTime = new Date(`${payment.data}T${payment.horario}`)
                     const currentDateTime = new Date()
                     
-                    // Status correto: se status da sessão é 'realizada', então está pago
-                    // Se não está realizada, verificar se já passou da hora para determinar se é atrasado
+                    // Status correto: se status da sessão é 'realizada', então está pago, caso contrário pendente
                     let displayStatus: string
                     if (payment.status === 'realizada') {
                       displayStatus = 'pago'
-                    } else if (sessionDateTime < currentDateTime) {
-                      displayStatus = 'atrasado'
                     } else {
                       displayStatus = 'pendente'
                     }
@@ -1160,7 +1153,6 @@ const Dashboard = () => {
         switch (status) {
           case 'pago': return 'success'
           case 'pendente': return 'warning'
-          case 'atrasado': return 'purple'
           default: return 'warning'
         }
       }
@@ -1182,7 +1174,7 @@ const Dashboard = () => {
                             variant={getStatusColor(displayStatus)}
                             className="text-xs"
                           >
-                            {displayStatus === 'pago' ? 'Pago' : displayStatus === 'atrasado' ? 'Atrasado' : 'Pendente'}
+                            {displayStatus === 'pago' ? 'Pago' : 'Pendente'}
                           </Badge>
                        </div>
                     </div>

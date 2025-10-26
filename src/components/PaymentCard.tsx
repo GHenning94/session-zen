@@ -7,8 +7,7 @@ import {
   CreditCard, 
   CheckCircle, 
   XCircle,
-  Clock,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import { Payment } from '@/hooks/usePayments';
 import { format } from 'date-fns';
@@ -35,13 +34,7 @@ const statusConfig = {
     icon: CheckCircle,
     color: 'text-green-600'
   },
-  atrasado: { 
-    label: 'Atrasado', 
-    variant: 'destructive' as const, 
-    icon: AlertCircle,
-    color: 'text-red-600'
-  },
-  cancelado: { 
+  cancelado: {
     label: 'Cancelado', 
     variant: 'secondary' as const, 
     icon: XCircle,

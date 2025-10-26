@@ -9,7 +9,7 @@ export interface Payment {
   package_id?: string | null;
   client_id: string;
   valor: number;
-  status: 'pendente' | 'pago' | 'atrasado' | 'cancelado' | 'reembolsado';
+  status: 'pendente' | 'pago' | 'cancelado' | 'reembolsado';
   metodo_pagamento?: string;
   data_vencimento?: string;
   data_pagamento?: string;
@@ -134,17 +134,9 @@ export const usePayments = () => {
     });
   };
 
-  const calculatePaymentStatus = (payment: Payment): 'pendente' | 'pago' | 'atrasado' | 'cancelado' | 'reembolsado' => {
+  const calculatePaymentStatus = (payment: Payment): 'pendente' | 'pago' | 'cancelado' | 'reembolsado' => {
     if (payment.status === 'pago' || payment.status === 'cancelado' || payment.status === 'reembolsado') {
       return payment.status;
-    }
-
-    if (payment.data_vencimento) {
-      const today = new Date();
-      const dueDate = new Date(payment.data_vencimento);
-      if (dueDate < today) {
-        return 'atrasado';
-      }
     }
 
     return 'pendente';

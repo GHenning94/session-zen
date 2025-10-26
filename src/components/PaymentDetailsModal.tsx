@@ -51,7 +51,6 @@ export const PaymentDetailsModal = ({
     switch (status) {
       case 'pago': return 'success'
       case 'pendente': return 'warning'
-      case 'atrasado': return 'purple'
       case 'cancelado': return 'destructive'
       default: return 'outline'
     }
@@ -61,7 +60,6 @@ export const PaymentDetailsModal = ({
     switch (status) {
       case 'pago': return 'Pago'
       case 'pendente': return 'Pendente'
-      case 'atrasado': return 'Atrasado'
       case 'cancelado': return 'Cancelado'
       default: return status
     }
@@ -159,7 +157,6 @@ export const PaymentDetailsModal = ({
                       <SelectContent>
                         <SelectItem value="pendente">Pendente</SelectItem>
                         <SelectItem value="pago">Pago</SelectItem>
-                        <SelectItem value="atrasado">Atrasado</SelectItem>
                         <SelectItem value="cancelado">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
@@ -214,7 +211,7 @@ export const PaymentDetailsModal = ({
             </Button>
           )}
 
-          {!onUpdatePaymentStatus && (payment.status === 'pendente' || payment.status === 'atrasado') && onMarkAsPaid && !isPackagePayment && (
+          {!onUpdatePaymentStatus && payment.status === 'pendente' && onMarkAsPaid && !isPackagePayment && (
             <Button
               variant="default"
               onClick={() => {
