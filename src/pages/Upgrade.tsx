@@ -29,7 +29,7 @@ export default function Upgrade() {
     if (!user || !plan.stripePrice) return
     setLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', { body: { priceId: plan.stripePrice } })
+      const { data, error } = await supabase.functions.invoke('create-checkout', { body: { priceId: plan.stripePrice, returnUrl: window.location.origin } })
       if (error) throw error
       if (data?.url) window.location.href = data.url
     } catch (error) {

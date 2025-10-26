@@ -55,7 +55,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: plan.stripePrice }
+        body: { priceId: plan.stripePrice, returnUrl: window.location.origin }
       });
 
       if (error) throw error;

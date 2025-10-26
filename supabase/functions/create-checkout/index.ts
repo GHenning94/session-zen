@@ -27,7 +27,7 @@ serve(async (req) => {
     
     if (!user) throw new Error("User not authenticated.");
 
-    const { priceId } = await req.json();
+    const { priceId, returnUrl } = await req.json();
 
     if (!priceId) throw new Error("priceId is required.");
     
@@ -41,12 +41,14 @@ serve(async (req) => {
       ? customers[0] 
       : await stripe.customers.create({ email: user.email, metadata: { user_id: user.id } });
 
+    const origin = (typeof returnUrl === 'string' && returnUrl.length > 0) ? returnUrl : SITE_URL;
+
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${SITE_URL}/dashboard?payment=success`,
-      cancel_url: `${SITE_URL}/dashboard`, // Redireciona para o Dashboard
+      success_url: `${origin}/dashboard?payment=success`,
+      cancel_url: `${origin}/dashboard`,
       metadata: { user_id: user.id }
     });
 

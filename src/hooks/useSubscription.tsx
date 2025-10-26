@@ -77,33 +77,40 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   // Começa como 'true' para esperar a verificação inicial
   const [isLoading, setIsLoading] = useState(true)
 
-  // Check subscription status
+  // Check subscription status (DB-first, Edge fallback)
   const checkSubscription = async () => {
     if (!user) {
       setCurrentPlan('basico')
-      setIsLoading(false) // Se não há usuário, terminamos de carregar
+      setIsLoading(false)
       return
     }
 
     setIsLoading(true)
     try {
-      console.log('🔄 Checking subscription status (Slow API call)...')
-      const { data, error } = await supabase.functions.invoke('check-subscription')
-      
-      if (error) {
-        console.error('Error checking subscription:', error)
-        setCurrentPlan('basico')
-        return // O finally vai setar isLoading(false)
+      // 1) Fast path: read from profiles.subscription_plan
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('subscription_plan')
+        .eq('user_id', user.id)
+        .single()
+
+      if (!profileError && profile?.subscription_plan) {
+        setCurrentPlan(profile.subscription_plan as SubscriptionPlan)
+        return
       }
 
-      console.log('✅ Subscription data:', data)
+      // 2) Fallback: call Stripe checker (may be slow)
+      console.log('🔄 Fallback: invoking check-subscription edge function...')
+      const { data, error } = await supabase.functions.invoke('check-subscription')
+      if (error) throw error
+
       if (data?.subscription_tier) {
         setCurrentPlan(data.subscription_tier as SubscriptionPlan)
       } else {
         setCurrentPlan('basico')
       }
     } catch (error) {
-      console.error('Error calling check-subscription:', error)
+      console.error('Error checking subscription:', error)
       setCurrentPlan('basico')
     } finally {
       setIsLoading(false)
