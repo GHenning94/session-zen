@@ -175,19 +175,17 @@ export const SessionDetailsModal = ({
             Ver na Agenda
           </Button>
 
-          {session.status !== 'cancelada' && session.status !== 'realizada' && (
-            <Button
-              variant="outline"
-              onClick={() => {
-                onEdit(session)
-                onOpenChange(false)
-              }}
-              className="flex items-center gap-2"
-            >
-              <Edit2 className="w-4 h-4" />
-              Editar
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            onClick={() => {
+              onEdit(session)
+              onOpenChange(false)
+            }}
+            className="flex items-center gap-2"
+          >
+            <Edit2 className="w-4 h-4" />
+            Editar
+          </Button>
           
           <Button
             variant="outline"
@@ -212,32 +210,6 @@ export const SessionDetailsModal = ({
             </Button>
           )}
 
-          {session.status === 'agendada' && (
-            <>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  onCancel(session.id)
-                  onOpenChange(false)
-                }}
-                className="flex items-center gap-2 text-destructive hover:text-destructive"
-              >
-                <X className="w-4 h-4" />
-                Cancelar
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  onMarkNoShow(session.id)
-                  onOpenChange(false)
-                }}
-                className="flex items-center gap-2 text-warning hover:text-warning"
-              >
-                <AlertTriangle className="w-4 h-4" />
-                Marcar Falta
-              </Button>
-            </>
-          )}
           
           <Button
             variant="destructive"
