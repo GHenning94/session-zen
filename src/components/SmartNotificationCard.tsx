@@ -104,7 +104,11 @@ export const SmartNotificationCard = ({ notifications }: SmartNotificationCardPr
               <Button
                 size="sm"
                 variant="ghost"
-                onClick={() => navigate(notification.actionUrl!)}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  navigate(notification.actionUrl!);
+                }}
                 className="shrink-0"
               >
                 {notification.actionLabel || 'Ver'}

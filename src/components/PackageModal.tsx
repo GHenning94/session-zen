@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect } from 'react';
 import { usePackages, Package } from '@/hooks/usePackages';
 import { Calendar } from '@/components/ui/calendar';
@@ -11,6 +12,9 @@ import { CalendarIcon, Package as PackageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
 interface PackageModalProps {
   open: boolean;
@@ -28,8 +32,10 @@ export const PackageModal = ({
   onSave 
 }: PackageModalProps) => {
   const { createPackage, updatePackage, loading } = usePackages();
+  const { user } = useAuth();
   
   const [formData, setFormData] = useState({
+    client_id: clientId || '',
     nome: '',
     total_sessoes: 10,
     valor_total: 0,
@@ -39,19 +45,50 @@ export const PackageModal = ({
     observacoes: ''
   });
 
+  // Carregar clientes
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, nome')
+        .eq('user_id', user!.id)
+        .order('nome');
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && open
+  });
+
   useEffect(() => {
-    if (packageToEdit) {
-      setFormData({
-        nome: packageToEdit.nome,
-        total_sessoes: packageToEdit.total_sessoes,
-        valor_total: packageToEdit.valor_total,
-        valor_por_sessao: packageToEdit.valor_por_sessao || 0,
-        data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
-        data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
-        observacoes: packageToEdit.observacoes || ''
-      });
+    if (open) {
+      if (packageToEdit) {
+        setFormData({
+          client_id: packageToEdit.client_id,
+          nome: packageToEdit.nome,
+          total_sessoes: packageToEdit.total_sessoes,
+          valor_total: packageToEdit.valor_total,
+          valor_por_sessao: packageToEdit.valor_por_sessao || 0,
+          data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
+          data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
+          observacoes: packageToEdit.observacoes || ''
+        });
+      } else {
+        // Reset ao abrir para novo
+        setFormData({
+          client_id: clientId || '',
+          nome: '',
+          total_sessoes: 10,
+          valor_total: 0,
+          valor_por_sessao: 0,
+          data_inicio: undefined,
+          data_fim: undefined,
+          observacoes: ''
+        });
+      }
     }
-  }, [packageToEdit]);
+  }, [packageToEdit, clientId, open]);
 
   useEffect(() => {
     // Calcular valor por sessão automaticamente
@@ -66,14 +103,19 @@ export const PackageModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!clientId && !packageToEdit) {
+    // Validação de campos obrigatórios
+    if (!formData.client_id) {
+      return;
+    }
+    
+    if (!formData.nome || formData.total_sessoes <= 0 || formData.valor_total <= 0) {
       return;
     }
 
     try {
       const data = {
         ...formData,
-        client_id: clientId || packageToEdit?.client_id || '',
+        client_id: formData.client_id,
         data_inicio: formData.data_inicio?.toISOString().split('T')[0],
         data_fim: formData.data_fim?.toISOString().split('T')[0]
       };
@@ -89,6 +131,7 @@ export const PackageModal = ({
       
       // Reset form
       setFormData({
+        client_id: '',
         nome: '',
         total_sessoes: 10,
         valor_total: 0,
@@ -114,6 +157,27 @@ export const PackageModal = ({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
+            {/* Cliente */}
+            <div className="col-span-2">
+              <Label htmlFor="client_id">Cliente *</Label>
+              <Select
+                value={formData.client_id}
+                onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+                disabled={!!packageToEdit} // Não permite trocar cliente em edição
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      {client.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="col-span-2">
               <Label htmlFor="nome">Nome do Pacote</Label>
               <Input

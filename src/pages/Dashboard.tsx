@@ -269,6 +269,7 @@ const Dashboard = () => {
         packagesDataResult,
         allSessionsForPaymentStatusResult
       ] = await Promise.all([
+        // Buscar TODAS as sessões de hoje, sem considerar horário para filtro inicial
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
@@ -296,12 +297,8 @@ const Dashboard = () => {
       const nowDate = new Date()
       
       const upcomingData = upcomingDataResult.data
-      const filteredUpcoming = upcomingData?.filter(session => {
-        // Criar datetime completo da sessão para comparação precisa
-        const sessionDateTime = new Date(`${session.data}T${session.horario}`)
-        // Comparar com o momento atual
-        return sessionDateTime >= nowDate
-      }).slice(0, 4)
+      // Manter todas as sessões agendadas sem filtro de horário - o backend já filtra por data >= today
+      const filteredUpcoming = upcomingData?.slice(0, 4)
       
       const paymentsData = paymentsDataResult.data
       const recentClientsData = recentClientsDataResult.data
