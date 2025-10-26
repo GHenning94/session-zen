@@ -43,13 +43,22 @@ serve(async (req) => {
 
     const origin = (typeof returnUrl === 'string' && returnUrl.length > 0) ? returnUrl : SITE_URL;
 
+    // Determine plan name from priceId
+    let planName = "pro";
+    if (priceId.includes("premium") || priceId === "price_1RoxpDFeTymAqTGEWg0sS49i") {
+      planName = "premium";
+    }
+
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       success_url: `${origin}/dashboard?payment=success`,
       cancel_url: `${origin}/dashboard`,
-      metadata: { user_id: user.id }
+      metadata: { 
+        user_id: user.id,
+        plan_name: planName
+      }
     });
 
     if (!session.url) throw new Error("Failed to create Stripe session URL.");

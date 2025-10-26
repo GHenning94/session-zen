@@ -72,33 +72,42 @@ serve(async (req) => {
         const subscription = event.data.object as Stripe.Subscription;
         const customer = await stripe.customers.retrieve(subscription.customer as string);
         
-        // Security: Validate customer email format
-        if (customer && !customer.deleted && customer.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
-          const isActive = subscription.status === "active";
-          const planName = isActive ? "pro" : "basico"; // Downgrade para básico se cancelar
+        if (customer && !customer.deleted) {
+          // Get user_id from customer metadata (set during customer creation)
+          const userId = customer.metadata?.user_id;
+          
+          if (userId) {
+            // Determine plan based on subscription status and price
+            let planName = "basico";
+            
+            if (subscription.status === "active" && subscription.items.data.length > 0) {
+              const priceId = subscription.items.data[0].price.id;
+              const price = await stripe.prices.retrieve(priceId);
+              const amount = price.unit_amount || 0;
+              
+              if (amount <= 2999) {
+                planName = "pro";
+              } else {
+                planName = "premium";
+              }
+            }
 
-          // Find user by email and update plan
-          const { data: profile, error: findError } = await supabase
-            .from("profiles")
-            .select("user_id")
-            .eq("email", customer.email)
-            .single();
-
-          if (!findError && profile) {
             const { error } = await supabase
               .from("profiles")
               .update({ 
                 subscription_plan: planName,
                 updated_at: new Date().toISOString()
               })
-              .eq("user_id", profile.user_id);
+              .eq("user_id", userId);
 
             if (error) {
               console.error("Error updating subscription:", error);
               throw error;
             }
 
-            console.log(`Updated subscription for ${customer.email} to ${planName}`);
+            console.log(`[WEBHOOK] Updated user ${userId} subscription to ${planName}`);
+          } else {
+            console.error("[WEBHOOK] No user_id found in customer metadata");
           }
         }
         break;
