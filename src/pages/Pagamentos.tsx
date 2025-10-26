@@ -45,6 +45,7 @@ const Pagamentos = () => {
   const [sessions, setSessions] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [profiles, setProfiles] = useState<any[]>([])
+  const [packagePayments, setPackagePayments] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -80,6 +81,12 @@ const Pagamentos = () => {
         .eq('user_id', user.id)
         .not('package_id', 'is', null)
         .order('data_vencimento', { ascending: false })
+      
+      if (paymentsError) {
+        console.error('Erro ao carregar pagamentos de pacotes:', paymentsError)
+      } else {
+        setPackagePayments(paymentsData || [])
+      }
       
       // Carregar clientes
       const { data: clientsData, error: clientsError } = await supabase
@@ -142,7 +149,7 @@ const Pagamentos = () => {
   }
 
   const getSessionPayments = () => {
-    // Sessões individuais e de pacotes
+    // Sessões individuais (excluir sessões de pacotes)
     const sessionPayments = sessions
       .filter(session => !session.package_id) // Apenas sessões avulsas
       .map(session => {
@@ -164,11 +171,44 @@ const Pagamentos = () => {
           status: status,
           method: method,
           session_id: session.id,
-          session_status: session.status
+          session_status: session.status,
+          type: 'session'
         }
       })
     
-    return sessionPayments
+    // Pagamentos de pacotes (um pagamento único por pacote)
+    const packagePaymentsList = packagePayments.map(payment => {
+      const client = clients.find(c => c.id === payment.client_id)
+      const packageInfo = payment.packages
+      
+      // Calcular status do pagamento do pacote
+      let status = payment.status || 'pendente'
+      if (payment.data_vencimento) {
+        const dueDate = new Date(payment.data_vencimento)
+        const today = new Date()
+        if (status === 'pendente' && dueDate < today) {
+          status = 'atrasado'
+        }
+      }
+      
+      return {
+        id: payment.id,
+        client: getClientName(payment.client_id),
+        client_avatar: client?.avatar_url,
+        date: payment.data_vencimento || new Date().toISOString().split('T')[0],
+        time: '00:00:00', // Pacotes não têm horário específico
+        value: payment.valor || 0,
+        status: status,
+        method: payment.metodo_pagamento || 'A definir',
+        payment_id: payment.id,
+        package_id: payment.package_id,
+        package_name: packageInfo?.nome || 'Pacote',
+        package_sessions: `${packageInfo?.sessoes_consumidas || 0}/${packageInfo?.total_sessoes || 0}`,
+        type: 'package'
+      }
+    })
+    
+    return [...sessionPayments, ...packagePaymentsList]
   }
 
   const markAsPaid = async (sessionId: string, paymentMethod: string) => {
@@ -606,48 +646,52 @@ const Pagamentos = () => {
                         const StatusIcon = getStatusIcon(payment.status)
                         
                         return (
-                          <div 
-                            key={payment.id} 
-                            className={cn(
-                              "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
-                              highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
-                            )}
-                            onClick={() => {
-                              setSelectedPayment(payment)
-                              setDetailsModalOpen(true)
-                            }}
-                          >
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                                <StatusIcon className="w-5 h-5 text-primary" />
-                              </div>
-                              <div className="flex-1">
-                                <h3 className="font-medium">{payment.client}</h3>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                                  <div className="flex items-center gap-1">
-                                    <Calendar className="w-3 h-3" />
-                                    <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
-                                  </div>
-                                  <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                                    {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div className="flex items-center gap-4">
-                              <div className="text-right">
-                                <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                                  {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
-                                  {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
-                                  {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
-                                  {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
-                                  <span className="capitalize">{payment.method}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
+                           <div 
+                             key={payment.id} 
+                             className={cn(
+                               "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                               highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                             )}
+                             onClick={() => {
+                               setSelectedPayment(payment)
+                               setDetailsModalOpen(true)
+                             }}
+                           >
+                             <div className="flex items-center gap-4">
+                               <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
+                                 <StatusIcon className="w-5 h-5 text-primary" />
+                               </div>
+                               <div className="flex-1">
+                                 <h3 className="font-medium">{payment.client}</h3>
+                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                   <div className="flex items-center gap-1">
+                                     <Calendar className="w-3 h-3" />
+                                     {payment.type === 'package' ? (
+                                       <span>{formatDateBR(payment.date)} • {payment.package_name} ({payment.package_sessions})</span>
+                                     ) : (
+                                       <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                                     )}
+                                   </div>
+                                   <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                                     {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                   </Badge>
+                                 </div>
+                               </div>
+                             </div>
+                             
+                             <div className="flex items-center gap-4">
+                               <div className="text-right">
+                                 <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
+                                 <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                   {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
+                                   {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
+                                   {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
+                                   {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
+                                   <span className="capitalize">{payment.method}</span>
+                                 </div>
+                               </div>
+                             </div>
+                           </div>
                         )
                       })}
                     </div>
@@ -669,48 +713,52 @@ const Pagamentos = () => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
                    return (
-                   <div 
-                     key={payment.id} 
-                     className={cn(
-                       "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
-                       highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
-                     )}
-                     onClick={() => {
-                       setSelectedPayment(payment)
-                       setDetailsModalOpen(true)
-                     }}
-                   >
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                          <StatusIcon className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium">{payment.client}</h3>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="w-3 h-3" />
-                              <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
-                            </div>
-                            <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                              {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center gap-4">
-                        <div className="text-right">
-                          <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-1">
-                            {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
-                            {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
-                            {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
-                            {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
-                            <span className="capitalize">{payment.method}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                    <div 
+                      key={payment.id} 
+                      className={cn(
+                        "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer",
+                        highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                      )}
+                      onClick={() => {
+                        setSelectedPayment(payment)
+                        setDetailsModalOpen(true)
+                      }}
+                    >
+                       <div className="flex items-center gap-4">
+                         <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
+                           <StatusIcon className="w-5 h-5 text-primary" />
+                         </div>
+                         <div className="flex-1">
+                           <h3 className="font-medium">{payment.client}</h3>
+                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                             <div className="flex items-center gap-1">
+                               <Calendar className="w-3 h-3" />
+                               {payment.type === 'package' ? (
+                                 <span>{formatDateBR(payment.date)} • {payment.package_name} ({payment.package_sessions})</span>
+                               ) : (
+                                 <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
+                               )}
+                             </div>
+                             <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                             </Badge>
+                           </div>
+                         </div>
+                       </div>
+                       
+                       <div className="flex items-center gap-4">
+                         <div className="text-right">
+                           <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
+                           <div className="text-xs text-muted-foreground flex items-center gap-1">
+                             {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
+                             {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
+                             {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
+                             {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
+                             <span className="capitalize">{payment.method}</span>
+                           </div>
+                         </div>
+                       </div>
+                     </div>
                         )
                       })}
                     </div>
