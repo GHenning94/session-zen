@@ -59,19 +59,11 @@ serve(async (req) => {
         user_id: user.id,
         plan_name: planName
       },
-      // Customização visual do checkout
-      ui_mode: 'hosted',
       locale: 'pt-BR',
       custom_text: {
         submit: {
           message: 'Ao confirmar, você concorda com os Termos de Serviço do TherapyPro'
         }
-      },
-      // Personalização de aparência
-      payment_method_options: {
-        card: {
-          setup_future_usage: 'off_session',
-        },
       },
     });
 
