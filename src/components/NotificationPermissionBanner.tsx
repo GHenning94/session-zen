@@ -10,14 +10,8 @@ export const NotificationPermissionBanner = () => {
   const { subscribe: subscribePush, isSupported: pushSupported } = usePushSubscription();
 
   useEffect(() => {
-    // Only show if notifications are supported and permission is not granted
-    if (isSupported && permission === 'default') {
-      // Show after 3 seconds
-      const timer = setTimeout(() => {
-        setShow(true);
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
+    // Banner disabled due to push service errors
+    // Users can enable notifications via settings
   }, [isSupported, permission]);
 
   const handleAllow = async () => {
@@ -44,6 +38,10 @@ export const NotificationPermissionBanner = () => {
     return null;
   }
 
+  // Banner permanently disabled
+  return null;
+
+  /* Disabled due to push service configuration issues
   if (!show || !isSupported || permission !== 'default') {
     return null;
   }
@@ -89,4 +87,5 @@ export const NotificationPermissionBanner = () => {
       </div>
     </div>
   );
+  */
 };

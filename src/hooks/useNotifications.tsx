@@ -52,63 +52,15 @@ export const useNotifications = () => {
     }
   }, [user])
 
-  // Polling for background tabs
+  // Polling for background tabs (DISABLED - using realtime only)
   const startBackgroundPolling = useCallback(() => {
-    if (pollingIntervalRef.current) return
-
-    console.log('[useNotifications] Starting background polling')
-    pollingIntervalRef.current = setInterval(async () => {
-      if (!user || document.visibilityState === 'visible') return
-
-      try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('data', { ascending: false })
-          .limit(10)
-
-        if (error) {
-          console.error('[useNotifications] Error in background polling:', error)
-          return
-        }
-
-        const newNotifications = (data || []).filter(
-          (n: Notification) => !seenNotificationIds.current.has(n.id)
-        )
-
-        if (newNotifications.length > 0) {
-          console.log('[useNotifications] Found new notifications in background:', newNotifications.length)
-          
-          // Add to seen IDs
-          newNotifications.forEach((n: Notification) => seenNotificationIds.current.add(n.id))
-          
-          // Update state
-          setNotifications((prev) => {
-            const updated = [...newNotifications, ...prev]
-            return updated.slice(0, 50) // Keep only 50 most recent
-          })
-          setUnreadCount((prev) => prev + newNotifications.filter((n: Notification) => !n.lida).length)
-          
-          // Show push notifications for unread
-          newNotifications
-            .filter((n: Notification) => !n.lida)
-            .forEach((n: Notification) => {
-              showNotification(n.titulo, n.conteudo)
-            })
-        }
-      } catch (error) {
-        console.error('[useNotifications] Error in background polling:', error)
-      }
-    }, 25000) // Poll every 25 seconds when in background
+    // Polling disabled - realtime handles everything
+    return
   }, [user, showNotification])
 
   const stopBackgroundPolling = useCallback(() => {
-    if (pollingIntervalRef.current) {
-      console.log('[useNotifications] Stopping background polling')
-      clearInterval(pollingIntervalRef.current)
-      pollingIntervalRef.current = null
-    }
+    // Polling disabled
+    return
   }, [])
 
   // Set up realtime subscription
@@ -179,33 +131,21 @@ export const useNotifications = () => {
     }
   }, [user, showNotification, loadNotifications, stopBackgroundPolling])
 
-  // Handle visibility changes for polling and reconciliation
+  // Handle visibility changes for reconciliation only (no polling)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible') {
-        console.log('[useNotifications] Tab visible, stopping polling and reloading')
-        stopBackgroundPolling()
-        if (user) {
-          loadNotifications()
-        }
-      } else {
-        console.log('[useNotifications] Tab hidden, starting background polling')
-        startBackgroundPolling()
+      if (document.visibilityState === 'visible' && user) {
+        console.log('[useNotifications] Tab visible, reloading notifications')
+        loadNotifications()
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
-    // Start polling if already hidden
-    if (document.visibilityState !== 'visible') {
-      startBackgroundPolling()
-    }
-
     return () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange)
-      stopBackgroundPolling()
     }
-  }, [user, loadNotifications, startBackgroundPolling, stopBackgroundPolling])
+  }, [user, loadNotifications])
 
   // Auto-marcar notificações como lidas quando o dropdown abrir
   const markVisibleAsRead = async () => {

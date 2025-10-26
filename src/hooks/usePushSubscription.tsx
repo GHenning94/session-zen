@@ -48,30 +48,9 @@ export const usePushSubscription = () => {
     }
   }, [user])
 
-  // Auto-subscribe if permission is already granted but no subscription exists
+  // Auto-subscribe disabled to prevent errors - user must click to enable
   useEffect(() => {
-    const attemptAutoSubscribe = async () => {
-      if (
-        isSupported &&
-        permission === 'granted' &&
-        !isSubscribed &&
-        !loading &&
-        !autoSubscribeAttempted.current &&
-        user
-      ) {
-        console.log('[usePushSubscription] 🔄 Auto-subscribing (permission already granted)')
-        autoSubscribeAttempted.current = true
-        
-        try {
-          await subscribe()
-          console.log('[usePushSubscription] ✅ Auto-subscribe successful')
-        } catch (error) {
-          console.error('[usePushSubscription] ❌ Auto-subscribe failed:', error)
-        }
-      }
-    }
-
-    attemptAutoSubscribe()
+    // Auto-subscribe disabled
   }, [isSupported, permission, isSubscribed, loading, user])
 
   const checkSubscription = async () => {
@@ -214,6 +193,19 @@ export const usePushSubscription = () => {
       if (error instanceof Error) {
         console.error('[usePushSubscription] Error message:', error.message)
         console.error('[usePushSubscription] Error stack:', error.stack)
+        
+        // Provide user-friendly error messages
+        if (error.message.includes('Registration failed')) {
+          toast.error(
+            'Erro ao registrar notificações. Verifique se o navegador suporta push notifications.',
+            { duration: 6000 }
+          )
+        } else if (error.message.includes('subscription')) {
+          toast.error(
+            'Erro ao criar inscrição de notificações. Tente novamente.',
+            { duration: 4000 }
+          )
+        }
       }
       return false
     } finally {

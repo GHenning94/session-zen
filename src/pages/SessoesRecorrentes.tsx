@@ -21,6 +21,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -34,6 +40,8 @@ export default function SessoesRecorrentes() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRecurring, setSelectedRecurring] = useState<any>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
+  const [showClientSelector, setShowClientSelector] = useState(false)
+  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
 
   // Carregar sessões recorrentes
   const { data: recurringSessions = [], refetch } = useQuery({
@@ -51,6 +59,22 @@ export default function SessoesRecorrentes() {
         `)
         .eq('user_id', user!.id)
         .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!user
+  })
+
+  // Carregar clientes
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, nome')
+        .eq('user_id', user!.id)
+        .order('nome')
       
       if (error) throw error
       return data || []
@@ -96,6 +120,25 @@ export default function SessoesRecorrentes() {
   const handleSave = () => {
     refetch()
     setSelectedRecurring(null)
+    setSelectedClientId(null)
+  }
+
+  const handleOpenNewRecurring = () => {
+    if (clients.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Nenhum cliente cadastrado',
+        description: 'Cadastre um cliente antes de criar uma recorrência.',
+      })
+      return
+    }
+    setShowClientSelector(true)
+  }
+
+  const handleSelectClient = (clientId: string) => {
+    setSelectedClientId(clientId)
+    setShowClientSelector(false)
+    setIsModalOpen(true)
   }
 
   const getRecurrenceDescription = (recurring: any) => {
@@ -149,7 +192,7 @@ export default function SessoesRecorrentes() {
             </p>
           </div>
           
-          <Button onClick={() => setIsModalOpen(true)} size="lg">
+          <Button onClick={handleOpenNewRecurring} size="lg">
             <Plus className="h-4 w-4 mr-2" />
             Nova Recorrência
           </Button>
@@ -163,7 +206,7 @@ export default function SessoesRecorrentes() {
               <p className="text-muted-foreground mb-4">
                 Configure sessões que se repetem automaticamente
               </p>
-              <Button onClick={() => setIsModalOpen(true)}>
+              <Button onClick={handleOpenNewRecurring}>
                 <Plus className="h-4 w-4 mr-2" />
                 Criar primeira recorrência
               </Button>
@@ -236,13 +279,38 @@ export default function SessoesRecorrentes() {
           </div>
         )}
 
+        <Dialog open={showClientSelector} onOpenChange={setShowClientSelector}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Selecione o Cliente</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {clients.map((client) => (
+                <Button
+                  key={client.id}
+                  variant="outline"
+                  className="w-full justify-start"
+                  onClick={() => handleSelectClient(client.id)}
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  {client.nome}
+                </Button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
+
         <RecurringSessionModal
           open={isModalOpen}
           onOpenChange={(open) => {
             setIsModalOpen(open)
-            if (!open) setSelectedRecurring(null)
+            if (!open) {
+              setSelectedRecurring(null)
+              setSelectedClientId(null)
+            }
           }}
           recurringSession={selectedRecurring}
+          clientId={selectedClientId || undefined}
           onSave={handleSave}
         />
 
