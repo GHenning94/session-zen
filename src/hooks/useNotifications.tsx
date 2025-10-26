@@ -22,6 +22,8 @@ export const useNotifications = () => {
   const [loading, setLoading] = useState(true)
   const seenNotificationIds = useRef(new Set<string>())
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
+  const isSubscribedRef = useRef(false)
+  const visibilityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   const loadNotifications = useCallback(async () => {
     if (!user) return
@@ -66,7 +68,16 @@ export const useNotifications = () => {
   // Set up realtime subscription
   useEffect(() => {
     if (!user) return
+    
+    // Prevent multiple subscriptions
+    if (isSubscribedRef.current) {
+      console.log('[useNotifications] Already subscribed, skipping')
+      return
+    }
 
+    console.log('[useNotifications] Initializing subscription')
+    isSubscribedRef.current = true
+    
     loadNotifications()
 
     const channel = supabase
@@ -126,26 +137,60 @@ export const useNotifications = () => {
       .subscribe()
 
     return () => {
+      console.log('[useNotifications] Cleaning up subscription')
+      isSubscribedRef.current = false
       supabase.removeChannel(channel)
       stopBackgroundPolling()
     }
-  }, [user, showNotification, loadNotifications, stopBackgroundPolling])
+  }, [user, showNotification])
 
   // Handle visibility changes for reconciliation only (no polling)
   useEffect(() => {
     const handleVisibilityChange = () => {
+      // Clear any pending timeout
+      if (visibilityTimeoutRef.current) {
+        clearTimeout(visibilityTimeoutRef.current)
+      }
+      
+      // Debounce the reload
       if (document.visibilityState === 'visible' && user) {
-        console.log('[useNotifications] Tab visible, reloading notifications')
-        loadNotifications()
+        console.log('[useNotifications] Tab visible, scheduling reload')
+        visibilityTimeoutRef.current = setTimeout(async () => {
+          console.log('[useNotifications] Reloading notifications')
+          if (!user) return
+          
+          try {
+            const { data, error } = await supabase
+              .from('notifications')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('data', { ascending: false })
+              .limit(50)
+
+            if (error) {
+              console.error('[useNotifications] Error loading notifications:', error)
+              return
+            }
+
+            (data || []).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
+            setNotifications(data || [])
+            setUnreadCount((data || []).filter((n: Notification) => !n.lida).length)
+          } catch (error) {
+            console.error('[useNotifications] Error loading notifications:', error)
+          }
+        }, 500)
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
+      if (visibilityTimeoutRef.current) {
+        clearTimeout(visibilityTimeoutRef.current)
+      }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [user, loadNotifications])
+  }, [user])
 
   // Auto-marcar notificações como lidas quando o dropdown abrir
   const markVisibleAsRead = async () => {

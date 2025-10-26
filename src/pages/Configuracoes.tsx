@@ -38,16 +38,25 @@ const Configuracoes = () => {
       setLoadingPayments(true);
       const { data, error } = await supabase.functions.invoke('get-payment-methods');
       
-      if (error) throw error;
+      if (error) {
+        // Silent fail if it's a configuration issue
+        console.warn('[Configuracoes] Could not load payment methods:', error);
+        setPaymentMethods([]);
+        return;
+      }
       
       setPaymentMethods(data.paymentMethods || []);
-    } catch (error) {
-      console.error('Error loading payment methods:', error);
-      toast({
-        title: "Erro",
-        description: "Erro ao carregar métodos de pagamento.",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      console.error('[Configuracoes] Error loading payment methods:', error);
+      
+      // Only show toast for unexpected errors, not configuration issues
+      if (error?.message && !error.message.includes('not found') && !error.message.includes('No customer')) {
+        toast({
+          title: "Erro",
+          description: "Erro ao carregar métodos de pagamento.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoadingPayments(false);
     }
@@ -72,9 +81,6 @@ const Configuracoes = () => {
       const allSettings = { ...profileData, ...(configData || {}), email: user.email || '' };
       setSettings(allSettings);
 
-      // Load payment methods
-      loadPaymentMethods();
-
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
       toast({ title: "Erro ao carregar dados.", variant: "destructive" });
@@ -84,6 +90,14 @@ const Configuracoes = () => {
   }, [user, toast]);
 
   useEffect(() => { loadData() }, [loadData]);
+  
+  // Lazy load payment methods only when viewing subscription tab
+  useEffect(() => {
+    if (activeTab === 'platform-payments' && user) {
+      console.log('[Configuracoes] Loading payment methods for subscription tab')
+      loadPaymentMethods();
+    }
+  }, [activeTab, user]);
 
   const handleSettingsChange = (field: string, value: any) => {
     setSettings(prev => ({ ...prev, [field]: value }));

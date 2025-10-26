@@ -15,7 +15,16 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
-const stripePromise = loadStripe('pk_live_51QT8oWCJopckKnVm5NfCgVsvkH0lElE2ipUVhfrcg2go4XhikZQ1OSsWEfgv8DgGZJUQqLkQ4W4M8avH8HnLFn0100e90pTSYo');
+// Fetch Stripe key from environment or use fallback
+const getStripeKey = () => {
+  const envKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY
+  if (envKey) return envKey
+  
+  // Fallback to hardcoded key if env var not set
+  return 'pk_live_51QT8oWCJopckKnVm5NfCgVsvkH0lElE2ipUVhfrcg2go4XhikZQ1OSsWEfgv8DgGZJUQqLkQ4W4M8avH8HnLFn0100e90pTSYo'
+}
+
+const stripePromise = loadStripe(getStripeKey());
 
 interface UpdatePaymentMethodModalProps {
   open: boolean;
