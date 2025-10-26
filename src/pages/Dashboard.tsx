@@ -515,6 +515,26 @@ const Dashboard = () => {
       // Gerar notificações inteligentes
       const notifications: any[] = []
 
+      // Notificação: Sessões passadas que ainda estão como 'agendada' - PRECISAM DE ATENÇÃO
+      const sessionsNeedingAttention = todaySessions.concat(upcomingSessions).filter(s => {
+        if (s.status !== 'agendada') return false
+        const sessionDateTime = new Date(`${s.data}T${s.horario}`)
+        const now = new Date()
+        return sessionDateTime < now
+      })
+      if (sessionsNeedingAttention.length > 0) {
+        notifications.push({
+          id: 'sessions-need-attention',
+          type: 'session_needs_update' as const,
+          priority: 'high' as const,
+          title: 'Sessões precisam de atualização',
+          message: `${sessionsNeedingAttention.length} sessão${sessionsNeedingAttention.length > 1 ? 'ões passadas precisam' : ' passada precisa'} de atualização de status`,
+          actionUrl: '/agenda',
+          actionLabel: 'Atualizar Status',
+          metadata: { count: sessionsNeedingAttention.length, sessionIds: sessionsNeedingAttention.map(s => s.id) }
+        })
+      }
+
       // Notificação: Pagamentos pendentes
       if (overdueSessionsForStats.length > 0) {
         const overdueAmount = overdueSessionsForStats.reduce((sum, s) => sum + (Number(s.valor) || 0), 0)
@@ -1042,10 +1062,14 @@ const Dashboard = () => {
                       </div>
                     </div>
                   ))
-                ) : upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
+                 ) : upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => {
+                   // Verificar se a sessão precisa de atenção
+                   const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                   
+                   return (
                    <div 
                      key={session.id || index} 
-                     className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                     className={`flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer ${needsAttention ? 'animate-attention-pulse border-warning' : ''}`}
                      onClick={() => navigate(`/agenda?highlight=${session.id}&date=${session.data}`)}
                    >
                       <div className="flex items-center gap-4">
@@ -1082,9 +1106,10 @@ const Dashboard = () => {
                             session.status === 'falta' ? 'Falta' :
                             'Agendada'}
                          </Badge>
-                       </div>
-                   </div>
-                )) : (
+                        </div>
+                    </div>
+                   )
+                 }) : (
                   <div className="flex items-center justify-center h-full">
                     <p className="text-muted-foreground text-center">Nenhuma sessão agendada</p>
                   </div>

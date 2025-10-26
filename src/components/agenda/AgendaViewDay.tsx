@@ -181,13 +181,18 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                 })()}
                 
                 {hourSessions.length > 0 ? (
-                  hourSessions.map((session) => (
+                  hourSessions.map((session) => {
+                    // Verificar se a sessão precisa de atenção
+                    const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                    
+                    return (
                     <Card 
                       key={session.id} 
                       className={cn(
                         "relative group cursor-move transition-all hover:shadow-md", 
                         getStatusColor(session.status),
-                        highlightedSessionId === session.id && "animate-pulse-highlight"
+                        highlightedSessionId === session.id && "animate-pulse-highlight",
+                        needsAttention && "animate-attention-pulse border-warning border-2"
                       )}
                       draggable
                       onDragStart={(e) => handleDragStart(e, session.id)}
@@ -247,7 +252,8 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                         </div>
                       </CardContent>
                     </Card>
-                  ))
+                    )
+                  })
                 ) : null}
 
                 {/* Google Events */}

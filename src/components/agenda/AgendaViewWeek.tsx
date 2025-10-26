@@ -235,13 +235,18 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                           return null
                         })()}
                         <div className="space-y-1">
-                          {daySessions.map((session) => (
+                          {daySessions.map((session) => {
+                            // Verificar se a sessão precisa de atenção
+                            const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                            
+                            return (
                             <Card 
                               key={session.id} 
                               className={cn(
                                 "cursor-move group relative transition-all hover:shadow-sm",
                                 getStatusColor(session.status),
-                                highlightedSessionId === session.id && "animate-pulse-highlight"
+                                highlightedSessionId === session.id && "animate-pulse-highlight",
+                                needsAttention && "animate-attention-pulse border-warning border-2"
                               )}
                               draggable
                               onDragStart={(e) => {
@@ -282,7 +287,8 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                 </div>
                               </CardContent>
                             </Card>
-                          ))}
+                            )
+                          })}
 
                           {/* Google Events */}
                           {dayGoogleEvents.map((event) => (

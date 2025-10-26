@@ -146,7 +146,11 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                 </div>
 
                 <div className="space-y-1">
-                  {daySessionsData.slice(0, 3).map((session) => (
+                  {daySessionsData.slice(0, 3).map((session) => {
+                    // Verificar se a sessão precisa de atenção
+                    const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
+                    
+                    return (
                     <div
                       key={session.id}
                       draggable
@@ -155,7 +159,8 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       className={cn(
                         "text-xs p-2 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors group relative cursor-move border border-primary/20",
                         highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
-                        draggedSession === session.id && "opacity-50 scale-95"
+                        draggedSession === session.id && "opacity-50 scale-95",
+                        needsAttention && "animate-attention-pulse border-warning border-2"
                       )}
                       onClick={(e) => {
                         e.stopPropagation()
@@ -189,7 +194,8 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                         </Button>
                       </div>
                     </div>
-                  ))}
+                    )
+                  })}
 
                   {dayGoogleEvents.slice(0, 2).map((event) => (
                     <div

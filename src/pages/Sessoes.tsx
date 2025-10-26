@@ -133,32 +133,8 @@ export default function Sessoes() {
 
       if (clientsError) throw clientsError
 
-      // Atualizar status automático das sessões
-      const now = new Date()
-      const updatedSessions = (sessionsData || []).map(session => ({
-        ...session,
-        status: calculateSessionStatus(session.data, session.horario, session.status)
-      }))
-
-      // Identificar sessões agendadas que já passaram e precisam ser atualizadas no banco
-      const sessionsToUpdate = updatedSessions.filter(session => {
-        const originalSession = sessionsData?.find(s => s.id === session.id)
-        return originalSession?.status === 'agendada' && session.status === 'realizada'
-      })
-
-      // Atualizar status no banco de dados para manter consistência
-      if (sessionsToUpdate.length > 0) {
-        const updatePromises = sessionsToUpdate.map(session =>
-          supabase
-            .from('sessions')
-            .update({ status: 'realizada' })
-            .eq('id', session.id)
-        )
-        await Promise.all(updatePromises)
-        console.log(`✅ ${sessionsToUpdate.length} sessão(ões) atualizada(s) automaticamente para 'realizada'`)
-      }
-
-      setSessions(updatedSessions)
+      // Não atualizar status automaticamente - manter como está
+      setSessions(sessionsData || [])
       setSessionNotes(notesData || [])
       setClients(clientsData || [])
     } catch (error) {
