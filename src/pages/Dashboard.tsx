@@ -31,6 +31,8 @@ import { NewClientModal } from "@/components/NewClientModal"
 import { NewPaymentModal } from "@/components/NewPaymentModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
 import { ActionableNotificationsBanner } from "@/components/ActionableNotificationsBanner"
+import { TutorialButton } from "@/components/TutorialButton"
+import { TutorialModal } from "@/components/TutorialModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 
 const Dashboard = () => {
@@ -48,6 +50,7 @@ const Dashboard = () => {
   const [recentPayments, setRecentPayments] = useState<any[]>([])
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
   const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false)
+  const [isTutorialOpen, setIsTutorialOpen] = useState(false)
   const [recentClients, setRecentClients] = useState<any[]>([])
   const [monthlyChart, setMonthlyChart] = useState<any[]>([])
   const [ticketMedioChart, setTicketMedioChart] = useState<any[]>([])
@@ -818,6 +821,10 @@ const Dashboard = () => {
     setIsNewPaymentOpen(true)
   }
 
+  const handleOpenTutorial = () => {
+    setIsTutorialOpen(true)
+  }
+
   // Memoized calculations for performance
   const filteredMonthlyChart = useMemo(() => {
     const totalMonths = monthlyChart.length;
@@ -918,10 +925,7 @@ const Dashboard = () => {
               Bem-vindo de volta! Aqui está um resumo do seu dia.
             </p>
           </div>
-          <Button className="bg-gradient-primary hover:opacity-90" onClick={handleNewSession}>
-            <Plus className="w-4 h-4 mr-2" />
-            Nova Sessão
-          </Button>
+          <TutorialButton onClick={handleOpenTutorial} />
         </div>
 
         {/* Actionable Notifications Banner */}
@@ -1812,6 +1816,10 @@ const Dashboard = () => {
         open={isNewPaymentOpen}
         onOpenChange={setIsNewPaymentOpen}
         onPaymentAdded={loadDashboardData}
+      />
+      <TutorialModal
+        open={isTutorialOpen}
+        onOpenChange={setIsTutorialOpen}
       />
     </Layout>
   )
