@@ -31,7 +31,7 @@ const PaginaPublica = () => {
       // Carregar dados básicos do perfil (sem informações financeiras sensíveis)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, plano, subscription_plan, created_at, updated_at')
+        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, subscription_plan, created_at, updated_at')
         .eq('user_id', user.id)
         .single();
       

@@ -736,7 +736,6 @@ export type Database = {
           especialidade: string | null
           id: string
           nome: string
-          plano: string | null
           profissao: string | null
           public_avatar_url: string | null
           subscription_plan: string | null
@@ -757,7 +756,6 @@ export type Database = {
           especialidade?: string | null
           id?: string
           nome: string
-          plano?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
           subscription_plan?: string | null
@@ -778,7 +776,6 @@ export type Database = {
           especialidade?: string | null
           id?: string
           nome?: string
-          plano?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
           subscription_plan?: string | null
