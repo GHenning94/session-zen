@@ -144,8 +144,12 @@ const Dashboard = () => {
   // Sempre recarregar quando o Dashboard é montado (volta de outra página)
   useEffect(() => {
     if (user && isActiveRef.current) {
-      console.log('🔄 Dashboard montado, forçando atualização...')
-      invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats'])
+      console.log('🔄 Dashboard montado, forçando atualização e limpando caches legados...')
+      // Limpar caches legados de localStorage
+      const keysToRemove = ['canal_1', 'canal_3', 'canal_6', 'canal_12', 'canal_1_time', 'canal_3_time', 'canal_6_time', 'canal_12_time']
+      keysToRemove.forEach(key => localStorage.removeItem(key))
+      
+      invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
       loadDashboardDataOptimized(true)
     }
   }, [])
@@ -206,7 +210,7 @@ const Dashboard = () => {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [user, invalidateCache, loadDashboardDataOptimized])
 
-  // Optimized real-time updates
+  // Optimized real-time updates (sessions, clients, payments)
   useEffect(() => {
     if (!user) return
 
@@ -220,8 +224,8 @@ const Dashboard = () => {
           filter: `user_id=eq.${user.id}` 
         }, 
         () => {
-          invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats'])
-          loadDashboardDataOptimized(true, ['upcomingSessions', 'recentPayments', 'dashboardStats'])
+          invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
+          loadDashboardDataOptimized(true, ['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
         }
       )
       .subscribe()
@@ -242,11 +246,28 @@ const Dashboard = () => {
       )
       .subscribe()
 
+    const paymentsChannel = supabase
+      .channel('dashboard-payments')
+      .on('postgres_changes', 
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'payments',
+          filter: `user_id=eq.${user.id}` 
+        }, 
+        () => {
+          invalidateCache(['recentPayments', 'dashboardStats', 'charts'])
+          loadDashboardDataOptimized(true, ['recentPayments', 'dashboardStats', 'charts'])
+        }
+      )
+      .subscribe()
+
     return () => {
       supabase.removeChannel(sessionsChannel)
       supabase.removeChannel(clientsChannel)
+      supabase.removeChannel(paymentsChannel)
     }
-  }, [user, loadDashboardDataOptimized])
+  }, [user, loadDashboardDataOptimized, invalidateCache])
 
   const loadDashboardData = async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>, isStale?: () => boolean) => {
     const checkStale = isStale || (() => !isActiveRef.current || !user)
@@ -301,30 +322,26 @@ const Dashboard = () => {
         todaySessionsResult,
         clientsCountResult,
         monthlyPaymentsResult,
-        pendingSessionsResult,
         upcomingDataResult,
         paymentsDataResult,
         recentClientsDataResult,
         allClientsWithPaymentsResult,
         allPaymentMethodsResult,
         packagesDataResult,
-        allSessionsForPaymentStatusResult,
         allSessionsForNotificationsResult,
         pendingPaymentsResult
       ] = await Promise.all([
         // Buscar TODAS as sessões de hoje, sem considerar horário para filtro inicial
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
-        supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
-        supabase.from('sessions').select('id, valor, data, horario, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
+        supabase.from('payments').select('valor, status, data_pagamento, created_at, sessions:session_id(data)').eq('user_id', user?.id).eq('status', 'pago').gte('created_at', `${new Date().toISOString().slice(0, 7)}-01`).lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         // Buscar sessões futuras incluindo hoje
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
         supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
-        supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null),
+        supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
         supabase.from('packages').select('*').eq('user_id', user?.id),
-        supabase.from('sessions').select('id, valor, status, data, horario').eq('user_id', user?.id).not('valor', 'is', null),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(500),
         supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id)
       ])
@@ -335,10 +352,7 @@ const Dashboard = () => {
       const clientsCount = clientsCountResult.count
 
       const monthlyPayments = monthlyPaymentsResult.data
-      const monthlyRevenue = monthlyPayments?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
-      
-      const pendingSessions = pendingSessionsResult.data
-      const pendingRevenue = pendingSessions?.reduce((sum, session) => sum + (session.valor || 0), 0) || 0
+      const monthlyRevenue = monthlyPayments?.reduce((sum, p) => sum + (p.valor || 0), 0) || 0
 
       const nowDate = new Date()
       
@@ -580,37 +594,17 @@ const Dashboard = () => {
         })
       }
 
-      // Notificação: Pagamentos pendentes (usar tabela payments - vermelho)
-      const currentDate = new Date()
-      currentDate.setHours(0, 0, 0, 0)
+      // Notificação: Pagamentos pendentes (usar tabela payments + isOverdue - vermelho)
+      const overduePayments = pendingPayments.filter(p => isOverdue(p))
       
-      // Pagamentos de sessão vencidos (data_vencimento < hoje)
-      const overdueSessionPayments = pendingPayments.filter(p => {
-        if (!p.session_id || !p.data_vencimento) return false
-        const vencimento = new Date(p.data_vencimento)
-        vencimento.setHours(0, 0, 0, 0)
-        return vencimento < currentDate
-      })
-      
-      // Pagamentos de pacote vencidos (data_fim < hoje)
-      const overduePackagePayments = pendingPayments.filter(p => {
-        if (!p.package_id || !p.packages?.data_fim) return false
-        const endDate = new Date(p.packages.data_fim)
-        endDate.setHours(0, 0, 0, 0)
-        return endDate < currentDate
-      })
-
-      const totalOverduePayments = overdueSessionPayments.length + overduePackagePayments.length
-      
-      if (totalOverduePayments > 0) {
-        const totalAmount = [...overdueSessionPayments, ...overduePackagePayments]
-          .reduce((sum, p) => sum + (p.valor || 0), 0)
+      if (overduePayments.length > 0) {
+        const totalAmount = overduePayments.reduce((sum, p) => sum + (p.valor || 0), 0)
         
         notifications.push({
           type: 'payment_overdue',
           priority: 'high',
           title: 'Pagamentos Pendentes',
-          message: `${totalOverduePayments} ${totalOverduePayments === 1 ? 'pagamento' : 'pagamentos'} ${totalOverduePayments === 1 ? 'aguardando' : 'aguardando'} confirmação`,
+          message: `${overduePayments.length} ${overduePayments.length === 1 ? 'pagamento' : 'pagamentos'} ${overduePayments.length === 1 ? 'aguardando' : 'aguardando'} confirmação`,
           actionUrl: '/pagamentos',
           actionLabel: 'Ver',
           metadata: {
@@ -804,7 +798,7 @@ const Dashboard = () => {
     await loadCanalData(period)
   }, [user])
 
-  // Load canal data with period filter
+  // Load canal data with period filter (usando payments)
   const loadCanalData = async (period: '1' | '3' | '6' | '12') => {
     try {
       if (!user) return
@@ -816,44 +810,39 @@ const Dashboard = () => {
       const startDate = new Date()
       const monthsToSubtract = parseInt(period)
       startDate.setMonth(currentDate.getMonth() - monthsToSubtract)
-      
-      const startDateStr = startDate.toISOString().split('T')[0]
-      const endDateStr = currentDate.toISOString().split('T')[0]
-      
-      console.log('💳 Buscando dados de', startDateStr, 'até', endDateStr)
 
-      const { data: periodPaymentMethods } = await supabase
-        .from('sessions')
-        .select('metodo_pagamento, valor')
+      // Buscar pagamentos (ao invés de sessions)
+      const { data: paymentsData, error } = await supabase
+        .from('payments')
+        .select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento), data_pagamento, created_at')
         .eq('user_id', user.id)
-        .eq('status', 'realizada')
-        .gte('data', startDateStr)
-        .lte('data', endDateStr)
+        .eq('status', 'pago')
+        .gte('created_at', startDate.toISOString().split('T')[0])
         .not('valor', 'is', null)
-        .not('metodo_pagamento', 'is', null)
 
-      console.log('💳 Dados filtrados encontrados:', periodPaymentMethods)
+      if (error) throw error
 
-      const canalPayments = {}
-      periodPaymentMethods?.forEach(session => {
-        const metodo = session.metodo_pagamento || 'A definir'
-        if (!canalPayments[metodo]) {
-          canalPayments[metodo] = 0
+      const canalData: { [key: string]: number } = {}
+      
+      paymentsData?.forEach((p) => {
+        const method = p.metodo_pagamento || p.sessions?.metodo_pagamento || 'Outros'
+        if (!canalData[method]) {
+          canalData[method] = 0
         }
-        canalPayments[metodo] += Number(session.valor) || 0
+        canalData[method] += p.valor || 0
       })
 
       const canalColors = {
-        'pix': '#00D09C',
-        'cartao': '#6366F1', 
-        'dinheiro': '#F59E0B',
-        'transferencia': '#8B5CF6',
-        'A definir': '#6B7280'
+        'pix': '#10B981',
+        'dinheiro': '#3B82F6', 
+        'cartao': '#8B5CF6',
+        'transferencia': '#F59E0B',
+        'Outros': '#6B7280'
       }
 
-      const filteredCanalData = Object.entries(canalPayments)
-        .map(([canal, valor]: [string, any]) => ({
-          canal: canal.charAt(0).toUpperCase() + canal.slice(1),
+      const filteredCanalData = Object.entries(canalData)
+        .map(([canal, valor]) => ({
+          name: canal,
           valor: valor,
           color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
         }))
