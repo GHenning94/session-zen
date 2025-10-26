@@ -294,7 +294,8 @@ const Dashboard = () => {
         allClientsWithPaymentsResult,
         allPaymentMethodsResult,
         packagesDataResult,
-        allSessionsForPaymentStatusResult
+        allSessionsForPaymentStatusResult,
+        pendingPaymentsResult
       ] = await Promise.all([
         // Buscar TODAS as sessões de hoje, sem considerar horário para filtro inicial
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
@@ -308,7 +309,8 @@ const Dashboard = () => {
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
         supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null),
         supabase.from('packages').select('*').eq('user_id', user?.id),
-        supabase.from('sessions').select('valor, status, data').eq('user_id', user?.id).not('valor', 'is', null)
+        supabase.from('sessions').select('valor, status, data').eq('user_id', user?.id).not('valor', 'is', null),
+        supabase.from('payments').select('id, valor, status, data_vencimento, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'pendente')
       ])
       
       if (checkStale()) return
@@ -527,28 +529,49 @@ const Dashboard = () => {
       if (sessionsNeedingAttention.length > 0) {
         notifications.push({
           id: 'sessions-need-attention',
-          type: 'session_needs_update' as const,
-          priority: 'high' as const,
+          type: 'recurring_next' as const,
+          priority: 'medium' as const,
           title: 'Sessões precisam de atualização',
           message: `${sessionsNeedingAttention.length} sessão${sessionsNeedingAttention.length > 1 ? 'ões passadas precisam' : ' passada precisa'} de atualização de status`,
-          actionUrl: '/agenda',
-          actionLabel: 'Atualizar Status',
+          actionUrl: '/sessoes',
+          actionLabel: 'Ver',
           metadata: { count: sessionsNeedingAttention.length, sessionIds: sessionsNeedingAttention.map(s => s.id) }
         })
       }
 
-      // Notificação: Pagamentos pendentes
-      if (overdueSessionsForStats.length > 0) {
-        const overdueAmount = overdueSessionsForStats.reduce((sum, s) => sum + (Number(s.valor) || 0), 0)
+      // Notificação: Pagamentos pendentes (sessões + pagamentos de pacotes)
+      const pendingPaymentsData = pendingPaymentsResult.data || []
+      const currentDate = new Date()
+      
+      // Pagamentos de sessões vencidos
+      const overdueSessionPayments = overdueSessionsForStats.filter(s => {
+        const sessionDate = new Date(s.data)
+        return sessionDate.getTime() < currentDate.getTime()
+      })
+      
+      // Pagamentos de pacotes vencidos
+      const overduePackagePayments = pendingPaymentsData.filter(p => {
+        if (!p.data_vencimento) return false
+        const dueDate = new Date(p.data_vencimento)
+        return dueDate.getTime() < currentDate.getTime()
+      })
+      
+      const totalOverduePayments = overdueSessionPayments.length + overduePackagePayments.length
+      
+      if (totalOverduePayments > 0) {
+        const sessionAmount = overdueSessionPayments.reduce((sum, s) => sum + (Number(s.valor) || 0), 0)
+        const packageAmount = overduePackagePayments.reduce((sum, p) => sum + (Number(p.valor) || 0), 0)
+        const totalAmount = sessionAmount + packageAmount
+        
         notifications.push({
           id: 'overdue-payments',
           type: 'payment_overdue' as const,
           priority: 'high' as const,
           title: 'Pagamentos pendentes',
-          message: `${overdueSessionsForStats.length} sessão${overdueSessionsForStats.length > 1 ? 'ões' : ''} com pagamento pendente`,
-          actionUrl: '/pagamentos?status=pendente',
-          actionLabel: 'Ver Pagamentos',
-          metadata: { count: overdueSessionsForStats.length, amount: overdueAmount }
+          message: `${totalOverduePayments} pagamento${totalOverduePayments > 1 ? 's' : ''} vencido${totalOverduePayments > 1 ? 's' : ''} precisa${totalOverduePayments > 1 ? 'm' : ''} de atualização`,
+          actionUrl: '/pagamentos',
+          actionLabel: 'Ver',
+          metadata: { count: totalOverduePayments, amount: totalAmount }
         })
       }
 
