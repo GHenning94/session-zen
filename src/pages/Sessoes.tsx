@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2 } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -16,7 +16,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 import { SessionNoteModal } from '@/components/SessionNoteModal'
-import { SessionEditModal } from '@/components/SessionEditModal'
+import { SessionModal } from '@/components/SessionModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { formatClientName } from '@/lib/utils'
@@ -73,6 +73,7 @@ export default function Sessoes() {
   // Estados para modais
   const [noteModalOpen, setNoteModalOpen] = useState(false)
   const [editModalOpen, setEditModalOpen] = useState(false)
+  const [newSessionModalOpen, setNewSessionModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [evolucaoModalOpen, setEvolucaoModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
@@ -444,6 +445,13 @@ export default function Sessoes() {
           </div>
           
           <div className="flex gap-2">
+            <Button
+              onClick={() => setNewSessionModalOpen(true)}
+              className="bg-gradient-primary hover:opacity-90"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Sessão
+            </Button>
             <Button
               variant={activeTab === 'sessions' ? 'default' : 'outline'}
               onClick={() => setActiveTab('sessions')}
@@ -840,12 +848,17 @@ export default function Sessoes() {
           editingNote={editingNote}
         />
         
-        <SessionEditModal
+        <SessionModal
           session={selectedSession}
-          clients={clients}
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
-          onSessionUpdated={loadData}
+          onSuccess={loadData}
+        />
+
+        <SessionModal
+          open={newSessionModalOpen}
+          onOpenChange={setNewSessionModalOpen}
+          onSuccess={loadData}
         />
 
         <EvolucaoModal

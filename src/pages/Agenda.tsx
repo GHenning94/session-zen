@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
+import { SessionModal } from "@/components/SessionModal"
 import { 
   Plus, 
   ChevronLeft, 
@@ -251,110 +252,26 @@ const Agenda = () => {
               Gerencie seus agendamentos e sessões
             </p>
           </div>
-          <Dialog open={isNewSessionOpen} onOpenChange={setIsNewSessionOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-gradient-primary hover:opacity-90">
-                <Plus className="w-4 h-4 mr-2" />
-                Nova Sessão
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>
-                  {editingSession ? "Editar Sessão" : "Agendar Nova Sessão"}
-                </DialogTitle>
-                <DialogDescription>
-                  {editingSession ? "Modifique os dados da sessão" : "Preencha os dados para criar um novo agendamento"}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="client">Cliente</Label>
-                  <Select value={newSession.client_id} onValueChange={handleClientChange}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o cliente" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {clients.map(client => (
-                        <SelectItem key={client.id} value={client.id}>
-                          <div className="flex items-center gap-2">
-                            <span>{client.nome}</span>
-                            {!client.ativo && (
-                              <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-warning/10 text-warning">
-                                inativo
-                              </span>
-                            )}
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {showReactivationMessage && (
-                    <div className="text-sm p-2 bg-warning/10 border border-warning/20 rounded-md text-warning">
-                      Ao agendar, este cliente será reativado automaticamente.
-                    </div>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <Label htmlFor="date">Data</Label>
-                    <Input 
-                      type="date" 
-                      id="date" 
-                      value={newSession.data}
-                      onChange={(e) => setNewSession({...newSession, data: e.target.value})}
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="time">Horário</Label>
-                    <Select value={newSession.horario} onValueChange={(value) => setNewSession({...newSession, horario: value})}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Horário" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {timeSlots.map(time => (
-                          <SelectItem key={time} value={time}>{time}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="value">Valor (opcional)</Label>
-                  <Input 
-                    type="number" 
-                    id="value" 
-                    placeholder="200.00"
-                    value={newSession.valor}
-                    onChange={(e) => setNewSession({...newSession, valor: e.target.value})}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="notes">Observações (opcional)</Label>
-                  <Textarea 
-                    id="notes" 
-                    placeholder="Notas sobre a sessão..." 
-                    className="resize-none"
-                    value={newSession.anotacoes}
-                    onChange={(e) => setNewSession({...newSession, anotacoes: e.target.value})}
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-3">
-                <Button variant="outline" onClick={() => setIsNewSessionOpen(false)}>
-                  Cancelar
-                </Button>
-                <Button 
-                  className="bg-gradient-primary hover:opacity-90" 
-                  onClick={handleSaveSession}
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Salvando..." : editingSession ? "Atualizar Sessão" : "Salvar Sessão"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button 
+            className="bg-gradient-primary hover:opacity-90"
+            onClick={() => setIsNewSessionOpen(true)}
+          >
+            <Plus className="w-4 w-4 mr-2" />
+            Nova Sessão
+          </Button>
         </div>
+
+        {/* Session Modal */}
+        <SessionModal
+          open={isNewSessionOpen}
+          onOpenChange={setIsNewSessionOpen}
+          session={editingSession}
+          selectedDate={selectedDate}
+          onSuccess={() => {
+            setIsNewSessionOpen(false)
+            setEditingSession(null)
+          }}
+        />
 
         {/* Navigation and Google Calendar Integration */}
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">

@@ -23,7 +23,6 @@ import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
-import { NewSessionModal } from "@/components/NewSessionModal"
 import { NewClientModal } from "@/components/NewClientModal"
 import { NewPaymentModal } from "@/components/NewPaymentModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
@@ -43,7 +42,6 @@ const Dashboard = () => {
   })
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([])
   const [recentPayments, setRecentPayments] = useState<any[]>([])
-  const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
   const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false)
   const [recentClients, setRecentClients] = useState<any[]>([])
@@ -705,7 +703,7 @@ const Dashboard = () => {
   }
 
   const handleNewSession = () => {
-    setIsNewSessionOpen(true)
+    navigate('/sessoes')
   }
 
   const handleNewClient = () => {
@@ -1625,11 +1623,6 @@ const Dashboard = () => {
       </div>
 
       {/* Modals */}
-      <NewSessionModal
-        open={isNewSessionOpen}
-        onOpenChange={setIsNewSessionOpen}
-        onSessionCreated={loadDashboardData}
-      />
       <NewClientModal
         open={isNewClientOpen}
         onOpenChange={setIsNewClientOpen}
