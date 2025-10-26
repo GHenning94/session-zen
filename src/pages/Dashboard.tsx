@@ -508,7 +508,21 @@ const Dashboard = () => {
       // Calcular estatísticas de pagamentos usando a tabela PAYMENTS
       const allPaymentsData = pendingPaymentsResult.data || []
       const paidPayments = allPaymentsData.filter(p => p.status === 'pago')
-      const pendingPayments = allPaymentsData.filter(p => p.status === 'pendente')
+      
+      // CRITICAL: Filtrar pendingPayments verificando o status real da sessão
+      // Se o pagamento é de sessão, só contar se a sessão ainda está como 'agendada'
+      // (o trigger agora sincroniza automaticamente, mas isso garante coerência com dados antigos)
+      const pendingPayments = allPaymentsData.filter(p => {
+        if (p.status !== 'pendente') return false
+        
+        // Para pagamentos de sessão, verificar se a sessão ainda está 'agendada'
+        if (p.session_id && p.sessions) {
+          return p.sessions.status === 'agendada'
+        }
+        
+        // Pagamentos de pacote são sempre válidos se estão pendentes
+        return true
+      })
 
       const paymentStatsData = {
         totalPaid: paidPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
