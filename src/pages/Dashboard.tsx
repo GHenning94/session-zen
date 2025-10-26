@@ -520,7 +520,8 @@ const Dashboard = () => {
       const notifications: any[] = []
 
       // Notificação: Sessões passadas que ainda estão como 'agendada' - PRECISAM DE ATENÇÃO
-      const sessionsNeedingAttention = todaySessions.concat(upcomingSessions).filter(s => {
+      // Usar allSessionsForPaymentStatus para garantir que TODAS as sessões sejam verificadas, não apenas hoje/futuras
+      const sessionsNeedingAttention = allSessionsForPaymentStatus.filter(s => {
         if (s.status !== 'agendada') return false
         const sessionDateTime = new Date(`${s.data}T${s.horario}`)
         const now = new Date()
