@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -34,6 +34,7 @@ interface Session {
   valor?: number
   anotacoes?: string
   client_id: string
+  package_id?: string
   clients?: {
     nome: string
     avatar_url?: string
@@ -631,12 +632,18 @@ export default function Sessoes() {
                                     clientName={session.clients?.nome || 'Cliente'}
                                     size="lg"
                                   />
-                                  <div className="flex-1 min-w-0">
+                                   <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-2">
                                       <h3 className="text-lg font-semibold">{formatClientName(session.clients?.nome || 'Cliente não encontrado')}</h3>
                                       <Badge variant={getStatusColor(session.status)}>
                                         {getStatusLabel(session.status)}
                                       </Badge>
+                                      {session.package_id && (
+                                        <Badge variant="secondary" className="text-xs">
+                                          <Package className="h-3 w-3 mr-1" />
+                                          Pacote
+                                        </Badge>
+                                      )}
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
                                       <div className="flex items-center gap-4">
@@ -696,12 +703,18 @@ export default function Sessoes() {
                               clientName={session.clients?.nome || 'Cliente'}
                               size="lg"
                             />
-                            <div className="flex-1 min-w-0">
+                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-lg font-semibold">{formatClientName(session.clients?.nome || 'Cliente não encontrado')}</h3>
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
+                                {session.package_id && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    <Package className="h-3 w-3 mr-1" />
+                                    Pacote
+                                  </Badge>
+                                )}
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
                                 <div className="flex items-center gap-4">

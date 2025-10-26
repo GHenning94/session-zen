@@ -510,75 +510,52 @@ const Dashboard = () => {
       const allSessionsForPaymentStatus = allSessionsForPaymentStatusResult.data || []
       const paidSessions = allSessionsForPaymentStatus.filter(s => s.status === 'realizada')
       const pendingPaymentSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) >= new Date())
-      const overdueSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) < new Date())
+      const overdueSessionsForStats = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) < new Date())
 
       setPaymentStats({
         totalPaid: paidSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
         totalPending: pendingPaymentSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
-        totalOverdue: overdueSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
+        totalOverdue: overdueSessionsForStats.reduce((sum, s) => sum + (s.valor || 0), 0),
         paidCount: paidSessions.length,
         pendingCount: pendingPaymentSessions.length,
-        overdueCount: overdueSessions.length
+        overdueCount: overdueSessionsForStats.length
       })
 
       // Gerar notificações inteligentes
       const notifications: any[] = []
 
-      // Notificação de pacotes acabando
-      if (packagesNearEnd > 0) {
-        const packagesEndingData = activePackages.filter(p => {
-          const remaining = (p.total_sessoes || 0) - (p.sessoes_consumidas || 0)
-          return remaining <= 2 && remaining > 0
-        })
-        
-        packagesEndingData.forEach(pkg => {
-          notifications.push({
-            id: `package_ending_${pkg.id}`,
-            type: 'package_ending' as const,
-            priority: 'high' as const,
-            title: 'Pacote acabando',
-            message: `Restam apenas ${(pkg.total_sessoes || 0) - (pkg.sessoes_consumidas || 0)} sessões no pacote`,
-            actionUrl: '/pacotes',
-            actionLabel: 'Ver pacotes',
-            metadata: pkg
-          })
-        })
-      }
-
-      // Notificação de pagamentos atrasados
-      if (overdueSessions.length > 0) {
-        const overdueAmount = overdueSessions.reduce((sum, s) => sum + (s.valor || 0), 0)
+      // Notificação: Pagamentos pendentes/atrasados
+      if (overdueSessionsForStats.length > 0) {
+        const overdueAmount = overdueSessionsForStats.reduce((sum, s) => sum + (Number(s.valor) || 0), 0)
         notifications.push({
-          id: 'payments_overdue',
+          id: 'overdue-payments',
           type: 'payment_overdue' as const,
           priority: 'high' as const,
-          title: `${overdueSessions.length} pagamentos atrasados`,
-          message: 'Verifique os pagamentos que precisam de atenção',
-          actionUrl: '/pagamentos',
-          actionLabel: 'Ver pagamentos',
-          metadata: { amount: overdueAmount, count: overdueSessions.length }
+          title: 'Pagamentos pendentes',
+          message: `${overdueSessionsForStats.length} sessão${overdueSessionsForStats.length > 1 ? 'ões' : ''} com pagamento pendente`,
+          actionUrl: '/pagamentos?status=atrasado',
+          actionLabel: 'Ver Pagamentos',
+          metadata: { count: overdueSessionsForStats.length, amount: overdueAmount }
         })
       }
 
-      // Notificação de próximas sessões recorrentes
-      const { data: recurringSessionsData } = await supabase
-        .from('recurring_sessions')
-        .select('*, clients(nome)')
-        .eq('user_id', user?.id)
-        .eq('status', 'ativa')
-        .limit(3)
-      
-      if (recurringSessionsData && recurringSessionsData.length > 0) {
-        recurringSessionsData.forEach(recurring => {
-          notifications.push({
-            id: `recurring_${recurring.id}`,
-            type: 'recurring_next' as const,
-            priority: 'medium' as const,
-            title: 'Sessão recorrente ativa',
-            message: `${recurring.clients?.nome || 'Cliente'} - ${recurring.recurrence_type}`,
-            actionUrl: '/sessoes-recorrentes',
-            actionLabel: 'Ver recorrências'
-          })
+      // Notificação: Sessões próximas não confirmadas (próximas 24h)
+      const upcomingSessionsNotifications = todaySessions.concat(upcomingSessions).filter(s => {
+        const sessionDateTime = new Date(`${s.data}T${s.horario}`)
+        const now = new Date()
+        const diff = sessionDateTime.getTime() - now.getTime()
+        const hours = diff / (1000 * 60 * 60)
+        return hours > 0 && hours <= 24 && s.status === 'agendada'
+      })
+      if (upcomingSessionsNotifications.length > 0) {
+        notifications.push({
+          id: 'upcoming-sessions',
+          type: 'recurring_next' as const,
+          priority: 'medium' as const,
+          title: 'Sessões próximas',
+          message: `${upcomingSessionsNotifications.length} sessão${upcomingSessionsNotifications.length > 1 ? 'ões' : ''} nas próximas 24 horas`,
+          actionUrl: '/agenda',
+          actionLabel: 'Ver Agenda'
         })
       }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Clock, User, Trash, Plus } from 'lucide-react'
+import { Clock, User, Trash, Plus, Package } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -17,6 +17,7 @@ interface Session {
   status: string
   valor?: number
   anotacoes?: string
+  package_id?: string
 }
 
 interface Client {
@@ -209,6 +210,12 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                   {formatClientName(clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado')}
                                 </span>
                               </div>
+                              {session.package_id && (
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                  <Package className="h-2 w-2 mr-0.5" />
+                                  Pacote
+                                </Badge>
+                              )}
                             </div>
                             <div className="flex items-center gap-1">
                               {session.valor && (

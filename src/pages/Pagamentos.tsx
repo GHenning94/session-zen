@@ -58,13 +58,28 @@ const Pagamentos = () => {
     
     setIsLoading(true)
     try {
-      // Carregar sessões
+      // Carregar sessões e pagamentos
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select('*')
         .eq('user_id', user.id)
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
+      
+      // Carregar pagamentos de pacotes
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select(`
+          *,
+          packages (
+            nome,
+            total_sessoes,
+            sessoes_consumidas
+          )
+        `)
+        .eq('user_id', user.id)
+        .not('package_id', 'is', null)
+        .order('data_vencimento', { ascending: false })
       
       // Carregar clientes
       const { data: clientsData, error: clientsError } = await supabase
@@ -127,30 +142,33 @@ const Pagamentos = () => {
   }
 
   const getSessionPayments = () => {
-    return sessions.map(session => {
-      const status = calculatePaymentStatus(session.data, session.horario, session.status)
-      const client = clients.find(c => c.id === session.client_id)
-      
-      // CORREÇÃO: Pagamentos pendentes, atrasados e cancelados devem ter canal "A definir"
-      let method = session.metodo_pagamento || 'A definir'
-      
-      if (status === 'pendente' || status === 'atrasado' || status === 'cancelado') {
-        method = 'A definir'
-      }
-      
-      return {
-        id: session.id,
-        client: getClientName(session.client_id),
-        client_avatar: client?.avatar_url,
-        date: session.data,
-        time: session.horario,
-        value: session.valor || 0,
-        status: status,
-        method: method,
-        session_id: session.id,
-        session_status: session.status
-      }
-    })
+    // Sessões individuais e de pacotes
+    const sessionPayments = sessions
+      .filter(session => !session.package_id) // Apenas sessões avulsas
+      .map(session => {
+        const status = calculatePaymentStatus(session.data, session.horario, session.status)
+        const client = clients.find(c => c.id === session.client_id)
+        
+        let method = session.metodo_pagamento || 'A definir'
+        if (status === 'pendente' || status === 'atrasado' || status === 'cancelado') {
+          method = 'A definir'
+        }
+        
+        return {
+          id: session.id,
+          client: getClientName(session.client_id),
+          client_avatar: client?.avatar_url,
+          date: session.data,
+          time: session.horario,
+          value: session.valor || 0,
+          status: status,
+          method: method,
+          session_id: session.id,
+          session_status: session.status
+        }
+      })
+    
+    return sessionPayments
   }
 
   const markAsPaid = async (sessionId: string, paymentMethod: string) => {

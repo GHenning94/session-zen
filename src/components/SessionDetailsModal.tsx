@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   CreditCard,
   Eye,
-  StickyNote
+  StickyNote,
+  Package
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
@@ -95,6 +96,12 @@ export const SessionDetailsModal = ({
                 <Badge variant={getStatusColor(session.status)}>
                   {getStatusLabel(session.status)}
                 </Badge>
+                {session.package_id && (
+                  <Badge variant="secondary">
+                    <Package className="h-3 w-3 mr-1" />
+                    Pacote
+                  </Badge>
+                )}
               </div>
             </div>
           </div>
@@ -126,9 +133,11 @@ export const SessionDetailsModal = ({
                 <div>
                   <label className="text-sm text-muted-foreground">Método de Pagamento</label>
                   <p className="font-medium capitalize">
-                    {session.metodo_pagamento === 'A definir' || !session.metodo_pagamento 
-                      ? 'A definir' 
-                      : session.metodo_pagamento}
+                    {session.package_id 
+                      ? 'A definir (Pacote)' 
+                      : session.metodo_pagamento === 'A definir' || !session.metodo_pagamento 
+                        ? 'A definir' 
+                        : session.metodo_pagamento}
                   </p>
                 </div>
               </div>

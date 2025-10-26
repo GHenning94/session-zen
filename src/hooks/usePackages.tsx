@@ -107,7 +107,8 @@ export const usePackages = () => {
         data: d.data,
         horario: d.horario,
         valor: d.valor,
-        status: 'agendada'
+        status: 'agendada',
+        metodo_pagamento: 'A definir'
       }));
 
       const { error } = await supabase
