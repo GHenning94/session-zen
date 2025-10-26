@@ -23,7 +23,9 @@ export const useNotifications = () => {
   const seenNotificationIds = useRef(new Set<string>())
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isSubscribedRef = useRef(false)
+  const isCleaningUpRef = useRef(false)
   const visibilityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const showNotificationRef = useRef(showNotification)
 
   const loadNotifications = useCallback(async () => {
     if (!user) return
@@ -65,18 +67,23 @@ export const useNotifications = () => {
     return
   }, [])
 
-  // Set up realtime subscription
+  // Keep showNotification ref updated without triggering re-subscriptions
+  useEffect(() => {
+    showNotificationRef.current = showNotification
+  }, [showNotification])
+
+  // Set up realtime subscription - ONLY depends on user.id
   useEffect(() => {
     if (!user) return
     
     // Prevent multiple subscriptions
-    if (isSubscribedRef.current) {
-      console.log('[useNotifications] Already subscribed, skipping')
+    if (isSubscribedRef.current || isCleaningUpRef.current) {
       return
     }
 
-    console.log('[useNotifications] Initializing subscription')
+    console.log(`[${new Date().toISOString()}] [useNotifications] Initializing subscription`)
     isSubscribedRef.current = true
+    isCleaningUpRef.current = false
     
     loadNotifications()
 
@@ -108,9 +115,8 @@ export const useNotifications = () => {
             setUnreadCount((prev) => prev + 1)
             
             // Show browser notification only if tab is not visible
-            if (document.visibilityState !== 'visible') {
-              console.log('[useNotifications] Showing push notification')
-              showNotification(
+            if (document.visibilityState !== 'visible' && showNotificationRef.current) {
+              showNotificationRef.current(
                 newNotification.titulo,
                 newNotification.conteudo
               )
@@ -137,12 +143,12 @@ export const useNotifications = () => {
       .subscribe()
 
     return () => {
-      console.log('[useNotifications] Cleaning up subscription')
+      console.log(`[${new Date().toISOString()}] [useNotifications] Cleaning up subscription`)
+      isCleaningUpRef.current = true
       isSubscribedRef.current = false
       supabase.removeChannel(channel)
-      stopBackgroundPolling()
     }
-  }, [user, showNotification])
+  }, [user?.id]) // ONLY depend on user.id, not the entire user object
 
   // Handle visibility changes for reconciliation only (no polling)
   useEffect(() => {
@@ -152,11 +158,9 @@ export const useNotifications = () => {
         clearTimeout(visibilityTimeoutRef.current)
       }
       
-      // Debounce the reload
+      // Debounce the reload (only when tab becomes visible after being hidden)
       if (document.visibilityState === 'visible' && user) {
-        console.log('[useNotifications] Tab visible, scheduling reload')
         visibilityTimeoutRef.current = setTimeout(async () => {
-          console.log('[useNotifications] Reloading notifications')
           if (!user) return
           
           try {

@@ -55,31 +55,14 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
   const elements = useElements();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [clientSecret, setClientSecret] = useState<string>('');
 
-  useEffect(() => {
-    const createSetupIntent = async () => {
-      try {
-        const { data, error } = await supabase.functions.invoke('create-setup-intent');
-        if (error) throw error;
-        setClientSecret(data.client_secret);
-      } catch (error) {
-        console.error('Error creating setup intent:', error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível inicializar o formulário de pagamento.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    createSetupIntent();
-  }, [toast]);
+  // NOTE: AdBlocker errors (net::ERR_BLOCKED_BY_ADBLOCKER) are normal and expected
+  // Stripe SDK automatically tries alternative URLs if blocked. No action needed.
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
 
-    if (!stripe || !elements || !clientSecret) {
+    if (!stripe || !elements) {
       return;
     }
 
@@ -93,18 +76,43 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
     }
 
     try {
-      const { error, setupIntent } = await stripe.confirmCardSetup(clientSecret, {
+      // Step 1: Create SetupIntent (deferred until submit)
+      const { data, error: setupIntentError } = await supabase.functions.invoke('create-setup-intent');
+      
+      if (setupIntentError) {
+        // Distinguish configuration errors from real errors
+        if (setupIntentError.message?.includes('No customer') || 
+            setupIntentError.message?.includes('not set') ||
+            setupIntentError.message?.includes('not found')) {
+          console.warn('[Stripe] Configuration issue:', setupIntentError);
+          toast({
+            title: "Configuração Necessária",
+            description: "Configure sua assinatura antes de adicionar um método de pagamento.",
+            variant: "destructive",
+          });
+          onClose();
+          return;
+        }
+        throw setupIntentError;
+      }
+
+      if (!data?.client_secret) {
+        throw new Error('No client secret returned from server');
+      }
+
+      // Step 2: Confirm card setup with Stripe
+      const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(data.client_secret, {
         payment_method: {
           card: cardNumberElement,
         },
       });
 
-      if (error) {
-        throw error;
+      if (confirmError) {
+        throw confirmError;
       }
 
       if (setupIntent?.payment_method) {
-        // Set as default payment method
+        // Step 3: Set as default payment method
         const { error: updateError } = await supabase.functions.invoke(
           'update-default-payment-method',
           {
@@ -123,7 +131,7 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
         onClose();
       }
     } catch (error: any) {
-      console.error('Error updating payment method:', error);
+      console.error('[Stripe] Error updating payment method:', error);
       toast({
         title: "Erro",
         description: error.message || "Erro ao atualizar o cartão.",

@@ -93,10 +93,31 @@ const Configuracoes = () => {
   
   // Lazy load payment methods only when viewing subscription tab
   useEffect(() => {
-    if (activeTab === 'platform-payments' && user) {
-      console.log('[Configuracoes] Loading payment methods for subscription tab')
-      loadPaymentMethods();
-    }
+    const loadPaymentMethodsIfSubscribed = async () => {
+      if (activeTab === 'platform-payments' && user) {
+        // Check if user has active subscription first
+        try {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('subscription_plan')
+            .eq('user_id', user.id)
+            .single();
+          
+          // Only load payment methods if user has a paid plan
+          if (profile?.subscription_plan && profile.subscription_plan !== 'basico') {
+            console.log('[Configuracoes] Loading payment methods for subscription tab');
+            loadPaymentMethods();
+          } else {
+            console.log('[Configuracoes] Basic plan - skipping payment methods');
+            setPaymentMethods([]);
+          }
+        } catch (error) {
+          console.warn('[Configuracoes] Could not check subscription:', error);
+        }
+      }
+    };
+    
+    loadPaymentMethodsIfSubscribed();
   }, [activeTab, user]);
 
   const handleSettingsChange = (field: string, value: any) => {
