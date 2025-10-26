@@ -29,7 +29,7 @@ import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
 import { PaymentDetailsModal } from "@/components/PaymentDetailsModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
-import { calculatePaymentStatus } from "@/utils/sessionStatusUtils"
+import { calculatePaymentStatus, paymentNeedsAttentionForSession, paymentNeedsAttentionForPackage } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 
@@ -72,18 +72,34 @@ const Pagamentos = () => {
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select(`
-          *,
-          packages (
+          id,
+          valor,
+          status,
+          metodo_pagamento,
+          data_vencimento,
+          data_pagamento,
+          observacoes,
+          created_at,
+          package_id,
+          session_id,
+          client_id,
+          packages:package_id (
             nome,
             total_sessoes,
             sessoes_consumidas,
-            data_inicio,
-            data_fim
+            data_fim,
+            data_inicio
+          ),
+          sessions:session_id (
+            data,
+            horario,
+            status,
+            valor
           )
         `)
         .eq('user_id', user.id)
         .not('package_id', 'is', null)
-        .order('data_vencimento', { ascending: false })
+        .order('created_at', { ascending: false })
       
       if (paymentsError) {
         console.error('Erro ao carregar pagamentos de pacotes:', paymentsError)
@@ -175,6 +191,7 @@ const Pagamentos = () => {
           method: method,
           session_id: session.id,
           session_status: session.status,
+          session_valor: session.valor,
           type: 'session'
         }
       })
@@ -390,15 +407,32 @@ const Pagamentos = () => {
     }
   })
 
-  // Separar pagamentos em futuros e passados
+  // Separar pagamentos em futuros e passados usando a data efetiva
   const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  
   const futurePayments = filteredPayments.filter(payment => {
-    const paymentDateTime = new Date(`${payment.date}T${payment.time}`)
-    return paymentDateTime >= now
+    // Para pacotes, usar package_data_fim; para sessões, usar date+time
+    if (payment.type === 'package' && payment.package_data_fim) {
+      const endDate = new Date(payment.package_data_fim)
+      endDate.setHours(0, 0, 0, 0)
+      return endDate >= now
+    } else {
+      const paymentDate = new Date(`${payment.date}T${payment.time || '00:00'}`)
+      return paymentDate >= now
+    }
   })
+  
   const pastPayments = filteredPayments.filter(payment => {
-    const paymentDateTime = new Date(`${payment.date}T${payment.time}`)
-    return paymentDateTime < now
+    // Para pacotes, usar package_data_fim; para sessões, usar date+time
+    if (payment.type === 'package' && payment.package_data_fim) {
+      const endDate = new Date(payment.package_data_fim)
+      endDate.setHours(0, 0, 0, 0)
+      return endDate < now
+    } else {
+      const paymentDate = new Date(`${payment.date}T${payment.time || '00:00'}`)
+      return paymentDate < now
+    }
   })
 
   const totalReceived = filteredPayments
@@ -670,25 +704,22 @@ const Pagamentos = () => {
                        {futurePayments.map((payment) => {
                          const StatusIcon = getStatusIcon(payment.status)
                          
-                         // Lógica de needsAttention corrigida
-                         let needsAttention = false
-                         if (payment.status === 'pendente') {
-                           if (payment.type === 'package') {
-                             // Para pacotes, verificar data_fim
-                             if (payment.package_data_fim) {
-                               const endDate = new Date(payment.package_data_fim)
-                               needsAttention = endDate.getTime() < new Date().getTime()
-                             }
-                           } else {
-                             // Para sessões, verificar se está no passado E status é 'agendada'
-                             const session = sessions.find(s => s.id === payment.session_id)
-                             if (session && session.status === 'agendada') {
-                               const sessionDateTime = new Date(`${payment.date}T${payment.time}`)
-                               needsAttention = sessionDateTime.getTime() < new Date().getTime()
-                             }
-                           }
-                         }
-                         
+                          // Verificar se pagamento precisa de atenção (bolinha vermelha)
+                          let needsAttention = false
+                          if (payment.type === 'package') {
+                            needsAttention = paymentNeedsAttentionForPackage({
+                              status: payment.status,
+                              packages: { data_fim: payment.package_data_fim }
+                            })
+                          } else if (payment.type === 'session' && payment.session_valor !== undefined) {
+                            needsAttention = paymentNeedsAttentionForSession({
+                              status: payment.session_status,
+                              valor: payment.session_valor,
+                              data: payment.date,
+                              horario: payment.time
+                            })
+                          }
+                          
                          return (
                            <div 
                              key={payment.id} 

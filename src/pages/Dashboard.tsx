@@ -295,6 +295,7 @@ const Dashboard = () => {
         allPaymentMethodsResult,
         packagesDataResult,
         allSessionsForPaymentStatusResult,
+        allSessionsForNotificationsResult,
         pendingPaymentsResult
       ] = await Promise.all([
         // Buscar TODAS as sessões de hoje, sem considerar horário para filtro inicial
@@ -310,7 +311,8 @@ const Dashboard = () => {
         supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null),
         supabase.from('packages').select('*').eq('user_id', user?.id),
         supabase.from('sessions').select('id, valor, status, data, horario').eq('user_id', user?.id).not('valor', 'is', null),
-        supabase.from('payments').select('id, valor, status, data_vencimento, package_id, client_id, clients(nome, avatar_url), packages(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id).eq('status', 'pendente')
+        supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(500),
+        supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id)
       ])
       
       if (checkStale()) return
@@ -503,25 +505,25 @@ const Dashboard = () => {
         packagesNearEnd
       }
 
-      // Calcular estatísticas de pagamentos (não setar ainda)
-      const allSessionsForPaymentStatus = allSessionsForPaymentStatusResult.data || []
-      const paidSessions = allSessionsForPaymentStatus.filter(s => s.status === 'realizada')
-      const pendingPaymentSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada')
-      const overdueSessionsForStats = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) < new Date())
+      // Calcular estatísticas de pagamentos usando a tabela PAYMENTS
+      const allPaymentsData = pendingPaymentsResult.data || []
+      const paidPayments = allPaymentsData.filter(p => p.status === 'pago')
+      const pendingPayments = allPaymentsData.filter(p => p.status === 'pendente')
 
       const paymentStatsData = {
-        totalPaid: paidSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
-        totalPending: pendingPaymentSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
-        paidCount: paidSessions.length,
-        pendingCount: pendingPaymentSessions.length
+        totalPaid: paidPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
+        totalPending: pendingPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
+        paidCount: paidPayments.length,
+        pendingCount: pendingPayments.length
       }
 
       // Gerar notificações inteligentes
       const notifications: any[] = []
 
-      // Notificação: Sessões passadas que ainda estão como 'agendada' - PRECISAM DE ATENÇÃO
-      // Usar allSessionsForPaymentStatus para garantir que TODAS as sessões sejam verificadas, não apenas hoje/futuras
-      const sessionsNeedingAttention = allSessionsForPaymentStatus.filter(s => {
+      // Notificação: Sessões passadas que ainda estão como 'agendada' - PRECISAM DE ATENÇÃO (amarelo)
+      // Usar allSessionsForNotifications (sem filtro de valor) para verificar todas as sessões
+      const allSessionsForNotifications = allSessionsForNotificationsResult.data || []
+      const sessionsNeedingAttention = allSessionsForNotifications.filter(s => {
         if (s.status !== 'agendada') return false
         const sessionDateTime = new Date(`${s.data}T${s.horario}`)
         const now = new Date()
@@ -532,54 +534,52 @@ const Dashboard = () => {
           id: 'sessions-need-attention',
           type: 'recurring_next' as const,
           priority: 'medium' as const,
-          title: 'Sessões precisam de atualização',
-          message: `${sessionsNeedingAttention.length} sessão${sessionsNeedingAttention.length > 1 ? 'ões passadas precisam' : ' passada precisa'} de atualização de status`,
+          title: 'Atualização de Status Necessária',
+          message: `${sessionsNeedingAttention.length} ${sessionsNeedingAttention.length === 1 ? 'sessão precisa' : 'sessões precisam'} que o status seja atualizado`,
           actionUrl: '/sessoes',
           actionLabel: 'Ver',
           metadata: { count: sessionsNeedingAttention.length, sessionIds: sessionsNeedingAttention.map(s => s.id) }
         })
       }
 
-      // Notificação: Pagamentos pendentes (sessões + pagamentos de pacotes)
-      const pendingPaymentsData = pendingPaymentsResult.data || []
+      // Notificação: Pagamentos pendentes (usar tabela payments - vermelho)
       const currentDate = new Date()
+      currentDate.setHours(0, 0, 0, 0)
       
-      // Pagamentos de sessões vencidos (apenas sessões 'agendada' com data/hora passada)
-      const overdueSessionPayments = overdueSessionsForStats.filter(s => {
-        if (s.status !== 'agendada') return false // Ignorar sessões já atualizadas
-        const sessionDateTime = new Date(`${s.data}T${s.horario}`)
-        return sessionDateTime.getTime() < currentDate.getTime()
+      // Pagamentos de sessão vencidos (data_vencimento < hoje)
+      const overdueSessionPayments = pendingPayments.filter(p => {
+        if (!p.session_id || !p.data_vencimento) return false
+        const vencimento = new Date(p.data_vencimento)
+        vencimento.setHours(0, 0, 0, 0)
+        return vencimento < currentDate
       })
       
-      // Pagamentos de pacotes vencidos (apenas após data_fim)
-      const overduePackagePayments = pendingPaymentsData.filter(p => {
-        if (!p.package_id) return false
-        const pkg = p.packages
-        if (!pkg || !pkg.data_fim) return false
-        const endDate = new Date(pkg.data_fim)
-        return endDate.getTime() < currentDate.getTime()
+      // Pagamentos de pacote vencidos (data_fim < hoje)
+      const overduePackagePayments = pendingPayments.filter(p => {
+        if (!p.package_id || !p.packages?.data_fim) return false
+        const endDate = new Date(p.packages.data_fim)
+        endDate.setHours(0, 0, 0, 0)
+        return endDate < currentDate
       })
-      
+
       const totalOverduePayments = overdueSessionPayments.length + overduePackagePayments.length
       
       if (totalOverduePayments > 0) {
-        const sessionAmount = overdueSessionPayments.reduce((sum, s) => sum + (Number(s.valor) || 0), 0)
-        const packageAmount = overduePackagePayments.reduce((sum, p) => sum + (Number(p.valor) || 0), 0)
-        const totalAmount = sessionAmount + packageAmount
+        const totalAmount = [...overdueSessionPayments, ...overduePackagePayments]
+          .reduce((sum, p) => sum + (p.valor || 0), 0)
         
         notifications.push({
-          id: 'overdue-payments',
-          type: 'payment_overdue' as const,
-          priority: 'high' as const,
-          title: 'Pagamentos pendentes',
-          message: `${totalOverduePayments} pagamento${totalOverduePayments > 1 ? 's' : ''} vencido${totalOverduePayments > 1 ? 's' : ''} precisa${totalOverduePayments > 1 ? 'm' : ''} de atualização`,
+          type: 'payment_overdue',
+          priority: 'high',
+          title: 'Pagamentos Pendentes',
+          message: `${totalOverduePayments} ${totalOverduePayments === 1 ? 'pagamento' : 'pagamentos'} ${totalOverduePayments === 1 ? 'aguardando' : 'aguardando'} confirmação`,
           actionUrl: '/pagamentos',
           actionLabel: 'Ver',
-          metadata: { count: totalOverduePayments, amount: totalAmount }
+          metadata: {
+            amount: totalAmount
+          }
         })
       }
-
-      // Preparar notificações (não setar ainda)
 
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
@@ -600,16 +600,16 @@ const Dashboard = () => {
         }
       }
       
-      // Sessões pendentes de pagamento (apenas futuras ou recentes)
+      // Sessões pendentes de pagamento (contagem de sessões recentes)
       const recentDate = new Date()
       recentDate.setDate(recentDate.getDate() - 7)
-      const pendingPayments = paymentsData?.filter(session => 
+      const recentPendingSessions = paymentsData?.filter(session => 
         session.status === 'agendada' && 
         new Date(session.data) >= recentDate
       )?.length || 0
       
-      if (pendingPayments > 0) {
-        reminders.push(`${pendingPayments} sessões precisam de acompanhamento de pagamento`)
+      if (recentPendingSessions > 0) {
+        reminders.push(`${recentPendingSessions} sessões precisam de acompanhamento de pagamento`)
       }
       
       // Clientes novos
@@ -637,7 +637,7 @@ const Dashboard = () => {
         sessionsToday: todaySessions?.length || 0,
         activeClients: clientsCount || 0,
         monthlyRevenue,
-        pendingRevenue,
+        pendingRevenue: pendingPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
         completionRate: 94
       }
 

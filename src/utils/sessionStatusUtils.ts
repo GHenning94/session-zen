@@ -81,3 +81,57 @@ export const getSessionStatusLabel = (status: string) => {
     default: return status
   }
 }
+
+/**
+ * Verifica se um PAGAMENTO de sessão precisa de atenção (bolinha vermelha)
+ * Apenas sessões com valor > 0, agendadas e que já passaram
+ */
+export const paymentNeedsAttentionForSession = (session: { status: string; valor?: number; data: string; horario: string }): boolean => {
+  if (session.status !== 'agendada') return false
+  if (!session.valor || session.valor <= 0) return false
+  
+  const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+  const currentDateTime = new Date()
+  
+  return sessionDateTime < currentDateTime
+}
+
+/**
+ * Verifica se um pagamento de PACOTE precisa de atenção (bolinha vermelha)
+ * Apenas pacotes pendentes cuja data_fim já passou
+ */
+export const paymentNeedsAttentionForPackage = (payment: { status: string; packages?: { data_fim?: string } }): boolean => {
+  if (payment.status !== 'pendente') return false
+  if (!payment.packages?.data_fim) return false
+  
+  const endDate = new Date(payment.packages.data_fim)
+  const currentDate = new Date()
+  currentDate.setHours(0, 0, 0, 0)
+  endDate.setHours(0, 0, 0, 0)
+  
+  return endDate < currentDate
+}
+
+/**
+ * Retorna a data efetiva de um pagamento para ordenação/agrupamento
+ * Para pacotes: usa data_fim; para sessões: usa data_vencimento ou data da sessão
+ */
+export const getPaymentEffectiveDate = (payment: any): Date => {
+  // Se é pagamento de pacote e tem data_fim, usar essa
+  if (payment.package_id && payment.packages?.data_fim) {
+    return new Date(payment.packages.data_fim)
+  }
+  
+  // Se tem data_vencimento, usar essa
+  if (payment.data_vencimento) {
+    return new Date(payment.data_vencimento)
+  }
+  
+  // Se é pagamento de sessão e tem data da sessão
+  if (payment.session_id && payment.sessions?.data) {
+    return new Date(`${payment.sessions.data}T${payment.sessions.horario || '00:00'}`)
+  }
+  
+  // Fallback: usar created_at
+  return new Date(payment.created_at)
+}
