@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ClientAvatar } from "@/components/ClientAvatar"
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
+import { PackageStatusCard } from "@/components/PackageStatusCard"
+import { PaymentStatusCard } from "@/components/PaymentStatusCard"
+import { SmartNotificationCard } from "@/components/SmartNotificationCard"
 import { 
   Calendar, 
   Users, 
@@ -55,6 +58,24 @@ const Dashboard = () => {
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
+  const [packageStats, setPackageStats] = useState({
+    totalPackages: 0,
+    activePackages: 0,
+    totalSessions: 0,
+    consumedSessions: 0,
+    remainingSessions: 0,
+    totalRevenue: 0,
+    packagesNearEnd: 0
+  })
+  const [paymentStats, setPaymentStats] = useState({
+    totalPaid: 0,
+    totalPending: 0,
+    totalOverdue: 0,
+    paidCount: 0,
+    pendingCount: 0,
+    overdueCount: 0
+  })
+  const [smartNotifications, setSmartNotifications] = useState<any[]>([])
   
   // Cooperative cancellation refs
   const isActiveRef = useRef(true)
@@ -244,7 +265,9 @@ const Dashboard = () => {
         paymentsDataResult,
         recentClientsDataResult,
         allClientsWithPaymentsResult,
-        allPaymentMethodsResult
+        allPaymentMethodsResult,
+        packagesDataResult,
+        allSessionsForPaymentStatusResult
       ] = await Promise.all([
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
@@ -254,7 +277,9 @@ const Dashboard = () => {
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
         supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
-        supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null)
+        supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null),
+        supabase.from('packages').select('*').eq('user_id', user?.id),
+        supabase.from('sessions').select('valor, status, data').eq('user_id', user?.id).not('valor', 'is', null)
       ])
       
       if (checkStale()) return
@@ -461,6 +486,106 @@ const Dashboard = () => {
 
       if (checkStale()) return
       if (!checkStale()) console.log('💳 Receita por canal calculada:', receitaPorCanalData)
+
+      // Calcular estatísticas de pacotes
+      const packagesData = packagesDataResult.data || []
+      const activePackages = packagesData.filter(p => p.status === 'ativo')
+      const totalSessions = packagesData.reduce((sum, p) => sum + (p.total_sessoes || 0), 0)
+      const consumedSessions = packagesData.reduce((sum, p) => sum + (p.sessoes_consumidas || 0), 0)
+      const remainingSessions = totalSessions - consumedSessions
+      const totalPackageRevenue = packagesData.reduce((sum, p) => sum + (p.valor_total || 0), 0)
+      const packagesNearEnd = activePackages.filter(p => {
+        const remaining = (p.total_sessoes || 0) - (p.sessoes_consumidas || 0)
+        return remaining <= 2 && remaining > 0
+      }).length
+
+      setPackageStats({
+        totalPackages: packagesData.length,
+        activePackages: activePackages.length,
+        totalSessions,
+        consumedSessions,
+        remainingSessions,
+        totalRevenue: totalPackageRevenue,
+        packagesNearEnd
+      })
+
+      // Calcular estatísticas de pagamentos
+      const allSessionsForPaymentStatus = allSessionsForPaymentStatusResult.data || []
+      const paidSessions = allSessionsForPaymentStatus.filter(s => s.status === 'realizada')
+      const pendingPaymentSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) >= new Date())
+      const overdueSessions = allSessionsForPaymentStatus.filter(s => s.status === 'agendada' && new Date(s.data) < new Date())
+
+      setPaymentStats({
+        totalPaid: paidSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
+        totalPending: pendingPaymentSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
+        totalOverdue: overdueSessions.reduce((sum, s) => sum + (s.valor || 0), 0),
+        paidCount: paidSessions.length,
+        pendingCount: pendingPaymentSessions.length,
+        overdueCount: overdueSessions.length
+      })
+
+      // Gerar notificações inteligentes
+      const notifications: any[] = []
+
+      // Notificação de pacotes acabando
+      if (packagesNearEnd > 0) {
+        const packagesEndingData = activePackages.filter(p => {
+          const remaining = (p.total_sessoes || 0) - (p.sessoes_consumidas || 0)
+          return remaining <= 2 && remaining > 0
+        })
+        
+        packagesEndingData.forEach(pkg => {
+          notifications.push({
+            id: `package_ending_${pkg.id}`,
+            type: 'package_ending' as const,
+            priority: 'high' as const,
+            title: 'Pacote acabando',
+            message: `Restam apenas ${(pkg.total_sessoes || 0) - (pkg.sessoes_consumidas || 0)} sessões no pacote`,
+            actionUrl: '/pacotes',
+            actionLabel: 'Ver pacotes',
+            metadata: pkg
+          })
+        })
+      }
+
+      // Notificação de pagamentos atrasados
+      if (overdueSessions.length > 0) {
+        const overdueAmount = overdueSessions.reduce((sum, s) => sum + (s.valor || 0), 0)
+        notifications.push({
+          id: 'payments_overdue',
+          type: 'payment_overdue' as const,
+          priority: 'high' as const,
+          title: `${overdueSessions.length} pagamentos atrasados`,
+          message: 'Verifique os pagamentos que precisam de atenção',
+          actionUrl: '/pagamentos',
+          actionLabel: 'Ver pagamentos',
+          metadata: { amount: overdueAmount, count: overdueSessions.length }
+        })
+      }
+
+      // Notificação de próximas sessões recorrentes
+      const { data: recurringSessionsData } = await supabase
+        .from('recurring_sessions')
+        .select('*, clients(nome)')
+        .eq('user_id', user?.id)
+        .eq('status', 'ativa')
+        .limit(3)
+      
+      if (recurringSessionsData && recurringSessionsData.length > 0) {
+        recurringSessionsData.forEach(recurring => {
+          notifications.push({
+            id: `recurring_${recurring.id}`,
+            type: 'recurring_next' as const,
+            priority: 'medium' as const,
+            title: 'Sessão recorrente ativa',
+            message: `${recurring.clients?.nome || 'Cliente'} - ${recurring.recurrence_type}`,
+            actionUrl: '/sessoes-recorrentes',
+            actionLabel: 'Ver recorrências'
+          })
+        })
+      }
+
+      setSmartNotifications(notifications)
 
       // Gerar lembretes dinâmicos (apenas eventos futuros)
       const reminders = []
@@ -846,6 +971,13 @@ const Dashboard = () => {
               </CardContent>
             </Card>
           ))}
+        </div>
+
+        {/* Pacotes, Pagamentos e Notificações Inteligentes */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <PackageStatusCard stats={packageStats} />
+          <PaymentStatusCard stats={paymentStats} />
+          <SmartNotificationCard notifications={smartNotifications} />
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
