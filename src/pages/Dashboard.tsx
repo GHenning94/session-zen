@@ -36,6 +36,7 @@ import { TutorialButton } from "@/components/TutorialButton"
 import { TutorialModal } from "@/components/TutorialModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { cn } from "@/lib/utils"
+import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -192,6 +193,19 @@ const Dashboard = () => {
     }
   }, [user, loadDashboardDataOptimized, invalidateCache])
 
+  // Recarregar ao voltar o foco/aba visível
+  useEffect(() => {
+    if (!user) return
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        invalidateCache(['upcomingSessions', 'recentPayments', 'recentClients', 'dashboardStats', 'charts'])
+        loadDashboardDataOptimized(true)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => document.removeEventListener('visibilitychange', onVisibility)
+  }, [user, invalidateCache, loadDashboardDataOptimized])
+
   // Optimized real-time updates
   useEffect(() => {
     if (!user) return
@@ -343,19 +357,18 @@ const Dashboard = () => {
       oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1)
       const oneYearAgoStr = oneYearAgo.toISOString().split('T')[0]
       
-      // Buscar todas as sessões do último ano de uma vez
-      const { data: yearSessions } = await supabase
-        .from('sessions')
-        .select('valor, status, data')
+      // Buscar todos os pagamentos do último ano (sessões + pacotes)
+      const { data: yearPayments } = await supabase
+        .from('payments')
+        .select('valor, status, data_vencimento, data_pagamento, created_at, session_id, package_id, sessions:session_id(data, horario), packages:package_id(data_fim)')
         .eq('user_id', user?.id)
-        .gte('data', oneYearAgoStr)
-        .not('valor', 'is', null)
+        .gte('created_at', oneYearAgoStr)
       
       if (checkStale()) return
       
-      // Processar dados do gráfico mensal em memória (muito mais rápido)
-      const chartData = []
-      const ticketMedioData = []
+      // Processar dados do gráfico mensal em memória com base em payments
+      const chartData: any[] = []
+      const ticketMedioData: any[] = []
       
       for (let i = 11; i >= 0; i--) {
         const date = new Date()
@@ -363,24 +376,35 @@ const Dashboard = () => {
         const monthStart = new Date(date.getFullYear(), date.getMonth(), 1)
         const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0)
         
-        const monthStartStr = monthStart.toISOString().split('T')[0]
-        const monthEndStr = monthEnd.toISOString().split('T')[0]
+        const revenue = (yearPayments || [])
+          .filter((p: any) => p.status === 'pago')
+          .filter((p: any) => {
+            const d = p.data_pagamento
+              ? new Date(p.data_pagamento)
+              : (p.sessions?.data ? new Date(p.sessions.data) : new Date(p.created_at))
+            return d >= monthStart && d <= monthEnd
+          })
+          .reduce((sum: number, p: any) => sum + (p.valor || 0), 0)
         
-        // Filtrar sessões do mês em memória
-        const monthSessions = yearSessions?.filter(s => 
-          s.data >= monthStartStr && s.data <= monthEndStr && s.status === 'realizada'
-        ) || []
+        const pending = (yearPayments || [])
+          .filter((p: any) => p.status === 'pendente')
+          .filter((p: any) => {
+            const eff = getPaymentEffectiveDate(p)
+            return eff >= monthStart && eff <= monthEnd
+          })
+          .reduce((sum: number, p: any) => sum + (p.valor || 0), 0)
         
-        const monthPendingSessions = yearSessions?.filter(s => 
-          s.data >= monthStartStr && s.data <= monthEndStr && s.status === 'agendada'
-        ) || []
-        
-        const revenue = monthSessions.reduce((sum, session) => sum + (session.valor || 0), 0)
-        const pending = monthPendingSessions.reduce((sum, session) => sum + (session.valor || 0), 0)
-        
-        const totalRevenue = monthSessions.reduce((sum, session) => sum + (session.valor || 0), 0)
-        const totalSessions = monthSessions.length
-        const ticketMedio = totalSessions > 0 ? totalRevenue / totalSessions : 0
+        const paidThisMonth = (yearPayments || [])
+          .filter((p: any) => p.status === 'pago')
+          .filter((p: any) => {
+            const d = p.data_pagamento
+              ? new Date(p.data_pagamento)
+              : (p.sessions?.data ? new Date(p.sessions.data) : new Date(p.created_at))
+            return d >= monthStart && d <= monthEnd
+          })
+        const totalPaidValue = paidThisMonth.reduce((sum: number, p: any) => sum + (p.valor || 0), 0)
+        const totalPaidCount = paidThisMonth.length
+        const ticketMedio = totalPaidCount > 0 ? totalPaidValue / totalPaidCount : 0
         
         const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
         const monthNamesLong = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
@@ -395,7 +419,7 @@ const Dashboard = () => {
         ticketMedioData.push({
           mes: monthNames[date.getMonth()],
           ticketMedio: ticketMedio,
-          sessoes: totalSessions,
+          sessoes: totalPaidCount,
           fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
       }

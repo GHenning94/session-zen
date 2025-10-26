@@ -29,7 +29,7 @@ import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
 import { PaymentDetailsModal } from "@/components/PaymentDetailsModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
-import { calculatePaymentStatus, paymentNeedsAttentionForSession, paymentNeedsAttentionForPackage } from "@/utils/sessionStatusUtils"
+import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 
@@ -43,11 +43,11 @@ const Pagamentos = () => {
   const [filterStatus, setFilterStatus] = useState("todos")
   const [filterMethod, setFilterMethod] = useState("todos")
   const [filterName, setFilterName] = useState("")
-  const [sessions, setSessions] = useState<any[]>([])
-  const [clients, setClients] = useState<any[]>([])
-  const [profiles, setProfiles] = useState<any[]>([])
-  const [packagePayments, setPackagePayments] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
+const [sessions, setSessions] = useState<any[]>([])
+const [clients, setClients] = useState<any[]>([])
+const [profiles, setProfiles] = useState<any[]>([])
+const [payments, setPayments] = useState<any[]>([])
+const [isLoading, setIsLoading] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
@@ -68,7 +68,7 @@ const Pagamentos = () => {
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
       
-      // Carregar pagamentos de pacotes
+      // Carregar TODOS os pagamentos (sessões + pacotes)
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select(`
@@ -94,17 +94,17 @@ const Pagamentos = () => {
             data,
             horario,
             status,
-            valor
+            valor,
+            metodo_pagamento
           )
         `)
         .eq('user_id', user.id)
-        .not('package_id', 'is', null)
         .order('created_at', { ascending: false })
       
       if (paymentsError) {
-        console.error('Erro ao carregar pagamentos de pacotes:', paymentsError)
+        console.error('Erro ao carregar pagamentos:', paymentsError)
       } else {
-        setPackagePayments(paymentsData || [])
+        setPayments(paymentsData || [])
       }
       
       // Carregar clientes
@@ -167,64 +167,37 @@ const Pagamentos = () => {
     return client?.nome || 'Cliente não encontrado'
   }
 
-  const getSessionPayments = () => {
-    // Sessões individuais (excluir sessões de pacotes)
-    const sessionPayments = sessions
-      .filter(session => !session.package_id) // Apenas sessões avulsas
-      .map(session => {
-        const status = calculatePaymentStatus(session.data, session.horario, session.status)
-        const client = clients.find(c => c.id === session.client_id)
-        
-        let method = session.metodo_pagamento || 'A definir'
-        if (status === 'pendente' || status === 'cancelado') {
-          method = 'A definir'
-        }
-        
-        return {
-          id: session.id,
-          client: getClientName(session.client_id),
-          client_avatar: client?.avatar_url,
-          date: session.data,
-          time: session.horario,
-          value: session.valor || 0,
-          status: status,
-          method: method,
-          session_id: session.id,
-          session_status: session.status,
-          session_valor: session.valor,
-          type: 'session'
-        }
-      })
-    
-    // Pagamentos de pacotes (um pagamento único por pacote)
-    const packagePaymentsList = packagePayments.map(payment => {
-      const client = clients.find(c => c.id === payment.client_id)
-      const packageInfo = payment.packages
-      
-      // Calcular status do pagamento do pacote
-      let status = payment.status || 'pendente'
-      
-      return {
-        id: payment.id,
-        client: getClientName(payment.client_id),
-        client_avatar: client?.avatar_url,
-        date: payment.data_vencimento || new Date().toISOString().split('T')[0],
-        time: '00:00:00', // Pacotes não têm horário específico
-        value: payment.valor || 0,
-        status: status,
-        method: payment.metodo_pagamento || 'A definir',
-        payment_id: payment.id,
-        package_id: payment.package_id,
-        package_name: packageInfo?.nome || 'Pacote',
-        package_sessions: `${packageInfo?.sessoes_consumidas || 0}/${packageInfo?.total_sessoes || 0}`,
-        package_data_inicio: packageInfo?.data_inicio,
-        package_data_fim: packageInfo?.data_fim,
-        type: 'package'
-      }
-    })
-    
-    return [...sessionPayments, ...packagePaymentsList]
-  }
+const getSessionPayments = () => {
+  // Mapear diretamente da tabela payments (sessões + pacotes)
+  return (payments || []).map((p: any) => {
+    const isPackage = !!p.package_id
+    const client = clients.find(c => c.id === p.client_id)
+    const effective = getPaymentEffectiveDate(p)
+    const effDateStr = effective.toISOString().split('T')[0]
+    const time = isPackage ? '00:00:00' : (p.sessions?.horario || '00:00:00')
+
+    return {
+      id: p.id,
+      client: client?.nome || 'Cliente não encontrado',
+      client_avatar: client?.avatar_url,
+      date: isPackage ? (p.packages?.data_inicio || effDateStr) : (p.sessions?.data || effDateStr),
+      time,
+      value: p.valor || 0,
+      status: p.status || 'pendente',
+      method: p.metodo_pagamento || p.sessions?.metodo_pagamento || 'A definir',
+      session_id: p.session_id,
+      session_status: p.sessions?.status,
+      session_valor: p.sessions?.valor,
+      package_id: p.package_id,
+      package_name: p.packages?.nome,
+      package_sessions: p.packages ? `${p.packages.sessoes_consumidas || 0}/${p.packages.total_sessoes || 0}` : undefined,
+      package_data_inicio: p.packages?.data_inicio,
+      package_data_fim: p.packages?.data_fim,
+      type: isPackage ? 'package' : 'session',
+      raw: p,
+    }
+  })
+}
 
   const markAsPaid = async (sessionId: string, paymentMethod: string) => {
     setIsLoading(true)
@@ -345,40 +318,40 @@ const Pagamentos = () => {
     }
   }
 
-  const filterByPeriod = (payments: any[]) => {
-    if (filterPeriod === "todos") return payments
-    
-    const now = new Date()
-    const startDate = new Date()
-    
-    switch (filterPeriod) {
-      case "hoje":
-        // Apenas hoje
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        return payments.filter(payment => {
-          const paymentDate = new Date(payment.date)
-          paymentDate.setHours(0, 0, 0, 0)
-          return paymentDate.getTime() === today.getTime()
-        })
-      case "semana":
-        startDate.setDate(now.getDate() - 7)
-        break
-      case "mes":
-        startDate.setMonth(now.getMonth() - 1)
-        break
-      case "trimestre":
-        startDate.setMonth(now.getMonth() - 3)
-        break
-      default:
-        return payments
+const filterByPeriod = (items: any[]) => {
+  if (filterPeriod === "todos") return items
+  
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const startDate = new Date(now)
+  
+  switch (filterPeriod) {
+    case "hoje": {
+      return items.filter(item => {
+        const eff = getPaymentEffectiveDate(item.raw)
+        const effDate = new Date(eff)
+        effDate.setHours(0, 0, 0, 0)
+        return effDate.getTime() === now.getTime()
+      })
     }
-    
-    return payments.filter(payment => {
-      const paymentDate = new Date(payment.date)
-      return paymentDate >= startDate && paymentDate <= now
-    })
+    case "semana":
+      startDate.setDate(now.getDate() - 7)
+      break
+    case "mes":
+      startDate.setMonth(now.getMonth() - 1)
+      break
+    case "trimestre":
+      startDate.setMonth(now.getMonth() - 3)
+      break
+    default:
+      return items
   }
+  
+  return items.filter(item => {
+    const eff = getPaymentEffectiveDate(item.raw)
+    return eff >= startDate && eff <= now
+  })
+}
 
   // Filtrar e ordenar pagamentos pela mais próxima (futuros primeiro, depois passados)
   const allPayments = getSessionPayments()
@@ -407,33 +380,23 @@ const Pagamentos = () => {
     }
   })
 
-  // Separar pagamentos em futuros e passados usando a data efetiva
-  const now = new Date()
-  now.setHours(0, 0, 0, 0)
-  
-  const futurePayments = filteredPayments.filter(payment => {
-    // Para pacotes, usar package_data_fim; para sessões, usar date+time
-    if (payment.type === 'package' && payment.package_data_fim) {
-      const endDate = new Date(payment.package_data_fim)
-      endDate.setHours(0, 0, 0, 0)
-      return endDate >= now
-    } else {
-      const paymentDate = new Date(`${payment.date}T${payment.time || '00:00'}`)
-      return paymentDate >= now
-    }
-  })
-  
-  const pastPayments = filteredPayments.filter(payment => {
-    // Para pacotes, usar package_data_fim; para sessões, usar date+time
-    if (payment.type === 'package' && payment.package_data_fim) {
-      const endDate = new Date(payment.package_data_fim)
-      endDate.setHours(0, 0, 0, 0)
-      return endDate < now
-    } else {
-      const paymentDate = new Date(`${payment.date}T${payment.time || '00:00'}`)
-      return paymentDate < now
-    }
-  })
+// Separar pagamentos em futuros e passados usando a data efetiva unificada
+const now = new Date()
+now.setHours(0, 0, 0, 0)
+
+const futurePayments = filteredPayments.filter(item => {
+  const eff = getPaymentEffectiveDate(item.raw)
+  const effDate = new Date(eff)
+  effDate.setHours(0, 0, 0, 0)
+  return effDate >= now
+})
+
+const pastPayments = filteredPayments.filter(item => {
+  const eff = getPaymentEffectiveDate(item.raw)
+  const effDate = new Date(eff)
+  effDate.setHours(0, 0, 0, 0)
+  return effDate < now
+})
 
   const totalReceived = filteredPayments
     .filter(p => p.status === 'pago')
@@ -705,20 +668,7 @@ const Pagamentos = () => {
                          const StatusIcon = getStatusIcon(payment.status)
                          
                           // Verificar se pagamento precisa de atenção (bolinha vermelha)
-                          let needsAttention = false
-                          if (payment.type === 'package') {
-                            needsAttention = paymentNeedsAttentionForPackage({
-                              status: payment.status,
-                              packages: { data_fim: payment.package_data_fim }
-                            })
-                          } else if (payment.type === 'session' && payment.session_valor !== undefined) {
-                            needsAttention = paymentNeedsAttentionForSession({
-                              status: payment.session_status,
-                              valor: payment.session_valor,
-                              data: payment.date,
-                              horario: payment.time
-                            })
-                          }
+                           const needsAttention = isOverdue(payment.raw)
                           
                          return (
                            <div 
@@ -808,24 +758,8 @@ const Pagamentos = () => {
                        {pastPayments.map((payment) => {
                    const StatusIcon = getStatusIcon(payment.status)
                    
-                   // Lógica de needsAttention corrigida
-                   let needsAttention = false
-                   if (payment.status === 'pendente') {
-                     if (payment.type === 'package') {
-                       // Para pacotes, verificar data_fim
-                       if (payment.package_data_fim) {
-                         const endDate = new Date(payment.package_data_fim)
-                         needsAttention = endDate.getTime() < new Date().getTime()
-                       }
-                     } else {
-                       // Para sessões, verificar se está no passado E status é 'agendada'
-                       const session = sessions.find(s => s.id === payment.session_id)
-                       if (session && session.status === 'agendada') {
-                         const sessionDateTime = new Date(`${payment.date}T${payment.time}`)
-                         needsAttention = sessionDateTime.getTime() < new Date().getTime()
-                       }
-                     }
-                   }
+                   // Lógica de needsAttention unificada
+                   const needsAttention = isOverdue(payment.raw)
                    
                    return (
                     <div 

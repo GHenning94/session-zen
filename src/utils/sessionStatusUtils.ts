@@ -135,3 +135,16 @@ export const getPaymentEffectiveDate = (payment: any): Date => {
   // Fallback: usar created_at
   return new Date(payment.created_at)
 }
+
+/**
+ * Verifica se um pagamento está vencido (precisa de atenção)
+ */
+export const isOverdue = (payment: any): boolean => {
+  if (!payment || payment.status !== 'pendente') return false
+  const effective = getPaymentEffectiveDate(payment)
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const eff = new Date(effective)
+  eff.setHours(0, 0, 0, 0)
+  return eff < today
+}
