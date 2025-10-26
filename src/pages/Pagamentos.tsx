@@ -242,6 +242,8 @@ const Pagamentos = () => {
       })
       
       await loadData()
+      // Notificar dashboard para atualizar
+      window.dispatchEvent(new Event('paymentUpdated'))
     } catch (error) {
       console.error('Erro ao marcar pagamento:', error)
       toast({
@@ -306,6 +308,8 @@ const Pagamentos = () => {
       })
       
       await loadData()
+      // Notificar dashboard para atualizar
+      window.dispatchEvent(new Event('paymentUpdated'))
     } catch (error) {
       console.error('Erro ao atualizar status:', error)
       toast({

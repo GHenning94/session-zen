@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Skeleton } from "@/components/ui/skeleton"
 import { ClientAvatar } from "@/components/ClientAvatar"
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
 import { PackageStatusCard } from "@/components/PackageStatusCard"
@@ -76,6 +77,7 @@ const Dashboard = () => {
     overdueCount: 0
   })
   const [smartNotifications, setSmartNotifications] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   
   // Cooperative cancellation refs
   const isActiveRef = useRef(true)
@@ -135,6 +137,15 @@ const Dashboard = () => {
     }
   }, [user, loadDashboardDataOptimized])
 
+  // Sempre recarregar quando o Dashboard é montado (volta de outra página)
+  useEffect(() => {
+    if (user && isActiveRef.current) {
+      console.log('🔄 Dashboard montado, forçando atualização...')
+      invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats'])
+      loadDashboardDataOptimized(true)
+    }
+  }, [])
+
   // Optimized event listeners with debouncing
   useEffect(() => {
     if (!user) return
@@ -155,20 +166,26 @@ const Dashboard = () => {
 
     const onStorage = () => handleDataChange()
     const handleClientAdded = () => handleDataChange(['recentClients', 'dashboardStats'])
-    const handleSessionAdded = () => handleDataChange(['upcomingSessions', 'dashboardStats'])
+    const handleSessionAdded = () => handleDataChange(['upcomingSessions', 'dashboardStats', 'recentPayments'])
+    const handleSessionUpdated = () => handleDataChange(['upcomingSessions', 'dashboardStats', 'recentPayments'])
     const handlePaymentAdded = () => handleDataChange(['recentPayments', 'dashboardStats'])
+    const handlePaymentUpdated = () => handleDataChange(['recentPayments', 'dashboardStats'])
 
     window.addEventListener('storage', onStorage)
     window.addEventListener('clientAdded', handleClientAdded)
     window.addEventListener('paymentAdded', handlePaymentAdded)
+    window.addEventListener('paymentUpdated', handlePaymentUpdated)
     window.addEventListener('sessionAdded', handleSessionAdded)
+    window.addEventListener('sessionUpdated', handleSessionUpdated)
     
     return () => {
       clearTimeout(timeoutId)
       window.removeEventListener('storage', onStorage)
       window.removeEventListener('clientAdded', handleClientAdded)
       window.removeEventListener('paymentAdded', handlePaymentAdded)
+      window.removeEventListener('paymentUpdated', handlePaymentUpdated)
       window.removeEventListener('sessionAdded', handleSessionAdded)
+      window.removeEventListener('sessionUpdated', handleSessionUpdated)
     }
   }, [user, loadDashboardDataOptimized, invalidateCache])
 
@@ -218,6 +235,11 @@ const Dashboard = () => {
     const checkStale = isStale || (() => !isActiveRef.current || !user)
     
     if (checkStale()) return
+    
+    // Mostrar loading apenas no carregamento inicial completo
+    if (forceFresh && !sections) {
+      setIsLoading(true)
+    }
     
     try {
       const now = Date.now()
@@ -274,7 +296,8 @@ const Dashboard = () => {
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         supabase.from('sessions').select('valor, data, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(10),
+        // Buscar sessões futuras incluindo hoje
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
         supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
@@ -297,8 +320,11 @@ const Dashboard = () => {
       const nowDate = new Date()
       
       const upcomingData = upcomingDataResult.data
-      // Manter todas as sessões agendadas sem filtro de horário - o backend já filtra por data >= today
-      const filteredUpcoming = upcomingData?.slice(0, 4)
+      // Filtrar sessões futuras considerando data E horário
+      const filteredUpcoming = upcomingData?.filter(session => {
+        const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+        return sessionDateTime > nowDate
+      }).slice(0, 4)
       
       const paymentsData = paymentsDataResult.data
       const recentClientsData = recentClientsDataResult.data
@@ -696,6 +722,8 @@ const Dashboard = () => {
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -924,7 +952,22 @@ const Dashboard = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {isLoading ? (
+          // Skeleton loading state
+          Array.from({ length: 4 }).map((_, index) => (
+            <Card key={index} className="shadow-soft">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-10 w-10 rounded-full" />
+              </CardHeader>
+              <CardContent>
+                <Skeleton className="h-8 w-20 mb-2" />
+                <Skeleton className="h-3 w-32" />
+              </CardContent>
+            </Card>
+          ))
+        ) : (
+          stats.map((stat, index) => (
             <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -944,14 +987,33 @@ const Dashboard = () => {
                 <p className="text-xs text-muted-foreground">{stat.change}</p>
               </CardContent>
             </Card>
-          ))}
+          ))
+        )}
         </div>
 
         {/* Pacotes, Pagamentos e Notificações Inteligentes */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <PackageStatusCard stats={packageStats} />
-          <PaymentStatusCard stats={paymentStats} />
-          <SmartNotificationCard notifications={smartNotifications} />
+          {isLoading ? (
+            <>
+              {Array.from({ length: 3 }).map((_, index) => (
+                <Card key={index} className="shadow-soft">
+                  <CardHeader>
+                    <Skeleton className="h-6 w-40 mb-2" />
+                    <Skeleton className="h-4 w-32" />
+                  </CardHeader>
+                  <CardContent>
+                    <Skeleton className="h-20 w-full" />
+                  </CardContent>
+                </Card>
+              ))}
+            </>
+          ) : (
+            <>
+              <PackageStatusCard stats={packageStats} />
+              <PaymentStatusCard stats={paymentStats} />
+              <SmartNotificationCard notifications={smartNotifications} />
+            </>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -985,7 +1047,25 @@ const Dashboard = () => {
               }`}
             >
               <div className="space-y-4">
-                 {upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
+                {isLoading ? (
+                  // Skeleton for upcoming sessions
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-12 w-12 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-20" />
+                          <Skeleton className="h-3 w-24" />
+                        </div>
+                      </div>
+                      <div className="text-right space-y-2">
+                        <Skeleton className="h-4 w-24" />
+                        <Skeleton className="h-5 w-20" />
+                      </div>
+                    </div>
+                  ))
+                ) : upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => (
                    <div 
                      key={session.id || index} 
                      className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
@@ -1062,7 +1142,24 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
                 <div className="space-y-3">
-                  {recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => {
+                  {isLoading ? (
+                    // Skeleton for recent payments
+                    Array.from({ length: 4 }).map((_, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <Skeleton className="h-10 w-10 rounded-full" />
+                          <div className="space-y-2">
+                            <Skeleton className="h-4 w-24" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </div>
+                        <div className="text-right space-y-2">
+                          <Skeleton className="h-4 w-20" />
+                          <Skeleton className="h-5 w-16" />
+                        </div>
+                      </div>
+                    ))
+                  ) : recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => {
                     // Determinar status baseado na data E hora da sessão
                     const sessionDateTime = new Date(`${payment.data}T${payment.horario}`)
                     const currentDateTime = new Date()

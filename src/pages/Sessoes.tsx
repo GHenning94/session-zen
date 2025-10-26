@@ -168,6 +168,8 @@ export default function Sessoes() {
         description: "A sessão foi cancelada com sucesso.",
       })
       await loadData()
+      // Notificar dashboard para atualizar
+      window.dispatchEvent(new Event('sessionUpdated'))
     } catch (error) {
       console.error('Erro ao cancelar sessão:', error)
       toast({
@@ -192,6 +194,8 @@ export default function Sessoes() {
         description: "A sessão foi marcada como falta com sucesso.",
       })
       await loadData()
+      // Notificar dashboard para atualizar
+      window.dispatchEvent(new Event('sessionUpdated'))
     } catch (error) {
       console.error('Erro ao marcar falta:', error)
       toast({
@@ -216,6 +220,8 @@ export default function Sessoes() {
         description: "A sessão foi excluída permanentemente.",
       })
       await loadData()
+      // Notificar dashboard para atualizar
+      window.dispatchEvent(new Event('sessionUpdated'))
     } catch (error) {
       console.error('Erro ao excluir sessão:', error)
       toast({
