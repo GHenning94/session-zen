@@ -301,7 +301,7 @@ const Dashboard = () => {
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('sessions').select('valor').eq('user_id', user?.id).eq('status', 'realizada').gte('data', `${new Date().toISOString().slice(0, 7)}-01`).lt('data', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
-        supabase.from('sessions').select('valor, data, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
+        supabase.from('sessions').select('id, valor, data, horario, status').eq('user_id', user?.id).in('status', ['agendada']).lt('data', today),
         // Buscar sessões futuras incluindo hoje
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
@@ -309,8 +309,8 @@ const Dashboard = () => {
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
         supabase.from('sessions').select('metodo_pagamento, valor').eq('user_id', user?.id).eq('status', 'realizada').not('valor', 'is', null).not('metodo_pagamento', 'is', null),
         supabase.from('packages').select('*').eq('user_id', user?.id),
-        supabase.from('sessions').select('valor, status, data').eq('user_id', user?.id).not('valor', 'is', null),
-        supabase.from('payments').select('id, valor, status, data_vencimento, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'pendente')
+        supabase.from('sessions').select('id, valor, status, data, horario').eq('user_id', user?.id).not('valor', 'is', null),
+        supabase.from('payments').select('id, valor, status, data_vencimento, package_id, client_id, clients(nome, avatar_url), packages(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id).eq('status', 'pendente')
       ])
       
       if (checkStale()) return
@@ -543,17 +543,20 @@ const Dashboard = () => {
       const pendingPaymentsData = pendingPaymentsResult.data || []
       const currentDate = new Date()
       
-      // Pagamentos de sessões vencidos
+      // Pagamentos de sessões vencidos (apenas sessões 'agendada' com data/hora passada)
       const overdueSessionPayments = overdueSessionsForStats.filter(s => {
-        const sessionDate = new Date(s.data)
-        return sessionDate.getTime() < currentDate.getTime()
+        if (s.status !== 'agendada') return false // Ignorar sessões já atualizadas
+        const sessionDateTime = new Date(`${s.data}T${s.horario}`)
+        return sessionDateTime.getTime() < currentDate.getTime()
       })
       
-      // Pagamentos de pacotes vencidos
+      // Pagamentos de pacotes vencidos (apenas após data_fim)
       const overduePackagePayments = pendingPaymentsData.filter(p => {
-        if (!p.data_vencimento) return false
-        const dueDate = new Date(p.data_vencimento)
-        return dueDate.getTime() < currentDate.getTime()
+        if (!p.package_id) return false
+        const pkg = p.packages
+        if (!pkg || !pkg.data_fim) return false
+        const endDate = new Date(pkg.data_fim)
+        return endDate.getTime() < currentDate.getTime()
       })
       
       const totalOverduePayments = overdueSessionPayments.length + overduePackagePayments.length
@@ -572,26 +575,6 @@ const Dashboard = () => {
           actionUrl: '/pagamentos',
           actionLabel: 'Ver',
           metadata: { count: totalOverduePayments, amount: totalAmount }
-        })
-      }
-
-      // Notificação: Sessões próximas não confirmadas (próximas 24h)
-      const upcomingSessionsNotifications = todaySessions.concat(upcomingSessions).filter(s => {
-        const sessionDateTime = new Date(`${s.data}T${s.horario}`)
-        const now = new Date()
-        const diff = sessionDateTime.getTime() - now.getTime()
-        const hours = diff / (1000 * 60 * 60)
-        return hours > 0 && hours <= 24 && s.status === 'agendada'
-      })
-      if (upcomingSessionsNotifications.length > 0) {
-        notifications.push({
-          id: 'upcoming-sessions',
-          type: 'recurring_next' as const,
-          priority: 'medium' as const,
-          title: 'Sessões próximas',
-          message: `${upcomingSessionsNotifications.length} sessão${upcomingSessionsNotifications.length > 1 ? 'ões' : ''} nas próximas 24 horas`,
-          actionUrl: '/agenda',
-          actionLabel: 'Ver Agenda'
         })
       }
 

@@ -76,7 +76,9 @@ const Pagamentos = () => {
           packages (
             nome,
             total_sessoes,
-            sessoes_consumidas
+            sessoes_consumidas,
+            data_inicio,
+            data_fim
           )
         `)
         .eq('user_id', user.id)
@@ -198,6 +200,8 @@ const Pagamentos = () => {
         package_id: payment.package_id,
         package_name: packageInfo?.nome || 'Pacote',
         package_sessions: `${packageInfo?.sessoes_consumidas || 0}/${packageInfo?.total_sessoes || 0}`,
+        package_data_inicio: packageInfo?.data_inicio,
+        package_data_fim: packageInfo?.data_fim,
         type: 'package'
       }
     })
@@ -663,11 +667,29 @@ const Pagamentos = () => {
                       <div className="h-px bg-border flex-1" />
                     </div>
                     <div className="space-y-4">
-                      {futurePayments.map((payment) => {
-                        const StatusIcon = getStatusIcon(payment.status)
-                        const needsAttention = payment.status === 'pendente' && new Date(payment.date) < new Date()
-                        
-                        return (
+                       {futurePayments.map((payment) => {
+                         const StatusIcon = getStatusIcon(payment.status)
+                         
+                         // Lógica de needsAttention corrigida
+                         let needsAttention = false
+                         if (payment.status === 'pendente') {
+                           if (payment.type === 'package') {
+                             // Para pacotes, verificar data_fim
+                             if (payment.package_data_fim) {
+                               const endDate = new Date(payment.package_data_fim)
+                               needsAttention = endDate.getTime() < new Date().getTime()
+                             }
+                           } else {
+                             // Para sessões, verificar se está no passado E status é 'agendada'
+                             const session = sessions.find(s => s.id === payment.session_id)
+                             if (session && session.status === 'agendada') {
+                               const sessionDateTime = new Date(`${payment.date}T${payment.time}`)
+                               needsAttention = sessionDateTime.getTime() < new Date().getTime()
+                             }
+                           }
+                         }
+                         
+                         return (
                            <div 
                              key={payment.id} 
                              className={cn(
@@ -694,15 +716,31 @@ const Pagamentos = () => {
                                    <div className="flex items-center gap-1">
                                      <Calendar className="w-3 h-3" />
                                      {payment.type === 'package' ? (
-                                       <span>{formatDateBR(payment.date)} • {payment.package_name} ({payment.package_sessions})</span>
+                                       <span>
+                                         {payment.package_data_inicio && payment.package_data_fim ? (
+                                           `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
+                                         ) : (
+                                           formatDateBR(payment.date)
+                                         )}
+                                       </span>
                                      ) : (
                                        <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                      )}
                                    </div>
+                                   {payment.type === 'package' && (
+                                     <Badge variant="outline" className="text-xs">
+                                       Pacote
+                                     </Badge>
+                                   )}
                                    <Badge variant={getStatusColor(payment.status)} className="text-xs">
                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                    </Badge>
                                  </div>
+                                 {payment.type === 'package' && (
+                                   <div className="text-xs text-muted-foreground mt-1">
+                                     {payment.package_name} • {payment.package_sessions} sessões
+                                   </div>
+                                 )}
                                </div>
                              </div>
                              
@@ -720,7 +758,7 @@ const Pagamentos = () => {
                              </div>
                            </div>
                         )
-                      })}
+                       })}
                     </div>
                   </div>
                 )}
@@ -736,9 +774,27 @@ const Pagamentos = () => {
                       <div className="h-px bg-border flex-1" />
                     </div>
                     <div className="space-y-4">
-                      {pastPayments.map((payment) => {
+                       {pastPayments.map((payment) => {
                    const StatusIcon = getStatusIcon(payment.status)
-                   const needsAttention = payment.status === 'pendente' && new Date(payment.date) < new Date()
+                   
+                   // Lógica de needsAttention corrigida
+                   let needsAttention = false
+                   if (payment.status === 'pendente') {
+                     if (payment.type === 'package') {
+                       // Para pacotes, verificar data_fim
+                       if (payment.package_data_fim) {
+                         const endDate = new Date(payment.package_data_fim)
+                         needsAttention = endDate.getTime() < new Date().getTime()
+                       }
+                     } else {
+                       // Para sessões, verificar se está no passado E status é 'agendada'
+                       const session = sessions.find(s => s.id === payment.session_id)
+                       if (session && session.status === 'agendada') {
+                         const sessionDateTime = new Date(`${payment.date}T${payment.time}`)
+                         needsAttention = sessionDateTime.getTime() < new Date().getTime()
+                       }
+                     }
+                   }
                    
                    return (
                     <div 
@@ -767,15 +823,31 @@ const Pagamentos = () => {
                              <div className="flex items-center gap-1">
                                <Calendar className="w-3 h-3" />
                                {payment.type === 'package' ? (
-                                 <span>{formatDateBR(payment.date)} • {payment.package_name} ({payment.package_sessions})</span>
+                                 <span>
+                                   {payment.package_data_inicio && payment.package_data_fim ? (
+                                     `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
+                                   ) : (
+                                     formatDateBR(payment.date)
+                                   )}
+                                 </span>
                                ) : (
                                  <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                )}
                              </div>
+                             {payment.type === 'package' && (
+                               <Badge variant="outline" className="text-xs">
+                                 Pacote
+                               </Badge>
+                             )}
                              <Badge variant={getStatusColor(payment.status)} className="text-xs">
                                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                              </Badge>
                            </div>
+                           {payment.type === 'package' && (
+                             <div className="text-xs text-muted-foreground mt-1">
+                               {payment.package_name} • {payment.package_sessions} sessões
+                             </div>
+                           )}
                          </div>
                        </div>
                        
