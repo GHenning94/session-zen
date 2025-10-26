@@ -7,10 +7,10 @@ interface TutorialButtonProps {
 
 export const TutorialButton = ({ onClick }: TutorialButtonProps) => {
   return (
-    <div className="relative">
+    <div className="relative group">
       <Button 
         onClick={onClick}
-        className="relative z-10 bg-background hover:bg-accent/10 text-foreground border-0"
+        className="relative z-10 bg-background text-foreground border-0 transition-transform duration-200 group-hover:scale-[1.02]"
       >
         <PlayCircle className="w-4 h-4 mr-2" />
         Tutorial
