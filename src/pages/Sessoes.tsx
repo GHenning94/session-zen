@@ -134,10 +134,29 @@ export default function Sessoes() {
       if (clientsError) throw clientsError
 
       // Atualizar status automático das sessões
+      const now = new Date()
       const updatedSessions = (sessionsData || []).map(session => ({
         ...session,
         status: calculateSessionStatus(session.data, session.horario, session.status)
       }))
+
+      // Identificar sessões agendadas que já passaram e precisam ser atualizadas no banco
+      const sessionsToUpdate = updatedSessions.filter(session => {
+        const originalSession = sessionsData?.find(s => s.id === session.id)
+        return originalSession?.status === 'agendada' && session.status === 'realizada'
+      })
+
+      // Atualizar status no banco de dados para manter consistência
+      if (sessionsToUpdate.length > 0) {
+        const updatePromises = sessionsToUpdate.map(session =>
+          supabase
+            .from('sessions')
+            .update({ status: 'realizada' })
+            .eq('id', session.id)
+        )
+        await Promise.all(updatePromises)
+        console.log(`✅ ${sessionsToUpdate.length} sessão(ões) atualizada(s) automaticamente para 'realizada'`)
+      }
 
       setSessions(updatedSessions)
       setSessionNotes(notesData || [])
@@ -385,8 +404,8 @@ export default function Sessoes() {
       const dateTimeA = new Date(`${a.data}T${a.horario}`)
       const dateTimeB = new Date(`${b.data}T${b.horario}`)
       
-      const isAfutureA = dateTimeA >= now
-      const isFutureB = dateTimeB >= now
+      const isAfutureA = dateTimeA > now
+      const isFutureB = dateTimeB > now
       
       // Sessões futuras vêm primeiro
       if (isAfutureA && !isFutureB) return -1
@@ -404,7 +423,7 @@ export default function Sessoes() {
   const now = new Date()
   const futureSessions = filteredSessions.filter(session => {
     const sessionDateTime = new Date(`${session.data}T${session.horario}`)
-    return sessionDateTime >= now
+    return sessionDateTime > now
   })
   const pastSessions = filteredSessions.filter(session => {
     const sessionDateTime = new Date(`${session.data}T${session.horario}`)

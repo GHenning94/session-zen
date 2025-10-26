@@ -236,12 +236,16 @@ const Dashboard = () => {
     
     if (checkStale()) return
     
-    // Mostrar loading apenas no carregamento inicial completo
-    if (forceFresh && !sections) {
+    // Sempre mostrar loading quando forçar atualização completa
+    const shouldShowLoading = forceFresh && (!sections || sections.length > 2)
+    
+    if (shouldShowLoading) {
       setIsLoading(true)
     }
     
     try {
+      // Garantir loading mínimo de 500ms para exibir skeleton
+      const minLoadTime = shouldShowLoading ? new Promise(resolve => setTimeout(resolve, 500)) : Promise.resolve()
       const now = Date.now()
       const CACHE_TIMES = {
         upcomingSessions: 30000, // 30s
@@ -719,11 +723,18 @@ const Dashboard = () => {
         console.log('📊 Client Ticket Médio:', clientTicketMedioData.length, 'itens')
         console.log('💾 Dashboard cached successfully!')
       }
+      
+      // Aguardar tempo mínimo de loading antes de finalizar
+      if (shouldShowLoading) {
+        await minLoadTime
+      }
 
     } catch (error) {
       console.error('Erro ao carregar dados do dashboard:', error)
     } finally {
-      setIsLoading(false)
+      if (shouldShowLoading) {
+        setIsLoading(false)
+      }
     }
   }
 
