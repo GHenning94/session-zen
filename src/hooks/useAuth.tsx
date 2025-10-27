@@ -86,16 +86,43 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   // useEffect de setup - passa o evento para processSession
   useEffect(() => {
     console.log('useAuth: setting up auth listeners')
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log(`useAuth: auth state changed (event: ${event})`);
+        
+        // NOVO: Detectar eventos de logout
+        if (event === 'SIGNED_OUT') {
+          console.log('🔴 useAuth: Usuário foi deslogado. Limpando estado.');
+          localStorage.clear();
+          sessionStorage.clear();
+          setUser(null);
+          setSession(null);
+          setLoading(false);
+          return;
+        }
+        
         processSession(session, event)
       }
     )
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
       console.log('useAuth: initial session check');
+      
+      // NOVO: Se houver erro ao obter sessão, limpar tudo
+      if (error) {
+        console.error('🔴 useAuth: Erro ao obter sessão inicial:', error);
+        localStorage.clear();
+        sessionStorage.clear();
+        setUser(null);
+        setSession(null);
+        setLoading(false);
+        return;
+      }
+      
       processSession(session)
     })
+    
     return () => subscription.unsubscribe()
   }, [])
 

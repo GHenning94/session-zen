@@ -33,14 +33,31 @@ export const AuthRedirect = () => {
         }
 
         try {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileError } = await supabase
             .from('profiles')
             .select('first_login_completed')
             .eq('user_id', user.id)
             .single();
 
+          // NOVO: Detectar se a conta foi deletada
+          if (profileError || !profile) {
+            console.error('🔀 AuthRedirect: Profile não encontrado. Usuário pode ter sido deletado.', profileError);
+            
+            // Limpar TUDO do localStorage
+            localStorage.clear();
+            sessionStorage.clear();
+            
+            // Forçar logout
+            await supabase.auth.signOut();
+            
+            // Redirecionar para landing page
+            navigate('/', { replace: true });
+            
+            return;
+          }
+
           // Se não completou primeiro login e está tentando ir para dashboard/agenda -> Welcome
-          if (!profile?.first_login_completed && 
+          if (!profile.first_login_completed && 
               (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/agenda'))) {
             console.log('🔀 AuthRedirect: Primeiro login não completado. Redirecionando para /welcome');
             navigate('/welcome', { replace: true });
@@ -49,7 +66,13 @@ export const AuthRedirect = () => {
 
           console.log('🔀 AuthRedirect: Usuário existe e completou onboarding.');
         } catch (error) {
-          console.error('🔀 AuthRedirect: Erro ao verificar profile:', error);
+          console.error('🔀 AuthRedirect: Erro crítico ao verificar profile:', error);
+          
+          // Em caso de erro crítico, também limpar tudo
+          localStorage.clear();
+          sessionStorage.clear();
+          await supabase.auth.signOut();
+          navigate('/', { replace: true });
         }
       }
     };

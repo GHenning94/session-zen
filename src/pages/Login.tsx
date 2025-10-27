@@ -98,12 +98,20 @@ const Login = () => {
       if (signInError) {
         let errorMessage = 'Erro ao fazer login. Tente novamente.'
         
-        if (signInError.message.includes('Email not confirmed')) {
+        // NOVO: Detectar se usuário foi deletado
+        if (signInError.message.includes('User not found') || 
+            signInError.message.includes('Invalid user') ||
+            signInError.status === 404) {
+          errorMessage = 'Esta conta não existe mais. Por favor, crie uma nova conta.'
+          
+          // Limpar qualquer cache antigo
+          localStorage.clear();
+          sessionStorage.clear();
+        }
+        else if (signInError.message.includes('Email not confirmed')) {
           errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
         } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
           errorMessage = 'E-mail ou senha incorretos'
-        } else if (signInError.message.includes('User not found')) {
-          errorMessage = 'Usuário não encontrado'
         } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
           errorMessage = 'Erro de conexão. Verifique sua internet.'
         }

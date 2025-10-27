@@ -164,8 +164,14 @@ const LandingPage = () => {
         const tag = document.createElement('script');
         tag.src = "https://www.youtube.com/iframe_api";
         tag.id = 'youtube-iframe-api';
-        const firstScriptTag = document.getElementsByTagName('script')[0];
-        firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+        
+        // Método mais seguro: adicionar ao head ou body diretamente
+        const targetElement = document.head || document.body;
+        if (targetElement) {
+          targetElement.appendChild(tag);
+        } else {
+          console.error('Não foi possível adicionar script do YouTube: DOM não disponível');
+        }
       }
     }
   }, []);
