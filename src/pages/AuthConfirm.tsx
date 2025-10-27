@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/integrations/supabase/client'
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
@@ -10,34 +11,59 @@ const AuthConfirm = () => {
   const [countdown, setCountdown] = useState(3)
 
   useEffect(() => {
-    // Verificar se há erro na URL (Supabase adiciona error_description se falhar)
-    const params = new URLSearchParams(window.location.search)
-    const error = params.get('error')
-    const errorDescription = params.get('error_description')
+    const confirmEmail = async () => {
+      try {
+        // 1) Novo fluxo com token_hash e type na query
+        const params = new URLSearchParams(window.location.search)
+        const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | null
+        const tokenHash = params.get('token_hash')
 
-    if (error) {
-      console.error('Email confirmation error:', error, errorDescription)
-      setStatus('error')
-      return
+        if (tokenHash && type) {
+          const { error } = await supabase.auth.verifyOtp({
+            type,
+            token_hash: tokenHash
+          })
+          if (error) throw error
+          setStatus('success')
+        } else {
+          // 2) Fallback: algumas confirmações chegam com access_token no hash (#)
+          const hash = window.location.hash
+          if (hash && hash.includes('access_token')) {
+            // Supabase SDK processa automaticamente o hash ao carregar; considerar sucesso
+            setStatus('success')
+          } else if (params.get('error')) {
+            setStatus('error')
+          } else {
+            // Sem parâmetros reconhecidos: considerar erro
+            setStatus('error')
+          }
+        }
+      } catch (err) {
+        console.error('Email confirmation error:', err)
+        setStatus('error')
+      }
     }
 
-    // Se chegou aqui sem erro, considerar sucesso
-    setStatus('success')
+    confirmEmail()
 
-    // Countdown para redirect
-    const timer = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer)
-          navigate('/login')
-          return 0
-        }
-        return prev - 1
-      })
-    }, 1000)
-
-    return () => clearInterval(timer)
+    return () => {}
   }, [navigate])
+
+  useEffect(() => {
+    if (status === 'success') {
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer)
+            navigate('/login')
+            return 0
+          }
+          return prev - 1
+        })
+      }, 1000)
+      return () => clearInterval(timer)
+    }
+  }, [status, navigate])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">

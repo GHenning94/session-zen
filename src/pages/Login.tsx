@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { TwoFactorVerification } from "@/components/TwoFactorVerification"
@@ -33,8 +33,12 @@ const Login = () => {
   })
 
   const is2FASuccess = useRef(false);
-  const loginFormRef = useRef<HTMLFormElement>(null);
-  const registerFormRef = useRef<HTMLFormElement>(null);
+const loginFormRef = useRef<HTMLFormElement>(null);
+const registerFormRef = useRef<HTMLFormElement>(null);
+
+// Controla a aba default via query param (?tab=register)
+const [searchParams] = useSearchParams();
+const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
 
   // Correção do Botão Voltar do Navegador (Já implementada)
   useEffect(() => {
@@ -98,22 +102,32 @@ const Login = () => {
       if (signInError) {
         let errorMessage = 'Erro ao fazer login. Tente novamente.'
         
-        // NOVO: Detectar se usuário foi deletado
-        if (signInError.message.includes('User not found') || 
-            signInError.message.includes('Invalid user') ||
-            signInError.status === 404) {
-          errorMessage = 'Esta conta não existe mais. Por favor, crie uma nova conta.'
-          
-          // Limpar qualquer cache antigo
-          localStorage.clear();
-          sessionStorage.clear();
-        }
-        else if (signInError.message.includes('Email not confirmed')) {
-          errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
-        } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-          errorMessage = 'E-mail ou senha incorretos'
-        } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
-          errorMessage = 'Erro de conexão. Verifique sua internet.'
+        try {
+          // Verificar se a conta existe para mensagens precisas
+          const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
+            body: { email: formData.email }
+          });
+          const accountExists = !!existsData?.exists;
+
+          if (!accountExists) {
+            errorMessage = 'Esta conta não existe.';
+            // Limpar qualquer cache antigo
+            localStorage.clear();
+            sessionStorage.clear();
+          } else if (signInError.message.includes('Email not confirmed')) {
+            errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+          } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+            errorMessage = 'E-mail ou senha incorretos'
+          } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
+            errorMessage = 'Erro de conexão. Verifique sua internet.'
+          }
+        } catch (checkErr) {
+          console.warn('Falha ao verificar existência de e-mail, usando mensagem genérica.');
+          if (signInError.message.includes('Email not confirmed')) {
+            errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+          } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+            errorMessage = 'E-mail ou senha incorretos'
+          }
         }
         
         console.error('Erro de Login:', signInError);
@@ -204,7 +218,7 @@ const Login = () => {
         email: formData.email,
         password: formData.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth-confirm`,
           data: {
             nome: formData.name,
             profissao: formData.profession
@@ -306,7 +320,7 @@ const Login = () => {
         </div>
         {/* Card Principal com Tabs */}
         <Card className="shadow-elegant border-border/50 bg-gradient-card backdrop-blur-sm">
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs defaultValue={defaultTab} className="w-full">
             <CardHeader className="pb-4 bg-transparent">
               <TabsList className="grid w-full grid-cols-2 bg-muted/50">
                 <TabsTrigger value="login" className="data-[state=active]:bg-background data-[state=active]:text-foreground">Entrar</TabsTrigger>
@@ -366,32 +380,47 @@ const Login = () => {
 
                         setIsResettingPassword(true);
                         try {
-                          const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-                            redirectTo: `${window.location.origin}/`,
-                            captchaToken
-                          });
+                          // Antes de enviar, confirmar se a conta existe
+                          try {
+                            const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
+                              body: { email: formData.email }
+                            });
+                            const accountExists = !!existsData?.exists;
 
-                          if (error) throw error;
+                            if (!accountExists) {
+                              toast({ 
+                                title: "Esta conta não existe", 
+                                description: "Verifique o e-mail digitado ou crie uma conta.", 
+                                variant: "destructive" 
+                              });
+                              return;
+                            }
 
-                          toast({ 
-                            title: "E-mail enviado!", 
-                            description: "Verifique sua caixa de entrada para redefinir sua senha." 
-                          });
-                          
-                        } catch (err: any) {
-                          console.error("Erro ao solicitar redefinição:", err);
-                          const errorMsg = err.message || "Não foi possível enviar o email.";
-                          const translatedMsg = errorMsg.includes('captcha') 
-                            ? 'Falha na verificação do captcha. Tente novamente.' 
-                            : errorMsg;
-                          toast({ 
-                            title: "Erro", 
-                            description: translatedMsg, 
-                            variant: "destructive" 
-                          });
-                        } finally {
-                          setIsResettingPassword(false);
-                        }
+                            const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+                              redirectTo: `${window.location.origin}/auth-confirm?type=recovery`,
+                              captchaToken
+                            });
+
+                            if (error) throw error;
+
+                            toast({ 
+                              title: "E-mail enviado!", 
+                              description: "Verifique sua caixa de entrada para redefinir sua senha." 
+                            });
+                          } catch (err: any) {
+                            console.error("Erro ao solicitar redefinição:", err);
+                            const errorMsg = err.message || "Não foi possível enviar o email.";
+                            const translatedMsg = errorMsg.includes('captcha') 
+                              ? 'Falha na verificação do captcha. Tente novamente.' 
+                              : errorMsg;
+                            toast({ 
+                              title: "Erro", 
+                              description: translatedMsg, 
+                              variant: "destructive" 
+                            });
+                          } finally {
+                            setIsResettingPassword(false);
+                          }
                       }}>
                       {isResettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       {isResettingPassword ? "Enviando..." : "Esqueci minha senha"}

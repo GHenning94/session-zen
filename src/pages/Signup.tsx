@@ -26,14 +26,21 @@ const Signup = () => {
   // Capturar plano selecionado da URL (ex: /signup?plan=premium)
   const selectedPlan = searchParams.get('plan')
 
-  // Verificar referral
+  // Redirecionar imediatamente para o fluxo correto de cadastro na página de Login
   useEffect(() => {
-    const ref = searchParams.get('ref')
-    if (ref) {
-      setReferralId(ref)
-      loadReferralUser(ref)
-    }
-  }, [searchParams])
+    const plan = searchParams.get('plan');
+    const ref = searchParams.get('ref');
+    const params = new URLSearchParams();
+    params.set('tab', 'register');
+    if (plan) params.set('plan', plan);
+    if (ref) params.set('ref', ref);
+    navigate(`/login?${params.toString()}`, { replace: true });
+  }, [navigate, searchParams]);
+
+  // Não renderiza nada, a rota /signup foi descontinuada
+  return null;
+
+  // Verificar referral
 
   const loadReferralUser = async (refId: string) => {
     try {
@@ -111,7 +118,7 @@ const Signup = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth-confirm`,
           data: {
             nome,
             profissao,

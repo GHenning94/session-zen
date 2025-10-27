@@ -443,12 +443,12 @@ const LandingPage = () => {
   ];
 
   const handleGetStarted = (planId?: string) => {
-    // Todos os botões de plano redirecionam para /signup com parâmetro
+    const params = new URLSearchParams();
+    params.set('tab', 'register');
     if (planId && planId !== 'basico') {
-      navigate(`/signup?plan=${planId}`);
-    } else {
-      navigate('/signup');
+      params.set('plan', planId);
     }
+    navigate(`/login?${params.toString()}`);
   };
 
   const techLogoStyle = {
