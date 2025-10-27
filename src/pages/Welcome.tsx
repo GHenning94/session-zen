@@ -125,6 +125,18 @@ const Welcome = () => {
       const priceId = isAnnual ? plan.stripeAnnualId : plan.stripeMonthlyId;
       if (!priceId) throw new Error('Price ID não encontrado');
 
+      // IMPORTANTE: Marcar first_login_completed ANTES de ir para o Stripe
+      // para evitar loop de redirecionamento quando voltar
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ first_login_completed: true })
+        .eq('user_id', user.id);
+
+      if (profileError) {
+        console.error('Erro ao atualizar profile:', profileError);
+        throw profileError;
+      }
+
       const returnUrl = `${window.location.origin}/dashboard?payment=success`;
 
       const { data, error } = await supabase.functions.invoke('create-checkout', {
