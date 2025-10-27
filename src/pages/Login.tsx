@@ -94,18 +94,26 @@ const Login = () => {
         options: { captchaToken }
       })
       
-      // Tratar o erro de e-mail não confirmado
+      // Traduzir erros de autenticação para português
       if (signInError) {
-        if (signInError.message === 'Email not confirmed') {
-          toast({
-            title: 'Verifique o seu e-mail',
-            description: 'Você precisa confirmar seu e-mail antes de fazer o login.',
-            variant: 'destructive',
-          });
-        } else {
-          console.error('Erro de Login:', signInError);
-          toast({ title: "Erro no login", description: signInError.message || "Credenciais inválidas", variant: "destructive" })
+        let errorMessage = 'Erro ao fazer login. Tente novamente.'
+        
+        if (signInError.message.includes('Email not confirmed')) {
+          errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+        } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+          errorMessage = 'E-mail ou senha incorretos'
+        } else if (signInError.message.includes('User not found')) {
+          errorMessage = 'Usuário não encontrado'
+        } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
+          errorMessage = 'Erro de conexão. Verifique sua internet.'
         }
+        
+        console.error('Erro de Login:', signInError);
+        toast({ 
+          title: "Erro no login", 
+          description: errorMessage, 
+          variant: "destructive" 
+        })
         return; // Parar aqui no erro
       }
 

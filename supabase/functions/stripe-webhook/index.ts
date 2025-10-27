@@ -38,11 +38,24 @@ serve(async (req) => {
         const planName = session.metadata?.plan_name;
 
         if (userId && planName) {
-          // Update user's subscription plan
+          // Get billing interval from subscription
+          let billingInterval = 'month';
+          if (session.subscription) {
+            try {
+              const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+              billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
+            } catch (e) {
+              console.error('Error fetching subscription interval:', e);
+            }
+          }
+
+          // Update user's subscription plan and mark onboarding as complete
           const { error } = await supabase
             .from("profiles")
             .update({ 
               subscription_plan: planName,
+              billing_interval: billingInterval,
+              first_login_completed: true,
               updated_at: new Date().toISOString()
             })
             .eq("user_id", userId);
@@ -96,10 +109,14 @@ serve(async (req) => {
               }
             }
 
+            // Get billing interval
+            const billingInterval = subscription.items.data[0]?.price.recurring?.interval || null;
+
             const { error } = await supabase
               .from("profiles")
               .update({ 
                 subscription_plan: planName,
+                billing_interval: billingInterval,
                 updated_at: new Date().toISOString()
               })
               .eq("user_id", userId);

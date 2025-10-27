@@ -78,6 +78,9 @@ verify_jwt = false
 [functions.get-subscription-invoices]
 verify_jwt = true
 
+[functions.get-subscription-details]
+verify_jwt = true
+
 [functions.check-email-exists]
 verify_jwt = false
 

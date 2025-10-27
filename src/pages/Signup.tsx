@@ -22,6 +22,9 @@ const Signup = () => {
   const [searchParams] = useSearchParams()
   const [referralId, setReferralId] = useState<string | null>(null)
   const [referralUser, setReferralUser] = useState<any>(null)
+  
+  // Capturar plano selecionado da URL (ex: /signup?plan=premium)
+  const selectedPlan = searchParams.get('plan')
 
   // Verificar referral
   useEffect(() => {
@@ -87,9 +90,18 @@ const Signup = () => {
       
       if (checkData?.exists) {
         toast({
-          title: "E-mail já cadastrado",
-          description: "Esta conta já está vinculada ao TherapyPro",
+          title: "Conta já existe",
+          description: "Esta conta já existe no TherapyPro. Por favor realize o Login.",
           variant: "destructive",
+          action: (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/login')}
+            >
+              Ir para Login
+            </Button>
+          ),
         })
         setIsLoading(false)
         return
@@ -111,6 +123,11 @@ const Signup = () => {
       if (error) throw error
 
       if (data.user) {
+        // Se há plano selecionado, salvar no sessionStorage
+        if (selectedPlan) {
+          sessionStorage.setItem('pending_plan', selectedPlan)
+        }
+
         // Se há referral, salvar na sessão para processar após escolha do plano
         if (referralId) {
           sessionStorage.setItem('pending_referral', referralId)
@@ -121,9 +138,23 @@ const Signup = () => {
       }
     } catch (error: any) {
       console.error('Erro no cadastro:', error)
+      
+      // Traduzir erros do Supabase para português
+      let errorMessage = 'Erro ao criar conta. Tente novamente.'
+      
+      if (error.message.includes('User already registered')) {
+        errorMessage = 'Esta conta já existe no TherapyPro. Por favor realize o Login.'
+      } else if (error.message.includes('Invalid email')) {
+        errorMessage = 'E-mail inválido'
+      } else if (error.message.includes('Password should be at least')) {
+        errorMessage = 'A senha deve ter pelo menos 6 caracteres'
+      } else if (error.message.includes('rate limit')) {
+        errorMessage = 'Muitas tentativas. Aguarde alguns minutos.'
+      }
+      
       toast({
-        title: "Erro no cadastro",
-        description: error.message || "Não foi possível criar a conta.",
+        title: "Erro ao criar conta",
+        description: errorMessage,
         variant: "destructive"
       })
     } finally {

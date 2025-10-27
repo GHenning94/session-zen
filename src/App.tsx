@@ -13,6 +13,7 @@ import { Suspense, lazy } from "react";
 import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
+import Welcome from "@/pages/Welcome";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { AuthRedirect } from "@/components/AuthRedirect";
 import { BackNavigationGuard } from "@/components/BackNavigationGuard";
@@ -89,6 +90,7 @@ const App = () => (
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
+                  <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
                   <Route path="/auth/confirm" element={<AuthConfirm />} />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>

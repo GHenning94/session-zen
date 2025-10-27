@@ -437,7 +437,12 @@ const LandingPage = () => {
   ];
 
   const handleGetStarted = (planId?: string) => {
-    navigate(planId === 'basico' || !planId ? '/login' : `/upgrade?plan=${planId}`);
+    // Todos os botões de plano redirecionam para /signup com parâmetro
+    if (planId && planId !== 'basico') {
+      navigate(`/signup?plan=${planId}`);
+    } else {
+      navigate('/signup');
+    }
   };
 
   const techLogoStyle = {

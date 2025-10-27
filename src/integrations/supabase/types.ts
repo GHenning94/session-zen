@@ -728,12 +728,14 @@ export type Database = {
           agencia: string | null
           avatar_url: string | null
           banco: string | null
+          billing_interval: string | null
           bio: string | null
           conta: string | null
           cpf_cnpj: string | null
           created_at: string
           crp: string | null
           especialidade: string | null
+          first_login_completed: boolean | null
           id: string
           nome: string
           profissao: string | null
@@ -748,12 +750,14 @@ export type Database = {
           agencia?: string | null
           avatar_url?: string | null
           banco?: string | null
+          billing_interval?: string | null
           bio?: string | null
           conta?: string | null
           cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
           especialidade?: string | null
+          first_login_completed?: boolean | null
           id?: string
           nome: string
           profissao?: string | null
@@ -768,12 +772,14 @@ export type Database = {
           agencia?: string | null
           avatar_url?: string | null
           banco?: string | null
+          billing_interval?: string | null
           bio?: string | null
           conta?: string | null
           cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
           especialidade?: string | null
+          first_login_completed?: boolean | null
           id?: string
           nome?: string
           profissao?: string | null
