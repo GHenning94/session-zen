@@ -139,7 +139,7 @@ serve(async (req) => {
           subject: 'Confirme seu e-mail - TherapyPro',
           from: {
             name: 'TherapyPro',
-            email: 'noreply@therapypro.app',
+            email: 'nao-responda@therapypro.app.br',
           },
           to: [
             {

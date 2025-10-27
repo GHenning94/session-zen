@@ -173,7 +173,7 @@ serve(async (req) => {
           subject: 'Redefinir Senha - TherapyPro',
           from: {
             name: 'TherapyPro',
-            email: 'noreply@therapypro.app', // Certifique-se de validar este remetente no SendPulse
+            email: 'nao-responda@therapypro.app.br',
           },
           to: [ { email } ],
         },
