@@ -142,9 +142,16 @@ const Welcome = () => {
       }
     } catch (error: any) {
       console.error('Erro ao selecionar plano:', error);
+      
+      // Melhor mensagem para erro de Price ID
+      let errorMessage = error.message || 'Tente novamente mais tarde';
+      if (errorMessage.includes('No such price') || errorMessage.includes('price_')) {
+        errorMessage = 'Erro na configuração de pagamento. Por favor, entre em contato com o suporte.';
+      }
+      
       toast({
         title: 'Erro ao processar plano',
-        description: error.message || 'Tente novamente mais tarde',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {

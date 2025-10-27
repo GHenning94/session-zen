@@ -26,9 +26,9 @@ export const AuthRedirect = () => {
 
       // REGRA 2: Se HÁ usuário, verificar se completou primeiro login
       if (user) {
-        // Não verificar se já está em /welcome
-        if (location.pathname === '/welcome') {
-          console.log('🔀 AuthRedirect: Já está em /welcome');
+        // Não verificar se já está em /welcome ou /auth-confirm
+        if (location.pathname === '/welcome' || location.pathname === '/auth-confirm' || location.pathname === '/reset-password') {
+          console.log('🔀 AuthRedirect: Já está em página permitida:', location.pathname);
           return;
         }
 
@@ -56,9 +56,8 @@ export const AuthRedirect = () => {
             return;
           }
 
-          // Se não completou primeiro login e está tentando ir para dashboard/agenda -> Welcome
-          if (!profile.first_login_completed && 
-              (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/agenda'))) {
+          // Se não completou primeiro login -> Redirecionar IMEDIATAMENTE para /welcome
+          if (!profile.first_login_completed) {
             console.log('🔀 AuthRedirect: Primeiro login não completado. Redirecionando para /welcome');
             navigate('/welcome', { replace: true });
             return;

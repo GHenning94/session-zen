@@ -396,7 +396,7 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
                           }
 
                           const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-                            redirectTo: `${window.location.origin}/auth-confirm?type=recovery`,
+                            redirectTo: `${window.location.origin}/reset-password`,
                             captchaToken
                           });
 
