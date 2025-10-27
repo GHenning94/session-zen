@@ -18,23 +18,102 @@ export default function Upgrade() {
 
   useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
 
+  // CONFIGURAÇÃO DOS PLANOS - ATUALIZE COM OS IDs DE PREÇO CORRETOS DO STRIPE
+  // Encontre os IDs de PREÇO em: https://dashboard.stripe.com/prices
+  // NÃO use IDs de produto (prod_*), use IDs de preço (price_*)
+  const STRIPE_PRICES = {
+    pro_monthly: 'SUBSTITUA_PELO_PRICE_ID_MENSAL_DO_PROFISSIONAL',
+    pro_annual: 'SUBSTITUA_PELO_PRICE_ID_ANUAL_DO_PROFISSIONAL',
+    premium_monthly: 'SUBSTITUA_PELO_PRICE_ID_MENSAL_DO_PREMIUM',
+    premium_annual: 'SUBSTITUA_PELO_PRICE_ID_ANUAL_DO_PREMIUM'
+  }
+
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+
   const plans = [
-    // ... (mesma lista de planos do seu arquivo original)
-    { id: 'basico', name: 'Básico', price: 'Gratuito', period: '', icon: <Star className="h-6 w-6" />, description: 'Ideal para começar', features: [ 'Até 3 clientes', 'Até 4 sessões por cliente', 'Agendamento básico', 'Suporte limitado' ], recommended: false, stripePrice: null, current: currentPlan === 'basico' },
-    { id: 'pro', name: 'Profissional', price: 'R$ 29,90', period: '/mês', icon: <Zap className="h-6 w-6" />, description: 'Perfeito para profissionais autônomos', features: [ 'Até 20 clientes', 'Sessões ilimitadas', 'Histórico completo', 'Agendamento online', 'Integração Google Agenda', 'Suporte por email' ], recommended: true, stripePrice: 'price_1RowvqFeTymAqTGEU6jkKtXi', current: currentPlan === 'pro' },
-    { id: 'premium', name: 'Premium', price: 'R$ 59,90', period: '/mês', icon: <Crown className="h-6 w-6" />, description: 'Para clínicas e consultórios', features: [ 'Clientes ilimitados', 'Sessões ilimitadas', 'Histórico completo', 'Relatórios em PDF e Excel', 'Integração Google Agenda', 'Integração WhatsApp', 'Backup automático', 'Suporte prioritário' ], recommended: false, stripePrice: 'price_1RoxpDFeTymAqTGEWg0sS49i', current: currentPlan === 'premium' }
+    { 
+      id: 'basico', 
+      name: 'Básico', 
+      price: 'Grátis', 
+      period: '', 
+      icon: <Star className="h-6 w-6" />, 
+      description: 'Para começar sua jornada', 
+      features: [ 
+        'Até 3 clientes', 
+        'Até 4 sessões por cliente', 
+        'Agenda básica', 
+        'Suporte por email' 
+      ], 
+      recommended: false, 
+      stripePrice: null, 
+      current: currentPlan === 'basico' 
+    },
+    { 
+      id: 'pro', 
+      name: 'Profissional', 
+      price: billingCycle === 'monthly' ? 'R$ 29,90' : 'R$ 24,90', 
+      period: '/mês', 
+      icon: <Zap className="h-6 w-6" />, 
+      description: 'Para profissionais em crescimento', 
+      features: [ 
+        'Até 20 clientes', 
+        'Sessões ilimitadas', 
+        'Histórico completo', 
+        'Personalização de design', 
+        'Relatórios básicos', 
+        'Suporte prioritário' 
+      ], 
+      recommended: true, 
+      stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.pro_monthly : STRIPE_PRICES.pro_annual, 
+      current: currentPlan === 'pro',
+      annualDiscount: billingCycle === 'annual' ? '17%' : null
+    },
+    { 
+      id: 'premium', 
+      name: 'Premium', 
+      price: billingCycle === 'monthly' ? 'R$ 49,90' : 'R$ 41,58', 
+      period: '/mês', 
+      icon: <Crown className="h-6 w-6" />, 
+      description: 'Recursos completos e avançados', 
+      features: [ 
+        'Clientes ilimitados', 
+        'Sessões ilimitadas', 
+        'Histórico completo', 
+        'Relatórios PDF avançados', 
+        'Integração WhatsApp', 
+        'Personalização total', 
+        'Configurações avançadas', 
+        'Suporte VIP 24/7' 
+      ], 
+      recommended: false, 
+      stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.premium_monthly : STRIPE_PRICES.premium_annual, 
+      current: currentPlan === 'premium',
+      annualDiscount: billingCycle === 'annual' ? '17%' : null
+    }
   ]
 
   const handleSubscribe = async (plan: typeof plans[0]) => {
     if (!user || !plan.stripePrice) return
+    
+    // Validar se o ID de preço foi configurado
+    if (plan.stripePrice.includes('SUBSTITUA_PELO')) {
+      alert('⚠️ Configuração pendente!\n\nOs IDs de preço do Stripe ainda não foram configurados.\n\nAcesse o Stripe Dashboard > Prices e copie os IDs de preço corretos para o arquivo Upgrade.tsx')
+      return
+    }
+    
     setLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('create-checkout', { body: { priceId: plan.stripePrice, returnUrl: window.location.origin } })
+      const { data, error } = await supabase.functions.invoke('create-checkout', { 
+        body: { 
+          priceId: plan.stripePrice, 
+          returnUrl: window.location.origin 
+        } 
+      })
       if (error) throw error
       if (data?.url) window.location.href = data.url
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro ao processar pagamento:', error)
-      alert('Erro ao processar pagamento. Tente novamente.')
+      alert(`Erro ao processar plano\n\n${error.message || 'Verifique os IDs de preço no Stripe Dashboard'}`)
     } finally {
       setLoading(false)
     }
@@ -50,15 +129,35 @@ export default function Upgrade() {
           </Button>
         </div>
         <div className="text-center mb-12 space-y-4">
-          <h1 className="text-4xl font-bold mb-4">Escolha seu plano</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Desbloqueie todo o potencial da sua prática profissional com nossos planos premium</p>
+          <h1 className="text-4xl font-bold mb-4">Bem-vindo ao TherapyPro! 🎉</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Escolha o plano ideal para começar sua jornada</p>
+          
+          {/* Seletor de Ciclo de Cobrança */}
+          <div className="flex items-center justify-center gap-3 mt-8">
+            <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Mensal
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+              className="relative w-12 h-6 rounded-full p-0"
+            >
+              <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-primary transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
+            </Button>
+            <span className={`text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Anual
+              <Badge variant="secondary" className="ml-2">Economize até 17%</Badge>
+            </span>
+          </div>
         </div>
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {plans.map((plan) => (
             <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${plan.id === currentPlan ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
                   style={plan.id === currentPlan ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
               {plan.id === currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
-              {plan.recommended && plan.id !== currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
+              {plan.recommended && plan.id !== currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
+              {plan.annualDiscount && (<Badge variant="secondary" className="absolute -top-3 right-3">Economize {plan.annualDiscount}</Badge>)}
               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
                 <div>
@@ -86,7 +185,16 @@ export default function Upgrade() {
             </Card>
           ))}
         </div>
-        <div className="text-center mt-12"><p className="text-sm text-muted-foreground">Todos os planos incluem 7 dias de teste grátis. Cancele a qualquer momento.</p></div>
+        <div className="text-center mt-12 space-y-4">
+          <p className="text-sm text-muted-foreground">Você pode alterar ou cancelar seu plano a qualquer momento</p>
+          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 max-w-2xl mx-auto">
+            <p className="text-sm text-yellow-700 dark:text-yellow-300">
+              ⚙️ <strong>Configuração necessária:</strong> Antes de assinar, certifique-se de configurar os IDs de preço do Stripe no código.
+              <br />
+              Acesse <a href="https://dashboard.stripe.com/prices" target="_blank" rel="noopener noreferrer" className="underline font-medium">Stripe Dashboard → Prices</a>
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
