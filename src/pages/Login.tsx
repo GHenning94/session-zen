@@ -395,12 +395,13 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
                             return;
                           }
 
-                          const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-                            redirectTo: `${window.location.origin}/reset-password`,
-                            captchaToken
+                          const { data: resetData, error: fnError } = await supabase.functions.invoke('request-password-reset', {
+                            body: { email: formData.email, captchaToken }
                           });
 
-                          if (error) throw error;
+                          if (fnError) throw fnError;
+
+                          
 
                           toast({ 
                             title: "E-mail enviado!", 
