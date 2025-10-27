@@ -7,8 +7,18 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, ExternalLink } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, ExternalLink, Trash2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
@@ -30,6 +40,9 @@ const Configuracoes = () => {
   const [loadingPayments, setLoadingPayments] = useState(false)
   const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false)
   const [deletingPaymentMethod, setDeletingPaymentMethod] = useState<string | null>(null)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
 
   const loadPaymentMethods = async () => {
     if (!user) return;
@@ -217,6 +230,49 @@ const Configuracoes = () => {
     }
   }
 
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETAR') {
+      toast({
+        title: "Confirmação necessária",
+        description: "Digite DELETAR para confirmar a exclusão da conta",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsDeletingAccount(true)
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user-account')
+      
+      if (error) throw error
+
+      localStorage.clear()
+      sessionStorage.clear()
+      supabase.removeAllChannels()
+      
+      await supabase.auth.signOut()
+      
+      toast({
+        title: "Conta deletada",
+        description: "Sua conta foi permanentemente deletada",
+      })
+      
+      window.location.href = '/'
+    } catch (error: any) {
+      console.error('Erro ao deletar conta:', error)
+      toast({
+        title: "Erro ao deletar conta",
+        description: error.message || "Não foi possível deletar a conta",
+        variant: "destructive"
+      })
+    } finally {
+      setIsDeletingAccount(false)
+      setShowDeleteConfirm(false)
+      setDeleteConfirmText('')
+    }
+  }
+
   if (isLoading) return <Layout><p className="p-4">Carregando configurações...</p></Layout>;
 
   return (
@@ -312,6 +368,42 @@ const Configuracoes = () => {
                   <Save className="w-4 h-4 mr-2" />
                   {isLoading ? 'Salvando...' : 'Salvar Alterações'}
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Danger Zone - Delete Account */}
+            <Card className="shadow-soft border-destructive/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-destructive">
+                  <Trash2 className="w-5 h-5" />
+                  Zona de Perigo
+                </CardTitle>
+                <CardDescription>
+                  Ações irreversíveis. Proceda com cautela.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
+                  <h4 className="font-medium text-destructive mb-2">⚠️ Deletar Conta Permanentemente</h4>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Esta ação é <strong>IRREVERSÍVEL</strong>. Todos os seus dados serão permanentemente deletados, incluindo:
+                  </p>
+                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 mb-4">
+                    <li>Todos os clientes e seus dados</li>
+                    <li>Histórico completo de sessões</li>
+                    <li>Pagamentos e pacotes</li>
+                    <li>Configurações e preferências</li>
+                    <li>Prontuários e anotações</li>
+                  </ul>
+                  <Button 
+                    variant="destructive" 
+                    onClick={() => setShowDeleteConfirm(true)}
+                    className="w-full"
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Deletar Minha Conta
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -575,6 +667,71 @@ const Configuracoes = () => {
           onOpenChange={setShowUpdatePaymentModal}
           onSuccess={handlePaymentSuccess}
         />
+
+        {/* Delete Account Confirmation Dialog */}
+        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-destructive">
+                ⚠️ Confirmar Exclusão de Conta
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-4">
+                <p>
+                  Esta ação é <strong>PERMANENTE e IRREVERSÍVEL</strong>. 
+                  Todos os seus dados serão deletados do sistema:
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Todos os clientes e informações associadas</li>
+                  <li>Histórico completo de sessões e agendamentos</li>
+                  <li>Todos os pagamentos e pacotes</li>
+                  <li>Prontuários, anotações e evoluções</li>
+                  <li>Configurações e preferências</li>
+                  <li>Dados de notificações e integrações</li>
+                </ul>
+                <div className="space-y-2 pt-4">
+                  <Label htmlFor="delete-confirm" className="text-sm font-medium">
+                    Para confirmar, digite <strong className="text-destructive">DELETAR</strong> abaixo:
+                  </Label>
+                  <Input
+                    id="delete-confirm"
+                    value={deleteConfirmText}
+                    onChange={(e) => setDeleteConfirmText(e.target.value)}
+                    placeholder="Digite DELETAR"
+                    className="border-destructive/50 focus:border-destructive"
+                  />
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel 
+                onClick={() => {
+                  setShowDeleteConfirm(false)
+                  setDeleteConfirmText('')
+                }}
+                disabled={isDeletingAccount}
+              >
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'DELETAR' || isDeletingAccount}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeletingAccount ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Deletando...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Deletar Permanentemente
+                  </>
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   )

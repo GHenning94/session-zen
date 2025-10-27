@@ -12,7 +12,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Get authenticated user
+    // Get authenticated user from JWT token
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
       throw new Error('Unauthorized: No authorization header');
@@ -20,23 +20,19 @@ Deno.serve(async (req) => {
 
     // Initialize Supabase clients
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-    // Client for authenticating the user
-    const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: false },
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    // Admin client for deleting data
+    // Admin client with service role for all operations
     const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
       auth: { persistSession: false, autoRefreshToken: false },
     });
 
-    // Verify user authentication
-    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    // Extract JWT token and verify it using service role client
+    const token = authHeader.replace('Bearer ', '');
+    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+    
     if (authError || !user) {
+      console.error('Authentication error:', authError);
       throw new Error('Unauthorized: Invalid or missing user session');
     }
 
