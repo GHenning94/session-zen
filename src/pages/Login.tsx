@@ -381,46 +381,45 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
                         setIsResettingPassword(true);
                         try {
                           // Antes de enviar, confirmar se a conta existe
-                          try {
-                            const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
-                              body: { email: formData.email }
-                            });
-                            const accountExists = !!existsData?.exists;
+                          const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
+                            body: { email: formData.email }
+                          });
+                          const accountExists = !!existsData?.exists;
 
-                            if (!accountExists) {
-                              toast({ 
-                                title: "Esta conta não existe", 
-                                description: "Verifique o e-mail digitado ou crie uma conta.", 
-                                variant: "destructive" 
-                              });
-                              return;
-                            }
-
-                            const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-                              redirectTo: `${window.location.origin}/auth-confirm?type=recovery`,
-                              captchaToken
-                            });
-
-                            if (error) throw error;
-
+                          if (!accountExists) {
                             toast({ 
-                              title: "E-mail enviado!", 
-                              description: "Verifique sua caixa de entrada para redefinir sua senha." 
-                            });
-                          } catch (err: any) {
-                            console.error("Erro ao solicitar redefinição:", err);
-                            const errorMsg = err.message || "Não foi possível enviar o email.";
-                            const translatedMsg = errorMsg.includes('captcha') 
-                              ? 'Falha na verificação do captcha. Tente novamente.' 
-                              : errorMsg;
-                            toast({ 
-                              title: "Erro", 
-                              description: translatedMsg, 
+                              title: "Esta conta não existe", 
+                              description: "Verifique o e-mail digitado ou crie uma conta.", 
                               variant: "destructive" 
                             });
-                          } finally {
-                            setIsResettingPassword(false);
+                            return;
                           }
+
+                          const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+                            redirectTo: `${window.location.origin}/auth-confirm?type=recovery`,
+                            captchaToken
+                          });
+
+                          if (error) throw error;
+
+                          toast({ 
+                            title: "E-mail enviado!", 
+                            description: "Verifique sua caixa de entrada para redefinir sua senha." 
+                          });
+                        } catch (err: any) {
+                          console.error("Erro ao solicitar redefinição:", err);
+                          const errorMsg = err.message || "Não foi possível enviar o email.";
+                          const translatedMsg = errorMsg.includes('captcha') 
+                            ? 'Falha na verificação do captcha. Tente novamente.' 
+                            : errorMsg;
+                          toast({ 
+                            title: "Erro", 
+                            description: translatedMsg, 
+                            variant: "destructive" 
+                          });
+                        } finally {
+                          setIsResettingPassword(false);
+                        }
                       }}>
                       {isResettingPassword ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                       {isResettingPassword ? "Enviando..." : "Esqueci minha senha"}
