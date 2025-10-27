@@ -73,21 +73,33 @@ serve(async (req) => {
       throw new Error(linkError?.message || 'Falha ao gerar link de recuperação');
     }
 
-    // Extrai o token_hash
-    let tokenHash: string | null = (linkData as any).hashed_token || null;
-    if (!tokenHash && (linkData as any).action_link) {
+    // Extrai o token_hash (pode estar em properties.hashed_token ou diretamente em hashed_token)
+    let tokenHash: string | null = null;
+    
+    // Tentar primeiro em properties.hashed_token
+    if ((linkData as any).properties?.hashed_token) {
+      tokenHash = (linkData as any).properties.hashed_token;
+    } 
+    // Fallback para hashed_token direto
+    else if ((linkData as any).hashed_token) {
+      tokenHash = (linkData as any).hashed_token;
+    }
+    // Fallback para extrair do action_link
+    else if ((linkData as any).action_link) {
       try {
         const u = new URL((linkData as any).action_link);
-        tokenHash = u.searchParams.get('token_hash');
+        tokenHash = u.searchParams.get('token');
       } catch (_) {
         // ignore
       }
     }
 
     if (!tokenHash) {
-      console.error('[Password Reset] hashed_token ausente no retorno:', linkData);
+      console.error('[Password Reset] Token não encontrado no retorno:', JSON.stringify(linkData, null, 2));
       throw new Error('Token de recuperação não encontrado');
     }
+    
+    console.log('[Password Reset] Token extraído com sucesso');
 
     const resetLink = `${SITE_URL}/reset-password?token_hash=${tokenHash}&type=recovery`;
     const userName = user_metadata?.nome || 'Usuário';

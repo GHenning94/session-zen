@@ -475,7 +475,7 @@ const LandingPage = () => {
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Twitter size={20}/></a>
                 <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Linkedin size={20}/></a>
               </div>
-              <Button className="bg-gradient-primary hover:opacity-90" onClick={() => handleGetStarted()}>Acessar Plataforma</Button>
+              <Button className="bg-gradient-primary hover:opacity-90" onClick={() => navigate('/login')}>Acessar Plataforma</Button>
             </div>
           </div>
         </div>
