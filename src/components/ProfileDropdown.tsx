@@ -16,10 +16,20 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Settings, Share, Copy, Camera, Check, X, Sun, Moon } from "lucide-react"
+import { User, LogOut, Settings, Share, Copy, Camera, Check, X, Sun, Moon, Trash2 } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { useTheme } from "next-themes"
@@ -60,6 +70,9 @@ export const ProfileDropdown = () => {
   const [selectedImageForCrop, setSelectedImageForCrop] = useState('')
   const [showProfessionSelector, setShowProfessionSelector] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteConfirmText, setDeleteConfirmText] = useState('')
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const securitySectionRef = useRef<HTMLDivElement>(null)
   
@@ -166,6 +179,48 @@ export const ProfileDropdown = () => {
         description: "Erro ao fazer logout.",
         variant: "destructive",
       })
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'DELETAR') {
+      toast({
+        title: "Confirmação necessária",
+        description: "Digite DELETAR para confirmar a exclusão da conta",
+        variant: "destructive"
+      })
+      return
+    }
+
+    setIsDeletingAccount(true)
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user-account')
+      
+      if (error) throw error
+
+      localStorage.clear()
+      sessionStorage.clear()
+      supabase.removeAllChannels()
+      await signOut()
+      
+      toast({
+        title: "Conta deletada",
+        description: "Sua conta foi permanentemente deletada",
+      })
+      
+      navigate('/')
+    } catch (error: any) {
+      console.error('Erro ao deletar conta:', error)
+      toast({
+        title: "Erro ao deletar conta",
+        description: error.message || "Não foi possível deletar a conta",
+        variant: "destructive"
+      })
+    } finally {
+      setIsDeletingAccount(false)
+      setShowDeleteConfirm(false)
+      setDeleteConfirmText('')
     }
   }
 
@@ -423,6 +478,11 @@ export const ProfileDropdown = () => {
             Editar Perfil
           </DropdownMenuItem>
           <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setShowDeleteConfirm(true)} className="text-destructive">
+            <Trash2 className="w-4 h-4 mr-2" />
+            Deletar Conta
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
             <LogOut className="w-4 h-4 mr-2" />
             Sair
@@ -636,6 +696,48 @@ export const ProfileDropdown = () => {
           return success
         }}
       />
+
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">⚠️ Atenção! Deletar Conta</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4">
+              <p className="font-semibold">Esta ação é IRREVERSÍVEL.</p>
+              <p>Todos os seus dados serão permanentemente deletados:</p>
+              <ul className="list-disc list-inside space-y-1 text-sm">
+                <li>Clientes e histórico completo</li>
+                <li>Sessões e agendamentos</li>
+                <li>Pagamentos e pacotes</li>
+                <li>Configurações e personalizações</li>
+                <li>Prontuários e evoluções</li>
+                <li>Todas as imagens e arquivos</li>
+              </ul>
+              <div className="space-y-2 pt-4">
+                <Label htmlFor="delete-confirm" className="text-foreground">
+                  Digite <span className="font-bold text-destructive">DELETAR</span> para confirmar:
+                </Label>
+                <Input
+                  id="delete-confirm"
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="DELETAR"
+                  className="font-mono"
+                />
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeletingAccount}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== 'DELETAR' || isDeletingAccount}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeletingAccount ? "Deletando..." : "Deletar Permanentemente"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   )
 }

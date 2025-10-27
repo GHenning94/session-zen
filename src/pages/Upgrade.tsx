@@ -18,14 +18,11 @@ export default function Upgrade() {
 
   useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
 
-  // CONFIGURAÇÃO DOS PLANOS - ATUALIZE COM OS IDs DE PREÇO CORRETOS DO STRIPE
-  // Encontre os IDs de PREÇO em: https://dashboard.stripe.com/prices
-  // NÃO use IDs de produto (prod_*), use IDs de preço (price_*)
   const STRIPE_PRICES = {
-    pro_monthly: 'SUBSTITUA_PELO_PRICE_ID_MENSAL_DO_PROFISSIONAL',
-    pro_annual: 'SUBSTITUA_PELO_PRICE_ID_ANUAL_DO_PROFISSIONAL',
-    premium_monthly: 'SUBSTITUA_PELO_PRICE_ID_MENSAL_DO_PREMIUM',
-    premium_annual: 'SUBSTITUA_PELO_PRICE_ID_ANUAL_DO_PREMIUM'
+    pro_monthly: 'price_1RowvqFeTymAqTGEU6jkKtXi',
+    pro_annual: 'price_1SMifUFeTymAqTGEucpJaUBz',
+    premium_monthly: 'price_1RoxpDFeTymAqTGEWg0sS49i',
+    premium_annual: 'price_1SMigPFeTymAqTGE6nN3mgP6'
   }
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
@@ -94,12 +91,6 @@ export default function Upgrade() {
 
   const handleSubscribe = async (plan: typeof plans[0]) => {
     if (!user || !plan.stripePrice) return
-    
-    // Validar se o ID de preço foi configurado
-    if (plan.stripePrice.includes('SUBSTITUA_PELO')) {
-      alert('⚠️ Configuração pendente!\n\nOs IDs de preço do Stripe ainda não foram configurados.\n\nAcesse o Stripe Dashboard > Prices e copie os IDs de preço corretos para o arquivo Upgrade.tsx')
-      return
-    }
     
     setLoading(true)
     try {
@@ -185,15 +176,8 @@ export default function Upgrade() {
             </Card>
           ))}
         </div>
-        <div className="text-center mt-12 space-y-4">
+        <div className="text-center mt-12">
           <p className="text-sm text-muted-foreground">Você pode alterar ou cancelar seu plano a qualquer momento</p>
-          <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 max-w-2xl mx-auto">
-            <p className="text-sm text-yellow-700 dark:text-yellow-300">
-              ⚙️ <strong>Configuração necessária:</strong> Antes de assinar, certifique-se de configurar os IDs de preço do Stripe no código.
-              <br />
-              Acesse <a href="https://dashboard.stripe.com/prices" target="_blank" rel="noopener noreferrer" className="underline font-medium">Stripe Dashboard → Prices</a>
-            </p>
-          </div>
         </div>
       </div>
     </div>

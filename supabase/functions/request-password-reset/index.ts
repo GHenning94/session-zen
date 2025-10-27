@@ -121,60 +121,50 @@ serve(async (req) => {
               <!DOCTYPE html>
               <html>
               <head>
-                <meta charset="utf-8">
+                <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Redefinir Senha - TherapyPro</title>
+                <style>
+                  body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
+                  .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; }
+                  .header { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 30px; text-align: center; }
+                  .header h1 { color: #ffffff; margin: 0; font-size: 28px; }
+                  .content { padding: 30px; word-wrap: break-word; overflow-wrap: break-word; }
+                  .content p { color: #333333; line-height: 1.6; margin: 15px 0; word-wrap: break-word; }
+                  .button-container { text-align: center; margin: 30px 0; }
+                  .button { display: inline-block; padding: 15px 40px; background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); color: #ffffff !important; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+                  .footer { background-color: #f8f9fa; padding: 20px; text-align: center; color: #666666; font-size: 12px; }
+                  .warning { background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0; border-radius: 4px; }
+                  @media only screen and (max-width: 600px) {
+                    .content { padding: 20px; }
+                    .button { padding: 12px 30px; font-size: 14px; }
+                  }
+                </style>
               </head>
-              <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 40px 0;">
+              <body>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="table-layout: fixed;">
                   <tr>
-                    <td align="center">
-                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <!-- Header -->
-                        <tr>
-                          <td style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
-                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">TherapyPro</h1>
-                          </td>
-                        </tr>
-                        <!-- Content -->
-                        <tr>
-                          <td style="padding: 40px 30px;">
-                            <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Olá, ${userName}! 🔐</h2>
-                            <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
-                              Recebemos uma solicitação para redefinir a senha da sua conta no <strong>TherapyPro</strong>.
-                            </p>
-                            <p style="margin: 0 0 30px 0; color: #475569; font-size: 16px; line-height: 1.6;">
-                              Se você fez essa solicitação, clique no botão abaixo para criar uma nova senha:
-                            </p>
-                            <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                              <tr>
-                                <td align="center" style="padding: 20px 0;">
-                                  <a href="${resetLink}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff !important; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                                    Redefinir Senha
-                                  </a>
-                                </td>
-                              </tr>
-                            </table>
-                            <p style="margin: 30px 0 20px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                              <strong>⚠️ Importante:</strong> Se você não solicitou a redefinição de senha, por favor ignore este e-mail. Sua senha permanecerá inalterada.
-                            </p>
-                            <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                              <strong>Nota:</strong> Este link expira em 1 hora por motivos de segurança.
-                            </p>
-                          </td>
-                        </tr>
-                        <!-- Footer -->
-                        <tr>
-                          <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">
-                              © ${new Date().getFullYear()} TherapyPro. Todos os direitos reservados.
-                            </p>
-                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                              Gestão profissional para terapeutas
-                            </p>
-                          </td>
-                        </tr>
-                      </table>
+                    <td>
+                      <div class="container">
+                        <div class="header">
+                          <h1>TherapyPro 🔐</h1>
+                        </div>
+                        <div class="content">
+                          <p>Olá, <strong>${userName || 'Usuário'}</strong>! 🔐</p>
+                          <p>Recebemos uma solicitação para redefinir a senha da sua conta no <strong>TherapyPro</strong>.</p>
+                          <p>Clique no botão abaixo para criar uma nova senha:</p>
+                          <div class="button-container">
+                            <a href="${resetLink}" class="button">Redefinir Senha</a>
+                          </div>
+                          <div class="warning">
+                            <p style="margin: 0;"><strong>⚠️ Importante:</strong></p>
+                            <p style="margin: 5px 0 0 0;">Se você não solicitou a redefinição de senha, ignore este email. Sua senha permanecerá segura.</p>
+                          </div>
+                          <p style="font-size: 14px; color: #666;">Este link expira em <strong>1 hora</strong> por segurança.</p>
+                        </div>
+                        <div class="footer">
+                          <p>&copy; ${new Date().getFullYear()} TherapyPro. Todos os direitos reservados.</p>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 </table>
