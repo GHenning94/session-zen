@@ -87,6 +87,9 @@ verify_jwt = false
 [functions.request-password-reset]
 verify_jwt = false
 
+[functions.request-email-confirmation]
+verify_jwt = false
+
 [functions.delete-user-account]
 verify_jwt = true
 

@@ -213,13 +213,27 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
     setIsLoading(true)
 
     try {
-      // Criar conta diretamente com Supabase com captchaToken
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth-confirm`,
-          data: {
+      // Verificar se o e-mail já está cadastrado
+      const { data: checkData } = await supabase.functions.invoke('check-email-exists', {
+        body: { email: formData.email }
+      })
+      
+      if (checkData?.exists) {
+        toast({
+          title: "E-mail já está em uso",
+          description: "Esta conta já existe. Por favor, realize o login.",
+          variant: "destructive"
+        })
+        setIsLoading(false)
+        return
+      }
+
+      // Criar conta via edge function que envia email pelo SendPulse
+      const { data, error } = await supabase.functions.invoke('request-email-confirmation', {
+        body: {
+          email: formData.email,
+          password: formData.password,
+          user_metadata: {
             nome: formData.name,
             profissao: formData.profession
           },
@@ -228,27 +242,23 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
       })
 
       if (error) {
-        // Verificar se o erro é de usuário já existente
-        if (error.message.includes('User already registered')) {
-          throw new Error('Conta já existente');
-        }
         throw error;
+      }
+
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
       // Sucesso!
       toast({ title: "Conta criada com sucesso!", description: "Verifique seu email para confirmar a conta." })
       
     } catch (error: any) {
-      // Tratar erros específicos
-      if (error.message.includes('Conta já existente') || error.message.includes('already registered')) {
-        toast({
-          title: "E-mail já está em uso",
-          description: "Esta conta já existe. Por favor, realize o login.",
-          variant: "destructive"
-        })
-      } else {
-        toast({ title: "Erro no cadastro", description: error.message || "Não foi possível criar a conta", variant: "destructive" })
-      }
+      console.error('Erro no cadastro:', error);
+      toast({ 
+        title: "Erro no cadastro", 
+        description: error.message || "Não foi possível criar a conta", 
+        variant: "destructive" 
+      })
     } finally {
       setIsLoading(false)
     }
