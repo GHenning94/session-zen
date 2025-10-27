@@ -113,9 +113,21 @@ const ResetPassword = () => {
       });
     } catch (error: any) {
       console.error('Erro ao redefinir senha:', error);
+      
+      // Traduzir mensagens de erro comuns do Supabase
+      let errorMessage = 'Tente novamente mais tarde';
+      
+      if (error.message?.includes('New password should be different')) {
+        errorMessage = 'A nova senha deve ser diferente da senha antiga';
+      } else if (error.message?.includes('Password should be at least')) {
+        errorMessage = 'A senha deve ter no mínimo 8 caracteres';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       toast({
         title: 'Erro ao redefinir senha',
-        description: error.message || 'Tente novamente mais tarde',
+        description: errorMessage,
         variant: 'destructive'
       });
     } finally {

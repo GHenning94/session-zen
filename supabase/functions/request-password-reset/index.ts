@@ -124,22 +124,12 @@ serve(async (req) => {
                 <meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Redefinir Senha - TherapyPro</title>
-                <style>
-                  body { margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4; }
-                  table { border-collapse: collapse; }
-                  .container { width: 100%; max-width: 600px; margin: 0 auto; }
-                  .button { display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff !important; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; }
-                  @media only screen and (max-width: 600px) {
-                    .container { width: 100% !important; }
-                    .content { padding: 20px !important; }
-                  }
-                </style>
               </head>
               <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 40px 20px;">
+                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 40px 0;">
                   <tr>
                     <td align="center">
-                      <table class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px;">
+                      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <!-- Header -->
                         <tr>
                           <td style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
@@ -148,7 +138,7 @@ serve(async (req) => {
                         </tr>
                         <!-- Content -->
                         <tr>
-                          <td class="content" style="padding: 40px 30px;">
+                          <td style="padding: 40px 30px;">
                             <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Olá, ${userName}! 🔐</h2>
                             <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
                               Recebemos uma solicitação para redefinir a senha da sua conta no <strong>TherapyPro</strong>.
@@ -159,7 +149,7 @@ serve(async (req) => {
                             <table width="100%" cellpadding="0" cellspacing="0" border="0">
                               <tr>
                                 <td align="center" style="padding: 20px 0;">
-                                  <a href="${resetLink}" class="button" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff !important; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
+                                  <a href="${resetLink}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff !important; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                                     Redefinir Senha
                                   </a>
                                 </td>
