@@ -1,36 +1,54 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-interface ClientData {
-  nome: string;
-  email?: string;
-  telefone?: string;
-  data_nascimento?: string;
-  genero?: string;
-  endereco?: string;
-  cpf?: string;
-  profissao?: string;
-  plano_saude?: string;
-  medicamentos?: string[];
-  tratamento?: string;
-  eh_crianca_adolescente?: boolean;
-  nome_pai?: string;
-  telefone_pai?: string;
-  nome_mae?: string;
-  telefone_mae?: string;
-  contato_emergencia_1_nome?: string;
-  contato_emergencia_1_telefone?: string;
-  contato_emergencia_2_nome?: string;
-  contato_emergencia_2_telefone?: string;
-  pais?: string;
-  emergencia_igual_pais?: boolean;
-  avatar_url?: string;
-}
+// Comprehensive validation schema matching client-side validation
+const clientRegistrationSchema = z.object({
+  nome: z.string()
+    .trim()
+    .min(2, { message: "Nome deve ter pelo menos 2 caracteres" })
+    .max(100, { message: "Nome deve ter no máximo 100 caracteres" }),
+  
+  email: z.string().trim().email({ message: "Email inválido" }).max(255).optional().or(z.literal('')),
+  
+  telefone: z.string()
+    .trim()
+    .min(1, { message: "Telefone é obrigatório" })
+    .max(20, { message: "Telefone deve ter no máximo 20 caracteres" }),
+  
+  cpf: z.string().trim().max(20).optional().or(z.literal('')),
+  data_nascimento: z.string().optional().or(z.literal('')),
+  genero: z.string().max(50).optional().or(z.literal('')),
+  endereco: z.string().trim().max(500).optional().or(z.literal('')),
+  profissao: z.string().trim().max(100).optional().or(z.literal('')),
+  plano_saude: z.string().trim().max(100).optional().or(z.literal('')),
+  
+  medicamentos: z.array(z.string().trim().max(200))
+    .max(50, { message: "Máximo de 50 medicamentos" })
+    .optional(),
+  
+  tratamento: z.string().trim().max(1000).optional().or(z.literal('')),
+  pais: z.string().trim().max(100).optional().or(z.literal('')),
+  eh_crianca_adolescente: z.boolean().optional(),
+  emergencia_igual_pais: z.boolean().optional(),
+  
+  nome_pai: z.string().trim().max(100).optional().or(z.literal('')),
+  telefone_pai: z.string().trim().max(20).optional().or(z.literal('')),
+  nome_mae: z.string().trim().max(100).optional().or(z.literal('')),
+  telefone_mae: z.string().trim().max(20).optional().or(z.literal('')),
+  
+  contato_emergencia_1_nome: z.string().trim().max(100).optional().or(z.literal('')),
+  contato_emergencia_1_telefone: z.string().trim().max(20).optional().or(z.literal('')),
+  contato_emergencia_2_nome: z.string().trim().max(100).optional().or(z.literal('')),
+  contato_emergencia_2_telefone: z.string().trim().max(20).optional().or(z.literal('')),
+  
+  avatar_url: z.string().trim().max(500).optional().or(z.literal('')),
+});
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -45,7 +63,8 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // Parse request body
-    const { token, clientData }: { token: string; clientData: ClientData } = await req.json();
+    const body = await req.json();
+    const { token, clientData } = body;
 
     if (!token || !clientData) {
       console.log('[REGISTER-CLIENT] Missing token or clientData');
@@ -56,6 +75,24 @@ serve(async (req) => {
     }
 
     console.log('[REGISTER-CLIENT] Processing registration for token:', token);
+
+    // Comprehensive input validation
+    const validationResult = clientRegistrationSchema.safeParse(clientData);
+    
+    if (!validationResult.success) {
+      console.log('[REGISTER-CLIENT] Validation failed:', validationResult.error.errors);
+      const firstError = validationResult.error.errors[0];
+      return new Response(
+        JSON.stringify({ 
+          error: firstError.message || 'Dados inválidos',
+          details: validationResult.error.errors 
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Use validated data
+    const validatedClientData = validationResult.data;
 
     // Rate limiting check with safe IP parsing
     const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
@@ -78,19 +115,10 @@ serve(async (req) => {
       );
     }
 
-    // Basic validation of required fields
-    if (!clientData.nome || !clientData.telefone) {
-      console.log('[REGISTER-CLIENT] Missing required fields (nome or telefone)');
-      return new Response(
-        JSON.stringify({ error: 'Nome e telefone são obrigatórios' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Call the transactional RPC function to register client
+    // Call the transactional RPC function to register client with validated data
     const { data: result, error: rpcError } = await supabase.rpc('register_client_from_token', {
       p_token: token,
-      p_client_data: clientData
+      p_client_data: validatedClientData
     });
 
     if (rpcError) {
@@ -128,16 +156,16 @@ serve(async (req) => {
     }
 
     if (userId) {
-      // Create notification for professional about new client registration
-      const { error: notifError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: userId,
-          titulo: 'Novo paciente cadastrado',
-          conteudo: `${clientData.nome} se cadastrou via link público`,
-          data: new Date().toISOString(),
-          lida: false
-        })
+        // Create notification for professional about new client registration
+        const { error: notifError } = await supabase
+          .from('notifications')
+          .insert({
+            user_id: userId,
+            titulo: 'Novo paciente cadastrado',
+            conteudo: `${validatedClientData.nome} se cadastrou via link público`,
+            data: new Date().toISOString(),
+            lida: false
+          })
 
       if (notifError) {
         console.error('[REGISTER-CLIENT] Error creating notification:', notifError)
@@ -155,7 +183,7 @@ serve(async (req) => {
             body: JSON.stringify({
               user_id: userId,
               title: 'Novo paciente cadastrado',
-              body: `${clientData.nome} se cadastrou via link público`,
+              body: `${validatedClientData.nome} se cadastrou via link público`,
               url: '/clientes',
               tag: 'new-client',
             }),

@@ -48,7 +48,7 @@ serve(async (req) => {
     const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
       p_ip: safeIp,
       p_endpoint: 'validate-registration-token',
-      p_max_requests: 20,
+      p_max_requests: 5,
       p_window_minutes: 1
     });
 

@@ -23,6 +23,28 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
+    // Rate limiting check with safe IP parsing
+    const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
+    const clientIp = (rawIp.split(',')[0] || '').trim();
+    const safeIp = clientIp && /^(\d{1,3}\.){3}\d{1,3}$|^::1$|^[a-fA-F0-9:]+$/.test(clientIp) ? clientIp : '0.0.0.0';
+    
+    const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
+      p_ip: safeIp,
+      p_endpoint: '2fa-request-reset',
+      p_max_requests: 3,
+      p_window_minutes: 5
+    });
+
+    if (rateLimitError) {
+      console.log('[2FA-RESET] Rate limit check error, allowing request:', rateLimitError);
+    } else if (!rateLimitCheck) {
+      console.log('[2FA-RESET] Rate limit exceeded for IP:', safeIp);
+      return new Response(
+        JSON.stringify({ error: 'Muitas tentativas. Aguarde alguns minutos antes de tentar novamente.' }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     const { email, resetToken } = await req.json();
 
     if (email && !resetToken) {

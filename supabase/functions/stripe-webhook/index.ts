@@ -34,8 +34,13 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.user_id;
-        const planName = session.metadata?.plan_name;
+        
+        // Security: Verify against customer record, not session metadata
+        const customer = await stripe.customers.retrieve(session.customer as string);
+        
+        if (customer && !customer.deleted) {
+          const userId = customer.metadata?.user_id;
+          const planName = session.metadata?.plan_name; // Plan name is safe from session
 
         if (userId && planName) {
           // Get billing interval from subscription
@@ -76,6 +81,11 @@ serve(async (req) => {
             });
 
           console.log(`Updated user ${userId} to plan ${planName}`);
+        } else {
+          console.error('[WEBHOOK] No user_id found in customer metadata');
+        }
+        } else {
+          console.error('[WEBHOOK] Customer not found or deleted');
         }
         break;
       }
