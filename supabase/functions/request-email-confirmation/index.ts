@@ -5,7 +5,16 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SENDPULSE_API_ID = Deno.env.get('SENDPULSE_API_ID');
 const SENDPULSE_API_SECRET = Deno.env.get('SENDPULSE_API_SECRET');
-const SITE_URL = SUPABASE_URL.replace('.supabase.co', '.lovable.app') || 'https://therapypro.lovable.app';
+
+// Get the site URL from request origin or use default
+function getSiteUrl(req: Request): string {
+  const origin = req.headers.get('origin');
+  if (origin) {
+    return origin;
+  }
+  // Fallback to lovable app domain
+  return 'https://ykwszazxigjivjkagjmf.lovable.app';
+}
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -50,8 +59,23 @@ serve(async (req) => {
     console.log('[Email Confirmation] Iniciando processo de registro para:', email);
 
     if (!email || !password) {
-      throw new Error('Email e senha são obrigatórios');
+      console.error('[Email Confirmation] Email ou senha não fornecidos');
+      return new Response(
+        JSON.stringify({ error: 'Email e senha são obrigatórios' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
     }
+
+    // Verificar se as variáveis de ambiente estão configuradas
+    if (!SENDPULSE_API_ID || !SENDPULSE_API_SECRET) {
+      console.error('[Email Confirmation] Credenciais SendPulse não configuradas');
+      return new Response(
+        JSON.stringify({ error: 'Serviço de email não configurado corretamente' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
+    }
+
+    const SITE_URL = getSiteUrl(req);
 
     // Criar cliente Supabase Admin
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -209,7 +233,11 @@ serve(async (req) => {
     if (!emailResponse.ok) {
       const errorText = await emailResponse.text();
       console.error('[SendPulse] Erro ao enviar email:', errorText);
-      throw new Error(`Erro ao enviar email: ${errorText}`);
+      console.error('[SendPulse] Status code:', emailResponse.status);
+      return new Response(
+        JSON.stringify({ error: 'Falha ao enviar email de confirmação. Por favor, tente novamente.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
     const emailResult = await emailResponse.json();

@@ -242,11 +242,17 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
       })
 
       if (error) {
-        throw error;
+        console.error('Erro ao chamar edge function:', error);
+        throw new Error(error.message || 'Erro ao criar conta. Por favor, tente novamente.');
       }
 
       if (data?.error) {
+        console.error('Erro retornado pela edge function:', data.error);
         throw new Error(data.error);
+      }
+
+      if (!data?.success) {
+        throw new Error('Falha ao criar conta. Por favor, tente novamente.');
       }
 
       // Sucesso!
