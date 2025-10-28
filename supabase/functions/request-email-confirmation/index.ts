@@ -85,6 +85,34 @@ serve(async (req) => {
       }
     });
 
+    // Verificar se o usuário já existe
+    console.log('[Email Confirmation] Verificando se usuário já existe:', email);
+    const { data: existingUsers, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error('[Email Confirmation] Erro ao listar usuários:', listError);
+    }
+
+    const existingUser = existingUsers?.users.find(u => u.email === email);
+    
+    if (existingUser) {
+      console.log('[Email Confirmation] Usuário já existe:', existingUser.id);
+      
+      // Se o usuário já existe mas não confirmou o email, deletar e recriar
+      if (!existingUser.email_confirmed_at) {
+        console.log('[Email Confirmation] Deletando usuário não confirmado para reenviar...');
+        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
+        
+        if (deleteError) {
+          console.error('[Email Confirmation] Erro ao deletar usuário:', deleteError);
+          throw new Error('Erro ao processar reenvio. Tente novamente.');
+        }
+      } else {
+        // Se já confirmou, retornar erro
+        throw new Error('Esta conta já está ativa. Faça login.');
+      }
+    }
+
     // Criar o usuário com autoConfirm false para que não envie email automático
     const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
       email,

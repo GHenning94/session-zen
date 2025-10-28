@@ -24,6 +24,9 @@ const Login = () => {
   const [pending2FAEmail, setPending2FAEmail] = useState('')
   const [requires2FAEmail, setRequires2FAEmail] = useState(false)
   const [requires2FAAuthenticator, setRequires2FAAuthenticator] = useState(false)
+  const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false)
+  const [confirmationEmail, setConfirmationEmail] = useState('')
+  const [resendCooldown, setResendCooldown] = useState(0)
   const [formData, setFormData] = useState({
     name: '',
     profession: 'psicologo',
@@ -39,6 +42,16 @@ const registerFormRef = useRef<HTMLFormElement>(null);
 // Controla a aba default via query param (?tab=register)
 const [searchParams] = useSearchParams();
 const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
+
+  // Countdown timer para reenvio de email
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => {
+        setResendCooldown(resendCooldown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
   // Correção do Botão Voltar do Navegador (Já implementada)
   useEffect(() => {
@@ -256,6 +269,9 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
       }
 
       // Sucesso!
+      setAwaitingEmailConfirmation(true)
+      setConfirmationEmail(formData.email)
+      setResendCooldown(60) // 60 segundos de cooldown
       toast({ title: "Conta criada com sucesso!", description: "Verifique seu email para confirmar a conta." })
       
     } catch (error: any) {
@@ -263,6 +279,44 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
       toast({ 
         title: "Erro no cadastro", 
         description: error.message || "Não foi possível criar a conta", 
+        variant: "destructive" 
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResendConfirmationEmail = async () => {
+    setIsLoading(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('request-email-confirmation', {
+        body: {
+          email: confirmationEmail,
+          password: formData.password,
+          user_metadata: {
+            nome: formData.name,
+            profissao: formData.profession
+          }
+        }
+      })
+
+      if (error) {
+        throw new Error(error.message || 'Erro ao reenviar email')
+      }
+
+      if (data?.error) {
+        throw new Error(data.error)
+      }
+
+      setResendCooldown(60)
+      toast({ 
+        title: "Email reenviado!", 
+        description: "Verifique sua caixa de entrada novamente." 
+      })
+    } catch (error: any) {
+      toast({ 
+        title: "Erro ao reenviar", 
+        description: error.message, 
         variant: "destructive" 
       })
     } finally {
@@ -346,6 +400,29 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
             <CardContent className="bg-transparent">
               {/* Aba de Login */}
               <TabsContent value="login" className="space-y-4">
+                {awaitingEmailConfirmation && (
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Email de confirmação enviado para:</p>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        value={confirmationEmail} 
+                        disabled 
+                        className="bg-background"
+                      />
+                      <Button
+                        onClick={handleResendConfirmationEmail}
+                        disabled={isLoading || resendCooldown > 0}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {resendCooldown > 0 ? `${resendCooldown}s` : 'Reenviar'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Verifique sua caixa de entrada e spam. Clique no link de confirmação para ativar sua conta.
+                    </p>
+                  </div>
+                )}
                 <form ref={loginFormRef} onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="login-email">E-mail</Label>
@@ -446,6 +523,29 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
               </TabsContent>
               {/* Aba de Registro */}
               <TabsContent value="register" className="space-y-4">
+                {awaitingEmailConfirmation && (
+                  <div className="p-4 bg-primary/10 border border-primary/20 rounded-lg space-y-3">
+                    <p className="text-sm font-medium">Email de confirmação enviado para:</p>
+                    <div className="flex items-center gap-2">
+                      <Input 
+                        value={confirmationEmail} 
+                        disabled 
+                        className="bg-background"
+                      />
+                      <Button
+                        onClick={handleResendConfirmationEmail}
+                        disabled={isLoading || resendCooldown > 0}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {resendCooldown > 0 ? `${resendCooldown}s` : 'Reenviar'}
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Verifique sua caixa de entrada e spam. Clique no link de confirmação para ativar sua conta.
+                    </p>
+                  </div>
+                )}
                 <form ref={registerFormRef} onSubmit={handleRegister} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="register-name">Nome Completo</Label>
