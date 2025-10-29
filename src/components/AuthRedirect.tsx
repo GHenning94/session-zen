@@ -10,74 +10,65 @@ export const AuthRedirect = () => {
 
   useEffect(() => {
     const checkFirstLogin = async () => {
-      console.log('🔀 AuthRedirect: Verificando estado', { user: !!user, loading, pathname: location.pathname });
+      if (loading) return;
 
-      if (loading) {
-        console.log('🔀 AuthRedirect: Aguardando carregamento...');
-        return;
-      }
-
-      // REGRA 1: Se NÃO há usuário E está tentando acessar rota protegida -> Manda para /login
-      if (!user && (location.pathname.startsWith('/dashboard') || location.pathname.startsWith('/agenda'))) {
-        console.log('🔀 AuthRedirect: Sem usuário, acessando rota protegida. Redirecionando para /login.');
+      const currentPath = location.pathname;
+      
+      // Rotas protegidas que requerem login
+      const protectedRoutes = ['/dashboard', '/agenda', '/clientes', '/pagamentos', '/configuracoes', '/pacotes', '/sessoes', '/prontuarios', '/relatorios'];
+      const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+      
+      // Se não está logado e tenta acessar rota protegida, redireciona para login
+      if (!user && isProtectedRoute) {
+        console.log('[AuthRedirect] User not authenticated, redirecting to login from:', currentPath);
         navigate('/login', { replace: true });
         return;
       }
 
-      // REGRA 2: Se HÁ usuário, verificar se completou primeiro login
+      // Se está logado, verifica se completou onboarding
       if (user) {
-        // Não verificar se já está em /welcome ou /auth-confirm
-        if (location.pathname === '/welcome' || location.pathname === '/auth-confirm' || location.pathname === '/reset-password') {
-          console.log('🔀 AuthRedirect: Já está em página permitida:', location.pathname);
+        // Permitir acesso direto a algumas páginas específicas sem verificar onboarding
+        const allowedPaths = ['/welcome', '/auth-confirm', '/reset-password', '/upgrade'];
+        if (allowedPaths.includes(currentPath)) {
           return;
         }
 
         try {
-          const { data: profile, error: profileError } = await supabase
+          const { data: profile, error } = await supabase
             .from('profiles')
-            .select('first_login_completed')
+            .select('first_login_completed, subscription_plan')
             .eq('user_id', user.id)
             .single();
 
-          // NOVO: Detectar se a conta foi deletada
-          if (profileError || !profile) {
-            console.error('🔀 AuthRedirect: Profile não encontrado. Usuário pode ter sido deletado.', profileError);
-            
-            // Limpar TUDO do localStorage
+          if (error) {
+            console.error('[AuthRedirect] Error fetching profile:', error);
+            // Se o perfil não existe, limpa o cache e desloga
             localStorage.clear();
-            sessionStorage.clear();
-            
-            // Forçar logout
             await supabase.auth.signOut();
-            
-            // Redirecionar para landing page
             navigate('/', { replace: true });
+            return;
+          }
+
+          // Se não completou o primeiro login/onboarding, redireciona para welcome
+          // EXCETO se já tem um plano pago ativo (significa que pagou mas webhook ainda não processou)
+          if (!profile?.first_login_completed) {
+            // Se tem plano pago, deixa entrar no dashboard (webhook vai processar em breve)
+            if (profile?.subscription_plan && profile.subscription_plan !== 'basico') {
+              console.log('[AuthRedirect] Has paid plan, allowing dashboard access');
+              return;
+            }
             
-            return;
-          }
-
-          // Se não completou primeiro login -> Redirecionar IMEDIATAMENTE para /welcome
-          if (!profile.first_login_completed) {
-            console.log('🔀 AuthRedirect: Primeiro login não completado. Redirecionando para /welcome');
+            console.log('[AuthRedirect] First login not completed, redirecting to welcome');
             navigate('/welcome', { replace: true });
-            return;
           }
-
-          console.log('🔀 AuthRedirect: Usuário existe e completou onboarding.');
         } catch (error) {
-          console.error('🔀 AuthRedirect: Erro crítico ao verificar profile:', error);
-          
-          // Em caso de erro crítico, também limpar tudo
-          localStorage.clear();
-          sessionStorage.clear();
-          await supabase.auth.signOut();
-          navigate('/', { replace: true });
+          console.error('[AuthRedirect] Error in checkFirstLogin:', error);
         }
       }
     };
 
     checkFirstLogin();
-  }, [user, loading, location.pathname, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
   return null;
 }

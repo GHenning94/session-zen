@@ -85,88 +85,103 @@ const Welcome = () => {
   ];
 
   const handleSelectPlan = async (planId: string) => {
-    if (!user) {
-      toast({
-        title: 'Erro',
-        description: 'Você precisa estar logado para selecionar um plano',
-        variant: 'destructive'
-      });
-      return;
-    }
-
+    if (loading) return;
+    
     setLoading(planId);
-
+    
     try {
-      // Se for plano básico, apenas marca como concluído
-      if (planId === 'basico') {
-        const { error } = await supabase
-          .from('profiles')
-          .update({ first_login_completed: true })
-          .eq('user_id', user.id);
-
-        if (error) throw error;
-
-        // Limpar sessionStorage
-        sessionStorage.removeItem('pending_plan');
-
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
         toast({
-          title: 'Bem-vindo ao TherapyPro!',
-          description: 'Você está usando o plano Básico. Você pode fazer upgrade a qualquer momento.',
+          title: 'Erro',
+          description: 'Você precisa estar logado para selecionar um plano',
+          variant: 'destructive'
         });
-
-        navigate('/dashboard');
+        navigate('/login');
         return;
       }
 
-      // Para planos pagos, criar checkout no Stripe
+      // Se for plano básico, atualiza o perfil e marca onboarding como completo
+      if (planId === 'basico') {
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            subscription_plan: 'basico',
+            first_login_completed: true,
+            onboarding_completed: true
+          })
+          .eq('user_id', user.id);
+
+        if (updateError) {
+          console.error('Erro ao atualizar perfil:', updateError);
+          throw new Error('Erro ao ativar plano básico');
+        }
+
+        toast({
+          title: 'Bem-vindo ao TherapyPro!',
+          description: 'Plano Básico ativado com sucesso!',
+        });
+        
+        sessionStorage.removeItem('pending_plan');
+        setTimeout(() => navigate('/dashboard'), 1000);
+        return;
+      }
+
+      // Para planos pagos, obter o priceId correto
       const plan = plans.find(p => p.id === planId);
-      if (!plan) throw new Error('Plano não encontrado');
+      if (!plan) {
+        toast({
+          title: 'Erro',
+          description: 'Plano não encontrado',
+          variant: 'destructive'
+        });
+        setLoading(null);
+        return;
+      }
 
       const priceId = isAnnual ? plan.stripeAnnualId : plan.stripeMonthlyId;
-      if (!priceId) throw new Error('Price ID não encontrado');
-
-      // IMPORTANTE: Marcar first_login_completed ANTES de ir para o Stripe
-      // para evitar loop de redirecionamento quando voltar
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ first_login_completed: true })
-        .eq('user_id', user.id);
-
-      if (profileError) {
-        console.error('Erro ao atualizar profile:', profileError);
-        throw profileError;
+      
+      if (!priceId) {
+        toast({
+          title: 'Erro',
+          description: 'Configuração de preço inválida. Entre em contato com o suporte.',
+          variant: 'destructive'
+        });
+        setLoading(null);
+        return;
       }
 
-      const returnUrl = `${window.location.origin}/dashboard?payment=success`;
+      console.log('Criando checkout para:', { planId, priceId, isAnnual });
 
+      // Criar sessão de checkout no Stripe (NÃO marcar first_login_completed aqui)
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId, returnUrl }
+        body: { 
+          priceId,
+          returnUrl: window.location.origin 
+        }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Erro na Edge Function create-checkout:', error);
+        throw new Error(error.message || 'Erro ao criar sessão de pagamento');
+      }
+      
+      if (!data?.url) {
+        throw new Error('URL de checkout não retornada. Tente novamente.');
+      }
 
-      if (data?.url) {
-        // Limpar sessionStorage antes de redirecionar
-        sessionStorage.removeItem('pending_plan');
-        window.location.href = data.url;
-      } else {
-        throw new Error('URL de checkout não retornada');
-      }
-    } catch (error: any) {
+      // Redirecionar para o Stripe
+      sessionStorage.removeItem('pending_plan');
+      window.location.href = data.url;
+      
+    } catch (error) {
       console.error('Erro ao selecionar plano:', error);
-      
-      // Melhor mensagem para erro de Price ID
-      let errorMessage = error.message || 'Tente novamente mais tarde';
-      if (errorMessage.includes('No such price') || errorMessage.includes('price_')) {
-        errorMessage = 'Erro na configuração de pagamento. Por favor, entre em contato com o suporte.';
-      }
-      
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao processar plano';
       toast({
-        title: 'Erro ao processar plano',
+        title: 'Erro',
         description: errorMessage,
         variant: 'destructive'
       });
-    } finally {
       setLoading(null);
     }
   };

@@ -20,11 +20,12 @@ import {
   TrendingUp,
   AlertCircle,
   BarChart3,
-  Crown
+  Crown,
+  Loader2
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Layout } from "@/components/Layout"
-import { useNavigate } from "react-router-dom"
+import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -37,11 +38,14 @@ import { TutorialModal } from "@/components/TutorialModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { cn } from "@/lib/utils"
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
+import { toast } from "sonner"
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { currentPlan } = useSubscription()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [dashboardData, setDashboardData] = useState({
     sessionsToday: 0,
     activeClients: 0,
@@ -139,7 +143,57 @@ const Dashboard = () => {
       console.log('👤 Usuário encontrado, carregando dados...')
       loadDashboardDataOptimized(true)
     }
-  }, [user, loadDashboardDataOptimized])
+    
+    // Check if returning from successful payment
+    const paymentStatus = searchParams.get('payment')
+    if (paymentStatus === 'success' && user) {
+      handlePaymentSuccess()
+    }
+  }, [user, loadDashboardDataOptimized, searchParams])
+
+  const handlePaymentSuccess = async () => {
+    setIsProcessingPayment(true)
+    
+    let attempts = 0
+    const maxAttempts = 10
+    
+    const checkStatus = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-subscription-status')
+        
+        if (error) throw error
+        
+        if (data?.plan && data.plan !== 'basico') {
+          setIsProcessingPayment(false)
+          toast.success('Assinatura ativada com sucesso!')
+          searchParams.delete('payment')
+          setSearchParams(searchParams)
+          loadDashboardDataOptimized(true)
+          return true
+        }
+        
+        return false
+      } catch (error) {
+        console.error('Error checking subscription:', error)
+        return false
+      }
+    }
+    
+    const pollStatus = setInterval(async () => {
+      attempts++
+      const processed = await checkStatus()
+      
+      if (processed || attempts >= maxAttempts) {
+        clearInterval(pollStatus)
+        if (!processed) {
+          setIsProcessingPayment(false)
+          toast.info('Processando assinatura. Atualize a página.')
+          searchParams.delete('payment')
+          setSearchParams(searchParams)
+        }
+      }
+    }, 1000)
+  }
 
   // Sempre recarregar quando o Dashboard é montado (volta de outra página)
   useEffect(() => {
