@@ -130,35 +130,51 @@ serve(async (req) => {
       throw new Error('Falha ao criar usuário');
     }
 
-    console.log('[Email Confirmation] Usuário criado:', signUpData.user.id);
+    const userId = signUpData.user.id;
+    console.log('[Email Confirmation] Usuário criado:', userId);
 
     // Gerar link de confirmação
-    const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'signup',
-      email: email,
-      options: {
-        redirectTo: `${SITE_URL}/auth-confirm`
+    let linkData;
+    try {
+      const { data: generatedLinkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
+        type: 'signup',
+        email: email,
+        options: {
+          redirectTo: `${SITE_URL}/auth-confirm`
+        }
+      });
+
+      if (linkError || !generatedLinkData) {
+        console.error('[Email Confirmation] Erro ao gerar link:', linkError);
+        // ROLLBACK: Deletar usuário recém-criado
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        console.log('[Email Confirmation] Rollback: Usuário deletado após falha na geração do link');
+        throw new Error('Falha ao gerar link de confirmação');
       }
-    });
 
-    if (linkError || !linkData) {
-      console.error('[Email Confirmation] Erro ao gerar link:', linkError);
-      throw new Error('Falha ao gerar link de confirmação');
+      linkData = generatedLinkData;
+      console.log('[Email Confirmation] Link de confirmação gerado');
+    } catch (error) {
+      // ROLLBACK: Garantir que o usuário seja deletado
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      console.log('[Email Confirmation] Rollback: Usuário deletado após exceção na geração do link');
+      throw error;
     }
 
-    console.log('[Email Confirmation] Link de confirmação gerado');
-
-    // Extrair token_hash do link
+    // Usar action_link diretamente (inclui token e tipo no hash, não na query string)
     const confirmationLink = linkData.properties.action_link;
-    const url = new URL(confirmationLink);
-    const token_hash = url.searchParams.get('token_hash');
-
-    if (!token_hash) {
-      throw new Error('Falha ao extrair token do link de confirmação');
-    }
 
     // Obter token do SendPulse
-    const accessToken = await getSendPulseToken();
+    let accessToken;
+    try {
+      accessToken = await getSendPulseToken();
+    } catch (error) {
+      console.error('[Email Confirmation] Erro ao obter token SendPulse:', error);
+      // ROLLBACK: Deletar usuário recém-criado
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      console.log('[Email Confirmation] Rollback: Usuário deletado após falha no SendPulse token');
+      throw new Error('Falha ao configurar envio de email');
+    }
 
     // Construir email HTML
     const userName = user_metadata?.nome || 'Usuário';
@@ -196,7 +212,7 @@ serve(async (req) => {
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center" style="padding: 20px 0;">
-                          <a href="${SITE_URL}/auth-confirm?token_hash=${token_hash}&type=signup" 
+                          <a href="${confirmationLink}" 
                              style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
                             Confirmar E-mail
                           </a>
@@ -234,38 +250,50 @@ serve(async (req) => {
     `;
 
     // Enviar email via SendPulse
-    const emailResponse = await fetch('https://api.sendpulse.com/smtp/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        email: {
-          html: emailHtml,
-          text: `Olá, ${userName}!\n\nBem-vindo ao TherapyPro! Para confirmar seu e-mail, acesse o link: ${SITE_URL}/auth-confirm?token_hash=${token_hash}&type=signup\n\nSe você não criou uma conta, ignore este e-mail.\n\nEste link expira em 24 horas.`,
-          subject: 'Confirme seu e-mail - TherapyPro',
-          from: {
-            name: 'TherapyPro',
-            email: 'nao-responda@therapypro.app.br',
-          },
-          to: [
-            {
-              email: email,
-            },
-          ],
+    let emailResponse;
+    try {
+      emailResponse = await fetch('https://api.sendpulse.com/smtp/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
         },
-      }),
-    });
+        body: JSON.stringify({
+          email: {
+            html: emailHtml,
+            text: `Olá, ${userName}!\n\nBem-vindo ao TherapyPro! Para confirmar seu e-mail, acesse o link: ${confirmationLink}\n\nSe você não criou uma conta, ignore este e-mail.\n\nEste link expira em 24 horas.`,
+            subject: 'Confirme seu e-mail - TherapyPro',
+            from: {
+              name: 'TherapyPro',
+              email: 'nao-responda@therapypro.app.br',
+            },
+            to: [
+              {
+                email: email,
+              },
+            ],
+          },
+        }),
+      });
 
-    if (!emailResponse.ok) {
-      const errorText = await emailResponse.text();
-      console.error('[SendPulse] Erro ao enviar email:', errorText);
-      console.error('[SendPulse] Status code:', emailResponse.status);
-      return new Response(
-        JSON.stringify({ error: 'Falha ao enviar email de confirmação. Por favor, tente novamente.' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-      );
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+        console.error('[SendPulse] Erro ao enviar email:', errorText);
+        console.error('[SendPulse] Status code:', emailResponse.status);
+        // ROLLBACK: Deletar usuário recém-criado
+        await supabaseAdmin.auth.admin.deleteUser(userId);
+        console.log('[Email Confirmation] Rollback: Usuário deletado após falha no envio do email');
+        return new Response(
+          JSON.stringify({ error: 'Falha ao enviar email de confirmação. Por favor, tente novamente.' }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+        );
+      }
+    } catch (error) {
+      console.error('[SendPulse] Exceção ao enviar email:', error);
+      // ROLLBACK: Deletar usuário recém-criado
+      await supabaseAdmin.auth.admin.deleteUser(userId);
+      console.log('[Email Confirmation] Rollback: Usuário deletado após exceção no envio do email');
+      throw new Error('Falha ao enviar email de confirmação');
     }
 
     const emailResult = await emailResponse.json();

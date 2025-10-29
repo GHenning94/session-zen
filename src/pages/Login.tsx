@@ -226,22 +226,8 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
     setIsLoading(true)
 
     try {
-      // Verificar se o e-mail já está cadastrado
-      const { data: checkData } = await supabase.functions.invoke('check-email-exists', {
-        body: { email: formData.email }
-      })
-      
-      if (checkData?.exists) {
-        toast({
-          title: "E-mail já está em uso",
-          description: "Esta conta já existe. Por favor, realize o login.",
-          variant: "destructive"
-        })
-        setIsLoading(false)
-        return
-      }
-
       // Criar conta via edge function que envia email pelo SendPulse
+      // A edge function vai gerenciar verificação de usuário existente e rollback se necessário
       const { data, error } = await supabase.functions.invoke('request-email-confirmation', {
         body: {
           email: formData.email,
