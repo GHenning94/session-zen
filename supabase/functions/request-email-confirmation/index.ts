@@ -185,12 +185,35 @@ serve(async (req) => {
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Confirme seu e-mail - TherapyPro</title>
+        <style>
+          body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+          }
+          .content {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            word-break: break-word;
+          }
+          @media only screen and (max-width: 600px) {
+            .content {
+              padding: 30px 20px !important;
+            }
+            .button-cell {
+              padding: 15px 0 !important;
+            }
+          }
+        </style>
       </head>
       <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
-        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4; padding: 40px 0;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout: fixed; width: 100%; background-color: #f4f4f4;">
           <tr>
-            <td align="center">
-              <table width="600" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <td style="padding: 40px 20px;" align="center">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                 <!-- Header -->
                 <tr>
                   <td style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
@@ -200,7 +223,7 @@ serve(async (req) => {
                 
                 <!-- Content -->
                 <tr>
-                  <td style="padding: 40px 30px;">
+                  <td class="content" style="padding: 40px 30px; word-wrap: break-word; overflow-wrap: break-word; word-break: break-word;">
                     <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Olá, ${userName}! 👋</h2>
                     <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
                       Bem-vindo ao <strong>TherapyPro</strong>! Estamos muito felizes em tê-lo conosco.
@@ -209,9 +232,9 @@ serve(async (req) => {
                       Para começar a usar nossa plataforma, por favor confirme seu endereço de e-mail clicando no botão abaixo:
                     </p>
                     
-                    <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
-                        <td align="center" style="padding: 20px 0;">
+                        <td class="button-cell" align="center" style="padding: 20px 0;">
                           <a href="${confirmationLink}" 
                              style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
                             Confirmar E-mail
