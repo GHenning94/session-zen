@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react"
-import { useNavigate, useSearchParams } from "react-router-dom"
+import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
 import { toast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { TwoFactorVerification } from "@/components/TwoFactorVerification"
@@ -17,6 +17,7 @@ const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
 const Login = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isLoading, setIsLoading] = useState(false)
   const [isResettingPassword, setIsResettingPassword] = useState(false); // Para o botão "Esqueci senha"
   const [showPasswordRequirements, setShowPasswordRequirements] = useState(false)
@@ -42,6 +43,21 @@ const registerFormRef = useRef<HTMLFormElement>(null);
 // Controla a aba default via query param (?tab=register)
 const [searchParams] = useSearchParams();
 const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login';
+
+  // Exibir mensagem do state (vindo de ResetPassword ou AuthRedirect)
+  useEffect(() => {
+    const stateMessage = location.state?.message;
+    const stateVariant = location.state?.variant;
+    if (stateMessage) {
+      toast({
+        title: stateVariant === 'destructive' ? 'Atenção' : 'Sucesso',
+        description: stateMessage,
+        variant: stateVariant || 'default'
+      });
+      // Limpar o state para não mostrar a mensagem novamente
+      navigate(location.pathname, { replace: true, state: {} });
+    }
+  }, [location.state, navigate, location.pathname]);
 
   // Countdown timer para reenvio de email
   useEffect(() => {

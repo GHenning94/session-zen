@@ -128,89 +128,62 @@ serve(async (req) => {
                   body {
                     margin: 0;
                     padding: 0;
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-                    -webkit-text-size-adjust: 100%;
-                    -ms-text-size-adjust: 100%;
-                  }
-                  .wrapper {
-                    width: 100%;
-                    table-layout: fixed;
+                    font-family: Arial, sans-serif;
                     background-color: #f4f4f4;
-                  }
-                  .container {
-                    max-width: 600px;
-                    width: 100%;
-                    margin: 0 auto;
-                  }
-                  .content {
-                    padding: 40px 30px;
-                    word-wrap: break-word;
-                    overflow-wrap: break-word;
-                    word-break: break-word;
                   }
                   @media only screen and (max-width: 600px) {
                     .content {
                       padding: 30px 20px !important;
                     }
-                    .button-cell {
-                      padding: 15px 0 !important;
-                    }
                   }
                 </style>
               </head>
-              <body style="margin: 0; padding: 0;">
-                <table role="presentation" class="wrapper" width="100%" cellspacing="0" cellpadding="0" border="0">
+              <body>
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f4f4f4;">
                   <tr>
                     <td style="padding: 40px 20px;" align="center">
-                      <table role="presentation" class="container" cellspacing="0" cellpadding="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-                        <!-- Header -->
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
                         <tr>
                           <td style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); padding: 40px 30px; text-align: center;">
                             <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">TherapyPro</h1>
                           </td>
                         </tr>
-                        
-                        <!-- Content -->
                         <tr>
-                          <td class="content">
-                            <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Recuperação de Senha 🔑</h2>
-                            <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
-                              Olá, ${userName || 'Usuário'}!
-                            </p>
-                            <p style="margin: 0 0 30px 0; color: #475569; font-size: 16px; line-height: 1.6;">
-                              Recebemos uma solicitação para redefinir a senha da sua conta no <strong>TherapyPro</strong>. Clique no botão abaixo para criar uma nova senha:
-                            </p>
-                            
+                          <td class="content" style="padding: 40px 30px;">
                             <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                               <tr>
-                                <td class="button-cell" align="center" style="padding: 20px 0;">
-                                  <a href="${resetLink}" 
-                                     style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">
-                                    Redefinir Senha
-                                  </a>
+                                <td style="word-wrap: break-word; overflow-wrap: break-word;">
+                                  <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Recuperação de Senha 🔑</h2>
+                                  <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+                                    Olá, ${userName || 'Usuário'}!
+                                  </p>
+                                  <p style="margin: 0 0 30px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+                                    Recebemos uma solicitação para redefinir a senha da sua conta no <strong>TherapyPro</strong>. Clique no botão abaixo:
+                                  </p>
+                                  <div style="text-align: center; margin: 30px 0;">
+                                    <a href="${resetLink}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">Redefinir Senha</a>
+                                  </div>
+                                  <p style="margin: 0 0 20px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                                    Ou copie e cole este link no seu navegador:
+                                  </p>
+                                  <p style="margin: 0 0 30px 0;">
+                                    <a href="${resetLink}" style="color: #2563eb; word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; display: inline-block; max-width: 100%; text-decoration: underline;">${resetLink}</a>
+                                  </p>
+                                  <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                                    Se você não solicitou a recuperação de senha, ignore este e-mail.
+                                  </p>
+                                  <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                                    <strong>Nota:</strong> Este link expira em 1 hora por motivos de segurança.
+                                  </p>
                                 </td>
                               </tr>
                             </table>
-                            
-                            <p style="margin: 30px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                              Se você não solicitou a recuperação de senha, por favor ignore este e-mail. Sua senha permanecerá inalterada.
-                            </p>
-                            
-                            <p style="margin: 20px 0 0 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                              <strong>Nota:</strong> Este link expira em 1 hora por motivos de segurança.
-                            </p>
                           </td>
                         </tr>
-                        
-                        <!-- Footer -->
                         <tr>
                           <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
-                            <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">
-                              © ${new Date().getFullYear()} TherapyPro. Todos os direitos reservados.
-                            </p>
-                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">
-                              Gestão profissional para terapeutas
-                            </p>
+                            <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">© ${new Date().getFullYear()} TherapyPro. Todos os direitos reservados.</p>
+                            <p style="margin: 0; color: #94a3b8; font-size: 12px;">Gestão profissional para terapeutas</p>
                           </td>
                         </tr>
                       </table>

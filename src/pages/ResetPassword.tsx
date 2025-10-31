@@ -8,6 +8,7 @@ import { Loader2, Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { PasswordRequirements } from '@/components/PasswordRequirements';
+import './Login.styles.css';
 
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
@@ -106,6 +107,9 @@ const ResetPassword = () => {
 
       if (error) throw error;
 
+      // Forçar logout para garantir nova autenticação
+      await supabase.auth.signOut();
+
       setStatus('success');
       toast({
         title: 'Senha redefinida com sucesso!',
@@ -136,11 +140,10 @@ const ResetPassword = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Decorative animated blobs */}
-      <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+    <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-background">
+      {/* Background Blobs - Matching Login page */}
+      <div className="background-animation-container">
+        <div className="blob blob-2"></div>
       </div>
       <Card className="w-full max-w-md shadow-elegant border-border/50 bg-gradient-card backdrop-blur-sm relative z-10">
         <CardHeader className="text-center">

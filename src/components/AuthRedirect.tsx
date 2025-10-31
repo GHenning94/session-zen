@@ -25,8 +25,22 @@ export const AuthRedirect = () => {
         return;
       }
 
-      // Se está logado, verifica se completou onboarding
+      // Se está logado, verifica autenticação completa
       if (user) {
+        // CRÍTICO: Verificar se o e-mail foi confirmado
+        if (!user.email_confirmed_at) {
+          console.log('[AuthRedirect] Email not confirmed, signing out and redirecting to login');
+          await supabase.auth.signOut();
+          navigate('/login', { 
+            state: { 
+              message: 'Por favor, confirme seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada.',
+              variant: 'destructive'
+            },
+            replace: true 
+          });
+          return;
+        }
+
         // Permitir acesso direto a algumas páginas específicas sem verificar onboarding
         const allowedPaths = ['/welcome', '/auth-confirm', '/reset-password', '/upgrade'];
         if (allowedPaths.includes(currentPath)) {
