@@ -27,9 +27,15 @@ export const AuthRedirect = () => {
 
       // Se está logado, verifica autenticação completa
       if (user) {
-        // CRÍTICO: Verificar se o e-mail foi confirmado
-        if (!user.email_confirmed_at) {
-          console.log('[AuthRedirect] Email not confirmed, signing out and redirecting to login');
+        // CRÍTICO: Verificar se o e-mail foi confirmado (verificação estrita)
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email_confirmed_strict')
+          .eq('user_id', user.id)
+          .single();
+
+        if (!profile?.email_confirmed_strict) {
+          console.log('[AuthRedirect] Email not confirmed (strict), signing out and redirecting to login');
           await supabase.auth.signOut();
           navigate('/login', { 
             state: { 

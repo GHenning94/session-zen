@@ -734,6 +734,7 @@ export type Database = {
           cpf_cnpj: string | null
           created_at: string
           crp: string | null
+          email_confirmed_strict: boolean
           especialidade: string | null
           first_login_completed: boolean | null
           id: string
@@ -756,6 +757,7 @@ export type Database = {
           cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
+          email_confirmed_strict?: boolean
           especialidade?: string | null
           first_login_completed?: boolean | null
           id?: string
@@ -778,6 +780,7 @@ export type Database = {
           cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
+          email_confirmed_strict?: boolean
           especialidade?: string | null
           first_login_completed?: boolean | null
           id?: string

@@ -170,6 +170,33 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
 
       // Se não houve erro, continuar com a lógica do 2FA
       if (signInData?.user) {
+        // VERIFICAÇÃO CRÍTICA: Email confirmado de forma estrita?
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email_confirmed_strict')
+          .eq('user_id', signInData.user.id)
+          .single();
+
+        if (!profile?.email_confirmed_strict) {
+          console.log('🔒 Login: Email não confirmado (strict), bloqueando acesso');
+          
+          // Fazer logout imediato
+          await supabase.auth.signOut();
+          
+          // Mostrar estado de aguardando confirmação
+          setAwaitingEmailConfirmation(true);
+          setConfirmationEmail(formData.email);
+          
+          toast({
+            title: 'Confirme seu e-mail',
+            description: 'Por favor, verifique sua caixa de entrada e clique no link de confirmação para ativar sua conta.',
+            variant: 'destructive'
+          });
+          
+          setIsLoading(false);
+          return; // PARAR AQUI
+        }
+
         const { data: settingsArray, error: settingsError } = await supabase
           .from('user_2fa_settings')
           .select('email_2fa_enabled, authenticator_2fa_enabled')

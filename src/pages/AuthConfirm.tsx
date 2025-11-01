@@ -24,12 +24,32 @@ const AuthConfirm = () => {
             token_hash: tokenHash
           })
           if (error) throw error
+
+          // NOVO: Se for confirmação de signup, marcar email_confirmed_strict
+          if (type === 'signup') {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user) {
+              await supabase
+                .from('profiles')
+                .update({ email_confirmed_strict: true })
+                .eq('user_id', user.id)
+            }
+          }
+
           setStatus('success')
         } else {
           // 2) Fallback: algumas confirmações chegam com access_token no hash (#)
           const hash = window.location.hash
           if (hash && hash.includes('access_token')) {
             // Supabase SDK processa automaticamente o hash ao carregar; considerar sucesso
+            // Para fallback, verificar se podemos marcar como signup
+            const { data: { user } } = await supabase.auth.getUser()
+            if (user && type === 'signup') {
+              await supabase
+                .from('profiles')
+                .update({ email_confirmed_strict: true })
+                .eq('user_id', user.id)
+            }
             setStatus('success')
           } else if (params.get('error')) {
             setStatus('error')
