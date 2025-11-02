@@ -95,11 +95,31 @@ serve(async (req) => {
 
     const existingUser = existingUsers?.users.find(u => u.email === email);
     
+    let userId: string;
+    
     if (existingUser) {
       console.log('[Email Confirmation] Usuário já existe:', existingUser.id);
       
-      // Se o usuário já existe mas não confirmou o email, deletar e recriar
-      if (!existingUser.email_confirmed_at) {
+      // Buscar o status strict no profiles
+      const { data: profileData } = await supabaseAdmin
+        .from('profiles')
+        .select('email_confirmed_strict')
+        .eq('user_id', existingUser.id)
+        .single();
+      
+      // Se o usuário já confirmou via nosso sistema strict, bloquear
+      if (profileData?.email_confirmed_strict === true) {
+        throw new Error('Esta conta já está ativa. Faça login.');
+      }
+      
+      // Se email_confirmed_at existe mas strict é false, significa que foi via password reset
+      // Neste caso, NÃO deletar o usuário, apenas gerar novo link e enviar
+      if (existingUser.email_confirmed_at && !profileData?.email_confirmed_strict) {
+        console.log('[Email Confirmation] Usuário confirmado pelo Supabase mas não pelo strict, reenviando...');
+        userId = existingUser.id;
+        // Continuar para gerar link e enviar email (não deletar)
+      } else if (!existingUser.email_confirmed_at) {
+        // Email não confirmado nem pelo Supabase, deletar e recriar
         console.log('[Email Confirmation] Deletando usuário não confirmado para reenviar...');
         const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
         
@@ -107,31 +127,50 @@ serve(async (req) => {
           console.error('[Email Confirmation] Erro ao deletar usuário:', deleteError);
           throw new Error('Erro ao processar reenvio. Tente novamente.');
         }
+        
+        // Criar novo usuário
+        const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+          email,
+          password,
+          email_confirm: false,
+          user_metadata: user_metadata || {}
+        });
+
+        if (signUpError) {
+          console.error('[Email Confirmation] Erro ao criar usuário:', signUpError);
+          throw signUpError;
+        }
+
+        if (!signUpData.user) {
+          throw new Error('Falha ao criar usuário');
+        }
+
+        userId = signUpData.user.id;
+        console.log('[Email Confirmation] Usuário criado:', userId);
       } else {
-        // Se já confirmou, retornar erro
-        throw new Error('Esta conta já está ativa. Faça login.');
+        userId = existingUser.id;
       }
+    } else {
+      // Usuário não existe, criar novo
+      const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
+        email,
+        password,
+        email_confirm: false,
+        user_metadata: user_metadata || {}
+      });
+
+      if (signUpError) {
+        console.error('[Email Confirmation] Erro ao criar usuário:', signUpError);
+        throw signUpError;
+      }
+
+      if (!signUpData.user) {
+        throw new Error('Falha ao criar usuário');
+      }
+
+      userId = signUpData.user.id;
+      console.log('[Email Confirmation] Usuário criado:', userId);
     }
-
-    // Criar o usuário com autoConfirm false para que não envie email automático
-    const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: false, // Não confirmar automaticamente
-      user_metadata: user_metadata || {}
-    });
-
-    if (signUpError) {
-      console.error('[Email Confirmation] Erro ao criar usuário:', signUpError);
-      throw signUpError;
-    }
-
-    if (!signUpData.user) {
-      throw new Error('Falha ao criar usuário');
-    }
-
-    const userId = signUpData.user.id;
-    console.log('[Email Confirmation] Usuário criado:', userId);
 
     // Gerar link de confirmação
     let linkData;

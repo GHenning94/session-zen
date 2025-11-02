@@ -316,17 +316,12 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
   }
 
   const handleResendConfirmationEmail = async () => {
+    if (!confirmationEmail) return;
+
     setIsLoading(true)
     try {
-      const { data, error } = await supabase.functions.invoke('request-email-confirmation', {
-        body: {
-          email: confirmationEmail,
-          password: formData.password,
-          user_metadata: {
-            nome: formData.name,
-            profissao: formData.profession
-          }
-        }
+      const { data, error } = await supabase.functions.invoke('resend-confirmation-email', {
+        body: { email: confirmationEmail }
       })
 
       if (error) {
@@ -343,9 +338,10 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
         description: "Verifique sua caixa de entrada novamente." 
       })
     } catch (error: any) {
+      console.error('Resend error:', error)
       toast({ 
         title: "Erro ao reenviar", 
-        description: error.message, 
+        description: error.message || "Tente novamente mais tarde.", 
         variant: "destructive" 
       })
     } finally {

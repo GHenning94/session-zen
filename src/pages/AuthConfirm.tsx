@@ -25,14 +25,20 @@ const AuthConfirm = () => {
           })
           if (error) throw error
 
-          // NOVO: Se for confirmação de signup, marcar email_confirmed_strict
-          if (type === 'signup') {
+          // NOVO: Se for confirmação de signup ou recovery, marcar email_confirmed_strict
+          if (type === 'signup' || type === 'recovery') {
             const { data: { user } } = await supabase.auth.getUser()
             if (user) {
-              await supabase
+              const { error: profileError } = await supabase
                 .from('profiles')
                 .update({ email_confirmed_strict: true })
                 .eq('user_id', user.id)
+              
+              if (profileError) {
+                console.error('Error updating profile email_confirmed_strict:', profileError)
+              } else {
+                console.log('✅ Profile email_confirmed_strict set to true for type:', type)
+              }
             }
           }
 
