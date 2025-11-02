@@ -81,7 +81,8 @@ const AuthConfirm = () => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer)
-            navigate('/login')
+            // Após confirmar email, redirecionar para welcome para escolher plano
+            navigate('/welcome')
             return 0
           }
           return prev - 1
@@ -114,7 +115,7 @@ const AuthConfirm = () => {
               </div>
               <CardTitle>E-mail Confirmado!</CardTitle>
               <CardDescription>
-                Seu e-mail foi confirmado com sucesso. Você será redirecionado para a tela de login em {countdown} segundo{countdown !== 1 ? 's' : ''}...
+                Seu e-mail foi confirmado com sucesso. Você será redirecionado para escolher seu plano em {countdown} segundo{countdown !== 1 ? 's' : ''}...
               </CardDescription>
             </>
           )}

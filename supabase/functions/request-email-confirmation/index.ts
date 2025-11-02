@@ -349,8 +349,8 @@ serve(async (req) => {
         success: true, 
         message: 'Conta criada com sucesso! Verifique seu email para confirmar.',
         user: {
-          id: signUpData.user.id,
-          email: signUpData.user.email
+          id: userId,
+          email: email
         }
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
