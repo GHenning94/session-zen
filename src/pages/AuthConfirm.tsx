@@ -4,76 +4,133 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
+import { toast } from 'sonner'
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [errorMessage, setErrorMessage] = useState<string>('')
   const [countdown, setCountdown] = useState(3)
 
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        // 1) Novo fluxo com token_hash e type na query
         const params = new URLSearchParams(window.location.search)
-        const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | null
+        const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | 'magiclink' | null
         const tokenHash = params.get('token_hash')
+        const nonce = params.get('n') // Nonce para validação
 
+        console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce })
+
+        // Processar verificação OTP ou hash
         if (tokenHash && type) {
           const { error } = await supabase.auth.verifyOtp({
             type,
             token_hash: tokenHash
           })
-          if (error) throw error
-
-          // NOVO: Se for confirmação de signup ou recovery, marcar email_confirmed_strict
-          if (type === 'signup' || type === 'recovery') {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user) {
-              const { error: profileError } = await supabase
-                .from('profiles')
-                .update({ email_confirmed_strict: true })
-                .eq('user_id', user.id)
-              
-              if (profileError) {
-                console.error('Error updating profile email_confirmed_strict:', profileError)
-              } else {
-                console.log('✅ Profile email_confirmed_strict set to true for type:', type)
-              }
-            }
+          if (error) {
+            console.error('[AuthConfirm] Erro no verifyOtp:', error)
+            throw error
           }
-
-          setStatus('success')
+          console.log('[AuthConfirm] verifyOtp realizado com sucesso')
         } else {
-          // 2) Fallback: algumas confirmações chegam com access_token no hash (#)
+          // Fallback: hash no fragmento
           const hash = window.location.hash
           if (hash && hash.includes('access_token')) {
-            // Supabase SDK processa automaticamente o hash ao carregar; considerar sucesso
-            // Para fallback, verificar se podemos marcar como signup
-            const { data: { user } } = await supabase.auth.getUser()
-            if (user && type === 'signup') {
-              await supabase
-                .from('profiles')
-                .update({ email_confirmed_strict: true })
-                .eq('user_id', user.id)
-            }
-            setStatus('success')
+            console.log('[AuthConfirm] Processando via hash (access_token)')
+            // Supabase SDK processa automaticamente
           } else if (params.get('error')) {
-            setStatus('error')
+            throw new Error(params.get('error_description') || 'Erro desconhecido')
           } else {
-            // Sem parâmetros reconhecidos: considerar erro
-            setStatus('error')
+            throw new Error('Link inválido ou expirado')
           }
         }
-      } catch (err) {
-        console.error('Email confirmation error:', err)
+
+        // Aguardar um pouco para garantir que o SDK processou
+        await new Promise(resolve => setTimeout(resolve, 500))
+
+        // Obter usuário autenticado
+        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        
+        if (userError || !user) {
+          console.error('[AuthConfirm] Erro ao obter usuário:', userError)
+          throw new Error('Não foi possível autenticar. Tente fazer login novamente.')
+        }
+
+        console.log('[AuthConfirm] Usuário autenticado:', user.id)
+
+        // Validar nonce se existir
+        if (nonce) {
+          console.log('[AuthConfirm] Validando nonce...')
+          
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('email_confirmation_nonce, email_confirmation_nonce_expires_at')
+            .eq('user_id', user.id)
+            .single()
+
+          if (profileError) {
+            console.error('[AuthConfirm] Erro ao buscar profile:', profileError)
+            throw new Error('Erro ao validar confirmação')
+          }
+
+          // Verificar se nonce existe e corresponde
+          if (!profileData?.email_confirmation_nonce || profileData.email_confirmation_nonce !== nonce) {
+            console.error('[AuthConfirm] Nonce inválido ou não encontrado')
+            await supabase.auth.signOut()
+            setErrorMessage('Este link de confirmação é inválido ou já foi usado. Solicite um novo link.')
+            setStatus('error')
+            return
+          }
+
+          // Verificar expiração
+          if (profileData.email_confirmation_nonce_expires_at) {
+            const expiresAt = new Date(profileData.email_confirmation_nonce_expires_at)
+            if (expiresAt < new Date()) {
+              console.error('[AuthConfirm] Nonce expirado')
+              await supabase.auth.signOut()
+              setErrorMessage('Este link de confirmação expirou. Solicite um novo link.')
+              setStatus('error')
+              return
+            }
+          }
+
+          console.log('[AuthConfirm] Nonce válido!')
+        } else if (type === 'signup' || type === 'magiclink') {
+          // Se não há nonce mas deveria ter (fluxo novo), considerar erro
+          console.warn('[AuthConfirm] Link sem nonce detectado (possível link antigo)')
+        }
+
+        // Marcar email como confirmado (strict) e limpar nonce
+        console.log('[AuthConfirm] Marcando email_confirmed_strict=true')
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            email_confirmed_strict: true,
+            email_confirmation_nonce: null,
+            email_confirmation_nonce_expires_at: null
+          })
+          .eq('user_id', user.id)
+
+        if (updateError) {
+          console.error('[AuthConfirm] Erro ao atualizar profile:', updateError)
+          throw new Error('Erro ao confirmar email')
+        }
+
+        console.log('[AuthConfirm] Email confirmado com sucesso!')
+        setStatus('success')
+        toast.success('Email confirmado com sucesso!')
+
+      } catch (err: any) {
+        console.error('[AuthConfirm] Erro na confirmação:', err)
+        setErrorMessage(err.message || 'Não foi possível confirmar seu e-mail')
         setStatus('error')
+        toast.error(err.message || 'Erro ao confirmar email')
       }
     }
 
     confirmEmail()
-
-    return () => {}
-  }, [navigate])
+  }, [])
 
   useEffect(() => {
     if (status === 'success') {
@@ -81,7 +138,6 @@ const AuthConfirm = () => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer)
-            // Após confirmar email, redirecionar para welcome para escolher plano
             navigate('/welcome')
             return 0
           }
@@ -91,6 +147,10 @@ const AuthConfirm = () => {
       return () => clearInterval(timer)
     }
   }, [status, navigate])
+
+  const handleRequestNewLink = () => {
+    navigate('/login?resend=true')
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
@@ -129,16 +189,23 @@ const AuthConfirm = () => {
               </div>
               <CardTitle>Erro na Confirmação</CardTitle>
               <CardDescription>
-                Não foi possível confirmar seu e-mail. O link pode ter expirado ou já foi utilizado.
+                {errorMessage || 'Não foi possível confirmar seu e-mail. O link pode ter expirado ou já foi utilizado.'}
               </CardDescription>
             </>
           )}
         </CardHeader>
         
         {status === 'error' && (
-          <CardContent className="text-center">
+          <CardContent className="flex flex-col gap-2">
+            <Button 
+              onClick={handleRequestNewLink}
+              className="w-full"
+            >
+              Solicitar Novo Link
+            </Button>
             <Button 
               onClick={() => navigate('/login')}
+              variant="outline"
               className="w-full"
             >
               Voltar para o Login

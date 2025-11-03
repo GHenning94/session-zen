@@ -112,44 +112,8 @@ serve(async (req) => {
         throw new Error('Esta conta já está ativa. Faça login.');
       }
       
-      // Se email_confirmed_at existe mas strict é false, significa que foi via password reset
-      // Neste caso, NÃO deletar o usuário, apenas gerar novo link e enviar
-      if (existingUser.email_confirmed_at && !profileData?.email_confirmed_strict) {
-        console.log('[Email Confirmation] Usuário confirmado pelo Supabase mas não pelo strict, reenviando...');
-        userId = existingUser.id;
-        // Continuar para gerar link e enviar email (não deletar)
-      } else if (!existingUser.email_confirmed_at) {
-        // Email não confirmado nem pelo Supabase, deletar e recriar
-        console.log('[Email Confirmation] Deletando usuário não confirmado para reenviar...');
-        const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(existingUser.id);
-        
-        if (deleteError) {
-          console.error('[Email Confirmation] Erro ao deletar usuário:', deleteError);
-          throw new Error('Erro ao processar reenvio. Tente novamente.');
-        }
-        
-        // Criar novo usuário
-        const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: false,
-          user_metadata: user_metadata || {}
-        });
-
-        if (signUpError) {
-          console.error('[Email Confirmation] Erro ao criar usuário:', signUpError);
-          throw signUpError;
-        }
-
-        if (!signUpData.user) {
-          throw new Error('Falha ao criar usuário');
-        }
-
-        userId = signUpData.user.id;
-        console.log('[Email Confirmation] Usuário criado:', userId);
-      } else {
-        userId = existingUser.id;
-      }
+      userId = existingUser.id;
+      console.log('[Email Confirmation] Prosseguindo com usuário existente não confirmado');
     } else {
       // Usuário não existe, criar novo
       const { data: signUpData, error: signUpError } = await supabaseAdmin.auth.admin.createUser({
@@ -172,35 +136,80 @@ serve(async (req) => {
       console.log('[Email Confirmation] Usuário criado:', userId);
     }
 
-    // Gerar link de confirmação
+    // Gerar nonce único para invalidar links anteriores
+    const nonce = crypto.randomUUID();
+    const nonceExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
+
+    console.log('[Email Confirmation] Gerando nonce:', nonce);
+
+    // Salvar nonce no profile
+    const { error: updateProfileError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        email_confirmation_nonce: nonce,
+        email_confirmation_nonce_expires_at: nonceExpiresAt
+      })
+      .eq('user_id', userId);
+
+    if (updateProfileError) {
+      console.error('[Email Confirmation] Erro ao salvar nonce:', updateProfileError);
+      throw new Error('Erro ao gerar link de confirmação');
+    }
+
+    console.log('[Email Confirmation] Nonce salvo no profile');
+
+    // Gerar link de confirmação com nonce no redirectTo
+    const redirectTo = `${SITE_URL}/auth-confirm?n=${nonce}`;
+    
     let linkData;
+    let linkType: 'signup' | 'magiclink' = 'signup';
+    
     try {
+      console.log('[Email Confirmation] Tentando gerar link tipo signup...');
       const { data: generatedLinkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
         type: 'signup',
         email: email,
         options: {
-          redirectTo: `${SITE_URL}/auth-confirm`
+          redirectTo
         }
       });
 
-      if (linkError || !generatedLinkData) {
-        console.error('[Email Confirmation] Erro ao gerar link:', linkError);
-        // ROLLBACK: Deletar usuário recém-criado
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-        console.log('[Email Confirmation] Rollback: Usuário deletado após falha na geração do link');
-        throw new Error('Falha ao gerar link de confirmação');
+      if (linkError) {
+        // Se der erro email_exists, tentar magiclink
+        if (linkError.message?.includes('email_exists') || linkError.status === 422) {
+          console.log('[Email Confirmation] Email já existe, usando magiclink...');
+          linkType = 'magiclink';
+          
+          const { data: magicLinkData, error: magicError } = await supabaseAdmin.auth.admin.generateLink({
+            type: 'magiclink',
+            email: email,
+            options: {
+              redirectTo
+            }
+          });
+
+          if (magicError || !magicLinkData) {
+            console.error('[Email Confirmation] Erro ao gerar magiclink:', magicError);
+            throw new Error('Falha ao gerar link de confirmação');
+          }
+
+          linkData = magicLinkData;
+        } else {
+          throw linkError;
+        }
+      } else if (!generatedLinkData) {
+        throw new Error('Link não gerado');
+      } else {
+        linkData = generatedLinkData;
       }
 
-      linkData = generatedLinkData;
-      console.log('[Email Confirmation] Link de confirmação gerado');
+      console.log(`[Email Confirmation] Link tipo ${linkType} gerado com sucesso`);
     } catch (error) {
-      // ROLLBACK: Garantir que o usuário seja deletado
-      await supabaseAdmin.auth.admin.deleteUser(userId);
-      console.log('[Email Confirmation] Rollback: Usuário deletado após exceção na geração do link');
-      throw error;
+      console.error('[Email Confirmation] Erro ao gerar link:', error);
+      throw new Error('Falha ao gerar link de confirmação');
     }
 
-    // Usar action_link diretamente (inclui token e tipo no hash, não na query string)
+    // Usar action_link diretamente
     const confirmationLink = linkData.properties.action_link;
 
     // Obter token do SendPulse
@@ -209,9 +218,6 @@ serve(async (req) => {
       accessToken = await getSendPulseToken();
     } catch (error) {
       console.error('[Email Confirmation] Erro ao obter token SendPulse:', error);
-      // ROLLBACK: Deletar usuário recém-criado
-      await supabaseAdmin.auth.admin.deleteUser(userId);
-      console.log('[Email Confirmation] Rollback: Usuário deletado após falha no SendPulse token');
       throw new Error('Falha ao configurar envio de email');
     }
 
@@ -295,50 +301,35 @@ serve(async (req) => {
     `;
 
     // Enviar email via SendPulse
-    let emailResponse;
-    try {
-      emailResponse = await fetch('https://api.sendpulse.com/smtp/emails', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({
-          email: {
-            html: emailHtml,
-            text: `Olá, ${userName}!\n\nBem-vindo ao TherapyPro! Para confirmar seu e-mail, acesse o link: ${confirmationLink}\n\nSe você não criou uma conta, ignore este e-mail.\n\nEste link expira em 24 horas.`,
-            subject: 'Confirme seu e-mail - TherapyPro',
-            from: {
-              name: 'TherapyPro',
-              email: 'nao-responda@therapypro.app.br',
-            },
-            to: [
-              {
-                email: email,
-              },
-            ],
+    const emailResponse = await fetch('https://api.sendpulse.com/smtp/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: JSON.stringify({
+        email: {
+          html: emailHtml,
+          text: `Olá, ${userName}!\n\nBem-vindo ao TherapyPro! Para confirmar seu e-mail, acesse o link: ${confirmationLink}\n\nSe você não criou uma conta, ignore este e-mail.\n\nEste link expira em 24 horas.`,
+          subject: 'Confirme seu e-mail - TherapyPro',
+          from: {
+            name: 'TherapyPro',
+            email: 'nao-responda@therapypro.app.br',
           },
-        }),
-      });
+          to: [
+            {
+              email: email,
+            },
+          ],
+        },
+      }),
+    });
 
-      if (!emailResponse.ok) {
-        const errorText = await emailResponse.text();
-        console.error('[SendPulse] Erro ao enviar email:', errorText);
-        console.error('[SendPulse] Status code:', emailResponse.status);
-        // ROLLBACK: Deletar usuário recém-criado
-        await supabaseAdmin.auth.admin.deleteUser(userId);
-        console.log('[Email Confirmation] Rollback: Usuário deletado após falha no envio do email');
-        return new Response(
-          JSON.stringify({ error: 'Falha ao enviar email de confirmação. Por favor, tente novamente.' }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
-        );
-      }
-    } catch (error) {
-      console.error('[SendPulse] Exceção ao enviar email:', error);
-      // ROLLBACK: Deletar usuário recém-criado
-      await supabaseAdmin.auth.admin.deleteUser(userId);
-      console.log('[Email Confirmation] Rollback: Usuário deletado após exceção no envio do email');
-      throw new Error('Falha ao enviar email de confirmação');
+    if (!emailResponse.ok) {
+      const errorText = await emailResponse.text();
+      console.error('[SendPulse] Erro ao enviar email:', errorText);
+      console.error('[SendPulse] Status code:', emailResponse.status);
+      throw new Error('Falha ao enviar email de confirmação. Por favor, tente novamente.');
     }
 
     const emailResult = await emailResponse.json();

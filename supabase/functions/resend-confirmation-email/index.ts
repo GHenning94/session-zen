@@ -123,12 +123,37 @@ serve(async (req) => {
 
     console.log('[Resend Email] Email não confirmado (strict), gerando novo link...');
 
-    // Gerar novo link de confirmação tipo 'signup'
+    // Gerar novo nonce para invalidar links anteriores
+    const nonce = crypto.randomUUID();
+    const nonceExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h
+
+    console.log('[Resend Email] Gerando novo nonce:', nonce);
+
+    // Salvar novo nonce no profile
+    const { error: updateProfileError } = await supabaseAdmin
+      .from('profiles')
+      .update({
+        email_confirmation_nonce: nonce,
+        email_confirmation_nonce_expires_at: nonceExpiresAt
+      })
+      .eq('user_id', existingUser.id);
+
+    if (updateProfileError) {
+      console.error('[Resend Email] Erro ao salvar nonce:', updateProfileError);
+      throw new Error('Erro ao gerar link de confirmação');
+    }
+
+    console.log('[Resend Email] Novo nonce salvo (links anteriores invalidados)');
+
+    // Gerar novo link de confirmação com nonce
+    const redirectTo = `${SITE_URL}/auth-confirm?n=${nonce}`;
+
+    // Usar magiclink para evitar erro email_exists
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'signup',
+      type: 'magiclink',
       email: email,
       options: {
-        redirectTo: `${SITE_URL}/auth-confirm`
+        redirectTo
       }
     });
 
@@ -207,7 +232,7 @@ serve(async (req) => {
                             Se você não solicitou este e-mail, ignore esta mensagem.
                           </p>
                           <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                            <strong>Nota:</strong> Este link expira em 24 horas.
+                            <strong>Nota:</strong> Este link expira em 24 horas e invalida todos os links anteriores.
                           </p>
                         </td>
                       </tr>
@@ -238,7 +263,7 @@ serve(async (req) => {
       body: JSON.stringify({
         email: {
           html: emailHtml,
-          text: `Olá, ${userName}!\n\nRecebemos sua solicitação para reenviar o link de confirmação.\n\nPara confirmar seu e-mail, acesse o link: ${confirmationLink}\n\nSe você não solicitou este e-mail, ignore esta mensagem.\n\nEste link expira em 24 horas.`,
+          text: `Olá, ${userName}!\n\nRecebemos sua solicitação para reenviar o link de confirmação.\n\nPara confirmar seu e-mail, acesse o link: ${confirmationLink}\n\nSe você não solicitou este e-mail, ignore esta mensagem.\n\nEste link expira em 24 horas e invalida todos os links anteriores.`,
           subject: 'Confirme seu e-mail - TherapyPro',
           from: {
             name: 'TherapyPro',

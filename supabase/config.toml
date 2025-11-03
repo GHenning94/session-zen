@@ -9,8 +9,8 @@ max_rows = 1000
 
 [auth]
 enabled = true
-site_url = "http://localhost:5173"
-additional_redirect_urls = ["http://localhost:5173/**"]
+site_url = "https://ykwszazxigjivjkagjmf.lovable.app"
+additional_redirect_urls = ["http://localhost:5173/**", "https://ykwszazxigjivjkagjmf.lovable.app/**"]
 jwt_expiry = 3600
 enable_confirmations = true
 
