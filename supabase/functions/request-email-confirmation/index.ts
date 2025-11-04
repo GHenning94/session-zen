@@ -142,21 +142,28 @@ serve(async (req) => {
 
     console.log('[Email Confirmation] Gerando nonce:', nonce);
 
-    // Salvar nonce no profile
-    const { error: updateProfileError } = await supabaseAdmin
+    // UPSERT atômico do profile com nonce (garante que profile sempre existirá)
+    const { data: upsertData, error: upsertProfileError } = await supabaseAdmin
       .from('profiles')
-      .update({
+      .upsert({
+        user_id: userId,
+        nome: user_metadata?.nome || 'Usuário',
+        profissao: user_metadata?.profissao || 'Psicólogo',
+        email_confirmed_strict: false,
         email_confirmation_nonce: nonce,
         email_confirmation_nonce_expires_at: nonceExpiresAt
+      }, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
       })
-      .eq('user_id', userId);
+      .select();
 
-    if (updateProfileError) {
-      console.error('[Email Confirmation] Erro ao salvar nonce:', updateProfileError);
+    if (upsertProfileError) {
+      console.error('[Email Confirmation] Erro ao fazer upsert do profile:', upsertProfileError);
       throw new Error('Erro ao gerar link de confirmação');
     }
 
-    console.log('[Email Confirmation] Nonce salvo no profile');
+    console.log('[Email Confirmation] Profile upsert realizado com sucesso:', upsertData);
 
     // Gerar link de confirmação com nonce no redirectTo
     const redirectTo = `${SITE_URL}/auth-confirm?n=${nonce}`;
@@ -270,10 +277,10 @@ serve(async (req) => {
                             <a href="${confirmationLink}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">Confirmar E-mail</a>
                           </div>
                           <p style="margin: 0 0 20px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                            Ou copie e cole este link no seu navegador:
+                            <strong>Se o botão não funcionar</strong>, copie e cole este link no seu navegador:
                           </p>
                           <p style="margin: 0 0 30px 0;">
-                            <a href="${confirmationLink}" style="color: #2563eb; word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; display: inline-block; max-width: 100%; text-decoration: underline;">${confirmationLink}</a>
+                            <a href="${confirmationLink}" style="color: #2563eb; word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; display: inline-block; max-width: 100%; text-decoration: underline; font-size: 14px;">${confirmationLink}</a>
                           </p>
                           <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
                             Se você não criou uma conta no TherapyPro, ignore este e-mail.

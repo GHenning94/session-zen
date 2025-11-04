@@ -81,14 +81,34 @@ const AuthConfirm = () => {
         if (nonce) {
           console.log('[AuthConfirm] Validando nonce...')
           
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('email_confirmation_nonce, email_confirmation_nonce_expires_at')
-            .eq('user_id', user.id)
-            .single()
+          // POLLING: Aguardar profile existir (edge function acabou de fazer upsert)
+          let profileData = null
+          let profileError = null
+          
+          for (let attempt = 1; attempt <= 5; attempt++) {
+            console.log(`[AuthConfirm] Buscando profile (tentativa ${attempt}/5)...`)
+            
+            const result = await supabase
+              .from('profiles')
+              .select('email_confirmation_nonce, email_confirmation_nonce_expires_at')
+              .eq('user_id', user.id)
+              .single()
+            
+            if (result.data) {
+              profileData = result.data
+              console.log('[AuthConfirm] ✅ Profile encontrado!')
+              break
+            }
+            
+            profileError = result.error
+            
+            if (attempt < 5) {
+              await new Promise(resolve => setTimeout(resolve, 400))
+            }
+          }
 
-          if (profileError) {
-            console.error('[AuthConfirm] Erro ao buscar profile:', profileError)
+          if (!profileData) {
+            console.error('[AuthConfirm] Erro ao buscar profile após 5 tentativas:', profileError)
             throw new Error('Erro ao validar confirmação')
           }
 

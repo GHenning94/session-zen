@@ -129,21 +129,28 @@ serve(async (req) => {
 
     console.log('[Resend Email] Gerando novo nonce:', nonce);
 
-    // Salvar novo nonce no profile
-    const { error: updateProfileError } = await supabaseAdmin
+    // UPSERT do profile (trata caso onde profile não existe ainda)
+    const { data: upsertData, error: upsertProfileError } = await supabaseAdmin
       .from('profiles')
-      .update({
+      .upsert({
+        user_id: existingUser.id,
+        nome: profileData?.nome || existingUser.user_metadata?.nome || 'Usuário',
+        profissao: existingUser.user_metadata?.profissao || 'Psicólogo',
+        email_confirmed_strict: false,
         email_confirmation_nonce: nonce,
         email_confirmation_nonce_expires_at: nonceExpiresAt
+      }, { 
+        onConflict: 'user_id',
+        ignoreDuplicates: false 
       })
-      .eq('user_id', existingUser.id);
+      .select();
 
-    if (updateProfileError) {
-      console.error('[Resend Email] Erro ao salvar nonce:', updateProfileError);
+    if (upsertProfileError) {
+      console.error('[Resend Email] Erro ao fazer upsert do profile:', upsertProfileError);
       throw new Error('Erro ao gerar link de confirmação');
     }
 
-    console.log('[Resend Email] Novo nonce salvo (links anteriores invalidados)');
+    console.log('[Resend Email] Profile upsert realizado (links anteriores invalidados):', upsertData);
 
     // Gerar novo link de confirmação com nonce
     const redirectTo = `${SITE_URL}/auth-confirm?n=${nonce}`;
@@ -223,10 +230,10 @@ serve(async (req) => {
                             <a href="${confirmationLink}" style="display: inline-block; padding: 16px 40px; background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); color: #ffffff; text-decoration: none; border-radius: 6px; font-size: 16px; font-weight: bold;">Confirmar E-mail</a>
                           </div>
                           <p style="margin: 0 0 20px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
-                            Ou copie e cole este link no seu navegador:
+                            <strong>Se o botão não funcionar</strong>, copie e cole este link no seu navegador:
                           </p>
                           <p style="margin: 0 0 30px 0;">
-                            <a href="${confirmationLink}" style="color: #2563eb; word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; display: inline-block; max-width: 100%; text-decoration: underline;">${confirmationLink}</a>
+                            <a href="${confirmationLink}" style="color: #2563eb; word-wrap: break-word; overflow-wrap: break-word; word-break: break-all; display: inline-block; max-width: 100%; text-decoration: underline; font-size: 14px;">${confirmationLink}</a>
                           </p>
                           <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px; line-height: 1.6;">
                             Se você não solicitou este e-mail, ignore esta mensagem.
