@@ -10,7 +10,7 @@ const AuthConfirm = () => {
   const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [countdown, setCountdown] = useState(3)
+  const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
     const confirmEmail = async () => {
@@ -46,15 +46,33 @@ const AuthConfirm = () => {
           }
         }
 
-        // Aguardar um pouco para garantir que o SDK processou
-        await new Promise(resolve => setTimeout(resolve, 500))
-
-        // Obter usuário autenticado
-        const { data: { user }, error: userError } = await supabase.auth.getUser()
+        console.log('[AuthConfirm] Aguardando sessão ser estabelecida...')
         
-        if (userError || !user) {
-          console.error('[AuthConfirm] Erro ao obter usuário:', userError)
-          throw new Error('Não foi possível autenticar. Tente fazer login novamente.')
+        // POLLING: Aguardar sessão ser estabelecida (máximo 5 tentativas, 500ms cada)
+        let sessionEstablished = false
+        let user = null
+        
+        for (let attempt = 1; attempt <= 5; attempt++) {
+          console.log(`[AuthConfirm] Tentativa ${attempt}/5 de obter sessão...`)
+          await new Promise(resolve => setTimeout(resolve, 500))
+          
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+          
+          if (session && session.user) {
+            console.log('[AuthConfirm] ✅ Sessão estabelecida com sucesso!', session.user.id)
+            sessionEstablished = true
+            user = session.user
+            break
+          }
+          
+          if (sessionError) {
+            console.warn(`[AuthConfirm] Erro ao obter sessão (tentativa ${attempt}):`, sessionError)
+          }
+        }
+        
+        if (!sessionEstablished || !user) {
+          console.error('[AuthConfirm] ❌ Sessão não estabelecida após 5 tentativas')
+          throw new Error('Sessão não estabelecida. Por favor, faça login novamente.')
         }
 
         console.log('[AuthConfirm] Usuário autenticado:', user.id)
@@ -175,7 +193,7 @@ const AuthConfirm = () => {
               </div>
               <CardTitle>E-mail Confirmado!</CardTitle>
               <CardDescription>
-                Seu e-mail foi confirmado com sucesso. Você será redirecionado para escolher seu plano em {countdown} segundo{countdown !== 1 ? 's' : ''}...
+                Sua conta está ativa! Você será redirecionado para escolher seu plano em {countdown} segundo{countdown !== 1 ? 's' : ''}...
               </CardDescription>
             </>
           )}

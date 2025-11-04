@@ -188,14 +188,16 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
           setConfirmationEmail(formData.email);
           
           toast({
-            title: 'Confirme seu e-mail',
-            description: 'Por favor, verifique sua caixa de entrada e clique no link de confirmação para ativar sua conta.',
+            title: 'Email não confirmado',
+            description: 'Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.',
             variant: 'destructive'
           });
           
           setIsLoading(false);
           return; // PARAR AQUI
         }
+
+        console.log('🔒 Login: Email confirmado (strict) ✅');
 
         const { data: settingsArray, error: settingsError } = await supabase
           .from('user_2fa_settings')

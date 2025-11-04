@@ -15,6 +15,30 @@ const Welcome = () => {
   const [loading, setLoading] = useState<string | null>(null);
   const [isAnnual, setIsAnnual] = useState(false);
   const [preselectedPlan, setPreselectedPlan] = useState<string | null>(null);
+  const [isCheckingUser, setIsCheckingUser] = useState(true);
+
+  // Verificar se usuário está autenticado
+  useEffect(() => {
+    console.log('[Welcome] Verificando autenticação...', { hasUser: !!user })
+    
+    if (!user) {
+      console.warn('[Welcome] Nenhum usuário encontrado. Redirecionando para /login em 3s...')
+      toast({
+        title: 'Sessão inválida',
+        description: 'Faça login para acessar esta página.',
+        variant: 'destructive'
+      })
+      
+      const timer = setTimeout(() => {
+        navigate('/login', { replace: true })
+      }, 3000)
+      
+      return () => clearTimeout(timer)
+    }
+    
+    console.log('[Welcome] ✅ Usuário autenticado:', user.id)
+    setIsCheckingUser(false)
+  }, [user, navigate])
 
   useEffect(() => {
     // Verificar se há um plano pré-selecionado
@@ -185,6 +209,18 @@ const Welcome = () => {
       setLoading(null);
     }
   };
+
+  // Mostrar loading enquanto verifica usuário
+  if (isCheckingUser) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Verificando autenticação...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
