@@ -108,11 +108,10 @@ serve(async (req) => {
       .from('profiles')
       .select('email_confirmed_strict, nome')
       .eq('user_id', existingUser.id)
-      .single();
+      .maybeSingle();
 
     if (profileError) {
-      console.error('[Resend Email] Erro ao buscar profile:', profileError);
-      throw new Error('Erro ao verificar perfil');
+      console.warn('[Resend Email] Profile não encontrado ou erro ao buscar. Prosseguindo com upsert...', profileError);
     }
 
     // Se já confirmou pelo sistema strict, bloquear
@@ -169,8 +168,21 @@ serve(async (req) => {
       throw new Error('Falha ao gerar link de confirmação');
     }
 
-    const confirmationLink = linkData.properties.action_link;
-    console.log('[Resend Email] Link de confirmação gerado');
+// Gerar link final com fallback robusto
+let confirmationLink = linkData?.properties?.action_link as string | undefined;
+const hashedToken = linkData?.properties?.hashed_token as string | undefined;
+if (!confirmationLink && hashedToken) {
+  const url = new URL(`${SUPABASE_URL}/auth/v1/verify`);
+  url.searchParams.set('token_hash', hashedToken);
+  url.searchParams.set('type', 'magiclink');
+  url.searchParams.set('redirect_to', redirectTo);
+  confirmationLink = url.toString();
+}
+if (!confirmationLink) {
+  console.error('[Resend Email] action_link e hashed_token ausentes no retorno do generateLink');
+  throw new Error('Não foi possível gerar o link de confirmação');
+}
+console.log('[Resend Email] Link final gerado (preview):', confirmationLink.substring(0, 80) + '...');
 
     // Obter token do SendPulse
     let accessToken;
@@ -270,7 +282,7 @@ serve(async (req) => {
       body: JSON.stringify({
         email: {
           html: emailHtml,
-          text: `Olá, ${userName}!\n\nRecebemos sua solicitação para reenviar o link de confirmação.\n\nConfirme seu e-mail acessando o link abaixo:\n<${confirmationLink}>\n\nSe o botão não funcionar no seu cliente de e-mail, copie e cole o link acima no navegador.\n\nSe você não solicitou este e-mail, ignore esta mensagem.\n\nEste link expira em 24 horas e invalida todos os links anteriores.`,
+          text: `Olá, ${userName}!\n\nRecebemos sua solicitação para reenviar o link de confirmação.\n\nConfirme seu e-mail acessando o link abaixo:\n${confirmationLink}\n<${confirmationLink}>\n\nSe o botão não funcionar no seu cliente de e-mail, copie e cole um dos links acima no navegador.\n\nSe você não solicitou este e-mail, ignore esta mensagem.\n\nEste link expira em 24 horas e invalida todos os links anteriores.`,
           subject: 'Confirme seu e-mail - TherapyPro',
           from: {
             name: 'TherapyPro',

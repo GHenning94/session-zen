@@ -14,6 +14,17 @@ const AuthConfirm = () => {
 
   useEffect(() => {
     const confirmEmail = async () => {
+      // Limpeza preventiva de caches/sessões antigas
+      try {
+        Object.keys(localStorage).forEach((k) => {
+          if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k)
+        })
+        sessionStorage.clear()
+        if ('caches' in window) {
+          const keys = await caches.keys()
+          await Promise.all(keys.map((k) => caches.delete(k)))
+        }
+      } catch (e) { console.warn('[AuthConfirm] Falha na limpeza preventiva', e) }
       try {
         const params = new URLSearchParams(window.location.search)
         const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | 'magiclink' | null
