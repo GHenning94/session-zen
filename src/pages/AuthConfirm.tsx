@@ -17,7 +17,7 @@ const AuthConfirm = () => {
       try {
         const params = new URLSearchParams(window.location.search)
         const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | 'magiclink' | null
-        const tokenHash = params.get('token_hash')
+        const tokenHash = (params.get('token_hash') || params.get('token') || params.get('hash'))
         const nonce = params.get('n') // Nonce para validação
 
         console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce })
@@ -52,9 +52,9 @@ const AuthConfirm = () => {
         let sessionEstablished = false
         let user = null
         
-        for (let attempt = 1; attempt <= 5; attempt++) {
-          console.log(`[AuthConfirm] Tentativa ${attempt}/5 de obter sessão...`)
-          await new Promise(resolve => setTimeout(resolve, 500))
+        for (let attempt = 1; attempt <= 12; attempt++) {
+          console.log(`[AuthConfirm] Tentativa ${attempt}/12 de obter sessão...`)
+          await new Promise(resolve => setTimeout(resolve, 700))
           
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           
@@ -85,8 +85,8 @@ const AuthConfirm = () => {
           let profileData = null
           let profileError = null
           
-          for (let attempt = 1; attempt <= 5; attempt++) {
-            console.log(`[AuthConfirm] Buscando profile (tentativa ${attempt}/5)...`)
+          for (let attempt = 1; attempt <= 10; attempt++) {
+            console.log(`[AuthConfirm] Buscando profile (tentativa ${attempt}/10)...`)
             
             const result = await supabase
               .from('profiles')
@@ -102,8 +102,8 @@ const AuthConfirm = () => {
             
             profileError = result.error
             
-            if (attempt < 5) {
-              await new Promise(resolve => setTimeout(resolve, 400))
+            if (attempt < 10) {
+              await new Promise(resolve => setTimeout(resolve, 500))
             }
           }
 
@@ -164,6 +164,21 @@ const AuthConfirm = () => {
         setErrorMessage(err.message || 'Não foi possível confirmar seu e-mail')
         setStatus('error')
         toast.error(err.message || 'Erro ao confirmar email')
+        // Limpeza de possíveis caches/sessões inconsistentes
+        try {
+          // Limpa tokens supabase persistidos
+          Object.keys(localStorage).forEach((k) => {
+            if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k)
+          })
+          sessionStorage.clear()
+          // Limpa caches do Service Worker
+          if ('caches' in window) {
+            const keys = await caches.keys()
+            await Promise.all(keys.map((k) => caches.delete(k)))
+          }
+        } catch (cleanupErr) {
+          console.warn('[AuthConfirm] Falha ao limpar caches:', cleanupErr)
+        }
       }
     }
 

@@ -27,6 +27,11 @@ export const AuthRedirect = () => {
 
       // Se está logado, verifica autenticação completa
       if (user) {
+        // Permitir rotas de autenticação antes de validar e-mail estrito
+        const allowedPaths = ['/welcome', '/auth-confirm', '/reset-password', '/upgrade'];
+        if (allowedPaths.includes(currentPath)) {
+          return;
+        }
         // CRÍTICO: Verificar se o e-mail foi confirmado (verificação estrita)
         const { data: profile } = await supabase
           .from('profiles')
@@ -47,11 +52,6 @@ export const AuthRedirect = () => {
           return;
         }
 
-        // Permitir acesso direto a algumas páginas específicas sem verificar onboarding
-        const allowedPaths = ['/welcome', '/auth-confirm', '/reset-password', '/upgrade'];
-        if (allowedPaths.includes(currentPath)) {
-          return;
-        }
 
         try {
           const { data: profile, error } = await supabase

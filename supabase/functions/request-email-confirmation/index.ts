@@ -317,7 +317,7 @@ serve(async (req) => {
       body: JSON.stringify({
         email: {
           html: emailHtml,
-          text: `Olá, ${userName}!\n\nBem-vindo ao TherapyPro! Para confirmar seu e-mail, acesse o link: ${confirmationLink}\n\nSe você não criou uma conta, ignore este e-mail.\n\nEste link expira em 24 horas.`,
+          text: `Olá, ${userName}!\n\nBem-vindo ao TherapyPro!\n\nConfirme seu e-mail acessando o link abaixo:\n<${confirmationLink}>\n\nSe o botão não funcionar no seu cliente de e-mail, copie e cole o link acima no navegador.\n\nSe você não criou uma conta, ignore este e-mail.\n\nEste link expira em 24 horas.`,
           subject: 'Confirme seu e-mail - TherapyPro',
           from: {
             name: 'TherapyPro',

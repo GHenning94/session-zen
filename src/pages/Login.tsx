@@ -192,6 +192,20 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
             description: 'Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.',
             variant: 'destructive'
           });
+
+          // Dispara reenvio automático do email de confirmação (uma vez)
+          try {
+            const { error: autoResendError } = await supabase.functions.invoke('resend-confirmation-email', {
+              body: { email: formData.email }
+            });
+            if (autoResendError) {
+              console.warn('Falha no reenvio automático:', autoResendError);
+            } else {
+              setResendCooldown(60);
+            }
+          } catch (autoErr) {
+            console.warn('Falha no reenvio automático:', autoErr);
+          }
           
           setIsLoading(false);
           return; // PARAR AQUI
