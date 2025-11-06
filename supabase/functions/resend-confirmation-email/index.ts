@@ -168,20 +168,27 @@ serve(async (req) => {
       throw new Error('Falha ao gerar link de confirmação');
     }
 
-// Gerar link final com fallback robusto
-let confirmationLink = linkData?.properties?.action_link as string | undefined;
+// Gerar link final com fallback robusto PREFERINDO hashed_token
+let confirmationLink: string;
 const hashedToken = linkData?.properties?.hashed_token as string | undefined;
-if (!confirmationLink && hashedToken) {
+
+if (hashedToken) {
+  // PREFERIR hashed_token
   const url = new URL(`${SUPABASE_URL}/auth/v1/verify`);
   url.searchParams.set('token_hash', hashedToken);
   url.searchParams.set('type', 'magiclink');
   url.searchParams.set('redirect_to', redirectTo);
   confirmationLink = url.toString();
-}
-if (!confirmationLink) {
-  console.error('[Resend Email] action_link e hashed_token ausentes no retorno do generateLink');
+  console.log('[Resend Email] Link gerado via hashed_token');
+} else if (linkData?.properties?.action_link) {
+  // Fallback para action_link
+  confirmationLink = linkData.properties.action_link as string;
+  console.log('[Resend Email] Link gerado via action_link');
+} else {
+  console.error('[Resend Email] Nenhum token disponível no retorno do generateLink');
   throw new Error('Não foi possível gerar o link de confirmação');
 }
+
 console.log('[Resend Email] Link final gerado (preview):', confirmationLink.substring(0, 80) + '...');
 
     // Obter token do SendPulse
@@ -282,7 +289,7 @@ console.log('[Resend Email] Link final gerado (preview):', confirmationLink.subs
       body: JSON.stringify({
         email: {
           html: emailHtml,
-          text: `Olá, ${userName}!\n\nRecebemos sua solicitação para reenviar o link de confirmação.\n\nConfirme seu e-mail acessando o link abaixo:\n${confirmationLink}\n<${confirmationLink}>\n\nSe o botão não funcionar no seu cliente de e-mail, copie e cole um dos links acima no navegador.\n\nSe você não solicitou este e-mail, ignore esta mensagem.\n\nEste link expira em 24 horas e invalida todos os links anteriores.`,
+          text: `Olá!\n\nVocê solicitou o reenvio do link de confirmação de e-mail para sua conta no TherapyPro.\n\nPor favor, confirme seu endereço de e-mail clicando no link abaixo:\n\n${confirmationLink}\n\n- Se o botão não funcionar, copie e cole o link acima no seu navegador.\n\nEste link expira em 24 horas.\n\nSe você não solicitou este e-mail, ignore-o.`,
           subject: 'Confirme seu e-mail - TherapyPro',
           from: {
             name: 'TherapyPro',

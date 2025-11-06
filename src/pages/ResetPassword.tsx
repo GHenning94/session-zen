@@ -26,28 +26,60 @@ const ResetPassword = () => {
       const tokenHash = searchParams.get('token_hash');
       const type = searchParams.get('type');
 
-      if (!tokenHash || type !== 'recovery') {
-        setStatus('error');
+      // Verificar também se veio via hash (access_token)
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+
+      // Se vier com token_hash, usar verifyOtp
+      if (tokenHash && type === 'recovery') {
+        try {
+          const { error } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: 'recovery'
+          });
+
+          if (error) {
+            console.error('[ResetPassword] Token inválido:', error);
+            setStatus('error');
+          } else {
+            console.log('[ResetPassword] Token verificado via verifyOtp');
+            setStatus('ready');
+          }
+        } catch (error) {
+          console.error('[ResetPassword] Erro ao verificar token:', error);
+          setStatus('error');
+        }
         return;
       }
 
-      try {
-        // Verificar se o token é válido
-        const { error } = await supabase.auth.verifyOtp({
-          token_hash: tokenHash,
-          type: 'recovery'
-        });
-
-        if (error) {
-          console.error('Token inválido:', error);
-          setStatus('error');
-        } else {
-          setStatus('ready');
+      // Se vier com access_token no hash, aguardar sessão estabelecida
+      if (accessToken) {
+        console.log('[ResetPassword] Detectado access_token no hash, aguardando sessão...');
+        
+        // Poll para sessão (SDK processa automaticamente o hash)
+        let sessionFound = false;
+        for (let i = 0; i < 10; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user) {
+            console.log('[ResetPassword] ✅ Sessão estabelecida via access_token');
+            sessionFound = true;
+            setStatus('ready');
+            break;
+          }
         }
-      } catch (error) {
-        console.error('Erro ao verificar token:', error);
-        setStatus('error');
+
+        if (!sessionFound) {
+          console.error('[ResetPassword] Sessão não estabelecida após polling');
+          setStatus('error');
+        }
+        return;
       }
+
+      // Nenhum parâmetro válido encontrado
+      console.error('[ResetPassword] Nenhum token válido encontrado');
+      setStatus('error');
     };
 
     verifyToken();
@@ -101,13 +133,40 @@ const ResetPassword = () => {
     setIsSubmitting(true);
 
     try {
+      // Garantir que temos uma sessão antes de atualizar
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('Sessão não encontrada. Por favor, solicite um novo link de redefinição.');
+      }
+
       const { error } = await supabase.auth.updateUser({
         password: newPassword
       });
 
       if (error) throw error;
 
-      // Forçar logout para garantir nova autenticação
+      // Limpar caches e forçar logout para garantir nova autenticação
+      try {
+        // Limpar localStorage específico do Supabase
+        Object.keys(localStorage).forEach(key => {
+          if (key.startsWith('sb-')) {
+            localStorage.removeItem(key);
+          }
+        });
+        
+        // Limpar sessionStorage
+        sessionStorage.clear();
+        
+        // Limpar service worker caches
+        if ('caches' in window) {
+          const cacheKeys = await caches.keys();
+          await Promise.all(cacheKeys.map(key => caches.delete(key)));
+        }
+      } catch (cacheError) {
+        console.warn('[ResetPassword] Erro ao limpar caches:', cacheError);
+      }
+
       await supabase.auth.signOut();
 
       setStatus('success');

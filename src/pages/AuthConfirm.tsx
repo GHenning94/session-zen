@@ -59,114 +59,47 @@ const AuthConfirm = () => {
 
         console.log('[AuthConfirm] Aguardando sessão ser estabelecida...')
         
-        // POLLING: Aguardar sessão ser estabelecida (máximo 5 tentativas, 500ms cada)
-        let sessionEstablished = false
-        let user = null
+        // Poll para obter a sessão (pode demorar alguns ms)
+        let sessionEstablished = false;
+        for (let i = 0; i < 12; i++) {
+          await new Promise(resolve => setTimeout(resolve, 700));
+          const { data: { session: currentSession } } = await supabase.auth.getSession();
+          
+          if (currentSession?.user) {
+            console.log('[AuthConfirm] ✅ Sessão estabelecida após', i + 1, 'tentativas');
+            sessionEstablished = true;
+            break;
+          }
+        }
+
+        if (!sessionEstablished) {
+          throw new Error('Não foi possível estabelecer a sessão. Tente novamente.');
+        }
+
+        // Invocar edge function para confirmar email de forma atômica
+        console.log('[AuthConfirm] Invocando confirm-email-strict...');
         
-        for (let attempt = 1; attempt <= 12; attempt++) {
-          console.log(`[AuthConfirm] Tentativa ${attempt}/12 de obter sessão...`)
-          await new Promise(resolve => setTimeout(resolve, 700))
+        const { data: confirmData, error: confirmError } = await supabase.functions.invoke('confirm-email-strict', {
+          body: { nonce: nonce || null }
+        });
+
+        if (confirmError) {
+          console.error('[AuthConfirm] Erro na confirmação strict:', confirmError);
           
-          const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-          
-          if (session && session.user) {
-            console.log('[AuthConfirm] ✅ Sessão estabelecida com sucesso!', session.user.id)
-            sessionEstablished = true
-            user = session.user
-            break
+          // Se for erro de nonce/expiração, fazer signOut e mostrar erro
+          if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
+            await supabase.auth.signOut();
+            throw new Error(confirmError.message);
           }
           
-          if (sessionError) {
-            console.warn(`[AuthConfirm] Erro ao obter sessão (tentativa ${attempt}):`, sessionError)
-          }
-        }
-        
-        if (!sessionEstablished || !user) {
-          console.error('[AuthConfirm] ❌ Sessão não estabelecida após 5 tentativas')
-          throw new Error('Sessão não estabelecida. Por favor, faça login novamente.')
+          throw new Error('Erro ao confirmar e-mail. Tente novamente.');
         }
 
-        console.log('[AuthConfirm] Usuário autenticado:', user.id)
-
-        // Validar nonce se existir
-        if (nonce) {
-          console.log('[AuthConfirm] Validando nonce...')
-          
-          // POLLING: Aguardar profile existir (edge function acabou de fazer upsert)
-          let profileData = null
-          let profileError = null
-          
-          for (let attempt = 1; attempt <= 10; attempt++) {
-            console.log(`[AuthConfirm] Buscando profile (tentativa ${attempt}/10)...`)
-            
-            const result = await supabase
-              .from('profiles')
-              .select('email_confirmation_nonce, email_confirmation_nonce_expires_at')
-              .eq('user_id', user.id)
-              .single()
-            
-            if (result.data) {
-              profileData = result.data
-              console.log('[AuthConfirm] ✅ Profile encontrado!')
-              break
-            }
-            
-            profileError = result.error
-            
-            if (attempt < 10) {
-              await new Promise(resolve => setTimeout(resolve, 500))
-            }
-          }
-
-          if (!profileData) {
-            console.error('[AuthConfirm] Erro ao buscar profile após 5 tentativas:', profileError)
-            throw new Error('Erro ao validar confirmação')
-          }
-
-          // Verificar se nonce existe e corresponde
-          if (!profileData?.email_confirmation_nonce || profileData.email_confirmation_nonce !== nonce) {
-            console.error('[AuthConfirm] Nonce inválido ou não encontrado')
-            await supabase.auth.signOut()
-            setErrorMessage('Este link de confirmação é inválido ou já foi usado. Solicite um novo link.')
-            setStatus('error')
-            return
-          }
-
-          // Verificar expiração
-          if (profileData.email_confirmation_nonce_expires_at) {
-            const expiresAt = new Date(profileData.email_confirmation_nonce_expires_at)
-            if (expiresAt < new Date()) {
-              console.error('[AuthConfirm] Nonce expirado')
-              await supabase.auth.signOut()
-              setErrorMessage('Este link de confirmação expirou. Solicite um novo link.')
-              setStatus('error')
-              return
-            }
-          }
-
-          console.log('[AuthConfirm] Nonce válido!')
-        } else if (type === 'signup' || type === 'magiclink') {
-          // Se não há nonce mas deveria ter (fluxo novo), considerar erro
-          console.warn('[AuthConfirm] Link sem nonce detectado (possível link antigo)')
+        if (!confirmData?.success) {
+          throw new Error('Falha na confirmação do e-mail');
         }
 
-        // Marcar email como confirmado (strict) e limpar nonce
-        console.log('[AuthConfirm] Marcando email_confirmed_strict=true')
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            email_confirmed_strict: true,
-            email_confirmation_nonce: null,
-            email_confirmation_nonce_expires_at: null
-          })
-          .eq('user_id', user.id)
-
-        if (updateError) {
-          console.error('[AuthConfirm] Erro ao atualizar profile:', updateError)
-          throw new Error('Erro ao confirmar email')
-        }
-
-        console.log('[AuthConfirm] Email confirmado com sucesso!')
+        console.log('[AuthConfirm] ✅ E-mail confirmado com sucesso (GoTrue + profiles)');
         setStatus('success')
         toast.success('Email confirmado com sucesso!')
 

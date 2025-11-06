@@ -60,6 +60,45 @@ serve(async (req) => {
     // Supabase Admin client (service role)
     const supabaseAdmin = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
+    // Verificar se o usuário existe e se o email está confirmado
+    const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers();
+    
+    if (listError) {
+      console.error('[Password Reset] Erro ao listar usuários:', listError);
+      throw new Error('Erro ao verificar conta');
+    }
+
+    const user = users.users.find(u => u.email === email);
+    
+    if (!user) {
+      console.log('[Password Reset] Usuário não encontrado:', email);
+      // Por segurança, não revelar que o usuário não existe
+      return new Response(
+        JSON.stringify({ success: true, message: 'Se o e-mail existir, você receberá instruções' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
+      );
+    }
+
+    // Verificar se o email está confirmado no profiles
+    const { data: profile, error: profileError } = await supabaseAdmin
+      .from('profiles')
+      .select('email_confirmed_strict')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error('[Password Reset] Erro ao verificar profile:', profileError);
+    }
+
+    // Bloquear reset se email não confirmado
+    if (!profile?.email_confirmed_strict) {
+      console.log('[Password Reset] Tentativa de reset sem email confirmado:', email);
+      return new Response(
+        JSON.stringify({ error: 'Por favor, confirme seu e-mail antes de redefinir a senha' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+
     // Gera o link de recuperação
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
@@ -193,7 +232,7 @@ serve(async (req) => {
               </body>
               </html>
             `,
-          text: `Olá, ${userName}!\n\nRecebemos uma solicitação para redefinir a senha da sua conta no TherapyPro.\n\nPara redefinir sua senha, acesse o link: ${resetLink}\n\nSe você não solicitou a redefinição, ignore este e-mail.\n\nEste link expira em 1 hora.`,
+          text: `Olá, ${userName}!\n\nRecebemos uma solicitação para redefinir a senha da sua conta no TherapyPro.\n\nPara redefinir sua senha, acesse o link abaixo:\n\n${resetLink}\n\n- Se você não solicitou a redefinição, ignore este e-mail.\n\nEste link expira em 1 hora.`,
           subject: 'Redefinir Senha - TherapyPro',
           from: {
             name: 'TherapyPro',

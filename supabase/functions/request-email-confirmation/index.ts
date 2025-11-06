@@ -216,20 +216,27 @@ serve(async (req) => {
       throw new Error('Falha ao gerar link de confirmação');
     }
 
-// Gerar link final com fallback robusto
-let confirmationLink = linkData?.properties?.action_link as string | undefined;
+// Gerar link final com fallback robusto PREFERINDO hashed_token
+let confirmationLink: string;
 const hashedToken = linkData?.properties?.hashed_token as string | undefined;
-if (!confirmationLink && hashedToken) {
+
+if (hashedToken) {
+  // PREFERIR hashed_token
   const url = new URL(`${SUPABASE_URL}/auth/v1/verify`);
   url.searchParams.set('token_hash', hashedToken);
   url.searchParams.set('type', linkType);
   url.searchParams.set('redirect_to', redirectTo);
   confirmationLink = url.toString();
-}
-if (!confirmationLink) {
-  console.error('[Email Confirmation] action_link e hashed_token ausentes no retorno do generateLink');
+  console.log('[Email Confirmation] Link gerado via hashed_token');
+} else if (linkData?.properties?.action_link) {
+  // Fallback para action_link
+  confirmationLink = linkData.properties.action_link as string;
+  console.log('[Email Confirmation] Link gerado via action_link');
+} else {
+  console.error('[Email Confirmation] Nenhum token disponível no retorno do generateLink');
   throw new Error('Não foi possível gerar o link de confirmação');
 }
+
 console.log('[Email Confirmation] Link final gerado (preview):', confirmationLink.substring(0, 80) + '...');
 
     // Obter token do SendPulse
