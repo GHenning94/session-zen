@@ -529,18 +529,33 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
                             return;
                           }
 
-                          const { data: resetData, error: fnError } = await supabase.functions.invoke('request-password-reset', {
-                            body: { email: formData.email, captchaToken }
-                          });
+const { data: resetData, error: fnError } = await supabase.functions.invoke('request-password-reset', {
+  body: { email: formData.email, captchaToken }
+});
 
-                          if (fnError) throw fnError;
+if (fnError) {
+  // Tentar extrair mensagem específica do Edge (status 400 = e-mail não confirmado)
+  let friendly = 'Não foi possível enviar o email.';
+  const ctx = (fnError as any)?.context;
+  const bodyText = ctx?.body || ctx?.response?.error || '';
+  try {
+    const parsed = typeof bodyText === 'string' ? JSON.parse(bodyText) : bodyText;
+    if (parsed?.error && String(parsed.error).toLowerCase().includes('confirme seu e-mail')) {
+      friendly = 'Por favor, confirme seu e-mail antes de redefinir a senha.';
+    }
+  } catch {
+    // ignore parse errors
+  }
+  // Se não conseguirmos extrair, mostrar mensagem padrão clara
+  toast({ title: 'Atenção', description: friendly, variant: 'destructive' });
+  return;
+}
 
-                          
-
-                          toast({ 
-                            title: "E-mail enviado!", 
-                            description: "Verifique sua caixa de entrada para redefinir sua senha." 
-                          });
+// Sucesso
+toast({ 
+  title: 'E-mail enviado!', 
+  description: 'Verifique sua caixa de entrada para redefinir sua senha.' 
+});
                         } catch (err: any) {
                           console.error("Erro ao solicitar redefinição:", err);
                           const errorMsg = err.message || "Não foi possível enviar o email.";

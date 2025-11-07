@@ -168,28 +168,43 @@ serve(async (req) => {
       throw new Error('Falha ao gerar link de confirmação');
     }
 
-// Gerar link final com fallback robusto PREFERINDO hashed_token
+// Gerar link final com fallback robusto PREFERINDO hashed_token e apontando para o frontend
 let confirmationLink: string;
 const hashedToken = linkData?.properties?.hashed_token as string | undefined;
 
 if (hashedToken) {
-  // PREFERIR hashed_token
-  const url = new URL(`${SUPABASE_URL}/auth/v1/verify`);
-  url.searchParams.set('token_hash', hashedToken);
+  // Preferir link direto para o frontend (AuthConfirm)
+  const url = new URL(`${SITE_URL}/auth-confirm`);
   url.searchParams.set('type', 'magiclink');
-  url.searchParams.set('redirect_to', redirectTo);
+  url.searchParams.set('token_hash', hashedToken);
+  url.searchParams.set('n', nonce);
   confirmationLink = url.toString();
-  console.log('[Resend Email] Link gerado via hashed_token');
+  console.log('[Resend Email] Link FRONTEND gerado via hashed_token');
 } else if (linkData?.properties?.action_link) {
-  // Fallback para action_link
-  confirmationLink = linkData.properties.action_link as string;
-  console.log('[Resend Email] Link gerado via action_link');
+  // Fallback para action_link: extrair token e construir link do frontend
+  try {
+    const u = new URL(linkData.properties.action_link as string);
+    const fallbackToken = u.searchParams.get('token') || u.searchParams.get('token_hash') || '';
+    if (fallbackToken) {
+      const url = new URL(`${SITE_URL}/auth-confirm`);
+      url.searchParams.set('type', 'magiclink');
+      url.searchParams.set('token_hash', fallbackToken);
+      url.searchParams.set('n', nonce);
+      confirmationLink = url.toString();
+      console.log('[Resend Email] Link FRONTEND gerado via action_link');
+    } else {
+      throw new Error('token ausente no action_link');
+    }
+  } catch (e) {
+    console.error('[Resend Email] Falha ao processar action_link:', e);
+    throw new Error('Não foi possível gerar o link de confirmação');
+  }
 } else {
   console.error('[Resend Email] Nenhum token disponível no retorno do generateLink');
   throw new Error('Não foi possível gerar o link de confirmação');
 }
 
-console.log('[Resend Email] Link final gerado (preview):', confirmationLink.substring(0, 80) + '...');
+console.log('[Resend Email] Link final (preview):', confirmationLink.substring(0, 80) + '...');
 
     // Obter token do SendPulse
     let accessToken;
