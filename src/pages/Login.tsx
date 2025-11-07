@@ -534,20 +534,13 @@ const { data: resetData, error: fnError } = await supabase.functions.invoke('req
 });
 
 if (fnError) {
-  // Tentar extrair mensagem específica do Edge (status 400 = e-mail não confirmado)
-  let friendly = 'Não foi possível enviar o email.';
-  const ctx = (fnError as any)?.context;
-  const bodyText = ctx?.body || ctx?.response?.error || '';
-  try {
-    const parsed = typeof bodyText === 'string' ? JSON.parse(bodyText) : bodyText;
-    if (parsed?.error && String(parsed.error).toLowerCase().includes('confirme seu e-mail')) {
-      friendly = 'Por favor, confirme seu e-mail antes de redefinir a senha.';
-    }
-  } catch {
-    // ignore parse errors
-  }
-  // Se não conseguirmos extrair, mostrar mensagem padrão clara
-  toast({ title: 'Atenção', description: friendly, variant: 'destructive' });
+  toast({ title: 'Erro', description: 'Não foi possível enviar o e-mail. Tente novamente.', variant: 'destructive' });
+  return;
+}
+
+// Tratar casos especiais retornados pela função
+if (resetData?.success === false && resetData?.code === 'EMAIL_NOT_CONFIRMED') {
+  toast({ title: 'Atenção', description: 'Confirme seu e-mail para ativar sua conta antes de fazer login.', variant: 'destructive' });
   return;
 }
 

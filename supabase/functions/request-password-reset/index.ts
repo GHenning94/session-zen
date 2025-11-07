@@ -93,9 +93,10 @@ serve(async (req) => {
     // Bloquear reset se email não confirmado
     if (!profile?.email_confirmed_strict) {
       console.log('[Password Reset] Tentativa de reset sem email confirmado:', email);
+      // Retornar 200 para evitar FunctionsError no cliente e permitir mensagem consistente
       return new Response(
-        JSON.stringify({ error: 'Por favor, confirme seu e-mail antes de redefinir a senha' }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+        JSON.stringify({ success: false, code: 'EMAIL_NOT_CONFIRMED', message: 'Confirme seu e-mail para ativar sua conta antes de fazer login.' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 200 }
       );
     }
 

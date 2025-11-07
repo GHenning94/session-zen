@@ -33,27 +33,51 @@ const AuthConfirm = () => {
 
         console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce })
 
-        // Processar verificação OTP ou hash
-        if (tokenHash && type) {
-          const { error } = await supabase.auth.verifyOtp({
-            type,
-            token_hash: tokenHash
-          })
-          if (error) {
-            console.error('[AuthConfirm] Erro no verifyOtp:', error)
-            throw error
+        // Processar verificação OTP ou hash com fallback de tipo (signup <-> magiclink)
+        if (tokenHash) {
+          const tryTypes: Array<'signup' | 'magiclink' | 'recovery' | 'email_change'> = [];
+          if (type) {
+            tryTypes.push(type);
+            if (type === 'signup') tryTypes.push('magiclink');
+            else if (type === 'magiclink') tryTypes.push('signup');
+          } else {
+            // Quando o tipo não vem na URL, tentamos ambos
+            tryTypes.push('signup', 'magiclink');
           }
-          console.log('[AuthConfirm] verifyOtp realizado com sucesso')
+
+          let verified = false;
+          for (const t of tryTypes) {
+            try {
+              console.log('[AuthConfirm] Tentando verifyOtp com tipo:', t);
+              const { error } = await supabase.auth.verifyOtp({
+                type: t,
+                token_hash: tokenHash
+              });
+              if (!error) {
+                console.log('[AuthConfirm] verifyOtp OK com tipo', t);
+                verified = true;
+                break;
+              } else {
+                console.warn('[AuthConfirm] verifyOtp retornou erro com tipo', t, error);
+              }
+            } catch (e) {
+              console.warn('[AuthConfirm] Falha no verifyOtp com tipo', t, e);
+            }
+          }
+
+          if (!verified) {
+            throw new Error('Link inválido ou expirado');
+          }
         } else {
           // Fallback: hash no fragmento
           const hash = window.location.hash
           if (hash && hash.includes('access_token')) {
-            console.log('[AuthConfirm] Processando via hash (access_token)')
+            console.log('[AuthConfirm] Processando via hash (access_token)');
             // Supabase SDK processa automaticamente
           } else if (params.get('error')) {
-            throw new Error(params.get('error_description') || 'Erro desconhecido')
+            throw new Error(params.get('error_description') || 'Erro desconhecido');
           } else {
-            throw new Error('Link inválido ou expirado')
+            throw new Error('Link inválido ou expirado');
           }
         }
 
