@@ -66,7 +66,14 @@ const AuthConfirm = () => {
           }
 
           if (!verified) {
-            throw new Error('Link inválido ou expirado');
+            console.warn('[AuthConfirm] verifyOtp falhou para todos os tipos. Redirecionando para verificação do Supabase...');
+            const supabaseUrl = 'https://ykwszazxigjivjkagjmf.supabase.co';
+            const supabaseTypes = type ? [type as 'signup' | 'magiclink'] : ['signup','magiclink'];
+            const redirectBase = `${window.location.origin}/auth-confirm${nonce ? `?n=${encodeURIComponent(nonce)}` : ''}`;
+            // Tentar redirecionar para a página de verificação do Supabase (fallback oficial)
+            const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${supabaseTypes[0]}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectBase)}`;
+            window.location.href = verifyUrl;
+            return;
           }
         } else {
           // Fallback: hash no fragmento
