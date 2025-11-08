@@ -14,24 +14,16 @@ const AuthConfirm = () => {
 
   useEffect(() => {
     const confirmEmail = async () => {
-      // Limpeza preventiva de caches/sessões antigas
-      try {
-        Object.keys(localStorage).forEach((k) => {
-          if (k.startsWith('sb-') || k.includes('supabase')) localStorage.removeItem(k)
-        })
-        sessionStorage.clear()
-        if ('caches' in window) {
-          const keys = await caches.keys()
-          await Promise.all(keys.map((k) => caches.delete(k)))
-        }
-      } catch (e) { console.warn('[AuthConfirm] Falha na limpeza preventiva', e) }
+        // Removido: limpeza preventiva para evitar apagar sessão durante verify
+
       try {
         const params = new URLSearchParams(window.location.search)
         const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | 'magiclink' | null
         const tokenHash = (params.get('token_hash') || params.get('token') || params.get('hash'))
         const nonce = params.get('n') // Nonce para validação
+        const vt = params.get('vt') as 'sg' | 'ml' | null // tentativa anterior (signup=sg, magiclink=ml)
 
-        console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce })
+        console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce, vt })
 
         // Processar verificação OTP ou hash com fallback de tipo (signup <-> magiclink)
         if (tokenHash) {
@@ -68,10 +60,17 @@ const AuthConfirm = () => {
           if (!verified) {
             console.warn('[AuthConfirm] verifyOtp falhou para todos os tipos. Redirecionando para verificação do Supabase...');
             const supabaseUrl = 'https://ykwszazxigjivjkagjmf.supabase.co';
-            const supabaseTypes = type ? [type as 'signup' | 'magiclink'] : ['signup','magiclink'];
-            const redirectBase = `${window.location.origin}/auth-confirm${nonce ? `?n=${encodeURIComponent(nonce)}` : ''}`;
+            // Escolher próximo tipo baseado em 'type' ou no marcador 'vt'
+            let nextType: 'signup' | 'magiclink';
+            if (type === 'signup' || type === 'magiclink') {
+              nextType = type;
+            } else {
+              nextType = vt === 'sg' ? 'magiclink' : 'signup';
+            }
+            const nextVt = nextType === 'signup' ? 'sg' : 'ml';
+            const redirectBase = `${window.location.origin}/auth-confirm${nonce ? `?n=${encodeURIComponent(nonce)}&vt=${nextVt}` : `?vt=${nextVt}`}`;
             // Tentar redirecionar para a página de verificação do Supabase (fallback oficial)
-            const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${supabaseTypes[0]}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectBase)}`;
+            const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${nextType}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectBase)}`;
             window.location.href = verifyUrl;
             return;
           }
@@ -92,8 +91,8 @@ const AuthConfirm = () => {
         
         // Poll para obter a sessão (pode demorar alguns ms)
         let sessionEstablished = false;
-        for (let i = 0; i < 12; i++) {
-          await new Promise(resolve => setTimeout(resolve, 700));
+        for (let i = 0; i < 20; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
           const { data: { session: currentSession } } = await supabase.auth.getSession();
           
           if (currentSession?.user) {
