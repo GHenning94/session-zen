@@ -25,61 +25,41 @@ const AuthConfirm = () => {
 
         console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce, vt })
 
-        // Processar verificação OTP ou hash com fallback de tipo (signup <-> magiclink)
+        // Processar verificação via endpoint oficial do Supabase para garantir criação de sessão
         if (tokenHash) {
-          const tryTypes: Array<'signup' | 'magiclink' | 'recovery' | 'email_change'> = [];
-          if (type) {
-            tryTypes.push(type);
-            if (type === 'signup') tryTypes.push('magiclink');
-            else if (type === 'magiclink') tryTypes.push('signup');
+          const supabaseUrl = 'https://ykwszazxigjivjkagjmf.supabase.co';
+          // Definir tipo a partir da URL ou alternar com marcador vt (sg/ml)
+          let nextType: 'signup' | 'magiclink';
+          if (type === 'signup' || type === 'magiclink') {
+            nextType = type;
           } else {
-            // Quando o tipo não vem na URL, tentamos ambos
-            tryTypes.push('signup', 'magiclink');
+            nextType = vt === 'sg' ? 'magiclink' : 'signup';
           }
+          const nextVt = nextType === 'signup' ? 'sg' : 'ml';
+          const redirectBase = `${window.location.origin}/auth-confirm${nonce ? `?n=${encodeURIComponent(nonce)}&vt=${nextVt}` : `?vt=${nextVt}`}`;
 
-          let verified = false;
-          for (const t of tryTypes) {
-            try {
-              console.log('[AuthConfirm] Tentando verifyOtp com tipo:', t);
-              const { error } = await supabase.auth.verifyOtp({
-                type: t,
-                token_hash: tokenHash
-              });
-              if (!error) {
-                console.log('[AuthConfirm] verifyOtp OK com tipo', t);
-                verified = true;
-                break;
-              } else {
-                console.warn('[AuthConfirm] verifyOtp retornou erro com tipo', t, error);
-              }
-            } catch (e) {
-              console.warn('[AuthConfirm] Falha no verifyOtp com tipo', t, e);
-            }
-          }
-
-          if (!verified) {
-            console.warn('[AuthConfirm] verifyOtp falhou para todos os tipos. Redirecionando para verificação do Supabase...');
-            const supabaseUrl = 'https://ykwszazxigjivjkagjmf.supabase.co';
-            // Escolher próximo tipo baseado em 'type' ou no marcador 'vt'
-            let nextType: 'signup' | 'magiclink';
-            if (type === 'signup' || type === 'magiclink') {
-              nextType = type;
-            } else {
-              nextType = vt === 'sg' ? 'magiclink' : 'signup';
-            }
-            const nextVt = nextType === 'signup' ? 'sg' : 'ml';
-            const redirectBase = `${window.location.origin}/auth-confirm${nonce ? `?n=${encodeURIComponent(nonce)}&vt=${nextVt}` : `?vt=${nextVt}`}`;
-            // Tentar redirecionar para a página de verificação do Supabase (fallback oficial)
-            const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${nextType}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectBase)}`;
-            window.location.href = verifyUrl;
-            return;
-          }
+          // Redireciona para o verificador oficial do Supabase, que retorna com #access_token
+          const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${nextType}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectBase)}`;
+          console.log('[AuthConfirm] Redirecionando para Supabase verify...', { nextType, redirectBase });
+          window.location.href = verifyUrl;
+          return;
         } else {
           // Fallback: hash no fragmento
           const hash = window.location.hash
           if (hash && hash.includes('access_token')) {
             console.log('[AuthConfirm] Processando via hash (access_token)');
-            // Supabase SDK processa automaticamente
+            // Força setSession a partir do hash para garantir persistência
+            try {
+              const hashParams = new URLSearchParams(hash.slice(1));
+              const access_token = hashParams.get('access_token');
+              const refresh_token = hashParams.get('refresh_token');
+              if (access_token && refresh_token) {
+                await supabase.auth.setSession({ access_token, refresh_token });
+                console.log('[AuthConfirm] setSession aplicado a partir do hash');
+              }
+            } catch (e) {
+              console.warn('[AuthConfirm] Falha ao aplicar setSession via hash', e);
+            }
           } else if (params.get('error')) {
             throw new Error(params.get('error_description') || 'Erro desconhecido');
           } else {
