@@ -25,24 +25,36 @@ const AuthConfirm = () => {
 
         console.log('[AuthConfirm] Iniciando confirmação', { type, hasTokenHash: !!tokenHash, hasNonce: !!nonce, vt })
 
-        // Processar verificação via endpoint oficial do Supabase para garantir criação de sessão
-        if (tokenHash) {
-          const supabaseUrl = 'https://ykwszazxigjivjkagjmf.supabase.co';
-          // Definir tipo a partir da URL ou alternar com marcador vt (sg/ml)
-          let nextType: 'signup' | 'magiclink';
-          if (type === 'signup' || type === 'magiclink') {
-            nextType = type;
-          } else {
-            nextType = vt === 'sg' ? 'magiclink' : 'signup';
-          }
-          const nextVt = nextType === 'signup' ? 'sg' : 'ml';
-          const redirectBase = `${window.location.origin}/auth-confirm${nonce ? `?n=${encodeURIComponent(nonce)}&vt=${nextVt}` : `?vt=${nextVt}`}`;
+        // Tentar verificar via SDK (apenas token_hash) antes de qualquer redirecionamento
+        const tokenHashParam = params.get('token_hash');
 
-          // Redireciona para o verificador oficial do Supabase, que retorna com #access_token
-          const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${nextType}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectBase)}`;
-          console.log('[AuthConfirm] Redirecionando para Supabase verify...', { nextType, redirectBase });
-          window.location.href = verifyUrl;
-          return;
+        if (tokenHashParam) {
+          const allowed: Array<'signup' | 'magiclink' | 'recovery' | 'email_change'> = ['signup','magiclink','recovery','email_change'];
+          const typesToTry: Array<'signup' | 'magiclink' | 'recovery' | 'email_change'> = [];
+          if (type && allowed.includes(type)) {
+            typesToTry.push(type as any);
+            // alternar entre signup/magiclink quando aplicável
+            if (type === 'signup') typesToTry.push('magiclink');
+            else if (type === 'magiclink') typesToTry.push('signup');
+          } else {
+            typesToTry.push('magiclink', 'signup');
+          }
+
+          let verified = false;
+          for (const t of typesToTry) {
+            try {
+              console.log('[AuthConfirm] verifyOtp(token_hash) com tipo', t);
+              const { error } = await supabase.auth.verifyOtp({ type: t, token_hash: tokenHashParam });
+              if (!error) { verified = true; break; }
+              console.warn('[AuthConfirm] verifyOtp(token_hash) falhou', error);
+            } catch (e) {
+              console.warn('[AuthConfirm] Falha no verifyOtp com tipo', t, e);
+            }
+          }
+
+          if (!verified) {
+            throw new Error('Link inválido ou expirado');
+          }
         } else {
           // Fallback: hash no fragmento
           const hash = window.location.hash
