@@ -42,6 +42,7 @@ import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import Suporte from "@/pages/Suporte";
 import PublicRegistration from "@/pages/PublicRegistration";
 import AuthConfirm from "@/pages/AuthConfirm";
+import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -92,7 +93,8 @@ const App = () => (
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
                   <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
-                  <Route path="/auth-confirm" element={<AuthConfirm />} />
+          <Route path="/auth-confirm" element={<AuthConfirm />} />
+          <Route path="/auth-callback" element={<AuthCallback />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
