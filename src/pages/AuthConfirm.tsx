@@ -16,8 +16,8 @@ const AuthConfirm = () => {
     const confirmEmail = async () => {
       try {
         const params = new URLSearchParams(window.location.search)
-        const type = params.get('type') as 'signup' | 'recovery' | 'email_change' | 'magiclink' | null
         const tokenHash = params.get('token_hash')
+        const type = params.get('type') || 'signup'
         const nonce = params.get('n')
         const hash = window.location.hash
 
@@ -28,16 +28,16 @@ const AuthConfirm = () => {
           hasHash: !!hash 
         })
 
-        // FORMATO A: Hash com access_token e refresh_token (retorno oficial do Supabase)
+        // FORMATO A: Hash com access_token e refresh_token
         if (hash && hash.includes('access_token')) {
-          console.log('[AuthConfirm] Formato A detectado: hash com access_token')
+          console.log('[AuthConfirm] Formato A: tokens no hash')
           
           const hashParams = new URLSearchParams(hash.slice(1))
           const access_token = hashParams.get('access_token')
           const refresh_token = hashParams.get('refresh_token')
           
           if (access_token && refresh_token) {
-            console.log('[AuthConfirm] Aplicando setSession com tokens do hash...')
+            console.log('[AuthConfirm] Aplicando setSession...')
             const { error: sessionError } = await supabase.auth.setSession({ 
               access_token, 
               refresh_token 
@@ -47,21 +47,21 @@ const AuthConfirm = () => {
               throw new Error(`Erro ao criar sessão: ${sessionError.message}`)
             }
             
-            // Polling para garantir que sessão está estabelecida
+            // Polling para garantir sessão estabelecida
             let sessionEstablished = false
             for (let i = 0; i < 20; i++) {
               await new Promise(resolve => setTimeout(resolve, 500))
               const { data: { session } } = await supabase.auth.getSession()
               
               if (session?.user) {
-                console.log('[AuthConfirm] ✅ Sessão estabelecida após', i + 1, 'tentativas')
+                console.log('[AuthConfirm] ✅ Sessão estabelecida')
                 sessionEstablished = true
                 break
               }
             }
 
             if (!sessionEstablished) {
-              throw new Error('Não foi possível estabelecer a sessão após setSession')
+              throw new Error('Não foi possível estabelecer a sessão')
             }
 
             // Invocar confirm-email-strict
@@ -72,7 +72,7 @@ const AuthConfirm = () => {
             )
 
             if (confirmError) {
-              console.error('[AuthConfirm] Erro na confirmação strict:', confirmError)
+              console.error('[AuthConfirm] Erro na confirmação:', confirmError)
               
               if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
                 await supabase.auth.signOut()
@@ -86,34 +86,25 @@ const AuthConfirm = () => {
               throw new Error('Falha na confirmação do e-mail')
             }
 
-            console.log('[AuthConfirm] ✅ E-mail confirmado com sucesso!')
+            console.log('[AuthConfirm] ✅ E-mail confirmado!')
             setStatus('success')
             toast.success('Email confirmado com sucesso!')
             return
           }
         }
 
-        // FORMATO B: token_hash na query string (e-mail custom ou link direto)
+        // FORMATO B: token_hash na query string
         if (tokenHash) {
-          console.log('[AuthConfirm] Formato B detectado: token_hash na query')
+          console.log('[AuthConfirm] Formato B: token_hash na query')
           
-          // Tentar tipos possíveis (com alternância signup/magiclink)
-          const typesToTry: Array<'signup' | 'magiclink' | 'recovery' | 'email_change'> = []
+          // Tentar verifyOtp com o tipo fornecido
+          const typesToTry: Array<'signup' | 'magiclink'> = 
+            type === 'signup' || type === 'magiclink' 
+              ? [type as 'signup' | 'magiclink', type === 'signup' ? 'magiclink' : 'signup']
+              : ['magiclink', 'signup']
           
-          if (type === 'signup' || type === 'magiclink') {
-            typesToTry.push(type)
-            // Alternativa
-            typesToTry.push(type === 'signup' ? 'magiclink' : 'signup')
-          } else if (type === 'recovery' || type === 'email_change') {
-            typesToTry.push(type)
-          } else {
-            // Default: tentar signup e magiclink
-            typesToTry.push('magiclink', 'signup')
-          }
-
-          let verifiedDirectly = false
+          let verified = false
           
-          // Tentativa 1: verifyOtp direto (nem sempre cria sessão)
           for (const t of typesToTry) {
             try {
               console.log('[AuthConfirm] Tentando verifyOtp com tipo:', t)
@@ -123,64 +114,54 @@ const AuthConfirm = () => {
               })
               
               if (!error) {
-                console.log('[AuthConfirm] verifyOtp bem-sucedido com tipo:', t)
-                verifiedDirectly = true
+                console.log('[AuthConfirm] ✅ verifyOtp bem-sucedido')
+                verified = true
                 break
               }
               
-              console.warn('[AuthConfirm] verifyOtp falhou com tipo:', t, error)
-            } catch (e) {
-              console.warn('[AuthConfirm] Exceção no verifyOtp com tipo:', t, e)
+              console.warn('[AuthConfirm] verifyOtp falhou:', error.message)
+            } catch (e: any) {
+              console.warn('[AuthConfirm] Exceção no verifyOtp:', e.message)
             }
           }
 
-          // Verificar se sessão foi criada
+          if (!verified) {
+            throw new Error('Link de confirmação inválido ou expirado. Solicite um novo link.')
+          }
+
+          // Aguardar sessão ser criada
           await new Promise(resolve => setTimeout(resolve, 1000))
           const { data: { session: checkSession } } = await supabase.auth.getSession()
           
-          if (checkSession?.user) {
-            console.log('[AuthConfirm] ✅ Sessão criada pelo verifyOtp, invocando confirm-email-strict...')
-            
-            const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
-              'confirm-email-strict',
-              { body: { nonce: nonce || null } }
-            )
-
-            if (confirmError) {
-              console.error('[AuthConfirm] Erro na confirmação strict:', confirmError)
-              
-              if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
-                await supabase.auth.signOut()
-                throw new Error(confirmError.message)
-              }
-              
-              throw new Error('Erro ao confirmar e-mail.')
-            }
-
-            if (!confirmData?.success) {
-              throw new Error('Falha na confirmação do e-mail')
-            }
-
-            console.log('[AuthConfirm] ✅ E-mail confirmado!')
-            setStatus('success')
-            toast.success('Email confirmado com sucesso!')
-            return
+          if (!checkSession?.user) {
+            throw new Error('Não foi possível criar sua sessão. Tente fazer login com sua senha.')
           }
 
-          // Fallback: redirecionar para endpoint oficial do Supabase
-          console.log('[AuthConfirm] verifyOtp não criou sessão, redirecionando para /auth/v1/verify...')
+          console.log('[AuthConfirm] ✅ Sessão criada, invocando confirm-email-strict...')
           
-          const useType = typesToTry[0] || 'signup'
-          const supabaseUrl = 'https://ykwszazxigjivjkagjmf.supabase.co'
-          const origin = window.location.origin
-          const redirectTo = nonce 
-            ? `${origin}/auth-confirm?n=${encodeURIComponent(nonce)}`
-            : `${origin}/auth-confirm`
-          
-          const verifyUrl = `${supabaseUrl}/auth/v1/verify?type=${useType}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectTo)}`
-          
-          console.log('[AuthConfirm] Redirecionando para:', verifyUrl)
-          window.location.href = verifyUrl
+          const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
+            'confirm-email-strict',
+            { body: { nonce: nonce || null } }
+          )
+
+          if (confirmError) {
+            console.error('[AuthConfirm] Erro na confirmação:', confirmError)
+            
+            if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
+              await supabase.auth.signOut()
+              throw new Error(confirmError.message)
+            }
+            
+            throw new Error('Erro ao confirmar e-mail.')
+          }
+
+          if (!confirmData?.success) {
+            throw new Error('Falha na confirmação do e-mail')
+          }
+
+          console.log('[AuthConfirm] ✅ E-mail confirmado!')
+          setStatus('success')
+          toast.success('Email confirmado com sucesso!')
           return
         }
 
@@ -191,7 +172,7 @@ const AuthConfirm = () => {
         }
 
         // Nenhum formato reconhecido
-        throw new Error('Link inválido ou expirado')
+        throw new Error('Link inválido ou expirado. Solicite um novo link de confirmação.')
 
       } catch (err: any) {
         console.error('[AuthConfirm] Erro na confirmação:', err)
