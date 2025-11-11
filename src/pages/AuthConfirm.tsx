@@ -1,4 +1,4 @@
-// src/pages/AuthConfirm.tsx - VERSÃO FINAL SIMPLIFICADA
+// src/pages/AuthConfirm.tsx - VERSÃO COM LOGOUT APÓS CONFIRMAÇÃO
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -90,7 +90,7 @@ const AuthConfirm = () => {
         console.log('[AuthConfirm] ⏳ Aguardando 1500ms...');
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // ✅ Invocar Edge Function com user_id no body (fallback)
+        // ✅ Invocar Edge Function
         console.log('[AuthConfirm] 📨 Invocando confirm-email-strict...');
         
         const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
@@ -98,7 +98,7 @@ const AuthConfirm = () => {
           { 
             body: { 
               nonce: nonce || null,
-              user_id: userId // ✅ Fallback para quando JWT não funcionar
+              user_id: userId
             }
           }
         );
@@ -113,7 +113,12 @@ const AuthConfirm = () => {
         }
 
         console.log('[AuthConfirm] ✅ E-mail confirmado!');
-        toast.success('E-mail confirmado com sucesso!');
+        
+        // ✅ CORREÇÃO: Fazer logout após confirmação bem-sucedida
+        console.log('[AuthConfirm] 🚪 Fazendo logout para forçar novo login...');
+        await supabase.auth.signOut();
+        
+        toast.success('E-mail confirmado com sucesso! Faça login para continuar.');
         setStatus('success');
         
         sessionStorage.removeItem('IS_CONFIRMING_AUTH');
@@ -141,13 +146,14 @@ const AuthConfirm = () => {
     confirmEmail()
   }, [navigate]) 
 
+  // ✅ CORREÇÃO: Redirecionar para LOGIN após confirmação
   useEffect(() => {
     if (status === 'success') {
       const timer = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer)
-            navigate('/welcome')
+            navigate('/login?confirmed=true') // ✅ Redirecionar para login
             return 0
           }
           return prev - 1
@@ -187,7 +193,7 @@ const AuthConfirm = () => {
               </div>
               <CardTitle>E-mail Confirmado!</CardTitle>
               <CardDescription>
-                Sua conta está ativa! Redirecionando em {countdown}s...
+                Sua conta está ativa! Redirecionando para o login em {countdown}s...
               </CardDescription>
             </>
           )}

@@ -12,7 +12,6 @@ const supabase = createClient(
 );
 
 serve(async (req) => {
-  // Security: Only allow POST requests for webhooks
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
   }
@@ -21,7 +20,7 @@ serve(async (req) => {
   const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
 
   if (!signature || !webhookSecret) {
-    console.error("Security: Missing signature or webhook secret");
+    console.error("❌ Security: Missing signature or webhook secret");
     return new Response("Unauthorized", { status: 401 });
   }
 
@@ -29,7 +28,7 @@ serve(async (req) => {
     const body = await req.text();
     const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
 
-    console.log(`Processing webhook event: ${event.type}`);
+    console.log(`[webhook] 📨 Processing event: ${event.type}`);
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -38,71 +37,140 @@ serve(async (req) => {
         const planName = session.metadata?.plan_name || 'pro';
         const billingInterval = session.metadata?.billing_interval || 'monthly';
 
-        if (userId) {
-          console.log('[webhook] Processing checkout.session.completed for user:', userId, {
-            plan: planName,
-            interval: billingInterval,
-            customer: session.customer
-          });
-          
-          // Update user profile with complete subscription info
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ 
-              subscription_plan: planName,
-              billing_interval: billingInterval,
-              stripe_customer_id: session.customer as string,
-              subscription_start_date: new Date().toISOString(),
-              onboarding_completed: true,
-              first_login_completed: true
-            })
-            .eq('user_id', userId);
+        if (!userId) {
+          console.error('[webhook] ❌ No user_id in session metadata');
+          break;
+        }
 
-          if (updateError) {
-            console.error('[webhook] Error updating profile:', updateError);
-          } else {
-            console.log('[webhook] Profile updated successfully with subscription data');
-            
-            // Create welcome notification
-            await supabase
-              .from('notifications')
-              .insert({
-                user_id: userId,
-                titulo: 'Bem-vindo ao TherapyPro!',
-                conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso. Aproveite todos os recursos!`
-              });
-          }
+        console.log('[webhook] 💳 Checkout completed:', {
+          user: userId,
+          plan: planName,
+          interval: billingInterval,
+          customer: session.customer,
+          subscription: session.subscription
+        });
+        
+        // Calcular data de próxima renovação (30 dias para mensal, 365 para anual)
+        const currentDate = new Date();
+        const nextBillingDate = new Date(currentDate);
+        
+        if (billingInterval === 'yearly') {
+          nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+        } else {
+          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+        }
+
+        // Atualizar perfil com informações completas da assinatura
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ 
+            subscription_plan: planName,
+            billing_interval: billingInterval,
+            stripe_customer_id: session.customer as string,
+            stripe_subscription_id: session.subscription as string,
+            subscription_start_date: new Date().toISOString(),
+            subscription_end_date: nextBillingDate.toISOString(),
+            subscription_cancel_at: null,
+            onboarding_completed: true,
+            first_login_completed: true
+          })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error('[webhook] ❌ Error updating profile:', updateError);
+        } else {
+          console.log('[webhook] ✅ Profile updated successfully');
+          
+          // Criar notificação de boas-vindas
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: userId,
+              titulo: 'Bem-vindo ao TherapyPro!',
+              conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso. Aproveite todos os recursos!`
+            });
+        }
+        break;
+      }
+
+      case "invoice.payment_succeeded": {
+        const invoice = event.data.object as Stripe.Invoice;
+        const customerId = invoice.customer as string;
+
+        console.log('[webhook] 💰 Payment succeeded for invoice:', invoice.id);
+
+        // Buscar usuário pelo stripe_customer_id
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id, subscription_plan, billing_interval')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (profile) {
+          // Calcular próxima data de cobrança
+          const nextBillingDate = new Date(invoice.period_end * 1000);
+
+          // Atualizar data de renovação
+          await supabase
+            .from('profiles')
+            .update({
+              subscription_end_date: nextBillingDate.toISOString(),
+              subscription_cancel_at: null
+            })
+            .eq('user_id', profile.user_id);
+
+          console.log('[webhook] ✅ Next billing date updated:', nextBillingDate.toISOString());
+
+          // Notificar usuário
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: profile.user_id,
+              titulo: 'Pagamento Confirmado',
+              conteudo: `Seu pagamento de R$ ${(invoice.amount_paid / 100).toFixed(2)} foi processado com sucesso. Próxima cobrança: ${nextBillingDate.toLocaleDateString('pt-BR')}`
+            });
         }
         break;
       }
 
       case "customer.subscription.updated": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.user_id;
+        const customerId = subscription.customer as string;
 
-        if (userId) {
-          console.log('[webhook] Processing subscription.updated for user:', userId, {
-            status: subscription.status,
-            cancel_at_period_end: subscription.cancel_at_period_end,
-            cancel_at: subscription.cancel_at
-          });
-          
-          const newPlanName = subscription.items.data[0]?.price.metadata?.plan_name || 
-                             subscription.metadata?.plan_name || 'pro';
-          const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 
-                                  subscription.metadata?.billing_interval || 'month';
+        console.log('[webhook] 🔄 Subscription updated:', {
+          subscription: subscription.id,
+          status: subscription.status,
+          cancel_at_period_end: subscription.cancel_at_period_end
+        });
+
+        // Buscar usuário
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id, subscription_plan')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (profile) {
           const isActive = subscription.status === 'active';
+          const newPlanName = subscription.items.data[0]?.price.metadata?.plan_name || 
+                             subscription.metadata?.plan_name || 
+                             profile.subscription_plan;
+          
+          const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
 
           const updateData: any = {
             subscription_plan: isActive ? newPlanName : 'basico',
-            billing_interval: isActive ? (billingInterval === 'year' ? 'yearly' : 'monthly') : null
+            billing_interval: isActive ? (billingInterval === 'year' ? 'yearly' : 'monthly') : null,
+            subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
           };
 
-          // Handle cancellation
+          // ✅ PERÍODO DE CARÊNCIA: Se cancelado, manter acesso até o fim do período
           if (subscription.cancel_at_period_end || subscription.cancel_at) {
             updateData.subscription_cancel_at = subscription.cancel_at 
               ? new Date(subscription.cancel_at * 1000).toISOString()
               : new Date(subscription.current_period_end * 1000).toISOString();
+            
+            console.log('[webhook] ⚠️ Subscription will cancel at:', updateData.subscription_cancel_at);
           } else {
             updateData.subscription_cancel_at = null;
           }
@@ -110,23 +178,32 @@ serve(async (req) => {
           const { error: updateError } = await supabase
             .from('profiles')
             .update(updateData)
-            .eq('user_id', userId);
+            .eq('user_id', profile.user_id);
 
           if (updateError) {
-            console.error('[webhook] Error updating subscription:', updateError);
+            console.error('[webhook] ❌ Error updating subscription:', updateError);
           } else {
-            console.log('[webhook] Subscription updated successfully');
-          }
+            console.log('[webhook] ✅ Subscription updated successfully');
 
-          // Send renewal notification if subscription is being renewed
-          if (isActive && !subscription.cancel_at_period_end) {
-            await supabase
-              .from('notifications')
-              .insert({
-                user_id: userId,
-                titulo: 'Assinatura Renovada',
-                conteudo: `Sua assinatura ${newPlanName} foi renovada com sucesso!`
-              });
+            // Notificar sobre cancelamento agendado
+            if (subscription.cancel_at_period_end) {
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: profile.user_id,
+                  titulo: 'Assinatura Cancelada',
+                  conteudo: `Sua assinatura foi cancelada mas você terá acesso até ${new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')}`
+                });
+            } else if (isActive) {
+              // Notificar sobre renovação
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: profile.user_id,
+                  titulo: 'Assinatura Renovada',
+                  conteudo: `Sua assinatura ${newPlanName} foi renovada com sucesso!`
+                });
+            }
           }
         }
         break;
@@ -134,33 +211,41 @@ serve(async (req) => {
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.user_id;
+        const customerId = subscription.customer as string;
 
-        if (userId) {
-          console.log('[webhook] Processing subscription.deleted for user:', userId);
-          
+        console.log('[webhook] 🗑️ Subscription deleted:', subscription.id);
+
+        // Buscar usuário
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (profile) {
+          // ✅ Reverter para plano gratuito
           const { error: updateError } = await supabase
             .from('profiles')
             .update({ 
               subscription_plan: 'basico',
               billing_interval: null,
               subscription_cancel_at: null,
-              stripe_customer_id: null
+              subscription_end_date: null,
+              stripe_subscription_id: null
             })
-            .eq('user_id', userId);
+            .eq('user_id', profile.user_id);
 
           if (updateError) {
-            console.error('[webhook] Error deleting subscription:', updateError);
+            console.error('[webhook] ❌ Error deleting subscription:', updateError);
           } else {
-            console.log('[webhook] Subscription deleted, user reverted to basic plan');
+            console.log('[webhook] ✅ User reverted to basic plan');
             
-            // Send notification
             await supabase
               .from('notifications')
               .insert({
-                user_id: userId,
+                user_id: profile.user_id,
                 titulo: 'Assinatura Encerrada',
-                conteudo: 'Sua assinatura foi encerrada. Você agora está no plano gratuito.'
+                conteudo: 'Sua assinatura foi encerrada. Você agora está no plano gratuito com funcionalidades limitadas.'
               });
           }
         }
@@ -168,7 +253,7 @@ serve(async (req) => {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        console.log(`[webhook] ℹ️ Unhandled event type: ${event.type}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -176,7 +261,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("Webhook error:", error);
+    console.error("[webhook] ❌ Error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { 

@@ -81,8 +81,8 @@ const Welcome = () => {
         'Relatórios básicos',
         'Suporte prioritário'
       ],
-      stripeMonthlyId: 'price_1QqLiLBJC6TkeQebbJQiW8P0',
-      stripeAnnualId: 'price_1QqLjCBJC6TkeQebB0OjVdWp',
+      stripeMonthlyId: 'price_1SSMNgCP57sNVd3laEmlQOcb',  // ✅ ATUALIZADO
+      stripeAnnualId: 'price_1SSMOdCP57sNVd3la4kMOinN',   // ✅ ATUALIZADO
       highlight: true
     },
     {
@@ -102,8 +102,8 @@ const Welcome = () => {
         'Configurações avançadas',
         'Suporte VIP 24/7'
       ],
-      stripeMonthlyId: 'price_1QqLkKBJC6TkeQebMaD5OlnU',
-      stripeAnnualId: 'price_1QqLlBBJC6TkeQebfWe0pPFy',
+      stripeMonthlyId: 'price_1SSMOBCP57sNVd3lqjfLY6Du',  // ✅ ATUALIZADO
+      stripeAnnualId: 'price_1SSMP7CP57sNVd3lSf4oYINX',   // ✅ ATUALIZADO
       highlight: false
     }
   ];
@@ -177,7 +177,7 @@ const Welcome = () => {
 
       console.log('Criando checkout para:', { planId, priceId, isAnnual });
 
-      // Criar sessão de checkout no Stripe (NÃO marcar first_login_completed aqui)
+      // Criar sessão de checkout no Stripe
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { 
           priceId,

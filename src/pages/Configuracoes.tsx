@@ -26,6 +26,7 @@ import { NotificationSettings } from "@/components/notifications/NotificationSet
 import { PaymentMethodCard } from "@/components/PaymentMethodCard"
 import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
 import { SubscriptionInvoices } from "@/components/SubscriptionInvoices"
+import { SubscriptionInfo } from "@/components/SubscriptionInfo"
 
 type AllSettings = Record<string, any>;
 
@@ -52,7 +53,6 @@ const Configuracoes = () => {
       const { data, error } = await supabase.functions.invoke('get-payment-methods');
       
       if (error) {
-        // Silent fail if it's a configuration issue
         console.warn('[Configuracoes] Could not load payment methods:', error);
         setPaymentMethods([]);
         return;
@@ -62,7 +62,6 @@ const Configuracoes = () => {
     } catch (error: any) {
       console.error('[Configuracoes] Error loading payment methods:', error);
       
-      // Only show toast for unexpected errors, not configuration issues
       if (error?.message && !error.message.includes('not found') && !error.message.includes('No customer')) {
         toast({
           title: "Erro",
@@ -79,10 +78,9 @@ const Configuracoes = () => {
     if (!user) return;
     setIsLoading(true);
     try {
-      // Carregar dados básicos do perfil (sem informações financeiras sensíveis)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, subscription_plan, created_at, updated_at')
+        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, subscription_plan, billing_interval, created_at, updated_at')
         .eq('user_id', user.id)
         .single();
       
@@ -104,11 +102,9 @@ const Configuracoes = () => {
 
   useEffect(() => { loadData() }, [loadData]);
   
-  // Lazy load payment methods only when viewing subscription tab
   useEffect(() => {
     const loadPaymentMethodsIfSubscribed = async () => {
       if (activeTab === 'platform-payments' && user) {
-        // Check if user has active subscription first
         try {
           const { data: profile } = await supabase
             .from('profiles')
@@ -116,7 +112,6 @@ const Configuracoes = () => {
             .eq('user_id', user.id)
             .single();
           
-          // Only load payment methods if user has a paid plan
           if (profile?.subscription_plan && profile.subscription_plan !== 'basico') {
             console.log('[Configuracoes] Loading payment methods for subscription tab');
             loadPaymentMethods();
@@ -300,7 +295,7 @@ const Configuracoes = () => {
                 <CardDescription>Atualize suas informações básicas</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Nome Completo</Label>
                     <Input 
@@ -334,405 +329,239 @@ const Configuracoes = () => {
                   <div className="space-y-2">
                     <Label>Telefone</Label>
                     <Input 
+                      type="tel" 
                       value={settings.telefone || ''} 
-                      onChange={(e) => handleSettingsChange('telefone', e.target.value)} 
+                      onChange={(e) => handleSettingsChange('telefone', e.target.value)}
+                      placeholder="(00) 00000-0000"
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>CRP/Registro</Label>
+                    <Label>CRP</Label>
                     <Input 
-                      placeholder="CRP 01/12345" 
                       value={settings.crp || ''} 
-                      onChange={(e) => handleSettingsChange('crp', e.target.value)} 
+                      onChange={(e) => handleSettingsChange('crp', e.target.value)}
+                      placeholder="00/00000"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Especialidade</Label>
                     <Input 
-                      placeholder="Terapia Cognitivo Comportamental" 
                       value={settings.especialidade || ''} 
-                      onChange={(e) => handleSettingsChange('especialidade', e.target.value)} 
+                      onChange={(e) => handleSettingsChange('especialidade', e.target.value)}
+                      placeholder="Ex: Terapia Cognitivo-Comportamental"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Biografia Profissional</Label>
+                  <Label>Biografia</Label>
                   <Textarea 
-                    placeholder="Descreva sua experiência..." 
                     value={settings.bio || ''} 
-                    onChange={(e) => handleSettingsChange('bio', e.target.value)} 
-                    className="min-h-[100px]"
+                    onChange={(e) => handleSettingsChange('bio', e.target.value)}
+                    placeholder="Conte um pouco sobre você e sua experiência profissional..."
+                    rows={4}
                   />
                 </div>
-                <Button onClick={handleSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+                <Button onClick={handleSave} disabled={isLoading}>
                   <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Salvando...' : 'Salvar Alterações'}
+                  Salvar Alterações
                 </Button>
               </CardContent>
             </Card>
 
-            {/* Danger Zone - Delete Account */}
-            <Card className="shadow-soft border-destructive/50">
+            {/* Zona de Perigo */}
+            <Card className="border-destructive shadow-soft">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-destructive">
+                <CardTitle className="text-destructive flex items-center gap-2">
                   <Trash2 className="w-5 h-5" />
                   Zona de Perigo
                 </CardTitle>
                 <CardDescription>
-                  Ações irreversíveis. Proceda com cautela.
+                  Ações irreversíveis da conta
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-4 bg-destructive/10 rounded-lg border border-destructive/20">
-                  <h4 className="font-medium text-destructive mb-2">⚠️ Deletar Conta Permanentemente</h4>
-                  <p className="text-sm text-muted-foreground mb-4">
-                    Esta ação é <strong>IRREVERSÍVEL</strong>. Todos os seus dados serão permanentemente deletados, incluindo:
-                  </p>
-                  <ul className="text-sm text-muted-foreground list-disc list-inside space-y-1 mb-4">
-                    <li>Todos os clientes e seus dados</li>
-                    <li>Histórico completo de sessões</li>
-                    <li>Pagamentos e pacotes</li>
-                    <li>Configurações e preferências</li>
-                    <li>Prontuários e anotações</li>
-                  </ul>
-                  <Button 
-                    variant="destructive" 
-                    onClick={() => setShowDeleteConfirm(true)}
-                    className="w-full"
-                  >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Deletar Minha Conta
-                  </Button>
-                </div>
+              <CardContent>
+                <Button
+                  variant="destructive"
+                  onClick={() => setShowDeleteConfirm(true)}
+                >
+                  Deletar Conta Permanentemente
+                </Button>
               </CardContent>
             </Card>
           </TabsContent>
-
+          
           <TabsContent value="platform-payments" className="space-y-6">
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <CreditCard />Métodos de Pagamento
+                  <CreditCard /> Assinatura e Pagamentos
                 </CardTitle>
-                <CardDescription>
-                  Gerencie seus cartões de crédito e débito para pagamento da assinatura
-                </CardDescription>
+                <CardDescription>Gerencie sua assinatura e métodos de pagamento</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {loadingPayments ? (
-                  <div className="flex justify-center items-center py-8">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                  </div>
-                ) : paymentMethods.length > 0 ? (
-                  <div className="space-y-4">
-                    {paymentMethods.map((method) => (
-                      <PaymentMethodCard
-                        key={method.id}
-                        paymentMethod={method}
-                        onEdit={() => setShowUpdatePaymentModal(true)}
-                        onDelete={() => handleDeletePaymentMethod(method.id)}
-                        onSetDefault={() => handleSetDefaultPaymentMethod(method.id)}
-                        isDeleting={deletingPaymentMethod === method.id}
-                      />
-                    ))}
-                    <Button 
-                      onClick={() => setShowUpdatePaymentModal(true)}
-                      variant="outline"
-                      className="w-full"
-                    >
-                      Adicionar Novo Cartão
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">
-                      Nenhum método de pagamento cadastrado
-                    </p>
-                    <Button 
-                      onClick={() => setShowUpdatePaymentModal(true)}
-                      variant="outline"
-                    >
-                      Adicionar Primeiro Cartão
-                    </Button>
-                  </div>
+              <CardContent className="space-y-6">
+                {/* Informações da Assinatura */}
+                <SubscriptionInfo />
+
+                {/* Faturas (apenas para planos pagos) */}
+                {settings.subscription_plan && settings.subscription_plan !== 'basico' && (
+                  <>
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">Histórico de Faturas</h3>
+                      <SubscriptionInvoices />
+                    </div>
+
+                    {/* Métodos de Pagamento */}
+                    <div className="border-t pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold">Métodos de Pagamento</h3>
+                        <Button
+                          onClick={() => setShowUpdatePaymentModal(true)}
+                          variant="outline"
+                          size="sm"
+                        >
+                          Adicionar Cartão
+                        </Button>
+                      </div>
+
+                      {loadingPayments ? (
+                        <p className="text-sm text-muted-foreground">Carregando...</p>
+                      ) : paymentMethods.length > 0 ? (
+                        <div className="grid gap-4">
+                          {paymentMethods.map((pm) => (
+                            <PaymentMethodCard
+                              key={pm.id}
+                              paymentMethod={pm}
+                              onSetDefault={() => handleSetDefaultPaymentMethod(pm.id)}
+                              onDelete={() => handleDeletePaymentMethod(pm.id)}
+                              isDeleting={deletingPaymentMethod === pm.id}
+                            />
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">
+                          Nenhum método de pagamento cadastrado
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
 
-            {/* Subscription Invoices */}
-            <SubscriptionInvoices />
+            {/* Modal de atualização de pagamento */}
+            {showUpdatePaymentModal && (
+              <UpdatePaymentMethodModal
+                isOpen={showUpdatePaymentModal}
+                onClose={() => setShowUpdatePaymentModal(false)}
+                onSuccess={handlePaymentSuccess}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="bank-details" className="space-y-6">
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Building />Dados Bancários
+                  <Building /> Dados Bancários
                 </CardTitle>
-                <CardDescription>Configure sua conta bancária para recebimento dos valores do programa de indicação</CardDescription>
+                <CardDescription>
+                  Informações para recebimento de pagamentos dos seus clientes
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Banco</Label>
-                    <Input 
-                      placeholder="Ex: Banco do Brasil" 
-                      value={settings.banco || ''} 
-                      onChange={(e) => handleSettingsChange('banco', e.target.value)} 
+                    <Input
+                      value={settings.banco || ''}
+                      onChange={(e) => handleSettingsChange('banco', e.target.value)}
+                      placeholder="Ex: Banco do Brasil"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Agência</Label>
-                    <Input 
-                      placeholder="Ex: 1234" 
-                      value={settings.agencia || ''} 
-                      onChange={(e) => handleSettingsChange('agencia', e.target.value)} 
+                    <Input
+                      value={settings.agencia || ''}
+                      onChange={(e) => handleSettingsChange('agencia', e.target.value)}
+                      placeholder="0000"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Conta</Label>
-                    <Input 
-                      placeholder="Ex: 12345-6" 
-                      value={settings.conta || ''} 
-                      onChange={(e) => handleSettingsChange('conta', e.target.value)} 
+                    <Input
+                      value={settings.conta || ''}
+                      onChange={(e) => handleSettingsChange('conta', e.target.value)}
+                      placeholder="00000-0"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Tipo de Conta</Label>
-                    <Select 
-                      value={settings.tipo_conta || ''} 
+                    <Select
+                      value={settings.tipo_conta || ''}
                       onValueChange={(v) => handleSettingsChange('tipo_conta', v)}
                     >
-                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione"/></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="corrente">Conta Corrente</SelectItem>
-                        <SelectItem value="poupanca">Poupança</SelectItem>
+                        <SelectItem value="poupanca">Conta Poupança</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label>CPF/CNPJ</Label>
-                    <Input 
-                      placeholder="000.000.000-00" 
-                      value={settings.cpf_cnpj || ''} 
-                      onChange={(e) => handleSettingsChange('cpf_cnpj', e.target.value)} 
+                    <Input
+                      value={settings.cpf_cnpj || ''}
+                      onChange={(e) => handleSettingsChange('cpf_cnpj', e.target.value)}
+                      placeholder="000.000.000-00"
                     />
                   </div>
                 </div>
-                
-                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                  <h4 className="font-medium text-blue-900 dark:text-blue-100 mb-2">Importante</h4>
-                  <p className="text-sm text-blue-800 dark:text-blue-200">
-                    Estes dados serão utilizados exclusivamente para o repasse dos valores do programa de indicação. 
-                    Certifique-se de que as informações estão corretas.
-                  </p>
-                </div>
-                
-                <Button onClick={handleSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+                <Button onClick={handleSave} disabled={isLoading}>
                   <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Salvando...' : 'Salvar Dados Bancários'}
+                  Salvar Dados Bancários
                 </Button>
               </CardContent>
             </Card>
           </TabsContent>
-          
+
           <TabsContent value="notifications" className="space-y-6">
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Bell/>Preferências de Notificação
-                </CardTitle>
-                <CardDescription>Configure como e quando receber notificações</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                   <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="font-medium">Notificações por E-mail</h4>
-                       <p className="text-sm text-muted-foreground">Receber avisos sobre agendamentos por e-mail</p>
-                     </div>
-                     <div className="flex gap-2">
-                       <Switch 
-                         checked={settings.notificacao_email ?? false} 
-                         onCheckedChange={(c) => handleSettingsChange('notificacao_email', c)} 
-                       />
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         onClick={() => setShowNotificationModal({ type: 'email', title: 'Notificações por E-mail' })}
-                       >
-                         Configurar
-                       </Button>
-                     </div>
-                   </div>
-                   <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="font-medium">Notificações WhatsApp</h4>
-                       <p className="text-sm text-muted-foreground">Enviar lembretes por WhatsApp</p>
-                     </div>
-                     <div className="flex gap-2">
-                       <Switch 
-                         checked={settings.notificacao_whatsapp ?? false} 
-                         onCheckedChange={(c) => handleSettingsChange('notificacao_whatsapp', c)} 
-                       />
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         onClick={() => setShowNotificationModal({ type: 'whatsapp', title: 'Notificações WhatsApp' })}
-                       >
-                         Configurar
-                       </Button>
-                     </div>
-                   </div>
-                   <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="font-medium">Lembrete de Sessão</h4>
-                       <p className="text-sm text-muted-foreground">Notificar 24h antes da sessão</p>
-                     </div>
-                     <div className="flex gap-2">
-                       <Switch 
-                         checked={settings.lembrete_24h ?? false} 
-                         onCheckedChange={(c) => handleSettingsChange('lembrete_24h', c)} 
-                       />
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         onClick={() => setShowNotificationModal({ type: 'reminder', title: 'Lembrete de Sessão' })}
-                       >
-                         Configurar
-                       </Button>
-                     </div>
-                   </div>
-                   <div className="flex items-center justify-between">
-                     <div>
-                       <h4 className="font-medium">Relatórios Semanais</h4>
-                       <p className="text-sm text-muted-foreground">Resumo semanal de atividades</p>
-                     </div>
-                     <div className="flex gap-2">
-                       <Switch 
-                         checked={settings.relatorio_semanal ?? false} 
-                         onCheckedChange={(c) => handleSettingsChange('relatorio_semanal', c)} 
-                       />
-                       <Button 
-                         variant="outline" 
-                         size="sm" 
-                         onClick={() => setShowNotificationModal({ type: 'reports', title: 'Relatórios Semanais' })}
-                       >
-                         Configurar
-                       </Button>
-                     </div>
-                   </div>
-                </div>
-                <div className="space-y-4 pt-4 border-t">
-                  <h4 className="font-medium">Contatos dos Pacientes</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>E-mail de Contato</Label>
-                      <Input 
-                        placeholder="contato@clinica.com" 
-                        value={settings.email_contato_pacientes || ''} 
-                        onChange={(e) => handleSettingsChange('email_contato_pacientes', e.target.value)} 
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>WhatsApp Business</Label>
-                      <Input 
-                        placeholder="(11) 99999-9999" 
-                        value={settings.whatsapp_contato_pacientes || ''} 
-                        onChange={(e) => handleSettingsChange('whatsapp_contato_pacientes', e.target.value)} 
-                      />
-                    </div>
-                  </div>
-                </div>
-                <Button onClick={handleSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
-                  <Save className="w-4 h-4 mr-2" />
-                  {isLoading ? 'Salvando...' : 'Salvar Preferências'}
-                </Button>
-              </CardContent>
-            </Card>
+            <NotificationSettings />
           </TabsContent>
         </Tabs>
-
-        {showNotificationModal && (
-          <NotificationSettings
-            open={!!showNotificationModal}
-            onOpenChange={(open) => !open && setShowNotificationModal(null)}
-            type={showNotificationModal.type}
-            title={showNotificationModal.title}
-          />
-        )}
-        
-        <UpdatePaymentMethodModal
-          open={showUpdatePaymentModal}
-          onOpenChange={setShowUpdatePaymentModal}
-          onSuccess={handlePaymentSuccess}
-        />
-
-        {/* Delete Account Confirmation Dialog */}
-        <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-destructive">
-                ⚠️ Confirmar Exclusão de Conta
-              </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-4">
-                <p>
-                  Esta ação é <strong>PERMANENTE e IRREVERSÍVEL</strong>. 
-                  Todos os seus dados serão deletados do sistema:
-                </p>
-                <ul className="list-disc list-inside space-y-1 text-sm">
-                  <li>Todos os clientes e informações associadas</li>
-                  <li>Histórico completo de sessões e agendamentos</li>
-                  <li>Todos os pagamentos e pacotes</li>
-                  <li>Prontuários, anotações e evoluções</li>
-                  <li>Configurações e preferências</li>
-                  <li>Dados de notificações e integrações</li>
-                </ul>
-                <div className="space-y-2 pt-4">
-                  <Label htmlFor="delete-confirm" className="text-sm font-medium">
-                    Para confirmar, digite <strong className="text-destructive">DELETAR</strong> abaixo:
-                  </Label>
-                  <Input
-                    id="delete-confirm"
-                    value={deleteConfirmText}
-                    onChange={(e) => setDeleteConfirmText(e.target.value)}
-                    placeholder="Digite DELETAR"
-                    className="border-destructive/50 focus:border-destructive"
-                  />
-                </div>
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel 
-                onClick={() => {
-                  setShowDeleteConfirm(false)
-                  setDeleteConfirmText('')
-                }}
-                disabled={isDeletingAccount}
-              >
-                Cancelar
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteAccount}
-                disabled={deleteConfirmText !== 'DELETAR' || isDeletingAccount}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                {isDeletingAccount ? (
-                  <>
-                    <span className="animate-spin mr-2">⏳</span>
-                    Deletando...
-                  </>
-                ) : (
-                  <>
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Deletar Permanentemente
-                  </>
-                )}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
       </div>
+
+      {/* Dialog de confirmação de exclusão */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. Isso irá deletar permanentemente sua conta
+              e remover todos os seus dados dos nossos servidores.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label>Digite DELETAR para confirmar</Label>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="DELETAR"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteAccount}
+              disabled={isDeletingAccount}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeletingAccount ? 'Deletando...' : 'Deletar Conta'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }
