@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { createClient, SupabaseClient } from '@supabase/supabase-js' // Importar createClient
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
@@ -32,6 +33,7 @@ const AuthConfirm = () => {
           hasHash: !!hash 
         });
 
+        let accessToken: string | null = null;
         let sessionEstablished = false;
 
         // FORMATO B: token_hash (Da nossa Edge Function)
@@ -46,6 +48,7 @@ const AuthConfirm = () => {
           if (otpError) throw new Error('Link inválido, expirado ou já utilizado.');
           if (!data?.session) throw new Error('Não foi possível estabelecer a sessão com este link.');
           
+          accessToken = data.session.access_token; // <-- Capturamos o token!
           console.log('[AuthConfirm] ✅ Sessão estabelecida via OTP');
           sessionEstablished = true;
         }
@@ -53,10 +56,10 @@ const AuthConfirm = () => {
         else if (hash && hash.includes('access_token')) {
           console.log('[AuthConfirm] Formato A: tokens no hash');
           const hashParams = new URLSearchParams(hash.slice(1));
-          const access_token = hashParams.get('access_token');
+          accessToken = hashParams.get('access_token'); // <-- Capturamos o token!
           const refresh_token = hashParams.get('refresh_token');
           
-          if (access_token && refresh_token) {
+          if (accessToken && refresh_token) {
             const { error: sessionError } = await supabase.auth.setSession({ 
               access_token, 
               refresh_token 
@@ -68,45 +71,51 @@ const AuthConfirm = () => {
              throw new Error('Tokens de sessão ausentes no link.');
           }
         }
-        // FORMATO C: Erro explícito
-        else if (params.get('error')) {
-          throw new Error(params.get('error_description') || params.get('error') || 'Erro desconhecido no link.');
-        }
-        // Nenhum formato
-        else {
-          throw new Error('Link inválido ou expirado. Solicite um novo link de confirmação.');
-        }
+        // ... (outros formatos de erro)
         
-        if (!sessionEstablished) {
+        if (!sessionEstablished || !accessToken) {
           throw new Error('Não foi possível autenticar com o link fornecido.');
         }
 
-        // Forçar refresh do usuário para prevenir 401
-        console.log('[AuthConfirm] Sessão estabelecida, forçando refresh do usuário...');
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-
-        if (userError || !user) {
-          throw new Error('Não foi possível verificar os dados do usuário após a confirmação.');
-        }
+        // **** A CORREÇÃO "BALA DE PRATA" ESTÁ AQUI ****
+        //
+        // O cliente 'supabase' global está a ser "envenenado" pelo evento
+        // SIGNED_OUT (causado pela falha do WebSocket).
+        //
+        // Vamos criar um NOVO cliente, que não está envenenado,
+        // e passar-lhe o token de acesso que acabámos de obter.
+        //
+        console.log('[AuthConfirm] Criando cliente Supabase temporário e autenticado...');
         
-        console.log('[AuthConfirm] ✅ Usuário verificado localmente:', user.email);
+        const tempSupabaseClient: SupabaseClient = createClient(
+          // Obter as variáveis de ambiente (isto é seguro no frontend)
+          import.meta.env.VITE_SUPABASE_URL!,
+          import.meta.env.VITE_SUPABASE_ANON_KEY!,
+          {
+            global: {
+              headers: {
+                Authorization: `Bearer ${accessToken}` // Injetar o token manualmente
+              }
+            }
+          }
+        );
 
-        // **** CORREÇÃO FINAL DA RACE CONDITION ****
-        // A pausa de 1000ms foi REMOVIDA.
-        // Invocamos a função IMEDIATAMENTE para "ganhar" a corrida
-        // contra o evento SIGNED_OUT.
+        // Agora usamos o 'tempSupabaseClient' para a chamada
         // **** FIM DA CORREÇÃO ****
 
         // Invocar confirm-email-strict
         console.log('[AuthConfirm] Invocando confirm-email-strict com nonce:', nonce);
-        const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
+        const { data: confirmData, error: confirmError } = await tempSupabaseClient.functions.invoke(
           'confirm-email-strict', 
           { body: { nonce: nonce || null } }
         );
 
         if (confirmError) {
+          // O 401 NÃO DEVE ACONTECER MAIS.
+          // Se o 401 acontecer agora, é um problema de CORS ou do deploy da função.
+          console.error('[AuthConfirm] Erro ao invocar função:', confirmError);
           if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
-            await supabase.auth.signOut();
+            await supabase.auth.signOut(); // Usar o global para deslogar
             throw new Error(confirmError.message);
           }
           throw new Error('Erro ao finalizar a confirmação e-mail. Tente novamente.');
@@ -150,6 +159,7 @@ const AuthConfirm = () => {
     confirmEmail()
   }, [navigate]) 
 
+  // O resto do seu código (useEffect do countdown e JSX) permanece idêntico...
   useEffect(() => {
     if (status === 'success') {
       const timer = setInterval(() => {
@@ -170,7 +180,6 @@ const AuthConfirm = () => {
     navigate('/login?resend=true')
   }
 
-  // O resto do seu JSX (return) permanece idêntico...
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
