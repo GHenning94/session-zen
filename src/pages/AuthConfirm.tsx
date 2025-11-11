@@ -5,7 +5,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-import { AuthTokenResponsePassword } from '@supabase/supabase-js'
+// Removida a importação de AuthTokenResponsePassword, pois não é estritamente necessária
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
@@ -47,12 +47,14 @@ const AuthConfirm = () => {
             throw new Error('Link inválido, expirado ou já utilizado.');
           }
           
-          if (!data?.session) {
-            throw new Error('Não foi possível estabelecer a sessão com este link.');
+          // **** CORREÇÃO APLICADA AQUI ****
+          // Se o verifyOtp retornou uma sessão, confiamos nela.
+          if (data?.session && data?.user) {
+            console.log('[AuthConfirm] ✅ Sessão estabelecida via OTP');
+            sessionEstablished = true;
+          } else {
+             throw new Error('Não foi possível estabelecer a sessão com este link.');
           }
-          
-          console.log('[AuthConfirm] ✅ Sessão estabelecida via OTP');
-          sessionEstablished = true;
         }
         // FORMATO A: Hash com access_token (Vindo de OAuth, como Google)
         else if (hash && hash.includes('access_token')) {
@@ -95,21 +97,10 @@ const AuthConfirm = () => {
           throw new Error('Não foi possível autenticar com o link fornecido.');
         }
 
-        // Polling para garantir que getSession() está atualizado
-        let sessionConfirmedLocal = false;
-        for (let i = 0; i < 20; i++) {
-          await new Promise(resolve => setTimeout(resolve, 500));
-          const { data: { session } } = await supabase.auth.getSession();
-          if (session?.user) {
-            console.log('[AuthConfirm] ✅ getSession() confirmada localmente');
-            sessionConfirmedLocal = true;
-            break;
-          }
-        }
-
-        if (!sessionConfirmedLocal) {
-          throw new Error('Não foi possível estabelecer a sessão localmente.');
-        }
+        // **** CORREÇÃO APLICADA AQUI ****
+        // O loop de polling foi removido.
+        // A sessão já foi estabelecida pelo verifyOtp ou setSession.
+        // Vamos direto para a confirmação estrita.
 
         // Invocar confirm-email-strict (a nossa função de perfil)
         console.log('[AuthConfirm] Invocando confirm-email-strict com nonce:', nonce);
