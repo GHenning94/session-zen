@@ -92,11 +92,9 @@ const AuthConfirm = () => {
         console.log('[AuthConfirm] ✅ Usuário verificado localmente:', user.email);
 
         // **** CORREÇÃO FINAL DA RACE CONDITION ****
-        // Vamos forçar uma pausa de 1 segundo para a sessão estabilizar
-        // antes de chamar a próxima função autenticada.
-        console.log('[AuthConfirm] Pausando por 1000ms para estabilizar a sessão...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('[AuthConfirm] Pausa completa. Invocando função...');
+        // A pausa de 1000ms foi REMOVIDA.
+        // Invocamos a função IMEDIATAMENTE para "ganhar" a corrida
+        // contra o evento SIGNED_OUT.
         // **** FIM DA CORREÇÃO ****
 
         // Invocar confirm-email-strict
