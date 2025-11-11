@@ -167,7 +167,13 @@ const AuthConfirm = () => {
             const SUPABASE_URL = 'https://ykwszazxigjivjkagjmf.supabase.co'
             const origin = window.location.origin
             const redirectTo = `${origin}/auth-confirm?n=${nonce || crypto.randomUUID()}`
-            const verifyUrl = `${SUPABASE_URL}/auth/v1/verify?type=${encodeURIComponent(type)}&token_hash=${encodeURIComponent(tokenHash!)}&redirect_to=${encodeURIComponent(redirectTo)}`
+            const qs = window.location.search
+            if (!/token_hash=|token=/.test(qs)) {
+              throw new Error('Token ausente no link. Solicite um novo e-mail de confirmação.')
+            }
+            const joiner = qs.includes('?') ? '&' : '?'
+            const verifyUrl = `${SUPABASE_URL}/auth/v1/verify${qs}${joiner}redirect_to=${encodeURIComponent(redirectTo)}`
+            console.log('[AuthConfirm] Redirecionando para', verifyUrl)
             window.location.replace(verifyUrl)
             return
           }
