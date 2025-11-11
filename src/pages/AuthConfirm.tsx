@@ -1,4 +1,4 @@
-// src/pages/AuthConfirm.tsx
+// src/pages/AuthConfirm.tsx - VERSÃO FINAL SIMPLIFICADA
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -14,7 +14,6 @@ const AuthConfirm = () => {
   const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
-    // ✅ CORREÇÃO CRÍTICA: Ativar flag para evitar race condition
     console.log('[AuthConfirm] 🚩 Ativando flag IS_CONFIRMING_AUTH');
     sessionStorage.setItem('IS_CONFIRMING_AUTH', 'true');
 
@@ -26,19 +25,18 @@ const AuthConfirm = () => {
         const nonce = params.get('n');
         const hash = window.location.hash;
 
-        console.log('[AuthConfirm] 📧 Iniciando confirmação de e-mail', { 
+        console.log('[AuthConfirm] 📧 Iniciando confirmação', { 
           type, 
           hasTokenHash: !!tokenHash, 
           hasNonce: !!nonce,
-          hasHash: !!hash,
-          timestamp: new Date().toISOString()
+          hasHash: !!hash
         });
 
-        let sessionEstablished = false;
+        let userId = null;
 
-        // FORMATO B: token_hash (Link de confirmação da Edge Function)
+        // FORMATO B: token_hash
         if (tokenHash && type) {
-          console.log('[AuthConfirm] 🔐 Formato B detectado - Validando token_hash via OTP...');
+          console.log('[AuthConfirm] 🔐 Formato B - Validando token_hash...');
           
           const { data, error: otpError } = await supabase.auth.verifyOtp({
             token_hash: tokenHash,
@@ -46,142 +44,103 @@ const AuthConfirm = () => {
           });
 
           if (otpError) {
-            console.error('[AuthConfirm] ❌ Erro na verificação OTP:', otpError.message);
+            console.error('[AuthConfirm] ❌ Erro OTP:', otpError.message);
             throw new Error('Link inválido, expirado ou já utilizado.');
           }
           
-          if (!data?.session) {
-            console.error('[AuthConfirm] ❌ Sessão não estabelecida após OTP');
-            throw new Error('Não foi possível estabelecer a sessão com este link.');
+          if (!data?.user) {
+            throw new Error('Não foi possível validar o link.');
           }
           
-          console.log('[AuthConfirm] ✅ Sessão estabelecida via OTP');
-          sessionEstablished = true;
+          userId = data.user.id;
+          console.log('[AuthConfirm] ✅ OTP validado, user_id:', userId);
         }
-        // FORMATO A: access_token (OAuth/Magic Link)
+        // FORMATO A: access_token
         else if (hash && hash.includes('access_token')) {
-          console.log('[AuthConfirm] 🔐 Formato A detectado - Tokens no hash');
+          console.log('[AuthConfirm] 🔐 Formato A - Tokens no hash');
           
           const hashParams = new URLSearchParams(hash.slice(1));
           const access_token = hashParams.get('access_token');
           const refresh_token = hashParams.get('refresh_token');
           
           if (!access_token || !refresh_token) {
-            console.error('[AuthConfirm] ❌ Tokens ausentes no hash');
-            throw new Error('Tokens de sessão ausentes no link.');
+            throw new Error('Tokens ausentes no link.');
           }
           
-          const { error: sessionError } = await supabase.auth.setSession({ 
+          const { data, error: sessionError } = await supabase.auth.setSession({ 
             access_token, 
             refresh_token 
           });
           
-          if (sessionError) {
-            console.error('[AuthConfirm] ❌ Erro ao criar sessão:', sessionError.message);
-            throw new Error(`Erro ao criar sessão: ${sessionError.message}`);
+          if (sessionError || !data?.user) {
+            throw new Error('Erro ao criar sessão.');
           }
           
-          console.log('[AuthConfirm] ✅ Sessão estabelecida via setSession');
-          sessionEstablished = true;
+          userId = data.user.id;
+          console.log('[AuthConfirm] ✅ Sessão criada, user_id:', userId);
         }
-        // FORMATO C: Erro explícito na URL
         else if (params.get('error')) {
-          const errorType = params.get('error');
-          const errorDesc = params.get('error_description');
-          console.error('[AuthConfirm] ❌ Erro explícito na URL:', errorType, errorDesc);
-          throw new Error(errorDesc || errorType || 'Erro desconhecido no link.');
+          throw new Error(params.get('error_description') || 'Erro no link.');
         }
-        // Nenhum formato reconhecido
         else {
-          console.error('[AuthConfirm] ❌ Formato de link não reconhecido');
-          throw new Error('Link inválido ou expirado. Solicite um novo link de confirmação.');
-        }
-        
-        if (!sessionEstablished) {
-          console.error('[AuthConfirm] ❌ Sessão não foi estabelecida');
-          throw new Error('Não foi possível autenticar com o link fornecido.');
+          throw new Error('Link inválido ou expirado.');
         }
 
-        // ✅ Validar usuário após estabelecer sessão
-        console.log('[AuthConfirm] 👤 Validando dados do usuário...');
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        // ✅ Aguardar estabilização
+        console.log('[AuthConfirm] ⏳ Aguardando 1500ms...');
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        if (userError || !user) {
-          console.error('[AuthConfirm] ❌ Erro ao verificar usuário:', userError?.message);
-          throw new Error('Não foi possível verificar os dados do usuário após a confirmação.');
-        }
-        
-        console.log('[AuthConfirm] ✅ Usuário verificado:', user.email);
-
-        // ✅ Pausa para estabilização da sessão (necessária para evitar 401)
-        console.log('[AuthConfirm] ⏳ Aguardando 1000ms para estabilizar sessão...');
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        console.log('[AuthConfirm] ⏳ Pausa concluída');
-
-        // ✅ Invocar Edge Function para confirmar e-mail
-        console.log('[AuthConfirm] 📨 Invocando confirm-email-strict...', { nonce });
+        // ✅ Invocar Edge Function com user_id no body (fallback)
+        console.log('[AuthConfirm] 📨 Invocando confirm-email-strict...');
         
         const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
-          'confirm-email-strict', 
-          { body: { nonce: nonce || null } }
+          'confirm-email-strict',
+          { 
+            body: { 
+              nonce: nonce || null,
+              user_id: userId // ✅ Fallback para quando JWT não funcionar
+            }
+          }
         );
 
         if (confirmError) {
-          console.error('[AuthConfirm] ❌ Erro na Edge Function:', confirmError.message);
-          
-          // Se o erro for de token inválido/expirado, fazer logout
-          if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
-            await supabase.auth.signOut();
-            throw new Error(confirmError.message);
-          }
-          
-          throw new Error('Erro ao finalizar a confirmação do e-mail. Tente novamente.');
+          console.error('[AuthConfirm] ❌ Erro na função:', confirmError.message);
+          throw new Error(confirmError.message || 'Erro ao confirmar e-mail.');
         }
 
         if (!confirmData?.success) {
-          console.error('[AuthConfirm] ❌ Resposta de falha da Edge Function:', confirmData);
-          throw new Error('Falha na confirmação do e-mail. Por favor, tente novamente.');
+          throw new Error('Falha na confirmação do e-mail.');
         }
 
-        console.log('[AuthConfirm] ✅ E-mail confirmado com sucesso!');
+        console.log('[AuthConfirm] ✅ E-mail confirmado!');
         toast.success('E-mail confirmado com sucesso!');
         setStatus('success');
         
-        // ✅ Remover flag ANTES de navegar
-        console.log('[AuthConfirm] 🚩 Removendo flag IS_CONFIRMING_AUTH (sucesso)');
         sessionStorage.removeItem('IS_CONFIRMING_AUTH');
         return;
 
       } catch (err: any) {
-        console.error('[AuthConfirm] ❌ Erro no fluxo de confirmação:', err.message);
+        console.error('[AuthConfirm] ❌ Erro:', err.message);
         
         setErrorMessage(err.message || 'Não foi possível confirmar seu e-mail');
         setStatus('error');
         toast.error(err.message || 'Erro ao confirmar e-mail');
 
-        // ✅ Remover flag em caso de erro
-        console.log('[AuthConfirm] 🚩 Removendo flag IS_CONFIRMING_AUTH (erro)');
         sessionStorage.removeItem('IS_CONFIRMING_AUTH');
         
-        // Limpar caches em caso de erro
         try {
           Object.keys(localStorage).forEach((k) => {
             if (k.startsWith('sb-') || k.includes('supabase')) {
               localStorage.removeItem(k);
             }
           });
-          sessionStorage.clear();
-          console.log('[AuthConfirm] 🧹 Cache limpo após erro');
-        } catch (cleanupErr) {
-          console.warn('[AuthConfirm] ⚠️ Falha ao limpar cache:', cleanupErr);
-        }
+        } catch {}
       }
     }
 
     confirmEmail()
   }, [navigate]) 
 
-  // Contador regressivo para redirecionamento
   useEffect(() => {
     if (status === 'success') {
       const timer = setInterval(() => {
@@ -200,7 +159,6 @@ const AuthConfirm = () => {
   }, [status, navigate])
 
   const handleRequestNewLink = () => {
-    console.log('[AuthConfirm] 📧 Solicitando novo link de confirmação');
     navigate('/login?resend=true')
   }
 
@@ -229,8 +187,7 @@ const AuthConfirm = () => {
               </div>
               <CardTitle>E-mail Confirmado!</CardTitle>
               <CardDescription>
-                Sua conta está ativa! Você será redirecionado para escolher seu plano em{' '}
-                <strong>{countdown}</strong> segundo{countdown !== 1 ? 's' : ''}...
+                Sua conta está ativa! Redirecionando em {countdown}s...
               </CardDescription>
             </>
           )}
@@ -244,7 +201,7 @@ const AuthConfirm = () => {
               </div>
               <CardTitle>Erro na Confirmação</CardTitle>
               <CardDescription className="text-left mt-4">
-                {errorMessage || 'Não foi possível confirmar seu e-mail. O link pode ter expirado ou já foi utilizado.'}
+                {errorMessage}
               </CardDescription>
             </>
           )}
@@ -252,17 +209,10 @@ const AuthConfirm = () => {
         
         {status === 'error' && (
           <CardContent className="flex flex-col gap-2">
-            <Button 
-              onClick={handleRequestNewLink}
-              className="w-full"
-            >
+            <Button onClick={handleRequestNewLink} className="w-full">
               Solicitar Novo Link
             </Button>
-            <Button 
-              onClick={() => navigate('/login')}
-              variant="outline"
-              className="w-full"
-            >
+            <Button onClick={() => navigate('/login')} variant="outline" className="w-full">
               Voltar para o Login
             </Button>
           </CardContent>
