@@ -87,8 +87,8 @@ const AuthConfirm = () => {
             }
 
             console.log('[AuthConfirm] ✅ E-mail confirmado!')
-            setStatus('success')
             toast.success('Email confirmado com sucesso!')
+            navigate('/welcome')
             return
           }
         }
@@ -163,7 +163,13 @@ const AuthConfirm = () => {
           }
           
           if (!sessionEstablished) {
-            throw new Error('Não foi possível estabelecer a sessão após verificação. Tente fazer login com sua senha.')
+            console.warn('[AuthConfirm] Sessão não estabelecida após verifyOtp, aplicando fallback /auth/v1/verify')
+            const SUPABASE_URL = 'https://ykwszazxigjivjkagjmf.supabase.co'
+            const origin = window.location.origin
+            const redirectTo = `${origin}/auth-confirm?n=${nonce || crypto.randomUUID()}`
+            const verifyUrl = `${SUPABASE_URL}/auth/v1/verify?type=${encodeURIComponent(type)}&token_hash=${encodeURIComponent(tokenHash!)}&redirect_to=${encodeURIComponent(redirectTo)}`
+            window.location.replace(verifyUrl)
+            return
           }
 
           console.log('[AuthConfirm] ✅ Sessão criada, invocando confirm-email-strict...')
@@ -189,8 +195,8 @@ const AuthConfirm = () => {
           }
 
           console.log('[AuthConfirm] ✅ E-mail confirmado!')
-          setStatus('success')
           toast.success('Email confirmado com sucesso!')
+          navigate('/welcome')
           return
         }
 
