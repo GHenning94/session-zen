@@ -5,7 +5,6 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
-// Removida a importação de AuthTokenResponsePassword, pois não é estritamente necessária
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
@@ -47,8 +46,6 @@ const AuthConfirm = () => {
             throw new Error('Link inválido, expirado ou já utilizado.');
           }
           
-          // **** CORREÇÃO APLICADA AQUI ****
-          // Se o verifyOtp retornou uma sessão, confiamos nela.
           if (data?.session && data?.user) {
             console.log('[AuthConfirm] ✅ Sessão estabelecida via OTP');
             sessionEstablished = true;
@@ -90,17 +87,26 @@ const AuthConfirm = () => {
           throw new Error('Link inválido ou expirado. Solicite um novo link de confirmação.');
         }
 
-        // ---- SE CHEGOU AQUI, O USUÁRIO DEVE ESTAR LOGADO (Via Formato A ou B) ----
+        // ---- SE CHEGOU AQUI, O USUÁRIO DEVE ESTAR LOGADO ----
         
         if (!sessionEstablished) {
-          // Fallback final, caso algo estranho aconteça
           throw new Error('Não foi possível autenticar com o link fornecido.');
         }
 
-        // **** CORREÇÃO APLICADA AQUI ****
-        // O loop de polling foi removido.
-        // A sessão já foi estabelecida pelo verifyOtp ou setSession.
-        // Vamos direto para a confirmação estrita.
+        // **** CORREÇÃO APLICADA AQUI (PREVENÇÃO DE RACE CONDITION) ****
+        // Forçar a atualização do cliente de auth ANTES de invocar a próxima função
+        // Isso previne a race condition do 401
+        console.log('[AuthConfirm] Sessão estabelecida, forçando refresh do usuário...');
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+        if (userError || !user) {
+          console.error('[AuthConfirm] Erro ao buscar usuário após login:', userError);
+          throw new Error('Não foi possível verificar os dados do usuário após a confirmação.');
+        }
+        
+        console.log('[AuthConfirm] ✅ Usuário verificado localmente:', user.email);
+        // Agora o cliente supabase-js está 100% ciente da sessão
+        // e vai anexar o token de auth na chamada invoke().
 
         // Invocar confirm-email-strict (a nossa função de perfil)
         console.log('[AuthConfirm] Invocando confirm-email-strict com nonce:', nonce);
@@ -110,13 +116,13 @@ const AuthConfirm = () => {
         );
 
         if (confirmError) {
-          console.error('[AuthConfirm] Erro na confirmação estrita:', confirmError);
+          console.error('[AuthConfirm] Erro na confirmação estrita:', confirmError.message);
           // Se o nonce for inválido, deslogar e mostrar erro
           if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
             await supabase.auth.signOut();
             throw new Error(confirmError.message);
           }
-          // Outros erros (ex: falha de rede) podem não exigir logout
+          // Outros erros
           throw new Error('Erro ao finalizar a confirmação e-mail. Tente novamente.');
         }
 
@@ -153,7 +159,7 @@ const AuthConfirm = () => {
     }
 
     confirmEmail()
-  }, [navigate]) // Adicionado navigate como dependência
+  }, [navigate]) 
 
   useEffect(() => {
     if (status === 'success') {
