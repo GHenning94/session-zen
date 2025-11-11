@@ -90,6 +90,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log(`useAuth: auth state changed (event: ${event})`);
+
+        // **** CORREÇÃO DEFINITIVA APLICADA AQUI ****
+        // Ler a "bandeira" (flag) que o AuthConfirm.tsx define
+        const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH');
+        if (event === 'SIGNED_OUT' && isConfirming) {
+          console.warn('🔴 useAuth: Evento SIGNED_OUT ignorado (AuthConfirm está a trabalhar).');
+          return; // Ignorar o logout prematuro
+        }
+        // **** FIM DA CORREÇÃO ****
         
         // NOVO: Detectar eventos de logout
         if (event === 'SIGNED_OUT') {
