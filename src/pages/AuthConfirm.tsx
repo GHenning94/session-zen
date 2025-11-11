@@ -5,6 +5,7 @@ import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { AuthTokenResponsePassword } from '@supabase/supabase-js'
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
@@ -15,104 +16,133 @@ const AuthConfirm = () => {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        const params = new URLSearchParams(window.location.search)
-        // const tokenHash = params.get('token_hash') // Removido - Não é usado no fluxo de signup
-        // const type = params.get('type') // Removido
-        const nonce = params.get('n')
-        const hash = window.location.hash
+        const params = new URLSearchParams(window.location.search);
+        const tokenHash = params.get('token_hash'); // FORMATO B (da nossa Edge Function)
+        const type = params.get('type');             // FORMATO B
+        const nonce = params.get('n');               // Nosso nonce
+        const hash = window.location.hash;           // FORMATO A (OAuth/MagicLink padrão)
 
         console.log('[AuthConfirm] Iniciando confirmação', { 
+          type, 
+          hasTokenHash: !!tokenHash, 
           hasNonce: !!nonce,
           hasHash: !!hash 
-        })
+        });
 
-        // FORMATO A: Hash com access_token e refresh_token (Fluxo padrão de Signup/Login)
-        if (hash && hash.includes('access_token')) {
-          console.log('[AuthConfirm] Formato A: tokens no hash')
+        // FLAG para saber se a sessão foi estabelecida
+        let sessionEstablished = false;
+
+        // FORMATO B: token_hash na query string (Vindo da nossa Edge Function)
+        if (tokenHash && type) {
+          console.log('[AuthConfirm] Formato B: token_hash detectado. Verificando OTP...');
           
-          const hashParams = new URLSearchParams(hash.slice(1))
-          const access_token = hashParams.get('access_token')
-          const refresh_token = hashParams.get('refresh_token')
+          // @ts-ignore
+          const { data, error: otpError } = await supabase.auth.verifyOtp({
+            token_hash: tokenHash,
+            type: type, // 'signup' ou 'magiclink'
+          });
+
+          if (otpError) {
+            console.error('[AuthConfirm] Erro no verifyOtp:', otpError.message);
+            throw new Error('Link inválido, expirado ou já utilizado.');
+          }
+          
+          if (!data?.session) {
+            throw new Error('Não foi possível estabelecer a sessão com este link.');
+          }
+          
+          console.log('[AuthConfirm] ✅ Sessão estabelecida via OTP');
+          sessionEstablished = true;
+        }
+        // FORMATO A: Hash com access_token (Vindo de OAuth, como Google)
+        else if (hash && hash.includes('access_token')) {
+          console.log('[AuthConfirm] Formato A: tokens no hash');
+          
+          const hashParams = new URLSearchParams(hash.slice(1));
+          const access_token = hashParams.get('access_token');
+          const refresh_token = hashParams.get('refresh_token');
           
           if (access_token && refresh_token) {
-            console.log('[AuthConfirm] Aplicando setSession...')
+            console.log('[AuthConfirm] Aplicando setSession...');
             const { error: sessionError } = await supabase.auth.setSession({ 
               access_token, 
               refresh_token 
-            })
+            });
             
             if (sessionError) {
-              throw new Error(`Erro ao criar sessão: ${sessionError.message}`)
+              throw new Error(`Erro ao criar sessão: ${sessionError.message}`);
             }
             
-            // Polling para garantir sessão estabelecida
-            let sessionEstablished = false
-            for (let i = 0; i < 20; i++) {
-              await new Promise(resolve => setTimeout(resolve, 500))
-              const { data: { session } } = await supabase.auth.getSession()
-              
-              if (session?.user) {
-                console.log('[AuthConfirm] ✅ Sessão estabelecida')
-                sessionEstablished = true
-                break
-              }
-            }
-
-            if (!sessionEstablished) {
-              throw new Error('Não foi possível estabelecer a sessão')
-            }
-
-            // Invocar confirm-email-strict
-            console.log('[AuthConfirm] Invocando confirm-email-strict...')
-            const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
-              'confirm-email-strict', 
-              { body: { nonce: nonce || null } }
-            )
-
-            if (confirmError) {
-              console.error('[AuthConfirm] Erro na confirmação:', confirmError)
-              
-              if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
-                await supabase.auth.signOut()
-                throw new Error(confirmError.message)
-              }
-              
-              throw new Error('Erro ao confirmar e-mail. Tente novamente.')
-            }
-
-            if (!confirmData?.success) {
-              throw new Error('Falha na confirmação do e-mail')
-            }
-
-            console.log('[AuthConfirm] ✅ E-mail confirmado!')
-            toast.success('Email confirmado com sucesso!')
-            
-            // **CORREÇÃO APLICADA AQUI**
-            // Em vez de navegar imediatamente, mudamos o status
-            // para que o useEffect do countdown seja ativado.
-            setStatus('success')
-            // navigate('/welcome') // <- Linha antiga removida
-            return
+            console.log('[AuthConfirm] ✅ Sessão estabelecida via setSession');
+            sessionEstablished = true;
+          } else {
+             throw new Error('Tokens de sessão ausentes no link.');
           }
         }
-        
-        // FORMATO B (token_hash) FOI COMPLETAMENTE REMOVIDO
-        // Era a causa do erro em download.png
-        
-        // FORMATO C: Erro na URL
-        const errorParam = params.get('error')
-        if (errorParam) {
-          throw new Error(params.get('error_description') || errorParam)
+        // FORMATO C: Erro explícito na URL
+        else if (params.get('error')) {
+          throw new Error(params.get('error_description') || params.get('error') || 'Erro desconhecido no link.');
+        }
+        // Nenhum formato reconhecido
+        else {
+          throw new Error('Link inválido ou expirado. Solicite um novo link de confirmação.');
         }
 
-        // Nenhum formato reconhecido
-        throw new Error('Link inválido ou expirado. Solicite um novo link de confirmação.')
+        // ---- SE CHEGOU AQUI, O USUÁRIO DEVE ESTAR LOGADO (Via Formato A ou B) ----
+        
+        if (!sessionEstablished) {
+          // Fallback final, caso algo estranho aconteça
+          throw new Error('Não foi possível autenticar com o link fornecido.');
+        }
+
+        // Polling para garantir que getSession() está atualizado
+        let sessionConfirmedLocal = false;
+        for (let i = 0; i < 20; i++) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user) {
+            console.log('[AuthConfirm] ✅ getSession() confirmada localmente');
+            sessionConfirmedLocal = true;
+            break;
+          }
+        }
+
+        if (!sessionConfirmedLocal) {
+          throw new Error('Não foi possível estabelecer a sessão localmente.');
+        }
+
+        // Invocar confirm-email-strict (a nossa função de perfil)
+        console.log('[AuthConfirm] Invocando confirm-email-strict com nonce:', nonce);
+        const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
+          'confirm-email-strict', 
+          { body: { nonce: nonce || null } }
+        );
+
+        if (confirmError) {
+          console.error('[AuthConfirm] Erro na confirmação estrita:', confirmError);
+          // Se o nonce for inválido, deslogar e mostrar erro
+          if (confirmError.message?.includes('inválido') || confirmError.message?.includes('expirado')) {
+            await supabase.auth.signOut();
+            throw new Error(confirmError.message);
+          }
+          // Outros erros (ex: falha de rede) podem não exigir logout
+          throw new Error('Erro ao finalizar a confirmação e-mail. Tente novamente.');
+        }
+
+        if (!confirmData?.success) {
+          throw new Error('Falha na resposta da confirmação do e-mail');
+        }
+
+        console.log('[AuthConfirm] ✅ E-mail confirmado (strict)!');
+        toast.success('Email confirmado com sucesso!');
+        setStatus('success'); // Ativa o countdown
+        return;
 
       } catch (err: any) {
-        console.error('[AuthConfirm] Erro na confirmação:', err)
-        setErrorMessage(err.message || 'Não foi possível confirmar seu e-mail')
-        setStatus('error')
-        toast.error(err.message || 'Erro ao confirmar email')
+        console.error('[AuthConfirm] Erro no fluxo de confirmação:', err);
+        setErrorMessage(err.message || 'Não foi possível confirmar seu e-mail');
+        setStatus('error');
+        toast.error(err.message || 'Erro ao confirmar email');
         
         // Limpeza apenas em caso de erro
         try {
