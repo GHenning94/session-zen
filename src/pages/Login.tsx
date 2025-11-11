@@ -325,7 +325,43 @@ const Login = () => {
     }
 
     setIsResettingPassword(true)
+    
     try {
+      // Verificar se a conta existe
+      const { data: existsData, error: existsError } = await supabase.functions.invoke('check-email-exists', {
+        body: { email: formData.email }
+      })
+
+      if (existsError) {
+        console.error('Erro ao verificar e-mail:', existsError)
+        toast.error('Erro ao verificar e-mail. Tente novamente.')
+        return
+      }
+
+      if (!existsData?.exists) {
+        toast.error('Esta conta não existe. Verifique o e-mail digitado.')
+        return
+      }
+
+      // Verificar se o e-mail foi confirmado
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('email_confirmed_strict')
+        .eq('email', formData.email)
+        .single()
+
+      if (profileError) {
+        console.error('Erro ao verificar perfil:', profileError)
+        toast.error('Erro ao verificar conta. Tente novamente.')
+        return
+      }
+
+      if (!profileData?.email_confirmed_strict) {
+        toast.error('Você precisa confirmar seu e-mail antes de redefinir a senha. Verifique sua caixa de entrada.')
+        return
+      }
+
+      // Se passou nas validações, enviar e-mail de recuperação
       const { error } = await supabase.functions.invoke('request-password-reset', {
         body: { email: formData.email }
       })
@@ -334,6 +370,7 @@ const Login = () => {
 
       toast.success('Email enviado! Verifique sua caixa de entrada para redefinir sua senha.')
     } catch (error: any) {
+      console.error('Erro ao enviar recuperação:', error)
       toast.error(error.message || 'Erro ao enviar email de recuperação.')
     } finally {
       setIsResettingPassword(false)
@@ -457,7 +494,7 @@ const Login = () => {
                   onClick={handleForgotPassword}
                   disabled={isResettingPassword}
                 >
-                  {isResettingPassword ? 'Enviando...' : 'Esqueci minha senha'}
+                  {isResettingPassword ? 'Verificando...' : 'Esqueci minha senha'}
                 </Button>
               </form>
             </TabsContent>
