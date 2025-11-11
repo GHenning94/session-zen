@@ -6,9 +6,6 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SENDPULSE_API_ID = Deno.env.get('SENDPULSE_API_ID');
 const SENDPULSE_API_SECRET = Deno.env.get('SENDPULSE_API_SECRET');
 
-// REMOVIDA: A função getSiteUrl(req) foi removida
-// pois era a fonte do bug (usava URL dinâmica).
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -41,13 +38,13 @@ async function getSendPulseToken(): Promise<string> {
   return data.access_token;
 }
 
-serve(async (req) => {
+// **** CORREÇÃO DE TIPO APLICADA AQUI ****
+serve(async (req: Request) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // **** CORREÇÃO APLICADA AQUI ****
     // Captura o 'redirect_to' enviado pelo frontend (Login.tsx)
     const { email, password, user_metadata, captchaToken, redirect_to } = await req.json();
     
@@ -61,7 +58,6 @@ serve(async (req) => {
       );
     }
     
-    // **** CORREÇÃO APLICADA AQUI ****
     // Valida se o frontend enviou a URL de redirecionamento
     if (!redirect_to) {
       console.error('[Email Confirmation] redirect_to não fornecido pelo frontend');
@@ -79,8 +75,6 @@ serve(async (req) => {
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
       );
     }
-
-    // REMOVIDA: const SITE_URL = getSiteUrl(req);
 
     // Criar cliente Supabase Admin
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -170,7 +164,6 @@ serve(async (req) => {
 
     console.log('[Email Confirmation] Profile upsert realizado com sucesso:', upsertData);
 
-    // **** CORREÇÃO APLICADA AQUI ****
     // Usa a URL de produção ('redirect_to') vinda do frontend e adiciona o nonce
     const finalRedirectTo = `${redirect_to}?n=${nonce}`;
     console.log('[Email Confirmation] URL de Redirecionamento Final:', finalRedirectTo);
@@ -227,7 +220,6 @@ serve(async (req) => {
 let confirmationLink: string;
 const hashedToken = linkData?.properties?.hashed_token as string | undefined;
 
-// **** CORREÇÃO APLICADA AQUI ****
 // Usa a URL de produção ('redirect_to') vinda do frontend como base
 const baseUrl = redirect_to; 
 
@@ -254,7 +246,8 @@ if (hashedToken) {
     } else {
       throw new Error('token ausente no action_link');
     }
-  } catch (e) {
+    // **** CORREÇÃO DE TIPO APLICADA AQUI ****
+  } catch (e: any) { 
     console.error('[Email Confirmation] Falha ao processar action_link:', e);
     throw new Error('Não foi possível gerar o link de confirmação');
   }
