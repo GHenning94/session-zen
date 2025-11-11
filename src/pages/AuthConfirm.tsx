@@ -13,7 +13,6 @@ const AuthConfirm = () => {
   const [countdown, setCountdown] = useState(5)
 
   useEffect(() => {
-    // **** CORREÇÃO DA RACE CONDITION (PASSO 1) ****
     // Avisar ao AuthRedirect para não interferir
     console.log('[AuthConfirm] Setting IS_CONFIRMING flag');
     sessionStorage.setItem('IS_CONFIRMING_AUTH', 'true');
@@ -92,6 +91,14 @@ const AuthConfirm = () => {
         
         console.log('[AuthConfirm] ✅ Usuário verificado localmente:', user.email);
 
+        // **** CORREÇÃO FINAL DA RACE CONDITION ****
+        // Vamos forçar uma pausa de 1 segundo para a sessão estabilizar
+        // antes de chamar a próxima função autenticada.
+        console.log('[AuthConfirm] Pausando por 1000ms para estabilizar a sessão...');
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log('[AuthConfirm] Pausa completa. Invocando função...');
+        // **** FIM DA CORREÇÃO ****
+
         // Invocar confirm-email-strict
         console.log('[AuthConfirm] Invocando confirm-email-strict com nonce:', nonce);
         const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
@@ -115,7 +122,6 @@ const AuthConfirm = () => {
         toast.success('Email confirmado com sucesso!');
         setStatus('success');
         
-        // **** CORREÇÃO DA RACE CONDITION (PASSO 2) ****
         // Remover a bandeira ANTES de navegar
         console.log('[AuthConfirm] Removing IS_CONFIRMING flag (Success)');
         sessionStorage.removeItem('IS_CONFIRMING_AUTH');
@@ -127,7 +133,6 @@ const AuthConfirm = () => {
         setStatus('error');
         toast.error(err.message || 'Erro ao confirmar email');
 
-        // **** CORREÇÃO DA RACE CONDITION (PASSO 2) ****
         // Remover a bandeira em caso de erro
         console.log('[AuthConfirm] Removing IS_CONFIRMING flag (Error)');
         sessionStorage.removeItem('IS_CONFIRMING_AUTH');
@@ -167,6 +172,7 @@ const AuthConfirm = () => {
     navigate('/login?resend=true')
   }
 
+  // O resto do seu JSX (return) permanece idêntico...
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
