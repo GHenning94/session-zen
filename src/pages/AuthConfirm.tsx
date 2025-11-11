@@ -189,7 +189,7 @@ const AuthConfirm = () => {
                   <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
                 </div>
               </div>
-              <CardTitle>E-mail Confirmado!</CardTitle>
+              <CardTitle>E-mail Confirmado!</Title>
               <CardDescription>
                 Sua conta está ativa! Você será redirecionado para escolher seu plano em {countdown} segundo{countdown !== 1 ? 's' : ''}...
               </CardDescription>

@@ -9,6 +9,9 @@ export const AuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // **** NOVO TESTE DE VERIFICAÇÃO DE DEPLOY ****
+    console.log('--- AUTH-REDIRECT v3 (FLAG-CHECKER) ESTÁ NO AR ---');
+
     // **** CORREÇÃO DA RACE CONDITION (PASSO 3) ****
     // Verificar se a página AuthConfirm está a trabalhar
     const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH');
@@ -16,9 +19,6 @@ export const AuthRedirect = () => {
       console.log('[AuthRedirect] Pausado: AuthConfirm está a trabalhar.');
       return; // Parar imediatamente e não fazer nada
     }
-
-    // Remover a linha de teste, já não é necessária
-    // console.log('--- VERSÃO CORRETA DO AUTHREDIRECT ESTÁ NO AR ---');
 
     const checkFirstLogin = async () => {
       if (loading) return;
@@ -43,7 +43,6 @@ export const AuthRedirect = () => {
         // Esta é a lógica que estava a falhar (o signOut prematuro)
         // Agora só corre se a bandeira 'IS_CONFIRMING_AUTH' não existir
         
-        // **** LÓGICA ANTIGA (AGORA SEGURA) ****
         const { data: profile } = await supabase
           .from('profiles')
           .select('email_confirmed_strict')
@@ -62,11 +61,12 @@ export const AuthRedirect = () => {
           });
           return;
         }
-        // **** FIM DA LÓGICA ANTIGA ****
 
 
         try {
-          const { data: profile, error } = await supabase
+          // A verificação de 'profile' já foi feita acima,
+          // mas esta busca 'first_login_completed'
+          const { data: profileLogin, error } = await supabase
             .from('profiles')
             .select('first_login_completed, subscription_plan')
             .eq('user_id', user.id)
@@ -80,8 +80,8 @@ export const AuthRedirect = () => {
             return;
           }
 
-          if (!profile?.first_login_completed) {
-            if (profile?.subscription_plan && profile.subscription_plan !== 'basico') {
+          if (!profileLogin?.first_login_completed) {
+            if (profileLogin?.subscription_plan && profileLogin.subscription_plan !== 'basico') {
               console.log('[AuthRedirect] Has paid plan, allowing dashboard access');
               return;
             }
