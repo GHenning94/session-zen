@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 export const AuthRedirect = () => {
-  const { user, loading } = useAuth(); // Só precisamos saber se há um usuário ou não
+  const { user, loading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -14,43 +14,52 @@ export const AuthRedirect = () => {
 
       const currentPath = location.pathname;
       
-      // Rotas protegidas que requerem login
       const protectedRoutes = ['/dashboard', '/agenda', '/clientes', '/pagamentos', '/configuracoes', '/pacotes', '/sessoes', '/prontuarios', '/relatorios'];
       const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
       
-      // Se não está logado e tenta acessar rota protegida, redireciona para login
       if (!user && isProtectedRoute) {
         console.log('[AuthRedirect] User not authenticated, redirecting to login from:', currentPath);
         navigate('/login', { replace: true });
         return;
       }
 
-      // Se está logado, verifica autenticação completa
       if (user) {
-        // Permitir rotas de autenticação antes de validar e-mail estrito
         const allowedPaths = ['/welcome', '/auth-confirm', '/reset-password', '/upgrade'];
         if (allowedPaths.includes(currentPath)) {
           return;
         }
-        // CRÍTICO: Verificar se o e-mail foi confirmado (verificação estrita)
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('email_confirmed_strict')
-          .eq('user_id', user.id)
-          .single();
 
-        if (!profile?.email_confirmed_strict) {
-          console.log('[AuthRedirect] Email not confirmed (strict), signing out and redirecting to login');
-          await supabase.auth.signOut();
-          navigate('/login', { 
-            state: { 
-              message: 'Por favor, confirme seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada.',
-              variant: 'destructive'
-            },
-            replace: true 
-          });
-          return;
+        // **** CORREÇÃO APLICADA AQUI ****
+        // Dar tempo à base de dados para atualizar após a confirmação.
+        // Se o utilizador foi criado nos últimos 2 minutos, não o deslogue
+        // por "email_confirmed_strict = false", porque ele está NO MEIO do fluxo.
+        const twoMinutesAgo = new Date(Date.now() - 120000).toISOString();
+        if (user.created_at > twoMinutesAgo && currentPath !== '/login') {
+            console.log('[AuthRedirect] Novo usuário detectado (criado < 2 min), pulando verificação estrita temporariamente.');
+            // Se for um utilizador novo, o fluxo de onboarding (welcome) vai apanhá-lo.
+            // Não precisamos de fazer nada aqui, apenas NÃO o deslogar.
+        } else {
+            // Se for um utilizador antigo (> 2 min), corra a verificação estrita
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('email_confirmed_strict')
+              .eq('user_id', user.id)
+              .single();
+
+            if (!profile?.email_confirmed_strict) {
+              console.log('[AuthRedirect] Email não confirmado (strict), signing out and redirecting to login');
+              await supabase.auth.signOut();
+              navigate('/login', { 
+                state: { 
+                  message: 'Por favor, confirme seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada.',
+                  variant: 'destructive'
+                },
+                replace: true 
+              });
+              return;
+            }
         }
+        // **** FIM DA CORREÇÃO ****
 
 
         try {
@@ -62,17 +71,13 @@ export const AuthRedirect = () => {
 
           if (error) {
             console.error('[AuthRedirect] Error fetching profile:', error);
-            // Se o perfil não existe, limpa o cache e desloga
             localStorage.clear();
             await supabase.auth.signOut();
             navigate('/', { replace: true });
             return;
           }
 
-          // Se não completou o primeiro login/onboarding, redireciona para welcome
-          // EXCETO se já tem um plano pago ativo (significa que pagou mas webhook ainda não processou)
           if (!profile?.first_login_completed) {
-            // Se tem plano pago, deixa entrar no dashboard (webhook vai processar em breve)
             if (profile?.subscription_plan && profile.subscription_plan !== 'basico') {
               console.log('[AuthRedirect] Has paid plan, allowing dashboard access');
               return;

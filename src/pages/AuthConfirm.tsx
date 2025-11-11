@@ -93,7 +93,7 @@ const AuthConfirm = () => {
           throw new Error('Não foi possível autenticar com o link fornecido.');
         }
 
-        // **** CORREÇÃO APLICADA AQUI (PREVENÇÃO DE RACE CONDITION) ****
+        // **** CORREÇÃO DA RACE CONDITION ****
         // Forçar a atualização do cliente de auth ANTES de invocar a próxima função
         // Isso previne a race condition do 401
         console.log('[AuthConfirm] Sessão estabelecida, forçando refresh do usuário...');
