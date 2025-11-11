@@ -1,4 +1,3 @@
-// src/pages/AuthConfirm.tsx - VERSÃO COM LOGOUT APÓS CONFIRMAÇÃO
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -34,7 +33,6 @@ const AuthConfirm = () => {
 
         let userId = null;
 
-        // FORMATO B: token_hash
         if (tokenHash && type) {
           console.log('[AuthConfirm] 🔐 Formato B - Validando token_hash...');
           
@@ -55,7 +53,6 @@ const AuthConfirm = () => {
           userId = data.user.id;
           console.log('[AuthConfirm] ✅ OTP validado, user_id:', userId);
         }
-        // FORMATO A: access_token
         else if (hash && hash.includes('access_token')) {
           console.log('[AuthConfirm] 🔐 Formato A - Tokens no hash');
           
@@ -86,11 +83,9 @@ const AuthConfirm = () => {
           throw new Error('Link inválido ou expirado.');
         }
 
-        // ✅ Aguardar estabilização
         console.log('[AuthConfirm] ⏳ Aguardando 1500ms...');
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // ✅ Invocar Edge Function
         console.log('[AuthConfirm] 📨 Invocando confirm-email-strict...');
         
         const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
@@ -114,7 +109,6 @@ const AuthConfirm = () => {
 
         console.log('[AuthConfirm] ✅ E-mail confirmado!');
         
-        // ✅ CORREÇÃO: Fazer logout após confirmação bem-sucedida
         console.log('[AuthConfirm] 🚪 Fazendo logout para forçar novo login...');
         await supabase.auth.signOut();
         
@@ -146,14 +140,13 @@ const AuthConfirm = () => {
     confirmEmail()
   }, [navigate]) 
 
-  // ✅ CORREÇÃO: Redirecionar para LOGIN após confirmação
   useEffect(() => {
     if (status === 'success') {
       const timer = setInterval(() => {
         setCountdown((prev) => {
           if (prev <= 1) {
             clearInterval(timer)
-            navigate('/login?confirmed=true') // ✅ Redirecionar para login
+            navigate('/login?confirmed=true')
             return 0
           }
           return prev - 1

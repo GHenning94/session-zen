@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Calendar, CreditCard, AlertCircle, Crown, Zap, Sparkles } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
 
 interface SubscriptionData {
   plan: string
@@ -65,6 +65,9 @@ export const SubscriptionInfo = () => {
 
   if (!subscription) return null
 
+  const isCancelled = !!subscription.cancelAt
+  const isFreePlan = subscription.plan === 'basico'
+
   const getPlanIcon = () => {
     switch (subscription.plan) {
       case 'premium':
@@ -98,9 +101,6 @@ export const SubscriptionInfo = () => {
     }
   }
 
-  const isCancelled = !!subscription.cancelAt
-  const isFreePlan = subscription.plan === 'basico'
-
   return (
     <Card>
       <CardHeader>
@@ -131,7 +131,6 @@ export const SubscriptionInfo = () => {
       <CardContent className="space-y-4">
         {!isFreePlan && (
           <>
-            {/* Data de início */}
             {subscription.startDate && (
               <div className="flex items-center gap-3 text-sm">
                 <Calendar className="w-4 h-4 text-muted-foreground" />
@@ -148,7 +147,6 @@ export const SubscriptionInfo = () => {
               </div>
             )}
 
-            {/* Próxima cobrança ou data de cancelamento */}
             {isCancelled ? (
               <div className="flex items-center gap-3 text-sm">
                 <AlertCircle className="w-4 h-4 text-destructive" />
@@ -180,11 +178,10 @@ export const SubscriptionInfo = () => {
                   </p>
                 </div>
               </div>
-            )}
+            ) : null}
           </>
         )}
 
-        {/* Botões de ação */}
         <div className="pt-4 flex gap-2">
           {isFreePlan ? (
             <Button 
@@ -207,8 +204,7 @@ export const SubscriptionInfo = () => {
                   variant="ghost" 
                   className="flex-1"
                   onClick={() => {
-                    // TODO: Implementar portal do cliente Stripe
-                    window.open('https://billing.stripe.com/p/login/test_xxx', '_blank')
+                    console.log('Abrir portal do cliente Stripe')
                   }}
                 >
                   Gerenciar
@@ -218,7 +214,6 @@ export const SubscriptionInfo = () => {
           )}
         </div>
 
-        {/* Limites do plano */}
         <div className="pt-4 border-t">
           <p className="text-sm font-medium mb-2">Recursos do plano</p>
           <ul className="text-sm text-muted-foreground space-y-1">

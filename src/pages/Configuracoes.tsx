@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, ExternalLink, Trash2 } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
@@ -22,7 +22,6 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
-import { NotificationSettings } from "@/components/notifications/NotificationSettings"
 import { PaymentMethodCard } from "@/components/PaymentMethodCard"
 import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
 import { SubscriptionInvoices } from "@/components/SubscriptionInvoices"
@@ -36,7 +35,6 @@ const Configuracoes = () => {
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
-  const [showNotificationModal, setShowNotificationModal] = useState<{ type: 'email' | 'whatsapp' | 'reminder' | 'reports'; title: string } | null>(null)
   const [paymentMethods, setPaymentMethods] = useState<any[]>([])
   const [loadingPayments, setLoadingPayments] = useState(false)
   const [showUpdatePaymentModal, setShowUpdatePaymentModal] = useState(false)
@@ -368,7 +366,6 @@ const Configuracoes = () => {
               </CardContent>
             </Card>
 
-            {/* Zona de Perigo */}
             <Card className="border-destructive shadow-soft">
               <CardHeader>
                 <CardTitle className="text-destructive flex items-center gap-2">
@@ -399,10 +396,8 @@ const Configuracoes = () => {
                 <CardDescription>Gerencie sua assinatura e métodos de pagamento</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Informações da Assinatura */}
                 <SubscriptionInfo />
 
-                {/* Faturas (apenas para planos pagos) */}
                 {settings.subscription_plan && settings.subscription_plan !== 'basico' && (
                   <>
                     <div className="border-t pt-6">
@@ -410,7 +405,6 @@ const Configuracoes = () => {
                       <SubscriptionInvoices />
                     </div>
 
-                    {/* Métodos de Pagamento */}
                     <div className="border-t pt-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold">Métodos de Pagamento</h3>
@@ -448,7 +442,6 @@ const Configuracoes = () => {
               </CardContent>
             </Card>
 
-            {/* Modal de atualização de pagamento */}
             {showUpdatePaymentModal && (
               <UpdatePaymentMethodModal
                 isOpen={showUpdatePaymentModal}
@@ -525,12 +518,78 @@ const Configuracoes = () => {
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
-            <NotificationSettings />
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Bell /> Notificações
+                </CardTitle>
+                <CardDescription>Configure como deseja receber notificações</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Notificações por E-mail</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receba notificações sobre sessões e lembretes por e-mail
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.notificacao_email || false}
+                      onCheckedChange={(checked) => handleSettingsChange('notificacao_email', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Notificações por WhatsApp</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receba notificações sobre sessões e lembretes por WhatsApp
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.notificacao_whatsapp || false}
+                      onCheckedChange={(checked) => handleSettingsChange('notificacao_whatsapp', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Lembrete 24h antes</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Enviar lembrete automático 24h antes das sessões
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.lembrete_24h || false}
+                      onCheckedChange={(checked) => handleSettingsChange('lembrete_24h', checked)}
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label>Relatório Semanal</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Receber resumo semanal de suas atividades
+                      </p>
+                    </div>
+                    <Switch
+                      checked={settings.relatorio_semanal || false}
+                      onCheckedChange={(checked) => handleSettingsChange('relatorio_semanal', checked)}
+                    />
+                  </div>
+                </div>
+                
+                <Button onClick={handleSave} disabled={isLoading}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Preferências
+                </Button>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Dialog de confirmação de exclusão */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
