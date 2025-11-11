@@ -16,19 +16,17 @@ const AuthConfirm = () => {
     const confirmEmail = async () => {
       try {
         const params = new URLSearchParams(window.location.search)
-        const tokenHash = params.get('token_hash')
-        const type = params.get('type') || 'signup'
+        // const tokenHash = params.get('token_hash') // Removido - Não é usado no fluxo de signup
+        // const type = params.get('type') // Removido
         const nonce = params.get('n')
         const hash = window.location.hash
 
         console.log('[AuthConfirm] Iniciando confirmação', { 
-          type, 
-          hasTokenHash: !!tokenHash, 
           hasNonce: !!nonce,
           hasHash: !!hash 
         })
 
-        // FORMATO A: Hash com access_token e refresh_token
+        // FORMATO A: Hash com access_token e refresh_token (Fluxo padrão de Signup/Login)
         if (hash && hash.includes('access_token')) {
           console.log('[AuthConfirm] Formato A: tokens no hash')
           
@@ -88,25 +86,19 @@ const AuthConfirm = () => {
 
             console.log('[AuthConfirm] ✅ E-mail confirmado!')
             toast.success('Email confirmado com sucesso!')
-            navigate('/welcome')
+            
+            // **CORREÇÃO APLICADA AQUI**
+            // Em vez de navegar imediatamente, mudamos o status
+            // para que o useEffect do countdown seja ativado.
+            setStatus('success')
+            // navigate('/welcome') // <- Linha antiga removida
             return
           }
         }
-
-        // FORMATO B: token_hash na query string
-        if (tokenHash) {
-          console.log('[AuthConfirm] Formato B: token_hash detectado — usando verificação oficial via /auth/v1/verify')
-          const SUPABASE_URL = 'https://ykwszazxigjivjkagjmf.supabase.co'
-          const origin = window.location.origin
-          const redirectTo = `${origin}/auth-confirm?n=${nonce || crypto.randomUUID()}`
-
-          // Redireciona diretamente para o endpoint oficial passando token_hash e type
-          const verifyUrl = `${SUPABASE_URL}/auth/v1/verify?type=${encodeURIComponent(type)}&token_hash=${encodeURIComponent(tokenHash)}&redirect_to=${encodeURIComponent(redirectTo)}`
-          console.log('[AuthConfirm] Redirecionando para', verifyUrl)
-          window.location.replace(verifyUrl)
-          return
-        }
-
+        
+        // FORMATO B (token_hash) FOI COMPLETAMENTE REMOVIDO
+        // Era a causa do erro em download.png
+        
         // FORMATO C: Erro na URL
         const errorParam = params.get('error')
         if (errorParam) {
@@ -140,7 +132,7 @@ const AuthConfirm = () => {
     }
 
     confirmEmail()
-  }, [])
+  }, [navigate]) // Adicionado navigate como dependência
 
   useEffect(() => {
     if (status === 'success') {
