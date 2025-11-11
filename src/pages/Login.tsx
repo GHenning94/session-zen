@@ -295,7 +295,11 @@ const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
             nome: formData.name,
             profissao: formData.profession
           },
-          captchaToken
+          captchaToken,
+          
+          // **** CORREÇÃO ESTÁ AQUI ****
+          // Envia a URL de produção correta para a Edge Function
+          redirect_to: 'https://therapypro.app.br/auth-confirm'
         }
       })
 
@@ -607,7 +611,7 @@ toast({
                       <SelectContent>
                         <SelectItem value="psicologo">Psicólogo(a)</SelectItem>
                         <SelectItem value="psicanalista">Psicanalista</SelectItem>
-                        <SelectItem value="terapeuta">Terapeuta</SelectItem>
+                        <SelectItem value->="terapeuta">Terapeuta</SelectItem>
                         <SelectItem value="coach">Coach</SelectItem>
                         <SelectItem value="psiquiatra">Psiquiatra</SelectItem>
                         <SelectItem value="outro">Outro</SelectItem>

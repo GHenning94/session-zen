@@ -6,15 +6,8 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SENDPULSE_API_ID = Deno.env.get('SENDPULSE_API_ID');
 const SENDPULSE_API_SECRET = Deno.env.get('SENDPULSE_API_SECRET');
 
-// Get the site URL from request origin or use default
-function getSiteUrl(req: Request): string {
-  const origin = req.headers.get('origin');
-  if (origin) {
-    return origin;
-  }
-  // Fallback to lovable app domain
-  return 'https://ykwszazxigjivjkagjmf.lovable.app';
-}
+// REMOVIDA: A função getSiteUrl(req) foi removida
+// pois era a fonte do bug (usava URL dinâmica).
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,7 +47,9 @@ serve(async (req) => {
   }
 
   try {
-    const { email, password, user_metadata, captchaToken } = await req.json();
+    // **** CORREÇÃO APLICADA AQUI ****
+    // Captura o 'redirect_to' enviado pelo frontend (Login.tsx)
+    const { email, password, user_metadata, captchaToken, redirect_to } = await req.json();
     
     console.log('[Email Confirmation] Iniciando processo de registro para:', email);
 
@@ -62,6 +57,16 @@ serve(async (req) => {
       console.error('[Email Confirmation] Email ou senha não fornecidos');
       return new Response(
         JSON.stringify({ error: 'Email e senha são obrigatórios' }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
+      );
+    }
+    
+    // **** CORREÇÃO APLICADA AQUI ****
+    // Valida se o frontend enviou a URL de redirecionamento
+    if (!redirect_to) {
+      console.error('[Email Confirmation] redirect_to não fornecido pelo frontend');
+      return new Response(
+        JSON.stringify({ error: 'Configuração de redirecionamento ausente' }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 400 }
       );
     }
@@ -75,7 +80,7 @@ serve(async (req) => {
       );
     }
 
-    const SITE_URL = getSiteUrl(req);
+    // REMOVIDA: const SITE_URL = getSiteUrl(req);
 
     // Criar cliente Supabase Admin
     const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -165,8 +170,10 @@ serve(async (req) => {
 
     console.log('[Email Confirmation] Profile upsert realizado com sucesso:', upsertData);
 
-    // Gerar link de confirmação com nonce no redirectTo
-    const redirectTo = `${SITE_URL}/auth-confirm?n=${nonce}`;
+    // **** CORREÇÃO APLICADA AQUI ****
+    // Usa a URL de produção ('redirect_to') vinda do frontend e adiciona o nonce
+    const finalRedirectTo = `${redirect_to}?n=${nonce}`;
+    console.log('[Email Confirmation] URL de Redirecionamento Final:', finalRedirectTo);
     
     let linkData;
     let linkType: 'signup' | 'magiclink' = 'signup';
@@ -177,7 +184,7 @@ serve(async (req) => {
         type: 'signup',
         email: email,
         options: {
-          redirectTo
+          redirectTo: finalRedirectTo // Usa a URL final corrigida
         }
       });
 
@@ -191,7 +198,7 @@ serve(async (req) => {
             type: 'magiclink',
             email: email,
             options: {
-              redirectTo
+              redirectTo: finalRedirectTo // Usa a URL final corrigida
             }
           });
 
@@ -220,9 +227,13 @@ serve(async (req) => {
 let confirmationLink: string;
 const hashedToken = linkData?.properties?.hashed_token as string | undefined;
 
+// **** CORREÇÃO APLICADA AQUI ****
+// Usa a URL de produção ('redirect_to') vinda do frontend como base
+const baseUrl = redirect_to; 
+
 if (hashedToken) {
   // Preferir link direto para o frontend (AuthConfirm) para evitar problemas de clientes de e-mail
-  const url = new URL(`${SITE_URL}/auth-confirm`);
+  const url = new URL(baseUrl); // Usa a URL de produção
   url.searchParams.set('type', linkType);
   url.searchParams.set('token_hash', hashedToken);
   url.searchParams.set('n', nonce);
@@ -234,7 +245,7 @@ if (hashedToken) {
     const u = new URL(linkData.properties.action_link as string);
     const fallbackToken = u.searchParams.get('token') || u.searchParams.get('token_hash') || '';
     if (fallbackToken) {
-      const url = new URL(`${SITE_URL}/auth-confirm`);
+      const url = new URL(baseUrl); // Usa a URL de produção
       url.searchParams.set('type', linkType);
       url.searchParams.set('token_hash', fallbackToken);
       url.searchParams.set('n', nonce);
