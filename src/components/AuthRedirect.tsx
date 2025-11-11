@@ -29,7 +29,7 @@ export const AuthRedirect = () => {
           return;
         }
 
-        // **** CORREÇÃO APLICADA AQUI ****
+        // **** CORREÇÃO CRÍTICA ESTÁ AQUI ****
         // Dar tempo à base de dados para atualizar após a confirmação.
         // Se o utilizador foi criado nos últimos 2 minutos, não o deslogue
         // por "email_confirmed_strict = false", porque ele está NO MEIO do fluxo.
