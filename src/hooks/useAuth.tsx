@@ -3,7 +3,6 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js'
 import { supabase } from '@/integrations/supabase/client'
 
-// Declaração de tipos para 'aal' (Inalterado)
 declare module '@supabase/supabase-js' {
   interface User {
     aal?: 'aal1' | 'aal2';
@@ -14,7 +13,6 @@ interface AuthContextType {
   user: User | null
   session: Session | null
   loading: boolean
-  // signUp: ... // <-- REMOVIDO
   signIn: (email: string, password: string, captchaToken?: string) => Promise<{ error: any }>
   signOut: () => Promise<{ error: any }>
 }
@@ -23,7 +21,6 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   session: null,
   loading: true,
-  // signUp: async () => ({ error: null }), // <-- REMOVIDO
   signIn: async () => ({ error: null }),
   signOut: async () => ({ error: null }),
 })
@@ -45,12 +42,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [session, setSession] = useState<Session | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // processSession - agora recebe o evento para evitar loading em TOKEN_REFRESHED
   const processSession = (session: Session | null, event?: string) => {
-    console.log('useAuth: processando sessão...', { 
+    console.log('[useAuth] Processando sessão...', { 
       sessionExists: !!session, 
       aal: session?.user?.aal,
-      event
+      event,
+      timestamp: new Date().toISOString()
     });
     
     setSession(session);
@@ -58,53 +55,60 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     if (!session) {
       setUser(null);
       setLoading(false);
-      console.log('useAuth: estado finalizado: (loading: false, user: null)');
+      console.log('[useAuth] Estado finalizado: sem sessão (loading: false, user: null)');
       return;
     }
 
     const currentAAL = session.user.aal;
     
-    // Se for TOKEN_REFRESHED ou USER_UPDATED, apenas atualiza user/session sem ativar loading
+    // Se for TOKEN_REFRESHED ou USER_UPDATED, apenas atualiza sem ativar loading
     if (event === 'TOKEN_REFRESHED' || event === 'USER_UPDATED') {
       setUser(session.user);
       setLoading(false);
-      console.log('useAuth: token refreshed/user updated (mantém loading: false)');
+      console.log('[useAuth] Token atualizado, mantendo loading: false');
       return;
     }
 
     if (currentAAL === 'aal1') {
       setUser(session.user);
       setLoading(true);
-      console.log('useAuth: estado pendente (AAL1): (loading: true, user: set)');
+      console.log('[useAuth] AAL1 detectado (autenticação parcial): loading: true');
     } else {
       setUser(session.user);
       setLoading(false);
-      console.log('useAuth: estado finalizado: (loading: false, user: set)');
+      console.log('[useAuth] Sessão completa estabelecida: loading: false');
     }
   };
 
-  // useEffect de setup - passa o evento para processSession
   useEffect(() => {
-    console.log('useAuth: setting up auth listeners')
+    console.log('[useAuth] Configurando listeners de autenticação...')
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        console.log(`useAuth: auth state changed (event: ${event})`);
+        console.log(`[useAuth] 🔔 Evento de autenticação: ${event}`, {
+          timestamp: new Date().toISOString(),
+          hasSession: !!session
+        });
 
-        // **** CORREÇÃO DEFINITIVA APLICADA AQUI ****
-        // Ler a "bandeira" (flag) que o AuthConfirm.tsx define
+        // ✅ CORREÇÃO CRÍTICA: Ignorar SIGNED_OUT durante confirmação de e-mail
         const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH');
-        if (event === 'SIGNED_OUT' && isConfirming) {
-          console.warn('🔴 useAuth: Evento SIGNED_OUT ignorado (AuthConfirm está a trabalhar).');
-          return; // Ignorar o logout prematuro
+        if (event === 'SIGNED_OUT' && isConfirming === 'true') {
+          console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - confirmação de e-mail em andamento');
+          return;
         }
-        // **** FIM DA CORREÇÃO ****
         
-        // NOVO: Detectar eventos de logout
+        // Logout completo
         if (event === 'SIGNED_OUT') {
-          console.log('🔴 useAuth: Usuário foi deslogado. Limpando estado.');
-          localStorage.clear();
-          sessionStorage.clear();
+          console.log('[useAuth] 🚪 Logout detectado - limpando estado completo');
+          
+          // Limpar storage
+          try {
+            localStorage.clear();
+            sessionStorage.clear();
+          } catch (e) {
+            console.error('[useAuth] Erro ao limpar storage:', e);
+          }
+          
           setUser(null);
           setSession(null);
           setLoading(false);
@@ -115,12 +119,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     )
     
+    // Obter sessão inicial
     supabase.auth.getSession().then(({ data: { session }, error }) => {
-      console.log('useAuth: initial session check');
+      console.log('[useAuth] Verificação de sessão inicial');
       
-      // NOVO: Se houver erro ao obter sessão, limpar tudo
       if (error) {
-        console.error('🔴 useAuth: Erro ao obter sessão inicial:', error);
+        console.error('[useAuth] ❌ Erro ao obter sessão inicial:', error.message);
         localStorage.clear();
         sessionStorage.clear();
         setUser(null);
@@ -132,13 +136,15 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       processSession(session)
     })
     
-    return () => subscription.unsubscribe()
+    return () => {
+      console.log('[useAuth] Removendo listeners de autenticação');
+      subscription.unsubscribe();
+    }
   }, [])
 
-  // const signUp = ... // <-- A FUNÇÃO INTEIRA FOI REMOVIDA
-
-  // signIn (Inalterada, com traduções)
   const signIn = async (email: string, password: string, captchaToken?: string) => {
+    console.log('[useAuth] Tentativa de login para:', email);
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -148,32 +154,52 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     })
     
     if (error) {
+      console.error('[useAuth] ❌ Erro no login:', error.message);
+      
       let translatedError = { ...error }
+      
+      // Tradução de mensagens de erro
       if (error.message.includes('Invalid login credentials')) {
         translatedError.message = 'Credenciais inválidas. Verifique seu e-mail e senha.'
       } else if (error.message.includes('Email not confirmed')) {
-        translatedError.message = 'E-mail não confirmado. Verifique sua caixa de entrada.' // <-- O erro que você queria
+        translatedError.message = 'E-mail não confirmado. Verifique sua caixa de entrada.'
+      } else if (error.message.includes('User not found')) {
+        translatedError.message = 'Usuário não encontrado. Verifique seu e-mail.'
+      } else if (error.message.includes('Too many requests')) {
+        translatedError.message = 'Muitas tentativas de login. Aguarde alguns minutos e tente novamente.'
       }
+      
       return { error: translatedError }
     }
+    
+    console.log('[useAuth] ✅ Login bem-sucedido');
     return { error }
   }
 
-  // signOut - limpa cache e conexões antes de fazer logout
   const signOut = async () => {
-    // Limpar todo o cache do usuário antes do logout
+    console.log('[useAuth] Iniciando logout...');
+    
+    // Limpar cache do usuário antes do logout
     if (user?.id) {
+      console.log('[useAuth] Limpando cache do usuário:', user.id);
+      
       // Limpar cache de tema
       const cacheKey = `user-theme-cache_${user.id}`
       localStorage.removeItem(cacheKey)
       
       // Limpar caches de dados
-      localStorage.removeItem('therapy-clients')
-      localStorage.removeItem('therapy-sessions')
-      localStorage.removeItem('therapy-payments')
+      const cacheKeys = [
+        'therapy-clients',
+        'therapy-sessions',
+        'therapy-payments'
+      ];
+      
+      cacheKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
       
       // Limpar caches de canal por período
-      ;['1', '3', '6', '12'].forEach(period => {
+      ['1', '3', '6', '12'].forEach(period => {
         localStorage.removeItem(`canal_${user.id}_${period}`)
         localStorage.removeItem(`canal_${user.id}_${period}_time`)
       })
@@ -181,16 +207,27 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     
     // Remover todos os canais realtime ativos
     const channels = supabase.getChannels()
-    channels.forEach(channel => {
-      supabase.removeChannel(channel)
-    })
+    if (channels.length > 0) {
+      console.log(`[useAuth] Removendo ${channels.length} canais realtime`);
+      channels.forEach(channel => {
+        supabase.removeChannel(channel)
+      })
+    }
     
     // Limpar estado imediatamente
     setUser(null)
     setSession(null)
     setLoading(false)
     
+    console.log('[useAuth] Estado limpo, executando logout no Supabase...');
     const result = await supabase.auth.signOut()
+    
+    if (result.error) {
+      console.error('[useAuth] ❌ Erro no logout:', result.error);
+    } else {
+      console.log('[useAuth] ✅ Logout concluído com sucesso');
+    }
+    
     return result
   }
 
@@ -198,7 +235,6 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     loading,
-    // signUp, // <-- REMOVIDO
     signIn,
     signOut,
   }
