@@ -9,9 +9,16 @@ export const AuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
-    // **** LINHA DE TESTE ADICIONADA AQUI ****
-    console.log('--- VERSÃO CORRETA DO AUTHREDIRECT ESTÁ NO AR ---');
-    // **** FIM DA ADIÇÃO ****
+    // **** CORREÇÃO DA RACE CONDITION (PASSO 3) ****
+    // Verificar se a página AuthConfirm está a trabalhar
+    const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH');
+    if (isConfirming) {
+      console.log('[AuthRedirect] Pausado: AuthConfirm está a trabalhar.');
+      return; // Parar imediatamente e não fazer nada
+    }
+
+    // Remover a linha de teste, já não é necessária
+    // console.log('--- VERSÃO CORRETA DO AUTHREDIRECT ESTÁ NO AR ---');
 
     const checkFirstLogin = async () => {
       if (loading) return;
@@ -33,37 +40,29 @@ export const AuthRedirect = () => {
           return;
         }
 
-        // **** CORREÇÃO CRÍTICA ESTÁ AQUI ****
-        // Dar tempo à base de dados para atualizar após a confirmação.
-        // Se o utilizador foi criado nos últimos 2 minutos, não o deslogue
-        // por "email_confirmed_strict = false", porque ele está NO MEIO do fluxo.
-        const twoMinutesAgo = new Date(Date.now() - 120000).toISOString();
-        if (user.created_at > twoMinutesAgo && currentPath !== '/login') {
-            console.log('[AuthRedirect] Novo usuário detectado (criado < 2 min), pulando verificação estrita temporariamente.');
-            // Se for um utilizador novo, o fluxo de onboarding (welcome) vai apanhá-lo.
-            // Não precisamos de fazer nada aqui, apenas NÃO o deslogar.
-        } else {
-            // Se for um utilizador antigo (> 2 min), corra a verificação estrita
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('email_confirmed_strict')
-              .eq('user_id', user.id)
-              .single();
+        // Esta é a lógica que estava a falhar (o signOut prematuro)
+        // Agora só corre se a bandeira 'IS_CONFIRMING_AUTH' não existir
+        
+        // **** LÓGICA ANTIGA (AGORA SEGURA) ****
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('email_confirmed_strict')
+          .eq('user_id', user.id)
+          .single();
 
-            if (!profile?.email_confirmed_strict) {
-              console.log('[AuthRedirect] Email não confirmado (strict), signing out and redirecting to login');
-              await supabase.auth.signOut();
-              navigate('/login', { 
-                state: { 
-                  message: 'Por favor, confirme seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada.',
-                  variant: 'destructive'
-                },
-                replace: true 
-              });
-              return;
-            }
+        if (!profile?.email_confirmed_strict) {
+          console.log('[AuthRedirect] Email não confirmado (strict), signing out and redirecting to login');
+          await supabase.auth.signOut();
+          navigate('/login', { 
+            state: { 
+              message: 'Por favor, confirme seu e-mail antes de acessar a plataforma. Verifique sua caixa de entrada.',
+              variant: 'destructive'
+            },
+            replace: true 
+          });
+          return;
         }
-        // **** FIM DA CORREÇÃO ****
+        // **** FIM DA LÓGICA ANTIGA ****
 
 
         try {
