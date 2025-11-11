@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react"
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
-import { toast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
 import { TwoFactorVerification } from "@/components/TwoFactorVerification"
 import { Turnstile } from '@marsidev/react-turnstile'
@@ -10,8 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Stethoscope, Brain, Heart, Check, X, Loader2 } from "lucide-react"
-import "./Login.styles.css"
+import { Stethoscope, Heart, Check, X, Loader2 } from "lucide-react"
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
@@ -43,36 +42,28 @@ const Login = () => {
   const [searchParams] = useSearchParams()
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
 
-  // ✅ NOVO: Mostrar mensagem quando email foi confirmado
   useEffect(() => {
     const confirmed = searchParams.get('confirmed')
     
     if (confirmed === 'true') {
-      toast({
-        title: 'E-mail confirmado!',
-        description: 'Sua conta está ativa. Faça login para continuar.',
-      })
-      
-      // Limpar o parâmetro da URL
+      toast.success('E-mail confirmado! Sua conta está ativa. Faça login para continuar.')
       window.history.replaceState({}, '', '/login')
     }
   }, [searchParams])
 
-  // Exibir mensagem do state (vindo de ResetPassword ou AuthRedirect)
   useEffect(() => {
     const stateMessage = location.state?.message
     const stateVariant = location.state?.variant
     if (stateMessage) {
-      toast({
-        title: stateVariant === 'destructive' ? 'Atenção' : 'Sucesso',
-        description: stateMessage,
-        variant: stateVariant || 'default'
-      })
+      if (stateVariant === 'destructive') {
+        toast.error(stateMessage)
+      } else {
+        toast.success(stateMessage)
+      }
       navigate(location.pathname, { replace: true, state: {} })
     }
   }, [location.state, navigate, location.pathname])
 
-  // Countdown timer para reenvio de email
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => {
@@ -82,7 +73,6 @@ const Login = () => {
     }
   }, [resendCooldown])
 
-  // Correção do Botão Voltar do Navegador
   useEffect(() => {
     const cleanup = () => {
       if (show2FA && !is2FASuccess.current) {
@@ -120,11 +110,7 @@ const Login = () => {
     const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
     
     if (!captchaToken) {
-      toast({
-        title: 'Valide o captcha',
-        description: 'Por favor, resolva o captcha para continuar',
-        variant: 'destructive'
-      })
+      toast.error('Por favor, resolva o captcha para continuar')
       return
     }
 
@@ -168,16 +154,11 @@ const Login = () => {
         }
         
         console.error('Erro de Login:', signInError)
-        toast({ 
-          title: "Erro no login", 
-          description: errorMessage, 
-          variant: "destructive" 
-        })
+        toast.error(errorMessage)
         return
       }
 
       if (signInData?.user) {
-        // Verificar confirmação estrita de e-mail
         const { data: profile } = await supabase
           .from('profiles')
           .select('email_confirmed_strict')
@@ -192,11 +173,7 @@ const Login = () => {
           setAwaitingEmailConfirmation(true)
           setConfirmationEmail(formData.email)
           
-          toast({
-            title: 'Email não confirmado',
-            description: 'Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.',
-            variant: 'destructive'
-          })
+          toast.error('Você precisa confirmar seu email antes de fazer login. Verifique sua caixa de entrada.')
 
           try {
             const { error: autoResendError } = await supabase.functions.invoke('resend-confirmation-email', {
@@ -237,14 +214,14 @@ const Login = () => {
           return
         }
         
-        toast({ title: "Login realizado com sucesso!", description: "Redirecionando..." })
+        toast.success('Login realizado com sucesso! Redirecionando...')
         navigate("/dashboard", { state: { fromLogin: true } })
       } else {
         throw new Error("Resposta de login inesperada.")
       }
     } catch (error: any) {
       console.error('Erro inesperado no handleLogin:', error)
-      toast({ title: "Erro", description: error.message || "Algo deu errado.", variant: "destructive" })
+      toast.error(error.message || "Algo deu errado.")
     } finally {
       if (!shouldShow2FAModal) {
         setIsLoading(false)
@@ -254,7 +231,7 @@ const Login = () => {
 
   const handle2FASuccess = async () => {
     is2FASuccess.current = true
-    toast({ title: "Login realizado com sucesso!", description: "Redirecionando..." })
+    toast.success('Login realizado com sucesso! Redirecionando...')
     navigate("/dashboard", { state: { fromLogin: true } })
   }
 
@@ -262,11 +239,11 @@ const Login = () => {
     e.preventDefault()
 
     if (formData.password !== formData.confirmPassword) {
-      toast({ title: "Erro", description: "As senhas não coincidem.", variant: "destructive" })
+      toast.error('As senhas não coincidem.')
       return
     }
     if (!validatePassword(formData.password)) {
-      toast({ title: "Senha inválida", description: "A senha deve atender a todos os requisitos.", variant: "destructive" })
+      toast.error('A senha deve atender a todos os requisitos.')
       return
     }
 
@@ -274,11 +251,7 @@ const Login = () => {
     const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
     
     if (!captchaToken) {
-      toast({
-        title: 'Valide o captcha',
-        description: 'Por favor, resolva o captcha para continuar',
-        variant: 'destructive'
-      })
+      toast.error('Por favor, resolva o captcha para continuar')
       return
     }
 
@@ -316,17 +289,10 @@ const Login = () => {
       setConfirmationEmail(formData.email)
       setResendCooldown(60)
       
-      toast({
-        title: "Conta criada!",
-        description: "Verifique seu e-mail para confirmar sua conta.",
-      })
+      toast.success('Conta criada! Verifique seu e-mail para confirmar sua conta.')
     } catch (error: any) {
       console.error('Erro no registro:', error)
-      toast({
-        title: "Erro ao criar conta",
-        description: error.message || "Tente novamente mais tarde.",
-        variant: "destructive"
-      })
+      toast.error(error.message || 'Tente novamente mais tarde.')
     } finally {
       setIsLoading(false)
     }
@@ -344,16 +310,9 @@ const Login = () => {
       if (error) throw error
 
       setResendCooldown(60)
-      toast({
-        title: "Email reenviado!",
-        description: "Verifique sua caixa de entrada.",
-      })
+      toast.success('Email reenviado! Verifique sua caixa de entrada.')
     } catch (error: any) {
-      toast({
-        title: "Erro ao reenviar",
-        description: error.message || "Tente novamente.",
-        variant: "destructive"
-      })
+      toast.error(error.message || 'Tente novamente.')
     } finally {
       setIsLoading(false)
     }
@@ -361,11 +320,7 @@ const Login = () => {
 
   const handleForgotPassword = async () => {
     if (!formData.email) {
-      toast({
-        title: "Email necessário",
-        description: "Digite seu email no campo acima primeiro.",
-        variant: "destructive"
-      })
+      toast.error('Digite seu email no campo acima primeiro.')
       return
     }
 
@@ -377,16 +332,9 @@ const Login = () => {
 
       if (error) throw error
 
-      toast({
-        title: "Email enviado!",
-        description: "Verifique sua caixa de entrada para redefinir sua senha.",
-      })
+      toast.success('Email enviado! Verifique sua caixa de entrada para redefinir sua senha.')
     } catch (error: any) {
-      toast({
-        title: "Erro",
-        description: error.message || "Erro ao enviar email de recuperação.",
-        variant: "destructive"
-      })
+      toast.error(error.message || 'Erro ao enviar email de recuperação.')
     } finally {
       setIsResettingPassword(false)
     }
@@ -458,7 +406,7 @@ const Login = () => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-            <Brain className="w-6 h-6 text-primary" />
+            <Stethoscope className="w-6 h-6 text-primary" />
           </div>
           <CardTitle className="text-2xl">TherapyPro</CardTitle>
           <CardDescription>Gerencie sua prática terapêutica</CardDescription>
@@ -494,7 +442,9 @@ const Login = () => {
                   />
                 </div>
 
-                <Turnstile siteKey={TURNSTILE_SITE_KEY} />
+                <div className="flex justify-center">
+                  <Turnstile siteKey={TURNSTILE_SITE_KEY} />
+                </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
@@ -585,7 +535,9 @@ const Login = () => {
                   />
                 </div>
 
-                <Turnstile siteKey={TURNSTILE_SITE_KEY} />
+                <div className="flex justify-center">
+                  <Turnstile siteKey={TURNSTILE_SITE_KEY} />
+                </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando conta...</> : 'Criar conta'}
