@@ -97,29 +97,36 @@ const AuthConfirm = () => {
         if (tokenHash) {
           console.log('[AuthConfirm] Formato B: token_hash na query')
           
-          // Tentar verifyOtp com o tipo fornecido
           const typesToTry: Array<'signup' | 'magiclink'> = 
             type === 'signup' || type === 'magiclink' 
               ? [type as 'signup' | 'magiclink', type === 'signup' ? 'magiclink' : 'signup']
               : ['magiclink', 'signup']
           
+          let sessionData = null
           let verified = false
           
           for (const t of typesToTry) {
             try {
               console.log('[AuthConfirm] Tentando verifyOtp com tipo:', t)
-              const { error } = await supabase.auth.verifyOtp({ 
+              const { data, error } = await supabase.auth.verifyOtp({ 
                 type: t, 
                 token_hash: tokenHash 
               })
               
-              if (!error) {
-                console.log('[AuthConfirm] ✅ verifyOtp bem-sucedido')
+              if (!error && data?.session) {
+                console.log('[AuthConfirm] ✅ verifyOtp retornou sessão')
+                sessionData = data.session
                 verified = true
                 break
               }
               
-              console.warn('[AuthConfirm] verifyOtp falhou:', error.message)
+              if (!error && data?.user) {
+                console.log('[AuthConfirm] ✅ verifyOtp retornou user (sem sessão)')
+                verified = true
+                break
+              }
+              
+              console.warn('[AuthConfirm] verifyOtp falhou:', error?.message)
             } catch (e: any) {
               console.warn('[AuthConfirm] Exceção no verifyOtp:', e.message)
             }
@@ -129,12 +136,34 @@ const AuthConfirm = () => {
             throw new Error('Link de confirmação inválido ou expirado. Solicite um novo link.')
           }
 
-          // Aguardar sessão ser criada
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          const { data: { session: checkSession } } = await supabase.auth.getSession()
+          // Se verifyOtp retornou uma sessão, aplicar com setSession
+          if (sessionData) {
+            console.log('[AuthConfirm] Aplicando sessão retornada pelo verifyOtp...')
+            const { error: sessionError } = await supabase.auth.setSession({
+              access_token: sessionData.access_token,
+              refresh_token: sessionData.refresh_token
+            })
+            
+            if (sessionError) {
+              throw new Error(`Erro ao criar sessão: ${sessionError.message}`)
+            }
+          }
+
+          // Polling robusto para garantir sessão estabelecida (igual Formato A)
+          let sessionEstablished = false
+          for (let i = 0; i < 20; i++) {
+            await new Promise(resolve => setTimeout(resolve, 500))
+            const { data: { session: checkSession } } = await supabase.auth.getSession()
+            
+            if (checkSession?.user) {
+              console.log('[AuthConfirm] ✅ Sessão estabelecida após polling')
+              sessionEstablished = true
+              break
+            }
+          }
           
-          if (!checkSession?.user) {
-            throw new Error('Não foi possível criar sua sessão. Tente fazer login com sua senha.')
+          if (!sessionEstablished) {
+            throw new Error('Não foi possível estabelecer a sessão após verificação. Tente fazer login com sua senha.')
           }
 
           console.log('[AuthConfirm] ✅ Sessão criada, invocando confirm-email-strict...')
