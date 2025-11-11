@@ -167,7 +167,6 @@ const AuthConfirm = () => {
     navigate('/login?resend=true')
   }
 
-  // O resto do seu JSX (return) permanece idêntico...
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md shadow-xl">
@@ -189,7 +188,7 @@ const AuthConfirm = () => {
                   <CheckCircle className="w-10 h-10 text-green-600 dark:text-green-400" />
                 </div>
               </div>
-              <CardTitle>E-mail Confirmado!</Title>
+              <CardTitle>E-mail Confirmado!</CardTitle>
               <CardDescription>
                 Sua conta está ativa! Você será redirecionado para escolher seu plano em {countdown} segundo{countdown !== 1 ? 's' : ''}...
               </CardDescription>
