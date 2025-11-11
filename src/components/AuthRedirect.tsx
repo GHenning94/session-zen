@@ -9,6 +9,10 @@ export const AuthRedirect = () => {
   const location = useLocation();
 
   useEffect(() => {
+    // **** LINHA DE TESTE ADICIONADA AQUI ****
+    console.log('--- VERSÃO CORRETA DO AUTHREDIRECT ESTÁ NO AR ---');
+    // **** FIM DA ADIÇÃO ****
+
     const checkFirstLogin = async () => {
       if (loading) return;
 
