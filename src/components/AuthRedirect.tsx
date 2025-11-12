@@ -1,20 +1,37 @@
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
 import { Loader2 } from 'lucide-react'
 
+// Rotas públicas que não devem ser redirecionadas
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/reset-password', '/auth-confirm', '/auth-callback']
+
 const AuthRedirect = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [isProcessing, setIsProcessing] = useState(true)
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
+      // Ignorar rotas públicas e rotas de agendamento/registro
+      const currentPath = location.pathname
+      const isPublicRoute = PUBLIC_ROUTES.includes(currentPath) || 
+                           currentPath.startsWith('/agendar/') || 
+                           currentPath.startsWith('/register/')
+      
+      if (isPublicRoute) {
+        console.log('[AuthRedirect] 🌐 Rota pública detectada, sem redirecionamento')
+        setIsProcessing(false)
+        return
+      }
+
       console.log('[AuthRedirect] 🚀 Iniciando redirecionamento de autenticação')
 
       // Verificar se está em processo de confirmação de email
       const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH')
       if (isConfirming === 'true') {
         console.log('[AuthRedirect] ⏸️ Processo de confirmação em andamento, aguardando...')
+        setIsProcessing(false)
         return
       }
 
@@ -23,13 +40,13 @@ const AuthRedirect = () => {
 
         if (sessionError) {
           console.error('[AuthRedirect] ❌ Erro ao obter sessão:', sessionError)
-          navigate('/login')
+          setIsProcessing(false)
           return
         }
 
         if (!session?.user) {
-          console.log('[AuthRedirect] ❌ Sem sessão ativa, redirecionando para login')
-          navigate('/login')
+          console.log('[AuthRedirect] ❌ Sem sessão ativa, sem redirecionamento necessário')
+          setIsProcessing(false)
           return
         }
 
@@ -83,7 +100,7 @@ const AuthRedirect = () => {
     }
 
     handleAuthRedirect()
-  }, [navigate])
+  }, [navigate, location.pathname])
 
   if (!isProcessing) {
     return null
