@@ -15,7 +15,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Welcome from "@/pages/Welcome";
 import ProtectedRoute from "@/components/ProtectedRoute";
-import { AuthRedirect } from "@/components/AuthRedirect";
+import AuthRedirect from "@/components/AuthRedirect";
 import { BackNavigationGuard } from "@/components/BackNavigationGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 

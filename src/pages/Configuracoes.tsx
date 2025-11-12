@@ -444,8 +444,8 @@ const Configuracoes = () => {
 
             {showUpdatePaymentModal && (
               <UpdatePaymentMethodModal
-                isOpen={showUpdatePaymentModal}
-                onClose={() => setShowUpdatePaymentModal(false)}
+                open={showUpdatePaymentModal}
+                onOpenChange={setShowUpdatePaymentModal}
                 onSuccess={handlePaymentSuccess}
               />
             )}

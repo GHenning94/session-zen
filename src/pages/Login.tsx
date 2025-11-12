@@ -343,24 +343,6 @@ const Login = () => {
         return
       }
 
-      // Verificar se o e-mail foi confirmado
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('email_confirmed_strict')
-        .eq('email', formData.email)
-        .single()
-
-      if (profileError) {
-        console.error('Erro ao verificar perfil:', profileError)
-        toast.error('Erro ao verificar conta. Tente novamente.')
-        return
-      }
-
-      if (!profileData?.email_confirmed_strict) {
-        toast.error('Você precisa confirmar seu e-mail antes de redefinir a senha. Verifique sua caixa de entrada.')
-        return
-      }
-
       // Se passou nas validações, enviar e-mail de recuperação
       const { error } = await supabase.functions.invoke('request-password-reset', {
         body: { email: formData.email }
@@ -428,7 +410,7 @@ const Login = () => {
         email={pending2FAEmail}
         requiresEmail={requires2FAEmail}
         requiresAuthenticator={requires2FAAuthenticator}
-        onSuccess={handle2FASuccess}
+        onVerified={handle2FASuccess}
         onCancel={() => {
           setShow2FA(false)
           setIsLoading(false)

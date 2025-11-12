@@ -15,7 +15,6 @@ interface PaymentMethod {
 
 interface PaymentMethodCardProps {
   paymentMethod: PaymentMethod;
-  onEdit: () => void;
   onDelete: () => void;
   onSetDefault: () => void;
   isDeleting?: boolean;
@@ -38,7 +37,6 @@ const formatBrand = (brand: string) => {
 
 export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
   paymentMethod,
-  onEdit,
   onDelete,
   onSetDefault,
   isDeleting = false,
@@ -76,15 +74,6 @@ export const PaymentMethodCard: React.FC<PaymentMethodCardProps> = ({
             </div>
           </div>
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={onEdit}
-              className="flex items-center space-x-2"
-            >
-              <Edit className="w-4 h-4" />
-              <span>Alterar</span>
-            </Button>
             <Button 
               variant="outline" 
               size="sm" 
