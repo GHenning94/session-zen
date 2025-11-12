@@ -71,9 +71,11 @@ export function AppSidebar() {
       ? "bg-primary text-primary-foreground font-semibold shadow-sm" 
       : "hover:bg-sidebar-accent/70 transition-all duration-200"
 
-  const handleNavClick = (e: React.MouseEvent) => {
-    // Previne que o sidebar mude de estado ao navegar
-    e.stopPropagation()
+  const handleNavClick = () => {
+    // Fecha o sidebar em mobile após navegação
+    if (window.innerWidth < 768) {
+      setOpen(false)
+    }
   }
 
   const settingsItem = { title: "Configurações", url: "/configuracoes", icon: Settings }

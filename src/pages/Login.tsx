@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Stethoscope, Heart, Check, X, Loader2 } from "lucide-react"
+import "./Login.styles.css"
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
@@ -214,8 +215,9 @@ const Login = () => {
           return
         }
         
-        toast.success('Login realizado com sucesso! Redirecionando...')
-        navigate("/dashboard", { state: { fromLogin: true } })
+        toast.success('Login realizado com sucesso!')
+        // Deixar AuthRedirect fazer o redirecionamento baseado no subscription_plan
+        window.location.href = '/dashboard'
       } else {
         throw new Error("Resposta de login inesperada.")
       }
@@ -231,8 +233,9 @@ const Login = () => {
 
   const handle2FASuccess = async () => {
     is2FASuccess.current = true
-    toast.success('Login realizado com sucesso! Redirecionando...')
-    navigate("/dashboard", { state: { fromLogin: true } })
+    toast.success('Login realizado com sucesso!')
+    // Deixar AuthRedirect fazer o redirecionamento baseado no subscription_plan
+    window.location.href = '/dashboard'
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -421,8 +424,14 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated blobs background */}
+      <div className="background-animation-container">
+        <div className="blob blob-1"></div>
+        <div className="blob blob-2"></div>
+      </div>
+      
+      <Card className="w-full max-w-md relative z-10">
         <CardHeader className="text-center">
           <div className="mx-auto mb-2 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
             <Stethoscope className="w-6 h-6 text-primary" />
