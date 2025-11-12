@@ -45,8 +45,9 @@ const AuthRedirect = () => {
         }
 
         if (!session?.user) {
-          console.log('[AuthRedirect] ❌ Sem sessão ativa, sem redirecionamento necessário')
-          setIsProcessing(false)
+          console.log('[AuthRedirect] ❌ Sem sessão ativa, redirecionando para login')
+          // Se não for rota pública e não tiver sessão, deve ir para o login
+          navigate('/login', { replace: true });
           return
         }
 
@@ -79,17 +80,31 @@ const AuthRedirect = () => {
 
         console.log('[AuthRedirect] ✅ Email confirmado')
 
-        // Verificar se o usuário tem plano definido
+        // **** CORREÇÃO DA LÓGICA APLICADA AQUI ****
+
         const subscriptionPlan = profile.subscription_plan
 
+        // CASO 1: Utilizador NÃO TEM plano
         if (!subscriptionPlan || subscriptionPlan === '') {
-          console.log('[AuthRedirect] 📋 Sem plano definido, redirecionando para Welcome')
-          navigate('/welcome', { replace: true })
-          return
+          // Se não tem plano, DEVE estar na página /welcome
+          if (currentPath !== '/welcome') {
+            console.log('[AuthRedirect] 📋 Sem plano definido, forçando para /welcome');
+            navigate('/welcome', { replace: true });
+            return; // Importante
+          }
+        } 
+        // CASO 2: Utilizador TEM plano
+        else {
+          // Se tem plano, NÃO DEVE estar na página /welcome
+          if (currentPath === '/welcome') {
+            console.log('[AuthRedirect] 💳 Plano ativo, saindo de /welcome para /dashboard');
+            navigate('/dashboard', { replace: true });
+            return; // Importante
+          }
         }
-
-        console.log('[AuthRedirect] 💳 Plano ativo:', subscriptionPlan, '- redirecionando para Dashboard')
-        navigate('/dashboard', { replace: true })
+        
+        // Se chegámos aqui, está tudo bem (Ex: tem plano e está em /agenda)
+        console.log('[AuthRedirect] ✅ Verificações completas, sem redirecionamento necessário.');
 
       } catch (error) {
         console.error('[AuthRedirect] ❌ Erro inesperado:', error)
