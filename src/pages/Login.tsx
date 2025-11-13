@@ -364,11 +364,10 @@ const Login = () => {
 
   if (awaitingEmailConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
         {/* Animated blobs background */}
         <div className="background-animation-container">
           <div className="blob blob-1"></div>
-          <div className="blob blob-2"></div>
         </div>
         
         <Card className="w-full max-w-md relative z-10">
@@ -415,11 +414,10 @@ const Login = () => {
 
   if (show2FA) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 relative overflow-hidden">
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
         {/* Animated blobs background */}
         <div className="background-animation-container">
           <div className="blob blob-1"></div>
-          <div className="blob blob-2"></div>
         </div>
         
         <div className="relative z-10 w-full max-w-md">
@@ -440,11 +438,10 @@ const Login = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated blobs background */}
       <div className="background-animation-container">
         <div className="blob blob-1"></div>
-        <div className="blob blob-2"></div>
       </div>
       
       <Card className="w-full max-w-md relative z-10">
