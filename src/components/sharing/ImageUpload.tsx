@@ -71,12 +71,8 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
         throw error
       }
 
-      // Get public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('user-uploads')
-        .getPublicUrl(fileName)
-
-      onChange(publicUrl)
+      // Return storage path instead of public URL
+      onChange(data.path)
 
       toast({
         title: "Sucesso",

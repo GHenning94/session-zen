@@ -155,6 +155,15 @@ export const ImageCropper = ({
       return
     }
 
+    if (!user) {
+      toast({
+        title: "Erro",
+        description: "Você precisa estar logado para fazer upload de imagens.",
+        variant: "destructive",
+      })
+      return
+    }
+
     setLoading(true)
     try {
       console.log('[ImageCropper] Starting crop process...')
@@ -195,16 +204,18 @@ export const ImageCropper = ({
         fileExtension = 'jpg'
       }
 
-      // Upload to Supabase Storage
+      // Upload to Supabase Storage with user folder
       console.log('[ImageCropper] Uploading to storage...')
-      const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`
-      const filePath = `public-uploads/${fileName}`
+      const timestamp = Date.now()
+      const randomStr = Math.random().toString(36).substring(7)
+      const fileName = `${timestamp}_${randomStr}.${fileExtension}`
+      const filePath = `${user.id}/${fileName}`
 
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('user-uploads')
         .upload(filePath, finalBlob, {
           contentType: finalBlob.type,
-          upsert: true,
+          upsert: false,
         })
 
       if (uploadError) {
@@ -215,7 +226,7 @@ export const ImageCropper = ({
       console.log('[ImageCropper] Upload successful:', uploadData)
 
       // Return storage path
-      onCropComplete(filePath)
+      onCropComplete(uploadData.path)
       onClose()
       toast({
         title: "Imagem recortada",
