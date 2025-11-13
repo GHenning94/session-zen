@@ -50,7 +50,7 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
       description: 'Para profissionais em crescimento',
       features: ['Até 20 clientes', 'Sessões ilimitadas', 'Histórico básico', 'Agendamento online'],
       recommended: true,
-      stripePrice: 'price_1RowvqFeTymAqTGEU6jkKtXi', // ID CORRETO DO PROFISSIONAL
+      stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb', // TherapyPro Profissional Mensal
       currentPlan: currentPlan === 'pro'
     },
     {
@@ -61,7 +61,7 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
       icon: <Crown className="h-5 w-5" />,
       description: 'Máximo poder e recursos',
       features: ['Clientes ilimitados', 'Histórico completo', 'Relatórios PDF', 'Integração WhatsApp'],
-      stripePrice: 'price_1RoxpDFeTymAqTGEWg0sS49i', // ID CORRETO DO PREMIUM
+      stripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du', // TherapyPro Premium Mensal
       currentPlan: currentPlan === 'premium'
     }
   ]

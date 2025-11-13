@@ -19,10 +19,10 @@ export default function Upgrade() {
   useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
 
   const STRIPE_PRICES = {
-    pro_monthly: 'price_1RowvqFeTymAqTGEU6jkKtXi',
-    pro_annual: 'price_1SMifUFeTymAqTGEucpJaUBz',
-    premium_monthly: 'price_1RoxpDFeTymAqTGEWg0sS49i',
-    premium_annual: 'price_1SMigPFeTymAqTGE6nN3mgP6'
+    pro_monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
+    pro_annual: 'price_1SSMOdCP57sNVd3la4kMOinN',
+    premium_monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
+    premium_annual: 'price_1SSMP7CP57sNVd3lSf4oYINX'
   }
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')

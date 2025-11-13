@@ -135,7 +135,7 @@ export const TwoFactorVerification = ({
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto">
+    <Card className="w-full">
       <CardHeader>
         <CardTitle>Verificação de Dois Fatores</CardTitle>
         <CardDescription>

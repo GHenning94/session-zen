@@ -364,8 +364,14 @@ const Login = () => {
 
   if (awaitingEmailConfirmation) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated blobs background */}
+        <div className="background-animation-container">
+          <div className="blob blob-1"></div>
+          <div className="blob blob-2"></div>
+        </div>
+        
+        <Card className="w-full max-w-md relative z-10">
           <CardHeader className="text-center">
             <div className="mx-auto mb-4 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
               <Heart className="w-8 h-8 text-primary" />
@@ -409,17 +415,27 @@ const Login = () => {
 
   if (show2FA) {
     return (
-      <TwoFactorVerification
-        email={pending2FAEmail}
-        requiresEmail={requires2FAEmail}
-        requiresAuthenticator={requires2FAAuthenticator}
-        onVerified={handle2FASuccess}
-        onCancel={() => {
-          setShow2FA(false)
-          setIsLoading(false)
-          supabase.auth.signOut()
-        }}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated blobs background */}
+        <div className="background-animation-container">
+          <div className="blob blob-1"></div>
+          <div className="blob blob-2"></div>
+        </div>
+        
+        <div className="relative z-10 w-full max-w-md">
+          <TwoFactorVerification
+            email={pending2FAEmail}
+            requiresEmail={requires2FAEmail}
+            requiresAuthenticator={requires2FAAuthenticator}
+            onVerified={handle2FASuccess}
+            onCancel={() => {
+              setShow2FA(false)
+              setIsLoading(false)
+              supabase.auth.signOut()
+            }}
+          />
+        </div>
+      </div>
     )
   }
 

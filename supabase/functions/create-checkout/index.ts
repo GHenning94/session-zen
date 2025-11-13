@@ -51,7 +51,7 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // ✅ Mapa atualizado com os novos Price IDs
+    // ✅ Price IDs atualizados do Stripe TherapyPro
     const priceMap: Record<string, { plan: string; interval: string; price: number }> = {
       'price_1SSMNgCP57sNVd3laEmlQOcb': { plan: 'pro', interval: 'monthly', price: 29.90 },
       'price_1SSMOdCP57sNVd3la4kMOinN': { plan: 'pro', interval: 'yearly', price: 299.90 },
