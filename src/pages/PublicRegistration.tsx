@@ -278,11 +278,10 @@ const PublicRegistration = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-radial from-primary/20 via-background to-background light relative overflow-hidden">
+    <div className="min-h-screen bg-background light relative overflow-hidden">
       {/* Blob effect no canto direito */}
       <div className="absolute inset-0 pointer-events-none">
         <div className="blob blob-right-1"></div>
-        <div className="blob blob-right-2"></div>
       </div>
 
       {/* Header */}
