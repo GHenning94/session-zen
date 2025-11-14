@@ -30,7 +30,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Suporte por email'
       ],
       recommended: currentPlan === 'basico',
-      stripePrice: 'price_1RowvqFeTymAqTGEU6jkKtXi' // ID do Profissional
+      stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb' // ID do Profissional
     },
     {
       name: 'Premium',
@@ -45,7 +45,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Suporte prioritário'
       ],
       recommended: currentPlan === 'pro',
-      stripePrice: 'price_1RoxpDFeTymAqTGEWg0sS49i' // ID do Premium
+      stripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du' // ID do Premium
     }
   ]
 
