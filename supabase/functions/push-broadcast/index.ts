@@ -59,6 +59,18 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Validate internal API secret for server-to-server authentication
+    const internalSecret = req.headers.get('X-Internal-Secret')
+    const expectedSecret = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') // Use service role key as shared secret
+    
+    if (!internalSecret || internalSecret !== expectedSecret) {
+      console.error('[push-broadcast] ❌ Unauthorized: Invalid or missing internal secret')
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: This endpoint is for internal use only' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     const supabase = createClient(supabaseUrl, supabaseServiceKey)
