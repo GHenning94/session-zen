@@ -98,7 +98,8 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           priceId: plan.stripePrice,
-          planName: plan.name
+          planName: plan.name,
+          returnUrl: window.location.origin,
         }
       })
 
