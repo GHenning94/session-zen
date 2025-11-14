@@ -172,13 +172,13 @@ serve(async (req) => {
       } else {
         console.log('[REGISTER-CLIENT] Notification created for professional')
         
-        // Send Web Push notification
+        // Send Web Push notification with internal authentication
         try {
           await fetch(`${supabaseUrl}/functions/v1/push-broadcast`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseKey}`,
+              'X-Internal-Secret': supabaseKey, // Internal auth for server-to-server calls
             },
             body: JSON.stringify({
               user_id: userId,

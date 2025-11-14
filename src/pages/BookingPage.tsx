@@ -221,6 +221,30 @@ const BookingPage = () => {
 
   const paymentMethods = [{ key: 'aceita_pix', label: 'Pix' }, { key: 'aceita_cartao', label: 'Cartão de Crédito' }, { key: 'aceita_transferencia', label: 'Transferência' }, { key: 'aceita_dinheiro', label: 'Dinheiro' }].filter(method => config[method.key])
 
+  // Sanitize custom CSS to prevent injection attacks
+  const sanitizeCSS = (css: string): string => {
+    if (!css) return '';
+    
+    // Block dangerous CSS patterns that can lead to data exfiltration or code execution
+    const dangerousPatterns = [
+      /url\s*\(/gi,           // External resource loading (data exfiltration)
+      /@import/gi,            // External stylesheet loading
+      /expression\s*\(/gi,    // IE expression() - code execution
+      /behavior\s*:/gi,       // IE behavior - code execution
+      /javascript\s*:/gi,     // JavaScript protocol
+      /-moz-binding/gi,       // Firefox binding (deprecated but dangerous)
+      /vbscript\s*:/gi,       // VBScript protocol
+      /data\s*:/gi,           // Data URIs (can be used for obfuscation)
+    ];
+    
+    let sanitized = css;
+    dangerousPatterns.forEach(pattern => {
+      sanitized = sanitized.replace(pattern, '/* blocked */');
+    });
+    
+    return sanitized;
+  };
+
   return (
     <div className="min-h-screen bg-muted/40" style={{
       backgroundColor: config.background_color || undefined,
@@ -229,7 +253,7 @@ const BookingPage = () => {
       backgroundPosition: 'center',
       color: config.brand_color || undefined
     }}>
-      {config.custom_css && <style dangerouslySetInnerHTML={{ __html: config.custom_css }} />}
+      {config.custom_css && <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(config.custom_css) }} />}
       <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-4xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Informações do Terapeuta */}
