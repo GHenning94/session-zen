@@ -151,14 +151,14 @@ export const ActionableNotificationsBanner = () => {
 
   return (
     <>
-      <Card className="mb-6 border-warning bg-warning/10">
+      <Card className="mb-6 border-warning/50 bg-warning/5">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 space-y-3">
               {notifications.map((notification) => (
                 <div
                   key={notification.id}
-                  className="flex items-center justify-between gap-4 p-3 bg-background/30 rounded-lg"
+                  className="flex items-center justify-between gap-4"
                 >
                   <div className="flex items-center gap-3 flex-1">
                     <div className="flex-shrink-0 text-warning">
