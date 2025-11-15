@@ -106,8 +106,7 @@ serve(async (req) => {
           user_id: user.id,
           plan_name: priceInfo.plan,
           billing_interval: priceInfo.interval
-        },
-        trial_period_days: 0 // Sem período de teste
+        }
       },
       // Permitir códigos promocionais
       allow_promotion_codes: true,
@@ -127,9 +126,11 @@ serve(async (req) => {
   } catch (error) {
     console.error("[create-checkout] ❌ Error:", error);
     const errorMessage = error instanceof Error ? error.message : String(error);
+    const stripeError = (error as any)?.raw?.message;
     return new Response(JSON.stringify({ 
       error: errorMessage,
-      details: "Erro ao criar sessão de pagamento. Verifique os dados e tente novamente."
+      stripe_error: stripeError,
+      details: stripeError || "Erro ao criar sessão de pagamento. Verifique os dados e tente novamente."
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,
