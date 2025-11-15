@@ -185,7 +185,7 @@ export const SubscriptionInfo = () => {
         <div className="pt-4 flex gap-2">
           {isFreePlan ? (
             <Button 
-              onClick={() => navigate('/welcome')} 
+              onClick={() => navigate('/upgrade')} 
               className="w-full"
             >
               Fazer Upgrade
@@ -193,7 +193,7 @@ export const SubscriptionInfo = () => {
           ) : (
             <>
               <Button 
-                onClick={() => navigate('/welcome')} 
+                onClick={() => navigate('/upgrade')} 
                 variant="outline"
                 className="flex-1"
               >

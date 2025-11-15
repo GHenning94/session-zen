@@ -10,14 +10,17 @@ import { supabase } from "@/integrations/supabase/client"
 interface Plan {
   id: string
   name: string
-  price: string
+  monthlyPrice: string
+  annualPrice: string
   period: string
   icon: React.ReactNode
   description: string
   features: string[]
   recommended?: boolean
-  stripePrice: string
+  monthlyStripePrice: string
+  annualStripePrice: string
   currentPlan?: boolean
+  annualSubtext?: string
 }
 
 interface UpgradePlanCardProps {
@@ -28,41 +31,50 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
 
   const allPlans: Plan[] = [
     {
       id: 'basico',
       name: 'Básico',
-      price: 'R$ 0',
+      monthlyPrice: 'R$ 0',
+      annualPrice: 'R$ 0',
       period: '/mês',
       icon: <Star className="h-5 w-5" />,
       description: 'Ideal para começar',
       features: ['Até 3 clientes', 'Até 4 sessões por cliente', 'Agendamento básico'],
-      stripePrice: '',
+      monthlyStripePrice: '',
+      annualStripePrice: '',
       currentPlan: currentPlan === 'basico'
     },
     {
       id: 'pro',
       name: 'Profissional',
-      price: 'R$ 29,90',
+      monthlyPrice: 'R$ 29,90',
+      annualPrice: 'R$ 24,90',
       period: '/mês',
       icon: <Zap className="h-5 w-5" />,
       description: 'Para profissionais em crescimento',
       features: ['Até 20 clientes', 'Sessões ilimitadas', 'Histórico básico', 'Agendamento online'],
       recommended: true,
-      stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb', // TherapyPro Profissional Mensal
-      currentPlan: currentPlan === 'pro'
+      monthlyStripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb',
+      annualStripePrice: 'price_1SSMOdCP57sNVd3la4kMOinN',
+      currentPlan: currentPlan === 'pro',
+      annualSubtext: '12x R$ 24,90 = R$ 298,80/ano'
     },
     {
       id: 'premium',
       name: 'Premium',
-      price: 'R$ 59,90',
+      monthlyPrice: 'R$ 49,90',
+      annualPrice: 'R$ 41,58',
       period: '/mês',
       icon: <Crown className="h-5 w-5" />,
       description: 'Máximo poder e recursos',
       features: ['Clientes ilimitados', 'Histórico completo', 'Relatórios PDF', 'Integração WhatsApp'],
-      stripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du', // TherapyPro Premium Mensal
-      currentPlan: currentPlan === 'premium'
+      monthlyStripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
+      annualStripePrice: 'price_1SSMP7CP57sNVd3lSf4oYINX',
+      currentPlan: currentPlan === 'premium',
+      annualSubtext: '12x R$ 41,58 = R$ 498,96/ano'
     }
   ]
 
@@ -95,9 +107,10 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
     // Para planos pagos, usar Stripe
     setLoading(true)
     try {
+      const stripePrice = billingCycle === 'monthly' ? plan.monthlyStripePrice : plan.annualStripePrice
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
-          priceId: plan.stripePrice,
+          priceId: stripePrice,
           planName: plan.name,
           returnUrl: window.location.origin,
         }
@@ -120,106 +133,102 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
     navigate('/upgrade')
   }
 
+  const displayedPlans = allPlans.filter(plan => plan.id !== currentPlan)
+
   return (
     <Card className="shadow-soft">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Crown className="w-4 h-4 text-primary" />
-          Planos de Assinatura
+          <Crown className="h-5 w-5 text-primary" />
+          Planos de assinatura
         </CardTitle>
-        <CardDescription className="text-xs">
-          Seu plano atual: <strong>{currentPlanInfo?.name}</strong>
+        <CardDescription>
+          {currentPlanInfo ? `Você está no plano ${currentPlanInfo.name}` : 'Escolha um plano para começar'}
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {/* Todos os Planos */}
-        <div className="space-y-3">
-          {allPlans.map((plan) => (
-            <div 
-              key={plan.id} 
-              className={`relative overflow-hidden rounded-xl border-2 transition-all duration-300 ${
-                plan.id === currentPlan 
-                  ? 'border-primary bg-gradient-to-r from-primary/5 to-primary/10 shadow-lg' 
-                  : 'border-border bg-card hover:border-primary/50 hover:shadow-md'
-              }`}
-            >
-              {/* Header do Plano */}
-              <div className="p-4 pb-3">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center gap-2">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      plan.id === currentPlan 
-                        ? 'bg-primary text-primary-foreground' 
-                        : 'bg-primary/10 text-primary'
-                    }`}>
-                      {plan.icon}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-0.5">
-                        <h3 className="text-base font-semibold">{plan.name}</h3>
-                        {plan.recommended && (
-                          <Badge className="bg-primary text-primary-foreground text-xs px-1.5 py-0.5">
-                            Popular
-                          </Badge>
-                        )}
-                        {plan.id === currentPlan && (
-                          <Badge className="bg-success text-success-foreground text-xs px-1.5 py-0.5">
-                            Ativo
-                          </Badge>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">{plan.description}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
 
-              {/* Recursos e Botão */}
-              <div className="px-4 pb-4">
-                <div className="space-y-3">
-                  {/* Lista de Recursos */}
-                  <div>
-                    <ul className="space-y-1.5">
-                      {plan.features.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-2">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full flex-shrink-0 mt-0.5"></div>
-                          <span className="text-xs">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Botão de Ação */}
-                  <div>
-                    <Button
-                      className="w-full h-8 text-xs font-medium"
-                      size="sm"
-                      variant={plan.id === currentPlan ? "outline" : plan.recommended ? "default" : "outline"}
-                      onClick={() => handleChangePlan(plan)}
-                      disabled={loading || plan.id === currentPlan}
-                    >
-                      {loading ? 'Processando...' : 
-                       plan.id === currentPlan ? 'Plano Atual' :
-                       plan.id === 'basico' ? 'Alterar para Básico' :
-                       `Alterar para ${plan.name}`}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        <div className="text-center pt-4">
-          <Button 
-            variant="ghost" 
-            className="text-sm" 
+      <CardContent className="space-y-4">
+        {/* Seletor de Ciclo de Cobrança */}
+        <div className="flex items-center justify-center gap-3 py-2">
+          <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Mensal
+          </span>
+          <Button
+            variant="outline"
             size="sm"
-            onClick={handleViewAllPlans}
+            onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+            className="relative w-12 h-6 rounded-full p-0"
           >
-            Ver detalhes completos <ArrowRight className="w-4 h-4 ml-2" />
+            <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-primary transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
           </Button>
+          <span className={`text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
+            Anual
+            <Badge variant="secondary" className="ml-2 text-xs">-17%</Badge>
+          </span>
         </div>
+
+        {displayedPlans.map((plan) => {
+          const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice
+          const isAnnual = billingCycle === 'annual'
+          
+          return (
+            <Card key={plan.id} className="relative border-2 border-border hover:border-primary/50 transition-colors">
+              {plan.recommended && (
+                <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
+                  Recomendado
+                </Badge>
+              )}
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    {plan.icon}
+                  </div>
+                  <div className="flex-1">
+                    <CardTitle className="text-base">{plan.name}</CardTitle>
+                    <CardDescription className="text-xs">{plan.description}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-2xl font-bold">{price}</span>
+                    <span className="text-muted-foreground text-sm">{plan.period}</span>
+                  </div>
+                  {isAnnual && plan.annualSubtext && (
+                    <p className="text-xs text-muted-foreground mt-1">{plan.annualSubtext}</p>
+                  )}
+                </div>
+                <ul className="space-y-2">
+                  {plan.features.map((feature, index) => (
+                    <li key={index} className="text-xs text-muted-foreground flex items-center gap-2">
+                      <span className="w-1 h-1 rounded-full bg-primary" />
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <Button 
+                  className="w-full" 
+                  size="sm"
+                  onClick={() => handleChangePlan(plan)}
+                  disabled={loading}
+                  variant={plan.recommended ? "default" : "outline"}
+                >
+                  {loading ? 'Processando...' : `Escolher ${plan.name}`}
+                </Button>
+              </CardContent>
+            </Card>
+          )
+        })}
+
+        <Button 
+          variant="ghost" 
+          className="w-full text-sm" 
+          onClick={handleViewAllPlans}
+        >
+          Ver detalhes completos
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
       </CardContent>
     </Card>
   )

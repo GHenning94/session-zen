@@ -417,8 +417,8 @@ const LandingPage = () => {
 
   const plans = [
     { name: "Básico", price: { monthly: "R$ 0", annually: "R$ 0" }, period: { monthly: "/mês", annually: "/ano" }, description: "Ideal para começar", features: ["Até 4 sessões por cliente", "Agendamento básico", "Suporte por email"], highlighted: false, cta: "Acessar", planId: "basico" },
-    { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 299,90" }, period: { monthly: "/mês", annually: "/ano" }, subtext: "equivale a R$ 24,99/mês", description: "Para profissionais em crescimento", features: ["Até 20 clientes", "Sessões ilimitadas", "Histórico básico", "Agendamento online", "Suporte prioritário"], highlighted: false, cta: "Assinar Profissional", planId: "pro" },
-    { name: "Premium", price: { monthly: "R$ 59,90", annually: "R$ 599,90" }, period: { monthly: "/mês", annually: "/ano" }, subtext: "equivale a R$ 49,99/mês", description: "Máximo poder e recursos", features: ["Clientes ilimitados", "Histórico completo", "Relatórios em PDF", "Integração WhatsApp", "Backup automático"], highlighted: true, cta: "Assinar Premium", planId: "premium" }
+    { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 24,90" }, period: { monthly: "/mês", annually: "/mês" }, subtext: "12x R$ 24,90 = R$ 298,80/ano", description: "Para profissionais em crescimento", features: ["Até 20 clientes", "Sessões ilimitadas", "Histórico básico", "Agendamento online", "Suporte prioritário"], highlighted: false, cta: "Assinar Profissional", planId: "pro" },
+    { name: "Premium", price: { monthly: "R$ 49,90", annually: "R$ 41,58" }, period: { monthly: "/mês", annually: "/mês" }, subtext: "12x R$ 41,58 = R$ 498,96/ano", description: "Máximo poder e recursos", features: ["Clientes ilimitados", "Histórico completo", "Relatórios em PDF", "Integração WhatsApp", "Backup automático"], highlighted: true, cta: "Assinar Premium", planId: "premium" }
   ];
 
   const systemInActionFeatures = [

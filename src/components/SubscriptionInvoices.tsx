@@ -7,16 +7,7 @@ import { useToast } from '@/hooks/use-toast'
 import { Download, FileText, Receipt, Calendar, AlertTriangle, Loader2 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+import { CancelSubscriptionFlow } from './CancelSubscriptionFlow'
 
 interface Invoice {
   id: string
@@ -314,39 +305,12 @@ export const SubscriptionInvoices = () => {
         )}
       </CardContent>
 
-      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Cancelar Assinatura</AlertDialogTitle>
-            <AlertDialogDescription>
-              Tem certeza que deseja cancelar sua assinatura? Você manterá o acesso aos recursos do plano até o fim do período já pago.
-              {subscriptionStatus?.next_billing_date && (
-                <span className="block mt-2 font-medium text-foreground">
-                  Seu plano ficará ativo até{' '}
-                  {format(new Date(subscriptionStatus.next_billing_date), "dd/MM/yyyy", { locale: ptBR })}.
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCanceling}>Voltar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleCancelSubscription}
-              disabled={isCanceling}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isCanceling ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Cancelando...
-                </>
-              ) : (
-                "Confirmar Cancelamento"
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <CancelSubscriptionFlow
+        open={showCancelDialog}
+        onOpenChange={setShowCancelDialog}
+        onConfirmCancel={handleCancelSubscription}
+        planName={getPlanDisplayName(currentPlan, subscriptionStatus?.billing_interval)}
+      />
     </Card>
   )
 }
