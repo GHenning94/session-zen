@@ -120,8 +120,8 @@ export default function Upgrade() {
           </Button>
         </div>
         <div className="text-center mb-12 space-y-4">
-          <h1 className="text-4xl font-bold mb-4">Bem-vindo ao TherapyPro! 🎉</h1>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Escolha o plano ideal para começar sua jornada</p>
+          <h1 className="text-4xl font-bold mb-4">Escolha o plano ideal para o seu consultório</h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Compare nossos planos e encontre o que melhor se adapta às suas necessidades</p>
           
           {/* Seletor de Ciclo de Cobrança */}
           <div className="flex items-center justify-center gap-3 mt-8">

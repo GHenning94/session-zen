@@ -279,7 +279,7 @@ const Configuracoes = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="platform-payments">Pagamentos</TabsTrigger>
+            <TabsTrigger value="platform-payments">Assinatura</TabsTrigger>
             <TabsTrigger value="bank-details">Dados Bancários</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
           </TabsList>
