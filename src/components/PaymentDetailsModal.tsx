@@ -28,7 +28,7 @@ interface PaymentDetailsModalProps {
   onGenerateReceipt: (payment: any) => void
   onViewSession: (sessionId: string) => void
   onMarkAsPaid?: (sessionId: string) => void
-  onUpdatePaymentStatus?: (paymentId: string, status: string) => void
+  onUpdatePaymentStatus?: (paymentId: string, status: string, method?: string) => void
 }
 
 export const PaymentDetailsModal = ({
@@ -140,13 +140,40 @@ export const PaymentDetailsModal = ({
                   <label className="text-sm text-muted-foreground">Valor</label>
                   <p className="font-medium text-lg">{formatCurrencyBR(payment.value)}</p>
                 </div>
-                <div>
-                  <label className="text-sm text-muted-foreground">Método de Pagamento</label>
-                  <div className="flex items-center gap-2 mt-1">
-                    {getPaymentMethodIcon(payment.method)}
-                    <p className="font-medium capitalize">{payment.method}</p>
+                {onUpdatePaymentStatus ? (
+                  <div>
+                    <label className="text-sm text-muted-foreground">Método de Pagamento</label>
+                    <Select 
+                      value={payment.method} 
+                      onValueChange={(value) => {
+                        // Atualizar método de pagamento
+                        if (payment.session_id) {
+                          // É uma sessão
+                          onUpdatePaymentStatus(payment.session_id, selectedStatus, value)
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full mt-1">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="z-50 bg-background">
+                        <SelectItem value="A definir">💳 A Definir</SelectItem>
+                        <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                        <SelectItem value="pix">📱 PIX</SelectItem>
+                        <SelectItem value="cartao">💳 Cartão</SelectItem>
+                        <SelectItem value="transferencia">🏦 Transferência Bancária</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
+                ) : (
+                  <div>
+                    <label className="text-sm text-muted-foreground">Método de Pagamento</label>
+                    <div className="flex items-center gap-2 mt-1">
+                      {getPaymentMethodIcon(payment.method)}
+                      <p className="font-medium capitalize">{payment.method}</p>
+                    </div>
+                  </div>
+                )}
                 {onUpdatePaymentStatus && (
                   <div>
                     <label className="text-sm text-muted-foreground">Status</label>
@@ -154,7 +181,9 @@ export const PaymentDetailsModal = ({
                       value={selectedStatus} 
                       onValueChange={(value) => {
                         setSelectedStatus(value)
-                        onUpdatePaymentStatus(payment.id, value)
+                        if (payment.session_id) {
+                          onUpdatePaymentStatus(payment.session_id, value, payment.method)
+                        }
                       }}
                     >
                       <SelectTrigger className="w-full mt-1">
