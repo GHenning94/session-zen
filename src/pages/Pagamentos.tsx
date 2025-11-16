@@ -266,31 +266,40 @@ const getSessionPayments = () => {
     openPaymentModal(sessionId)
   }
 
-  const handleUpdatePaymentStatus = async (paymentId: string, status: string) => {
+  const handleUpdatePaymentStatus = async (paymentId: string, status: string, method?: string) => {
     setIsLoading(true)
     try {
       // Verificar se é pagamento de pacote ou sessão
-      const payment = allPayments.find(p => p.id === paymentId)
+      const payment = allPayments.find(p => p.id === paymentId || p.session_id === paymentId)
       
       if (payment?.type === 'package') {
         // Atualizar pagamento de pacote
+        const updateData: any = { status }
+        if (status === 'pago') {
+          updateData.data_pagamento = new Date().toISOString().split('T')[0]
+        }
+        if (method) {
+          updateData.metodo_pagamento = method
+        }
+        
         const { error } = await supabase
           .from('payments')
-          .update({ 
-            status,
-            data_pagamento: status === 'pago' ? new Date().toISOString().split('T')[0] : null
-          })
+          .update(updateData)
           .eq('id', paymentId)
         
         if (error) throw error
       } else {
         // Atualizar status da sessão
+        const updateData: any = { 
+          status: status === 'pago' ? 'realizada' : status === 'cancelado' ? 'cancelada' : 'agendada'
+        }
+        if (method) {
+          updateData.metodo_pagamento = method
+        }
+        
         const { error } = await supabase
           .from('sessions')
-          .update({ 
-            status: status === 'pago' ? 'realizada' : 'agendada',
-            metodo_pagamento: status === 'pago' ? payment?.method : null
-          })
+          .update(updateData)
           .eq('id', paymentId)
         
         if (error) throw error

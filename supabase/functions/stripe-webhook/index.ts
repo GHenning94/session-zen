@@ -68,18 +68,13 @@ serve(async (req) => {
             billing_interval: billingInterval,
             stripe_customer_id: session.customer as string,
             stripe_subscription_id: session.subscription as string,
-            subscription_start_date: new Date().toISOString(),
-            subscription_end_date: nextBillingDate.toISOString(),
-            subscription_cancel_at: null,
-            onboarding_completed: true,
-            first_login_completed: true
           })
           .eq('user_id', userId);
 
         if (updateError) {
           console.error('[webhook] ❌ Error updating profile:', updateError);
         } else {
-          console.log('[webhook] ✅ Profile updated successfully');
+          console.log('[webhook] ✅ Profile updated successfully to plan:', planName);
           
           // Criar notificação de boas-vindas
           await supabase
@@ -140,7 +135,11 @@ serve(async (req) => {
         console.log('[webhook] 🔄 Subscription updated:', {
           subscription: subscription.id,
           status: subscription.status,
-          cancel_at_period_end: subscription.cancel_at_period_end
+          cancel_at_period_end: subscription.cancel_at_period_end,
+          items: subscription.items.data.map(item => ({
+            price: item.price.id,
+            product: item.price.product
+          }))
         });
 
         // Buscar usuário
@@ -152,16 +151,28 @@ serve(async (req) => {
 
         if (profile) {
           const isActive = subscription.status === 'active';
-          const newPlanName = subscription.items.data[0]?.price.metadata?.plan_name || 
-                             subscription.metadata?.plan_name || 
-                             profile.subscription_plan;
+          
+          // Buscar os metadados do preço para descobrir o plano
+          const priceId = subscription.items.data[0]?.price.id;
+          let newPlanName = profile.subscription_plan;
+          
+          // Mapear price IDs para planos
+          const priceToPlans: { [key: string]: string } = {
+            'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',  // Profissional Mensal
+            'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',  // Profissional Anual
+            'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium', // Premium Mensal
+            'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'  // Premium Anual
+          };
+          
+          if (priceId && priceToPlans[priceId]) {
+            newPlanName = priceToPlans[priceId];
+          }
           
           const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
 
           const updateData: any = {
             subscription_plan: isActive ? newPlanName : 'basico',
             billing_interval: isActive ? (billingInterval === 'year' ? 'yearly' : 'monthly') : null,
-            subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
           };
 
           // ✅ PERÍODO DE CARÊNCIA: Se cancelado, manter acesso até o fim do período
@@ -175,6 +186,8 @@ serve(async (req) => {
             updateData.subscription_cancel_at = null;
           }
 
+          console.log('[webhook] 📝 Updating profile with:', updateData);
+
           const { error: updateError } = await supabase
             .from('profiles')
             .update(updateData)
@@ -183,7 +196,7 @@ serve(async (req) => {
           if (updateError) {
             console.error('[webhook] ❌ Error updating subscription:', updateError);
           } else {
-            console.log('[webhook] ✅ Subscription updated successfully');
+            console.log('[webhook] ✅ Subscription updated successfully - New plan:', newPlanName);
 
             // Notificar sobre cancelamento agendado
             if (subscription.cancel_at_period_end) {
@@ -194,10 +207,22 @@ serve(async (req) => {
                   titulo: 'Assinatura Cancelada',
                   conteudo: `Sua assinatura foi cancelada mas você terá acesso até ${new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')}`
                 });
-            } else if (isActive) {
-              // Notificar sobre renovação
+            } else if (isActive && newPlanName !== profile.subscription_plan) {
+              // Notificar sobre mudança de plano
               await supabase
                 .from('notifications')
+                .insert({
+                  user_id: profile.user_id,
+                  titulo: 'Plano Atualizado',
+                  conteudo: `Seu plano foi alterado para ${newPlanName === 'premium' ? 'Premium' : 'Profissional'} com sucesso!`
+                });
+            }
+          }
+        } else {
+          console.error('[webhook] ❌ Profile not found for customer:', customerId);
+        }
+        break;
+      }
                 .insert({
                   user_id: profile.user_id,
                   titulo: 'Assinatura Renovada',
