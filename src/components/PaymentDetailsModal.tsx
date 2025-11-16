@@ -150,11 +150,17 @@ export const PaymentDetailsModal = ({
                 {onUpdatePaymentStatus && (
                   <div>
                     <label className="text-sm text-muted-foreground">Status</label>
-                    <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+                    <Select 
+                      value={selectedStatus} 
+                      onValueChange={(value) => {
+                        setSelectedStatus(value)
+                        onUpdatePaymentStatus(payment.id, value)
+                      }}
+                    >
                       <SelectTrigger className="w-full mt-1">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-50 bg-background">
                         <SelectItem value="pendente">Pendente</SelectItem>
                         <SelectItem value="pago">Pago</SelectItem>
                         <SelectItem value="cancelado">Cancelado</SelectItem>
