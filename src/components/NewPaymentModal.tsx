@@ -195,7 +195,7 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
               <SelectTrigger>
                 <SelectValue placeholder="Selecione uma sessão" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-background max-h-[300px]">
                 {getSessionsForSelect().map((session) => (
                   <SelectItem key={session.id} value={session.id}>
                     {session.label}
@@ -238,11 +238,11 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o método" />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                <SelectItem value="pix">PIX</SelectItem>
-                <SelectItem value="cartao">Cartão</SelectItem>
-                <SelectItem value="transferencia">Transferência Bancária</SelectItem>
+              <SelectContent className="z-50 bg-background">
+                <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
+                <SelectItem value="pix">📱 PIX</SelectItem>
+                <SelectItem value="cartao">💳 Cartão</SelectItem>
+                <SelectItem value="transferencia">🏦 Transferência Bancária</SelectItem>
               </SelectContent>
             </Select>
           </div>

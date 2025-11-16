@@ -276,7 +276,10 @@ const getSessionPayments = () => {
         // Atualizar pagamento de pacote
         const { error } = await supabase
           .from('payments')
-          .update({ status })
+          .update({ 
+            status,
+            data_pagamento: status === 'pago' ? new Date().toISOString().split('T')[0] : null
+          })
           .eq('id', paymentId)
         
         if (error) throw error
@@ -284,7 +287,10 @@ const getSessionPayments = () => {
         // Atualizar status da sessão
         const { error } = await supabase
           .from('sessions')
-          .update({ status: status === 'pago' ? 'realizada' : 'agendada' })
+          .update({ 
+            status: status === 'pago' ? 'realizada' : 'agendada',
+            metodo_pagamento: status === 'pago' ? payment?.method : null
+          })
           .eq('id', paymentId)
         
         if (error) throw error
@@ -295,8 +301,10 @@ const getSessionPayments = () => {
         description: "O status do pagamento foi atualizado com sucesso.",
       })
       
+      // Recarregar dados
       await loadData()
-      // Notificar dashboard para atualizar
+      
+      // Notificar Dashboard e outras páginas para atualizar
       window.dispatchEvent(new Event('paymentUpdated'))
     } catch (error) {
       console.error('Erro ao atualizar status:', error)
