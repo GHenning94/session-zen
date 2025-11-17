@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
+import { useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2 } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
@@ -26,12 +27,18 @@ import { PaymentMethodCard } from "@/components/PaymentMethodCard"
 import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
 import { SubscriptionInvoices } from "@/components/SubscriptionInvoices"
 import { SubscriptionInfo } from "@/components/SubscriptionInfo"
+import { TwoFactorSettings } from "@/components/TwoFactorSettings"
+import { ThemeToggle } from "@/components/ThemeToggle"
+import { ColorPicker } from "@/components/ColorPicker"
+import { useColorTheme } from "@/hooks/useColorTheme"
 
 type AllSettings = Record<string, any>;
 
 const Configuracoes = () => {
   const { toast } = useToast()
   const { user } = useAuth()
+  const [searchParams] = useSearchParams()
+  const { applyBrandColor, saveBrandColor } = useColorTheme()
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
@@ -42,6 +49,17 @@ const Configuracoes = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [showColorPicker, setShowColorPicker] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  
+  // Ler tab da URL
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab && ['profile', 'security', 'preferences', 'platform-payments', 'bank-details', 'notifications'].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   const loadPaymentMethods = async () => {
     if (!user) return;
@@ -277,8 +295,10 @@ const Configuracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
+            <TabsTrigger value="security">Segurança</TabsTrigger>
+            <TabsTrigger value="preferences">Preferências</TabsTrigger>
             <TabsTrigger value="platform-payments">Assinatura</TabsTrigger>
             <TabsTrigger value="bank-details">Dados Bancários</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
@@ -383,6 +403,103 @@ const Configuracoes = () => {
                 >
                   Deletar Conta Permanentemente
                 </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="security" className="space-y-6">
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Segurança
+                </CardTitle>
+                <CardDescription>Gerencie a segurança da sua conta</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>E-mail da Conta</Label>
+                    <Input type="email" value={settings.email || ''} disabled />
+                    <p className="text-xs text-muted-foreground">
+                      Para alterar seu e-mail, entre em contato com o suporte
+                    </p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Nova Senha</Label>
+                    <Input 
+                      type="password" 
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Digite nova senha (opcional)"
+                    />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Confirmar Nova Senha</Label>
+                    <Input 
+                      type="password" 
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirme a nova senha"
+                    />
+                  </div>
+                </div>
+                
+                <TwoFactorSettings />
+                
+                <Button onClick={handleSave} disabled={isLoading}>
+                  <Save className="w-4 h-4 mr-2" />
+                  Salvar Alterações
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card className="border-destructive shadow-soft">
+              <CardHeader>
+                <CardTitle className="text-destructive flex items-center gap-2">
+                  <Trash2 className="w-5 h-5" />
+                  Zona de Perigo
+                </CardTitle>
+                <CardDescription>Ações irreversíveis da conta</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                  Deletar Conta Permanentemente
+                </Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="preferences" className="space-y-6">
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Palette className="w-5 h-5" />
+                  Preferências
+                </CardTitle>
+                <CardDescription>Personalize a aparência da plataforma</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Modo Escuro/Claro</Label>
+                    <p className="text-sm text-muted-foreground">Altere o tema da plataforma</p>
+                  </div>
+                  <ThemeToggle />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Cor da Plataforma</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Personalize a cor principal da plataforma
+                  </p>
+                  <Button variant="outline" onClick={() => setShowColorPicker(true)}>
+                    <Palette className="w-4 h-4 mr-2" />
+                    Personalizar Cores
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
@@ -621,6 +738,26 @@ const Configuracoes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <UpdatePaymentMethodModal 
+        open={showUpdatePaymentModal}
+        onOpenChange={setShowUpdatePaymentModal}
+        onSuccess={handlePaymentSuccess}
+      />
+
+      {showColorPicker && (
+        <ColorPicker
+          open={showColorPicker}
+          onOpenChange={setShowColorPicker}
+          currentColor={settings.brand_color}
+          onSave={async (color) => {
+            await saveBrandColor(color)
+            handleSettingsChange('brand_color', color)
+            applyBrandColor(color)
+            setShowColorPicker(false)
+          }}
+        />
+      )}
     </Layout>
   )
 }

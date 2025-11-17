@@ -247,20 +247,6 @@ export const PaymentDetailsModal = ({
             </Button>
           )}
 
-          {onUpdatePaymentStatus && selectedStatus !== payment.status && (
-            <Button
-              variant="default"
-              onClick={() => {
-                onUpdatePaymentStatus(payment.id, selectedStatus)
-                onOpenChange(false)
-              }}
-              className="flex items-center gap-2"
-            >
-              <CheckCircle className="w-4 h-4" />
-              Atualizar Status
-            </Button>
-          )}
-
           {!onUpdatePaymentStatus && payment.status === 'pendente' && onMarkAsPaid && !isPackagePayment && (
             <Button
               variant="default"
