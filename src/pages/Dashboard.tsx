@@ -718,13 +718,21 @@ const Dashboard = () => {
 
       if (checkStale()) return
 
+      // Calcular taxa de conclusão baseado em sessões realizadas  
+      const allSessionsData = allSessionsForNotificationsResult.data || []
+      const totalSessionsCount = allSessionsData.length
+      const completedSessionsCount = allSessionsData.filter(s => s.status === 'realizada').length
+      const calculatedCompletionRate = totalSessionsCount > 0 
+        ? Math.round((completedSessionsCount / totalSessionsCount) * 100)
+        : 0
+
       // Preparar dashboard data (não setar ainda)
       const dashboardDataPrepared = {
         sessionsToday: todaySessions?.length || 0,
         activeClients: clientsCount || 0,
         monthlyRevenue,
         pendingRevenue: pendingPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
-        completionRate: 94
+        completionRate: calculatedCompletionRate
       }
 
       // Ordenar upcoming sessions e recent payments (futuras primeiro, depois passadas)

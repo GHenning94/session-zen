@@ -298,28 +298,13 @@ const getSessionPayments = () => {
           updatePaymentData.metodo_pagamento = method
         }
         
-        // Atualizar payment
+        // Atualizar apenas payment
         const { error: paymentError } = await supabase
           .from('payments')
           .update(updatePaymentData)
           .eq('session_id', paymentId)
         
         if (paymentError) throw paymentError
-        
-        // Atualizar session
-        const updateSessionData: any = { 
-          status: status === 'pago' ? 'realizada' : status === 'cancelado' ? 'cancelada' : 'agendada'
-        }
-        if (method) {
-          updateSessionData.metodo_pagamento = method
-        }
-        
-        const { error: sessionError } = await supabase
-          .from('sessions')
-          .update(updateSessionData)
-          .eq('id', paymentId)
-        
-        if (sessionError) throw sessionError
       }
       
       toast({
