@@ -17,7 +17,7 @@ import {
   Package
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
@@ -42,6 +42,15 @@ export const PaymentDetailsModal = ({
 }: PaymentDetailsModalProps) => {
   const { avatarUrl } = useAvatarUrl(payment?.client_avatar)
   const [selectedStatus, setSelectedStatus] = useState(payment?.status || 'pendente')
+  const [selectedMethod, setSelectedMethod] = useState(payment?.method || 'A definir')
+  
+  // Atualizar estados quando o payment mudar
+  useEffect(() => {
+    if (payment) {
+      setSelectedStatus(payment.status || 'pendente')
+      setSelectedMethod(payment.method || 'A definir')
+    }
+  }, [payment])
   
   if (!payment) return null
 
@@ -144,12 +153,16 @@ export const PaymentDetailsModal = ({
                   <div>
                     <label className="text-sm text-muted-foreground">Método de Pagamento</label>
                     <Select 
-                      value={payment.method} 
+                      value={selectedMethod} 
                       onValueChange={(value) => {
+                        setSelectedMethod(value)
                         // Atualizar método de pagamento
                         if (payment.session_id) {
                           // É uma sessão
                           onUpdatePaymentStatus(payment.session_id, selectedStatus, value)
+                        } else if (payment.id) {
+                          // É um pagamento de pacote
+                          onUpdatePaymentStatus(payment.id, selectedStatus, value)
                         }
                       }}
                     >
@@ -182,7 +195,9 @@ export const PaymentDetailsModal = ({
                       onValueChange={(value) => {
                         setSelectedStatus(value)
                         if (payment.session_id) {
-                          onUpdatePaymentStatus(payment.session_id, value, payment.method)
+                          onUpdatePaymentStatus(payment.session_id, value, selectedMethod)
+                        } else if (payment.id) {
+                          onUpdatePaymentStatus(payment.id, value, selectedMethod)
                         }
                       }}
                     >

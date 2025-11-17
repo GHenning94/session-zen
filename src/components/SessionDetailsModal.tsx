@@ -135,9 +135,9 @@ export const SessionDetailsModal = ({
                   <p className="font-medium capitalize">
                     {session.package_id 
                       ? 'A definir (Pacote)' 
-                      : session.metodo_pagamento === 'A definir' || !session.metodo_pagamento 
-                        ? 'A definir' 
-                        : session.metodo_pagamento}
+                      : (session.metodo_pagamento && session.metodo_pagamento !== 'A definir')
+                        ? session.metodo_pagamento 
+                        : 'A definir'}
                   </p>
                 </div>
               </div>

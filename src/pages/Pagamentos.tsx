@@ -270,7 +270,7 @@ const getSessionPayments = () => {
     setIsLoading(true)
     try {
       // Verificar se é pagamento de pacote ou sessão
-      const payment = allPayments.find(p => p.id === paymentId || p.session_id === paymentId)
+      const payment = allPayments.find(p => p.id === paymentId)
       
       if (payment?.type === 'package') {
         // Atualizar pagamento de pacote
@@ -289,20 +289,37 @@ const getSessionPayments = () => {
         
         if (error) throw error
       } else {
-        // Atualizar status da sessão
-        const updateData: any = { 
+        // Para sessão, atualizar TANTO a tabela payments QUANTO a sessions
+        const updatePaymentData: any = { status }
+        if (status === 'pago') {
+          updatePaymentData.data_pagamento = new Date().toISOString().split('T')[0]
+        }
+        if (method) {
+          updatePaymentData.metodo_pagamento = method
+        }
+        
+        // Atualizar payment
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .update(updatePaymentData)
+          .eq('session_id', paymentId)
+        
+        if (paymentError) throw paymentError
+        
+        // Atualizar session
+        const updateSessionData: any = { 
           status: status === 'pago' ? 'realizada' : status === 'cancelado' ? 'cancelada' : 'agendada'
         }
         if (method) {
-          updateData.metodo_pagamento = method
+          updateSessionData.metodo_pagamento = method
         }
         
-        const { error } = await supabase
+        const { error: sessionError } = await supabase
           .from('sessions')
-          .update(updateData)
+          .update(updateSessionData)
           .eq('id', paymentId)
         
-        if (error) throw error
+        if (sessionError) throw sessionError
       }
       
       toast({
