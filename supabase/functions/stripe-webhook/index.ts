@@ -223,16 +223,6 @@ serve(async (req) => {
         }
         break;
       }
-                .insert({
-                  user_id: profile.user_id,
-                  titulo: 'Assinatura Renovada',
-                  conteudo: `Sua assinatura ${newPlanName} foi renovada com sucesso!`
-                });
-            }
-          }
-        }
-        break;
-      }
 
       case "customer.subscription.deleted": {
         const subscription = event.data.object as Stripe.Subscription;
