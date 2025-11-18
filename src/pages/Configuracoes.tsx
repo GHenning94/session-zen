@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Camera } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
@@ -31,7 +31,7 @@ import { TwoFactorSettings } from "@/components/TwoFactorSettings"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
-import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
 
 type AllSettings = Record<string, any>;
 
@@ -53,7 +53,6 @@ const Configuracoes = () => {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const { avatarUrl } = useAvatarUrl(settings.avatar_url)
   
   // Ler tab da URL
   useEffect(() => {
@@ -148,6 +147,31 @@ const Configuracoes = () => {
 
   const handleSettingsChange = (field: string, value: any) => {
     setSettings(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleAvatarChange = async (avatarPath: string) => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ avatar_url: avatarPath })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setSettings(prev => ({ ...prev, avatar_url: avatarPath }));
+      
+      // Force page reload to update all avatar instances
+      window.location.reload();
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a foto.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSave = async () => {
@@ -315,77 +339,13 @@ const Configuracoes = () => {
                 </CardTitle>
                 <CardDescription>Atualize sua foto de perfil</CardDescription>
               </CardHeader>
-              <CardContent>
-                <div className="flex flex-col items-center gap-4">
-                  <div className="relative group">
-                    <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center border-4 border-border">
-                      {avatarUrl ? (
-                        <img 
-                          src={avatarUrl} 
-                          alt={settings.nome || 'Perfil'} 
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-12 h-12 text-muted-foreground" />
-                      )}
-                    </div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id="avatar-upload"
-                      onChange={async (e) => {
-                        const file = e.target.files?.[0]
-                        if (!file || !user) return
-
-                        try {
-                          const fileExt = file.name.split('.').pop()
-                          const fileName = `${user.id}-${Date.now()}.${fileExt}`
-                          const filePath = `user-uploads/${fileName}`
-
-                          const { error: uploadError } = await supabase.storage
-                            .from('user-uploads')
-                            .upload(filePath, file, { upsert: true })
-
-                          if (uploadError) throw uploadError
-
-                          const { error: updateError } = await supabase
-                            .from('profiles')
-                            .update({ avatar_url: filePath })
-                            .eq('user_id', user.id)
-
-                          if (updateError) throw updateError
-
-                          setSettings(prev => ({ ...prev, avatar_url: filePath }))
-
-                          toast({
-                            title: "Foto atualizada",
-                            description: "Sua foto de perfil foi atualizada com sucesso.",
-                          })
-                          
-                          // Força reload da página para atualizar o avatar no header
-                          window.location.reload()
-                        } catch (error) {
-                          console.error('Erro ao fazer upload:', error)
-                          toast({
-                            title: "Erro",
-                            description: "Erro ao atualizar foto de perfil.",
-                            variant: "destructive",
-                          })
-                        }
-                      }}
-                    />
-                    <label
-                      htmlFor="avatar-upload"
-                      className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg"
-                    >
-                      <Camera className="w-4 h-4" />
-                    </label>
-                  </div>
-                  <p className="text-sm text-muted-foreground text-center">
-                    Clique no ícone de câmera para alterar sua foto de perfil
-                  </p>
-                </div>
+              <CardContent className="flex justify-center py-6">
+                <ProfileAvatarUpload
+                  userName={settings.nome || "Usuário"}
+                  currentAvatarUrl={settings.avatar_url || ""}
+                  onAvatarChange={handleAvatarChange}
+                  size="lg"
+                />
               </CardContent>
             </Card>
 
