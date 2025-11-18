@@ -318,7 +318,7 @@ const Configuracoes = () => {
               <CardContent>
                 <div className="flex flex-col items-center gap-4">
                   <div className="relative group">
-                    <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center border-4 border-border">
+                    <div className="w-24 h-24 rounded-full overflow-hidden bg-muted flex items-center justify-center border-4 border-border">
                       {avatarUrl ? (
                         <img 
                           src={avatarUrl} 
@@ -326,7 +326,7 @@ const Configuracoes = () => {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <User className="w-16 h-16 text-muted-foreground" />
+                        <User className="w-12 h-12 text-muted-foreground" />
                       )}
                     </div>
                     <input
@@ -349,17 +349,22 @@ const Configuracoes = () => {
 
                           if (uploadError) throw uploadError
 
-                          await supabase
+                          const { error: updateError } = await supabase
                             .from('profiles')
                             .update({ avatar_url: filePath })
                             .eq('user_id', user.id)
 
-                          handleSettingsChange('avatar_url', filePath)
+                          if (updateError) throw updateError
+
+                          setSettings(prev => ({ ...prev, avatar_url: filePath }))
 
                           toast({
                             title: "Foto atualizada",
                             description: "Sua foto de perfil foi atualizada com sucesso.",
                           })
+                          
+                          // Força reload da página para atualizar o avatar no header
+                          window.location.reload()
                         } catch (error) {
                           console.error('Erro ao fazer upload:', error)
                           toast({
@@ -372,9 +377,9 @@ const Configuracoes = () => {
                     />
                     <label
                       htmlFor="avatar-upload"
-                      className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-3 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg"
+                      className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg"
                     >
-                      <Camera className="w-5 h-5" />
+                      <Camera className="w-4 h-4" />
                     </label>
                   </div>
                   <p className="text-sm text-muted-foreground text-center">
@@ -462,26 +467,6 @@ const Configuracoes = () => {
                 <Button onClick={handleSave} disabled={isLoading}>
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Alterações
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card className="border-destructive shadow-soft">
-              <CardHeader>
-                <CardTitle className="text-destructive flex items-center gap-2">
-                  <Trash2 className="w-5 h-5" />
-                  Zona de Perigo
-                </CardTitle>
-                <CardDescription>
-                  Ações irreversíveis da conta
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Button
-                  variant="destructive"
-                  onClick={() => setShowDeleteConfirm(true)}
-                >
-                  Deletar Conta Permanentemente
                 </Button>
               </CardContent>
             </Card>
