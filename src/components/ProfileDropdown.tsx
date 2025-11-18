@@ -29,6 +29,28 @@ export const ProfileDropdown = () => {
   useEffect(() => {
     if (user) {
       fetchProfile()
+      
+      // Subscribe to profile changes
+      const channel = supabase
+        .channel('profile-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'profiles',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Profile updated:', payload)
+            fetchProfile()
+          }
+        )
+        .subscribe()
+
+      return () => {
+        supabase.removeChannel(channel)
+      }
     }
   }, [user])
 
@@ -45,7 +67,9 @@ export const ProfileDropdown = () => {
       if (error) throw error
 
       if (data) {
-        setProfile(data)
+        // Garante capitalização correta da profissão
+        const profissaoFormatada = data.profissao === 'psicologo' ? 'Psicólogo' : data.profissao
+        setProfile({ ...data, profissao: profissaoFormatada })
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error)
