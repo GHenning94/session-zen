@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Camera } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
   AlertDialog,
@@ -31,6 +31,7 @@ import { TwoFactorSettings } from "@/components/TwoFactorSettings"
 import { ThemeToggle } from "@/components/ThemeToggle"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
+import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 type AllSettings = Record<string, any>;
 
@@ -52,6 +53,7 @@ const Configuracoes = () => {
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const { avatarUrl } = useAvatarUrl(settings.avatar_url)
   
   // Ler tab da URL
   useEffect(() => {
@@ -305,6 +307,84 @@ const Configuracoes = () => {
           </TabsList>
           
           <TabsContent value="profile" className="space-y-6">
+            {/* Foto de Perfil */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User />Foto de Perfil
+                </CardTitle>
+                <CardDescription>Atualize sua foto de perfil</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex flex-col items-center gap-4">
+                  <div className="relative group">
+                    <div className="w-32 h-32 rounded-full overflow-hidden bg-muted flex items-center justify-center border-4 border-border">
+                      {avatarUrl ? (
+                        <img 
+                          src={avatarUrl} 
+                          alt={settings.nome || 'Perfil'} 
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <User className="w-16 h-16 text-muted-foreground" />
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      id="avatar-upload"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0]
+                        if (!file || !user) return
+
+                        try {
+                          const fileExt = file.name.split('.').pop()
+                          const fileName = `${user.id}-${Date.now()}.${fileExt}`
+                          const filePath = `user-uploads/${fileName}`
+
+                          const { error: uploadError } = await supabase.storage
+                            .from('user-uploads')
+                            .upload(filePath, file, { upsert: true })
+
+                          if (uploadError) throw uploadError
+
+                          await supabase
+                            .from('profiles')
+                            .update({ avatar_url: filePath })
+                            .eq('user_id', user.id)
+
+                          handleSettingsChange('avatar_url', filePath)
+
+                          toast({
+                            title: "Foto atualizada",
+                            description: "Sua foto de perfil foi atualizada com sucesso.",
+                          })
+                        } catch (error) {
+                          console.error('Erro ao fazer upload:', error)
+                          toast({
+                            title: "Erro",
+                            description: "Erro ao atualizar foto de perfil.",
+                            variant: "destructive",
+                          })
+                        }
+                      }}
+                    />
+                    <label
+                      htmlFor="avatar-upload"
+                      className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-3 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg"
+                    >
+                      <Camera className="w-5 h-5" />
+                    </label>
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center">
+                    Clique no ícone de câmera para alterar sua foto de perfil
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Dados Pessoais */}
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -750,11 +830,13 @@ const Configuracoes = () => {
           open={showColorPicker}
           onOpenChange={setShowColorPicker}
           currentColor={settings.brand_color}
-          onSave={async (color) => {
-            await saveBrandColor(color)
-            handleSettingsChange('brand_color', color)
-            applyBrandColor(color)
-            setShowColorPicker(false)
+          onSaveColor={async (color) => {
+            const success = await saveBrandColor(color)
+            if (success) {
+              handleSettingsChange('brand_color', color)
+              applyBrandColor(color)
+            }
+            return success
           }}
         />
       )}
