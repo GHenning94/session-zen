@@ -8,8 +8,9 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2 } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { PasswordRequirements } from "@/components/PasswordRequirements"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -32,6 +33,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
+import { formatPhone, formatCRP, validatePassword } from "@/utils/inputMasks"
 
 type AllSettings = Record<string, any>;
 
@@ -51,8 +53,69 @@ const Configuracoes = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [changingPassword, setChangingPassword] = useState(false)
+  const [changingEmail, setChangingEmail] = useState(false)
+  const [newEmail, setNewEmail] = useState('')
+
+  const handlePhoneChange = (value: string) => {
+    handleSettingsChange('telefone', formatPhone(value));
+  };
+
+  const handleCRPChange = (value: string) => {
+    handleSettingsChange('crp', formatCRP(value));
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({ title: "Campos obrigatórios", description: "Preencha todos os campos de senha.", variant: "destructive" });
+      return;
+    }
+    if (!validatePassword(newPassword)) {
+      toast({ title: "Senha inválida", description: "A nova senha deve atender a todos os requisitos.", variant: "destructive" });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Senhas não coincidem", description: "A nova senha e a confirmação devem ser iguais.", variant: "destructive" });
+      return;
+    }
+    setChangingPassword(true);
+    try {
+      const { error: signInError } = await supabase.auth.signInWithPassword({ email: user?.email || '', password: currentPassword });
+      if (signInError) {
+        toast({ title: "Senha atual incorreta", description: "A senha atual está incorreta.", variant: "destructive" });
+        return;
+      }
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      toast({ title: "Senha atualizada", description: "Sua senha foi alterada com sucesso." });
+      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
+    } catch (error: any) {
+      toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleEmailChange = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      toast({ title: "E-mail inválido", description: "Digite um e-mail válido.", variant: "destructive" });
+      return;
+    }
+    setChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) throw error;
+      toast({ title: "Verificação enviada", description: "Um e-mail de verificação foi enviado para o novo endereço. Confirme para concluir a alteração." });
+      setNewEmail('');
+    } catch (error: any) {
+      toast({ title: "Erro ao alterar e-mail", description: error.message, variant: "destructive" });
+    } finally {
+      setChangingEmail(false);
+    }
+  };
   
   // Ler tab da URL
   useEffect(() => {
@@ -171,6 +234,146 @@ const Configuracoes = () => {
         description: "Não foi possível atualizar a foto.",
         variant: "destructive",
       });
+    }
+  };
+
+  // Máscaras
+  const formatPhone = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    if (cleaned.length <= 10) {
+      return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+    }
+    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  };
+
+  const formatCRP = (value: string) => {
+    const cleaned = value.replace(/\D/g, '');
+    return cleaned.replace(/(\d{2})(\d{5})/, '$1/$2');
+  };
+
+  const handlePhoneChange = (value: string) => {
+    const formatted = formatPhone(value);
+    handleSettingsChange('telefone', formatted);
+  };
+
+  const handleCRPChange = (value: string) => {
+    const formatted = formatCRP(value);
+    handleSettingsChange('crp', formatted);
+  };
+
+  // Validação de senha
+  const validatePassword = (password: string) => {
+    const requirements = [
+      { test: (pwd: string) => pwd.length >= 8 },
+      { test: (pwd: string) => /[A-Z]/.test(pwd) },
+      { test: (pwd: string) => /[a-z]/.test(pwd) },
+      { test: (pwd: string) => /\d/.test(pwd) },
+      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) }
+    ];
+    return requirements.every(req => req.test(password));
+  };
+
+  const handlePasswordChange = async () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Preencha todos os campos de senha.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!validatePassword(newPassword)) {
+      toast({
+        title: "Senha inválida",
+        description: "A nova senha deve atender a todos os requisitos.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast({
+        title: "Senhas não coincidem",
+        description: "A nova senha e a confirmação devem ser iguais.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      // Verificar senha atual
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword
+      });
+
+      if (signInError) {
+        toast({
+          title: "Senha atual incorreta",
+          description: "A senha atual está incorreta.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Atualizar senha
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+      if (error) throw error;
+
+      toast({
+        title: "Senha atualizada",
+        description: "Sua senha foi alterada com sucesso.",
+      });
+
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast({
+        title: "Erro ao alterar senha",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
+  const handleEmailChange = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      toast({
+        title: "E-mail inválido",
+        description: "Digite um e-mail válido.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setChangingEmail(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ 
+        email: newEmail 
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Verificação enviada",
+        description: "Um e-mail de verificação foi enviado para o novo endereço. Confirme para concluir a alteração.",
+      });
+
+      setNewEmail('');
+    } catch (error: any) {
+      toast({
+        title: "Erro ao alterar e-mail",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setChangingEmail(false);
     }
   };
 
@@ -437,47 +640,117 @@ const Configuracoes = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Shield className="w-5 h-5" />
-                  Segurança
+                  E-mail da Conta
                 </CardTitle>
-                <CardDescription>Gerencie a segurança da sua conta</CardDescription>
+                <CardDescription>Altere o e-mail da sua conta</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>E-mail da Conta</Label>
-                    <Input type="email" value={settings.email || ''} disabled />
-                    <p className="text-xs text-muted-foreground">
-                      Para alterar seu e-mail, entre em contato com o suporte
-                    </p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Nova Senha</Label>
-                    <Input 
-                      type="password" 
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Digite nova senha (opcional)"
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label>Confirmar Nova Senha</Label>
-                    <Input 
-                      type="password" 
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Confirme a nova senha"
-                    />
-                  </div>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>E-mail Atual</Label>
+                  <Input type="email" value={settings.email || ''} disabled />
                 </div>
                 
-                <TwoFactorSettings />
+                <div className="space-y-2">
+                  <Label>Novo E-mail</Label>
+                  <Input 
+                    type="email" 
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    placeholder="Digite o novo e-mail"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Você receberá um e-mail de verificação no novo endereço
+                  </p>
+                </div>
                 
-                <Button onClick={handleSave} disabled={isLoading}>
-                  <Save className="w-4 h-4 mr-2" />
-                  Salvar Alterações
+                <Button 
+                  onClick={handleEmailChange} 
+                  disabled={changingEmail || !newEmail}
+                >
+                  {changingEmail ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Enviando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Alterar E-mail
+                    </>
+                  )}
                 </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Alterar Senha
+                </CardTitle>
+                <CardDescription>Atualize sua senha de acesso</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Senha Atual</Label>
+                  <Input 
+                    type="password" 
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    placeholder="Digite sua senha atual"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Nova Senha</Label>
+                  <Input 
+                    type="password" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Digite a nova senha"
+                  />
+                  {newPassword && <PasswordRequirements password={newPassword} />}
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Confirmar Nova Senha</Label>
+                  <Input 
+                    type="password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirme a nova senha"
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handlePasswordChange} 
+                  disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+                >
+                  {changingPassword ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Alterando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Alterar Senha
+                    </>
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="w-5 h-5" />
+                  Autenticação em Dois Fatores
+                </CardTitle>
+                <CardDescription>Configure a segurança adicional da sua conta</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <TwoFactorSettings />
               </CardContent>
             </Card>
             
@@ -600,7 +873,7 @@ const Configuracoes = () => {
                   <Building /> Dados Bancários
                 </CardTitle>
                 <CardDescription>
-                  Informações para recebimento de pagamentos dos seus clientes
+                  Estes dados são usados exclusivamente para pagamentos do programa de indicação
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">

@@ -133,7 +133,7 @@ export const ProfileAvatarUpload = ({
         className={`relative group cursor-pointer`}
         onClick={() => fileInputRef.current?.click()}
       >
-        <Avatar className={sizeClasses[size]}>
+        <Avatar className={`${sizeClasses[size]} border-2 border-border`}>
           <AvatarImage src={displayUrl} alt={userName} />
           <AvatarFallback className="bg-gradient-card text-primary font-medium">
             {getInitials(userName)}
@@ -149,6 +149,14 @@ export const ProfileAvatarUpload = ({
           )}
         </div>
 
+        {/* Visible camera icon indicator - always visible */}
+        <div 
+          className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-2 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg border-2 border-background"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Camera className="w-4 h-4" />
+        </div>
+
         {/* Remove button - only show when there's an avatar */}
         {currentAvatarUrl && !isUploading && (
           <button
@@ -156,9 +164,9 @@ export const ProfileAvatarUpload = ({
               e.stopPropagation();
               handleRemoveAvatar();
             }}
-            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90"
+            className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/90 shadow-lg"
           >
-            <X className="h-3 w-3" />
+            <X className="h-4 w-4" />
           </button>
         )}
       </div>

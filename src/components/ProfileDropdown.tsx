@@ -67,8 +67,18 @@ export const ProfileDropdown = () => {
       if (error) throw error
 
       if (data) {
-        // Garante capitalização correta da profissão
-        const profissaoFormatada = data.profissao === 'psicologo' ? 'Psicólogo' : data.profissao
+        // Garante capitalização correta e acentuação das profissões
+        const professionMap: Record<string, string> = {
+          'psicologo': 'Psicólogo',
+          'psicanalista': 'Psicanalista',
+          'psiquiatra': 'Psiquiatra',
+          'terapeuta': 'Terapeuta',
+          'neurologista': 'Neurologista',
+          'psicoterapeuta': 'Psicoterapeuta',
+          'coach': 'Coach'
+        };
+        const normalized = (data.profissao || '').toLowerCase();
+        const profissaoFormatada = professionMap[normalized] || data.profissao;
         setProfile({ ...data, profissao: profissaoFormatada })
       }
     } catch (error) {
