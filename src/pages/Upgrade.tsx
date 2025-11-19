@@ -56,14 +56,15 @@ export default function Upgrade() {
         'Até 20 clientes', 
         'Sessões ilimitadas', 
         'Histórico completo', 
-        'Personalização de design', 
-        'Relatórios básicos', 
+        'Agendamento online',
+        'Personalização de design',
         'Suporte prioritário' 
       ], 
       recommended: true, 
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.pro_monthly : STRIPE_PRICES.pro_annual, 
       current: currentPlan === 'pro',
-      annualDiscount: billingCycle === 'annual' ? '17%' : null
+      annualPrice: 'R$ 298,80',
+      annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null
     },
     { 
       id: 'premium', 
@@ -71,21 +72,22 @@ export default function Upgrade() {
       price: billingCycle === 'monthly' ? 'R$ 49,90' : 'R$ 41,58', 
       period: '/mês', 
       icon: <Crown className="h-6 w-6" />, 
-      description: 'Recursos completos e avançados', 
+      description: 'Máximo poder e recursos', 
       features: [ 
         'Clientes ilimitados', 
-        'Sessões ilimitadas', 
+        'Sessões ilimitadas',
         'Histórico completo', 
-        'Relatórios PDF avançados', 
+        'Relatórios em PDF',
         'Integração WhatsApp', 
-        'Personalização total', 
-        'Configurações avançadas', 
+        'Personalização total',
+        'Backup automático',
         'Suporte VIP 24/7' 
       ], 
       recommended: false, 
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.premium_monthly : STRIPE_PRICES.premium_annual, 
       current: currentPlan === 'premium',
-      annualDiscount: billingCycle === 'annual' ? '17%' : null
+      annualPrice: 'R$ 498,96',
+      annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null
     }
   ]
 
@@ -125,21 +127,22 @@ export default function Upgrade() {
           
           {/* Seletor de Ciclo de Cobrança */}
           <div className="flex items-center justify-center gap-3 mt-8">
-            <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Mensal
-            </span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative w-12 h-6 rounded-full p-0"
-            >
-              <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-primary transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
-            </Button>
-            <span className={`text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Anual
-              <Badge variant="secondary" className="ml-2">Economize até 17%</Badge>
-            </span>
+            <span className={`text-sm ${billingCycle === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Mensal</span>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={billingCycle === 'annual'}
+                onChange={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary peer-focus:ring-offset-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+            </label>
+            <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
+            {billingCycle === 'annual' && (
+              <Badge variant="secondary" className="bg-green-100 text-green-700 transition-colors hover:bg-green-700 hover:text-white">
+                Economize 2 meses
+              </Badge>
+            )}
           </div>
         </div>
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
@@ -149,15 +152,22 @@ export default function Upgrade() {
               {plan.id === currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
               {plan.recommended && plan.id !== currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
               {plan.annualDiscount && (<Badge variant="secondary" className="absolute -top-3 right-3">Economize {plan.annualDiscount}</Badge>)}
-              <CardHeader className="text-center space-y-4">
+               <CardHeader className="text-center space-y-4">
                 <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
                 <div>
                   <CardTitle className="text-2xl">{plan.name}</CardTitle>
                   <CardDescription className="mt-2">{plan.description}</CardDescription>
                 </div>
-                <div>
-                  <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground">{plan.period}</span>
+                <div className="flex flex-col items-center justify-center">
+                  <div className="flex items-baseline">
+                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                    <span className="text-muted-foreground ml-2">{plan.period}</span>
+                  </div>
+                  {billingCycle === 'annual' && plan.annualPrice && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Cobrança anual de {plan.annualPrice}
+                    </p>
+                  )}
                 </div>
               </CardHeader>
               <CardContent className="flex flex-col flex-grow">
@@ -169,9 +179,20 @@ export default function Upgrade() {
                     </li>
                   ))}
                 </ul>
-                <Button className="w-full" size="lg" onClick={() => plan.stripePrice ? handleSubscribe(plan) : navigate('/dashboard')} disabled={loading || plan.id === currentPlan}>
-                  {plan.id === currentPlan ? 'Seu plano atual' : loading ? 'Processando...' : `Assinar ${plan.name}`}
-                </Button>
+                {plan.current ? (
+                  <Button size="lg" disabled className="w-full">
+                    Plano Atual
+                  </Button>
+                ) : (
+                  <Button 
+                    size="lg" 
+                    className={`w-full max-w-xs mx-auto ${plan.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
+                    onClick={() => handleSubscribe(plan)}
+                    disabled={loading || !plan.stripePrice}
+                  >
+                    {loading ? 'Processando...' : plan.id === 'basico' ? 'Acessar' : 'Fazer Upgrade'}
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ))}
