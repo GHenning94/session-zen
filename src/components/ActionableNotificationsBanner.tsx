@@ -59,7 +59,7 @@ export const ActionableNotificationsBanner = () => {
     }
 
     loadNotifications();
-  }, [loading2FA, user]);
+  }, [loading2FA, user, has2FAConfigured]);
 
   const loadNotifications = async () => {
     const actionableNotifications: ActionableNotification[] = [];
@@ -137,12 +137,8 @@ export const ActionableNotificationsBanner = () => {
   };
 
   const handleAction = (route: string) => {
-    if (route === '/configuracoes?tab=security') {
-      // Open profile modal to security tab
-      profileModal.openToSecurity();
-    } else {
-      navigate(route);
-    }
+    // Always navigate to the route directly
+    navigate(route);
   };
 
   if (!visible || notifications.length === 0) {
