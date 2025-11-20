@@ -186,7 +186,7 @@ export const SubscriptionInfo = () => {
           {isFreePlan ? (
             <Button 
               onClick={() => navigate('/upgrade')} 
-              className="w-full max-w-[200px] mx-auto"
+              className="w-full max-w-[200px]"
             >
               Fazer Upgrade
             </Button>
