@@ -186,7 +186,7 @@ export default function Upgrade() {
                 ) : (
                   <Button 
                     size="lg" 
-                    className={`w-full max-w-xs mx-auto ${plan.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
+                    className={`w-full max-w-[200px] mx-auto ${plan.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
                     onClick={() => handleSubscribe(plan)}
                     disabled={loading || !plan.stripePrice}
                   >

@@ -59,63 +59,6 @@ const Configuracoes = () => {
   const [changingPassword, setChangingPassword] = useState(false)
   const [changingEmail, setChangingEmail] = useState(false)
   const [newEmail, setNewEmail] = useState('')
-
-  const handlePhoneChange = (value: string) => {
-    handleSettingsChange('telefone', formatPhone(value));
-  };
-
-  const handleCRPChange = (value: string) => {
-    handleSettingsChange('crp', formatCRP(value));
-  };
-
-  const handlePasswordChange = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
-      toast({ title: "Campos obrigatórios", description: "Preencha todos os campos de senha.", variant: "destructive" });
-      return;
-    }
-    if (!validatePassword(newPassword)) {
-      toast({ title: "Senha inválida", description: "A nova senha deve atender a todos os requisitos.", variant: "destructive" });
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      toast({ title: "Senhas não coincidem", description: "A nova senha e a confirmação devem ser iguais.", variant: "destructive" });
-      return;
-    }
-    setChangingPassword(true);
-    try {
-      const { error: signInError } = await supabase.auth.signInWithPassword({ email: user?.email || '', password: currentPassword });
-      if (signInError) {
-        toast({ title: "Senha atual incorreta", description: "A senha atual está incorreta.", variant: "destructive" });
-        return;
-      }
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
-      if (error) throw error;
-      toast({ title: "Senha atualizada", description: "Sua senha foi alterada com sucesso." });
-      setCurrentPassword(''); setNewPassword(''); setConfirmPassword('');
-    } catch (error: any) {
-      toast({ title: "Erro ao alterar senha", description: error.message, variant: "destructive" });
-    } finally {
-      setChangingPassword(false);
-    }
-  };
-
-  const handleEmailChange = async () => {
-    if (!newEmail || !newEmail.includes('@')) {
-      toast({ title: "E-mail inválido", description: "Digite um e-mail válido.", variant: "destructive" });
-      return;
-    }
-    setChangingEmail(true);
-    try {
-      const { error } = await supabase.auth.updateUser({ email: newEmail });
-      if (error) throw error;
-      toast({ title: "Verificação enviada", description: "Um e-mail de verificação foi enviado para o novo endereço. Confirme para concluir a alteração." });
-      setNewEmail('');
-    } catch (error: any) {
-      toast({ title: "Erro ao alterar e-mail", description: error.message, variant: "destructive" });
-    } finally {
-      setChangingEmail(false);
-    }
-  };
   
   // Ler tab da URL
   useEffect(() => {
@@ -237,40 +180,12 @@ const Configuracoes = () => {
     }
   };
 
-  // Máscaras
-  const formatPhone = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    if (cleaned.length <= 10) {
-      return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
-    }
-    return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-  };
-
-  const formatCRP = (value: string) => {
-    const cleaned = value.replace(/\D/g, '');
-    return cleaned.replace(/(\d{2})(\d{5})/, '$1/$2');
-  };
-
   const handlePhoneChange = (value: string) => {
-    const formatted = formatPhone(value);
-    handleSettingsChange('telefone', formatted);
+    handleSettingsChange('telefone', formatPhone(value));
   };
 
   const handleCRPChange = (value: string) => {
-    const formatted = formatCRP(value);
-    handleSettingsChange('crp', formatted);
-  };
-
-  // Validação de senha
-  const validatePassword = (password: string) => {
-    const requirements = [
-      { test: (pwd: string) => pwd.length >= 8 },
-      { test: (pwd: string) => /[A-Z]/.test(pwd) },
-      { test: (pwd: string) => /[a-z]/.test(pwd) },
-      { test: (pwd: string) => /\d/.test(pwd) },
-      { test: (pwd: string) => /[!@#$%^&*(),.?":{}|<>]/.test(pwd) }
-    ];
-    return requirements.every(req => req.test(password));
+    handleSettingsChange('crp', formatCRP(value));
   };
 
   const handlePasswordChange = async () => {
@@ -589,7 +504,7 @@ const Configuracoes = () => {
                     <Label>E-mail</Label>
                     <Input type="email" value={settings.email || ''} disabled />
                     <p className="text-xs text-muted-foreground">
-                      Para alterar seu e-mail, entre em contato com o suporte
+                      Para alterar seu e-mail, vá para a aba "Segurança"
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -597,7 +512,7 @@ const Configuracoes = () => {
                     <Input 
                       type="tel" 
                       value={settings.telefone || ''} 
-                      onChange={(e) => handleSettingsChange('telefone', e.target.value)}
+                      onChange={(e) => handlePhoneChange(e.target.value)}
                       placeholder="(00) 00000-0000"
                     />
                   </div>
@@ -605,7 +520,7 @@ const Configuracoes = () => {
                     <Label>CRP</Label>
                     <Input 
                       value={settings.crp || ''} 
-                      onChange={(e) => handleSettingsChange('crp', e.target.value)}
+                      onChange={(e) => handleCRPChange(e.target.value)}
                       placeholder="00/00000"
                     />
                   </div>
