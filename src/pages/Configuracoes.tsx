@@ -695,11 +695,11 @@ const Configuracoes = () => {
                 <CardDescription>Personalize a aparência da plataforma</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>Modo Escuro/Claro</Label>
-                    <p className="text-sm text-muted-foreground">Altere o tema da plataforma</p>
-                  </div>
+                <div className="space-y-2">
+                  <Label>Modo Escuro/Claro</Label>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Altere o tema da plataforma
+                  </p>
                   <ThemeToggle />
                 </div>
                 
