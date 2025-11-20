@@ -107,10 +107,17 @@ export const useUserTheme = () => {
   useLayoutEffect(() => {
     if (isPublicPage()) {
       // Apply light theme immediately on public pages
-      document.documentElement.classList.remove('dark')
-      document.documentElement.classList.add('light')
-      document.documentElement.setAttribute('data-theme', 'light')
+      const root = document.documentElement
+      root.style.transition = 'none'
+      root.classList.remove('dark')
+      root.classList.add('light')
+      root.setAttribute('data-theme', 'light')
+      localStorage.setItem('theme', 'light')
       setTheme('light')
+      // Re-enable transitions after a frame
+      requestAnimationFrame(() => {
+        root.style.transition = ''
+      })
     }
   }, [isPublicPage, setTheme])
 

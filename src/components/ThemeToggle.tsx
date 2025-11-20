@@ -13,16 +13,22 @@ export const ThemeToggle = () => {
     setIsChanging(true)
     const newTheme = theme === "dark" ? "light" : "dark"
     
-    // Aplica o tema imediatamente no DOM para evitar flash
+    // Update localStorage immediately to prevent flash
+    localStorage.setItem('theme', newTheme)
+    
+    // Apply theme instantly to DOM
     document.documentElement.classList.remove('light', 'dark')
     document.documentElement.classList.add(newTheme)
     document.documentElement.setAttribute('data-theme', newTheme)
     
+    // Update next-themes
     setTheme(newTheme)
-    await saveThemePreference(newTheme)
     
-    // Pequeno delay para smooth transition
-    setTimeout(() => setIsChanging(false), 300)
+    // Save to database in background
+    saveThemePreference(newTheme)
+    
+    // Small delay for smooth transition
+    setTimeout(() => setIsChanging(false), 200)
   }
 
   // Garante sincronização entre next-themes e DOM
@@ -40,7 +46,7 @@ export const ThemeToggle = () => {
       size="default"
       onClick={handleThemeToggle}
       disabled={isChanging}
-      className="w-full justify-start gap-2"
+      className="w-[180px] justify-start gap-2"
     >
       {isChanging ? (
         <Loader2 className="h-4 w-4 animate-spin" />
