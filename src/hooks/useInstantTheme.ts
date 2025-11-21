@@ -1,5 +1,4 @@
 import { useLayoutEffect } from 'react'
-import { setDocumentTheme } from '@/hooks/useThemeFlashPrevention'
 
 const THEME_CACHE_KEY = 'user-theme-cache'
 
@@ -12,12 +11,12 @@ export const useInstantTheme = (userId?: string) => {
     const cachedTheme = localStorage.getItem(cacheKey)
     
     if (cachedTheme && (cachedTheme === 'light' || cachedTheme === 'dark')) {
-      // Remove any existing theme classes first
-      document.documentElement.classList.remove('light', 'dark')
+      const root = document.documentElement
       
       // Apply the cached theme immediately to prevent flicker
-      document.documentElement.classList.add(cachedTheme)
-      document.documentElement.setAttribute('data-theme', cachedTheme)
+      root.classList.add(cachedTheme)
+      root.classList.remove(cachedTheme === 'dark' ? 'light' : 'dark')
+      root.setAttribute('data-theme', cachedTheme)
       
       // Force a reflow to ensure the theme is applied immediately
       document.documentElement.offsetHeight

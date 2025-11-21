@@ -78,21 +78,8 @@ export const watchThemeChanges = () => {
     return originalSetItem.call(this, key, value)
   }
 
-  // Observa mudanças no atributo data-theme para manter classe em sincronia
-  const observer = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
-        const newTheme = document.documentElement.getAttribute('data-theme')
-        if (newTheme === 'light' || newTheme === 'dark') {
-          setDocumentTheme(newTheme as Theme)
-        }
-      }
-    }
-  })
-
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
-
-  return () => observer.disconnect()
+  // Retorna função vazia já que não há cleanup necessário
+  return () => {}
 }
 
 // Auto-executa quando o módulo é carregado
