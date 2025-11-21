@@ -2,6 +2,16 @@
 // Aplicado no início da aplicação antes da hidratação do React
 
 const THEME_CACHE_KEY = 'user-theme-cache'
+const VALID_THEMES = ['light', 'dark'] as const
+
+type Theme = (typeof VALID_THEMES)[number]
+
+export const setDocumentTheme = (theme: Theme) => {
+  const root = document.documentElement
+  root.classList.add(theme)
+  root.classList.remove(theme === 'dark' ? 'light' : 'dark')
+  root.setAttribute('data-theme', theme)
+}
 
 // Utilitário: detecta se é página pública que deve forçar light
 const isPublicPage = () => {
@@ -48,12 +58,10 @@ export const applyThemeInstantly = () => {
     console.warn('Erro ao ler preferências de tema:', error)
   }
 
-  // Aplica imediatamente
-  document.documentElement.classList.remove('light', 'dark')
-  document.documentElement.classList.add(themeToApply)
-  document.documentElement.setAttribute('data-theme', themeToApply)
+  // Aplica imediatamente usando helper para evitar flicker
+  setDocumentTheme(themeToApply)
   localStorage.setItem('theme', themeToApply)
-
+ 
   return themeToApply
 }
 
@@ -64,10 +72,8 @@ export const watchThemeChanges = () => {
   // Observa mudanças no localStorage do tema e aplica instantaneamente
   const originalSetItem = localStorage.setItem
   localStorage.setItem = function(key, value) {
-    if (key === 'theme') {
-      document.documentElement.classList.remove('light', 'dark')
-      document.documentElement.classList.add(value)
-      document.documentElement.setAttribute('data-theme', value)
+    if (key === 'theme' && (value === 'light' || value === 'dark')) {
+      setDocumentTheme(value as Theme)
     }
     return originalSetItem.call(this, key, value)
   }
@@ -78,8 +84,7 @@ export const watchThemeChanges = () => {
       if (mutation.type === 'attributes' && mutation.attributeName === 'data-theme') {
         const newTheme = document.documentElement.getAttribute('data-theme')
         if (newTheme === 'light' || newTheme === 'dark') {
-          document.documentElement.classList.remove('light', 'dark')
-          document.documentElement.classList.add(newTheme)
+          setDocumentTheme(newTheme as Theme)
         }
       }
     }
