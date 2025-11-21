@@ -12,18 +12,24 @@ export const ThemeToggle = () => {
   const handleThemeToggle = async () => {
     setIsChanging(true)
     const newTheme = theme === "dark" ? "light" : "dark"
-    
+
+    const root = document.documentElement
+    root.classList.add('theme-transitioning')
+
     // Atualiza o localStorage; o watcher de tema sincroniza o DOM imediatamente
     localStorage.setItem('theme', newTheme)
-    
+
     // Atualiza o estado do next-themes
     setTheme(newTheme)
-    
+
     // Salva preferência no banco em segundo plano
     saveThemePreference(newTheme)
-    
-    // Pequeno delay apenas para mostrar o spinner suavemente
-    setTimeout(() => setIsChanging(false), 200)
+
+    // Pequeno delay para garantir que o tema foi aplicado antes de exibir o app
+    setTimeout(() => {
+      root.classList.remove('theme-transitioning')
+      setIsChanging(false)
+    }, 400)
   }
 
   // Garante sincronização entre next-themes e DOM

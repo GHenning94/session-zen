@@ -64,6 +64,12 @@ const PageLoading = () => (
   </div>
 );
 
+const ThemeTransitionOverlay = () => (
+  <div className="theme-transition-overlay">
+    <div className="theme-transition-spinner" />
+  </div>
+);
+
 // Analytics wrapper to track page views
 const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
   useGoogleAnalytics()
@@ -79,6 +85,7 @@ const App = () => (
         storageKey="theme"
         disableTransitionOnChange
       >
+        <ThemeTransitionOverlay />
         <TooltipProvider>
           <AuthProvider>
             <SubscriptionProvider>
