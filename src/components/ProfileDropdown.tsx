@@ -88,7 +88,7 @@ export const ProfileDropdown = () => {
 
   const handleSignOut = async () => {
     await signOut()
-    navigate('/login')
+    navigate('/')
   }
 
   return (
