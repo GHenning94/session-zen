@@ -13,21 +13,16 @@ export const ThemeToggle = () => {
     setIsChanging(true)
     const newTheme = theme === "dark" ? "light" : "dark"
     
-    // Update localStorage immediately to prevent flash
+    // Atualiza o localStorage; o watcher de tema sincroniza o DOM imediatamente
     localStorage.setItem('theme', newTheme)
     
-    // Apply theme instantly to DOM
-    document.documentElement.classList.remove('light', 'dark')
-    document.documentElement.classList.add(newTheme)
-    document.documentElement.setAttribute('data-theme', newTheme)
-    
-    // Update next-themes
+    // Atualiza o estado do next-themes
     setTheme(newTheme)
     
-    // Save to database in background
+    // Salva preferência no banco em segundo plano
     saveThemePreference(newTheme)
     
-    // Small delay for smooth transition
+    // Pequeno delay apenas para mostrar o spinner suavemente
     setTimeout(() => setIsChanging(false), 200)
   }
 

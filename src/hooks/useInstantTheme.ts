@@ -1,4 +1,5 @@
 import { useLayoutEffect } from 'react'
+import { setDocumentTheme } from '@/hooks/useThemeFlashPrevention'
 
 const THEME_CACHE_KEY = 'user-theme-cache'
 
