@@ -7,7 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { ClientAvatar } from "@/components/ClientAvatar"
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
 import { PackageStatusCard } from "@/components/PackageStatusCard"
-import { PaymentStatusCard } from "@/components/PaymentStatusCard"
+import { BusinessOrbitalView } from "@/components/BusinessOrbitalView"
 import { SmartNotificationCard } from "@/components/SmartNotificationCard"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { 
@@ -1087,6 +1087,7 @@ const Dashboard = () => {
         </div>
 
         {/* Pacotes, Pagamentos e Notificações Inteligentes */}
+        {/* Visão Geral do Negócio - Grid com 3 colunas */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {isLoading ? (
             <>
@@ -1105,11 +1106,21 @@ const Dashboard = () => {
           ) : (
             <>
               <PackageStatusCard stats={packageStats} />
-              <PaymentStatusCard stats={paymentStats} />
               <SmartNotificationCard notifications={smartNotifications} />
             </>
           )}
         </div>
+
+        {/* Visão Orbital do Negócio */}
+        {!isLoading && (
+          <div className="w-full">
+            <BusinessOrbitalView 
+              dashboardData={dashboardData}
+              packageStats={packageStats}
+              upcomingSessionsCount={upcomingSessions.length}
+            />
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Próximas Sessões */}
