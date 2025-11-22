@@ -10,23 +10,35 @@ export const ThemeToggle = () => {
   const [isChanging, setIsChanging] = useState(false)
 
   const handleThemeToggle = async () => {
-    setIsChanging(true)
     const newTheme = theme === "dark" ? "light" : "dark"
-
     const root = document.documentElement
+    
+    // Captura as cores computadas atuais antes de qualquer mudança
+    const bodyStyle = window.getComputedStyle(document.body)
+    const bgColor = bodyStyle.backgroundColor
+    const fgColor = bodyStyle.color
+    
+    // Congela as cores do overlay para evitar piscada durante a transição
+    root.style.setProperty('--transition-bg', bgColor)
+    root.style.setProperty('--transition-fg', fgColor)
+    
+    // Ativa o overlay ANTES de trocar o tema
     root.classList.add('theme-transitioning')
+    setIsChanging(true)
 
-    // Atualiza o estado do next-themes (que também persiste no localStorage)
-    setTheme(newTheme)
+    // Troca o tema no próximo frame, garantindo que o overlay já está ativo
+    requestAnimationFrame(() => {
+      setTheme(newTheme)
+      saveThemePreference(newTheme)
 
-    // Salva preferência no banco em segundo plano (não bloqueia a UI)
-    saveThemePreference(newTheme)
-
-    // Pequeno delay para garantir que o tema foi aplicado antes de exibir o app
-    setTimeout(() => {
-      root.classList.remove('theme-transitioning')
-      setIsChanging(false)
-    }, 400)
+      // Remove o overlay depois que o novo tema foi aplicado
+      setTimeout(() => {
+        root.classList.remove('theme-transitioning')
+        root.style.removeProperty('--transition-bg')
+        root.style.removeProperty('--transition-fg')
+        setIsChanging(false)
+      }, 300)
+    })
   }
 
   // Garante que o atributo data-theme acompanha o tema atual

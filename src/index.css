@@ -314,8 +314,8 @@ html.theme-transitioning body {
   display: none;
   align-items: center;
   justify-content: center;
-  background-color: hsl(var(--background));
-  color: hsl(var(--foreground));
+  background-color: var(--transition-bg, hsl(var(--background)));
+  color: var(--transition-fg, hsl(var(--foreground)));
   z-index: 9999;
 }
 
