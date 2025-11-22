@@ -16,13 +16,10 @@ export const ThemeToggle = () => {
     const root = document.documentElement
     root.classList.add('theme-transitioning')
 
-    // Atualiza o localStorage; o watcher de tema sincroniza o DOM imediatamente
-    localStorage.setItem('theme', newTheme)
-
-    // Atualiza o estado do next-themes
+    // Atualiza o estado do next-themes (que também persiste no localStorage)
     setTheme(newTheme)
 
-    // Salva preferência no banco em segundo plano
+    // Salva preferência no banco em segundo plano (não bloqueia a UI)
     saveThemePreference(newTheme)
 
     // Pequeno delay para garantir que o tema foi aplicado antes de exibir o app
@@ -32,11 +29,9 @@ export const ThemeToggle = () => {
     }, 400)
   }
 
-  // Garante sincronização entre next-themes e DOM
+  // Garante que o atributo data-theme acompanha o tema atual
   useEffect(() => {
     if (theme) {
-      document.documentElement.classList.remove('light', 'dark')
-      document.documentElement.classList.add(theme)
       document.documentElement.setAttribute('data-theme', theme)
     }
   }, [theme])
