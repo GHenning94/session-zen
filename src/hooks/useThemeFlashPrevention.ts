@@ -66,24 +66,12 @@ export const applyThemeInstantly = () => {
 }
 
 // Função para monitorar mudanças de tema em tempo real (após inicialização)
+// Mantida como no-op para evitar conflitos com next-themes
 export const watchThemeChanges = () => {
-  if (typeof window === 'undefined') return
-
-  // Observa mudanças no localStorage do tema e aplica instantaneamente
-  const originalSetItem = localStorage.setItem
-  localStorage.setItem = function(key, value) {
-    if (key === 'theme' && (value === 'light' || value === 'dark')) {
-      setDocumentTheme(value as Theme)
-    }
-    return originalSetItem.call(this, key, value)
-  }
-
-  // Retorna função vazia já que não há cleanup necessário
   return () => {}
 }
 
 // Auto-executa quando o módulo é carregado
 if (typeof window !== 'undefined') {
   applyThemeInstantly()
-  watchThemeChanges()
 }
