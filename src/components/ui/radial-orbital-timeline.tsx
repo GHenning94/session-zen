@@ -1,8 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
-import { ArrowRight, Link } from "lucide-react";
+import { Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TimelineItem {
@@ -63,12 +62,13 @@ export default function RadialOrbitalTimeline({
         setActiveNodeId(id);
         setAutoRotate(false);
 
-        const relatedItems = getRelatedItems(id);
-        const newPulseEffect: Record<number, boolean> = {};
-        relatedItems.forEach((relId) => {
-          newPulseEffect[relId] = true;
-        });
-        setPulseEffect(newPulseEffect);
+        // Center node rotation
+        const nodeIndex = timelineData.findIndex((item) => item.id === id);
+        const totalNodes = timelineData.length;
+        const targetAngle = (nodeIndex / totalNodes) * 360;
+        setRotationAngle(270 - targetAngle);
+
+        setPulseEffect({});
       } else {
         setActiveNodeId(null);
         setAutoRotate(true);
@@ -100,7 +100,7 @@ export default function RadialOrbitalTimeline({
 
   const calculateNodePosition = (index: number, total: number) => {
     const angle = ((index / total) * 360 + rotationAngle) % 360;
-    const radius = 200;
+    const radius = 140;
     const radian = (angle * Math.PI) / 180;
 
     const x = radius * Math.cos(radian) + centerOffset.x;
@@ -141,7 +141,7 @@ export default function RadialOrbitalTimeline({
 
   return (
     <div
-      className="w-full h-[500px] flex flex-col items-center justify-center overflow-hidden"
+      className="w-full h-[380px] flex flex-col items-center justify-center overflow-hidden"
       ref={containerRef}
       onClick={handleContainerClick}
     >
@@ -155,17 +155,29 @@ export default function RadialOrbitalTimeline({
           }}
         >
           {/* Centro orbital com gradiente da plataforma */}
-          <div className="absolute w-16 h-16 rounded-full bg-gradient-primary animate-pulse flex items-center justify-center z-10">
-            <div className="absolute w-20 h-20 rounded-full border border-primary/20 animate-ping opacity-70"></div>
+          <div className="absolute w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center z-10 group cursor-pointer">
+            <div className="absolute w-28 h-28 rounded-full border-2 border-primary/30 animate-ping opacity-70"></div>
             <div
-              className="absolute w-24 h-24 rounded-full border border-primary/10 animate-ping opacity-50"
+              className="absolute w-32 h-32 rounded-full border-2 border-primary/20 animate-ping opacity-50"
               style={{ animationDelay: "0.5s" }}
             ></div>
-            <div className="w-8 h-8 rounded-full bg-background backdrop-blur-md"></div>
+            <div className="w-16 h-16 rounded-full bg-background backdrop-blur-md flex items-center justify-center relative overflow-hidden">
+              {/* Hover overlay with camera icon */}
+              <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                <Camera className="h-6 w-6 text-white" />
+              </div>
+            </div>
+            
+            {/* Visible camera icon indicator - always visible */}
+            <div 
+              className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg border-2 border-background"
+            >
+              <Camera className="w-3 h-3" />
+            </div>
           </div>
 
           {/* Órbita */}
-          <div className="absolute w-96 h-96 rounded-full border border-border/30"></div>
+          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-border/60"></div>
 
           {timelineData.map((item, index) => {
             const position = calculateNodePosition(index, timelineData.length);
@@ -277,42 +289,6 @@ export default function RadialOrbitalTimeline({
                           ></div>
                         </div>
                       </div>
-
-                      {item.relatedIds.length > 0 && (
-                        <div className="mt-4 pt-3 border-t border-border">
-                          <div className="flex items-center mb-2">
-                            <Link size={10} className="text-muted-foreground mr-1" />
-                            <h4 className="text-xs uppercase tracking-wider font-medium text-muted-foreground">
-                              Relacionados
-                            </h4>
-                          </div>
-                          <div className="flex flex-wrap gap-1">
-                            {item.relatedIds.map((relatedId) => {
-                              const relatedItem = timelineData.find(
-                                (i) => i.id === relatedId
-                              );
-                              return (
-                                <Button
-                                  key={relatedId}
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex items-center h-6 px-2 py-0 text-xs"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    toggleItem(relatedId);
-                                  }}
-                                >
-                                  {relatedItem?.title}
-                                  <ArrowRight
-                                    size={8}
-                                    className="ml-1"
-                                  />
-                                </Button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 )}

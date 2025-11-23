@@ -1106,21 +1106,17 @@ const Dashboard = () => {
           ) : (
             <>
               <PackageStatusCard stats={packageStats} />
+              <div className="flex items-center justify-center">
+                <BusinessOrbitalView 
+                  dashboardData={dashboardData}
+                  packageStats={packageStats}
+                  upcomingSessionsCount={upcomingSessions.length}
+                />
+              </div>
               <SmartNotificationCard notifications={smartNotifications} />
             </>
           )}
         </div>
-
-        {/* Visão Orbital do Negócio */}
-        {!isLoading && (
-          <div className="w-full">
-            <BusinessOrbitalView 
-              dashboardData={dashboardData}
-              packageStats={packageStats}
-              upcomingSessionsCount={upcomingSessions.length}
-            />
-          </div>
-        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Próximas Sessões */}
