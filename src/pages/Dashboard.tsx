@@ -1106,13 +1106,11 @@ const Dashboard = () => {
           ) : (
             <>
               <PackageStatusCard stats={packageStats} />
-              <div className="flex items-center justify-center">
-                <BusinessOrbitalView 
-                  dashboardData={dashboardData}
-                  packageStats={packageStats}
-                  upcomingSessionsCount={upcomingSessions.length}
-                />
-              </div>
+              <BusinessOrbitalView 
+                dashboardData={dashboardData}
+                packageStats={packageStats}
+                upcomingSessionsCount={upcomingSessions.length}
+              />
               <SmartNotificationCard notifications={smartNotifications} />
             </>
           )}

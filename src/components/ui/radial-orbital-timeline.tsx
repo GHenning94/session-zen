@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from "react";
 import { Camera } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { OrbitalCenterAvatar } from "@/components/OrbitalCenterAvatar";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface TimelineItem {
   id: number;
@@ -23,6 +26,8 @@ interface RadialOrbitalTimelineProps {
 export default function RadialOrbitalTimeline({
   timelineData,
 }: RadialOrbitalTimelineProps) {
+  const { user } = useAuth();
+  const [orbitalAvatar, setOrbitalAvatar] = useState<string>("");
   const [expandedItems, setExpandedItems] = useState<Record<number, boolean>>(
     {}
   );
@@ -37,6 +42,44 @@ export default function RadialOrbitalTimeline({
   const containerRef = useRef<HTMLDivElement>(null);
   const orbitRef = useRef<HTMLDivElement>(null);
   const nodeRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  // Load orbital avatar from configuracoes
+  useEffect(() => {
+    const loadOrbitalAvatar = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('configuracoes')
+        .select('logo_url')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (data?.logo_url) {
+        setOrbitalAvatar(data.logo_url);
+      }
+    };
+    
+    loadOrbitalAvatar();
+  }, [user]);
+
+  const handleAvatarChange = async (newUrl: string) => {
+    if (!user) return;
+    
+    // Update configuracoes table with new logo_url
+    const { error } = await supabase
+      .from('configuracoes')
+      .upsert({
+        user_id: user.id,
+        logo_url: newUrl,
+        updated_at: new Date().toISOString()
+      }, {
+        onConflict: 'user_id'
+      });
+    
+    if (!error) {
+      setOrbitalAvatar(newUrl);
+    }
+  };
 
   const handleContainerClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (e.target === containerRef.current || e.target === orbitRef.current) {
@@ -154,27 +197,11 @@ export default function RadialOrbitalTimeline({
             transform: `translate(${centerOffset.x}px, ${centerOffset.y}px)`,
           }}
         >
-          {/* Centro orbital com gradiente da plataforma */}
-          <div className="absolute w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center z-10 group cursor-pointer">
-            <div className="absolute w-28 h-28 rounded-full border-2 border-primary/30 animate-ping opacity-70"></div>
-            <div
-              className="absolute w-32 h-32 rounded-full border-2 border-primary/20 animate-ping opacity-50"
-              style={{ animationDelay: "0.5s" }}
-            ></div>
-            <div className="w-16 h-16 rounded-full bg-background backdrop-blur-md flex items-center justify-center relative overflow-hidden">
-              {/* Hover overlay with camera icon */}
-              <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Camera className="h-6 w-6 text-white" />
-              </div>
-            </div>
-            
-            {/* Visible camera icon indicator - always visible */}
-            <div 
-              className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg border-2 border-background"
-            >
-              <Camera className="w-3 h-3" />
-            </div>
-          </div>
+          {/* Centro orbital com gradiente da plataforma e avatar upload */}
+          <OrbitalCenterAvatar 
+            currentAvatarUrl={orbitalAvatar}
+            onAvatarChange={handleAvatarChange}
+          />
 
           {/* Órbita */}
           <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-border/60"></div>
