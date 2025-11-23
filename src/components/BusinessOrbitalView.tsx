@@ -1,4 +1,4 @@
-import { TrendingUp, Users, DollarSign, Package, Target } from "lucide-react"
+import { Calendar, Users, DollarSign, Package, BadgeDollarSign } from "lucide-react"
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline"
 import { formatCurrencyBR } from "@/utils/formatters"
 
@@ -37,23 +37,23 @@ export const BusinessOrbitalView = ({
   const timelineData = [
     {
       id: 1,
-      title: "Sessões Hoje",
+      title: "Sessões",
       date: `${currentDay} ${currentMonth}`,
       content: `${dashboardData.sessionsToday} sessão${dashboardData.sessionsToday !== 1 ? 'ões' : ''} realizada${dashboardData.sessionsToday !== 1 ? 's' : ''} hoje. ${upcomingSessionsCount} agendada${upcomingSessionsCount !== 1 ? 's' : ''} nos próximos dias.`,
       category: "Atendimentos",
-      icon: TrendingUp,
-      relatedIds: [2, 5],
+      icon: Calendar,
+      relatedIds: [],
       status: sessionsProgress >= 75 ? "completed" as const : sessionsProgress >= 30 ? "in-progress" as const : "pending" as const,
       energy: Math.round(sessionsProgress),
     },
     {
       id: 2,
-      title: "Clientes Ativos",
+      title: "Clientes",
       date: currentMonth,
       content: `${dashboardData.activeClients} cliente${dashboardData.activeClients !== 1 ? 's' : ''} ativo${dashboardData.activeClients !== 1 ? 's' : ''} na sua carteira. Base sólida para crescimento sustentável.`,
       category: "Crescimento",
       icon: Users,
-      relatedIds: [1, 3],
+      relatedIds: [],
       status: clientsProgress >= 60 ? "completed" as const : "in-progress" as const,
       energy: Math.round(clientsProgress),
     },
@@ -64,29 +64,29 @@ export const BusinessOrbitalView = ({
       content: `${formatCurrencyBR(dashboardData.monthlyRevenue)} recebidos este mês. ${formatCurrencyBR(dashboardData.pendingRevenue)} pendentes.`,
       category: "Financeiro",
       icon: DollarSign,
-      relatedIds: [2, 4],
+      relatedIds: [],
       status: revenueProgress >= 70 ? "completed" as const : "in-progress" as const,
       energy: Math.round(revenueProgress),
     },
     {
       id: 4,
-      title: "Pacotes Ativos",
+      title: "Pacotes",
       date: currentMonth,
       content: `${packageStats.activePackages} pacote${packageStats.activePackages !== 1 ? 's' : ''} de sessões em andamento. Receita total: ${formatCurrencyBR(packageStats.totalRevenue)}.`,
       category: "Produtos",
       icon: Package,
-      relatedIds: [3, 5],
+      relatedIds: [],
       status: packagesProgress >= 50 ? "completed" as const : "in-progress" as const,
       energy: Math.round(packagesProgress),
     },
     {
       id: 5,
-      title: "Meta do Mês",
+      title: "Ticket Médio",
       date: currentMonth,
       content: `Performance geral: ${dashboardData.completionRate}%. Continue mantendo a consistência nos atendimentos.`,
       category: "Objetivos",
-      icon: Target,
-      relatedIds: [1, 4],
+      icon: BadgeDollarSign,
+      relatedIds: [],
       status: completionProgress >= 90 ? "completed" as const : completionProgress >= 70 ? "in-progress" as const : "pending" as const,
       energy: Math.round(completionProgress),
     },
@@ -94,10 +94,6 @@ export const BusinessOrbitalView = ({
 
   return (
     <div className="relative">
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold text-foreground">Visão Geral do Negócio</h3>
-        <p className="text-sm text-muted-foreground">Clique nos nós orbitais para ver detalhes</p>
-      </div>
       <RadialOrbitalTimeline timelineData={timelineData} />
     </div>
   )
