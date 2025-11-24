@@ -163,6 +163,7 @@ export const useMetas = () => {
         .from('metas')
         .update({
           concluida: true,
+          ativa: false,
           data_conclusao: new Date().toISOString()
         })
         .eq('id', metaId)
@@ -181,10 +182,6 @@ export const useMetas = () => {
       }
 
       await loadMetas();
-      toast({
-        title: "Meta concluída! 🎉",
-        description: "Parabéns pela conquista!"
-      });
     } catch (error) {
       console.error('Erro ao marcar meta como concluída:', error);
     }
