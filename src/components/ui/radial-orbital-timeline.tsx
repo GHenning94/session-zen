@@ -169,11 +169,11 @@ export default function RadialOrbitalTimeline({
   const getStatusStyles = (status: TimelineItem["status"]): string => {
     switch (status) {
       case "completed":
-        return "bg-success text-success-foreground";
+        return "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))]";
       case "in-progress":
-        return "bg-primary text-primary-foreground";
+        return "bg-[hsl(var(--primary))] text-[hsl(var(--primary-foreground))]";
       case "pending":
-        return "bg-muted text-muted-foreground";
+        return "bg-[hsl(var(--warning))] text-[hsl(var(--warning-foreground))]";
       default:
         return "bg-muted text-muted-foreground";
     }
