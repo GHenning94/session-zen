@@ -150,10 +150,7 @@ export default function RadialOrbitalTimeline({
     const y = radius * Math.sin(radian) + centerOffset.y;
 
     const zIndex = Math.round(100 + 50 * Math.cos(radian));
-    const opacity = Math.max(
-      0.4,
-      Math.min(1, 0.4 + 0.6 * ((1 + Math.sin(radian)) / 2))
-    );
+    const opacity = 1;
 
     return { x, y, angle, zIndex, opacity };
   };
@@ -184,7 +181,7 @@ export default function RadialOrbitalTimeline({
 
   return (
     <div
-      className="w-full h-[380px] flex flex-col items-center justify-center overflow-hidden"
+      className="w-full h-[320px] flex flex-col items-center justify-center overflow-hidden"
       ref={containerRef}
       onClick={handleContainerClick}
     >
@@ -204,7 +201,7 @@ export default function RadialOrbitalTimeline({
           />
 
           {/* Órbita */}
-          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-border animate-[pulse_4s_ease-in-out_infinite]"></div>
+          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-primary/50 dark:border-primary/70 animate-[pulse_6s_ease-in-out_infinite] shadow-[0_0_20px_rgba(59,130,246,0.3)] dark:shadow-[0_0_30px_rgba(59,130,246,0.6)]"></div>
 
           {timelineData.map((item, index) => {
             const position = calculateNodePosition(index, timelineData.length);
@@ -233,10 +230,10 @@ export default function RadialOrbitalTimeline({
                 {/* Efeito de energia ao redor do nó */}
                 <div
                   className={`absolute rounded-full -inset-1 ${
-                    isPulsing ? "animate-[pulse_3s_ease-in-out_infinite]" : ""
+                    isPulsing ? "animate-[pulse_5s_ease-in-out_infinite]" : ""
                   }`}
                   style={{
-                    background: `radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)`,
                     width: `${item.energy * 0.5 + 40}px`,
                     height: `${item.energy * 0.5 + 40}px`,
                     left: `-${(item.energy * 0.5 + 40 - 40) / 2}px`,
