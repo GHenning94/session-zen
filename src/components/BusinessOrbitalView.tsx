@@ -95,7 +95,7 @@ export const BusinessOrbitalView = ({
 
   return (
     <Card className="p-6">
-      <h2 className="text-lg font-semibold mb-4">Progresso de Metas</h2>
+      <h2 className="text-xl font-semibold mb-4">Progresso de Metas</h2>
       <RadialOrbitalTimeline timelineData={timelineData} />
     </Card>
   )
