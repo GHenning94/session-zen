@@ -531,6 +531,48 @@ export type Database = {
         }
         Relationships: []
       }
+      metas: {
+        Row: {
+          ativa: boolean
+          concluida: boolean
+          created_at: string
+          data_conclusao: string | null
+          data_inicio: string
+          id: string
+          tipo: string
+          updated_at: string
+          user_id: string
+          valor_meta: number
+          versao: number
+        }
+        Insert: {
+          ativa?: boolean
+          concluida?: boolean
+          created_at?: string
+          data_conclusao?: string | null
+          data_inicio?: string
+          id?: string
+          tipo: string
+          updated_at?: string
+          user_id: string
+          valor_meta: number
+          versao?: number
+        }
+        Update: {
+          ativa?: boolean
+          concluida?: boolean
+          created_at?: string
+          data_conclusao?: string | null
+          data_inicio?: string
+          id?: string
+          tipo?: string
+          updated_at?: string
+          user_id?: string
+          valor_meta?: number
+          versao?: number
+        }
+        Relationships: []
+      }
       notification_settings: {
         Row: {
           created_at: string
