@@ -51,8 +51,14 @@ export const BusinessOrbitalView = ({
   
   // Verificar se tem meta concluída (sem meta ativa) - pegar a mais recente
   const getMetaConcluidaMaisRecente = (tipo: MetaTipo) => {
-    const metasConcluidas = metas.filter(m => m.tipo === tipo && m.concluida && !getMetaAtivaPorTipo(tipo));
+    // Verificar se há meta ativa deste tipo
+    const temMetaAtiva = !!getMetaAtivaPorTipo(tipo);
+    if (temMetaAtiva) return undefined;
+    
+    // Se não há meta ativa, buscar a meta concluída mais recente
+    const metasConcluidas = metas.filter(m => m.tipo === tipo && m.concluida && !m.ativa);
     if (metasConcluidas.length === 0) return undefined;
+    
     return metasConcluidas.sort((a, b) => 
       new Date(b.data_conclusao || b.created_at).getTime() - new Date(a.data_conclusao || a.created_at).getTime()
     )[0];

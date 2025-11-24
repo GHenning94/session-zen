@@ -250,9 +250,9 @@ export default function RadialOrbitalTimeline({
                       ? "bg-primary text-primary-foreground shadow-lg shadow-primary/50"
                       : isRelated
                       ? "bg-primary/60 text-primary-foreground shadow-md shadow-primary/30"
-                      : "bg-card text-card-foreground border-2 border-primary/40 shadow-sm"
+                      : `${getStatusStyles(item.status)} shadow-sm transition-all duration-300`
                   }
-                  transition-all duration-300 transform
+                  transform
                   ${isExpanded ? "scale-150" : ""}
                 `}
                 >
