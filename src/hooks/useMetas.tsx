@@ -205,7 +205,7 @@ export const useMetas = () => {
     };
 
     for (const meta of metas) {
-      if (!meta.concluida && valores[meta.tipo] >= meta.valor_meta) {
+      if (meta.ativa && !meta.concluida && valores[meta.tipo] >= meta.valor_meta) {
         await marcarMetaConcluida(meta.id);
       }
     }
