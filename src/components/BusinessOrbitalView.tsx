@@ -1,6 +1,7 @@
 import { Calendar, Users, DollarSign, Package, BadgeDollarSign } from "lucide-react"
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { Card } from "@/components/ui/card"
 
 interface BusinessOrbitalViewProps {
   dashboardData: {
@@ -93,8 +94,9 @@ export const BusinessOrbitalView = ({
   ]
 
   return (
-    <div className="relative">
+    <Card className="p-6">
+      <h2 className="text-lg font-semibold mb-4">Progresso de Metas</h2>
       <RadialOrbitalTimeline timelineData={timelineData} />
-    </div>
+    </Card>
   )
 }

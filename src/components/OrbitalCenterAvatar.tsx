@@ -123,29 +123,24 @@ export const OrbitalCenterAvatar = ({
         
         <div className="w-16 h-16 rounded-full bg-background backdrop-blur-md flex items-center justify-center relative overflow-hidden">
           {displayUrl ? (
-            <img 
-              src={displayUrl} 
-              alt="Logo" 
-              className="w-full h-full object-cover rounded-full"
-            />
-          ) : null}
-          
-          {/* Hover overlay with camera icon */}
-          <div className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            {isUploading ? (
-              <Loader2 className="h-6 w-6 text-white animate-spin" />
-            ) : (
-              <Camera className="h-6 w-6 text-white" />
-            )}
-          </div>
-        </div>
-        
-        {/* Visible camera icon indicator - always visible */}
-        <div 
-          className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer hover:bg-primary/90 transition-colors shadow-lg border-2 border-background"
-          onClick={handleClick}
-        >
-          <Camera className="w-3 h-3" />
+            <>
+              <img 
+                src={displayUrl} 
+                alt="Logo" 
+                className="w-full h-full object-cover rounded-full"
+              />
+              {/* Camera overlay with transparency always visible */}
+              <div className="absolute inset-0 bg-background/60 rounded-full flex items-center justify-center">
+                {isUploading ? (
+                  <Loader2 className="h-5 w-5 text-foreground animate-spin" />
+                ) : (
+                  <Camera className="h-5 w-5 text-foreground opacity-50" />
+                )}
+              </div>
+            </>
+          ) : (
+            <Camera className="h-6 w-6 text-muted-foreground opacity-40" />
+          )}
         </div>
 
         {/* Remove button - only show when there's an avatar */}

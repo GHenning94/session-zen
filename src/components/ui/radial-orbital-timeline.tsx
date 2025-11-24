@@ -204,7 +204,7 @@ export default function RadialOrbitalTimeline({
           />
 
           {/* Órbita */}
-          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-border/60"></div>
+          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-border animate-[pulse_4s_ease-in-out_infinite]"></div>
 
           {timelineData.map((item, index) => {
             const position = calculateNodePosition(index, timelineData.length);
@@ -233,10 +233,10 @@ export default function RadialOrbitalTimeline({
                 {/* Efeito de energia ao redor do nó */}
                 <div
                   className={`absolute rounded-full -inset-1 ${
-                    isPulsing ? "animate-pulse duration-1000" : ""
+                    isPulsing ? "animate-[pulse_3s_ease-in-out_infinite]" : ""
                   }`}
                   style={{
-                    background: `radial-gradient(circle, hsl(var(--primary) / 0.2) 0%, transparent 70%)`,
+                    background: `radial-gradient(circle, hsl(var(--primary) / 0.3) 0%, transparent 70%)`,
                     width: `${item.energy * 0.5 + 40}px`,
                     height: `${item.energy * 0.5 + 40}px`,
                     left: `-${(item.energy * 0.5 + 40 - 40) / 2}px`,
@@ -250,10 +250,10 @@ export default function RadialOrbitalTimeline({
                   w-10 h-10 rounded-full flex items-center justify-center
                   ${
                     isExpanded
-                      ? "bg-primary text-primary-foreground shadow-primary"
+                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/50"
                       : isRelated
-                      ? "bg-primary/50 text-primary-foreground"
-                      : "bg-card text-card-foreground border-2 border-border"
+                      ? "bg-primary/60 text-primary-foreground shadow-md shadow-primary/30"
+                      : "bg-card text-card-foreground border-2 border-primary/40 shadow-sm"
                   }
                   transition-all duration-300 transform
                   ${isExpanded ? "scale-150" : ""}
@@ -265,7 +265,7 @@ export default function RadialOrbitalTimeline({
                 {/* Título do nó */}
                 <div
                   className={`
-                  absolute top-12 whitespace-nowrap
+                  absolute top-12 left-1/2 -translate-x-1/2 whitespace-nowrap
                   text-xs font-semibold tracking-wider
                   transition-all duration-300
                   ${isExpanded ? "text-foreground scale-125" : "text-muted-foreground"}
