@@ -123,7 +123,7 @@ export const MetasManager = () => {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle className="text-lg">{getTipoLabel(tipo)}</CardTitle>
-                    {metaConcluida && (
+                    {!metaAtiva && metaConcluida && (
                       <Badge variant="success" className="flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" />
                         Meta {metaConcluida.versao} Concluída
@@ -137,7 +137,7 @@ export const MetasManager = () => {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {!metaAtiva || metaConcluida ? (
+                  {!metaAtiva ? (
                     <div className="flex gap-2">
                       <div className="flex-1">
                         <Label htmlFor={`meta-${tipo}`} className="sr-only">
