@@ -227,20 +227,6 @@ export default function RadialOrbitalTimeline({
                   toggleItem(item.id);
                 }}
               >
-                {/* Efeito de energia ao redor do nó */}
-                <div
-                  className={`absolute rounded-full -inset-1 ${
-                    isPulsing ? "animate-slow-pulse" : ""
-                  }`}
-                  style={{
-                    background: `radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)`,
-                    width: `${item.energy * 0.5 + 40}px`,
-                    height: `${item.energy * 0.5 + 40}px`,
-                    left: `-${(item.energy * 0.5 + 40 - 40) / 2}px`,
-                    top: `-${(item.energy * 0.5 + 40 - 40) / 2}px`,
-                  }}
-                ></div>
-
                 {/* Nó orbital */}
                 <div
                   className={`
