@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type MetaTipo = 'sessoes' | 'clientes' | 'receita' | 'pacotes' | 'ticket_medio';
 
@@ -102,8 +103,41 @@ export const useMetas = () => {
     }
   };
 
+  // Realtime subscription para sincronização instantânea
   useEffect(() => {
+    if (!user) return;
+    
     loadMetas();
+    
+    let channel: RealtimeChannel;
+    
+    const setupRealtimeSubscription = async () => {
+      channel = supabase
+        .channel('metas-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'metas',
+            filter: `user_id=eq.${user.id}`
+          },
+          (payload) => {
+            console.log('Meta change detected:', payload);
+            // Recarregar metas instantaneamente
+            loadMetas();
+          }
+        )
+        .subscribe();
+    };
+    
+    setupRealtimeSubscription();
+    
+    return () => {
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+    };
   }, [user]);
 
   const createMeta = async (tipo: MetaTipo, valor_meta: number) => {
@@ -171,17 +205,23 @@ export const useMetas = () => {
 
       if (error) throw error;
 
-      // Criar notificação
+      // Criar notificação INSTANTÂNEA
       const meta = metas.find(m => m.id === metaId);
       if (meta) {
-        await supabase.from('notifications').insert({
+        const { error: notifError } = await supabase.from('notifications').insert({
           user_id: user.id,
           titulo: 'Meta Concluída! 🎉',
-          conteudo: `Parabéns! Você concluiu sua meta de ${getTipoLabel(meta.tipo)}!`
+          conteudo: `Parabéns! Você concluiu sua meta de ${getTipoLabel(meta.tipo)}!`,
+          lida: false,
+          data: new Date().toISOString()
         });
+        
+        if (notifError) {
+          console.error('Erro ao criar notificação:', notifError);
+        }
       }
 
-      await loadMetas();
+      // Não precisa chamar loadMetas aqui, o realtime fará isso
     } catch (error) {
       console.error('Erro ao marcar meta como concluída:', error);
     }

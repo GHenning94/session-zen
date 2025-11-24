@@ -96,7 +96,21 @@ export const MetasManager = () => {
   };
 
   if (isLoading) {
-    return <div className="text-center">Carregando metas...</div>;
+    return (
+      <div className="space-y-4">
+        {tiposMeta.map((tipo) => (
+          <Card key={tipo}>
+            <CardHeader>
+              <div className="h-6 bg-muted animate-pulse rounded w-32" />
+              <div className="h-4 bg-muted animate-pulse rounded w-48 mt-2" />
+            </CardHeader>
+            <CardContent>
+              <div className="h-10 bg-muted animate-pulse rounded" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
   }
 
   return (
