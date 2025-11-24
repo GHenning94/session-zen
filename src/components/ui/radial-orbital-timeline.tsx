@@ -181,7 +181,7 @@ export default function RadialOrbitalTimeline({
 
   return (
     <div
-      className="w-full h-[320px] flex flex-col items-center justify-center overflow-hidden"
+      className="w-full h-[420px] flex flex-col items-center justify-center overflow-hidden"
       ref={containerRef}
       onClick={handleContainerClick}
     >
@@ -201,7 +201,7 @@ export default function RadialOrbitalTimeline({
           />
 
           {/* Órbita */}
-          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-primary/50 dark:border-primary/70 animate-[pulse_6s_ease-in-out_infinite] shadow-[0_0_20px_rgba(59,130,246,0.3)] dark:shadow-[0_0_30px_rgba(59,130,246,0.6)]"></div>
+          <div className="absolute w-[280px] h-[280px] rounded-full border-2 border-border/60 animate-[pulse_8s_ease-in-out_infinite]"></div>
 
           {timelineData.map((item, index) => {
             const position = calculateNodePosition(index, timelineData.length);
@@ -230,7 +230,7 @@ export default function RadialOrbitalTimeline({
                 {/* Efeito de energia ao redor do nó */}
                 <div
                   className={`absolute rounded-full -inset-1 ${
-                    isPulsing ? "animate-[pulse_5s_ease-in-out_infinite]" : ""
+                    isPulsing ? "animate-[pulse_8s_ease-in-out_infinite]" : ""
                   }`}
                   style={{
                     background: `radial-gradient(circle, hsl(var(--primary) / 0.4) 0%, transparent 70%)`,
