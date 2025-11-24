@@ -49,7 +49,14 @@ export const MetasManager = () => {
   };
 
   const getMetaConcluida = (tipo: MetaTipo) => {
-    return metas.find(m => m.tipo === tipo && m.concluida);
+    // Pegar a meta mais recente concluída e não ativa
+    const metasConcluidas = metas.filter(m => m.tipo === tipo && m.concluida && !m.ativa);
+    if (metasConcluidas.length === 0) return undefined;
+    
+    // Retornar a mais recente baseado na data de conclusão
+    return metasConcluidas.sort((a, b) => 
+      new Date(b.data_conclusao || b.created_at).getTime() - new Date(a.data_conclusao || a.created_at).getTime()
+    )[0];
   };
 
   const getHistoricoMetas = (tipo: MetaTipo) => {

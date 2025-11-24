@@ -2,7 +2,7 @@ import { Calendar, Users, DollarSign, Package, BadgeDollarSign } from "lucide-re
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { Card } from "@/components/ui/card"
-import { useMetas } from "@/hooks/useMetas"
+import { useMetas, MetaTipo } from "@/hooks/useMetas"
 import { useEffect } from "react"
 
 interface BusinessOrbitalViewProps {
@@ -49,13 +49,21 @@ export const BusinessOrbitalView = ({
   const metaPacotes = getMetaAtivaPorTipo('pacotes')
   const metaTicket = getMetaAtivaPorTipo('ticket_medio')
   
-  // Verificar se tem meta concluída (sem meta ativa)
+  // Verificar se tem meta concluída (sem meta ativa) - pegar a mais recente
+  const getMetaConcluidaMaisRecente = (tipo: MetaTipo) => {
+    const metasConcluidas = metas.filter(m => m.tipo === tipo && m.concluida && !getMetaAtivaPorTipo(tipo));
+    if (metasConcluidas.length === 0) return undefined;
+    return metasConcluidas.sort((a, b) => 
+      new Date(b.data_conclusao || b.created_at).getTime() - new Date(a.data_conclusao || a.created_at).getTime()
+    )[0];
+  };
+  
   const metaConcluidas = {
-    sessoes: metas.find(m => m.tipo === 'sessoes' && m.concluida && !metaSessoes),
-    clientes: metas.find(m => m.tipo === 'clientes' && m.concluida && !metaClientes),
-    receita: metas.find(m => m.tipo === 'receita' && m.concluida && !metaReceita),
-    pacotes: metas.find(m => m.tipo === 'pacotes' && m.concluida && !metaPacotes),
-    ticket_medio: metas.find(m => m.tipo === 'ticket_medio' && m.concluida && !metaTicket)
+    sessoes: getMetaConcluidaMaisRecente('sessoes'),
+    clientes: getMetaConcluidaMaisRecente('clientes'),
+    receita: getMetaConcluidaMaisRecente('receita'),
+    pacotes: getMetaConcluidaMaisRecente('pacotes'),
+    ticket_medio: getMetaConcluidaMaisRecente('ticket_medio')
   }
   
   // Calcular progresso baseado nas metas definidas pelo usuário
