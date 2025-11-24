@@ -34,7 +34,6 @@ import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
 import { formatPhone, formatCRP, validatePassword } from "@/utils/inputMasks"
-import { MetasManager } from "@/components/MetasManager"
 
 type AllSettings = Record<string, any>;
 
@@ -440,11 +439,10 @@ const Configuracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
             <TabsTrigger value="preferences">Preferências</TabsTrigger>
-            <TabsTrigger value="metas">Metas</TabsTrigger>
             <TabsTrigger value="platform-payments">Assinatura</TabsTrigger>
             <TabsTrigger value="bank-details">Dados Bancários</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
@@ -717,10 +715,6 @@ const Configuracoes = () => {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-          
-          <TabsContent value="metas" className="space-y-6">
-            <MetasManager />
           </TabsContent>
           
           <TabsContent value="platform-payments" className="space-y-6">
