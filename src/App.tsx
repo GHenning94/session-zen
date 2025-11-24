@@ -40,6 +40,7 @@ import Estudos from "@/pages/Estudos";
 import RedesSociais from "@/pages/RedesSociais";
 import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import Suporte from "@/pages/Suporte";
+import Metas from "@/pages/Metas";
 import PublicRegistration from "@/pages/PublicRegistration";
 import AuthConfirm from "@/pages/AuthConfirm";
 import AuthCallback from "@/pages/AuthCallback";
@@ -161,6 +162,11 @@ const App = () => (
                   <Route path="/prontuarios" element={
                     <ProtectedRoute>
                       <Prontuarios />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/metas" element={
+                    <ProtectedRoute>
+                      <Metas />
                     </ProtectedRoute>
                   } />
                   <Route path="/estudos" element={
