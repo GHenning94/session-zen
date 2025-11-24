@@ -49,6 +49,15 @@ export const BusinessOrbitalView = ({
   const metaPacotes = getMetaAtivaPorTipo('pacotes')
   const metaTicket = getMetaAtivaPorTipo('ticket_medio')
   
+  // Verificar se tem meta concluída (sem meta ativa)
+  const metaConcluidas = {
+    sessoes: metas.find(m => m.tipo === 'sessoes' && m.concluida && !metaSessoes),
+    clientes: metas.find(m => m.tipo === 'clientes' && m.concluida && !metaClientes),
+    receita: metas.find(m => m.tipo === 'receita' && m.concluida && !metaReceita),
+    pacotes: metas.find(m => m.tipo === 'pacotes' && m.concluida && !metaPacotes),
+    ticket_medio: metas.find(m => m.tipo === 'ticket_medio' && m.concluida && !metaTicket)
+  }
+  
   // Calcular progresso baseado nas metas definidas pelo usuário
   const sessionsProgress = metaSessoes 
     ? Math.min(100, (dashboardData.sessionsToday / metaSessoes.valor_meta) * 100)
@@ -73,11 +82,13 @@ export const BusinessOrbitalView = ({
       date: `${currentDay} ${currentMonth}`,
       content: metaSessoes 
         ? `Meta: ${metaSessoes.valor_meta} sessões\nAtual: ${dashboardData.sessionsToday} sessões\n${upcomingSessionsCount} agendada${upcomingSessionsCount !== 1 ? 's' : ''} nos próximos dias.`
-        : 'Defina uma meta em Configurações para começar.',
+        : metaConcluidas.sessoes
+        ? `Meta ${metaConcluidas.sessoes.versao} concluída! Defina uma nova meta para continuar.`
+        : 'Defina uma meta em Metas para começar.',
       category: "Atendimentos",
       icon: Calendar,
       relatedIds: [],
-      status: !metaSessoes ? "pending" as const : sessionsProgress >= 100 ? "completed" as const : "in-progress" as const,
+      status: metaConcluidas.sessoes ? "completed" as const : !metaSessoes ? "pending" as const : sessionsProgress >= 100 ? "completed" as const : "in-progress" as const,
       energy: Math.round(sessionsProgress),
     },
     {
@@ -86,11 +97,13 @@ export const BusinessOrbitalView = ({
       date: currentMonth,
       content: metaClientes
         ? `Meta: ${metaClientes.valor_meta} clientes\nAtual: ${dashboardData.activeClients} clientes\nBase sólida para crescimento sustentável.`
-        : 'Defina uma meta em Configurações para começar.',
+        : metaConcluidas.clientes
+        ? `Meta ${metaConcluidas.clientes.versao} concluída! Defina uma nova meta para continuar.`
+        : 'Defina uma meta em Metas para começar.',
       category: "Crescimento",
       icon: Users,
       relatedIds: [],
-      status: !metaClientes ? "pending" as const : clientsProgress >= 100 ? "completed" as const : "in-progress" as const,
+      status: metaConcluidas.clientes ? "completed" as const : !metaClientes ? "pending" as const : clientsProgress >= 100 ? "completed" as const : "in-progress" as const,
       energy: Math.round(clientsProgress),
     },
     {
@@ -99,11 +112,13 @@ export const BusinessOrbitalView = ({
       date: currentMonth,
       content: metaReceita
         ? `Meta: ${formatCurrencyBR(metaReceita.valor_meta)}\nAtual: ${formatCurrencyBR(dashboardData.monthlyRevenue)}\nPendente: ${formatCurrencyBR(dashboardData.pendingRevenue)}`
-        : 'Defina uma meta em Configurações para começar.',
+        : metaConcluidas.receita
+        ? `Meta ${metaConcluidas.receita.versao} concluída! Defina uma nova meta para continuar.`
+        : 'Defina uma meta em Metas para começar.',
       category: "Financeiro",
       icon: DollarSign,
       relatedIds: [],
-      status: !metaReceita ? "pending" as const : revenueProgress >= 100 ? "completed" as const : "in-progress" as const,
+      status: metaConcluidas.receita ? "completed" as const : !metaReceita ? "pending" as const : revenueProgress >= 100 ? "completed" as const : "in-progress" as const,
       energy: Math.round(revenueProgress),
     },
     {
@@ -112,11 +127,13 @@ export const BusinessOrbitalView = ({
       date: currentMonth,
       content: metaPacotes
         ? `Meta: ${metaPacotes.valor_meta} pacotes\nAtual: ${packageStats.activePackages} pacotes\nReceita total: ${formatCurrencyBR(packageStats.totalRevenue)}`
-        : 'Defina uma meta em Configurações para começar.',
+        : metaConcluidas.pacotes
+        ? `Meta ${metaConcluidas.pacotes.versao} concluída! Defina uma nova meta para continuar.`
+        : 'Defina uma meta em Metas para começar.',
       category: "Produtos",
       icon: Package,
       relatedIds: [],
-      status: !metaPacotes ? "pending" as const : packagesProgress >= 100 ? "completed" as const : "in-progress" as const,
+      status: metaConcluidas.pacotes ? "completed" as const : !metaPacotes ? "pending" as const : packagesProgress >= 100 ? "completed" as const : "in-progress" as const,
       energy: Math.round(packagesProgress),
     },
     {
@@ -125,11 +142,13 @@ export const BusinessOrbitalView = ({
       date: currentMonth,
       content: metaTicket
         ? `Meta: ${metaTicket.valor_meta}%\nAtual: ${dashboardData.completionRate}%\nContinue mantendo a consistência nos atendimentos.`
-        : 'Defina uma meta em Configurações para começar.',
+        : metaConcluidas.ticket_medio
+        ? `Meta ${metaConcluidas.ticket_medio.versao} concluída! Defina uma nova meta para continuar.`
+        : 'Defina uma meta em Metas para começar.',
       category: "Objetivos",
       icon: BadgeDollarSign,
       relatedIds: [],
-      status: !metaTicket ? "pending" as const : completionProgress >= 100 ? "completed" as const : "in-progress" as const,
+      status: metaConcluidas.ticket_medio ? "completed" as const : !metaTicket ? "pending" as const : completionProgress >= 100 ? "completed" as const : "in-progress" as const,
       energy: Math.round(completionProgress),
     },
   ]

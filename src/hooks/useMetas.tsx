@@ -32,8 +32,7 @@ export const useMetas = () => {
         .from('metas')
         .select('*')
         .eq('user_id', user.id)
-        .eq('ativa', true)
-        .order('tipo', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
       setMetas((data || []) as Meta[]);
@@ -46,6 +45,60 @@ export const useMetas = () => {
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const updateMeta = async (metaId: string, valor_meta: number) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('metas')
+        .update({ valor_meta, updated_at: new Date().toISOString() })
+        .eq('id', metaId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await loadMetas();
+      toast({
+        title: "Meta atualizada!",
+        description: "Meta atualizada com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar meta:', error);
+      toast({
+        title: "Erro ao atualizar meta",
+        description: "Não foi possível atualizar a meta.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const deleteMeta = async (metaId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('metas')
+        .delete()
+        .eq('id', metaId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await loadMetas();
+      toast({
+        title: "Meta excluída!",
+        description: "Meta excluída com sucesso."
+      });
+    } catch (error) {
+      console.error('Erro ao excluir meta:', error);
+      toast({
+        title: "Erro ao excluir meta",
+        description: "Não foi possível excluir a meta.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -180,6 +233,8 @@ export const useMetas = () => {
     metas,
     isLoading,
     createMeta,
+    updateMeta,
+    deleteMeta,
     loadMetas,
     marcarMetaConcluida,
     verificarEMarcarMetasConcluidas,
