@@ -1026,7 +1026,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <NotificationPermissionBanner />
-      <div className="space-y-8 min-h-[calc(100vh-112px)]">
+      <div className="flex flex-col gap-8 min-h-[calc(100vh-88px)]">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -1328,7 +1328,7 @@ const Dashboard = () => {
         </div>
 
         {/* Ações Rápidas e Upgrade */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
             <CardHeader>
