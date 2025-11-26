@@ -1697,7 +1697,7 @@ const Dashboard = () => {
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
-                  <Card className="shadow-soft min-h-[520px]">
+                  <Card className="shadow-soft h-full">
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
