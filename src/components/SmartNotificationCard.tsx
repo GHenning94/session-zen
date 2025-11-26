@@ -8,7 +8,9 @@ import {
   DollarSign, 
   Repeat,
   Clock,
-  ArrowRight
+  ArrowRight,
+  Calendar,
+  Users
 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { formatCurrencyBR } from '@/utils/formatters'
@@ -26,6 +28,7 @@ interface SmartNotification {
 
 interface SmartNotificationCardProps {
   notifications: SmartNotification[]
+  reminders?: string[]
 }
 
 const getIcon = (type: SmartNotification['type']) => {
@@ -52,10 +55,10 @@ const getVariant = (priority: SmartNotification['priority']) => {
   }
 }
 
-export const SmartNotificationCard = ({ notifications }: SmartNotificationCardProps) => {
+export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNotificationCardProps) => {
   const navigate = useNavigate()
 
-  if (notifications.length === 0) {
+  if (notifications.length === 0 && reminders.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
@@ -120,6 +123,24 @@ export const SmartNotificationCard = ({ notifications }: SmartNotificationCardPr
             )}
           </div>
         ))}
+        
+        {/* Lembretes Importantes */}
+        {reminders.length > 0 && (
+          <div className="pt-3 mt-3 border-t">
+            <div className="flex items-center gap-2 mb-3">
+              <AlertCircle className="w-4 h-4 text-warning" />
+              <span className="text-sm font-semibold text-warning">Lembretes Importantes</span>
+            </div>
+            <div className="space-y-2">
+              {reminders.map((reminder, index) => (
+                <div key={index} className="flex items-start gap-2 text-xs text-muted-foreground">
+                  <span className="text-warning mt-0.5">•</span>
+                  <span>{reminder}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   )

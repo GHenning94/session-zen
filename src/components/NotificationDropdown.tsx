@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,17 +20,12 @@ import {
   Calendar,
   User,
   CreditCard,
-  Settings,
-  AlertCircle,
-  Users
+  Settings
 } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { supabase } from "@/integrations/supabase/client"
-import { useAuth } from "@/hooks/useAuth"
 
 const NotificationDropdown = () => {
-  const { user } = useAuth()
   const { 
     notifications, 
     unreadCount, 
@@ -41,71 +36,6 @@ const NotificationDropdown = () => {
     markVisibleAsRead
   } = useNotifications()
   const [open, setOpen] = useState(false)
-  const [reminders, setReminders] = useState<string[]>([])
-  const [loadingReminders, setLoadingReminders] = useState(false)
-
-
-  // Carregar lembretes importantes
-  useEffect(() => {
-    if (open && user) {
-      loadReminders()
-    }
-  }, [open, user])
-
-  const loadReminders = async () => {
-    if (!user) return
-    
-    setLoadingReminders(true)
-    try {
-      const remindersList: string[] = []
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-
-      // Buscar próxima sessão
-      const { data: upcomingSessions } = await supabase
-        .from('sessions')
-        .select('id, data, horario, status, clients(nome)')
-        .eq('user_id', user.id)
-        .eq('status', 'agendada')
-        .gte('data', today.toISOString().split('T')[0])
-        .order('data')
-        .order('horario')
-        .limit(1)
-
-      if (upcomingSessions && upcomingSessions.length > 0) {
-        const nextSession = upcomingSessions[0]
-        const [year, month, day] = nextSession.data.split('-')
-        const sessionDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-        const isToday = sessionDate.toDateString() === today.toDateString()
-        
-        if (isToday) {
-          remindersList.push(`${nextSession.clients?.nome || 'Cliente'} tem consulta às ${new Date(`2000-01-01T${nextSession.horario}`).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} hoje`)
-        } else {
-          remindersList.push(`Próxima consulta: ${nextSession.clients?.nome || 'Cliente'} em ${sessionDate.toLocaleDateString('pt-BR')}`)
-        }
-      }
-
-      // Buscar novos clientes desta semana
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
-      
-      const { data: recentClients } = await supabase
-        .from('clients')
-        .select('id, created_at')
-        .eq('user_id', user.id)
-        .gte('created_at', weekAgo.toISOString())
-
-      if (recentClients && recentClients.length > 0) {
-        remindersList.push(`${recentClients.length} novo${recentClients.length > 1 ? 's' : ''} cliente${recentClients.length > 1 ? 's' : ''} esta semana`)
-      }
-
-      setReminders(remindersList)
-    } catch (error) {
-      console.error('Erro ao carregar lembretes:', error)
-    } finally {
-      setLoadingReminders(false)
-    }
-  }
 
   const getNotificationIcon = (titulo: string) => {
     if (titulo.toLowerCase().includes('agendamento')) return <Calendar className="w-4 h-4" />
@@ -199,28 +129,7 @@ const NotificationDropdown = () => {
         
         <DropdownMenuSeparator />
         
-        {/* Lembretes Importantes */}
-        {reminders.length > 0 && (
-          <>
-            <div className="p-3 bg-warning/10 border-l-4 border-warning">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertCircle className="w-4 h-4 text-warning" />
-                <span className="text-sm font-semibold text-warning">Lembretes Importantes</span>
-              </div>
-              <ul className="space-y-1">
-                {reminders.map((reminder, index) => (
-                  <li key={index} className="text-xs text-muted-foreground flex items-start gap-2">
-                    <span className="text-warning mt-0.5">•</span>
-                    <span>{reminder}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-            <DropdownMenuSeparator />
-          </>
-        )}
-        
-        {loading || loadingReminders ? (
+        {loading ? (
           <div className="p-4 text-center text-sm text-muted-foreground">
             Carregando notificações...
           </div>

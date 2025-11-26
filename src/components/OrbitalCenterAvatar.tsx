@@ -129,17 +129,23 @@ export const OrbitalCenterAvatar = ({
                 alt="Logo" 
                 className="w-full h-full object-cover rounded-full"
               />
-              {/* Camera overlay with transparency always visible */}
-              <div className="absolute inset-0 bg-background/60 rounded-full flex items-center justify-center">
+              {/* Camera overlay apenas no hover */}
+              <div className="absolute inset-0 bg-background/80 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                 {isUploading ? (
                   <Loader2 className="h-5 w-5 text-foreground animate-spin" />
                 ) : (
-                  <Camera className="h-5 w-5 text-foreground opacity-50" />
+                  <Camera className="h-5 w-5 text-foreground" />
                 )}
               </div>
             </>
           ) : (
-            <Camera className="h-6 w-6 text-muted-foreground opacity-40" />
+            <>
+              {isUploading ? (
+                <Loader2 className="h-6 w-6 text-muted-foreground animate-spin" />
+              ) : (
+                <Camera className="h-6 w-6 text-muted-foreground opacity-40" />
+              )}
+            </>
           )}
         </div>
 
