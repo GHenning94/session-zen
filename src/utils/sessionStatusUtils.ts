@@ -13,7 +13,10 @@ export const calculateSessionStatus = (data: string, horario: string, currentSta
 export const sessionNeedsAttention = (data: string, horario: string, status: string): boolean => {
   if (status !== 'agendada') return false
   
-  const sessionDateTime = new Date(`${data}T${horario}`)
+  // Parse seguro da data/hora
+  const [year, month, day] = data.split('-').map(Number)
+  const [hours, minutes] = horario.split(':').map(Number)
+  const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
   const currentDateTime = new Date()
   
   return sessionDateTime < currentDateTime
@@ -90,7 +93,10 @@ export const paymentNeedsAttentionForSession = (session: { status: string; valor
   if (session.status !== 'agendada') return false
   if (!session.valor || session.valor <= 0) return false
   
-  const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+  // Parse seguro da data/hora
+  const [year, month, day] = session.data.split('-').map(Number)
+  const [hours, minutes] = session.horario.split(':').map(Number)
+  const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
   const currentDateTime = new Date()
   
   return sessionDateTime < currentDateTime
@@ -146,7 +152,10 @@ export const isOverdue = (payment: any): boolean => {
   
   // Se é pagamento de sessão, considerar data E hora
   if (payment.session_id && payment.sessions?.data && payment.sessions?.horario) {
-    const sessionDateTime = new Date(`${payment.sessions.data}T${payment.sessions.horario}`)
+    // Parse seguro da data/hora
+    const [year, month, day] = payment.sessions.data.split('-').map(Number)
+    const [hours, minutes] = payment.sessions.horario.split(':').map(Number)
+    const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
     const now = new Date()
     return sessionDateTime < now
   }
