@@ -1026,7 +1026,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <NotificationPermissionBanner />
-      <div className="space-y-8 pb-4">
+      <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -1697,7 +1697,7 @@ const Dashboard = () => {
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
-                  <Card className="shadow-soft h-[560px]">
+                  <Card className="shadow-soft min-h-[520px]">
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1807,7 +1807,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Coluna da Direita */}
-          <div className="space-y-6 flex flex-col">
+          <div className="space-y-6 flex flex-col h-full">
             {/* Upgrade de Plano */}
             <Card className="shadow-soft">
               <CardContent className="p-6">
@@ -1873,7 +1873,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft h-[560px]">
+            <Card className="shadow-soft min-h-[520px]">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />

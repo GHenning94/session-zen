@@ -48,7 +48,7 @@ export function Layout({ children }: LayoutProps) {
   
   return (
     <SidebarProvider>
-      <div className="flex-1 flex flex-col bg-background">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
         <div className="flex-1 flex flex-col">
@@ -65,7 +65,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 px-6 pb-6 pt-2 overflow-auto">
+          <main className="flex-1 px-6 pb-3 pt-2">
             {children}
           </main>
         </div>
