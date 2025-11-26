@@ -1026,7 +1026,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <NotificationPermissionBanner />
-      <div className="space-y-8">
+      <div className="space-y-8 flex flex-col min-h-[calc(100vh-88px)]">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -1328,17 +1328,17 @@ const Dashboard = () => {
         </div>
 
         {/* Ações Rápidas e Upgrade */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1">
           {/* Ações Rápidas */}
-          <Card className="lg:col-span-2 shadow-soft">
+          <Card className="lg:col-span-2 shadow-soft h-full flex flex-col">
             <CardHeader>
               <CardTitle>Ações Rápidas</CardTitle>
               <CardDescription>
                 Acesse rapidamente as funcionalidades mais utilizadas
               </CardDescription>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
+            <CardContent className="flex-1 flex flex-col">
+              <div className="space-y-6 flex-1 flex flex-col">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewSession}>
                     <Calendar className="w-6 h-6 text-primary" />
@@ -1696,8 +1696,8 @@ const Dashboard = () => {
                 </div>
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
-                <div className="col-span-full">
-                  <Card className="shadow-soft min-h-[520px]">
+                <div className="col-span-full flex-1 flex flex-col">
+                  <Card className="shadow-soft flex-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1807,7 +1807,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Coluna da Direita */}
-          <div className="space-y-6 flex flex-col h-full">
+          <div className="space-y-6 flex flex-col flex-1">
             {/* Upgrade de Plano */}
             <Card className="shadow-soft">
               <CardContent className="p-6">
@@ -1873,7 +1873,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft min-h-[520px]">
+            <Card className="shadow-soft flex-1 min-h-[400px]">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
