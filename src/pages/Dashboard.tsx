@@ -900,7 +900,7 @@ const Dashboard = () => {
 
       const filteredCanalData = Object.entries(canalData)
         .map(([canal, valor]) => ({
-          name: canal,
+          canal: canal.charAt(0).toUpperCase() + canal.slice(1),
           valor: valor,
           color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
         }))
