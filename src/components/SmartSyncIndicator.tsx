@@ -7,116 +7,54 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { supabase } from "@/integrations/supabase/client"
-import { useAuth } from "@/hooks/useAuth"
+import { useGlobalRealtime } from "@/hooks/useGlobalRealtime"
 import { 
   Wifi, 
   WifiOff, 
-  RefreshCw, 
-  CheckCircle, 
-  AlertCircle,
+  RefreshCw,
   Zap
 } from "lucide-react"
 
 type ConnectionStatus = 'connected' | 'disconnected' | 'reconnecting' | 'syncing'
 
 export const SmartSyncIndicator = () => {
-  const { user } = useAuth()
+  const { connectionStatus, subscribe } = useGlobalRealtime()
   const [status, setStatus] = useState<ConnectionStatus>('connected')
   const [lastSync, setLastSync] = useState<Date | null>(null)
   const [syncCount, setSyncCount] = useState(0)
 
+  // Usar o hook global ao invés de criar canal duplicado
   useEffect(() => {
-    if (!user) return
+    const unsubscribe = subscribe(['sessions', 'clients', 'payments', 'notifications'], () => {
+      setStatus('syncing')
+      setLastSync(new Date())
+      setSyncCount(prev => prev + 1)
+      
+      setTimeout(() => {
+        setStatus(connectionStatus === 'connected' ? 'connected' : 'disconnected')
+      }, 1000)
+    })
 
-    // Monitor da conexão do Supabase
-    const channel = supabase.channel('sync_monitor')
+    return unsubscribe
+  }, [subscribe, connectionStatus])
 
-    // Escutar mudanças em tempo real para detectar atividade
-    const subscription = channel
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'sessions',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          setStatus('syncing')
-          setLastSync(new Date())
-          setSyncCount(prev => prev + 1)
-          
-          // Voltar ao status conectado após 1 segundo
-          setTimeout(() => {
-            setStatus('connected')
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'clients',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          setStatus('syncing')
-          setLastSync(new Date())
-          setSyncCount(prev => prev + 1)
-          
-          setTimeout(() => {
-            setStatus('connected')
-          }, 1000)
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          setStatus('syncing')
-          setLastSync(new Date())
-          setSyncCount(prev => prev + 1)
-          
-          setTimeout(() => {
-            setStatus('connected')
-          }, 1000)
-        }
-      )
-      .subscribe((status) => {
-        console.log('Realtime status:', status)
-        
-        if (status === 'SUBSCRIBED') {
-          setStatus('connected')
-        } else if (status === 'CHANNEL_ERROR') {
-          setStatus('disconnected')
-        }
-      })
-
-    // Monitor de conectividade
+  // Monitor de conectividade offline/online
+  useEffect(() => {
     const handleOnline = () => setStatus('connected')
     const handleOffline = () => setStatus('disconnected')
 
     window.addEventListener('online', handleOnline)
     window.addEventListener('offline', handleOffline)
 
-    // Verificar conexão inicial
     if (!navigator.onLine) {
       setStatus('disconnected')
     }
 
     return () => {
-      supabase.removeChannel(channel)
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
-  }, [user])
+  }, [])
 
   const getStatusInfo = () => {
     switch (status) {

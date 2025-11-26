@@ -64,7 +64,7 @@ export const NotificationSettings = ({ open, onOpenChange, type, title }: Notifi
     try {
       const { data, error } = await supabase
         .from('notification_settings')
-        .select('*')
+        .select('id, type, enabled, frequency, time, events, user_id, created_at, updated_at')
         .eq('user_id', user?.id)
         .eq('type', type)
         .single()

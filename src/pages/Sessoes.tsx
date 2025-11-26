@@ -103,11 +103,12 @@ export default function Sessoes() {
     try {
       setLoading(true)
       
-      // Carregar sessões com avatares
+      // Carregar sessões (campos otimizados)
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select(`
-          *,
+          id, data, horario, status, valor, anotacoes, client_id, package_id,
+          metodo_pagamento, session_type, google_event_id, created_at, updated_at,
           clients (nome, ativo, avatar_url)
         `)
         .order('data', { ascending: false })
@@ -115,11 +116,11 @@ export default function Sessoes() {
 
       if (sessionsError) throw sessionsError
 
-      // Carregar anotações de sessões
+      // Carregar anotações (campos otimizados)
       const { data: notesData, error: notesError } = await supabase
         .from('session_notes')
         .select(`
-          *,
+          id, notes, created_at, session_id, client_id, is_private,
           clients (nome, avatar_url),
           sessions (data, horario, status)
         `)
@@ -127,7 +128,7 @@ export default function Sessoes() {
 
       if (notesError) throw notesError
 
-      // Carregar clientes
+      // Carregar clientes (apenas campos necessários)
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('id, nome, ativo, avatar_url')

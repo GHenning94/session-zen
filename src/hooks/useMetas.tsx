@@ -31,7 +31,7 @@ export const useMetas = () => {
     try {
       const { data, error } = await supabase
         .from('metas')
-        .select('*')
+        .select('id, tipo, valor_meta, ativa, concluida, data_inicio, data_conclusao, versao, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 

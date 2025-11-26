@@ -57,7 +57,7 @@ export const SessionModal = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, nome, ativo')
         .eq('user_id', user!.id)
         .order('nome')
       
@@ -75,7 +75,7 @@ export const SessionModal = ({
       
       const { data, error } = await supabase
         .from('packages')
-        .select('*')
+        .select('id, nome, total_sessoes, sessoes_consumidas, status, client_id')
         .eq('client_id', formData.client_id)
         .eq('status', 'ativo')
         .order('created_at', { ascending: false })

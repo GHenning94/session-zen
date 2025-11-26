@@ -11,10 +11,11 @@ export interface CompressionOptions {
   format?: 'webp' | 'jpeg' | 'png';
 }
 
+// Defaults otimizados para reduzir egress
 const DEFAULT_OPTIONS: CompressionOptions = {
-  maxWidth: 1920,
-  maxHeight: 1920,
-  quality: 0.9,
+  maxWidth: 800, // Reduzido de 1920
+  maxHeight: 800, // Reduzido de 1920
+  quality: 0.7, // Reduzido de 0.9 (ainda excelente para web)
   maxDPI: 72,
   format: 'webp'
 };
@@ -104,24 +105,48 @@ export const getOptimalCompressionSettings = (file: File): CompressionOptions =>
   
   if (sizeInMB > 10) {
     return {
-      maxWidth: 1024,
-      maxHeight: 1024,
-      quality: 0.8,
+      maxWidth: 600,
+      maxHeight: 600,
+      quality: 0.65,
       format: 'webp'
     };
   } else if (sizeInMB > 5) {
     return {
-      maxWidth: 1440,
-      maxHeight: 1440,
-      quality: 0.85,
+      maxWidth: 800,
+      maxHeight: 800,
+      quality: 0.7,
       format: 'webp'
     };
   } else {
     return {
-      maxWidth: 1920,
-      maxHeight: 1920,
-      quality: 0.9,
+      maxWidth: 800,
+      maxHeight: 800,
+      quality: 0.7,
       format: 'webp'
     };
   }
+};
+
+/**
+ * Settings para thumbnails (avatares, etc)
+ */
+export const getThumbnailCompressionSettings = (): CompressionOptions => {
+  return {
+    maxWidth: 200,
+    maxHeight: 200,
+    quality: 0.6, // Mais agressivo para thumbnails
+    format: 'webp'
+  };
+};
+
+/**
+ * Settings para mobile
+ */
+export const getMobileCompressionSettings = (): CompressionOptions => {
+  return {
+    maxWidth: 400,
+    maxHeight: 400,
+    quality: 0.65,
+    format: 'webp'
+  };
 };

@@ -88,7 +88,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     
     const { data, error } = await supabase
       .from('clients')
-      .select('*')
+      .select('id, nome, ativo')
       .eq('user_id', user.id)
     
     if (!error && data) {
