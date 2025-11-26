@@ -1111,7 +1111,10 @@ const Dashboard = () => {
                 packageStats={packageStats}
                 upcomingSessionsCount={upcomingSessions.length}
               />
-              <SmartNotificationCard notifications={smartNotifications} />
+              <SmartNotificationCard 
+                notifications={smartNotifications} 
+                reminders={dynamicReminders}
+              />
             </>
           )}
         </div>
