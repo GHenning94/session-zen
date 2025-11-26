@@ -298,13 +298,23 @@ const getSessionPayments = () => {
           updatePaymentData.metodo_pagamento = method
         }
         
-        // Atualizar apenas payment
+        // Atualizar tabela payments
         const { error: paymentError } = await supabase
           .from('payments')
           .update(updatePaymentData)
           .eq('session_id', paymentId)
         
         if (paymentError) throw paymentError
+        
+        // ADICIONAR: Atualizar tabela sessions também quando método de pagamento muda
+        if (method) {
+          const { error: sessionError } = await supabase
+            .from('sessions')
+            .update({ metodo_pagamento: method })
+            .eq('id', paymentId)
+          
+          if (sessionError) throw sessionError
+        }
       }
       
       toast({
@@ -399,22 +409,33 @@ const filterByPeriod = (items: any[]) => {
     }
   })
 
-// Separar pagamentos em futuros e passados usando a data efetiva unificada
+// Separar pagamentos em futuros e passados usando data+horário (igual à página de sessões)
 const now = new Date()
-now.setHours(0, 0, 0, 0)
 
 const futurePayments = filteredPayments.filter(item => {
+  // Para pagamentos de sessão, usar data+horário da sessão
+  if (item.type === 'session' && item.date && item.time) {
+    const [year, month, day] = item.date.split('-').map(Number)
+    const [hours, minutes] = item.time.split(':').map(Number)
+    const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
+    return sessionDateTime > now
+  }
+  // Para pacotes, usar a data efetiva
   const eff = getPaymentEffectiveDate(item.raw)
-  const effDate = new Date(eff)
-  effDate.setHours(0, 0, 0, 0)
-  return effDate >= now
+  return eff > now
 })
 
 const pastPayments = filteredPayments.filter(item => {
+  // Para pagamentos de sessão, usar data+horário da sessão
+  if (item.type === 'session' && item.date && item.time) {
+    const [year, month, day] = item.date.split('-').map(Number)
+    const [hours, minutes] = item.time.split(':').map(Number)
+    const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
+    return sessionDateTime <= now
+  }
+  // Para pacotes, usar a data efetiva
   const eff = getPaymentEffectiveDate(item.raw)
-  const effDate = new Date(eff)
-  effDate.setHours(0, 0, 0, 0)
-  return effDate < now
+  return eff <= now
 })
 
   const totalReceived = filteredPayments
