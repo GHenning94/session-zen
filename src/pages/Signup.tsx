@@ -26,21 +26,14 @@ const Signup = () => {
   // Capturar plano selecionado da URL (ex: /signup?plan=premium)
   const selectedPlan = searchParams.get('plan')
 
-  // Redirecionar imediatamente para o fluxo correto de cadastro na página de Login
+  // Verificar referral ao montar o componente
   useEffect(() => {
-    const plan = searchParams.get('plan');
-    const ref = searchParams.get('ref');
-    const params = new URLSearchParams();
-    params.set('tab', 'register');
-    if (plan) params.set('plan', plan);
-    if (ref) params.set('ref', ref);
-    navigate(`/login?${params.toString()}`, { replace: true });
-  }, [navigate, searchParams]);
-
-  // Não renderiza nada, a rota /signup foi descontinuada
-  return null;
-
-  // Verificar referral
+    const refId = searchParams.get('ref')
+    if (refId) {
+      setReferralId(refId)
+      loadReferralUser(refId)
+    }
+  }, [searchParams])
 
   const loadReferralUser = async (refId: string) => {
     try {

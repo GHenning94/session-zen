@@ -215,9 +215,17 @@ const Login = () => {
           return
         }
         
-        toast.success('Login realizado com sucesso!')
-        // Deixar AuthRedirect fazer o redirecionamento baseado no subscription_plan
-        window.location.href = '/dashboard'
+        // Verificar se há plano pendente no sessionStorage
+        const pendingPlan = sessionStorage.getItem('pending_plan')
+        
+        if (pendingPlan && pendingPlan !== 'basico') {
+          console.log('[Login] Plano pendente detectado, redirecionando para checkout:', pendingPlan)
+          toast.success('Login realizado! Preparando checkout...')
+          navigate('/checkout-redirect', { replace: true })
+        } else {
+          toast.success('Login realizado com sucesso!')
+          navigate('/dashboard', { replace: true })
+        }
       } else {
         throw new Error("Resposta de login inesperada.")
       }
@@ -233,9 +241,18 @@ const Login = () => {
 
   const handle2FASuccess = async () => {
     is2FASuccess.current = true
-    toast.success('Login realizado com sucesso!')
-    // Deixar AuthRedirect fazer o redirecionamento baseado no subscription_plan
-    window.location.href = '/dashboard'
+    
+    // Verificar se há plano pendente no sessionStorage
+    const pendingPlan = sessionStorage.getItem('pending_plan')
+    
+    if (pendingPlan && pendingPlan !== 'basico') {
+      console.log('[Login] Plano pendente detectado após 2FA, redirecionando para checkout:', pendingPlan)
+      toast.success('Login realizado! Preparando checkout...')
+      navigate('/checkout-redirect', { replace: true })
+    } else {
+      toast.success('Login realizado com sucesso!')
+      navigate('/dashboard', { replace: true })
+    }
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -286,6 +303,13 @@ const Login = () => {
 
       if (!data?.success) {
         throw new Error('Falha ao criar conta. Por favor, tente novamente.')
+      }
+
+      // Salvar plano selecionado no sessionStorage (se houver)
+      const planParam = searchParams.get('plan')
+      if (planParam && planParam !== 'basico') {
+        console.log('[Register] Salvando plano pendente:', planParam)
+        sessionStorage.setItem('pending_plan', planParam)
       }
 
       setAwaitingEmailConfirmation(true)

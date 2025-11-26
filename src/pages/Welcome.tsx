@@ -151,14 +151,12 @@ const Welcome = () => {
                 <li>• Suporte prioritário</li>
               </ul>
 
-              <form action="https://buy.stripe.com/test_7sI1816Bn9Pg09adQQ" method="GET">
-                <Button
-                  type="submit"
-                  className="w-full"
-                >
-                  Ver Planos Premium
-                </Button>
-              </form>
+              <Button
+                onClick={() => navigate('/upgrade')}
+                className="w-full"
+              >
+                Ver Planos Premium
+              </Button>
             </CardContent>
           </Card>
         </div>

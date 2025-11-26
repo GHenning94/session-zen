@@ -20,6 +20,8 @@ import AuthRedirect from "@/components/AuthRedirect";
 import { BackNavigationGuard } from "@/components/BackNavigationGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
+import { CheckoutRedirect } from "@/components/CheckoutRedirect";
+
 // Importações diretas para páginas principais (sem loading)
 import Dashboard from "@/pages/Dashboard";
 import Agenda from "@/pages/Agenda";
@@ -107,6 +109,7 @@ const App = () => (
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
+                  <Route path="/checkout-redirect" element={<ProtectedRoute><CheckoutRedirect /></ProtectedRoute>} />
                   <Route path="/welcome" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
           <Route path="/auth-confirm" element={<AuthConfirm />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
