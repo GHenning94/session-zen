@@ -58,7 +58,11 @@ const getVariant = (priority: SmartNotification['priority']) => {
 export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNotificationCardProps) => {
   const navigate = useNavigate()
 
-  if (notifications.length === 0 && reminders.length === 0) {
+  // Garantir que sempre temos arrays válidos
+  const validNotifications = Array.isArray(notifications) ? notifications : []
+  const validReminders = Array.isArray(reminders) ? reminders.filter(r => r && r !== 'Nenhum lembrete importante no momento') : []
+
+  if (validNotifications.length === 0 && validReminders.length === 0) {
     return (
       <Card>
         <CardContent className="py-8 text-center">
@@ -74,7 +78,7 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
   return (
     <Card>
       <CardContent className="p-4 space-y-3">
-        {notifications.map((notification) => (
+        {validNotifications.map((notification) => (
           <div
             key={notification.id}
             className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
@@ -125,9 +129,9 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
         ))}
         
         {/* Lembretes Importantes */}
-        {reminders.length > 0 && reminders[0] !== 'Nenhum lembrete importante no momento' && (
+        {validReminders.length > 0 && (
           <div className="space-y-3">
-            {reminders.map((reminder, index) => (
+            {validReminders.map((reminder, index) => (
               <div
                 key={index}
                 className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
