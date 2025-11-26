@@ -181,13 +181,12 @@ export default function RadialOrbitalTimeline({
 
   return (
     <div
-      className="w-full h-[380px] flex flex-col items-center justify-center"
+      className="w-full h-[380px] flex flex-col items-center justify-center pointer-events-none"
       ref={containerRef}
-      onClick={handleContainerClick}
     >
-      <div className="relative w-full max-w-4xl h-full flex items-center justify-center">
+      <div className="relative w-full max-w-4xl h-full flex items-center justify-center pointer-events-none">
         <div
-          className="absolute w-full h-full flex items-center justify-center"
+          className="absolute w-full h-full flex items-center justify-center pointer-events-none"
           ref={orbitRef}
           style={{
             perspective: "1000px",
@@ -220,7 +219,7 @@ export default function RadialOrbitalTimeline({
               <div
                 key={item.id}
                 ref={(el) => (nodeRefs.current[item.id] = el)}
-                className="absolute transition-all duration-700 cursor-pointer"
+                className="absolute transition-all duration-700 cursor-pointer pointer-events-auto"
                 style={nodeStyle}
                 onClick={(e) => {
                   e.stopPropagation();
@@ -259,9 +258,21 @@ export default function RadialOrbitalTimeline({
 
                 {/* Card de detalhes expandido */}
                 {isExpanded && (
-                  <Card className="absolute top-20 left-1/2 -translate-x-1/2 w-64 bg-card/95 backdrop-blur-lg border-border shadow-elegant overflow-visible">
+                  <Card className="absolute top-20 left-1/2 -translate-x-1/2 w-64 bg-card/95 backdrop-blur-lg border-border shadow-elegant overflow-visible pointer-events-auto">
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 w-px h-3 bg-border"></div>
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-2 relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleItem(item.id);
+                        }}
+                        className="absolute top-2 right-2 p-1 rounded-full hover:bg-muted transition-colors"
+                        aria-label="Fechar"
+                      >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
                       <div className="flex justify-between items-center">
                         <Badge
                           className={`px-2 text-xs ${getStatusStyles(

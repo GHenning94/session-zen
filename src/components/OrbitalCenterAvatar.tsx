@@ -112,7 +112,7 @@ export const OrbitalCenterAvatar = ({
   return (
     <>
       <div 
-        className="absolute w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center z-10 group cursor-pointer"
+        className="absolute w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center z-10 group cursor-pointer pointer-events-auto"
         onClick={handleClick}
       >
         <div className="absolute w-28 h-28 rounded-full border-2 border-primary/30 animate-ping opacity-70"></div>

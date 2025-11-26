@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { CheckCircle, XCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const AuthConfirm = () => {
   const navigate = useNavigate()
@@ -168,12 +169,12 @@ const AuthConfirm = () => {
           {status === 'loading' && (
             <>
               <div className="flex justify-center mb-4">
-                <Loader2 className="w-16 h-16 text-primary animate-spin" />
+                <Skeleton className="h-16 w-16 rounded-full" />
               </div>
-              <CardTitle>Confirmando E-mail</CardTitle>
-              <CardDescription>
-                Aguarde enquanto validamos seu e-mail...
-              </CardDescription>
+              <div className="space-y-2">
+                <Skeleton className="h-6 w-48 mx-auto" />
+                <Skeleton className="h-4 w-64 mx-auto" />
+              </div>
             </>
           )}
           
