@@ -631,8 +631,13 @@ const Dashboard = () => {
       const allSessionsForNotifications = allSessionsForNotificationsResult.data || []
       const sessionsNeedingAttention = allSessionsForNotifications.filter(s => {
         if (s.status !== 'agendada') return false
-        const sessionDateTime = new Date(`${s.data}T${s.horario}`)
+        
+        // Parse seguro da data/hora
+        const [year, month, day] = s.data.split('-').map(Number)
+        const [hours, minutes] = s.horario.split(':').map(Number)
+        const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
         const now = new Date()
+        
         return sessionDateTime < now
       })
       if (sessionsNeedingAttention.length > 0) {
