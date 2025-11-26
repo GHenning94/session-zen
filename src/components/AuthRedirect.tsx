@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader2 } from 'lucide-react'
+import { LoadingState } from '@/components/LoadingState'
 
 // Rotas públicas que não devem ser redirecionadas
 const PUBLIC_ROUTES = ['/', '/login', '/signup', '/reset-password', '/auth-confirm', '/auth-callback']
@@ -122,11 +122,8 @@ const AuthRedirect = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center">
-      <div className="text-center space-y-4">
-        <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto" />
-        <p className="text-muted-foreground">Verificando autenticação...</p>
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center">
+      <LoadingState text="Verificando autenticação..." />
     </div>
   )
 }

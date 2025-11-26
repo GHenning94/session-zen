@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
-import { Loader2 } from 'lucide-react'
+import { LoadingState } from '@/components/LoadingState'
 
 const AuthCallback = () => {
   const navigate = useNavigate()
@@ -53,11 +53,8 @@ const AuthCallback = () => {
   }, [navigate])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
-      <div className="flex flex-col items-center gap-4">
-        <Loader2 className="w-12 h-12 text-primary animate-spin" />
-        <p className="text-muted-foreground">Processando autenticação...</p>
-      </div>
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <LoadingState text="Processando autenticação..." />
     </div>
   )
 }
