@@ -686,18 +686,6 @@ const Dashboard = () => {
         }
       }
       
-      // Sessões pendentes de pagamento (contagem de sessões recentes)
-      const recentDate = new Date()
-      recentDate.setDate(recentDate.getDate() - 7)
-      const recentPendingSessions = paymentsData?.filter(session => 
-        session.status === 'agendada' && 
-        new Date(session.data) >= recentDate
-      )?.length || 0
-      
-      if (recentPendingSessions > 0) {
-        reminders.push(`${recentPendingSessions} sessões precisam de acompanhamento de pagamento`)
-      }
-      
       // Clientes novos
       if (recentClientsData && recentClientsData.length > 0) {
         const newClientsThisWeek = recentClientsData.filter(client => {

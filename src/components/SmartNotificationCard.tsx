@@ -125,20 +125,23 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
         ))}
         
         {/* Lembretes Importantes */}
-        {reminders.length > 0 && (
-          <div className="pt-3 mt-3 border-t">
-            <div className="flex items-center gap-2 mb-3">
-              <AlertCircle className="w-4 h-4 text-warning" />
-              <span className="text-sm font-semibold text-warning">Lembretes Importantes</span>
-            </div>
-            <div className="space-y-2">
-              {reminders.map((reminder, index) => (
-                <div key={index} className="flex items-start gap-2 text-xs text-muted-foreground">
-                  <span className="text-warning mt-0.5">•</span>
-                  <span>{reminder}</span>
+        {reminders.length > 0 && reminders[0] !== 'Nenhum lembrete importante no momento' && (
+          <div className="space-y-3">
+            {reminders.map((reminder, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              >
+                <div className="p-2 rounded-full bg-warning/10 flex items-center justify-center">
+                  <AlertCircle className="h-4 w-4 text-warning" />
                 </div>
-              ))}
-            </div>
+                
+                <div className="flex-1 space-y-1">
+                  <p className="text-sm font-semibold">Lembrete</p>
+                  <p className="text-xs text-muted-foreground">{reminder}</p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>
