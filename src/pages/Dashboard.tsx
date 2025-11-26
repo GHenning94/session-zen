@@ -1328,7 +1328,7 @@ const Dashboard = () => {
         </div>
 
         {/* Ações Rápidas e Upgrade */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
             <CardHeader>
@@ -1697,7 +1697,7 @@ const Dashboard = () => {
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
-                  <Card className="shadow-soft h-full">
+                  <Card className="shadow-soft min-h-[520px]">
                     <CardHeader className="pb-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
@@ -1739,10 +1739,10 @@ const Dashboard = () => {
                         Distribuição da receita por método de pagamento
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="h-[360px] px-4 pt-4 pb-2">
+                    <CardContent className="h-[400px] px-4 pt-4 pb-2">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
                         {/* Gráfico de Pizza */}
-                        <div className="h-full min-h-[320px]">
+                        <div className="h-full min-h-[360px]">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <Pie
@@ -1873,7 +1873,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft min-h-[480px] flex-1">
+            <Card className="shadow-soft min-h-[520px]">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
@@ -1885,7 +1885,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="h-full">
                 <div className="space-y-3">
-                  {recentClients.length > 0 ? recentClients.slice(0, 7).map((client, index) => (
+                  {recentClients.length > 0 ? recentClients.slice(0, 8).map((client, index) => (
                     <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <ClientAvatar 
                       avatarPath={client.avatar_url}
