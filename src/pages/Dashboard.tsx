@@ -1873,7 +1873,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft min-h-[320px]">
+            <Card className="shadow-soft min-h-[600px]">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
@@ -1885,7 +1885,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="h-full">
                 <div className="space-y-3">
-                  {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
+                  {recentClients.length > 0 ? recentClients.slice(0, 10).map((client, index) => (
                     <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
                     <ClientAvatar 
                       avatarPath={client.avatar_url}
