@@ -413,7 +413,10 @@ const Dashboard = () => {
       const upcomingData = upcomingDataResult.data
       // Filtrar sessões futuras considerando data E horário
       const filteredUpcoming = upcomingData?.filter(session => {
-        const sessionDateTime = new Date(`${session.data}T${session.horario}`)
+        // Parse seguro da data/hora
+        const [year, month, day] = session.data.split('-').map(Number)
+        const [hours, minutes] = session.horario.split(':').map(Number)
+        const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
         return sessionDateTime > nowDate
       }).slice(0, 4)
       
@@ -678,16 +681,16 @@ const Dashboard = () => {
       // Próximas sessões (apenas futuras)
       if (filteredUpcoming && filteredUpcoming.length > 0) {
         const nextSession = filteredUpcoming[0]
-        // Parse manual da data para evitar problemas de timezone
-        const [year, month, day] = nextSession.data.split('-')
-        const sessionDate = new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
-        const sessionTime = new Date(`${nextSession.data}T${nextSession.horario}`)
-        const isToday = sessionDate.toDateString() === nowDate.toDateString()
+        // Parse seguro da data/hora
+        const [year, month, day] = nextSession.data.split('-').map(Number)
+        const [hours, minutes] = nextSession.horario.split(':').map(Number)
+        const sessionDateTime = new Date(year, month - 1, day, hours, minutes, 0)
+        const isToday = sessionDateTime.toDateString() === nowDate.toDateString()
         
         if (isToday) {
-          reminders.push(`${nextSession.clients?.nome || 'Cliente'} tem consulta às ${new Date(`2000-01-01T${nextSession.horario}`).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} hoje`)
+          reminders.push(`${nextSession.clients?.nome || 'Cliente'} tem consulta às ${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')} hoje`)
         } else {
-          reminders.push(`Próxima consulta: ${nextSession.clients?.nome || 'Cliente'} em ${sessionDate.toLocaleDateString('pt-BR')}`)
+          reminders.push(`Próxima consulta: ${nextSession.clients?.nome || 'Cliente'} em ${sessionDateTime.toLocaleDateString('pt-BR')}`)
         }
       }
       
