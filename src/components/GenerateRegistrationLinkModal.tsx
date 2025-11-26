@@ -7,6 +7,7 @@ import { Link, Copy, Clock, Shield, AlertCircle, UserPlus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Skeleton } from "@/components/ui/skeleton"
 
 interface GenerateRegistrationLinkModalProps {
   children: React.ReactNode
@@ -192,8 +193,12 @@ export const GenerateRegistrationLinkModal = ({ children }: GenerateRegistration
               </div>
             </div>
           ) : (
-            <div className="flex items-center justify-center p-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="space-y-4 p-8">
+              <Skeleton className="h-4 w-32 mx-auto" />
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
             </div>
           )}
         </div>

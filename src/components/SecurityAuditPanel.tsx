@@ -7,6 +7,7 @@ import { Shield, Eye, Edit, Trash, Download, AlertTriangle } from 'lucide-react'
 import { getClientAuditLogs, type ClientAuditLog } from '@/utils/secureClientData'
 import { formatDateBR, formatTimeBR } from '@/utils/formatters'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface SecurityAuditPanelProps {
   clientId?: string
@@ -80,9 +81,13 @@ export function SecurityAuditPanel({ clientId, isOpen, onClose }: SecurityAuditP
         
         <CardContent className="overflow-auto max-h-[60vh]">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2">Carregando logs de auditoria...</span>
+            <div className="space-y-4 py-8">
+              <Skeleton className="h-4 w-48 mx-auto" />
+              <div className="space-y-2">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
             </div>
           ) : auditLogs.length === 0 ? (
             <div className="text-center py-8">

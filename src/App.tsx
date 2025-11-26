@@ -10,6 +10,7 @@ import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
 import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
+import { Skeleton } from "@/components/ui/skeleton"
 import LandingPage from "@/pages/LandingPage";
 import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
@@ -60,8 +61,14 @@ const queryClient = new QueryClient({
 
 // Loading component for code splitting
 const PageLoading = () => (
-  <div className="min-h-screen flex items-center justify-center">
-    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+  <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="space-y-4 w-full max-w-md px-4">
+      <Skeleton className="h-12 w-12 rounded-full mx-auto" />
+      <div className="space-y-2">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-5/6 mx-auto" />
+      </div>
+    </div>
   </div>
 );
 

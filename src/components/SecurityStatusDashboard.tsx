@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Skeleton } from '@/components/ui/skeleton'
 import { 
   Shield, 
   ShieldCheck, 
@@ -107,9 +108,12 @@ export function SecurityStatusDashboard({ isOpen, onClose }: SecurityStatusDashb
         
         <CardContent className="overflow-auto max-h-[70vh] space-y-6">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2">Carregando estatísticas de segurança...</span>
+            <div className="space-y-4 py-8">
+              <Skeleton className="h-4 w-56 mx-auto" />
+              <div className="grid grid-cols-2 gap-4">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+              </div>
             </div>
           ) : !securityStats ? (
             <div className="text-center py-8">

@@ -13,6 +13,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { ClientAvatar } from '@/components/ClientAvatar'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
@@ -242,8 +243,12 @@ export default function Prontuarios() {
   if (loading) {
     return (
       <Layout>
-        <div className="p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="p-6 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <div className="space-y-2">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-32 w-full" />
+          </div>
         </div>
       </Layout>
     )
