@@ -123,9 +123,10 @@ const Signup = () => {
       if (error) throw error
 
       if (data.user) {
-        // Se há plano selecionado, salvar no sessionStorage
-        if (selectedPlan) {
-          sessionStorage.setItem('pending_plan', selectedPlan)
+        // Se há plano selecionado, salvar no localStorage
+        if (selectedPlan && selectedPlan !== 'basico') {
+          console.log('[Signup] 💾 Salvando plano no localStorage:', selectedPlan)
+          localStorage.setItem('pending_plan', selectedPlan)
         }
 
         // Se há referral, salvar na sessão para processar após escolha do plano

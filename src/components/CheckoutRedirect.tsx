@@ -16,7 +16,8 @@ export const CheckoutRedirect = () => {
     const processCheckout = async () => {
       try {
         // Verificar se há plano pendente
-        const pendingPlan = sessionStorage.getItem('pending_plan')
+        const pendingPlan = localStorage.getItem('pending_plan')
+        const pendingBilling = localStorage.getItem('pending_billing') || 'monthly'
         
         if (!pendingPlan || pendingPlan === 'basico') {
           console.log('[CheckoutRedirect] Sem plano pendente ou plano gratuito, redirecionando para dashboard')
@@ -24,7 +25,7 @@ export const CheckoutRedirect = () => {
           return
         }
 
-        console.log('[CheckoutRedirect] Plano pendente detectado:', pendingPlan)
+        console.log('[CheckoutRedirect] Plano pendente detectado:', { pendingPlan, pendingBilling })
 
         // Buscar usuário autenticado
         const { data: { user } } = await supabase.auth.getUser()
@@ -36,14 +37,16 @@ export const CheckoutRedirect = () => {
         }
 
         // Mapear plano para price IDs
-        const priceMap: Record<string, { monthly: string; yearly: string }> = {
+        const priceMap: Record<string, { monthly: string; yearly: string; annually: string }> = {
           'pro': {
             monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
-            yearly: 'price_1SSMOdCP57sNVd3la4kMOinN'
+            yearly: 'price_1SSMOdCP57sNVd3la4kMOinN',
+            annually: 'price_1SSMOdCP57sNVd3la4kMOinN'
           },
           'premium': {
             monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
-            yearly: 'price_1SSMP7CP57sNVd3lSf4oYINX'
+            yearly: 'price_1SSMP7CP57sNVd3lSf4oYINX',
+            annually: 'price_1SSMP7CP57sNVd3lSf4oYINX'
           }
         }
 
@@ -52,15 +55,16 @@ export const CheckoutRedirect = () => {
         if (!prices) {
           console.error('[CheckoutRedirect] Plano inválido:', pendingPlan)
           toast.error('Plano selecionado inválido')
-          sessionStorage.removeItem('pending_plan')
+          localStorage.removeItem('pending_plan')
+          localStorage.removeItem('pending_billing')
           navigate('/dashboard', { replace: true })
           return
         }
 
-        // Por padrão, usar plano mensal
-        const priceId = prices.monthly
+        // Usar o ciclo de cobrança selecionado
+        const priceId = prices[pendingBilling as 'monthly' | 'yearly' | 'annually']
 
-        console.log('[CheckoutRedirect] Criando checkout para:', { plan: pendingPlan, priceId })
+        console.log('[CheckoutRedirect] Criando checkout para:', { plan: pendingPlan, billing: pendingBilling, priceId })
 
         // Criar sessão de checkout
         const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -81,15 +85,17 @@ export const CheckoutRedirect = () => {
 
         console.log('[CheckoutRedirect] ✅ Redirecionando para checkout Stripe')
         
-        // Limpar sessionStorage antes de redirecionar
-        sessionStorage.removeItem('pending_plan')
+        // Limpar localStorage antes de redirecionar
+        localStorage.removeItem('pending_plan')
+        localStorage.removeItem('pending_billing')
         
         // Redirecionar para Stripe
         window.location.href = data.url
       } catch (error: any) {
         console.error('[CheckoutRedirect] Erro ao processar checkout:', error)
         toast.error('Erro ao processar pagamento. Tente novamente.')
-        sessionStorage.removeItem('pending_plan')
+        localStorage.removeItem('pending_plan')
+        localStorage.removeItem('pending_billing')
         navigate('/dashboard', { replace: true })
       }
     }

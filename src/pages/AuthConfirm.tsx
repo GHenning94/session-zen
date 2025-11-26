@@ -110,8 +110,21 @@ const AuthConfirm = () => {
 
         console.log('[AuthConfirm] ✅ E-mail confirmado!');
         
+        // Preservar plano pendente antes do logout
+        const pendingPlan = localStorage.getItem('pending_plan');
+        const pendingBilling = localStorage.getItem('pending_billing');
+        
         console.log('[AuthConfirm] 🚪 Fazendo logout para forçar novo login...');
         await supabase.auth.signOut();
+        
+        // Restaurar plano após logout (já que signOut pode limpar localStorage)
+        if (pendingPlan) {
+          console.log('[AuthConfirm] 💾 Restaurando plano pendente:', pendingPlan);
+          localStorage.setItem('pending_plan', pendingPlan);
+          if (pendingBilling) {
+            localStorage.setItem('pending_billing', pendingBilling);
+          }
+        }
         
         toast.success('E-mail confirmado com sucesso! Faça login para continuar.');
         setStatus('success');
