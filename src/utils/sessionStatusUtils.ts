@@ -138,9 +138,20 @@ export const getPaymentEffectiveDate = (payment: any): Date => {
 
 /**
  * Verifica se um pagamento está vencido (precisa de atenção)
+ * Para pagamentos de sessão: considera data E hora da sessão
+ * Para outros pagamentos: considera apenas a data
  */
 export const isOverdue = (payment: any): boolean => {
   if (!payment || payment.status !== 'pendente') return false
+  
+  // Se é pagamento de sessão, considerar data E hora
+  if (payment.session_id && payment.sessions?.data && payment.sessions?.horario) {
+    const sessionDateTime = new Date(`${payment.sessions.data}T${payment.sessions.horario}`)
+    const now = new Date()
+    return sessionDateTime < now
+  }
+  
+  // Para outros pagamentos (pacotes, etc), considerar apenas data
   const effective = getPaymentEffectiveDate(payment)
   const today = new Date()
   today.setHours(0, 0, 0, 0)
