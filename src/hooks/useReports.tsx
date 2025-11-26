@@ -35,7 +35,7 @@ export const useReports = () => {
       // Buscar clientes
       const { data: clients } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, nome, email, telefone, ativo, created_at, dados_clinicos, historico')
         .eq('user_id', user.id)
         .order('nome')
 
@@ -44,7 +44,7 @@ export const useReports = () => {
       // Buscar sessões com filtros
       let sessionsQuery = supabase
         .from('sessions')
-        .select('*')
+        .select('id, client_id, data, horario, status, valor, anotacoes')
         .eq('user_id', user.id)
 
       if (filters.startDate) {

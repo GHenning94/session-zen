@@ -106,10 +106,11 @@ export default function Prontuarios() {
     try {
       setLoading(true)
       
-      // Carregar clientes
+      // Carregar clientes ativos
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
         .select('id, nome, email, telefone, avatar_url, ativo, created_at')
+        .eq('user_id', user.id)
         .eq('ativo', true)
         .order('nome')
 
@@ -118,7 +119,8 @@ export default function Prontuarios() {
       // Carregar anamneses
       const { data: anamnesesData, error: anamnesisError } = await supabase
         .from('anamneses')
-        .select('*')
+        .select('id, client_id, queixa_principal, motivo_consulta, historico_medico, historico_familiar, antecedentes_relevantes, diagnostico_inicial, observacoes_adicionais, created_at, updated_at')
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false })
 
       if (anamnesisError) throw anamnesisError
@@ -126,7 +128,8 @@ export default function Prontuarios() {
       // Carregar evoluções
       const { data: evolucoesData, error: evolucoesError } = await supabase
         .from('evolucoes')
-        .select('*')
+        .select('id, client_id, session_id, data_sessao, evolucao, created_at, updated_at')
+        .eq('user_id', user.id)
         .order('data_sessao', { ascending: false })
 
       if (evolucoesError) throw evolucoesError

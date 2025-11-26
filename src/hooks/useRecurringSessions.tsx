@@ -100,7 +100,7 @@ export const useRecurringSessions = () => {
         : new Date(Date.now() + daysAhead * 24 * 60 * 60 * 1000);
 
       let count = 0;
-      const maxCount = recurring.recurrence_count || 100;
+      const maxCount = 100; // Default maximum count
 
       while (currentDate <= endDate && count < maxCount) {
         // Ajustar data baseado no tipo de recorrência
