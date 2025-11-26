@@ -60,43 +60,22 @@ const [isLoading, setIsLoading] = useState(false)
     
     setIsLoading(true)
     try {
-      // Carregar sessões e pagamentos
+      // Carregar sessões (apenas campos necessários)
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
-        .select('*')
+        .select('id, data, horario, status, valor, metodo_pagamento, client_id, package_id')
         .eq('user_id', user.id)
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
       
-      // Carregar TODOS os pagamentos (sessões + pacotes)
+      // Carregar pagamentos com relacionamentos (campos otimizados)
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select(`
-          id,
-          valor,
-          status,
-          metodo_pagamento,
-          data_vencimento,
-          data_pagamento,
-          observacoes,
-          created_at,
-          package_id,
-          session_id,
-          client_id,
-          packages:package_id (
-            nome,
-            total_sessoes,
-            sessoes_consumidas,
-            data_fim,
-            data_inicio
-          ),
-          sessions:session_id (
-            data,
-            horario,
-            status,
-            valor,
-            metodo_pagamento
-          )
+          id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
+          observacoes, created_at, package_id, session_id, client_id,
+          packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio),
+          sessions:session_id (data, horario, status, valor, metodo_pagamento)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -107,16 +86,16 @@ const [isLoading, setIsLoading] = useState(false)
         setPayments(paymentsData || [])
       }
       
-      // Carregar clientes
+      // Carregar clientes (apenas campos necessários)
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, nome, avatar_url, user_id')
         .eq('user_id', user.id)
 
-      // Carregar perfil do profissional
+      // Carregar perfil do profissional (apenas campos para recibo)
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('nome, profissao, crp, telefone, cpf_cnpj, user_id')
         .eq('user_id', user.id)
 
       if (sessionsError) {

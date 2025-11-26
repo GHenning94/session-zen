@@ -51,16 +51,16 @@ export const useCalendarData = () => {
 
     setIsLoading(true)
     try {
-      // Carregar sessões e clientes em paralelo
+      // Carregar sessões e clientes (campos otimizados)
       const [sessionsResult, clientsResult] = await Promise.all([
         supabase
           .from('sessions')
-          .select('*')
+          .select('id, user_id, client_id, data, horario, valor, anotacoes, status, metodo_pagamento, created_at, updated_at, google_event_id, google_sync_type')
           .eq('user_id', user.id)
           .order('data', { ascending: true }),
         supabase
           .from('clients')
-          .select('*')
+          .select('id, nome, email, telefone, user_id, ativo')
           .eq('user_id', user.id)
           .order('nome', { ascending: true })
       ])
@@ -291,44 +291,8 @@ export const useCalendarData = () => {
     return client?.nome || 'Cliente não encontrado'
   }, [clients])
 
-  // Configurar realtime
-  useEffect(() => {
-    if (!user) return
-
-    const channel = supabase
-      .channel('calendar-realtime')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'sessions',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          console.log('Realtime: Sessão alterada, recarregando dados...')
-          loadData()
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'clients',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          console.log('Realtime: Cliente alterado, recarregando dados...')
-          loadData()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [user, loadData])
+  // REMOVIDO: Realtime agora é gerenciado pelo useGlobalRealtime
+  // Isso evita canais duplicados e otimiza conexões
 
   // Carregar dados inicialmente
   useEffect(() => {

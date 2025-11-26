@@ -23,7 +23,7 @@ export const UnsyncButton: React.FC<UnsyncButtonProps> = ({ onSuccess }) => {
       // Buscar sessões que foram importadas do Google Calendar
       const { data: sessions, error: fetchError } = await supabase
         .from('sessions')
-        .select('*')
+        .select('id, google_event_id, anotacoes, data, horario, client_id')
         .eq('user_id', user.id)
         .ilike('anotacoes', '%Importado do Google Calendar%')
 

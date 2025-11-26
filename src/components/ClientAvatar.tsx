@@ -1,6 +1,7 @@
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { useAvatarCache } from "@/contexts/AvatarCacheContext"
 import { User } from "lucide-react"
+import { useEffect, useState } from "react"
 
 interface ClientAvatarProps {
   avatarPath?: string | null
@@ -15,7 +16,28 @@ export const ClientAvatar = ({
   className = "",
   size = 'md'
 }: ClientAvatarProps) => {
-  const { avatarUrl, isLoading } = useAvatarUrl(avatarPath)
+  const { getCachedAvatar } = useAvatarCache()
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    let isMounted = true
+    
+    const loadAvatar = async () => {
+      setIsLoading(true)
+      const url = await getCachedAvatar(avatarPath, size)
+      if (isMounted) {
+        setAvatarUrl(url)
+        setIsLoading(false)
+      }
+    }
+    
+    loadAvatar()
+    
+    return () => {
+      isMounted = false
+    }
+  }, [avatarPath, size, getCachedAvatar])
   
   const sizeClasses = {
     sm: 'h-8 w-8',

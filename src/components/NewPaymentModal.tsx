@@ -65,7 +65,7 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
     
     const { data, error } = await supabase
       .from('sessions')
-      .select('*')
+      .select('id, data, horario, status, valor, client_id')
       .eq('user_id', user.id)
       .order('data', { ascending: false })
     

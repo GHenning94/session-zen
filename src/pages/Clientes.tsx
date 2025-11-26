@@ -80,10 +80,10 @@ const Clientes = () => {
     
     setIsLoading(true)
     try {
-      // Use direct client table access since security functions are working
+      // Usar QUERY_FIELDS para reduzir egress
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, nome, email, telefone, ativo, avatar_url, created_at, updated_at, user_id')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
       

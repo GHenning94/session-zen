@@ -43,13 +43,13 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
     try {
       const { data: clientsData } = await supabase
         .from('clients')
-        .select('*')
+        .select('id, nome, ativo, avatar_url')
         .eq('user_id', user.id)
         .order('nome')
-      
+
       const { data: sessionsData } = await supabase
         .from('sessions')
-        .select('*')
+        .select('id, data, horario, client_id, status')
         .eq('user_id', user.id)
 
       setClients(clientsData || [])

@@ -86,7 +86,7 @@ export const useRecurringSessions = () => {
       // Buscar configuração da recorrência
       const { data: recurring, error: fetchError } = await supabase
         .from('recurring_sessions')
-        .select('*')
+        .select('id, client_id, horario, recurrence_type, recurrence_interval, recurrence_end_date, dia_da_semana, status, valor, google_calendar_sync')
         .eq('id', recurringId)
         .single();
 

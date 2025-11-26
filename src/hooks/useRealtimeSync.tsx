@@ -185,10 +185,10 @@ function getTableName(type: string): 'clients' | 'sessions' {
 
 function getSelectFields(type: string): string {
   switch (type) {
-    case 'clients': return '*'
-    case 'sessions': return '*, clients(nome)'
-    case 'payments': return '*, clients(nome)'
-    default: return '*'
+    case 'clients': return 'id, nome, email, telefone, ativo, avatar_url, created_at, updated_at, user_id'
+    case 'sessions': return 'id, data, horario, status, valor, client_id, package_id, anotacoes, metodo_pagamento, created_at, updated_at, user_id, clients(nome)'
+    case 'payments': return 'id, valor, status, data_pagamento, created_at, session_id, package_id, client_id, user_id, clients(nome)'
+    default: return 'id'
   }
 }
 

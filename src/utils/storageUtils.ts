@@ -118,7 +118,7 @@ export const uploadFile = async (
     const { data, error } = await supabase.storage
       .from('user-uploads')
       .upload(filePath, file, {
-        cacheControl: '3600',
+        cacheControl: 'public, max-age=31536000, immutable', // Cache agressivo (1 ano)
         upsert: false
       });
 

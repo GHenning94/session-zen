@@ -3,6 +3,8 @@ import App from './App.tsx'
 import './index.css'
 import './styles/premium.css'
 import './hooks/useThemeFlashPrevention'
+import { AvatarCacheProvider } from './contexts/AvatarCacheContext'
+import { GlobalRealtimeProvider } from './hooks/useGlobalRealtime'
 
 // Register Service Worker for Web Push Notifications
 if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -26,4 +28,10 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
   console.log('[Main] Service Worker or Push API not supported in this browser')
 }
 
-createRoot(document.getElementById("root")!).render(<App />);
+createRoot(document.getElementById("root")!).render(
+  <GlobalRealtimeProvider>
+    <AvatarCacheProvider>
+      <App />
+    </AvatarCacheProvider>
+  </GlobalRealtimeProvider>
+);

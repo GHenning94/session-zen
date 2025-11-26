@@ -39,11 +39,13 @@ import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters
 import { cn } from "@/lib/utils"
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { toast } from "sonner"
+import { useGlobalRealtime } from "@/hooks/useGlobalRealtime"
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { currentPlan } = useSubscription()
+  const { subscribe } = useGlobalRealtime()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
   const [dashboardData, setDashboardData] = useState({
@@ -264,64 +266,17 @@ const Dashboard = () => {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [user, invalidateCache, loadDashboardDataOptimized])
 
-  // Optimized real-time updates (sessions, clients, payments)
+  // Usar hook global de realtime ao invés de criar 3 canais separados
   useEffect(() => {
     if (!user) return
 
-    const sessionsChannel = supabase
-      .channel('dashboard-sessions')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'sessions',
-          filter: `user_id=eq.${user.id}` 
-        }, 
-        () => {
-          invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
-          loadDashboardDataOptimized(true, ['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
-        }
-      )
-      .subscribe()
-      
-    const clientsChannel = supabase
-      .channel('dashboard-clients')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'clients',
-          filter: `user_id=eq.${user.id}` 
-        }, 
-        () => {
-          invalidateCache(['recentClients', 'dashboardStats'])
-          loadDashboardDataOptimized(true, ['recentClients', 'dashboardStats'])
-        }
-      )
-      .subscribe()
+    const unsubscribe = subscribe(['sessions', 'clients', 'payments'], () => {
+      invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
+      loadDashboardDataOptimized(true, ['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
+    })
 
-    const paymentsChannel = supabase
-      .channel('dashboard-payments')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'payments',
-          filter: `user_id=eq.${user.id}` 
-        }, 
-        () => {
-          invalidateCache(['recentPayments', 'dashboardStats', 'charts'])
-          loadDashboardDataOptimized(true, ['recentPayments', 'dashboardStats', 'charts'])
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(sessionsChannel)
-      supabase.removeChannel(clientsChannel)
-      supabase.removeChannel(paymentsChannel)
-    }
-  }, [user, loadDashboardDataOptimized, invalidateCache])
+    return unsubscribe
+  }, [user, loadDashboardDataOptimized, invalidateCache, subscribe])
 
   const loadDashboardData = async (forceFresh = false, sections?: Array<keyof typeof cacheTimestamps>, isStale?: () => boolean) => {
     const checkStale = isStale || (() => !isActiveRef.current || !user)
@@ -395,8 +350,8 @@ const Dashboard = () => {
         supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
         supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
-        supabase.from('packages').select('*').eq('user_id', user?.id),
-        supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(500),
+        supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
+        supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
         supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id)
       ])
       
