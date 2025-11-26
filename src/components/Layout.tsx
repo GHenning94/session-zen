@@ -53,7 +53,7 @@ export function Layout({ children }: LayoutProps) {
         
         <div className="flex-1 flex flex-col">
           {/* Header transparente */}
-          <header className="h-16 bg-transparent flex items-center justify-between px-8">
+          <header className="h-16 bg-transparent flex items-center justify-between px-6">
             <div className="flex items-center gap-4">
               <SidebarTrigger className="h-9 w-9 rounded-lg hover:bg-accent transition-colors" />
             </div>
@@ -65,7 +65,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-8 overflow-auto">
+          <main className="flex-1 px-6 pb-4 pt-2">
             {children}
           </main>
         </div>

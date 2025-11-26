@@ -1026,7 +1026,7 @@ const Dashboard = () => {
   return (
     <Layout>
       <NotificationPermissionBanner />
-      <div className="space-y-8">
+      <div className="space-y-8 min-h-[calc(100vh-112px)]">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -1654,7 +1654,7 @@ const Dashboard = () => {
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="h-80 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-muted hover:scrollbar-thumb-primary/30 transition-colors">
+                      <div className="h-auto">
                         <div className="space-y-3 pr-2">
                           {clientTicketMedio.length > 0 ? clientTicketMedio.map((client, index) => {
                             const maxTicket = Math.max(...clientTicketMedio.map(c => c.ticketMedio))
