@@ -8,6 +8,7 @@ import { useSecureClientData } from '@/hooks/useSecureClientData'
 import { SecurityAuditPanel } from '@/components/SecurityAuditPanel'
 import { formatDateBR } from '@/utils/formatters'
 import { toast } from 'sonner'
+import { Skeleton } from '@/components/ui/skeleton'
 
 interface MedicalDataViewerProps {
   clientId: string
@@ -92,9 +93,13 @@ export function MedicalDataViewer({ clientId, clientName, isOpen, onClose }: Med
         
         <CardContent className="overflow-auto max-h-[70vh]">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-              <span className="ml-2">Carregando dados protegidos...</span>
+            <div className="space-y-4 py-8">
+              <Skeleton className="h-4 w-48 mx-auto" />
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-4/6" />
+              </div>
             </div>
           ) : error ? (
             <div className="text-center py-8">

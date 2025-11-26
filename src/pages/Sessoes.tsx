@@ -18,6 +18,7 @@ import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters
 import { SessionNoteModal } from '@/components/SessionNoteModal'
 import { SessionModal } from '@/components/SessionModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
+import { Skeleton } from '@/components/ui/skeleton'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { formatClientName } from '@/lib/utils'
 import { calculateSessionStatus, sessionNeedsAttention } from "@/utils/sessionStatusUtils"
@@ -431,8 +432,13 @@ export default function Sessoes() {
   if (loading) {
     return (
       <Layout>
-        <div className="p-6 flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="p-6 space-y-4">
+          <Skeleton className="h-8 w-48" />
+          <div className="space-y-2">
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+            <Skeleton className="h-24 w-full" />
+          </div>
         </div>
       </Layout>
     )
