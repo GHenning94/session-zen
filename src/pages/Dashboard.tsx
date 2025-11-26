@@ -1873,7 +1873,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft min-h-[480px]">
+            <Card className="shadow-soft min-h-[480px] flex-1">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
