@@ -130,12 +130,13 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
     setIsLoading(true)
     
     try {
-      // Atualizar o status da sessão para 'concluida' ou status de pagamento
+      // Atualizar o status da sessão para 'realizada' e o método de pagamento
       const { error: sessionError } = await supabase
         .from('sessions')
         .update({ 
-          status: 'concluida',
-          valor: parseFloat(paymentData.valor)
+          status: 'realizada',
+          valor: parseFloat(paymentData.valor),
+          metodo_pagamento: paymentData.metodo
         })
         .eq('id', selectedSession)
 

@@ -1917,23 +1917,6 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-
-        {/* Alertas */}
-        <Card className="shadow-soft border-warning/20 bg-warning/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-warning">
-              <AlertCircle className="w-5 h-5" />
-              Lembretes Importantes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {dynamicReminders.map((reminder, index) => (
-                <p key={index} className="text-sm">• {reminder}</p>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       {/* Modals */}
