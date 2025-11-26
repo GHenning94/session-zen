@@ -28,6 +28,7 @@ const Login = () => {
   const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false)
   const [confirmationEmail, setConfirmationEmail] = useState('')
   const [resendCooldown, setResendCooldown] = useState(0)
+  const turnstileRef = useRef<any>(null)
   const [formData, setFormData] = useState({
     name: '',
     profession: 'psicologo',
@@ -43,9 +44,20 @@ const Login = () => {
   const [searchParams] = useSearchParams()
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
 
+  // Capturar plano da URL e salvar no localStorage
   useEffect(() => {
-    const confirmed = searchParams.get('confirmed')
+    const plan = searchParams.get('plan')
+    const billing = searchParams.get('billing')
     
+    if (plan && plan !== 'basico') {
+      console.log('[Login] 💾 Salvando plano no localStorage:', { plan, billing })
+      localStorage.setItem('pending_plan', plan)
+      if (billing) {
+        localStorage.setItem('pending_billing', billing)
+      }
+    }
+    
+    const confirmed = searchParams.get('confirmed')
     if (confirmed === 'true') {
       toast.success('E-mail confirmado! Sua conta está ativa. Faça login para continuar.')
       window.history.replaceState({}, '', '/login')
@@ -215,17 +227,18 @@ const Login = () => {
           return
         }
         
-        // Verificar se há plano pendente no sessionStorage
-        const pendingPlan = sessionStorage.getItem('pending_plan')
+        // Verificar se há plano pendente no localStorage
+        const pendingPlan = localStorage.getItem('pending_plan')
         
         if (pendingPlan && pendingPlan !== 'basico') {
-          console.log('[Login] Plano pendente detectado, redirecionando para checkout:', pendingPlan)
-          toast.success('Login realizado! Preparando checkout...')
-          navigate('/checkout-redirect', { replace: true })
-        } else {
-          toast.success('Login realizado com sucesso!')
-          navigate('/dashboard', { replace: true })
+          console.log('[Login] 🛒 Plano pendente detectado, redirecionando para checkout')
+          toast.success('Redirecionando para checkout...')
+          navigate('/checkout-redirect')
+          return
         }
+        
+        toast.success('Login realizado com sucesso!')
+        navigate('/dashboard')
       } else {
         throw new Error("Resposta de login inesperada.")
       }
@@ -242,17 +255,18 @@ const Login = () => {
   const handle2FASuccess = async () => {
     is2FASuccess.current = true
     
-    // Verificar se há plano pendente no sessionStorage
-    const pendingPlan = sessionStorage.getItem('pending_plan')
+    // Verificar se há plano pendente no localStorage
+    const pendingPlan = localStorage.getItem('pending_plan')
     
     if (pendingPlan && pendingPlan !== 'basico') {
-      console.log('[Login] Plano pendente detectado após 2FA, redirecionando para checkout:', pendingPlan)
-      toast.success('Login realizado! Preparando checkout...')
-      navigate('/checkout-redirect', { replace: true })
-    } else {
-      toast.success('Login realizado com sucesso!')
-      navigate('/dashboard', { replace: true })
+      console.log('[Login] 🛒 Plano pendente detectado após 2FA, redirecionando para checkout')
+      toast.success('Redirecionando para checkout...')
+      navigate('/checkout-redirect')
+      return
     }
+    
+    toast.success('Login realizado com sucesso!')
+    navigate('/dashboard')
   }
 
   const handleRegister = async (e: React.FormEvent) => {
@@ -305,12 +319,7 @@ const Login = () => {
         throw new Error('Falha ao criar conta. Por favor, tente novamente.')
       }
 
-      // Salvar plano selecionado no sessionStorage (se houver)
-      const planParam = searchParams.get('plan')
-      if (planParam && planParam !== 'basico') {
-        console.log('[Register] Salvando plano pendente:', planParam)
-        sessionStorage.setItem('pending_plan', planParam)
-      }
+      // Plano já foi salvo no localStorage pelo useEffect
 
       setAwaitingEmailConfirmation(true)
       setConfirmationEmail(formData.email)
@@ -508,7 +517,22 @@ const Login = () => {
                 </div>
 
                 <div className="flex justify-center">
-                  <Turnstile siteKey={TURNSTILE_SITE_KEY} />
+                  <Turnstile 
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY} 
+                    onError={() => {
+                      console.error('[Login] ❌ Erro no CAPTCHA')
+                      if (turnstileRef.current) {
+                        turnstileRef.current.reset()
+                      }
+                    }}
+                    onExpire={() => {
+                      console.warn('[Login] ⏰ CAPTCHA expirado')
+                      if (turnstileRef.current) {
+                        turnstileRef.current.reset()
+                      }
+                    }}
+                  />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
@@ -601,7 +625,22 @@ const Login = () => {
                 </div>
 
                 <div className="flex justify-center">
-                  <Turnstile siteKey={TURNSTILE_SITE_KEY} />
+                  <Turnstile 
+                    ref={turnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onError={() => {
+                      console.error('[Login] ❌ Erro no CAPTCHA')
+                      if (turnstileRef.current) {
+                        turnstileRef.current.reset()
+                      }
+                    }}
+                    onExpire={() => {
+                      console.warn('[Login] ⏰ CAPTCHA expirado')
+                      if (turnstileRef.current) {
+                        turnstileRef.current.reset()
+                      }
+                    }}
+                  />
                 </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>

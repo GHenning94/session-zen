@@ -447,6 +447,7 @@ const LandingPage = () => {
     params.set('tab', 'register');
     if (planId && planId !== 'basico') {
       params.set('plan', planId);
+      params.set('billing', billingCycle);
     }
     navigate(`/login?${params.toString()}`);
   };
