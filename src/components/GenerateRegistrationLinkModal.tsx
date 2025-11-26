@@ -11,9 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton"
 
 interface GenerateRegistrationLinkModalProps {
   children: React.ReactNode
+  disabled?: boolean
 }
 
-export const GenerateRegistrationLinkModal = ({ children }: GenerateRegistrationLinkModalProps) => {
+export const GenerateRegistrationLinkModal = ({ children, disabled = false }: GenerateRegistrationLinkModalProps) => {
   const [isOpen, setIsOpen] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
   const [linkData, setLinkData] = useState<{
@@ -98,6 +99,7 @@ export const GenerateRegistrationLinkModal = ({ children }: GenerateRegistration
   }
 
   const handleOpenChange = (open: boolean) => {
+    if (disabled && open) return // Prevent opening when disabled
     setIsOpen(open)
     if (open) {
       // Load existing link when modal opens

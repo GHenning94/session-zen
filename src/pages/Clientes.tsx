@@ -401,10 +401,10 @@ const Clientes = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <GenerateRegistrationLinkModal>
-              <Button variant="outline">
+            <GenerateRegistrationLinkModal disabled={!canAddMore}>
+              <Button variant="outline" disabled={!canAddMore}>
                 <Link className="w-4 h-4 mr-2" />
-                Gerar Link
+                Gerar Link {!canAddMore && `(Limite)`}
               </Button>
             </GenerateRegistrationLinkModal>
             <Button 
