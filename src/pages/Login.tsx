@@ -28,7 +28,10 @@ const Login = () => {
   const [awaitingEmailConfirmation, setAwaitingEmailConfirmation] = useState(false)
   const [confirmationEmail, setConfirmationEmail] = useState('')
   const [resendCooldown, setResendCooldown] = useState(0)
-  const turnstileRef = useRef<any>(null)
+  const loginTurnstileRef = useRef<any>(null)
+  const registerTurnstileRef = useRef<any>(null)
+  const [loginCaptchaReady, setLoginCaptchaReady] = useState(false)
+  const [registerCaptchaReady, setRegisterCaptchaReady] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     profession: 'psicologo',
@@ -122,12 +125,13 @@ const Login = () => {
     const formDataHtml = new FormData(loginFormRef.current!)
     const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
     
-    if (!captchaToken) {
-      toast.error('Por favor, resolva o captcha para continuar')
+    if (!captchaToken || !loginCaptchaReady) {
+      toast.error('Por favor, resolva o CAPTCHA para continuar')
       return
     }
 
     setIsLoading(true)
+    setLoginCaptchaReady(false) // Invalidar token imediatamente
     let shouldShow2FAModal = false
 
     try {
@@ -140,29 +144,33 @@ const Login = () => {
       if (signInError) {
         let errorMessage = 'Erro ao fazer login. Tente novamente.'
         
-        try {
-          const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
-            body: { email: formData.email }
-          })
-          const accountExists = !!existsData?.exists
+        if (signInError.message.includes('captcha') || signInError.message.includes('timeout-or-duplicate')) {
+          errorMessage = 'Erro de verificação. Por favor, resolva o CAPTCHA novamente.'
+        } else {
+          try {
+            const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
+              body: { email: formData.email }
+            })
+            const accountExists = !!existsData?.exists
 
-          if (!accountExists) {
-            errorMessage = 'Esta conta não existe.'
-            localStorage.clear()
-            sessionStorage.clear()
-          } else if (signInError.message.includes('Email not confirmed')) {
-            errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
-          } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-            errorMessage = 'E-mail ou senha incorretos'
-          } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
-            errorMessage = 'Erro de conexão. Verifique sua internet.'
-          }
-        } catch (checkErr) {
-          console.warn('Falha ao verificar existência de e-mail, usando mensagem genérica.')
-          if (signInError.message.includes('Email not confirmed')) {
-            errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
-          } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-            errorMessage = 'E-mail ou senha incorretos'
+            if (!accountExists) {
+              errorMessage = 'Esta conta não existe.'
+              localStorage.clear()
+              sessionStorage.clear()
+            } else if (signInError.message.includes('Email not confirmed')) {
+              errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+            } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+              errorMessage = 'E-mail ou senha incorretos'
+            } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
+              errorMessage = 'Erro de conexão. Verifique sua internet.'
+            }
+          } catch (checkErr) {
+            console.warn('Falha ao verificar existência de e-mail, usando mensagem genérica.')
+            if (signInError.message.includes('Email not confirmed')) {
+              errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+            } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+              errorMessage = 'E-mail ou senha incorretos'
+            }
           }
         }
         
@@ -246,6 +254,11 @@ const Login = () => {
       console.error('Erro inesperado no handleLogin:', error)
       toast.error(error.message || "Algo deu errado.")
     } finally {
+      // Sempre resetar o CAPTCHA após tentativa (sucesso ou erro)
+      if (loginTurnstileRef.current) {
+        loginTurnstileRef.current.reset()
+      }
+      
       if (!shouldShow2FAModal) {
         setIsLoading(false)
       }
@@ -284,12 +297,13 @@ const Login = () => {
     const formDataHtml = new FormData(registerFormRef.current!)
     const captchaToken = (formDataHtml.get('cf-turnstile-response') as string) || ''
     
-    if (!captchaToken) {
-      toast.error('Por favor, resolva o captcha para continuar')
+    if (!captchaToken || !registerCaptchaReady) {
+      toast.error('Por favor, resolva o CAPTCHA para continuar')
       return
     }
 
     setIsLoading(true)
+    setRegisterCaptchaReady(false) // Invalidar token imediatamente
 
     try {
       const { data, error } = await supabase.functions.invoke('request-email-confirmation', {
@@ -328,8 +342,19 @@ const Login = () => {
       toast.success('Conta criada! Verifique seu e-mail para confirmar sua conta.')
     } catch (error: any) {
       console.error('Erro no registro:', error)
-      toast.error(error.message || 'Tente novamente mais tarde.')
+      
+      // Melhorar mensagem de erro para CAPTCHA
+      let errorMessage = error.message || 'Tente novamente mais tarde.'
+      if (error.message && (error.message.includes('captcha') || error.message.includes('timeout-or-duplicate'))) {
+        errorMessage = 'Erro de verificação. Por favor, resolva o CAPTCHA novamente.'
+      }
+      
+      toast.error(errorMessage)
     } finally {
+      // Sempre resetar o CAPTCHA após tentativa
+      if (registerTurnstileRef.current) {
+        registerTurnstileRef.current.reset()
+      }
       setIsLoading(false)
     }
   }
@@ -518,24 +543,30 @@ const Login = () => {
 
                 <div className="flex justify-center">
                   <Turnstile 
-                    ref={turnstileRef}
-                    siteKey={TURNSTILE_SITE_KEY} 
+                    ref={loginTurnstileRef}
+                    siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={() => {
+                      console.log('[Login] ✅ CAPTCHA resolvido')
+                      setLoginCaptchaReady(true)
+                    }}
                     onError={() => {
                       console.error('[Login] ❌ Erro no CAPTCHA')
-                      if (turnstileRef.current) {
-                        turnstileRef.current.reset()
+                      setLoginCaptchaReady(false)
+                      if (loginTurnstileRef.current) {
+                        loginTurnstileRef.current.reset()
                       }
                     }}
                     onExpire={() => {
                       console.warn('[Login] ⏰ CAPTCHA expirado')
-                      if (turnstileRef.current) {
-                        turnstileRef.current.reset()
+                      setLoginCaptchaReady(false)
+                      if (loginTurnstileRef.current) {
+                        loginTurnstileRef.current.reset()
                       }
                     }}
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || !loginCaptchaReady}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Entrando...</> : 'Entrar'}
                 </Button>
 
@@ -626,24 +657,30 @@ const Login = () => {
 
                 <div className="flex justify-center">
                   <Turnstile 
-                    ref={turnstileRef}
+                    ref={registerTurnstileRef}
                     siteKey={TURNSTILE_SITE_KEY}
+                    onSuccess={() => {
+                      console.log('[Registro] ✅ CAPTCHA resolvido')
+                      setRegisterCaptchaReady(true)
+                    }}
                     onError={() => {
-                      console.error('[Login] ❌ Erro no CAPTCHA')
-                      if (turnstileRef.current) {
-                        turnstileRef.current.reset()
+                      console.error('[Registro] ❌ Erro no CAPTCHA')
+                      setRegisterCaptchaReady(false)
+                      if (registerTurnstileRef.current) {
+                        registerTurnstileRef.current.reset()
                       }
                     }}
                     onExpire={() => {
-                      console.warn('[Login] ⏰ CAPTCHA expirado')
-                      if (turnstileRef.current) {
-                        turnstileRef.current.reset()
+                      console.warn('[Registro] ⏰ CAPTCHA expirado')
+                      setRegisterCaptchaReady(false)
+                      if (registerTurnstileRef.current) {
+                        registerTurnstileRef.current.reset()
                       }
                     }}
                   />
                 </div>
 
-                <Button type="submit" className="w-full" disabled={isLoading}>
+                <Button type="submit" className="w-full" disabled={isLoading || !registerCaptchaReady}>
                   {isLoading ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Criando conta...</> : 'Criar conta'}
                 </Button>
               </form>
