@@ -33,12 +33,31 @@ serve(async (req) => {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.user_id;
-        const planName = session.metadata?.plan_name || 'pro';
-        const billingInterval = session.metadata?.billing_interval || 'monthly';
+        const customerId = session.customer as string;
+        const subscriptionId = session.subscription as string;
+        
+        // MELHORADO: Buscar metadata do checkout E da subscription
+        let userId = session.metadata?.user_id;
+        let planName = session.metadata?.plan_name || 'pro';
+        let billingInterval = session.metadata?.billing_interval || 'monthly';
+
+        // Se não encontrar userId nos metadados da sessão, buscar do customer
+        if (!userId) {
+          console.log('[webhook] Buscando user_id pelo customer_id:', customerId)
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('user_id')
+            .eq('stripe_customer_id', customerId)
+            .single();
+          
+          if (profile) {
+            userId = profile.user_id;
+            console.log('[webhook] User_id encontrado no perfil:', userId)
+          }
+        }
 
         if (!userId) {
-          console.error('[webhook] ❌ No user_id in session metadata');
+          console.error('[webhook] ❌ No user_id found in session or customer');
           break;
         }
 
@@ -46,11 +65,11 @@ serve(async (req) => {
           user: userId,
           plan: planName,
           interval: billingInterval,
-          customer: session.customer,
-          subscription: session.subscription
+          customer: customerId,
+          subscription: subscriptionId
         });
         
-        // Calcular data de próxima renovação (30 dias para mensal, 365 para anual)
+        // Calcular data de próxima renovação
         const currentDate = new Date();
         const nextBillingDate = new Date(currentDate);
         
@@ -66,8 +85,10 @@ serve(async (req) => {
           .update({ 
             subscription_plan: planName,
             billing_interval: billingInterval,
-            stripe_customer_id: session.customer as string,
-            stripe_subscription_id: session.subscription as string,
+            stripe_customer_id: customerId,
+            stripe_subscription_id: subscriptionId,
+            subscription_end_date: nextBillingDate.toISOString(),
+            subscription_cancel_at: null
           })
           .eq('user_id', userId);
 
@@ -84,6 +105,60 @@ serve(async (req) => {
               titulo: 'Bem-vindo ao TherapyPro!',
               conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso. Aproveite todos os recursos!`
             });
+        }
+        break;
+      }
+
+      case "customer.subscription.created": {
+        const subscription = event.data.object as Stripe.Subscription;
+        const customerId = subscription.customer as string;
+
+        console.log('[webhook] 🆕 Subscription created:', {
+          subscription: subscription.id,
+          customer: customerId,
+          status: subscription.status,
+          metadata: subscription.metadata
+        });
+
+        // Buscar usuário pelo customer_id
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('user_id')
+          .eq('stripe_customer_id', customerId)
+          .single();
+
+        if (!profile) {
+          console.error('[webhook] ❌ Profile not found for customer:', customerId);
+          break;
+        }
+
+        // Determinar plano baseado no price ID
+        const priceId = subscription.items.data[0]?.price.id;
+        const priceToPlans: { [key: string]: string } = {
+          'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',
+          'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',
+          'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium',
+          'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'
+        };
+        
+        const planName = priceId && priceToPlans[priceId] ? priceToPlans[priceId] : 'pro';
+        const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
+
+        // Atualizar profile
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({
+            subscription_plan: planName,
+            billing_interval: billingInterval === 'year' ? 'yearly' : 'monthly',
+            stripe_subscription_id: subscription.id,
+            subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
+          })
+          .eq('user_id', profile.user_id);
+
+        if (updateError) {
+          console.error('[webhook] ❌ Error updating subscription:', updateError);
+        } else {
+          console.log('[webhook] ✅ Subscription created and profile updated:', planName);
         }
         break;
       }
