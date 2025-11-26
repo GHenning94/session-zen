@@ -223,7 +223,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
       return
     }
 
-    if (!canAddClient(clients.length)) {
+    if (!editingClient && !canAddClient(clients.length)) {
       toast({
         title: "Limite atingido",
         description: `Seu plano permite apenas ${planLimits.maxClients} clientes. Faça upgrade para adicionar mais.`,
@@ -307,7 +307,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     }
   }
 
-  const canAddMore = canAddClient(clients.length)
+  const canAddMore = editingClient ? true : canAddClient(clients.length)
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
