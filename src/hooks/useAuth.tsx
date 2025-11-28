@@ -101,12 +101,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (event === 'SIGNED_OUT') {
           console.log('[useAuth] 🚪 Logout detectado - limpando estado completo');
           
+          // ✅ PRESERVAR plano pendente antes de limpar
+          const pendingPlan = localStorage.getItem('pending_plan');
+          const pendingBilling = localStorage.getItem('pending_billing');
+          
           // Limpar storage
           try {
             localStorage.clear();
             sessionStorage.clear();
           } catch (e) {
             console.error('[useAuth] Erro ao limpar storage:', e);
+          }
+          
+          // ✅ RESTAURAR plano pendente após limpar
+          if (pendingPlan) {
+            console.log('[useAuth] 💾 Restaurando plano pendente após logout:', pendingPlan);
+            localStorage.setItem('pending_plan', pendingPlan);
+          }
+          if (pendingBilling) {
+            localStorage.setItem('pending_billing', pendingBilling);
           }
           
           setUser(null);

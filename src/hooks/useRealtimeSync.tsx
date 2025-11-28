@@ -112,13 +112,21 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
         }))
       })
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erro na sincronização:', error)
-      toast({
-        title: "Erro de Sincronização",
-        description: "Não foi possível sincronizar os dados.",
-        variant: "destructive"
-      })
+      
+      // ✅ Só mostrar toast se não for erro esperado durante transição de auth
+      const isAuthTransition = sessionStorage.getItem('IS_CONFIRMING_AUTH') === 'true';
+      
+      if (!isAuthTransition) {
+        toast({
+          title: "Erro de Sincronização",
+          description: "Não foi possível sincronizar os dados.",
+          variant: "destructive"
+        })
+      } else {
+        console.log('[useRealtimeSync] Erro de sincronização suprimido durante confirmação de auth');
+      }
     } finally {
       setIsLoading(false)
     }
@@ -142,22 +150,23 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
   ... (código inalterado) ...
   */
 
-  // --- INÍCIO DA CORREÇÃO 4 ---
-  // Sync inicial (CORRIGIDO e HABILITADO)
-  // Este era o 'useEffect' que estava faltando ou desabilitado
+  // Sync inicial
   useEffect(() => {
-    // Só sincronize se o usuário existir E a autenticação NÃO estiver carregando
-    if (user && !authLoading) {
+    // ✅ Verificar se está em processo de confirmação de auth
+    const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH');
+    
+    // Só sincronize se o usuário existir E a autenticação NÃO estiver carregando E NÃO estiver confirmando
+    if (user && !authLoading && isConfirming !== 'true') {
       console.log('useRealtimeSync: User logged in and auth complete. Starting initial sync.');
       syncData('all')
     } else if (!user) {
        console.log('useRealtimeSync: No user, skipping sync.');
     } else if (authLoading) {
        console.log('useRealtimeSync: User found, but auth is still loading (2FA pending?). Waiting...');
+    } else if (isConfirming === 'true') {
+       console.log('useRealtimeSync: Auth confirmation in progress, skipping sync to avoid errors.');
     }
-  // Depende do ID do usuário (para rodar no login) e do status de authLoading
-  }, [user?.id, authLoading]) // <--- A CORREÇÃO CRÍTICA
-  // --- FIM DA CORREÇÃO 4 ---
+  }, [user?.id, authLoading])
 
 
   return (
