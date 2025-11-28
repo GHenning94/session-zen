@@ -183,11 +183,11 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
 }
 
 // Funções auxiliares (inalteradas)
-function getTableName(type: string): 'clients' | 'sessions' {
+function getTableName(type: string): 'clients' | 'sessions' | 'payments' {
   switch (type) {
     case 'clients': return 'clients'
     case 'sessions': return 'sessions'
-    case 'payments': return 'sessions' // pagamentos são parte das sessões
+    case 'payments': return 'payments'
     default: return 'clients'
   }
 }
