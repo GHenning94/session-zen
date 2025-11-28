@@ -468,6 +468,8 @@ const Login = () => {
               onClick={() => {
                 setAwaitingEmailConfirmation(false)
                 setConfirmationEmail('')
+                // Redirecionar para a aba de login
+                navigate('/login?tab=login')
               }}
               variant="ghost"
               className="w-full"
