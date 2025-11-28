@@ -184,8 +184,13 @@ const AuthConfirm = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Blob azul no canto direito */}
+      <div className="background-animation-container">
+        <div className="blob blob-1"></div>
+      </div>
+      
+      <Card className="w-full max-w-md shadow-xl relative z-10">
         <CardHeader className="text-center">
           {status === 'loading' && (
             <>
