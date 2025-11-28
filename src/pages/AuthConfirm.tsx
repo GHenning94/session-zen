@@ -114,6 +114,14 @@ const AuthConfirm = () => {
         const pendingPlan = localStorage.getItem('pending_plan');
         const pendingBilling = localStorage.getItem('pending_billing');
         
+        // ✅ USAR sessionStorage como backup (não é afetado por localStorage.clear)
+        if (pendingPlan) {
+          sessionStorage.setItem('pending_plan_backup', pendingPlan);
+        }
+        if (pendingBilling) {
+          sessionStorage.setItem('pending_billing_backup', pendingBilling);
+        }
+        
         console.log('[AuthConfirm] 🚪 Fazendo logout para forçar novo login...');
         await supabase.auth.signOut();
         

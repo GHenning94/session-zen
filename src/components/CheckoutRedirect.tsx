@@ -15,12 +15,20 @@ export const CheckoutRedirect = () => {
   useEffect(() => {
     const processCheckout = async () => {
       try {
-        // Verificar se há plano pendente
-        const pendingPlan = localStorage.getItem('pending_plan')
-        const pendingBilling = localStorage.getItem('pending_billing') || 'monthly'
+        // ✅ Verificar se há plano pendente (localStorage ou backup no sessionStorage)
+        const pendingPlan = localStorage.getItem('pending_plan') || 
+                            sessionStorage.getItem('pending_plan_backup');
+        const pendingBilling = localStorage.getItem('pending_billing') || 
+                               sessionStorage.getItem('pending_billing_backup') || 
+                               'monthly';
         
         if (!pendingPlan || pendingPlan === 'basico') {
           console.log('[CheckoutRedirect] Sem plano pendente ou plano gratuito, redirecionando para dashboard')
+          
+          // Limpar backups
+          sessionStorage.removeItem('pending_plan_backup');
+          sessionStorage.removeItem('pending_billing_backup');
+          
           navigate('/dashboard', { replace: true })
           return
         }
@@ -85,17 +93,24 @@ export const CheckoutRedirect = () => {
 
         console.log('[CheckoutRedirect] ✅ Redirecionando para checkout Stripe')
         
-        // Limpar localStorage antes de redirecionar
+        // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')
         localStorage.removeItem('pending_billing')
+        sessionStorage.removeItem('pending_plan_backup')
+        sessionStorage.removeItem('pending_billing_backup')
         
         // Redirecionar para Stripe
         window.location.href = data.url
       } catch (error: any) {
         console.error('[CheckoutRedirect] Erro ao processar checkout:', error)
         toast.error('Erro ao processar pagamento. Tente novamente.')
+        
+        // ✅ Limpar ambos os storages em caso de erro
         localStorage.removeItem('pending_plan')
         localStorage.removeItem('pending_billing')
+        sessionStorage.removeItem('pending_plan_backup')
+        sessionStorage.removeItem('pending_billing_backup')
+        
         navigate('/dashboard', { replace: true })
       }
     }

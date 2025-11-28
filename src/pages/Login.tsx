@@ -235,10 +235,15 @@ const Login = () => {
           return
         }
         
-        // Verificar se há plano pendente no localStorage
-        const pendingPlan = localStorage.getItem('pending_plan')
+        // ✅ Verificar se há plano pendente no localStorage ou backup no sessionStorage
+        const pendingPlan = localStorage.getItem('pending_plan') || 
+                            sessionStorage.getItem('pending_plan_backup');
         
         if (pendingPlan && pendingPlan !== 'basico') {
+          // Limpar backup do sessionStorage
+          sessionStorage.removeItem('pending_plan_backup');
+          sessionStorage.removeItem('pending_billing_backup');
+          
           console.log('[Login] 🛒 Plano pendente detectado, redirecionando para checkout')
           toast.success('Redirecionando para checkout...')
           navigate('/checkout-redirect')
@@ -268,10 +273,15 @@ const Login = () => {
   const handle2FASuccess = async () => {
     is2FASuccess.current = true
     
-    // Verificar se há plano pendente no localStorage
-    const pendingPlan = localStorage.getItem('pending_plan')
+    // ✅ Verificar se há plano pendente no localStorage ou backup
+    const pendingPlan = localStorage.getItem('pending_plan') || 
+                        sessionStorage.getItem('pending_plan_backup');
     
     if (pendingPlan && pendingPlan !== 'basico') {
+      // Limpar backup do sessionStorage
+      sessionStorage.removeItem('pending_plan_backup');
+      sessionStorage.removeItem('pending_billing_backup');
+      
       console.log('[Login] 🛒 Plano pendente detectado após 2FA, redirecionando para checkout')
       toast.success('Redirecionando para checkout...')
       navigate('/checkout-redirect')
