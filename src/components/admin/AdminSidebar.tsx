@@ -1,4 +1,4 @@
-import { Shield, Users, CreditCard, BarChart3, FileText, Settings, AlertTriangle, Home } from "lucide-react"
+import { Shield, Users, CreditCard, BarChart3, FileText, Settings, AlertTriangle, Home, Bell } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -21,6 +21,7 @@ const menuItems = [
   { title: "Conteúdo", url: "/admin/content", icon: FileText },
   { title: "Configurações", url: "/admin/config", icon: Settings },
   { title: "Logs e Auditoria", url: "/admin/logs", icon: AlertTriangle },
+  { title: "Notificações", url: "/admin/notifications", icon: Bell },
 ]
 
 export function AdminSidebar() {
