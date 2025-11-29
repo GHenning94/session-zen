@@ -20,11 +20,11 @@ export default function AdminContent() {
 
   const loadContent = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      const sessionToken = localStorage.getItem('admin_session_token');
+      if (!sessionToken) throw new Error('No admin session');
 
       const { data, error } = await supabase.functions.invoke('admin-get-content', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        headers: { 'x-admin-token': sessionToken }
       });
 
       if (error) throw error;
@@ -53,7 +53,7 @@ export default function AdminContent() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div>
           <h1 className="text-3xl font-bold">Conteúdo e Páginas</h1>
           <p className="text-muted-foreground">Gerencie páginas públicas, eventos e templates</p>
