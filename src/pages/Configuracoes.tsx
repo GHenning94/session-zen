@@ -258,6 +258,20 @@ const Configuracoes = () => {
 
       if (error) throw error;
 
+      // Enviar notificação de segurança por email
+      try {
+        await supabase.functions.invoke('send-security-notification', {
+          body: {
+            email: user?.email,
+            type: 'password_changed',
+            userName: settings.nome
+          }
+        });
+      } catch (emailError) {
+        console.error('Erro ao enviar notificação de segurança:', emailError);
+        // Não bloquear a operação se o email falhar
+      }
+
       toast({
         title: "Senha alterada",
         description: "Você será redirecionado para fazer login novamente"
@@ -309,12 +323,29 @@ const Configuracoes = () => {
 
   const confirmEmailChange = async () => {
     setIsLoading(true);
+    const oldEmail = user?.email || '';
+    
     try {
       const { error } = await supabase.auth.updateUser({ 
         email: pendingNewEmail 
       });
 
       if (error) throw error;
+
+      // Enviar notificação de segurança para o email antigo
+      try {
+        await supabase.functions.invoke('send-security-notification', {
+          body: {
+            email: oldEmail,
+            type: 'email_changed',
+            userName: settings.nome,
+            newEmail: pendingNewEmail
+          }
+        });
+      } catch (emailError) {
+        console.error('Erro ao enviar notificação de segurança:', emailError);
+        // Não bloquear a operação se o email falhar
+      }
 
       toast({
         title: "E-mail alterado",
