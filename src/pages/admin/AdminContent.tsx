@@ -24,7 +24,7 @@ export default function AdminContent() {
       if (!sessionToken) throw new Error('No admin session');
 
       const { data, error } = await supabase.functions.invoke('admin-get-content', {
-        headers: { 'x-admin-token': sessionToken }
+        body: { sessionToken }
       });
 
       if (error) throw error;

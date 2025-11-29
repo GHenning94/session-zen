@@ -25,7 +25,7 @@ export default function AdminAnalytics() {
       if (!sessionToken) throw new Error('No admin session');
 
       const { data, error } = await supabase.functions.invoke('admin-get-analytics', {
-        headers: { 'x-admin-token': sessionToken }
+        body: { sessionToken }
       });
 
       if (error) throw error;
