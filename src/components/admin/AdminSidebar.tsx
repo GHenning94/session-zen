@@ -26,9 +26,10 @@ const menuItems = [
 ]
 
 export function AdminSidebar() {
-  const { state } = useSidebar()
+  const { state, setOpen } = useSidebar()
   const location = useLocation()
   const currentPath = location.pathname
+  const isCollapsed = state === "collapsed"
 
   const isActive = (path: string, end?: boolean) => {
     if (end) {
@@ -36,8 +37,17 @@ export function AdminSidebar() {
     }
     return currentPath.startsWith(path)
   }
+  
+  const getNavClasses = ({ isActive }: { isActive: boolean }) =>
+    isActive 
+      ? "bg-primary text-primary-foreground font-semibold shadow-sm" 
+      : "hover:bg-sidebar-accent/70 transition-all duration-200"
 
-  const isCollapsed = state === "collapsed"
+  const handleNavClick = () => {
+    if (window.innerWidth < 768) {
+      setOpen(false)
+    }
+  }
 
   return (
     <Sidebar
@@ -50,23 +60,20 @@ export function AdminSidebar() {
             Painel Admin
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
+            <SidebarMenu className="space-y-0.5 px-3">
               {menuItems.map((item) => (
                 <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to={item.url}
+                  <SidebarMenuButton asChild className={`h-8 rounded-xl ${getNavClasses({ isActive: isActive(item.url, item.end) })}`}>
+                    <NavLink 
+                      to={item.url} 
                       end={item.end}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors text-foreground ${
-                          isActive
-                            ? "bg-primary text-primary-foreground font-medium"
-                            : "hover:bg-muted/50"
-                        }`
-                      }
+                      className="flex items-center w-full"
+                      onClick={handleNavClick}
                     >
-                      <item.icon className="h-5 w-5 flex-shrink-0" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : ''}`}>
+                        <item.icon className="h-4 w-4 shrink-0" />
+                        {!isCollapsed && <span className="text-xs ml-2">{item.title}</span>}
+                      </div>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

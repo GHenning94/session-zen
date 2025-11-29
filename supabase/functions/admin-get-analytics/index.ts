@@ -16,18 +16,24 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Verify admin session from token
-    const authHeader = req.headers.get('x-admin-token')
-    if (!authHeader) {
-      throw new Error('No admin token provided')
+    // Get session token from body
+    const { sessionToken } = await req.json()
+    
+    if (!sessionToken) {
+      throw new Error('No session token provided')
     }
 
-    const { data: sessionData, error: sessionError } = await supabaseClient.functions.invoke('admin-verify-session', {
-      body: { sessionToken: authHeader }
-    })
-    
-    if (sessionError || !sessionData.valid) {
-      throw new Error('Invalid admin session')
+    // Verify admin session
+    const { data: session, error: sessionError } = await supabaseClient
+      .from('admin_sessions')
+      .select('user_id')
+      .eq('session_token', sessionToken)
+      .eq('revoked', false)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !session) {
+      throw new Error('Invalid or expired admin session')
     }
 
     // Get database analytics
