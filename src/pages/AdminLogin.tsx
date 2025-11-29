@@ -57,7 +57,7 @@ const AdminLogin = () => {
       localStorage.setItem('admin_session_expires', data.expiresAt)
 
       toast.success('Login realizado com sucesso!')
-      navigate('/admin')
+      navigate('/admin/dashboard')
 
     } catch (error: any) {
       console.error('[Admin Login] Error:', error)
@@ -74,8 +74,13 @@ const AdminLogin = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-secondary/10">
-      <Card className="w-full max-w-md shadow-2xl border-2">
+    <div className="min-h-screen flex items-center justify-center bg-background relative overflow-hidden">
+      {/* Blue blob background */}
+      <div className="absolute inset-0 -z-10">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl" />
+      </div>
+      
+      <Card className="w-full max-w-md shadow-2xl border-2 relative z-10">
         <CardHeader className="space-y-3 text-center">
           <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
             <Shield className="h-8 w-8 text-primary" />

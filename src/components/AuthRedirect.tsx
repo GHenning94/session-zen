@@ -18,6 +18,7 @@ const AuthRedirect = () => {
       const isPublicRoute = PUBLIC_ROUTES.includes(currentPath) || 
                            currentPath.startsWith('/agendar/') || 
                            currentPath.startsWith('/register/') ||
+                           currentPath === '/admin' ||
                            currentPath.startsWith('/admin/')
       
       if (isPublicRoute) {
