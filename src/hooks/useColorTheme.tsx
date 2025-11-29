@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { useLocation } from 'react-router-dom'
 
 const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
+const COLOR_CACHE_KEY = 'user-color-cache'
 
 // Helper functions for color conversion
 const hexToHsl = (hex: string): string => {
@@ -153,12 +154,20 @@ export const useColorTheme = () => {
       // Always normalize and save as HSL triplet
       const normalized = normalizeToHslTriplet(colorValue)
       
+      // Save to cache immediately
+      const cacheKey = `${COLOR_CACHE_KEY}_${user.id}`
+      localStorage.setItem(cacheKey, normalized)
+      
       const { error } = await supabase
         .from('configuracoes')
         .update({ brand_color: normalized })
         .eq('user_id', user.id)
 
-      if (error) throw error
+      if (error) {
+        // Remove from cache if save failed
+        localStorage.removeItem(cacheKey)
+        throw error
+      }
 
       applyBrandColor(normalized)
       toast.success('Cor da plataforma atualizada com sucesso!')
@@ -171,12 +180,6 @@ export const useColorTheme = () => {
   }
 
   useLayoutEffect(() => {
-    // CRITICAL: Apply default colors IMMEDIATELY and SYNCHRONOUSLY
-    // This ensures colors are always present, even for new accounts
-    if (location.pathname !== '/') {
-      directApplyColor(DEFAULT_COLOR)
-    }
-    
     const loadUserColor = async () => {
       // If on landing page, always reset to default and don't apply any custom color
       if (location.pathname === '/') {
@@ -185,12 +188,24 @@ export const useColorTheme = () => {
       }
 
       if (!user) {
-        // For non-logged users not on landing page, default already applied above
+        // For non-logged users not on landing page, apply default
+        directApplyColor(DEFAULT_COLOR)
         return
       }
 
+      // First, try to get cached color and apply it immediately
+      const cacheKey = `${COLOR_CACHE_KEY}_${user.id}`
+      const cachedColor = localStorage.getItem(cacheKey)
+      
+      if (cachedColor) {
+        directApplyColor(cachedColor)
+      } else {
+        // Apply default while loading
+        directApplyColor(DEFAULT_COLOR)
+      }
+
       try {
-        // Then load user's custom color if they have one
+        // Then load from database and update if different
         const { data } = await supabase
           .from('configuracoes')
           .select('brand_color')
@@ -200,12 +215,21 @@ export const useColorTheme = () => {
         if (data?.brand_color) {
           // Normalize before applying to ensure consistent format
           const normalized = normalizeToHslTriplet(data.brand_color)
-          applyBrandColor(normalized)
+          
+          // Update cache
+          localStorage.setItem(cacheKey, normalized)
+          
+          // Apply color if different from cache
+          if (normalized !== cachedColor) {
+            applyBrandColor(normalized)
+          }
+        } else if (!cachedColor) {
+          // No custom color in DB and no cache, keep default
+          // (default already applied above)
         }
-        // If no custom color, keep the default that was already applied
       } catch (error) {
         console.error('Error loading user color:', error)
-        // Default is already applied, so no need to do anything
+        // Cache or default is already applied, so no need to do anything
       }
     }
 
