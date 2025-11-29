@@ -322,15 +322,22 @@ const Configuracoes = () => {
   };
 
   const confirmEmailChange = async () => {
+    if (!pendingNewEmail) return;
+    
     setIsLoading(true);
     const oldEmail = user?.email || '';
     
     try {
-      const { error } = await supabase.auth.updateUser({ 
-        email: pendingNewEmail 
+      // Chamar edge function para iniciar processo de mudança de email
+      const { data, error } = await supabase.functions.invoke('request-email-change', {
+        body: {
+          new_email: pendingNewEmail,
+          user_name: settings.nome
+        }
       });
 
       if (error) throw error;
+      if (!data?.success) throw new Error('Erro ao solicitar mudança de email');
 
       // Enviar notificação de segurança para o email antigo
       try {
@@ -348,7 +355,7 @@ const Configuracoes = () => {
       }
 
       toast({
-        title: "E-mail alterado",
+        title: "E-mail de confirmação enviado",
         description: "Você será deslogado. Verifique seu novo e-mail para confirmar a alteração.",
       });
 

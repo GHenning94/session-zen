@@ -848,6 +848,8 @@ export type Database = {
           cpf_cnpj: string | null
           created_at: string
           crp: string | null
+          email_change_nonce: string | null
+          email_change_nonce_expires_at: string | null
           email_confirmation_nonce: string | null
           email_confirmation_nonce_expires_at: string | null
           email_confirmed_strict: boolean
@@ -855,6 +857,7 @@ export type Database = {
           first_login_completed: boolean | null
           id: string
           nome: string
+          pending_new_email: string | null
           profissao: string | null
           public_avatar_url: string | null
           subscription_plan: string | null
@@ -873,6 +876,8 @@ export type Database = {
           cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
+          email_change_nonce?: string | null
+          email_change_nonce_expires_at?: string | null
           email_confirmation_nonce?: string | null
           email_confirmation_nonce_expires_at?: string | null
           email_confirmed_strict?: boolean
@@ -880,6 +885,7 @@ export type Database = {
           first_login_completed?: boolean | null
           id?: string
           nome: string
+          pending_new_email?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
           subscription_plan?: string | null
@@ -898,6 +904,8 @@ export type Database = {
           cpf_cnpj?: string | null
           created_at?: string
           crp?: string | null
+          email_change_nonce?: string | null
+          email_change_nonce_expires_at?: string | null
           email_confirmation_nonce?: string | null
           email_confirmation_nonce_expires_at?: string | null
           email_confirmed_strict?: boolean
@@ -905,6 +913,7 @@ export type Database = {
           first_login_completed?: boolean | null
           id?: string
           nome?: string
+          pending_new_email?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
           subscription_plan?: string | null

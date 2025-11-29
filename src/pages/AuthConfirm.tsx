@@ -87,28 +87,31 @@ const AuthConfirm = () => {
         console.log('[AuthConfirm] ⏳ Aguardando 1500ms...');
         await new Promise(resolve => setTimeout(resolve, 1500));
 
-        console.log('[AuthConfirm] 📨 Invocando confirm-email-strict...');
+        // Detectar se é mudança de email ou confirmação de cadastro
+        const isEmailChange = type === 'email_change';
+        const functionName = isEmailChange ? 'confirm-email-change' : 'confirm-email-strict';
+        
+        console.log(`[AuthConfirm] 📨 Invocando ${functionName}...`);
         
         const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
-          'confirm-email-strict',
+          functionName,
           { 
-            body: { 
-              nonce: nonce || null,
-              user_id: userId
-            }
+            body: isEmailChange 
+              ? { nonce: nonce || null }
+              : { nonce: nonce || null, user_id: userId }
           }
         );
 
         if (confirmError) {
           console.error('[AuthConfirm] ❌ Erro na função:', confirmError.message);
-          throw new Error(confirmError.message || 'Erro ao confirmar e-mail.');
+          throw new Error(confirmError.message || `Erro ao ${isEmailChange ? 'alterar' : 'confirmar'} e-mail.`);
         }
 
         if (!confirmData?.success) {
-          throw new Error('Falha na confirmação do e-mail.');
+          throw new Error(`Falha na ${isEmailChange ? 'alteração' : 'confirmação'} do e-mail.`);
         }
 
-        console.log('[AuthConfirm] ✅ E-mail confirmado!');
+        console.log(`[AuthConfirm] ✅ E-mail ${isEmailChange ? 'alterado' : 'confirmado'}!`);
         
         // Preservar plano pendente antes do logout
         const pendingPlan = localStorage.getItem('pending_plan');

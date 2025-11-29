@@ -27,12 +27,12 @@ export default function EmailChangeConfirmation() {
 
     setIsLoading(true)
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'email_change',
-        email: email
+      const { data, error } = await supabase.functions.invoke('resend-email-change', {
+        body: { email }
       })
 
       if (error) throw error
+      if (!data?.success) throw new Error('Erro ao reenviar email')
 
       setResendCooldown(60)
       toast.success('Email reenviado! Verifique sua caixa de entrada.')
