@@ -13,13 +13,11 @@ import { Check, Loader2 } from "lucide-react"
 
 const COLOR_PALETTE = [
   { name: "Azul Profissional", value: "217 91% 45%", color: "hsl(217 91% 45%)" },
-  { name: "Verde Saúde", value: "142 76% 36%", color: "hsl(142 76% 36%)" },
-  { name: "Roxo Elegante", value: "271 91% 65%", color: "hsl(271 91% 65%)" },
-  { name: "Vermelho Energia", value: "0 84% 60%", color: "hsl(0 84% 60%)" },
-  { name: "Laranja Criativo", value: "33 96% 56%", color: "hsl(33 96% 56%)" },
-  { name: "Rosa Moderno", value: "348 83% 47%", color: "hsl(348 83% 47%)" },
   { name: "Azul Céu", value: "200 98% 39%", color: "hsl(200 98% 39%)" },
-  { name: "Verde Menta", value: "160 84% 39%", color: "hsl(160 84% 39%)" },
+  { name: "Roxo Escuro", value: "271 91% 45%", color: "hsl(271 91% 45%)" },
+  { name: "Roxo Claro", value: "271 91% 65%", color: "hsl(271 91% 65%)" },
+  { name: "Laranja Escuro", value: "20 91% 48%", color: "hsl(20 91% 48%)" },
+  { name: "Laranja Claro", value: "33 96% 56%", color: "hsl(33 96% 56%)" },
 ]
 
 
@@ -80,7 +78,7 @@ export const ColorPicker = ({
         <div className="space-y-6 py-4">
           <div>
             <Label className="text-sm font-medium mb-3 block">Cores Sólidas</Label>
-            <div className="grid grid-cols-4 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {COLOR_PALETTE.map((color) => (
                 <button
                   key={color.value}
