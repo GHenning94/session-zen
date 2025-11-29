@@ -58,7 +58,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-4 md:p-8 overflow-y-auto overscroll-contain touch-scroll">
+          <main className="flex-1 p-4 md:p-8">
             <div className="w-full max-w-full">
               {children}
             </div>
