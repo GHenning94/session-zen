@@ -78,6 +78,13 @@ verify_jwt = false
 [functions.delete-user-account]
 verify_jwt = true
 
+[functions.request-email-change]
+verify_jwt = true
+[functions.resend-email-change]
+verify_jwt = false
+[functions.confirm-email-change]
+verify_jwt = false
+
 [functions.encrypt-data]
 verify_jwt = true
 
