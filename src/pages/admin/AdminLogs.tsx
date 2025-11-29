@@ -29,11 +29,11 @@ export default function AdminLogs() {
 
   const loadLogs = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      const sessionToken = localStorage.getItem('admin_session_token');
+      if (!sessionToken) throw new Error('No admin session');
 
       const { data, error } = await supabase.functions.invoke('admin-get-logs', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        headers: { 'x-admin-token': sessionToken }
       });
 
       if (error) throw error;
@@ -74,7 +74,7 @@ export default function AdminLogs() {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold">Logs e Auditoria</h1>

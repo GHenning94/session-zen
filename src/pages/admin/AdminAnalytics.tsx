@@ -21,11 +21,11 @@ export default function AdminAnalytics() {
 
   const loadAnalytics = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
+      const sessionToken = localStorage.getItem('admin_session_token');
+      if (!sessionToken) throw new Error('No admin session');
 
       const { data, error } = await supabase.functions.invoke('admin-get-analytics', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
+        headers: { 'x-admin-token': sessionToken }
       });
 
       if (error) throw error;
