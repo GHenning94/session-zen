@@ -13,11 +13,12 @@ const AuthRedirect = () => {
 
   useEffect(() => {
     const handleAuthRedirect = async () => {
-      // Ignorar rotas públicas e rotas de agendamento/registro
+      // Ignorar rotas públicas e rotas de agendamento/registro/admin
       const currentPath = location.pathname
       const isPublicRoute = PUBLIC_ROUTES.includes(currentPath) || 
                            currentPath.startsWith('/agendar/') || 
-                           currentPath.startsWith('/register/')
+                           currentPath.startsWith('/register/') ||
+                           currentPath.startsWith('/admin/')
       
       if (isPublicRoute) {
         console.log('[AuthRedirect] 🌐 Rota pública detectada, sem redirecionamento')
