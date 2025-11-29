@@ -94,5 +94,23 @@ verify_jwt = false
 [functions.admin-security-audit]
 verify_jwt = false
 
+[functions.admin-get-payments]
+verify_jwt = false
+
+[functions.admin-get-analytics]
+verify_jwt = false
+
+[functions.admin-get-content]
+verify_jwt = false
+
+[functions.admin-get-logs]
+verify_jwt = false
+
+[functions.admin-update-user]
+verify_jwt = false
+
+[functions.admin-system-config]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true

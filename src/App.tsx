@@ -52,6 +52,11 @@ import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminSecurity from "@/pages/admin/AdminSecurity";
 import AdminUsers from "@/pages/admin/AdminUsers";
+import AdminPayments from "@/pages/admin/AdminPayments";
+import AdminAnalytics from "@/pages/admin/AdminAnalytics";
+import AdminContent from "@/pages/admin/AdminContent";
+import AdminLogs from "@/pages/admin/AdminLogs";
+import AdminSystemConfig from "@/pages/admin/AdminSystemConfig";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -249,6 +254,46 @@ const App = () => (
                     element={
                       <AdminProtectedRoute>
                         <AdminUsers />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/payments" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminPayments />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/analytics" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminAnalytics />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/content" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminContent />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/logs" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminLogs />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/config" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSystemConfig />
                       </AdminProtectedRoute>
                     } 
                   />

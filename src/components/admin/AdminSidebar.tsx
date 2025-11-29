@@ -19,7 +19,7 @@ const menuItems = [
   { title: "Pagamentos", url: "/admin/payments", icon: CreditCard },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Conteúdo", url: "/admin/content", icon: FileText },
-  { title: "Configurações", url: "/admin/settings", icon: Settings },
+  { title: "Configurações", url: "/admin/config", icon: Settings },
   { title: "Logs e Auditoria", url: "/admin/logs", icon: AlertTriangle },
 ]
 
