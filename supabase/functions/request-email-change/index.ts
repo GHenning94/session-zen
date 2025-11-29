@@ -5,7 +5,7 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const SENDPULSE_API_ID = Deno.env.get('SENDPULSE_API_ID');
 const SENDPULSE_API_SECRET = Deno.env.get('SENDPULSE_API_SECRET');
-const SITE_URL = SUPABASE_URL?.replace('.supabase.co', '.lovable.app') || 'https://ykwszazxigjivjkagjmf.lovable.app';
+const SITE_URL = SUPABASE_URL?.replace('.supabase.co', '.lovable.dev') || 'https://ykwszazxigjivjkagjmf.lovable.dev';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
