@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { LoadingState } from '@/components/LoadingState'
 
 // Rotas públicas que não devem ser redirecionadas
-const PUBLIC_ROUTES = ['/', '/login', '/signup', '/reset-password', '/auth-confirm', '/auth-callback']
+const PUBLIC_ROUTES = ['/', '/login', '/signup', '/reset-password', '/auth-confirm', '/auth-callback', '/email-change-confirmation']
 
 const AuthRedirect = () => {
   const navigate = useNavigate()
