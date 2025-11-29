@@ -234,6 +234,21 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Mobile scroll optimization */
+  .overscroll-contain {
+    overscroll-behavior: contain;
+  }
+  
+  .touch-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
+  }
+  
+  /* Prevent body scroll issues when sidebar is open */
+  body {
+    overscroll-behavior-y: contain;
+  }
 }
 
 /* Animated gradient border for Tutorial button */

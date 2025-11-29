@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
+import { encryptFields } from '../_shared/encryption.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -94,6 +95,11 @@ serve(async (req) => {
     // Use validated data
     const validatedClientData = validationResult.data;
 
+    // Encrypt sensitive fields before saving
+    const encryptedData = await encryptFields(validatedClientData, [
+      'tratamento'
+    ]);
+
     // Rate limiting check with safe IP parsing
     const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
     const clientIp = (rawIp.split(',')[0] || '').trim();
@@ -115,10 +121,10 @@ serve(async (req) => {
       );
     }
 
-    // Call the transactional RPC function to register client with validated data
+    // Call the transactional RPC function to register client with encrypted data
     const { data: result, error: rpcError } = await supabase.rpc('register_client_from_token', {
       p_token: token,
-      p_client_data: validatedClientData
+      p_client_data: encryptedData
     });
 
     if (rpcError) {

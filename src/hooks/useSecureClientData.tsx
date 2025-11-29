@@ -10,6 +10,7 @@ import {
   getSecuritySummary,
   type SecureMedicalData 
 } from '@/utils/secureClientData'
+import { decryptSensitiveData, encryptSensitiveData } from '@/utils/encryptionMiddleware'
 
 /**
  * SECURE CLIENT DATA HOOK
@@ -117,11 +118,18 @@ export function useSecureClientData(): UseSecureClientDataReturn {
     try {
       const data = await getSecureClientMedicalData(clientId)
       
-      toast({
-        title: "Dados Médicos Acessados",
-        description: "Acesso registrado para auditoria de conformidade.",
-        variant: "default"
-      })
+      // Decrypt sensitive fields
+      if (data) {
+        const decrypted = await decryptSensitiveData('clients', data)
+        
+        toast({
+          title: "Dados Médicos Acessados",
+          description: "Acesso registrado para auditoria de conformidade.",
+          variant: "default"
+        })
+        
+        return decrypted as SecureMedicalData
+      }
       
       return data
     } catch (error) {
@@ -145,7 +153,18 @@ export function useSecureClientData(): UseSecureClientDataReturn {
     clearError()
     
     try {
-      const success = await updateSecureClientMedicalData(clientId, dadosClinicos, historico)
+      // Encrypt data before sending
+      const dataToEncrypt: any = {}
+      if (dadosClinicos !== undefined) dataToEncrypt.dados_clinicos = dadosClinicos
+      if (historico !== undefined) dataToEncrypt.historico = historico
+      
+      const encrypted = await encryptSensitiveData('clients', dataToEncrypt)
+      
+      const success = await updateSecureClientMedicalData(
+        clientId, 
+        encrypted.dados_clinicos, 
+        encrypted.historico
+      )
       
       if (success) {
         toast({
