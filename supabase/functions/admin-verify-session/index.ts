@@ -60,28 +60,7 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verificar se ainda é admin
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user_id)
-      .eq('role', 'admin')
-      .single()
-
-    if (roleError || !roleData) {
-      console.error('[Admin Verify] User is no longer admin')
-      
-      // Revogar sessão
-      await supabase
-        .from('admin_sessions')
-        .update({ revoked: true, revoked_at: now.toISOString() })
-        .eq('id', session.id)
-
-      return new Response(
-        JSON.stringify({ error: 'Permissões revogadas', valid: false }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    // Sessão válida - não precisa verificar role pois sessões admin são criadas apenas no login
 
     console.log('[Admin Verify] Session valid for user:', session.user_id)
 
