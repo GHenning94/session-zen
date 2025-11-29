@@ -339,21 +339,6 @@ const Configuracoes = () => {
       if (error) throw error;
       if (!data?.success) throw new Error('Erro ao solicitar mudança de email');
 
-      // Enviar notificação de segurança para o email antigo
-      try {
-        await supabase.functions.invoke('send-security-notification', {
-          body: {
-            email: oldEmail,
-            type: 'email_changed',
-            userName: settings.nome,
-            newEmail: pendingNewEmail
-          }
-        });
-      } catch (emailError) {
-        console.error('Erro ao enviar notificação de segurança:', emailError);
-        // Não bloquear a operação se o email falhar
-      }
-
       toast({
         title: "E-mail de confirmação enviado",
         description: "Você será deslogado. Verifique seu novo e-mail para confirmar a alteração.",
@@ -361,6 +346,9 @@ const Configuracoes = () => {
 
       setNewEmail('');
       setShowEmailChangeDialog(false);
+
+      // Marcar que está em processo de mudança de email
+      sessionStorage.setItem('IS_EMAIL_CHANGE_PENDING', 'true');
 
       // Deslogar e redirecionar para página de confirmação
       await supabase.auth.signOut();

@@ -13,6 +13,11 @@ export default function EmailChangeConfirmation() {
   const [isLoading, setIsLoading] = useState(false)
   const email = searchParams.get('email') || ''
 
+  // Limpar flag de mudança de email pendente quando a página carregar
+  useEffect(() => {
+    sessionStorage.removeItem('IS_EMAIL_CHANGE_PENDING');
+  }, []);
+
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => {

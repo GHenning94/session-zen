@@ -59,6 +59,37 @@ serve(async (req) => {
       throw new Error('Erro ao atualizar email');
     }
 
+    // Obter email antigo e nome do usuário para notificação
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profile.user_id);
+    const oldEmail = userData?.user?.email;
+
+    const { data: profileData } = await supabaseAdmin
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', profile.user_id)
+      .single();
+
+    // Enviar notificação de segurança APÓS confirmação bem-sucedida
+    console.log('[Confirm Email Change] Enviando notificação de segurança');
+    try {
+      await fetch(`${SUPABASE_URL}/functions/v1/send-security-notification`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+        },
+        body: JSON.stringify({
+          email: oldEmail,
+          type: 'email_changed',
+          userName: profileData?.nome || 'Usuário',
+          newEmail: profile.pending_new_email
+        })
+      });
+    } catch (emailError) {
+      console.error('[Confirm Email Change] Erro ao enviar notificação de segurança:', emailError);
+      // Não bloquear a operação se o email falhar
+    }
+
     console.log('[Confirm Email Change] Limpando dados pendentes do profile');
 
     // Limpar dados pendentes do profile

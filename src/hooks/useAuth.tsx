@@ -96,6 +96,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - confirmação de e-mail em andamento');
           return;
         }
+
+        // ✅ CORREÇÃO: Ignorar SIGNED_OUT durante mudança de e-mail
+        const isEmailChangePending = sessionStorage.getItem('IS_EMAIL_CHANGE_PENDING');
+        if (event === 'SIGNED_OUT' && isEmailChangePending === 'true') {
+          console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - mudança de e-mail em andamento');
+          return;
+        }
         
         // Logout completo
         if (event === 'SIGNED_OUT') {
