@@ -177,6 +177,138 @@ serve(async (req) => {
         </html>
       `;
       textContent = `Olá, ${name}!\n\nInformamos que o e-mail da sua conta no TherapyPro foi alterado.\n\nE-mail anterior: ${email}\nNovo e-mail: ${displayNewEmail}\nData e hora: ${currentDate}\n\nSe você realizou esta alteração, pode ignorar este e-mail.\n\nSe você não reconhece esta ação, entre em contato com nosso suporte imediatamente.`;
+    } else if (type === 'failed_email_change_attempt') {
+      subject = '⚠️ Tentativa de mudança de e-mail mal sucedida - TherapyPro';
+      const attemptedNewEmail = newEmail || 'não especificado';
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Tentativa de Mudança de E-mail - TherapyPro</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+            <tr>
+              <td style="padding: 40px 20px;" align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">⚠️ Alerta de Segurança</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Olá, ${name}!</h2>
+                      <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+                        Detectamos uma tentativa <strong>mal sucedida</strong> de mudança de e-mail na sua conta do <strong>TherapyPro</strong>.
+                      </p>
+                      <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+                        <p style="margin: 0 0 10px 0; color: #991b1b; font-size: 14px; font-weight: bold;">Detalhes da Tentativa:</p>
+                        <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 14px;">E-mail atual: ${email}</p>
+                        <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 14px;">Tentativa de mudança para: ${attemptedNewEmail}</p>
+                        <p style="margin: 0; color: #7f1d1d; font-size: 14px;">Data e hora: ${currentDate}</p>
+                      </div>
+                      <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                        <p style="margin: 0 0 10px 0; color: #065f46; font-size: 14px; font-weight: bold;">✅ Foi você?</p>
+                        <p style="margin: 0; color: #065f46; font-size: 14px;">
+                          Se você tentou alterar seu e-mail, pode ignorar este alerta. A senha informada estava incorreta.
+                        </p>
+                      </div>
+                      <div style="background-color: #fff7ed; border: 1px solid #fb923c; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                        <p style="margin: 0 0 10px 0; color: #9a3412; font-size: 14px; font-weight: bold;">🚨 Não foi você?</p>
+                        <p style="margin: 0 0 10px 0; color: #9a3412; font-size: 14px;">
+                          Alguém pode estar tentando acessar sua conta. Recomendamos urgentemente:
+                        </p>
+                        <ul style="margin: 0; padding-left: 20px; color: #9a3412; font-size: 14px;">
+                          <li>Alterar sua senha imediatamente</li>
+                          <li>Ativar autenticação em dois fatores</li>
+                          <li>Verificar atividades suspeitas na conta</li>
+                          <li>Entrar em contato com nosso suporte</li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                      <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">© ${new Date().getFullYear()} TherapyPro. Todos os direitos reservados.</p>
+                      <p style="margin: 0; color: #94a3b8; font-size: 12px;">Gestão profissional para terapeutas</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+      textContent = `Olá, ${name}!\n\nDetectamos uma tentativa MAL SUCEDIDA de mudança de e-mail na sua conta do TherapyPro.\n\nE-mail atual: ${email}\nTentativa de mudança para: ${attemptedNewEmail}\nData e hora: ${currentDate}\n\nFoi você?\nSe você tentou alterar seu e-mail, pode ignorar este alerta. A senha informada estava incorreta.\n\nNão foi você?\nAlguém pode estar tentando acessar sua conta. Recomendamos urgentemente:\n- Alterar sua senha imediatamente\n- Ativar autenticação em dois fatores\n- Verificar atividades suspeitas\n- Entrar em contato com nosso suporte`;
+    } else if (type === 'failed_account_deletion_attempt') {
+      subject = '🚨 Tentativa de exclusão de conta mal sucedida - TherapyPro';
+      htmlContent = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Tentativa de Exclusão de Conta - TherapyPro</title>
+        </head>
+        <body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f4f4f4;">
+            <tr>
+              <td style="padding: 40px 20px;" align="center">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); padding: 40px 30px; text-align: center;">
+                      <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: bold;">🚨 Alerta Crítico de Segurança</h1>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 40px 30px;">
+                      <h2 style="margin: 0 0 20px 0; color: #1e293b; font-size: 24px;">Olá, ${name}!</h2>
+                      <p style="margin: 0 0 20px 0; color: #475569; font-size: 16px; line-height: 1.6;">
+                        Detectamos uma tentativa <strong>mal sucedida</strong> de exclusão da sua conta no <strong>TherapyPro</strong>.
+                      </p>
+                      <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 16px; margin: 20px 0;">
+                        <p style="margin: 0 0 10px 0; color: #991b1b; font-size: 14px; font-weight: bold;">Detalhes da Tentativa:</p>
+                        <p style="margin: 0 0 5px 0; color: #7f1d1d; font-size: 14px;">Conta: ${email}</p>
+                        <p style="margin: 0; color: #7f1d1d; font-size: 14px;">Data e hora: ${currentDate}</p>
+                      </div>
+                      <div style="background-color: #ecfdf5; border: 1px solid #10b981; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                        <p style="margin: 0 0 10px 0; color: #065f46; font-size: 14px; font-weight: bold;">✅ Foi você?</p>
+                        <p style="margin: 0; color: #065f46; font-size: 14px;">
+                          Se você tentou deletar sua conta, pode ignorar este alerta. A senha informada estava incorreta.
+                        </p>
+                      </div>
+                      <div style="background-color: #fff7ed; border: 1px solid #fb923c; border-radius: 6px; padding: 16px; margin: 20px 0;">
+                        <p style="margin: 0 0 10px 0; color: #9a3412; font-size: 14px; font-weight: bold;">🚨 Não foi você?</p>
+                        <p style="margin: 0 0 10px 0; color: #9a3412; font-size: 14px;">
+                          <strong>ATENÇÃO!</strong> Alguém está tentando deletar sua conta. Aja imediatamente:
+                        </p>
+                        <ul style="margin: 0; padding-left: 20px; color: #9a3412; font-size: 14px;">
+                          <li><strong>Altere sua senha AGORA</strong></li>
+                          <li>Ative autenticação em dois fatores</li>
+                          <li>Verifique dispositivos conectados</li>
+                          <li>Entre em contato com nosso suporte urgentemente</li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style="background-color: #f8fafc; padding: 30px; text-align: center; border-top: 1px solid #e2e8f0;">
+                      <p style="margin: 0 0 10px 0; color: #64748b; font-size: 14px;">© ${new Date().getFullYear()} TherapyPro. Todos os direitos reservados.</p>
+                      <p style="margin: 0; color: #94a3b8; font-size: 12px;">Gestão profissional para terapeutas</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `;
+      textContent = `Olá, ${name}!\n\nATENÇÃO! Detectamos uma tentativa MAL SUCEDIDA de exclusão da sua conta no TherapyPro.\n\nConta: ${email}\nData e hora: ${currentDate}\n\nFoi você?\nSe você tentou deletar sua conta, pode ignorar este alerta. A senha informada estava incorreta.\n\nNão foi você?\nATENÇÃO! Alguém está tentando deletar sua conta. Aja imediatamente:\n- ALTERE SUA SENHA AGORA\n- Ative autenticação em dois fatores\n- Verifique dispositivos conectados\n- Entre em contato com nosso suporte urgentemente`;
     } else {
       throw new Error('Tipo de notificação inválido');
     }

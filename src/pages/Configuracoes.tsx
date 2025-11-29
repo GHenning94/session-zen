@@ -68,6 +68,8 @@ const Configuracoes = () => {
   const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false)
   const [pendingNewEmail, setPendingNewEmail] = useState('')
   const [pendingNewPassword, setPendingNewPassword] = useState('')
+  const [emailChangePassword, setEmailChangePassword] = useState('')
+  const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
   
   // Ler tab da URL
   useEffect(() => {
@@ -322,22 +324,32 @@ const Configuracoes = () => {
   };
 
   const confirmEmailChange = async () => {
-    if (!pendingNewEmail) return;
+    if (!pendingNewEmail || !emailChangePassword) {
+      toast({
+        title: "Erro",
+        description: "Digite sua senha para confirmar",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsLoading(true);
     const oldEmail = user?.email || '';
     
     try {
-      // Chamar edge function para iniciar processo de mudança de email
+      // Chamar edge function para iniciar processo de mudança de email (com verificação de senha)
       const { data, error } = await supabase.functions.invoke('request-email-change', {
         body: {
           new_email: pendingNewEmail,
-          user_name: settings.nome
+          user_name: settings.nome,
+          password: emailChangePassword
         }
       });
 
       if (error) throw error;
-      if (!data?.success) throw new Error('Erro ao solicitar mudança de email');
+      if (!data?.success) {
+        throw new Error(data?.error || 'Erro ao solicitar mudança de email');
+      }
 
       toast({
         title: "E-mail de confirmação enviado",
@@ -345,6 +357,7 @@ const Configuracoes = () => {
       });
 
       setNewEmail('');
+      setEmailChangePassword('');
       setShowEmailChangeDialog(false);
 
       // Marcar que está em processo de mudança de email
@@ -359,6 +372,7 @@ const Configuracoes = () => {
         description: error.message,
         variant: "destructive"
       });
+      setEmailChangePassword('');
       setShowEmailChangeDialog(false);
     } finally {
       setIsLoading(false);
@@ -468,12 +482,29 @@ const Configuracoes = () => {
       return
     }
 
+    if (!deleteAccountPassword) {
+      toast({
+        title: "Senha necessária",
+        description: "Digite sua senha para confirmar a exclusão",
+        variant: "destructive"
+      })
+      return
+    }
+
     setIsDeletingAccount(true)
     
     try {
-      const { data, error } = await supabase.functions.invoke('delete-user-account')
+      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+        body: {
+          password: deleteAccountPassword
+        }
+      })
       
       if (error) throw error
+
+      if (!data?.success) {
+        throw new Error(data?.error || 'Não foi possível deletar a conta')
+      }
 
       localStorage.clear()
       sessionStorage.clear()
@@ -498,6 +529,7 @@ const Configuracoes = () => {
       setIsDeletingAccount(false)
       setShowDeleteConfirm(false)
       setDeleteConfirmText('')
+      setDeleteAccountPassword('')
     }
   }
 
@@ -1014,16 +1046,30 @@ const Configuracoes = () => {
               e remover todos os seus dados dos nossos servidores.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2">
-            <Label>Digite DELETAR para confirmar</Label>
-            <Input
-              value={deleteConfirmText}
-              onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder="DELETAR"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Digite sua senha</Label>
+              <Input
+                type="password"
+                value={deleteAccountPassword}
+                onChange={(e) => setDeleteAccountPassword(e.target.value)}
+                placeholder="Senha"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Digite DELETAR para confirmar</Label>
+              <Input
+                value={deleteConfirmText}
+                onChange={(e) => setDeleteConfirmText(e.target.value)}
+                placeholder="DELETAR"
+              />
+            </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setDeleteConfirmText('')}>
+            <AlertDialogCancel onClick={() => {
+              setDeleteConfirmText('')
+              setDeleteAccountPassword('')
+            }}>
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
@@ -1068,9 +1114,18 @@ const Configuracoes = () => {
               Ao prosseguir com a alteração do e-mail, você será deslogado da plataforma e precisará confirmar o novo e-mail através do link enviado. Após a confirmação, será necessário fazer login novamente com os novos dados.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="space-y-2">
+            <Label>Digite sua senha para confirmar</Label>
+            <Input
+              type="password"
+              value={emailChangePassword}
+              onChange={(e) => setEmailChangePassword(e.target.value)}
+              placeholder="Senha"
+            />
+          </div>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEmailChange} disabled={isLoading}>
+            <AlertDialogCancel onClick={() => setEmailChangePassword('')}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmEmailChange} disabled={isLoading || !emailChangePassword}>
               {isLoading ? 'Processando...' : 'Continuar'}
             </AlertDialogAction>
           </AlertDialogFooter>

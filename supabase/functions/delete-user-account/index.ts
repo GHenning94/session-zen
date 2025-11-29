@@ -39,6 +39,53 @@ Deno.serve(async (req) => {
     const userId = user.id;
     console.log(`Starting account deletion for user: ${userId}`);
 
+    // Get password from request body
+    const { password } = await req.json();
+
+    if (!password) {
+      throw new Error('Senha é obrigatória para confirmar a exclusão');
+    }
+
+    // Verify password
+    console.log('[Delete Account] Verificando senha do usuário');
+    const { error: signInError } = await supabaseAdmin.auth.signInWithPassword({
+      email: user.email!,
+      password: password,
+    });
+
+    if (signInError) {
+      console.error('[Delete Account] Senha incorreta:', signInError);
+      
+      // Get user name for email
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('nome')
+        .eq('user_id', userId)
+        .single();
+
+      const userName = profile?.nome || 'Usuário';
+
+      // Send security alert email
+      try {
+        await fetch(`${supabaseUrl}/functions/v1/send-security-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+          },
+          body: JSON.stringify({
+            email: user.email,
+            type: 'failed_account_deletion_attempt',
+            userName: userName
+          })
+        });
+      } catch (emailError) {
+        console.error('[Delete Account] Erro ao enviar notificação de falha:', emailError);
+      }
+
+      throw new Error('Senha incorreta');
+    }
+
     // Delete user data in proper order (respecting foreign key constraints)
     // Order matters: child tables first, then parent tables
 
