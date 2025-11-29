@@ -3,10 +3,14 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Shield, AlertTriangle, Activity, Clock } from "lucide-react";
+import { Shield, AlertTriangle, Activity, Clock, FileDown, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAdminReportExport } from "@/hooks/useAdminReportExport";
 
 export default function AdminLogs() {
   const [loading, setLoading] = useState(true);
@@ -14,6 +18,10 @@ export default function AdminLogs() {
   const [medicalLogs, setMedicalLogs] = useState<any[]>([]);
   const [adminSessions, setAdminSessions] = useState<any[]>([]);
   const [stats, setStats] = useState<any>({});
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const { generateLogsReport, isGenerating } = useAdminReportExport();
 
   useEffect(() => {
     loadLogs();
@@ -42,6 +50,18 @@ export default function AdminLogs() {
     }
   };
 
+  const handleExport = () => {
+    generateLogsReport(
+      { auditLogs, medicalLogs, adminSessions },
+      stats,
+      {
+        startDate,
+        endDate,
+        category: categoryFilter !== "all" ? categoryFilter : undefined
+      }
+    );
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -55,10 +75,59 @@ export default function AdminLogs() {
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Logs e Auditoria</h1>
-          <p className="text-muted-foreground">Monitore atividades e eventos do sistema</p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">Logs e Auditoria</h1>
+            <p className="text-muted-foreground">Monitore atividades e eventos do sistema</p>
+          </div>
+          <Button onClick={handleExport} disabled={isGenerating}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar PDF"}
+          </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Data Início</label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Data Fim</label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Categoria</label>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="audit">Auditoria</SelectItem>
+                    <SelectItem value="medical">Médico</SelectItem>
+                    <SelectItem value="sessions">Sessões Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>

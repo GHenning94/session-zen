@@ -3,11 +3,17 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Users, Activity, DollarSign, TrendingUp } from "lucide-react";
+import { Users, Activity, DollarSign, TrendingUp, FileDown, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { useAdminReportExport } from "@/hooks/useAdminReportExport";
 
 export default function AdminAnalytics() {
   const [loading, setLoading] = useState(true);
   const [analytics, setAnalytics] = useState<any>({});
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const { generateAnalyticsReport, isGenerating } = useAdminReportExport();
 
   useEffect(() => {
     loadAnalytics();
@@ -44,15 +50,54 @@ export default function AdminAnalytics() {
 
   const { database_stats, recent_activity, ga_property_id } = analytics;
 
+  const handleExport = () => {
+    generateAnalyticsReport(analytics, { startDate, endDate });
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground">
-            Métricas e estatísticas do sistema (Google Analytics: {ga_property_id})
-          </p>
+        <div className="flex justify-between items-start">
+          <div>
+            <h1 className="text-3xl font-bold">Analytics</h1>
+            <p className="text-muted-foreground">
+              Métricas e estatísticas do sistema (Google Analytics: {ga_property_id})
+            </p>
+          </div>
+          <Button onClick={handleExport} disabled={isGenerating}>
+            <FileDown className="h-4 w-4 mr-2" />
+            {isGenerating ? "Gerando..." : "Exportar PDF"}
+          </Button>
         </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filtros de Período
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Data Início</label>
+                <Input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-2 block">Data Fim</label>
+                <Input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
