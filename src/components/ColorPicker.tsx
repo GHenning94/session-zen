@@ -78,7 +78,7 @@ export const ColorPicker = ({
         <div className="space-y-6 py-4">
           <div>
             <Label className="text-sm font-medium mb-3 block">Cores Sólidas</Label>
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-6 gap-3">
               {COLOR_PALETTE.map((color) => (
                 <button
                   key={color.value}
