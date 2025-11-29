@@ -106,7 +106,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="flex-1 overflow-y-auto h-full">
+      <SidebarContent className="flex-1 overflow-y-auto">
         <SidebarMenu className="space-y-0.5 px-3">
           {menuItems.map((item) => {
             const isComingSoon = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
