@@ -60,6 +60,11 @@ const SheetContent = React.forwardRef<
     <SheetPrimitive.Content
       ref={ref}
       className={cn(sheetVariants({ side }), className)}
+      onCloseAutoFocus={(e) => {
+        // Ensure body overflow is reset when sheet closes
+        document.body.style.overflow = '';
+        document.body.style.pointerEvents = '';
+      }}
       {...props}
     >
       {children}
