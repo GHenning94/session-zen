@@ -493,14 +493,17 @@ const LandingPage = () => {
               <AnimateOnScroll className="max-w-3xl mx-auto text-center">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4"><div className="text-center">Organize seus <span className="bg-gradient-primary bg-clip-text text-transparent">{displayText}</span></div><div className="text-center">com facilidade</div></h1>
                 <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
-                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                <div className="flex flex-col gap-2 items-center">
                   <Button size="lg" className="bg-gradient-primary hover:opacity-90 text-lg px-8 py-6 text-white shadow-primary hover:shadow-elegant transition-all" onClick={() => handleGetStarted()}>
-                    <div className="flex flex-col items-start">
-                      <span>Comece a usar gratuitamente</span>
-                      <span className="text-xs text-white/80">Sem cartão de crédito</span>
-                    </div>
+                    Comece a usar gratuitamente
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
+                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                    Sem cartão de crédito
+                  </p>
                 </div>
 
                 <Mouse className="scroll-down-mouse mt-20" />
