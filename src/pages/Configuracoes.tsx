@@ -33,7 +33,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
-import { formatPhone, formatCRP, validatePassword } from "@/utils/inputMasks"
+import { formatPhone, formatCRP, formatCRM, validatePassword } from "@/utils/inputMasks"
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
 
 type AllSettings = Record<string, any>;
@@ -187,6 +187,10 @@ const Configuracoes = () => {
 
   const handleCRPChange = (value: string) => {
     handleSettingsChange('crp', formatCRP(value));
+  };
+
+  const handleCRMChange = (value: string) => {
+    handleSettingsChange('crp', formatCRM(value));
   };
 
   const handlePasswordChange = async () => {
@@ -517,14 +521,26 @@ const Configuracoes = () => {
                       placeholder="(00) 00000-0000"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>CRP</Label>
-                    <Input 
-                      value={settings.crp || ''} 
-                      onChange={(e) => handleCRPChange(e.target.value)}
-                      placeholder="00/00000"
-                    />
-                  </div>
+                  {settings.profissao === 'psicologo' && (
+                    <div className="space-y-2">
+                      <Label>CRP</Label>
+                      <Input 
+                        value={settings.crp || ''} 
+                        onChange={(e) => handleCRPChange(e.target.value)}
+                        placeholder="00/00000"
+                      />
+                    </div>
+                  )}
+                  {settings.profissao === 'psiquiatra' && (
+                    <div className="space-y-2">
+                      <Label>CRM</Label>
+                      <Input 
+                        value={settings.crp || ''} 
+                        onChange={(e) => handleCRMChange(e.target.value)}
+                        placeholder="000000-UF"
+                      />
+                    </div>
+                  )}
                   <div className="space-y-2">
                     <Label>Especialidade</Label>
                     <Input 
