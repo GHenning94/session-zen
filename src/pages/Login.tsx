@@ -135,6 +135,21 @@ const Login = () => {
     let shouldShow2FAModal = false
 
     try {
+      // ✅ VERIFICAR SE É EMAIL DO ADMIN ANTES DE TENTAR LOGIN
+      const { data: adminCheckData } = await supabase.functions.invoke('check-admin-email', {
+        body: { email: formData.email }
+      })
+
+      if (adminCheckData?.isAdmin) {
+        toast.error('Credenciais de administrador devem ser usadas em /admin/login', {
+          description: 'Você será redirecionado para a área administrativa.'
+        })
+        setTimeout(() => {
+          navigate('/admin/login')
+        }, 2000)
+        return
+      }
+
       const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
