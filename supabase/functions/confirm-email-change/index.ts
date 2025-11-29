@@ -46,6 +46,10 @@ serve(async (req) => {
       throw new Error('Nenhuma mudança de email pendente');
     }
 
+    // Obter email antigo e nome do usuário ANTES de atualizar
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profile.user_id);
+    const oldEmail = userData?.user?.email;
+
     console.log('[Confirm Email Change] Atualizando email no auth.users');
 
     // Atualizar email no auth.users usando admin API
@@ -58,10 +62,6 @@ serve(async (req) => {
       console.error('[Confirm Email Change] Erro ao atualizar auth.users:', updateAuthError);
       throw new Error('Erro ao atualizar email');
     }
-
-    // Obter email antigo e nome do usuário para notificação
-    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(profile.user_id);
-    const oldEmail = userData?.user?.email;
 
     const { data: profileData } = await supabaseAdmin
       .from('profiles')
