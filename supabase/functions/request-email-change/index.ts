@@ -60,12 +60,57 @@ serve(async (req) => {
       throw new Error('Usuário não autenticado');
     }
 
-    const { new_email, user_name } = await req.json();
+    const { new_email, user_name, password } = await req.json();
 
     console.log('[Request Email Change] Iniciando mudança de email para:', new_email);
 
     if (!new_email) {
       throw new Error('Novo email é obrigatório');
+    }
+
+    if (!password) {
+      throw new Error('Senha é obrigatória para confirmar a mudança');
+    }
+
+    // Verificar senha do usuário
+    console.log('[Request Email Change] Verificando senha do usuário');
+    const { error: signInError } = await supabaseClient.auth.signInWithPassword({
+      email: user.email!,
+      password: password,
+    });
+
+    if (signInError) {
+      console.error('[Request Email Change] Senha incorreta:', signInError);
+      
+      // Buscar nome do usuário para o email
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('nome')
+        .eq('user_id', user.id)
+        .single();
+
+      const userName = profile?.nome || user_name || 'Usuário';
+
+      // Enviar email de alerta de tentativa falha
+      try {
+        await fetch(`${SUPABASE_URL}/functions/v1/send-security-notification`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+          },
+          body: JSON.stringify({
+            email: user.email,
+            type: 'failed_email_change_attempt',
+            userName: userName,
+            newEmail: new_email
+          })
+        });
+      } catch (emailError) {
+        console.error('[Request Email Change] Erro ao enviar notificação de falha:', emailError);
+      }
+
+      throw new Error('Senha incorreta');
     }
 
     // Validar se o novo email já está em uso
