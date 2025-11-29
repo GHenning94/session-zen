@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_notifications: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          read: boolean
+          severity: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          read?: boolean
+          severity?: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          read?: boolean
+          severity?: string
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       admin_sessions: {
         Row: {
           created_at: string
@@ -1341,6 +1377,7 @@ export type Database = {
         Args: { client_user_id: string }
         Returns: boolean
       }
+      check_overdue_payments: { Args: never; Returns: undefined }
       check_rate_limit: {
         Args: {
           p_endpoint: string
@@ -1350,8 +1387,21 @@ export type Database = {
         }
         Returns: boolean
       }
+      check_unauthorized_attempts: { Args: never; Returns: undefined }
+      check_usage_spikes: { Args: never; Returns: undefined }
       cleanup_expired_2fa_codes: { Args: never; Returns: undefined }
       cleanup_expired_registration_tokens: { Args: never; Returns: undefined }
+      cleanup_old_notifications: { Args: never; Returns: undefined }
+      create_admin_notification: {
+        Args: {
+          p_message: string
+          p_metadata?: Json
+          p_severity?: string
+          p_title: string
+          p_type: string
+        }
+        Returns: string
+      }
       current_user_has_role: {
         Args: { _role: Database["public"]["Enums"]["app_role"] }
         Returns: boolean

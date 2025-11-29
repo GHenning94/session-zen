@@ -112,5 +112,11 @@ verify_jwt = false
 [functions.admin-system-config]
 verify_jwt = false
 
+[functions.admin-get-notifications]
+verify_jwt = false
+
+[functions.admin-mark-notification-read]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
