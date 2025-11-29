@@ -82,5 +82,11 @@ verify_jwt = true
 [functions.migrate-to-encrypted]
 verify_jwt = true
 
+[functions.admin-login]
+verify_jwt = false
+
+[functions.admin-verify-session]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
