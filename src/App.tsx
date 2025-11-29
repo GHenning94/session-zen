@@ -48,6 +48,7 @@ import PublicRegistration from "@/pages/PublicRegistration";
 import AuthConfirm from "@/pages/AuthConfirm";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
+import EmailChangeConfirmation from "@/pages/EmailChangeConfirmation";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
 import AdminSecurity from "@/pages/admin/AdminSecurity";
@@ -128,6 +129,7 @@ const App = () => (
           <Route path="/auth-confirm" element={<AuthConfirm />} />
           <Route path="/auth-callback" element={<AuthCallback />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
+                  <Route path="/email-change-confirmation" element={<EmailChangeConfirmation />} />
                   <Route path="/dashboard" element={
                     <ProtectedRoute>
                       <Dashboard />

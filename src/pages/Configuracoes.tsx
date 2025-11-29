@@ -35,12 +35,15 @@ import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
 import { formatPhone, formatCRP, formatCRM, validatePassword } from "@/utils/inputMasks"
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
+import { cleanupInvalidSession } from "@/utils/sessionCleanup"
+import { useNavigate } from "react-router-dom"
 
 type AllSettings = Record<string, any>;
 
 const Configuracoes = () => {
   const { toast } = useToast()
   const { user } = useAuth()
+  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
   const [settings, setSettings] = useState<AllSettings>({})
@@ -57,9 +60,14 @@ const Configuracoes = () => {
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const [changingPassword, setChangingPassword] = useState(false)
   const [changingEmail, setChangingEmail] = useState(false)
   const [newEmail, setNewEmail] = useState('')
+  const [showEmailChangeDialog, setShowEmailChangeDialog] = useState(false)
+  const [showPasswordChangeDialog, setShowPasswordChangeDialog] = useState(false)
+  const [pendingNewEmail, setPendingNewEmail] = useState('')
+  const [pendingNewPassword, setPendingNewPassword] = useState('')
   
   // Ler tab da URL
   useEffect(() => {
@@ -194,10 +202,19 @@ const Configuracoes = () => {
   };
 
   const handlePasswordChange = async () => {
-    if (!currentPassword || !newPassword || !confirmPassword) {
+    if (!currentPassword || !newPassword || !confirmNewPassword) {
       toast({
-        title: "Campos obrigatórios",
-        description: "Preencha todos os campos de senha.",
+        title: "Erro",
+        description: "Preencha todos os campos de senha",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      toast({
+        title: "Erro",
+        description: "As senhas não coincidem",
         variant: "destructive"
       });
       return;
@@ -206,51 +223,53 @@ const Configuracoes = () => {
     if (!validatePassword(newPassword)) {
       toast({
         title: "Senha inválida",
-        description: "A nova senha deve atender a todos os requisitos.",
+        description: "A senha deve atender a todos os requisitos de segurança",
         variant: "destructive"
       });
       return;
     }
 
-    if (newPassword !== confirmPassword) {
+    // Validar senha atual antes de mostrar o dialog
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: user?.email || '',
+      password: currentPassword,
+    });
+
+    if (signInError) {
       toast({
-        title: "Senhas não coincidem",
-        description: "A nova senha e a confirmação devem ser iguais.",
+        title: "Erro",
+        description: "Senha atual incorreta",
         variant: "destructive"
       });
       return;
     }
 
-    setChangingPassword(true);
+    // Mostrar dialog de confirmação
+    setPendingNewPassword(newPassword);
+    setShowPasswordChangeDialog(true);
+  };
+
+  const confirmPasswordChange = async () => {
+    setIsLoading(true);
     try {
-      // Verificar senha atual
-      const { error: signInError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: currentPassword
+      const { error } = await supabase.auth.updateUser({
+        password: pendingNewPassword
       });
-
-      if (signInError) {
-        toast({
-          title: "Senha atual incorreta",
-          description: "A senha atual está incorreta.",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Atualizar senha
-      const { error } = await supabase.auth.updateUser({ password: newPassword });
 
       if (error) throw error;
 
       toast({
-        title: "Senha atualizada",
-        description: "Sua senha foi alterada com sucesso.",
+        title: "Senha alterada",
+        description: "Você será redirecionado para fazer login novamente"
       });
 
       setCurrentPassword('');
       setNewPassword('');
-      setConfirmPassword('');
+      setConfirmNewPassword('');
+      setShowPasswordChangeDialog(false);
+
+      // Deslogar e redirecionar
+      await cleanupInvalidSession('Mudança de senha');
     } catch (error: any) {
       toast({
         title: "Erro ao alterar senha",
@@ -258,42 +277,65 @@ const Configuracoes = () => {
         variant: "destructive"
       });
     } finally {
-      setChangingPassword(false);
+      setIsLoading(false);
     }
   };
 
   const handleEmailChange = async () => {
-    if (!newEmail || !newEmail.includes('@')) {
+    if (!newEmail) {
       toast({
-        title: "E-mail inválido",
-        description: "Digite um e-mail válido.",
+        title: "Erro",
+        description: "Digite o novo e-mail",
         variant: "destructive"
       });
       return;
     }
 
-    setChangingEmail(true);
+    // Validar formato de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newEmail)) {
+      toast({
+        title: "Erro",
+        description: "Digite um e-mail válido",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Mostrar dialog de confirmação
+    setPendingNewEmail(newEmail);
+    setShowEmailChangeDialog(true);
+  };
+
+  const confirmEmailChange = async () => {
+    setIsLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ 
-        email: newEmail 
+        email: pendingNewEmail 
       });
 
       if (error) throw error;
 
       toast({
-        title: "Verificação enviada",
-        description: "Um e-mail de verificação foi enviado para o novo endereço. Confirme para concluir a alteração.",
+        title: "E-mail alterado",
+        description: "Você será deslogado. Verifique seu novo e-mail para confirmar a alteração.",
       });
 
       setNewEmail('');
+      setShowEmailChangeDialog(false);
+
+      // Deslogar e redirecionar para página de confirmação
+      await supabase.auth.signOut();
+      navigate(`/email-change-confirmation?email=${encodeURIComponent(pendingNewEmail)}`);
     } catch (error: any) {
       toast({
         title: "Erro ao alterar e-mail",
         description: error.message,
         variant: "destructive"
       });
+      setShowEmailChangeDialog(false);
     } finally {
-      setChangingEmail(false);
+      setIsLoading(false);
     }
   };
 
@@ -597,9 +639,9 @@ const Configuracoes = () => {
                 
                 <Button 
                   onClick={handleEmailChange} 
-                  disabled={changingEmail || !newEmail}
+                  disabled={isLoading || !newEmail}
                 >
-                  {changingEmail ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Enviando...
@@ -648,17 +690,17 @@ const Configuracoes = () => {
                   <Label>Confirmar Nova Senha</Label>
                   <Input 
                     type="password" 
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
                     placeholder="Confirme a nova senha"
                   />
                 </div>
                 
                 <Button 
                   onClick={handlePasswordChange} 
-                  disabled={changingPassword || !currentPassword || !newPassword || !confirmPassword}
+                  disabled={isLoading || !currentPassword || !newPassword || !confirmNewPassword}
                 >
-                  {changingPassword ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Alterando...
@@ -990,6 +1032,42 @@ const Configuracoes = () => {
           }}
         />
       )}
+
+      {/* Dialog de confirmação de mudança de email */}
+      <AlertDialog open={showEmailChangeDialog} onOpenChange={setShowEmailChangeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar mudança de e-mail</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao prosseguir com a alteração do e-mail, você será deslogado da plataforma e precisará confirmar o novo e-mail através do link enviado. Após a confirmação, será necessário fazer login novamente com os novos dados.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmEmailChange} disabled={isLoading}>
+              {isLoading ? 'Processando...' : 'Continuar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog de confirmação de mudança de senha */}
+      <AlertDialog open={showPasswordChangeDialog} onOpenChange={setShowPasswordChangeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmar mudança de senha</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ao prosseguir com a alteração da senha, você será deslogado da plataforma e precisará fazer login novamente com a nova senha.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPasswordChange} disabled={isLoading}>
+              {isLoading ? 'Processando...' : 'Continuar'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }
