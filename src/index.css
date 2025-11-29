@@ -4,10 +4,11 @@
 
 /* SaaS Profissional Design System - Cores HSL para psicanalistas e terapeutas */
 
-/* Controle global de overflow horizontal */
+/* Controle global de overflow e altura */
 html, body {
   overflow-x: hidden;
   max-width: 100vw;
+  height: 100%;
 }
 
 @layer base {

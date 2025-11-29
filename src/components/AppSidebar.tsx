@@ -84,7 +84,7 @@ export function AppSidebar() {
 
   return (
     <Sidebar
-      className="border-none m-3 rounded-2xl shadow-medium overflow-hidden flex flex-col max-h-[calc(100vh-24px)]"
+      className="border-none m-3 rounded-2xl shadow-medium flex flex-col"
       collapsible="icon"
       style={{
         // @ts-ignore
