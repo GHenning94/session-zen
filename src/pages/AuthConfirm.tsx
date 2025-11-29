@@ -80,6 +80,32 @@ const AuthConfirm = () => {
         else if (params.get('error')) {
           throw new Error(params.get('error_description') || 'Erro no link.');
         }
+        // Tratamento específico para mudança de email com nonce customizado
+        else if (type === 'email_change' && nonce) {
+          console.log('[AuthConfirm] 🔄 Mudança de email com nonce customizado');
+          
+          // Chamar diretamente a edge function confirm-email-change
+          const { data: confirmData, error: confirmError } = await supabase.functions.invoke(
+            'confirm-email-change',
+            { body: { nonce } }
+          );
+
+          if (confirmError) {
+            console.error('[AuthConfirm] ❌ Erro na confirmação:', confirmError.message);
+            throw new Error(confirmError.message || 'Erro ao alterar e-mail.');
+          }
+
+          if (!confirmData?.success) {
+            throw new Error('Falha na alteração do e-mail.');
+          }
+
+          console.log('[AuthConfirm] ✅ E-mail alterado com sucesso!');
+          toast.success('E-mail alterado com sucesso! Faça login com seu novo e-mail.');
+          setStatus('success');
+          
+          sessionStorage.removeItem('IS_CONFIRMING_AUTH');
+          return;
+        }
         else {
           throw new Error('Link inválido ou expirado.');
         }
