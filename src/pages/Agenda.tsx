@@ -414,8 +414,8 @@ const Agenda = () => {
         </div>
 
         {/* Resumo do Dia */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="shadow-soft">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
+          <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Sessões Hoje</CardTitle>
             </CardHeader>
@@ -425,7 +425,7 @@ const Agenda = () => {
             </CardContent>
           </Card>
           
-          <Card className="shadow-soft">
+          <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Receita Prevista</CardTitle>
             </CardHeader>
@@ -437,7 +437,7 @@ const Agenda = () => {
             </CardContent>
           </Card>
           
-          <Card className="shadow-soft">
+          <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Taxa de Ocupação</CardTitle>
             </CardHeader>
