@@ -107,20 +107,20 @@ const Signup = () => {
         return
       }
 
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth-confirm`,
-          data: {
+      const { data, error } = await supabase.functions.invoke('request-email-confirmation', {
+        body: {
+          email,
+          password,
+          user_metadata: {
             nome,
             profissao,
             referral_id: referralId
-          }
+          },
+          redirect_to: 'https://therapypro.app.br/auth-confirm'
         }
       })
 
-      if (error) throw error
+      if (error || data?.error) throw new Error(data?.error || error?.message)
 
       if (data.user) {
         // Se há plano selecionado, salvar no localStorage
@@ -167,12 +167,11 @@ const Signup = () => {
     if (resendCooldown > 0) return
     
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email
+      const { data, error } = await supabase.functions.invoke('resend-confirmation-email', {
+        body: { email }
       })
 
-      if (error) throw error
+      if (error || data?.error) throw new Error(data?.error || error?.message)
 
       toast({
         title: "E-mail reenviado!",

@@ -12,8 +12,8 @@ function getSiteUrl(req: Request): string {
   if (origin) {
     return origin;
   }
-  // Fallback to lovable app domain
-  return 'https://ykwszazxigjivjkagjmf.lovable.app';
+  // Fallback to production domain
+  return 'https://therapypro.app.br';
 }
 
 const corsHeaders = {
