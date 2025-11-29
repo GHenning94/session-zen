@@ -997,11 +997,11 @@ const Dashboard = () => {
         <ActionableNotificationsBanner />
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full">
         {isLoading ? (
           // Skeleton loading state
           Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="shadow-soft">
+            <Card key={index} className="shadow-soft w-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <Skeleton className="h-4 w-24" />
                 <Skeleton className="h-10 w-10 rounded-full" />
@@ -1014,7 +1014,7 @@ const Dashboard = () => {
           ))
         ) : (
           stats.map((stat, index) => (
-            <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow">
+            <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow w-full">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
                   {stat.title}
@@ -1313,16 +1313,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card>
                     <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-primary" />
                           <CardTitle>Receita Financeira</CardTitle>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto justify-center sm:justify-end">
                           <Button 
                             variant={chartPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('1')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             1 mês
                           </Button>
@@ -1330,6 +1331,7 @@ const Dashboard = () => {
                             variant={chartPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('3')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             3 meses
                           </Button>
@@ -1337,6 +1339,7 @@ const Dashboard = () => {
                             variant={chartPeriod === '6' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('6')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             6 meses
                           </Button>
@@ -1344,6 +1347,7 @@ const Dashboard = () => {
                             variant={chartPeriod === '12' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('12')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             1 ano
                           </Button>
@@ -1500,16 +1504,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-success" />
                           <CardTitle>Ticket Médio</CardTitle>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto justify-center sm:justify-end">
                           <Button 
                             variant={ticketPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('1')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             1 mês
                           </Button>
@@ -1517,6 +1522,7 @@ const Dashboard = () => {
                             variant={ticketPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('3')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             3 meses
                           </Button>
@@ -1524,6 +1530,7 @@ const Dashboard = () => {
                             variant={ticketPeriod === '6' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('6')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             6 meses
                           </Button>
@@ -1531,6 +1538,7 @@ const Dashboard = () => {
                             variant={ticketPeriod === '12' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('12')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             1 ano
                           </Button>
@@ -1654,16 +1662,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
                     <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between flex-wrap gap-4">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto justify-center sm:justify-end">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('1')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             1 mês
                           </Button>
@@ -1671,6 +1680,7 @@ const Dashboard = () => {
                             variant={canalPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('3')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             3 meses
                           </Button>
@@ -1678,6 +1688,7 @@ const Dashboard = () => {
                             variant={canalPeriod === '6' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('6')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             6 meses
                           </Button>
@@ -1685,6 +1696,7 @@ const Dashboard = () => {
                             variant={canalPeriod === '12' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('12')}
+                            className="whitespace-nowrap flex-shrink-0"
                           >
                             1 ano
                           </Button>

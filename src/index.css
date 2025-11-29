@@ -224,6 +224,16 @@
   .sidebar-button-shape {
     border-radius: 0.4rem !important; /* Valor intermediário perfeito */
   }
+  
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
 }
 
 /* Animated gradient border for Tutorial button */

@@ -421,8 +421,8 @@ const Clientes = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card className="shadow-soft">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
+          <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Total de Clientes Ativos</CardTitle>
             </CardHeader>
@@ -434,7 +434,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
           
-          <Card className="shadow-soft">
+          <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Plano Atual</CardTitle>
             </CardHeader>
@@ -446,7 +446,7 @@ const Clientes = () => {
             </CardContent>
           </Card>
           
-          <Card className="shadow-soft">
+          <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg">Total de Clientes Inativos</CardTitle>
             </CardHeader>
