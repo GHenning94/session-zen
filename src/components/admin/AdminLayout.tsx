@@ -22,30 +22,27 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
 
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="flex w-full bg-background">
         <AdminSidebar />
         
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header */}
-          <header className="h-16 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10">
-            <div className="flex h-full items-center justify-between px-6">
-              <div className="flex items-center gap-4">
-                <SidebarTrigger />
-                <div>
-                  <h1 className="text-xl font-bold">TherapyPro Admin</h1>
-                  <p className="text-xs text-muted-foreground">Painel Administrativo</p>
-                </div>
-              </div>
-              <Button variant="outline" onClick={handleLogout} className="gap-2">
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
+          <header className="h-16 bg-transparent flex items-center justify-between px-4 md:px-8 flex-shrink-0">
+            <div className="flex items-center gap-4">
+              <SidebarTrigger className="h-9 w-9 rounded-lg hover:bg-accent transition-colors" />
             </div>
+            
+            <Button variant="outline" onClick={handleLogout} className="gap-2">
+              <LogOut className="h-4 w-4" />
+              Sair
+            </Button>
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 overflow-auto">
-            {children}
+          <main className="flex-1 p-4 md:p-8">
+            <div className="w-full max-w-full">
+              {children}
+            </div>
           </main>
         </div>
       </div>
