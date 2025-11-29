@@ -50,6 +50,14 @@ Deno.serve(async (req) => {
     const adminEmail = Deno.env.get('ADMIN_EMAIL')
     const adminPassword = Deno.env.get('ADMIN_PASSWORD')
 
+    if (!adminEmail || !adminPassword) {
+      console.error('[Admin Login] Admin credentials not configured')
+      return new Response(
+        JSON.stringify({ error: 'Credenciais de administrador não configuradas' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
     if (email !== adminEmail || password !== adminPassword) {
       console.error('[Admin Login] Invalid credentials')
       return new Response(
@@ -58,43 +66,9 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Buscar usuário no Supabase para obter o ID
-    const { data: authData, error: authError } = await supabase.auth.admin.listUsers()
+    // Gerar ID único para esta sessão admin (não depende de auth.users)
+    const adminUserId = crypto.randomUUID()
     
-    if (authError) {
-      console.error('[Admin Login] Error fetching users:', authError)
-      return new Response(
-        JSON.stringify({ error: 'Erro ao buscar dados do usuário' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    const adminUser = authData.users.find(u => u.email === adminEmail)
-
-    if (!adminUser) {
-      console.error('[Admin Login] Admin user not found in database')
-      return new Response(
-        JSON.stringify({ error: 'Usuário admin não encontrado' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
-    // Verificar se o usuário tem role de admin
-    const { data: roleData, error: roleError } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', adminUser.id)
-      .eq('role', 'admin')
-      .single()
-
-    if (roleError || !roleData) {
-      console.error('[Admin Login] User is not an admin')
-      return new Response(
-        JSON.stringify({ error: 'Usuário não possui permissões de administrador' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
-
     // Criar sessão de admin
     const sessionToken = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000) // 12 horas
@@ -105,7 +79,7 @@ Deno.serve(async (req) => {
     const { error: sessionError } = await supabase
       .from('admin_sessions')
       .insert({
-        user_id: adminUser.id,
+        user_id: adminUserId,
         session_token: sessionToken,
         ip_address: clientIP,
         user_agent: userAgent,
@@ -122,7 +96,7 @@ Deno.serve(async (req) => {
 
     // Log da ação
     await supabase.from('audit_log').insert({
-      user_id: adminUser.id,
+      user_id: adminUserId,
       action: 'ADMIN_LOGIN',
       table_name: 'admin_sessions',
       new_values: { email, ip_address: clientIP },
@@ -134,7 +108,7 @@ Deno.serve(async (req) => {
       JSON.stringify({
         success: true,
         sessionToken,
-        userId: adminUser.id,
+        userId: adminUserId,
         expiresAt: expiresAt.toISOString(),
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

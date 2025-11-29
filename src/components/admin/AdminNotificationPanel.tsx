@@ -54,8 +54,8 @@ export const AdminNotificationPanel = () => {
 
   const loadNotifications = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const adminToken = localStorage.getItem('admin_session_token');
+      if (!adminToken) return;
 
       const params = new URLSearchParams();
       if (filterType !== "all") {
@@ -63,7 +63,7 @@ export const AdminNotificationPanel = () => {
       }
 
       const { data, error } = await supabase.functions.invoke('admin-get-notifications', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { 'x-admin-token': adminToken },
         body: { params: params.toString() }
       });
 
@@ -80,11 +80,11 @@ export const AdminNotificationPanel = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const adminToken = localStorage.getItem('admin_session_token');
+      if (!adminToken) return;
 
       const { error } = await supabase.functions.invoke('admin-mark-notification-read', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { 'x-admin-token': adminToken },
         body: { notification_id: notificationId }
       });
 
@@ -101,11 +101,11 @@ export const AdminNotificationPanel = () => {
 
   const markAllAsRead = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
+      const adminToken = localStorage.getItem('admin_session_token');
+      if (!adminToken) return;
 
       const { error } = await supabase.functions.invoke('admin-mark-notification-read', {
-        headers: { Authorization: `Bearer ${session.access_token}` },
+        headers: { 'x-admin-token': adminToken },
         body: { mark_all: true }
       });
 
