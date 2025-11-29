@@ -1,7 +1,9 @@
-// Previne o flash visual durante mudanças de tema
+// Previne o flash visual durante mudanças de tema e cores
 // Aplicado no início da aplicação antes da hidratação do React
 
 const THEME_CACHE_KEY = 'user-theme-cache'
+const COLOR_CACHE_KEY = 'user-color-cache'
+const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 const VALID_THEMES = ['light', 'dark'] as const
 
 type Theme = (typeof VALID_THEMES)[number]
@@ -13,6 +15,30 @@ export const setDocumentTheme = (theme: Theme) => {
   root.setAttribute('data-theme', theme)
 }
 
+// Aplicar cor no DOM
+const applyColorToDocument = (colorValue: string) => {
+  if (!colorValue) return
+  
+  const cleanColor = colorValue.replace(/[^\d\s%]/g, '').trim()
+  
+  // Update CSS custom properties
+  document.documentElement.style.setProperty('--primary', cleanColor)
+  document.documentElement.style.setProperty('--sidebar-primary', cleanColor)
+  
+  // Create variations
+  const hslValues = cleanColor.match(/\d+/g)
+  if (hslValues && hslValues.length >= 3) {
+    const [h, s, l] = hslValues
+    const lighterL = Math.min(85, parseInt(l) + 15)
+    const darkerL = Math.max(25, parseInt(l) - 10)
+    
+    document.documentElement.style.setProperty('--primary-glow', `${h} ${s}% ${lighterL}%`)
+    
+    const gradient = `linear-gradient(135deg, hsl(${h} ${s}% ${l}%), hsl(${h} ${s}% ${darkerL}%))`
+    document.documentElement.style.setProperty('--gradient-primary', gradient)
+  }
+}
+
 // Utilitário: detecta se é página pública que deve forçar light
 const isPublicPage = () => {
   if (typeof window === 'undefined') return false
@@ -20,7 +46,7 @@ const isPublicPage = () => {
   return path === '/' || path === '/login' || path === '/signup' || path.startsWith('/agendar/')
 }
 
-// Função para aplicar tema instantaneamente no DOM
+// Função para aplicar tema e cor instantaneamente no DOM
 export const applyThemeInstantly = () => {
   if (typeof window === 'undefined') return
 
@@ -33,21 +59,31 @@ export const applyThemeInstantly = () => {
   // Lê preferências
   const currentUser = localStorage.getItem('sb-supabase-auth-token')
   let themeToApply: 'light' | 'dark' = 'light'
+  let colorToApply = DEFAULT_COLOR
 
   try {
     if (isPublicPage()) {
       themeToApply = 'light'
+      colorToApply = DEFAULT_COLOR
     } else if (currentUser) {
       const authData = JSON.parse(currentUser)
       const userId = authData?.user?.id
       if (userId) {
-        const cacheKey = `${THEME_CACHE_KEY}_${userId}`
-        const cachedTheme = localStorage.getItem(cacheKey) as 'light' | 'dark' | null
+        // Carregar tema
+        const themeCacheKey = `${THEME_CACHE_KEY}_${userId}`
+        const cachedTheme = localStorage.getItem(themeCacheKey) as 'light' | 'dark' | null
         if (cachedTheme === 'dark' || cachedTheme === 'light') {
           themeToApply = cachedTheme
         } else {
           const local = localStorage.getItem('theme') as 'light' | 'dark' | null
           if (local === 'dark' || local === 'light') themeToApply = local
+        }
+        
+        // Carregar cor
+        const colorCacheKey = `${COLOR_CACHE_KEY}_${userId}`
+        const cachedColor = localStorage.getItem(colorCacheKey)
+        if (cachedColor) {
+          colorToApply = cachedColor
         }
       }
     } else {
@@ -55,12 +91,13 @@ export const applyThemeInstantly = () => {
       if (local === 'dark' || local === 'light') themeToApply = local
     }
   } catch (error) {
-    console.warn('Erro ao ler preferências de tema:', error)
+    console.warn('Erro ao ler preferências:', error)
   }
 
-  // Aplica imediatamente usando helper para evitar flicker
+  // Aplica tema e cor imediatamente para evitar flicker
   setDocumentTheme(themeToApply)
   localStorage.setItem('theme', themeToApply)
+  applyColorToDocument(colorToApply)
  
   return themeToApply
 }
