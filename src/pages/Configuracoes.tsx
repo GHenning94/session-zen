@@ -231,34 +231,35 @@ const Configuracoes = () => {
       return;
     }
 
-    // Validar senha atual antes de mostrar o dialog
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email: user?.email || '',
-      password: currentPassword,
-    });
-
-    if (signInError) {
-      toast({
-        title: "Erro",
-        description: "Senha atual incorreta",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Mostrar dialog de confirmação
+    // Armazenar a senha atual e mostrar dialog de confirmação
     setPendingNewPassword(newPassword);
     setShowPasswordChangeDialog(true);
   };
 
   const confirmPasswordChange = async () => {
-    setIsLoading(true);
+    setChangingPassword(true);
     try {
-      const { error } = await supabase.auth.updateUser({
+      // Primeiro, validar a senha atual tentando fazer reauthentication
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
+      });
+
+      if (authError) {
+        toast({
+          title: "Erro",
+          description: "Senha atual incorreta",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Se a validação passou, atualizar a senha
+      const { error: updateError } = await supabase.auth.updateUser({
         password: pendingNewPassword
       });
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       // Enviar notificação de segurança por email
       try {
@@ -275,7 +276,7 @@ const Configuracoes = () => {
       }
 
       toast({
-        title: "Senha alterada",
+        title: "Senha alterada com sucesso!",
         description: "Você será redirecionado para fazer login novamente"
       });
 
@@ -284,16 +285,19 @@ const Configuracoes = () => {
       setConfirmNewPassword('');
       setShowPasswordChangeDialog(false);
 
-      // Deslogar e redirecionar
-      await cleanupInvalidSession('Mudança de senha');
+      // Aguardar 2 segundos para o usuário ver a mensagem
+      setTimeout(async () => {
+        await cleanupInvalidSession('Mudança de senha');
+      }, 2000);
     } catch (error: any) {
+      console.error('Erro ao alterar senha:', error);
       toast({
         title: "Erro ao alterar senha",
-        description: error.message,
+        description: error.message || "Não foi possível alterar a senha",
         variant: "destructive"
       });
     } finally {
-      setIsLoading(false);
+      setChangingPassword(false);
     }
   };
 
@@ -730,6 +734,7 @@ const Configuracoes = () => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Digite sua senha atual"
+                    autoComplete="current-password"
                   />
                 </div>
                 
@@ -740,6 +745,7 @@ const Configuracoes = () => {
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="Digite a nova senha"
+                    autoComplete="new-password"
                   />
                   {newPassword && <PasswordRequirements password={newPassword} />}
                 </div>
@@ -751,14 +757,15 @@ const Configuracoes = () => {
                     value={confirmNewPassword}
                     onChange={(e) => setConfirmNewPassword(e.target.value)}
                     placeholder="Confirme a nova senha"
+                    autoComplete="new-password"
                   />
                 </div>
                 
                 <Button 
                   onClick={handlePasswordChange} 
-                  disabled={isLoading || !currentPassword || !newPassword || !confirmNewPassword}
+                  disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
                 >
-                  {isLoading ? (
+                  {changingPassword ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Alterando...
@@ -1138,13 +1145,17 @@ const Configuracoes = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar mudança de senha</AlertDialogTitle>
             <AlertDialogDescription>
-              Ao prosseguir com a alteração da senha, você será deslogado da plataforma e precisará fazer login novamente com a nova senha.
+              Ao prosseguir com a alteração da senha, você será deslogado da plataforma e precisará fazer login novamente com a nova senha. 
+              Esta ação não pode ser desfeita e você precisará da nova senha para acessar sua conta.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmPasswordChange} disabled={isLoading}>
-              {isLoading ? 'Processando...' : 'Continuar'}
+            <AlertDialogCancel onClick={() => {
+              setCurrentPassword('');
+              setPendingNewPassword('');
+            }}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmPasswordChange} disabled={changingPassword}>
+              {changingPassword ? 'Processando...' : 'Confirmar e Deslogar'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
