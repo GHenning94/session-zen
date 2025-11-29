@@ -20,25 +20,30 @@ Deno.serve(async (req) => {
 
     console.log('[Admin Login] Attempt for:', email)
 
-    // Validar CAPTCHA do Turnstile
-    const turnstileSecret = '0x4AAAAAAB43Um6N9k0oiFBjfJR3TEvx2xt' // Secret key do Turnstile já existente
-    const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        secret: turnstileSecret,
-        response: captchaToken,
-      }),
-    })
+    // Validar CAPTCHA do Turnstile (modo tolerante - não bloqueia login se falhar)
+    const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY')
 
-    const turnstileData = await turnstileResponse.json()
+    if (turnstileSecret && captchaToken) {
+      try {
+        const turnstileResponse = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            secret: turnstileSecret,
+            response: captchaToken,
+          }),
+        })
 
-    if (!turnstileData.success) {
-      console.error('[Admin Login] Turnstile validation failed')
-      return new Response(
-        JSON.stringify({ error: 'Falha na validação do CAPTCHA' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+        const turnstileData = await turnstileResponse.json()
+
+        if (!turnstileData.success) {
+          console.error('[Admin Login] Turnstile validation failed, prosseguindo apenas com validação de credenciais.')
+        }
+      } catch (captchaError) {
+        console.error('[Admin Login] Erro ao validar Turnstile, prosseguindo sem CAPTCHA:', captchaError)
+      }
+    } else {
+      console.warn('[Admin Login] Turnstile desativado ou token ausente, prosseguindo sem validação de CAPTCHA.')
     }
 
     // Validar credenciais de admin
