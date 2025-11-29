@@ -50,6 +50,8 @@ import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
 import AdminLogin from "@/pages/AdminLogin";
 import AdminDashboard from "@/pages/admin/AdminDashboard";
+import AdminSecurity from "@/pages/admin/AdminSecurity";
+import AdminUsers from "@/pages/admin/AdminUsers";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -231,6 +233,22 @@ const App = () => (
                     element={
                       <AdminProtectedRoute>
                         <AdminDashboard />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/security" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminSecurity />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/users" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminUsers />
                       </AdminProtectedRoute>
                     } 
                   />

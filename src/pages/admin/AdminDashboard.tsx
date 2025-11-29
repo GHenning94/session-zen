@@ -1,8 +1,7 @@
 import { useState } from "react"
-import { useNavigate } from "react-router-dom"
-import { toast } from "sonner"
+import { AdminLayout } from "@/components/admin/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
+import { useNavigate } from "react-router-dom"
 import { 
   Shield, 
   Users, 
@@ -11,7 +10,6 @@ import {
   FileText, 
   Settings, 
   AlertTriangle,
-  LogOut,
   Activity,
   DollarSign,
   UserCheck,
@@ -29,14 +27,6 @@ const AdminDashboard = () => {
     systemHealth: "Excelente"
   })
 
-  const handleLogout = () => {
-    localStorage.removeItem('admin_session_token')
-    localStorage.removeItem('admin_user_id')
-    localStorage.removeItem('admin_session_expires')
-    toast.success('Logout realizado com sucesso')
-    navigate('/admin/login')
-  }
-
   const quickActions = [
     { title: "Criptografia e Segurança", icon: Shield, path: "/admin/security", color: "text-red-600" },
     { title: "Usuários", icon: Users, path: "/admin/users", color: "text-blue-600" },
@@ -47,20 +37,8 @@ const AdminDashboard = () => {
   ]
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted/20 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-4xl font-bold text-foreground">Painel Administrativo</h1>
-            <p className="text-muted-foreground mt-1">TherapyPro - Gestão Completa</p>
-          </div>
-          <Button variant="outline" onClick={handleLogout} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
-        </div>
-
+    <AdminLayout>
+      <div className="p-6 space-y-6 max-w-7xl mx-auto">
         {/* Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500">
@@ -168,7 +146,7 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AdminLayout>
   )
 }
 
