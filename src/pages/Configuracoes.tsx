@@ -64,7 +64,7 @@ const Configuracoes = () => {
   // Ler tab da URL
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['profile', 'security', 'preferences', 'platform-payments', 'bank-details', 'notifications', 'encryption'].includes(tab)) {
+    if (tab && ['profile', 'security', 'preferences', 'platform-payments', 'bank-details', 'notifications'].includes(tab)) {
       setActiveTab(tab)
     }
   }, [searchParams])
@@ -440,14 +440,13 @@ const Configuracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-7">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile">Perfil</TabsTrigger>
             <TabsTrigger value="security">Segurança</TabsTrigger>
             <TabsTrigger value="preferences">Preferências</TabsTrigger>
             <TabsTrigger value="platform-payments">Assinatura</TabsTrigger>
             <TabsTrigger value="bank-details">Dados Bancários</TabsTrigger>
             <TabsTrigger value="notifications">Notificações</TabsTrigger>
-            <TabsTrigger value="encryption">Criptografia</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-6">
@@ -918,10 +917,6 @@ const Configuracoes = () => {
                 </Button>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="encryption" className="space-y-6">
-            <EncryptionAuditReport />
           </TabsContent>
         </Tabs>
       </div>

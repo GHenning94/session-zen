@@ -58,6 +58,8 @@ import AdminContent from "@/pages/admin/AdminContent";
 import AdminLogs from "@/pages/admin/AdminLogs";
 import AdminSystemConfig from "@/pages/admin/AdminSystemConfig";
 import AdminNotifications from "@/pages/admin/AdminNotifications";
+import AdminActivity from "@/pages/admin/AdminActivity";
+import AdminRoles from "@/pages/admin/AdminRoles";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -311,6 +313,22 @@ const App = () => (
                     element={
                       <AdminProtectedRoute>
                         <AdminNotifications />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/activity" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminActivity />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/admin/roles" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminRoles />
                       </AdminProtectedRoute>
                     } 
                   />
