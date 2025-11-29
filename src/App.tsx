@@ -48,6 +48,9 @@ import PublicRegistration from "@/pages/PublicRegistration";
 import AuthConfirm from "@/pages/AuthConfirm";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
+import AdminLogin from "@/pages/AdminLogin";
+import AdminDashboard from "@/pages/admin/AdminDashboard";
+import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 
@@ -220,6 +223,18 @@ const App = () => (
                     </Suspense>
                   } />
                   <Route path="/register/:token" element={<PublicRegistration />} />
+                  
+                  {/* Admin Routes */}
+                  <Route path="/admin/login" element={<AdminLogin />} />
+                  <Route 
+                    path="/admin" 
+                    element={
+                      <AdminProtectedRoute>
+                        <AdminDashboard />
+                      </AdminProtectedRoute>
+                    } 
+                  />
+                  
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={
                     <Suspense fallback={<PageLoading />}>
