@@ -73,7 +73,14 @@ Deno.serve(async (req) => {
     const sessionToken = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000) // 12 horas
 
-    const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip')
+    // Extrair apenas o primeiro IP da lista (o IP do cliente real)
+    const forwardedFor = req.headers.get('x-forwarded-for')
+    const firstIP = forwardedFor 
+      ? forwardedFor.split(',')[0].trim()
+      : req.headers.get('x-real-ip')
+    
+    // Validar se é um IP válido, caso contrário usar null
+    const clientIP = firstIP && /^[\d.:a-fA-F]+$/.test(firstIP) ? firstIP : null
     const userAgent = req.headers.get('user-agent')
 
     const { error: sessionError } = await supabase
