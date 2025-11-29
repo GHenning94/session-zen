@@ -41,10 +41,10 @@ export function Layout({ children }: LayoutProps) {
   
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background overflow-x-hidden">
+      <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0 overflow-x-hidden">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Header transparente */}
           <header className="h-16 bg-transparent flex items-center justify-between px-4 md:px-8 flex-shrink-0">
             <div className="flex items-center gap-4">
@@ -58,8 +58,8 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-4 md:p-8 overflow-x-hidden">
-            <div className="w-full max-w-full overflow-x-auto">
+          <main className="flex-1 p-4 md:p-8">
+            <div className="w-full max-w-full">
               {children}
             </div>
           </main>
