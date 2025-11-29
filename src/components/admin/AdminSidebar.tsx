@@ -1,4 +1,4 @@
-import { Shield, Users, CreditCard, BarChart3, FileText, Settings, AlertTriangle, Home, Bell } from "lucide-react"
+import { Shield, Users, CreditCard, BarChart3, FileText, Settings, AlertTriangle, Home, Bell, Activity } from "lucide-react"
 import { NavLink, useLocation } from "react-router-dom"
 import {
   Sidebar,
@@ -16,10 +16,11 @@ const menuItems = [
   { title: "Dashboard", url: "/admin", icon: Home, end: true },
   { title: "Criptografia e Segurança", url: "/admin/security", icon: Shield },
   { title: "Usuários", url: "/admin/users", icon: Users },
+  { title: "Roles e Permissões", url: "/admin/roles", icon: Shield },
+  { title: "Atividades", url: "/admin/activity", icon: Activity },
   { title: "Pagamentos", url: "/admin/payments", icon: CreditCard },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Conteúdo", url: "/admin/content", icon: FileText },
-  { title: "Configurações", url: "/admin/config", icon: Settings },
   { title: "Logs e Auditoria", url: "/admin/logs", icon: AlertTriangle },
   { title: "Notificações", url: "/admin/notifications", icon: Bell },
 ]
@@ -57,10 +58,10 @@ export function AdminSidebar() {
                       to={item.url}
                       end={item.end}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors ${
+                        `flex items-center gap-3 rounded-lg px-3 py-2 text-sm transition-colors text-foreground ${
                           isActive
                             ? "bg-primary text-primary-foreground font-medium"
-                            : "hover:bg-muted"
+                            : "hover:bg-muted/50"
                         }`
                       }
                     >
