@@ -2,7 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const SENDPULSE_API_ID = Deno.env.get('SENDPULSE_API_ID');
 const SENDPULSE_API_SECRET = Deno.env.get('SENDPULSE_API_SECRET');
-const SITE_URL = Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app') || 'https://therapypro.lovable.app';
+const SITE_URL = 'https://therapypro.app.br';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
