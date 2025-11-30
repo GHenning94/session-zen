@@ -117,7 +117,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           genero: editingClient.genero || "",
           planoSaude: editingClient.plano_saude || "",
           tratamento: editingClient.tratamento || "",
-          medicamentos: editingClient.medicamentos || [],
+          medicamentos: Array.isArray(editingClient.medicamentos) ? editingClient.medicamentos : [],
           contatoEmergencia1Nome: editingClient.contato_emergencia_1_nome || "",
           contatoEmergencia1Telefone: editingClient.contato_emergencia_1_telefone || "",
           contatoEmergencia2Nome: editingClient.contato_emergencia_2_nome || "",
@@ -129,6 +129,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           ehCriancaAdolescente: editingClient.eh_crianca_adolescente || false,
           emergenciaIgualPais: editingClient.emergencia_igual_pais || false
         })
+        setCurrentMedicamento("")
       } else {
         // Reset form when not editing (opening for new client)
         resetForm()
@@ -249,7 +250,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         profissao: newClient.profession || null,
         plano_saude: newClient.planoSaude || null,
         tratamento: newClient.tratamento || null,
-        medicamentos: newClient.medicamentos.length > 0 ? newClient.medicamentos : null,
+        medicamentos: (Array.isArray(newClient.medicamentos) && newClient.medicamentos.length > 0) ? newClient.medicamentos : null,
         contato_emergencia_1_nome: newClient.contatoEmergencia1Nome || null,
         contato_emergencia_1_telefone: newClient.contatoEmergencia1Telefone || null,
         contato_emergencia_2_nome: newClient.contatoEmergencia2Nome || null,

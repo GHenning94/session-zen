@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { Loader2, User, CheckCircle, Stethoscope } from "lucide-react"
+import { Loader2, User, CheckCircle, Stethoscope, Plus, Trash2 } from "lucide-react"
 import { PublicAvatarUpload } from "@/components/PublicAvatarUpload"
 import "./PublicRegistration.styles.css"
 
@@ -137,10 +137,22 @@ const PublicRegistration = () => {
     }))
   }
 
+  const [currentMedicamento, setCurrentMedicamento] = useState("")
+
   const handleMedicamentosChange = (value: string) => {
-    // CORREÇÃO: Não enviar array vazio, enviar array vazio real para evitar '[]'
-    const medicamentos = value.split(',').map(med => med.trim()).filter(med => med)
-    handleInputChange('medicamentos', medicamentos.length > 0 ? medicamentos : [])
+    const medicamentos = value.split(',').map(med => med.trim()).filter(med => med.length > 0)
+    handleInputChange('medicamentos', medicamentos)
+  }
+
+  const addMedicamento = () => {
+    if (currentMedicamento.trim()) {
+      handleInputChange('medicamentos', [...formData.medicamentos, currentMedicamento.trim()])
+      setCurrentMedicamento("")
+    }
+  }
+
+  const removeMedicamento = (index: number) => {
+    handleInputChange('medicamentos', formData.medicamentos.filter((_, i) => i !== index))
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -501,14 +513,51 @@ const PublicRegistration = () => {
               {/* SEMPRE VISÍVEL - Medicamentos */}
               <div className="space-y-2">
                 <Label htmlFor="medicamentos" className="text-gray-900">Medicamento:</Label>
-                <Textarea
-                  id="medicamentos"
-                  value={formData.medicamentos.join(', ')}
-                  onChange={(e) => handleMedicamentosChange(e.target.value)}
-                  placeholder="Separe por vírgula"
-                  rows={2}
-                  className="bg-white text-gray-900"
-                />
+                <div className="flex gap-2">
+                  <Input
+                    id="medicamentos"
+                    placeholder="Digite o medicamento"
+                    value={currentMedicamento}
+                    onChange={(e) => setCurrentMedicamento(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addMedicamento()
+                      }
+                    }}
+                    className="flex-1 bg-white text-gray-900"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addMedicamento}
+                    disabled={!currentMedicamento.trim()}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Adicionar
+                  </Button>
+                </div>
+
+                {formData.medicamentos.length > 0 && (
+                  <div className="mt-2 space-y-2">
+                    <Label className="text-sm text-gray-600">Medicamentos adicionados:</Label>
+                    <div className="space-y-2">
+                      {formData.medicamentos.map((med, index) => (
+                        <div key={index} className="flex items-center justify-between bg-gray-100 p-2 rounded">
+                          <span className="text-sm text-gray-900">{med}</span>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeMedicamento(index)}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Switch Criança/Adolescente - SEMPRE visível em ambos os modos */}
