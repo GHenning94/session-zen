@@ -204,8 +204,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       console.log('[useAuth] Limpando cache do usuário:', user.id);
       
       // Limpar cache de tema
-      const cacheKey = `user-theme-cache_${user.id}`
-      localStorage.removeItem(cacheKey)
+      const themeCacheKey = `user-theme-cache_${user.id}`
+      localStorage.removeItem(themeCacheKey)
+      
+      // Limpar cache de cor
+      const colorCacheKey = `user-color-cache_${user.id}`
+      localStorage.removeItem(colorCacheKey)
       
       // Limpar caches de dados
       const cacheKeys = [

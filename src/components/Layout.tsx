@@ -7,6 +7,7 @@ import { NotificationPermissionBanner } from "@/components/NotificationPermissio
 import { useAuth } from "@/hooks/useAuth"
 import { useUserTheme } from "@/hooks/useUserTheme"
 import { useInstantTheme } from "@/hooks/useInstantTheme"
+import { useColorTheme } from "@/hooks/useColorTheme"
 import { Skeleton } from "@/components/ui/skeleton"
 
 interface LayoutProps {
@@ -21,6 +22,9 @@ export function Layout({ children }: LayoutProps) {
   
   // Load and apply user's theme preference
   useUserTheme()
+  
+  // Load and apply user's color preference
+  useColorTheme()
   
   // Show loading state while authenticating
   if (loading) {
