@@ -307,7 +307,7 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- CORREÇÃO FINAL: RESTAURANDO A LÓGICA ORIGINAL DO SCROLL HORIZONTAL ---
+  // --- RESTAURANDO A LÓGICA ORIGINAL DO SCROLL HORIZONTAL ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (!mediaQuery.matches) return;
@@ -325,9 +325,8 @@ const LandingPage = () => {
       const gap = 32;
       const offset = cardWidth + gap;
       
-      // RESTAURANDO VARIÁVEIS ORIGINAIS
       const totalScroll = track.scrollWidth - window.innerWidth;
-      const animationDistance = totalScroll - (2 * offset); // Esta era a variável chave no código inicial.
+      const animationDistance = totalScroll - (2 * offset);
 
       gsap.fromTo(track,
         {
@@ -341,7 +340,7 @@ const LandingPage = () => {
             pin: true,
             scrub: 1.8,
             start: `top top`,
-            end: () => `+=${animationDistance}`, // Restaurando o cálculo original
+            end: () => `+=${animationDistance}`,
             invalidateOnRefresh: true,
             onUpdate: (self: any) => {
               const viewportCenter = window.innerWidth / 2;
@@ -533,11 +532,11 @@ const LandingPage = () => {
                     Comece a usar gratuitamente
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
-                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                    {/* CORREÇÃO DA MENSAGEM */}
-                    <Lock className="w-4 h-4 text-primary" />
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5 mt-2"> 
+                    {/* CORREÇÃO DO ÍCONE E MENSAGEM */}
+                    <CheckCircle className="w-4 h-4 text-primary" />
                     Comece em 2 minutos sem cartão de crédito
-                    {/* FIM DA CORREÇÃO DA MENSAGEM */}
+                    {/* FIM DA CORREÇÃO */}
                   </p>
                 </div>
 
