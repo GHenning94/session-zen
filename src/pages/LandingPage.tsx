@@ -47,7 +47,7 @@ interface Testimonial {
   name: string;
   role: string;
   text: string;
-  imgSrc: string; // Garantindo que o tipo use imgSrc
+  imgSrc: string;
 }
 
 // --- HOOKS E COMPONENTES AUXILIARES ---
@@ -307,7 +307,7 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- RESTAURANDO A LÓGICA ORIGINAL DO SCROLL HORIZONTAL ---
+  // --- ANIMAÇÃO HORIZONTAL (Otimizada para Fluidez) ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (!mediaQuery.matches) return;
@@ -338,10 +338,13 @@ const LandingPage = () => {
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
-            scrub: 1.8,
+            scrub: 1, // Reduzido de 1.8 para 1 para evitar lag
             start: `top top`,
             end: () => `+=${animationDistance}`,
             invalidateOnRefresh: true,
+            anticipatePin: 1, // Ajuda a evitar o pulo na entrada do pin
+            fastScrollEnd: true, // Libera o scroll se o usuário passar rápido
+            preventOverlaps: true, // Previne conflitos de altura
             onUpdate: (self: any) => {
               const viewportCenter = window.innerWidth / 2;
               
@@ -367,7 +370,7 @@ const LandingPage = () => {
     return () => ctx.revert();
   }, []);
 
-  // --- ANIMAÇÃO DE CARTAS EMPILHADAS (MANTIDA ESTÁVEL) ---
+  // --- ANIMAÇÃO DE CARTAS EMPILHADAS (Otimizada para Fluidez) ---
   useLayoutEffect(() => {
     const pinEl = stackingPinRef.current;
     if (!pinEl) return;
@@ -388,8 +391,11 @@ const LandingPage = () => {
           pin: true,
           start: "top top",
           end: `+=${totalScrollDistance}`, 
-          scrub: 1,
+          scrub: 1, // Scrub mais responsivo
           invalidateOnRefresh: true,
+          anticipatePin: 1, // Suaviza a entrada
+          fastScrollEnd: true, // Evita travamento em scroll rápido
+          preventOverlaps: true,
         },
       });
       
@@ -533,10 +539,8 @@ const LandingPage = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                   <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5 mt-2"> 
-                    {/* CORREÇÃO DO ÍCONE E MENSAGEM */}
                     <CheckCircle className="w-4 h-4 text-primary" />
                     Comece em 2 minutos sem cartão de crédito
-                    {/* FIM DA CORREÇÃO */}
                   </p>
                 </div>
 
