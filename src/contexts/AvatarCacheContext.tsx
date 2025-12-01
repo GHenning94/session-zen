@@ -1,6 +1,5 @@
 import { createContext, useContext, ReactNode, useCallback } from 'react'
 import { getSignedUrl } from '@/utils/storageUtils'
-import { getOptimizedImageUrl, IMAGE_PRESETS } from '@/utils/imageTransformUtils'
 
 /**
  * Cache global de avatares com expiração automática
@@ -73,7 +72,7 @@ export const AvatarCacheProvider = ({ children }: AvatarCacheProviderProps) => {
         return url
       }
 
-      // Para storage paths, gerar signed URL com transformações
+      // Para storage paths, gerar signed URL (sem transformações pois o bucket é privado)
       const signedUrl = await getSignedUrl(path, 3600) // 1h
 
       if (!signedUrl) {
@@ -81,17 +80,14 @@ export const AvatarCacheProvider = ({ children }: AvatarCacheProviderProps) => {
         return null
       }
 
-      // Aplicar transformações de imagem para otimizar
-      const optimizedUrl = getOptimizedImageUrl(path, IMAGE_PRESETS.avatar[size])
-
-      // Cachear
+      // Cachear a signed URL diretamente (não usar transformações em buckets privados)
       avatarCache.set(cacheKey, {
-        url: optimizedUrl,
+        url: signedUrl,
         expires: Date.now() + CACHE_DURATION,
         size
       })
 
-      return optimizedUrl
+      return signedUrl
     } catch (error) {
       console.error('[AvatarCache] ❌ Error generating avatar URL:', error)
       return null
