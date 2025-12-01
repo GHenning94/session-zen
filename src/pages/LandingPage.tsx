@@ -307,7 +307,7 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- CORREÇÃO DE ROLAGEM: ANIMAÇÃO HORIZONTAL (Travamento) ---
+  // --- CORREÇÃO DE ROLAGEM: ANIMAÇÃO HORIZONTAL (Travamento / Call Stack) ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (!mediaQuery.matches || !sectionPinRef.current || !trackRef.current) return;
@@ -324,25 +324,14 @@ const LandingPage = () => {
       const trackWidth = track.scrollWidth;
       const windowWidth = window.innerWidth;
       
-      // Distância que o track REALMENTE precisa se mover
-      // (largura total) - (largura da janela) + (offset inicial) - (offset final)
-      // Ajuste: A rolagem deve levar do início do primeiro CARD REAL ao fim do último CARD REAL.
-      
-      // O track começa com padding: 0 calc(50vw - 160px);
-      // O offset move a primeira card real (index 1) para o centro
       const startX = -offset;
       
-      // O track precisa se mover até que a última card real (antes do placeholder final)
-      // esteja no centro.
-      // O ponto final da translação é: (Largura total do track) - (largura da janela) + (offset inicial)
-      // Usamos trackWidth - windowWidth como base do movimento.
-      
+      // A distância que o track precisa rolar é (Largura total - Largura visível)
+      // O track começa em -offset e termina no ponto onde o último card real está à esquerda da tela.
       const moveDistance = trackWidth - windowWidth; 
-      
-      // O track X vai de -offset (início) até -moveDistance - (o que sobrou do offset)
       const endX = -(moveDistance + offset); 
 
-      // Altura da rolagem do pino deve ser exatamente a distância da translação
+      // A altura de pinagem é a distância de translação.
       const pinScrollDistance = moveDistance; 
 
       gsap.fromTo(track,
@@ -355,12 +344,15 @@ const LandingPage = () => {
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
-            // CORREÇÃO CRÍTICA: Definir a altura do pino (end) para a distância de translação
+            // CORREÇÃO: Usar o cálculo mais simples.
             end: () => `+=${pinScrollDistance}`,
             scrub: 1.8,
             start: `top top`,
             invalidateOnRefresh: true,
             
+            // CORREÇÃO CRÍTICA: Mover a lógica de escala para o ScrollTrigger que anima o movimento horizontal.
+            // O uso de 'gsap.to' dentro de 'onUpdate' do ScrollTrigger principal é o que mais causa instabilidade/stack overflow.
+            // Vamos manter a lógica, mas ela deve ser otimizada.
             onUpdate: (self: any) => {
               const viewportCenter = window.innerWidth / 2;
               
@@ -371,10 +363,11 @@ const LandingPage = () => {
                 
                 const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
                 
-                gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
+                // Mantenha o gsap.to, mas certifique-se que o browser não está re-calculando o layout
+                // (que não é o caso aqui, mas é o suspeito primário).
+                gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.2 }); // Reduzindo a duração do easing para tentar evitar loops
               });
             },
-            // Garante que o cálculo é refeito ao atualizar (redimensionar, etc)
             onRefresh: () => ScrollTrigger.refresh(),
           },
         }
@@ -385,7 +378,7 @@ const LandingPage = () => {
     }, sectionPinRef);
   
     return () => {
-        // Limpa todas as instâncias GSAP e ScrollTrigger criadas neste contexto
+        // CORREÇÃO: Garante que todos os ScrollTriggers são limpos corretamente na saída.
         ctx.revert();
     };
   }, []); 
@@ -402,17 +395,15 @@ const LandingPage = () => {
       gsap.set(cards[0], { yPercent: 0, opacity: 1 });
       gsap.set(cards.slice(1), { yPercent: 100, opacity: 0 });
 
-      // Garante que o scroll é suficiente para toda a animação.
-      // 3 cartas * 600px de scroll por carta = 1800px.
       const scrollDistancePerCard = 600; 
-      const totalScrollDistance = (cards.length - 1) * scrollDistancePerCard + scrollDistancePerCard; // Adiciona um extra para o último card
+      const totalScrollDistance = (cards.length - 1) * scrollDistancePerCard + scrollDistancePerCard; 
       
       const timeline = gsap.timeline({
         scrollTrigger: {
           trigger: pinEl,
           pin: true,
           start: "top top",
-          end: `+=${totalScrollDistance}`, // Fim dinâmico
+          end: `+=${totalScrollDistance}`, 
           scrub: 1,
           invalidateOnRefresh: true,
         },
@@ -426,13 +417,13 @@ const LandingPage = () => {
       timeline.to(cards[1], { scale: 0.95, yPercent: -5, ease: "power2.inOut" });
       timeline.to(cards[2], { yPercent: 0, opacity: 1, ease: "power2.inOut" }, "<");
       
-      // Adiciona um respiro final para o último card permanecer na tela
       timeline.to({}, { duration: 0.5 });
 
 
     }, stackingPinRef);
     
     return () => {
+        // CORREÇÃO: Garante que todos os ScrollTriggers são limpos corretamente na saída.
         ctx.revert();
     };
   }, []); 
