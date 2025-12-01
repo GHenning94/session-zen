@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ClientAvatar } from "@/components/ClientAvatar"
 import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
 import { PackageStatusCard } from "@/components/PackageStatusCard"
@@ -21,9 +22,11 @@ import {
   AlertCircle,
   BarChart3,
   Crown,
-  Loader2
+  Loader2,
+  Pill,
+  Baby
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -341,14 +344,14 @@ const Dashboard = () => {
         pendingPaymentsResult
       ] = await Promise.all([
         // Buscar TODAS as sessões de hoje, sem considerar horário para filtro inicial
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url)').eq('user_id', user?.id).eq('data', today).order('horario'),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('payments').select('valor, status, data_pagamento, created_at, sessions:session_id(data)').eq('user_id', user?.id).eq('status', 'pago').gte('created_at', `${new Date().toISOString().slice(0, 7)}-01`).lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         // Buscar sessões futuras incluindo hoje
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
-        supabase.from('clients').select('id, nome, avatar_url, created_at').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
-        supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
+        supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
         supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
@@ -1138,22 +1141,46 @@ const Dashboard = () => {
                        </div>
                      )}
                       <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-4 flex-1">
-                          <ClientAvatar 
-                            avatarPath={session.clients?.avatar_url}
-                            clientName={session.clients?.nome || 'Cliente'}
-                            size="lg"
-                          />
-                          <div>
-                            <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {formatTimeBR(session.horario)}
-                            </p>
-                            <p className="text-sm font-medium text-success">
-                              {formatCurrencyBR(session.valor || 0)}
-                            </p>
-                       </div>
-                     </div>
+                         <div className="flex items-center gap-4 flex-1">
+                           <ClientAvatar 
+                             avatarPath={session.clients?.avatar_url}
+                             clientName={session.clients?.nome || 'Cliente'}
+                             size="lg"
+                           />
+                           <div>
+                             <div className="flex items-center gap-2">
+                               <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
+                               <TooltipProvider>
+                                 {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
+                                   <Tooltip>
+                                     <TooltipTrigger>
+                                       <Pill className="w-4 h-4 text-blue-500" />
+                                     </TooltipTrigger>
+                                     <TooltipContent>
+                                       <p>Faz uso de medicamentos</p>
+                                     </TooltipContent>
+                                   </Tooltip>
+                                 )}
+                                 {session.clients?.eh_crianca_adolescente && (
+                                   <Tooltip>
+                                     <TooltipTrigger>
+                                       <Baby className="w-4 h-4 text-pink-500" />
+                                     </TooltipTrigger>
+                                     <TooltipContent>
+                                       <p>Criança/Adolescente</p>
+                                     </TooltipContent>
+                                   </Tooltip>
+                                 )}
+                               </TooltipProvider>
+                             </div>
+                             <p className="text-sm text-muted-foreground">
+                               {formatTimeBR(session.horario)}
+                             </p>
+                             <p className="text-sm font-medium text-success">
+                               {formatCurrencyBR(session.valor || 0)}
+                             </p>
+                        </div>
+                      </div>
                        <div className="text-right">
                           <p className="font-medium">{formatDateBR(session.data)}</p>
                          <Badge 
@@ -1376,9 +1403,9 @@ const Dashboard = () => {
                                tickLine={false}
                                axisLine={false}
                                tickFormatter={(value) => formatCurrencyBR(value)}
-                             />
-                              <Tooltip 
-                                formatter={(value: any, name: string) => {
+                              />
+                               <RechartsTooltip 
+                                 formatter={(value: any, name: string) => {
                                   if (name === 'receita') return [formatCurrencyBR(value), 'Receita']
                                   if (name === 'aReceber') return [formatCurrencyBR(value), 'A Receber']
                                   return [formatCurrencyBR(value), name]
@@ -1568,9 +1595,9 @@ const Dashboard = () => {
                                tickLine={false}
                                axisLine={false}
                                tickFormatter={(value) => formatCurrencyBR(value)}
-                             />
-                             <Tooltip 
-                               formatter={(value: any) => [formatCurrencyBR(value), 'Ticket Médio']}
+                              />
+                              <RechartsTooltip 
+                                formatter={(value: any) => [formatCurrencyBR(value), 'Ticket Médio']}
                                labelFormatter={(label) => {
                                  const month = ticketMedioChart.find(item => item.mes === label);
                                  return month ? month.fullMonth : label;
@@ -1725,8 +1752,8 @@ const Dashboard = () => {
                                   <Cell key={`cell-${index}`} fill={entry.color} />
                                 ))}
                               </Pie>
-                              <Tooltip 
-                                formatter={(value: any) => [formatCurrencyBR(value), 'Receita']}
+                               <RechartsTooltip 
+                                 formatter={(value: any) => [formatCurrencyBR(value), 'Receita']}
                                 contentStyle={{
                                   backgroundColor: 'hsl(var(--background))',
                                   border: '1px solid hsl(var(--border))',
@@ -1817,7 +1844,31 @@ const Dashboard = () => {
                       />
                       
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{client.nome}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{client.nome}</p>
+                          <TooltipProvider>
+                            {client.medicamentos && client.medicamentos.length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Pill className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Faz uso de medicamentos</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {client.eh_crianca_adolescente && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Baby className="w-4 h-4 text-pink-500 flex-shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Criança/Adolescente</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </TooltipProvider>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           {client.sessoes} sessões
                         </p>
@@ -1860,7 +1911,31 @@ const Dashboard = () => {
                       size="md"
                     />
                       <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{client.nome}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium truncate">{client.nome}</p>
+                          <TooltipProvider>
+                            {client.medicamentos && client.medicamentos.length > 0 && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Pill className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Faz uso de medicamentos</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                            {client.eh_crianca_adolescente && (
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <Baby className="w-4 h-4 text-pink-500 flex-shrink-0" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Criança/Adolescente</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )}
+                          </TooltipProvider>
+                        </div>
                         <p className="text-sm text-muted-foreground">
                           {formatDateBR(client.created_at)}
                         </p>
