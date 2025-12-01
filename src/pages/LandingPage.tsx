@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react"; // <--- NOVO: Importação explícita do React
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,8 +17,13 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorTheme } from "@/hooks/useColorTheme";
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { CookieNotice } from "@/components/CookieNotice";
+
+// Para resolver "Cannot find module '...'" para imagens e GSAP,
+// e garantir que o TypeScript os trate corretamente, você pode precisar
+// de um arquivo de declaração de tipos (como src/types/custom.d.ts)
+// No entanto, a correção mais imediata é garantir que as importações
+// no JS/TS estejam sintaticamente corretas e adicionar o React.
 
 import antesImg from '../assets/antes.webp';
 import depoisImg from '../assets/depois.webp';
@@ -106,14 +112,14 @@ const TestimonialsColumn = (props: {
       <div className="flex flex-col gap-6 pb-6 bg-background testimonials-column-track" style={{ animationDuration: `${props.duration}s` }}>
         {[...new Array(2)].fill(0).map((_, index) => (
           <React.Fragment key={index}>
-            {props.testimonials.map(({ text, image, name, role }, i) => (
+            {props.testimonials.map(({ text, imgSrc, name, role }, i) => ( // <--- CORRIGIDO: Propriedade 'image' para 'imgSrc'
               <div className="testimonial-card-column" key={i}>
                 <div>"{text}"</div>
                 <div className="flex items-center gap-2 mt-5">
                   <img
                     width={40}
                     height={40}
-                    src={image}
+                    src={imgSrc} // <--- CORRIGIDO: Propriedade 'image' para 'imgSrc'
                     alt={name}
                     className="h-10 w-10 rounded-full object-cover"
                   />

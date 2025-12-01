@@ -314,13 +314,6 @@
 .marquee-item.dark { background-image: var(--gradient-primary); color: hsl(var(--primary-foreground)); box-shadow: var(--shadow-medium); }
 .marquee-item svg { width: 1.25rem; height: 1.25rem; }
 
-/* REMOVIDO TESTIMONIAL ANTIGO */
-.testimonial-card { 
-  /* Estilos removidos, não usado na nova estrutura */
-}
-.testimonial-card:hover { 
-  /* Estilos removidos, não usado na nova estrutura */
-}
 
 .fade-in-section {}
 .fade-in-section.is-visible .fade-in-item { opacity: 0; transform: translateY(20px); animation: item-fade-in 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
