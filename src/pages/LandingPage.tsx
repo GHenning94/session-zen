@@ -104,7 +104,7 @@ const TestimonialsColumn = (props: {
       <div className="flex flex-col gap-6 pb-6 bg-background testimonials-column-track" style={{ animationDuration: `${props.duration}s` }}>
         {[...new Array(2)].fill(0).map((_, index) => (
           <React.Fragment key={index}>
-            {props.testimonials.map(({ text, imgSrc, name, role }, i) => ( // Propriedade 'image' corrigida para 'imgSrc'
+            {props.testimonials.map(({ text, imgSrc, name, role }, i) => (
               <div className="testimonial-card-column" key={i}>
                 <div>"{text}"</div>
                 <div className="flex items-center gap-2 mt-5">
@@ -307,7 +307,7 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- CORREÇÃO FINAL: ANIMAÇÃO HORIZONTAL (Máximo Call Stack) ---
+  // --- CORREÇÃO FINAL: ANIMAÇÃO HORIZONTAL (Máximo Call Stack / Final Incorreto) ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (!mediaQuery.matches || !sectionPinRef.current || !trackRef.current) return;
@@ -319,15 +319,25 @@ const LandingPage = () => {
       
       const cardWidth = 320;
       const gap = 32;
-      const offset = cardWidth + gap;
+      const offset = cardWidth + gap; // 352px
       
       const trackWidth = track.scrollWidth;
       const windowWidth = window.innerWidth;
       
       const startX = -offset;
-      const moveDistance = trackWidth - windowWidth; 
-      const endX = -(moveDistance + offset); 
-      const pinScrollDistance = moveDistance; 
+      
+      // A distância total que o track precisa percorrer (da posição inicial até a posição final desejada)
+      // Largura total (incluindo placeholders) - Largura da janela
+      const totalMoveDistance = trackWidth - windowWidth; 
+      
+      // O track começa em -offset. O ponto final real da translação deve ser: 
+      // -(largura total do conteúdo - largura da janela + o offset de padding)
+      const endX = -(totalMoveDistance + offset); 
+
+      // A ALTURA do ScrollTrigger (end) deve ser a diferença entre o startX e o endX.
+      // Neste caso, é simplesmente a diferença de largura, já que o track tem padding
+      // calc(50vw - 160px) nas laterais.
+      const pinScrollDistance = totalMoveDistance; 
 
       const animateTrack = gsap.fromTo(track,
         {
@@ -339,16 +349,13 @@ const LandingPage = () => {
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
+            // CORREÇÃO: Usamos a distância calculada.
             end: () => `+=${pinScrollDistance}`,
             scrub: 1.8,
             start: `top top`,
             invalidateOnRefresh: true,
-            
-            // CORREÇÃO: Usar o 'onUpdate' do tween (animateTrack) em vez do ScrollTrigger
-            // para evitar que a manipulação de escala cause um refresh loop.
-            // O ScrollTrigger continua controlando o progresso (animateTrack.progress)
           },
-          // FUNÇÃO DE ESCALA MOVEU-SE PARA A PROPRIEDADE DO TWEEN:
+          // A lógica de escala foi movida para o 'onUpdate' do tween para evitar o loop de refresh do ScrollTrigger.
           onUpdate: () => {
              const viewportCenter = window.innerWidth / 2;
              
