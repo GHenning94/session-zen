@@ -47,7 +47,7 @@ interface Testimonial {
   name: string;
   role: string;
   text: string;
-  imgSrc: string;
+  imgSrc: string; // Garantindo que o tipo use imgSrc
 }
 
 // --- HOOKS E COMPONENTES AUXILIARES ---
@@ -104,7 +104,7 @@ const TestimonialsColumn = (props: {
       <div className="flex flex-col gap-6 pb-6 bg-background testimonials-column-track" style={{ animationDuration: `${props.duration}s` }}>
         {[...new Array(2)].fill(0).map((_, index) => (
           <React.Fragment key={index}>
-            {props.testimonials.map(({ text, imgSrc, name, role }, i) => (
+            {props.testimonials.map(({ text, imgSrc, name, role }, i) => ( // Propriedade 'image' corrigida para 'imgSrc'
               <div className="testimonial-card-column" key={i}>
                 <div>"{text}"</div>
                 <div className="flex items-center gap-2 mt-5">
@@ -307,7 +307,7 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- CORREÇÃO DE ROLAGEM: ANIMAÇÃO HORIZONTAL (Travamento / Call Stack) ---
+  // --- CORREÇÃO FINAL: ANIMAÇÃO HORIZONTAL (Máximo Call Stack) ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (!mediaQuery.matches || !sectionPinRef.current || !trackRef.current) return;
@@ -325,16 +325,11 @@ const LandingPage = () => {
       const windowWidth = window.innerWidth;
       
       const startX = -offset;
-      
-      // A distância que o track precisa rolar é (Largura total - Largura visível)
-      // O track começa em -offset e termina no ponto onde o último card real está à esquerda da tela.
       const moveDistance = trackWidth - windowWidth; 
       const endX = -(moveDistance + offset); 
-
-      // A altura de pinagem é a distância de translação.
       const pinScrollDistance = moveDistance; 
 
-      gsap.fromTo(track,
+      const animateTrack = gsap.fromTo(track,
         {
           x: startX
         },
@@ -344,32 +339,30 @@ const LandingPage = () => {
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
-            // CORREÇÃO: Usar o cálculo mais simples.
             end: () => `+=${pinScrollDistance}`,
             scrub: 1.8,
             start: `top top`,
             invalidateOnRefresh: true,
             
-            // CORREÇÃO CRÍTICA: Mover a lógica de escala para o ScrollTrigger que anima o movimento horizontal.
-            // O uso de 'gsap.to' dentro de 'onUpdate' do ScrollTrigger principal é o que mais causa instabilidade/stack overflow.
-            // Vamos manter a lógica, mas ela deve ser otimizada.
-            onUpdate: (self: any) => {
-              const viewportCenter = window.innerWidth / 2;
-              
-              allCards.forEach((card) => {
-                const cardRect = card.getBoundingClientRect();
-                const cardCenter = cardRect.left + cardRect.width / 2;
-                const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
-                
-                const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
-                
-                // Mantenha o gsap.to, mas certifique-se que o browser não está re-calculando o layout
-                // (que não é o caso aqui, mas é o suspeito primário).
-                gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.2 }); // Reduzindo a duração do easing para tentar evitar loops
-              });
-            },
-            onRefresh: () => ScrollTrigger.refresh(),
+            // CORREÇÃO: Usar o 'onUpdate' do tween (animateTrack) em vez do ScrollTrigger
+            // para evitar que a manipulação de escala cause um refresh loop.
+            // O ScrollTrigger continua controlando o progresso (animateTrack.progress)
           },
+          // FUNÇÃO DE ESCALA MOVEU-SE PARA A PROPRIEDADE DO TWEEN:
+          onUpdate: () => {
+             const viewportCenter = window.innerWidth / 2;
+             
+             allCards.forEach((card) => {
+               const cardRect = card.getBoundingClientRect();
+               const cardCenter = cardRect.left + cardRect.width / 2;
+               const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
+               
+               const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
+               
+               // Usar gsap.set é mais seguro que gsap.to para mudanças de estilo rápidas em onUpdate
+               gsap.set(card, { scale: scale, ease: "power1.out", overwrite: true });
+             });
+          }
         }
       );
       
@@ -378,7 +371,6 @@ const LandingPage = () => {
     }, sectionPinRef);
   
     return () => {
-        // CORREÇÃO: Garante que todos os ScrollTriggers são limpos corretamente na saída.
         ctx.revert();
     };
   }, []); 
@@ -409,11 +401,9 @@ const LandingPage = () => {
         },
       });
       
-      // Animação 1: Card 0 sai, Card 1 entra
       timeline.to(cards[0], { scale: 0.90, yPercent: -10, ease: "power2.inOut" });
       timeline.to(cards[1], { yPercent: 0, opacity: 1, ease: "power2.inOut" }, "<"); 
       
-      // Animação 2: Card 1 sai, Card 2 entra
       timeline.to(cards[1], { scale: 0.95, yPercent: -5, ease: "power2.inOut" });
       timeline.to(cards[2], { yPercent: 0, opacity: 1, ease: "power2.inOut" }, "<");
       
@@ -423,7 +413,6 @@ const LandingPage = () => {
     }, stackingPinRef);
     
     return () => {
-        // CORREÇÃO: Garante que todos os ScrollTriggers são limpos corretamente na saída.
         ctx.revert();
     };
   }, []); 
