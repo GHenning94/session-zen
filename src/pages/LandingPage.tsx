@@ -319,24 +319,19 @@ const LandingPage = () => {
       
       const cardWidth = 320;
       const gap = 32;
-      const offset = cardWidth + gap; // 352px
+      const offset = cardWidth + gap; 
       
       const trackWidth = track.scrollWidth;
       const windowWidth = window.innerWidth;
       
       const startX = -offset;
       
-      // A distância total que o track precisa percorrer (da posição inicial até a posição final desejada)
-      // Largura total (incluindo placeholders) - Largura da janela
       const totalMoveDistance = trackWidth - windowWidth; 
       
       // O track começa em -offset. O ponto final real da translação deve ser: 
       // -(largura total do conteúdo - largura da janela + o offset de padding)
       const endX = -(totalMoveDistance + offset); 
 
-      // A ALTURA do ScrollTrigger (end) deve ser a diferença entre o startX e o endX.
-      // Neste caso, é simplesmente a diferença de largura, já que o track tem padding
-      // calc(50vw - 160px) nas laterais.
       const pinScrollDistance = totalMoveDistance; 
 
       const animateTrack = gsap.fromTo(track,
@@ -349,13 +344,11 @@ const LandingPage = () => {
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
-            // CORREÇÃO: Usamos a distância calculada.
             end: () => `+=${pinScrollDistance}`,
             scrub: 1.8,
             start: `top top`,
             invalidateOnRefresh: true,
           },
-          // A lógica de escala foi movida para o 'onUpdate' do tween para evitar o loop de refresh do ScrollTrigger.
           onUpdate: () => {
              const viewportCenter = window.innerWidth / 2;
              
@@ -366,7 +359,6 @@ const LandingPage = () => {
                
                const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
                
-               // Usar gsap.set é mais seguro que gsap.to para mudanças de estilo rápidas em onUpdate
                gsap.set(card, { scale: scale, ease: "power1.out", overwrite: true });
              });
           }
@@ -548,10 +540,10 @@ const LandingPage = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                   <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                    <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                    </svg>
-                    Sem cartão de crédito
+                    {/* INÍCIO DA CORREÇÃO DE ESTILO E MENSAGEM */}
+                    <Lock className="w-4 h-4 text-primary" />
+                    **Comece em 2 minutos. Não pedimos cartão.**
+                    {/* FIM DA CORREÇÃO DE ESTILO E MENSAGEM */}
                   </p>
                 </div>
 
