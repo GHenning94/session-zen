@@ -309,13 +309,18 @@
 .marquee-track.reverse { animation-direction: reverse; }
 @keyframes marquee-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .marquee-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1.5rem; border-radius: 9999px; font-size: 1.125rem; font-weight: 500; transition: transform 0.3s ease, box-shadow 0.3s ease; flex-shrink: 0; }
-.marquee-item:hover { transform: scale(1.05); box-shadow: var(--shadow-large); }
+.marquee-item:hover { transform: scale(1.05); box-shadow: var(--shadow-medium); }
 .marquee-item.light { background-color: hsl(var(--muted)); color: hsl(var(--foreground)); }
 .marquee-item.dark { background-image: var(--gradient-primary); color: hsl(var(--primary-foreground)); box-shadow: var(--shadow-medium); }
 .marquee-item svg { width: 1.25rem; height: 1.25rem; }
 
-.testimonial-card { background-color: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: 1rem; padding: 1.5rem; box-shadow: var(--shadow-soft); transition: transform 0.3s ease, box-shadow 0.3s ease; display: flex; flex-direction: column; }
-.testimonial-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-large); }
+/* REMOVIDO TESTIMONIAL ANTIGO */
+.testimonial-card { 
+  /* Estilos removidos, não usado na nova estrutura */
+}
+.testimonial-card:hover { 
+  /* Estilos removidos, não usado na nova estrutura */
+}
 
 .fade-in-section {}
 .fade-in-section.is-visible .fade-in-item { opacity: 0; transform: translateY(20px); animation: item-fade-in 0.6s cubic-bezier(0.165, 0.84, 0.44, 1) forwards; }
@@ -602,4 +607,71 @@
   height: 1.25rem;
   color: #22c55e;
   flex-shrink: 0;
+}
+
+/* ======================================================= */
+/* NOVO: SEÇÃO DE DEPOIMENTOS EM COLUNAS (CSS ANIMATION)  */
+/* ======================================================= */
+
+.testimonials-columns-container {
+  max-height: 740px; /* Altura máxima da viewport para o scroll */
+  overflow: hidden;
+  /* Cria o efeito de fade nas bordas superior e inferior */
+  mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  -webkit-mask-image: linear-gradient(to bottom, transparent, black 15%, black 85%, transparent);
+  position: relative;
+  padding: 0 1rem;
+}
+
+.testimonials-column-track {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem; /* Espaçamento entre os cards */
+  will-change: transform;
+  
+  /* Definição padrão da animação. O tempo é sobrescrito no componente JSX */
+  animation: column-scroll linear infinite;
+  padding-bottom: 1.5rem;
+}
+
+/* Animação de scroll contínuo */
+@keyframes column-scroll {
+  0% { transform: translateY(0); }
+  100% { transform: translateY(-50%); } /* Rola até a metade para repetir o conteúdo */
+}
+
+.testimonial-card-column {
+  padding: 1.5rem; /* 10 no original */
+  border-radius: 1.5rem; /* 3xl no original */
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 10px 15px -3px hsl(var(--primary) / 0.1);
+  max-width: 320px; /* Largura máxima do card */
+  width: 100%;
+  background-color: hsl(var(--card));
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: hsl(var(--muted-foreground));
+  transition: transform 0.3s ease;
+}
+
+.testimonial-card-column:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 25px -5px hsl(var(--primary) / 0.15);
+}
+
+.testimonial-card-column .font-medium {
+  color: hsl(var(--foreground));
+}
+
+/* Media Queries para ocultar colunas */
+@media (min-width: 768px) {
+  .testimonials-columns-container > div:nth-child(2) {
+    display: block;
+  }
+}
+
+@media (min-width: 1024px) {
+  .testimonials-columns-container > div:nth-child(3) {
+    display: block;
+  }
 }

@@ -44,6 +44,13 @@ declare global {
 }
 // --- FIM: CORREÇÃO DE TIPAGEM DO TYPESCRIPT ---
 
+// --- TIPAGEM DO TESTEMUNHO ---
+interface Testimonial {
+  name: string;
+  role: string;
+  text: string;
+  imgSrc: string;
+}
 
 // --- HOOKS E COMPONENTES AUXILIARES ---
 
@@ -83,6 +90,42 @@ const FaqItem = ({ question, answer }: any) => {
       </button>
       <div className={`grid overflow-hidden transition-all duration-300 ease-in-out ${isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}>
         <div className="overflow-hidden"><p className="pb-5 text-muted-foreground pr-4">{answer}</p></div>
+      </div>
+    </div>
+  );
+};
+
+// --- COMPONENTE TESTIMONIALS (NOVO) ---
+const TestimonialsColumn = (props: {
+  className?: string;
+  testimonials: Testimonial[];
+  duration?: number;
+}) => {
+  return (
+    <div className={props.className}>
+      <div className="flex flex-col gap-6 pb-6 bg-background testimonials-column-track" style={{ animationDuration: `${props.duration}s` }}>
+        {[...new Array(2)].fill(0).map((_, index) => (
+          <React.Fragment key={index}>
+            {props.testimonials.map(({ text, image, name, role }, i) => (
+              <div className="testimonial-card-column" key={i}>
+                <div>"{text}"</div>
+                <div className="flex items-center gap-2 mt-5">
+                  <img
+                    width={40}
+                    height={40}
+                    src={image}
+                    alt={name}
+                    className="h-10 w-10 rounded-full object-cover"
+                  />
+                  <div className="flex flex-col">
+                    <div className="font-medium tracking-tight leading-5">{name}</div>
+                    <div className="leading-5 opacity-60 tracking-tight text-sm">{role}</div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </React.Fragment>
+        ))}
       </div>
     </div>
   );
@@ -399,14 +442,22 @@ const LandingPage = () => {
     { name: "Consultores", icon: MessageCircle }, { name: "Mentores", icon: Shield },
   ];
   
-  const testimonials = [
+  const testimonials: Testimonial[] = [
     { name: "Dr. Ana Costa", role: "Psicóloga Clínica", text: "O TherapyPro revolucionou a gestão do meu consultório. Agora tenho mais tempo para focar no que realmente importa: meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=1" },
     { name: "Juliana Pereira", role: "Terapeuta Ocupacional", text: "Excelente ferramenta! A gestão de agendamentos e o histórico de clientes são funcionalidades que me economizam horas toda semana.", imgSrc: "https://i.pravatar.cc/150?img=26" },
     { name: "Carlos Martins", role: "Psicanalista", text: "A plataforma é intuitiva, segura e completa. Os relatórios financeiros me deram uma visão clara do crescimento da minha prática.", imgSrc: "https://i.pravatar.cc/150?img=33" },
     { name: "Dr. Ricardo Souza", role: "Psiquiatra", text: "A segurança dos prontuários era minha maior preocupação. Com o TherapyPro, sinto total confiança na proteção dos dados dos meus pacientes.", imgSrc: "https://i.pravatar.cc/150?img=68" },
     { name: "Mariana Lima", role: "Coach de Carreira", text: "Uso para gerenciar meus clientes e pagamentos. É simples, direto e muito eficiente. Recomendo!", imgSrc: "https://i.pravatar.cc/150?img=49" },
     { name: "Fernando Guimarães", role: "Terapeuta Holístico", text: "O suporte é incrível e a plataforma está sempre evoluindo. Sinto que minhas sugestões são ouvidas.", imgSrc: "https://i.pravatar.cc/150?img=53" },
+    // Adicionando mais 3 para preencher 3 colunas de 3
+    { name: "Patrícia Nunes", role: "Psicopedagoga", text: "A sincronização com o Google Calendar é um divisor de águas! Minha agenda nunca esteve tão organizada.", imgSrc: "https://i.pravatar.cc/150?img=56" },
+    { name: "Roberto Alves", role: "Neuropsicólogo", text: "As funcionalidades de relatórios me ajudam a ter uma visão profissional clara para a tomada de decisões no consultório.", imgSrc: "https://i.pravatar.cc/150?img=60" },
+    { name: "Clara Mendes", role: "Nutricionista", text: "Embora focado em terapia, adaptou-se perfeitamente à minha clínica de nutrição. Excelente para gestão de pacientes!", imgSrc: "https://i.pravatar.cc/150?img=40" },
   ];
+  
+  const firstColumn = testimonials.slice(0, 3);
+  const secondColumn = testimonials.slice(3, 6);
+  const thirdColumn = testimonials.slice(6, 9);
   
   const faqItems = [
     { question: "O TherapyPro é seguro para os dados dos meus pacientes?", answer: "Sim. A segurança é nossa prioridade máxima. Utilizamos criptografia de ponta para proteger todos os dados e seguimos as melhores práticas de segurança, em conformidade com as normas de proteção de dados." },
@@ -687,22 +738,20 @@ const LandingPage = () => {
           </div>
         </section>
 
-        <section id="depoimentos" className="py-16 px-4 sm:px-6 lg:px-8 bg-background relative">
+        <section id="depoimentos" className="py-24 px-4 sm:px-6 lg:px-8 bg-background relative">
           <AnimateOnScroll className="max-w-7xl mx-auto">
-            <div className="text-center mb-16"><h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Aprovado por quem usa todos os dias</h2><p className="text-lg text-muted-foreground max-w-2xl mx-auto">Confiança construída com resultados reais.</p></div>
+            <div className="text-center mb-16">
+              <div className="flex justify-center">
+                <div className="border border-border/50 py-1 px-4 rounded-lg text-sm font-medium text-primary">Depoimentos</div>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-bold text-foreground mt-4 mb-4">Aprovado por quem usa todos os dias</h2>
+              <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Confiança construída com resultados reais.</p>
+            </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-fr">
-              {testimonials.map((testimonial, index) => (
-                <div key={index} className="fade-in-item">
-                  <div className="testimonial-card h-full">
-                    <p className="text-muted-foreground mb-6 text-lg flex-grow">"{testimonial.text}"</p>
-                    <div className="flex items-center gap-4">
-                      <img src={testimonial.imgSrc} alt={testimonial.name} className="w-12 h-12 rounded-full object-cover" />
-                      <div><p className="font-bold text-foreground">{testimonial.name}</p><p className="text-sm text-muted-foreground">{testimonial.role}</p></div>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div className="flex justify-center gap-6 mt-10 testimonials-columns-container">
+              <TestimonialsColumn testimonials={firstColumn} duration={15} />
+              <TestimonialsColumn testimonials={secondColumn} className="hidden md:block" duration={19} />
+              <TestimonialsColumn testimonials={thirdColumn} className="hidden lg:block" duration={17} />
             </div>
 
           </AnimateOnScroll>
