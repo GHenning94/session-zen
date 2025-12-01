@@ -178,11 +178,16 @@ export const SessionModal = ({
         })
       }
 
+      // Garantir formato correto HH:MM:SS para horário
+      const horarioFormatado = formData.horario.includes(':00') 
+        ? formData.horario 
+        : `${formData.horario}:00`
+
       const sessionData = {
         user_id: user.id,
         client_id: formData.client_id,
         data: formData.data,
-        horario: formData.horario + ':00',
+        horario: horarioFormatado,
         valor: formData.valor ? parseFloat(formData.valor) : null,
         status: formData.status,
         anotacoes: formData.anotacoes || null,
