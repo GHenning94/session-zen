@@ -307,61 +307,57 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- CORREÇÃO FINAL: ANIMAÇÃO HORIZONTAL (Máximo Call Stack / Final Incorreto) ---
+  // --- CORREÇÃO FINAL: RESTAURANDO A LÓGICA ORIGINAL DO SCROLL HORIZONTAL ---
   useLayoutEffect(() => {
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    if (!mediaQuery.matches || !sectionPinRef.current || !trackRef.current) return;
-    
+    if (!mediaQuery.matches) return;
+  
     let ctx = gsap.context(() => {
-      const track = trackRef.current as HTMLElement;
+      const track = trackRef.current;
+      if (!track) return;
+      
       const allCards = gsap.utils.toArray<HTMLElement>(".feature-card-large");
       if (allCards.length < 2) return;
       
+      const featureCards = allCards.slice(1, -1);
+
       const cardWidth = 320;
       const gap = 32;
-      const offset = cardWidth + gap; 
+      const offset = cardWidth + gap;
       
-      const trackWidth = track.scrollWidth;
-      const windowWidth = window.innerWidth;
-      
-      const startX = -offset;
-      
-      const totalMoveDistance = trackWidth - windowWidth; 
-      
-      // O track começa em -offset. O ponto final real da translação deve ser: 
-      // -(largura total do conteúdo - largura da janela + o offset de padding)
-      const endX = -(totalMoveDistance + offset); 
+      // RESTAURANDO VARIÁVEIS ORIGINAIS
+      const totalScroll = track.scrollWidth - window.innerWidth;
+      const animationDistance = totalScroll - (2 * offset); // Esta era a variável chave no código inicial.
 
-      const pinScrollDistance = totalMoveDistance; 
-
-      const animateTrack = gsap.fromTo(track,
+      gsap.fromTo(track,
         {
-          x: startX
+          x: -offset
         },
         {
-          x: endX,
+          x: -(totalScroll - offset),
           ease: "none",
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
-            end: () => `+=${pinScrollDistance}`,
             scrub: 1.8,
             start: `top top`,
+            end: () => `+=${animationDistance}`, // Restaurando o cálculo original
             invalidateOnRefresh: true,
+            onUpdate: (self: any) => {
+              const viewportCenter = window.innerWidth / 2;
+              
+              featureCards.forEach((card) => {
+                const cardRect = card.getBoundingClientRect();
+                const cardCenter = cardRect.left + cardRect.width / 2;
+                const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
+                const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
+                gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
+              });
+
+              gsap.to(allCards[0], { scale: 0.8, ease: "power1.out", duration: 0.5 });
+              gsap.to(allCards[allCards.length - 1], { scale: 0.8, ease: "power1.out", duration: 0.5 });
+            },
           },
-          onUpdate: () => {
-             const viewportCenter = window.innerWidth / 2;
-             
-             allCards.forEach((card) => {
-               const cardRect = card.getBoundingClientRect();
-               const cardCenter = cardRect.left + cardRect.width / 2;
-               const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
-               
-               const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
-               
-               gsap.set(card, { scale: scale, ease: "power1.out", overwrite: true });
-             });
-          }
         }
       );
       
@@ -369,12 +365,10 @@ const LandingPage = () => {
 
     }, sectionPinRef);
   
-    return () => {
-        ctx.revert();
-    };
-  }, []); 
+    return () => ctx.revert();
+  }, []);
 
-  // --- CORREÇÃO DE ROLAGEM: CARTAS EMPILHADAS (PINNING) ---
+  // --- ANIMAÇÃO DE CARTAS EMPILHADAS (MANTIDA ESTÁVEL) ---
   useLayoutEffect(() => {
     const pinEl = stackingPinRef.current;
     if (!pinEl) return;
@@ -540,10 +534,10 @@ const LandingPage = () => {
                     <ArrowRight className="w-5 h-5 ml-2" />
                   </Button>
                   <p className="text-sm font-medium text-muted-foreground flex items-center gap-1.5">
-                    {/* INÍCIO DA CORREÇÃO DE ESTILO E MENSAGEM */}
+                    {/* CORREÇÃO DA MENSAGEM */}
                     <Lock className="w-4 h-4 text-primary" />
-                    **Comece em 2 minutos. Não pedimos cartão.**
-                    {/* FIM DA CORREÇÃO DE ESTILO E MENSAGEM */}
+                    Comece em 2 minutos sem cartão de crédito
+                    {/* FIM DA CORREÇÃO DA MENSAGEM */}
                   </p>
                 </div>
 
