@@ -35,17 +35,14 @@ import { Flip } from "gsap/Flip";
 import "./LandingPage.styles.css";
 
 // --- INÍCIO: CORREÇÃO DE TIPAGEM DO TYPESCRIPT ---
-// Este bloco avisa ao TypeScript sobre o objeto YT e a função da API do YouTube na window.
 declare global {
   interface Window {
     YT: any;
     onYouTubeIframeAPIReady?: () => void;
   }
 }
-// --- FIM: CORREÇÃO: tipagem de imagem e GSAP resolvida na correção anterior com a importação de React
-// --- e com a suposição de que as dependências GSAP e as imagens estão instaladas/configuradas.
+// --- FIM: CORREÇÃO DE TIPAGEM DO TYPESCRIPT ---
 
-// --- TIPAGEM DO TESTEMUNHO ---
 interface Testimonial {
   name: string;
   role: string;
@@ -135,7 +132,6 @@ const TestimonialsColumn = (props: {
 // --- COMPONENTE PRINCIPAL ---
 
 const LandingPage = () => {
-  // Re-registro dos plugins para garantir que o contexto seja limpo e as instâncias novas sejam registradas
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, Flip); 
 
   const navigate = useNavigate();
@@ -210,7 +206,6 @@ const LandingPage = () => {
         tag.src = "https://www.youtube.com/iframe_api";
         tag.id = 'youtube-iframe-api';
         
-        // Método mais seguro: adicionar ao head ou body diretamente
         const targetElement = document.head || document.body;
         if (targetElement) {
           targetElement.appendChild(tag);
@@ -312,9 +307,8 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
-  // --- CORREÇÃO DE ROLAGEM: ANIMAÇÃO HORIZONTAL ---
+  // --- CORREÇÃO DE ROLAGEM: ANIMAÇÃO HORIZONTAL (Travamento) ---
   useLayoutEffect(() => {
-    // Garante que só roda em desktop
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
     if (!mediaQuery.matches || !sectionPinRef.current || !trackRef.current) return;
     
@@ -323,8 +317,6 @@ const LandingPage = () => {
       const allCards = gsap.utils.toArray<HTMLElement>(".feature-card-large");
       if (allCards.length < 2) return;
       
-      const featureCards = allCards.slice(1, -1);
-      
       const cardWidth = 320;
       const gap = 32;
       const offset = cardWidth + gap;
@@ -332,19 +324,30 @@ const LandingPage = () => {
       const trackWidth = track.scrollWidth;
       const windowWidth = window.innerWidth;
       
-      // A distância total de scroll para a animação é a largura total do track, menos a largura visível,
-      // mais o offset de padding de ambos os lados para que as placeholders não sejam o ponto final
-      const totalScrollDistance = trackWidth - windowWidth + (2 * offset);
+      // Distância que o track REALMENTE precisa se mover
+      // (largura total) - (largura da janela) + (offset inicial) - (offset final)
+      // Ajuste: A rolagem deve levar do início do primeiro CARD REAL ao fim do último CARD REAL.
       
-      // Garante que a primeira e última card placeholders estão fora de vista no início e fim
-      // A animação deve mover o track do ponto onde o primeiro card real está centralizado,
-      // até o ponto onde o último card real está centralizado.
+      // O track começa com padding: 0 calc(50vw - 160px);
+      // O offset move a primeira card real (index 1) para o centro
       const startX = -offset;
-      const endX = -(trackWidth - windowWidth + offset); // Vai do -offset (início da rolagem) até o final da lista (excluindo o offset do final)
+      
+      // O track precisa se mover até que a última card real (antes do placeholder final)
+      // esteja no centro.
+      // O ponto final da translação é: (Largura total do track) - (largura da janela) + (offset inicial)
+      // Usamos trackWidth - windowWidth como base do movimento.
+      
+      const moveDistance = trackWidth - windowWidth; 
+      
+      // O track X vai de -offset (início) até -moveDistance - (o que sobrou do offset)
+      const endX = -(moveDistance + offset); 
+
+      // Altura da rolagem do pino deve ser exatamente a distância da translação
+      const pinScrollDistance = moveDistance; 
 
       gsap.fromTo(track,
         {
-          x: startX 
+          x: startX
         },
         {
           x: endX,
@@ -352,14 +355,12 @@ const LandingPage = () => {
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
-            // A altura do ScrollTrigger deve ser a distância que o track percorre.
-            // Ajustamos a distância final para 80% do total por segurança na UX.
-            end: () => `+=${trackWidth - windowWidth}`,
+            // CORREÇÃO CRÍTICA: Definir a altura do pino (end) para a distância de translação
+            end: () => `+=${pinScrollDistance}`,
             scrub: 1.8,
             start: `top top`,
             invalidateOnRefresh: true,
             
-            // O código de escala não precisa ser re-analisado, mas foi simplificado
             onUpdate: (self: any) => {
               const viewportCenter = window.innerWidth / 2;
               
@@ -368,18 +369,13 @@ const LandingPage = () => {
                 const cardCenter = cardRect.left + cardRect.width / 2;
                 const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
                 
-                // Mapeia a distância do centro (0 a window.innerWidth / 2) para a escala (1.1 a 0.8)
                 const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
                 
-                // Aplica a escala, evitando jitter ao usar gsap.to em vez de set direto
                 gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
               });
             },
-            onRefreshInit: (self) => {
-                // Força o ScrollTrigger a recalcular as posições
-                self.start = self.end - (trackWidth - windowWidth);
-                self.end = self.start + (trackWidth - windowWidth);
-            }
+            // Garante que o cálculo é refeito ao atualizar (redimensionar, etc)
+            onRefresh: () => ScrollTrigger.refresh(),
           },
         }
       );
@@ -392,7 +388,7 @@ const LandingPage = () => {
         // Limpa todas as instâncias GSAP e ScrollTrigger criadas neste contexto
         ctx.revert();
     };
-  }, []); // Dependência vazia: roda apenas uma vez
+  }, []); 
 
   // --- CORREÇÃO DE ROLAGEM: CARTAS EMPILHADAS (PINNING) ---
   useLayoutEffect(() => {
@@ -406,9 +402,10 @@ const LandingPage = () => {
       gsap.set(cards[0], { yPercent: 0, opacity: 1 });
       gsap.set(cards.slice(1), { yPercent: 100, opacity: 0 });
 
-      // Aumenta a distância de rolagem por carta para dar mais tempo para a animação
+      // Garante que o scroll é suficiente para toda a animação.
+      // 3 cartas * 600px de scroll por carta = 1800px.
       const scrollDistancePerCard = 600; 
-      const totalScrollDistance = (cards.length - 1) * scrollDistancePerCard;
+      const totalScrollDistance = (cards.length - 1) * scrollDistancePerCard + scrollDistancePerCard; // Adiciona um extra para o último card
       
       const timeline = gsap.timeline({
         scrollTrigger: {
@@ -422,35 +419,12 @@ const LandingPage = () => {
       });
       
       // Animação 1: Card 0 sai, Card 1 entra
-      timeline.to(cards[0], {
-        scale: 0.90, 
-        yPercent: -10, 
-        ease: "power2.inOut",
-        duration: 0.5 // Duração controlada pela distância de scroll
-      });
-      timeline.to(cards[1], {
-        yPercent: 0,
-        opacity: 1,
-        ease: "power2.inOut",
-        duration: 0.5
-      }, "<"); 
-      
-      // Pequeno espaço de respiro
-      timeline.to({}, { duration: 0.2 });
+      timeline.to(cards[0], { scale: 0.90, yPercent: -10, ease: "power2.inOut" });
+      timeline.to(cards[1], { yPercent: 0, opacity: 1, ease: "power2.inOut" }, "<"); 
       
       // Animação 2: Card 1 sai, Card 2 entra
-      timeline.to(cards[1], {
-        scale: 0.95, 
-        yPercent: -5, 
-        ease: "power2.inOut",
-        duration: 0.5
-      });
-      timeline.to(cards[2], {
-        yPercent: 0,
-        opacity: 1,
-        ease: "power2.inOut",
-        duration: 0.5
-      }, "<");
+      timeline.to(cards[1], { scale: 0.95, yPercent: -5, ease: "power2.inOut" });
+      timeline.to(cards[2], { yPercent: 0, opacity: 1, ease: "power2.inOut" }, "<");
       
       // Adiciona um respiro final para o último card permanecer na tela
       timeline.to({}, { duration: 0.5 });
@@ -459,10 +433,9 @@ const LandingPage = () => {
     }, stackingPinRef);
     
     return () => {
-        // Limpa todas as instâncias GSAP e ScrollTrigger criadas neste contexto
         ctx.revert();
     };
-  }, []); // Dependência vazia: roda apenas uma vez
+  }, []); 
 
   const handleGetStarted = (planId?: string) => {
     const params = new URLSearchParams();
