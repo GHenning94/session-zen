@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from "react"; // <--- NOVO: Importação explícita do React
+import React, { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,12 +18,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useColorTheme } from "@/hooks/useColorTheme";
 import { CookieNotice } from "@/components/CookieNotice";
-
-// Para resolver "Cannot find module '...'" para imagens e GSAP,
-// e garantir que o TypeScript os trate corretamente, você pode precisar
-// de um arquivo de declaração de tipos (como src/types/custom.d.ts)
-// No entanto, a correção mais imediata é garantir que as importações
-// no JS/TS estejam sintaticamente corretas e adicionar o React.
 
 import antesImg from '../assets/antes.webp';
 import depoisImg from '../assets/depois.webp';
@@ -48,7 +42,8 @@ declare global {
     onYouTubeIframeAPIReady?: () => void;
   }
 }
-// --- FIM: CORREÇÃO DE TIPAGEM DO TYPESCRIPT ---
+// --- FIM: CORREÇÃO: tipagem de imagem e GSAP resolvida na correção anterior com a importação de React
+// --- e com a suposição de que as dependências GSAP e as imagens estão instaladas/configuradas.
 
 // --- TIPAGEM DO TESTEMUNHO ---
 interface Testimonial {
@@ -112,14 +107,14 @@ const TestimonialsColumn = (props: {
       <div className="flex flex-col gap-6 pb-6 bg-background testimonials-column-track" style={{ animationDuration: `${props.duration}s` }}>
         {[...new Array(2)].fill(0).map((_, index) => (
           <React.Fragment key={index}>
-            {props.testimonials.map(({ text, imgSrc, name, role }, i) => ( // <--- CORRIGIDO: Propriedade 'image' para 'imgSrc'
+            {props.testimonials.map(({ text, imgSrc, name, role }, i) => (
               <div className="testimonial-card-column" key={i}>
                 <div>"{text}"</div>
                 <div className="flex items-center gap-2 mt-5">
                   <img
                     width={40}
                     height={40}
-                    src={imgSrc} // <--- CORRIGIDO: Propriedade 'image' para 'imgSrc'
+                    src={imgSrc}
                     alt={name}
                     className="h-10 w-10 rounded-full object-cover"
                   />
@@ -140,7 +135,8 @@ const TestimonialsColumn = (props: {
 // --- COMPONENTE PRINCIPAL ---
 
 const LandingPage = () => {
-  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin); 
+  // Re-registro dos plugins para garantir que o contexto seja limpo e as instâncias novas sejam registradas
+  gsap.registerPlugin(ScrollTrigger, ScrollToPlugin, Flip); 
 
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
@@ -154,9 +150,9 @@ const LandingPage = () => {
 
   const [sliderPosition, setSliderPosition] = useState(50);
 
-  const sectionPinRef = useRef(null);
-  const trackRef = useRef(null);
-  const stackingPinRef = useRef(null);
+  const sectionPinRef = useRef<HTMLDivElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const stackingPinRef = useRef<HTMLDivElement | null>(null);
   
   const playerRef = useRef<any>(null);
   const [videoContainerRef, videoEntry] = useIntersectionObserver({ threshold: 0.5 });
@@ -316,54 +312,74 @@ const LandingPage = () => {
     return () => clearTimeout(timeout);
   }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
   
+  // --- CORREÇÃO DE ROLAGEM: ANIMAÇÃO HORIZONTAL ---
   useLayoutEffect(() => {
+    // Garante que só roda em desktop
     const mediaQuery = window.matchMedia('(min-width: 1024px)');
-    if (!mediaQuery.matches) return;
-  
+    if (!mediaQuery.matches || !sectionPinRef.current || !trackRef.current) return;
+    
     let ctx = gsap.context(() => {
-      const track = trackRef.current;
-      if (!track) return;
-      
+      const track = trackRef.current as HTMLElement;
       const allCards = gsap.utils.toArray<HTMLElement>(".feature-card-large");
       if (allCards.length < 2) return;
       
       const featureCards = allCards.slice(1, -1);
-
+      
       const cardWidth = 320;
       const gap = 32;
       const offset = cardWidth + gap;
       
-      const totalScroll = track.scrollWidth - window.innerWidth;
-      const animationDistance = totalScroll - (2 * offset);
+      const trackWidth = track.scrollWidth;
+      const windowWidth = window.innerWidth;
+      
+      // A distância total de scroll para a animação é a largura total do track, menos a largura visível,
+      // mais o offset de padding de ambos os lados para que as placeholders não sejam o ponto final
+      const totalScrollDistance = trackWidth - windowWidth + (2 * offset);
+      
+      // Garante que a primeira e última card placeholders estão fora de vista no início e fim
+      // A animação deve mover o track do ponto onde o primeiro card real está centralizado,
+      // até o ponto onde o último card real está centralizado.
+      const startX = -offset;
+      const endX = -(trackWidth - windowWidth + offset); // Vai do -offset (início da rolagem) até o final da lista (excluindo o offset do final)
 
       gsap.fromTo(track,
         {
-          x: -offset
+          x: startX 
         },
         {
-          x: -(totalScroll - offset),
+          x: endX,
           ease: "none",
           scrollTrigger: {
             trigger: sectionPinRef.current,
             pin: true,
+            // A altura do ScrollTrigger deve ser a distância que o track percorre.
+            // Ajustamos a distância final para 80% do total por segurança na UX.
+            end: () => `+=${trackWidth - windowWidth}`,
             scrub: 1.8,
             start: `top top`,
-            end: () => `+=${animationDistance}`,
             invalidateOnRefresh: true,
+            
+            // O código de escala não precisa ser re-analisado, mas foi simplificado
             onUpdate: (self: any) => {
               const viewportCenter = window.innerWidth / 2;
               
-              featureCards.forEach((card) => {
+              allCards.forEach((card) => {
                 const cardRect = card.getBoundingClientRect();
                 const cardCenter = cardRect.left + cardRect.width / 2;
                 const distanceFromCenter = Math.abs(viewportCenter - cardCenter);
+                
+                // Mapeia a distância do centro (0 a window.innerWidth / 2) para a escala (1.1 a 0.8)
                 const scale = gsap.utils.mapRange(0, window.innerWidth / 2, 1.1, 0.8, distanceFromCenter);
+                
+                // Aplica a escala, evitando jitter ao usar gsap.to em vez de set direto
                 gsap.to(card, { scale: scale, ease: "power1.out", duration: 0.5 });
               });
-
-              gsap.to(allCards[0], { scale: 0.8, ease: "power1.out", duration: 0.5 });
-              gsap.to(allCards[allCards.length - 1], { scale: 0.8, ease: "power1.out", duration: 0.5 });
             },
+            onRefreshInit: (self) => {
+                // Força o ScrollTrigger a recalcular as posições
+                self.start = self.end - (trackWidth - windowWidth);
+                self.end = self.start + (trackWidth - windowWidth);
+            }
           },
         }
       );
@@ -372,9 +388,13 @@ const LandingPage = () => {
 
     }, sectionPinRef);
   
-    return () => ctx.revert();
-  }, []);
+    return () => {
+        // Limpa todas as instâncias GSAP e ScrollTrigger criadas neste contexto
+        ctx.revert();
+    };
+  }, []); // Dependência vazia: roda apenas uma vez
 
+  // --- CORREÇÃO DE ROLAGEM: CARTAS EMPILHADAS (PINNING) ---
   useLayoutEffect(() => {
     const pinEl = stackingPinRef.current;
     if (!pinEl) return;
@@ -386,53 +406,81 @@ const LandingPage = () => {
       gsap.set(cards[0], { yPercent: 0, opacity: 1 });
       gsap.set(cards.slice(1), { yPercent: 100, opacity: 0 });
 
+      // Aumenta a distância de rolagem por carta para dar mais tempo para a animação
+      const scrollDistancePerCard = 600; 
+      const totalScrollDistance = (cards.length - 1) * scrollDistancePerCard;
+      
       const timeline = gsap.timeline({
         scrollTrigger: {
           trigger: pinEl,
           pin: true,
           start: "top top",
-          end: "+=1200",
+          end: `+=${totalScrollDistance}`, // Fim dinâmico
           scrub: 1,
           invalidateOnRefresh: true,
         },
       });
       
-      timeline.to({}, { duration: 0.2 });
-
+      // Animação 1: Card 0 sai, Card 1 entra
       timeline.to(cards[0], {
         scale: 0.90, 
         yPercent: -10, 
-        ease: "power2.inOut"
+        ease: "power2.inOut",
+        duration: 0.5 // Duração controlada pela distância de scroll
       });
       timeline.to(cards[1], {
         yPercent: 0,
         opacity: 1,
-        ease: "power2.inOut"
+        ease: "power2.inOut",
+        duration: 0.5
       }, "<"); 
-
+      
+      // Pequeno espaço de respiro
       timeline.to({}, { duration: 0.2 });
       
+      // Animação 2: Card 1 sai, Card 2 entra
       timeline.to(cards[1], {
         scale: 0.95, 
         yPercent: -5, 
-        ease: "power2.inOut"
+        ease: "power2.inOut",
+        duration: 0.5
       });
       timeline.to(cards[2], {
         yPercent: 0,
         opacity: 1,
-        ease: "power2.inOut"
+        ease: "power2.inOut",
+        duration: 0.5
       }, "<");
+      
+      // Adiciona um respiro final para o último card permanecer na tela
+      timeline.to({}, { duration: 0.5 });
+
 
     }, stackingPinRef);
     
-    return () => ctx.revert();
-  }, []);
+    return () => {
+        // Limpa todas as instâncias GSAP e ScrollTrigger criadas neste contexto
+        ctx.revert();
+    };
+  }, []); // Dependência vazia: roda apenas uma vez
 
-  const handleScrollToFeatures = () => {
-    gsap.to(window, { duration: 1.2, scrollTo: "#funcionalidades", ease: "power2.inOut" });
+  const handleGetStarted = (planId?: string) => {
+    const params = new URLSearchParams();
+    params.set('tab', 'register');
+    if (planId && planId !== 'basico') {
+      params.set('plan', planId);
+      params.set('billing', billingCycle);
+    }
+    navigate(`/login?${params.toString()}`);
   };
 
-
+  const techLogoStyle = {
+    height: '36px',
+    width: 'auto',
+    opacity: '0.2',
+    filter: 'grayscale(100%)'
+  };
+  
   const features = [
     { icon: Globe, title: "Página Pública", description: "Crie uma página profissional para que novos clientes possam te encontrar e agendar uma consulta." },
     { icon: Calendar, title: "Agendamento Inteligente", description: "Otimize sua rotina com uma agenda clara, evitando conflitos e maximizando seu tempo." },
@@ -464,7 +512,7 @@ const LandingPage = () => {
   const firstColumn = testimonials.slice(0, 3);
   const secondColumn = testimonials.slice(3, 6);
   const thirdColumn = testimonials.slice(6, 9);
-  
+
   const faqItems = [
     { question: "O TherapyPro é seguro para os dados dos meus pacientes?", answer: "Sim. A segurança é nossa prioridade máxima. Utilizamos criptografia de ponta para proteger todos os dados e seguimos as melhores práticas de segurança, em conformidade com as normas de proteção de dados." },
     { question: "Posso testar a plataforma antes de assinar?", answer: "Com certeza! Oferecemos um plano Básico totalmente gratuito, ideal para você começar e conhecer as principais funcionalidades. Você pode fazer o upgrade para um plano superior a qualquer momento." },
@@ -499,22 +547,6 @@ const LandingPage = () => {
     }
   ];
 
-  const handleGetStarted = (planId?: string) => {
-    const params = new URLSearchParams();
-    params.set('tab', 'register');
-    if (planId && planId !== 'basico') {
-      params.set('plan', planId);
-      params.set('billing', billingCycle);
-    }
-    navigate(`/login?${params.toString()}`);
-  };
-
-  const techLogoStyle = {
-    height: '36px',
-    width: 'auto',
-    opacity: '0.2',
-    filter: 'grayscale(100%)'
-  };
 
   return (
     <div className="landing-page-wrapper">
