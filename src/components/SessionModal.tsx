@@ -205,17 +205,53 @@ export const SessionModal = ({
 
         if (error) throw error
 
+        // Atualizar pagamento associado se o valor mudou
+        if (sessionData.valor) {
+          const { error: paymentError } = await supabase
+            .from('payments')
+            .update({ 
+              valor: sessionData.valor,
+              data_vencimento: sessionData.data
+            })
+            .eq('session_id', session.id)
+          
+          if (paymentError) console.error('Erro ao atualizar pagamento:', paymentError)
+        }
+
         toast({
           title: "Sessão atualizada",
           description: "A sessão foi atualizada com sucesso.",
         })
       } else {
         // Criar nova sessão
-        const { error } = await supabase
+        const { data: newSession, error } = await supabase
           .from('sessions')
           .insert([sessionData])
+          .select('id')
+          .single()
 
         if (error) throw error
+
+        // Criar pagamento associado (se não for sessão de pacote e tiver valor)
+        if (sessionType !== 'pacote' && sessionData.valor) {
+          const paymentData = {
+            user_id: user.id,
+            client_id: formData.client_id,
+            session_id: newSession.id,
+            valor: sessionData.valor,
+            status: 'pendente',
+            metodo_pagamento: 'A definir',
+            data_vencimento: sessionData.data
+          }
+          
+          const { error: paymentError } = await supabase
+            .from('payments')
+            .insert([paymentData])
+          
+          if (paymentError) {
+            console.error('Erro ao criar pagamento:', paymentError)
+          }
+        }
 
         toast({
           title: "Sessão criada",
@@ -244,6 +280,13 @@ export const SessionModal = ({
 
     setIsLoading(true)
     try {
+      // Primeiro excluir o pagamento associado
+      await supabase
+        .from('payments')
+        .delete()
+        .eq('session_id', session.id)
+
+      // Depois excluir a sessão
       const { error } = await supabase
         .from('sessions')
         .delete()
