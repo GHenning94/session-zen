@@ -233,27 +233,8 @@ export const SessionModal = ({
           .single()
 
         if (error) throw error
-
-        // Criar pagamento associado (se não for sessão de pacote e tiver valor)
-        if (sessionType !== 'pacote' && sessionData.valor) {
-          const paymentData = {
-            user_id: user.id,
-            client_id: formData.client_id,
-            session_id: newSession.id,
-            valor: sessionData.valor,
-            status: 'pendente',
-            metodo_pagamento: 'A definir',
-            data_vencimento: sessionData.data
-          }
-          
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .insert([paymentData])
-          
-          if (paymentError) {
-            console.error('Erro ao criar pagamento:', paymentError)
-          }
-        }
+        
+        // Nota: O pagamento é criado automaticamente pelo trigger create_payment_for_session
 
         toast({
           title: "Sessão criada",
