@@ -251,49 +251,31 @@ const getSessionPayments = () => {
       // Verificar se é pagamento de pacote ou sessão
       const payment = allPayments.find(p => p.id === paymentId)
       
-      if (payment?.type === 'package') {
-        // Atualizar pagamento de pacote
-        const updateData: any = { status }
-        if (status === 'pago') {
-          updateData.data_pagamento = new Date().toISOString().split('T')[0]
-        }
-        if (method) {
-          updateData.metodo_pagamento = method
-        }
+      // Dados para atualização do pagamento
+      const updatePaymentData: any = { status }
+      if (status === 'pago') {
+        updatePaymentData.data_pagamento = new Date().toISOString().split('T')[0]
+      }
+      if (method) {
+        updatePaymentData.metodo_pagamento = method
+      }
+      
+      // Atualizar tabela payments pelo ID do pagamento
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .update(updatePaymentData)
+        .eq('id', paymentId)
+      
+      if (paymentError) throw paymentError
+      
+      // Se for sessão e tiver método de pagamento, atualizar também a sessão
+      if (payment?.type === 'session' && payment?.session_id && method) {
+        const { error: sessionError } = await supabase
+          .from('sessions')
+          .update({ metodo_pagamento: method })
+          .eq('id', payment.session_id)
         
-        const { error } = await supabase
-          .from('payments')
-          .update(updateData)
-          .eq('id', paymentId)
-        
-        if (error) throw error
-      } else {
-        // Para sessão, atualizar TANTO a tabela payments QUANTO a sessions
-        const updatePaymentData: any = { status }
-        if (status === 'pago') {
-          updatePaymentData.data_pagamento = new Date().toISOString().split('T')[0]
-        }
-        if (method) {
-          updatePaymentData.metodo_pagamento = method
-        }
-        
-        // Atualizar tabela payments
-        const { error: paymentError } = await supabase
-          .from('payments')
-          .update(updatePaymentData)
-          .eq('session_id', paymentId)
-        
-        if (paymentError) throw paymentError
-        
-        // ADICIONAR: Atualizar tabela sessions também quando método de pagamento muda
-        if (method) {
-          const { error: sessionError } = await supabase
-            .from('sessions')
-            .update({ metodo_pagamento: method })
-            .eq('id', paymentId)
-          
-          if (sessionError) throw sessionError
-        }
+        if (sessionError) console.error('Erro ao atualizar sessão:', sessionError)
       }
       
       toast({
