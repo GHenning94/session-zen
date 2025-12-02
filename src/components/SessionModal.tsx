@@ -179,9 +179,11 @@ export const SessionModal = ({
       }
 
       // Garantir formato correto HH:MM:SS para horário
-      const horarioFormatado = formData.horario.includes(':00') 
-        ? formData.horario 
-        : `${formData.horario}:00`
+      // Conta quantos ":" existem - se só tem 1 (HH:MM), adiciona :00
+      const colonCount = (formData.horario.match(/:/g) || []).length
+      const horarioFormatado = colonCount === 1 
+        ? `${formData.horario}:00` 
+        : formData.horario
 
       const sessionData = {
         user_id: user.id,
