@@ -3,6 +3,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { supabase } from '@/integrations/supabase/client'
 import { useGoogleCalendar } from '@/hooks/useGoogleCalendar'
+import { formatTimeForDatabase } from '@/lib/utils'
 
 export interface CalendarSession {
   id: string
@@ -111,7 +112,7 @@ export const useCalendarData = () => {
         user_id: user.id,
         client_id: sessionData.client_id!,
         data: sessionData.data!,
-        horario: sessionData.horario!,
+        horario: formatTimeForDatabase(sessionData.horario!),
         valor: sessionData.valor || null,
         anotacoes: sessionData.anotacoes || null,
         status: sessionData.status || 'agendada'
@@ -254,7 +255,7 @@ export const useCalendarData = () => {
 
       const updates: Partial<CalendarSession> = { data: newDate }
       if (newTime) {
-        updates.horario = newTime
+        updates.horario = formatTimeForDatabase(newTime)
       }
 
       const { error } = await supabase

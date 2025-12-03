@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { formatTimeForDatabase } from "@/lib/utils"
 
 interface NewSessionModalProps {
   open: boolean
@@ -158,7 +159,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
         user_id: user?.id,
         client_id: newSession.client_id,
         data: newSession.data,
-        horario: newSession.horario,
+        horario: formatTimeForDatabase(newSession.horario),
         valor: newSession.valor ? parseFloat(newSession.valor) : null,
         anotacoes: newSession.anotacoes,
         status: 'agendada',

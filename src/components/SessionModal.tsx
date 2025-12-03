@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { formatTimeForDatabase } from "@/lib/utils"
 import { CalendarIcon, Package, Repeat, User, DollarSign, Clock, FileText } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 
@@ -178,18 +179,11 @@ export const SessionModal = ({
         })
       }
 
-      // Garantir formato correto HH:MM:SS para horário
-      // Conta quantos ":" existem - se só tem 1 (HH:MM), adiciona :00
-      const colonCount = (formData.horario.match(/:/g) || []).length
-      const horarioFormatado = colonCount === 1 
-        ? `${formData.horario}:00` 
-        : formData.horario
-
       const sessionData = {
         user_id: user.id,
         client_id: formData.client_id,
         data: formData.data,
-        horario: horarioFormatado,
+        horario: formatTimeForDatabase(formData.horario),
         valor: formData.valor ? parseFloat(formData.valor) : null,
         status: formData.status,
         anotacoes: formData.anotacoes || null,
