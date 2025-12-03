@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatTimeForDatabase } from '@/lib/utils';
 
 export interface RecurringSession {
   id: string;
@@ -125,7 +126,7 @@ export const useRecurringSessions = () => {
           recurring_session_id: recurringId,
           session_type: 'recorrente',
           data: currentDate.toISOString().split('T')[0],
-          horario: recurring.horario,
+          horario: formatTimeForDatabase(recurring.horario),
           valor: recurring.valor,
           status: 'agendada'
         });
