@@ -6,6 +6,13 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Helper function to format time as HH:MM:SS for PostgreSQL
+function formatTimeForDatabase(time: string): string {
+  if (!time) return time
+  const colonCount = (time.match(/:/g) || []).length
+  return colonCount === 1 ? `${time}:00` : time
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -122,7 +129,7 @@ serve(async (req) => {
         user_id: config.user_id,
         client_id: newClient.id,
         data: sessionData.data,
-        horario: sessionData.horario,
+        horario: formatTimeForDatabase(sessionData.horario),
         status: 'agendada',
         valor: config.valor_padrao || 0
       }])

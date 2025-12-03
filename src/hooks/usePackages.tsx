@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { formatTimeForDatabase } from '@/lib/utils';
 
 export interface Package {
   id: string;
@@ -105,7 +106,7 @@ export const usePackages = () => {
         package_id: packageId,
         session_type: 'pacote',
         data: d.data,
-        horario: d.horario,
+        horario: formatTimeForDatabase(d.horario),
         valor: d.valor,
         status: 'agendada',
         metodo_pagamento: 'A definir'
