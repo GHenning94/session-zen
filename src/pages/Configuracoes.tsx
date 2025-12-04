@@ -507,6 +507,9 @@ const Configuracoes = () => {
       if (error) throw error
 
       if (!data?.success) {
+        if (data?.errorType === 'INVALID_PASSWORD') {
+          throw new Error('Senha incorreta. Verifique sua senha e tente novamente.')
+        }
         throw new Error(data?.error || 'Não foi possível deletar a conta')
       }
 
