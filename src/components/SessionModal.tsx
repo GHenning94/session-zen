@@ -65,7 +65,9 @@ export const SessionModal = ({
       if (error) throw error
       return data || []
     },
-    enabled: !!user && open
+    enabled: !!user && open,
+    staleTime: 0, // Always fetch fresh data when modal opens
+    refetchOnMount: 'always'
   })
 
   // Carregar pacotes ativos do cliente
