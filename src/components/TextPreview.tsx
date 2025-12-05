@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Eye } from 'lucide-react'
+import DOMPurify from 'dompurify'
 
 interface TextPreviewProps {
   content: string
@@ -29,7 +30,7 @@ export function TextPreview({ content, isHtml = false, title = "Visualização C
         {isHtml ? (
           <div 
             className="line-clamp-3 cursor-pointer hover:bg-accent/30 rounded p-1 -m-1 transition-colors"
-            dangerouslySetInnerHTML={{ __html: content }}
+            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
             onClick={() => setIsModalOpen(true)}
             style={{
               display: '-webkit-box',
@@ -77,7 +78,7 @@ export function TextPreview({ content, isHtml = false, title = "Visualização C
             {isHtml ? (
               <div 
                 className="prose prose-sm max-w-none whitespace-pre-wrap break-words overflow-wrap-anywhere"
-                dangerouslySetInnerHTML={{ __html: content }}
+                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
                 style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}
               />
             ) : (
