@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
+import { formatTimeForDatabase } from "@/lib/utils"
 
 interface SessionEditModalProps {
   session: any
@@ -92,7 +93,7 @@ export const SessionEditModal = ({
         .update({
           client_id: formData.client_id,
           data: formData.data,
-          horario: formData.horario + ':00',
+          horario: formatTimeForDatabase(formData.horario),
           valor: parseFloat(formData.valor) || null,
           status: autoStatus,
           anotacoes: formData.anotacoes || null
