@@ -11,6 +11,7 @@ import { useGoogleCalendar } from "@/hooks/useGoogleCalendar"
 import { PlanProtection } from "@/components/PlanProtection"
 import { UnsyncButton } from "@/components/UnsyncButton"
 import { supabase } from "@/integrations/supabase/client"
+import { formatTimeForDatabase } from "@/lib/utils"
 import { 
   Calendar,
   Clock,
@@ -127,7 +128,7 @@ const GoogleCalendarIntegration = () => {
           user_id: user.id,
           client_id: clientId,
           data: eventDate,
-          horario: eventTime,
+          horario: formatTimeForDatabase(eventTime),
           status: 'agendada',
           anotacoes: `Importado do Google Calendar\nLocal: ${event.location || 'Não especificado'}\nLink: ${event.htmlLink}`
         }])
