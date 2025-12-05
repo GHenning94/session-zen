@@ -183,9 +183,15 @@ export const useCalendarData = () => {
     try {
       setIsLoading(true)
 
+      // Formatar horário se presente nos updates
+      const formattedUpdates = {
+        ...updates,
+        ...(updates.horario && { horario: formatTimeForDatabase(updates.horario) })
+      }
+
       const { error } = await supabase
         .from('sessions')
-        .update(updates)
+        .update(formattedUpdates)
         .eq('id', sessionId)
         .eq('user_id', user.id)
 

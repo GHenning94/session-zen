@@ -860,6 +860,10 @@ export type Database = {
           pending_new_email: string | null
           profissao: string | null
           public_avatar_url: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_cancel_at: string | null
+          subscription_end_date: string | null
           subscription_plan: string | null
           telefone: string | null
           tipo_conta: string | null
@@ -888,6 +892,10 @@ export type Database = {
           pending_new_email?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_cancel_at?: string | null
+          subscription_end_date?: string | null
           subscription_plan?: string | null
           telefone?: string | null
           tipo_conta?: string | null
@@ -916,6 +924,10 @@ export type Database = {
           pending_new_email?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_cancel_at?: string | null
+          subscription_end_date?: string | null
           subscription_plan?: string | null
           telefone?: string | null
           tipo_conta?: string | null
