@@ -48,6 +48,7 @@ export const useRecurringSessions = () => {
         .insert({
           user_id: user.id,
           ...data,
+          horario: formatTimeForDatabase(data.horario),
           recurrence_interval: data.recurrence_interval || 1,
           status: 'ativa',
           google_calendar_sync: data.google_calendar_sync || false
@@ -163,9 +164,15 @@ export const useRecurringSessions = () => {
   const updateRecurring = async (id: string, data: Partial<RecurringSession>) => {
     setLoading(true);
     try {
+      // Formatar horário se presente nos dados
+      const formattedData = {
+        ...data,
+        ...(data.horario && { horario: formatTimeForDatabase(data.horario) })
+      };
+      
       const { data: recurringSession, error } = await supabase
         .from('recurring_sessions')
-        .update(data)
+        .update(formattedData)
         .eq('id', id)
         .select()
         .single();
@@ -232,12 +239,16 @@ export const useRecurringSessions = () => {
   const updateSingleInstance = async (sessionId: string, data: any) => {
     setLoading(true);
     try {
+      // Formatar horário se presente nos dados
+      const formattedData = {
+        ...data,
+        ...(data.horario && { horario: formatTimeForDatabase(data.horario) }),
+        is_modified: true // Marca como modificada individualmente
+      };
+      
       const { data: session, error } = await supabase
         .from('sessions')
-        .update({
-          ...data,
-          is_modified: true // Marca como modificada individualmente
-        })
+        .update(formattedData)
         .eq('id', sessionId)
         .select()
         .single();
@@ -265,10 +276,16 @@ export const useRecurringSessions = () => {
   const updateAllInstances = async (recurringId: string, data: any) => {
     setLoading(true);
     try {
+      // Formatar horário se presente nos dados
+      const formattedData = {
+        ...data,
+        ...(data.horario && { horario: formatTimeForDatabase(data.horario) })
+      };
+      
       // Atualizar todas as sessões futuras não modificadas
       const { error } = await supabase
         .from('sessions')
-        .update(data)
+        .update(formattedData)
         .eq('recurring_session_id', recurringId)
         .eq('is_modified', false)
         .gte('data', new Date().toISOString().split('T')[0]);
