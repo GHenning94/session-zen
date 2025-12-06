@@ -16,17 +16,50 @@ serve(async (req) => {
     return new Response('Method not allowed', { status: 405 });
   }
 
-  const signature = req.headers.get("stripe-signature");
-  const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
-
-  if (!signature || !webhookSecret) {
-    console.error("❌ Security: Missing signature or webhook secret");
-    return new Response("Unauthorized", { status: 401 });
-  }
-
   try {
     const body = await req.text();
-    const event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+    const signature = req.headers.get("stripe-signature");
+    const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
+
+    let event: Stripe.Event;
+
+    // ✅ MODO 1: Verificação com webhook secret (mais seguro)
+    if (signature && webhookSecret) {
+      console.log('[webhook] 🔐 Using signature verification');
+      try {
+        event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
+      } catch (err) {
+        console.error('[webhook] ❌ Signature verification failed:', err);
+        return new Response("Webhook signature verification failed", { status: 400 });
+      }
+    } 
+    // ✅ MODO 2: Fallback - Verificar evento diretamente na API do Stripe
+    else {
+      console.log('[webhook] ⚠️ No webhook secret configured, using API verification');
+      
+      let parsedBody;
+      try {
+        parsedBody = JSON.parse(body);
+      } catch {
+        console.error('[webhook] ❌ Failed to parse request body');
+        return new Response("Invalid JSON body", { status: 400 });
+      }
+
+      // Verificar se o evento existe no Stripe (anti-spoofing)
+      if (!parsedBody.id || !parsedBody.type) {
+        console.error('[webhook] ❌ Missing event id or type');
+        return new Response("Invalid event format", { status: 400 });
+      }
+
+      try {
+        // Buscar o evento diretamente na API do Stripe para verificar autenticidade
+        event = await stripe.events.retrieve(parsedBody.id);
+        console.log('[webhook] ✅ Event verified via API:', event.id);
+      } catch (err) {
+        console.error('[webhook] ❌ Event not found in Stripe:', parsedBody.id);
+        return new Response("Event not found in Stripe", { status: 404 });
+      }
+    }
 
     console.log(`[webhook] 📨 Processing event: ${event.type}`);
 
