@@ -86,24 +86,28 @@ serve(async (req) => {
       };
     }
 
-    // Get invoices
+    // Get invoices - only paid invoices (real transactions)
     const invoices = await stripe.invoices.list({
       customer: customer.id,
-      limit: 12, // Last 12 invoices
+      limit: 12,
+      status: 'paid' // Only show paid invoices, not drafts or open
     });
 
-    const formattedInvoices = invoices.data.map(invoice => ({
-      id: invoice.id,
-      number: invoice.number,
-      amount_paid: invoice.amount_paid,
-      currency: invoice.currency,
-      status: invoice.status,
-      created: invoice.created,
-      period_start: invoice.period_start,
-      period_end: invoice.period_end,
-      hosted_invoice_url: invoice.hosted_invoice_url,
-      invoice_pdf: invoice.invoice_pdf,
-    }));
+    // Filter to only include real paid invoices with actual amounts
+    const formattedInvoices = invoices.data
+      .filter(invoice => invoice.amount_paid > 0 && invoice.status === 'paid')
+      .map(invoice => ({
+        id: invoice.id,
+        number: invoice.number,
+        amount_paid: invoice.amount_paid,
+        currency: invoice.currency,
+        status: invoice.status,
+        created: invoice.created,
+        period_start: invoice.period_start,
+        period_end: invoice.period_end,
+        hosted_invoice_url: invoice.hosted_invoice_url,
+        invoice_pdf: invoice.invoice_pdf,
+      }));
 
     return new Response(JSON.stringify({ 
       invoices: formattedInvoices,
