@@ -138,6 +138,52 @@ serve(async (req) => {
               titulo: 'Bem-vindo ao TherapyPro!',
               conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso. Aproveite todos os recursos!`
             });
+
+          // Enviar email de upgrade com recibo
+          try {
+            // Buscar invoice mais recente do cliente
+            const invoices = await stripe.invoices.list({
+              customer: customerId,
+              limit: 1
+            });
+            
+            const invoice = invoices.data[0];
+            
+            // Chamar edge function de envio de email
+            const emailPayload = {
+              userId,
+              planName,
+              billingInterval,
+              invoiceUrl: invoice?.hosted_invoice_url || null,
+              invoicePdf: invoice?.invoice_pdf || null,
+              amount: invoice?.amount_paid || session.amount_total
+            };
+            
+            console.log('[webhook] 📧 Sending upgrade email with payload:', emailPayload);
+            
+            // Fazer chamada interna para send-upgrade-email
+            const emailResponse = await fetch(
+              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-upgrade-email`,
+              {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+                },
+                body: JSON.stringify(emailPayload)
+              }
+            );
+            
+            if (emailResponse.ok) {
+              console.log('[webhook] ✅ Upgrade email sent successfully');
+            } else {
+              const emailError = await emailResponse.text();
+              console.error('[webhook] ⚠️ Failed to send upgrade email:', emailError);
+            }
+          } catch (emailErr) {
+            console.error('[webhook] ⚠️ Error sending upgrade email:', emailErr);
+            // Não falhar o webhook por causa do email
+          }
         }
         break;
       }

@@ -157,21 +157,24 @@ const Dashboard = () => {
   }, [user, loadDashboardDataOptimized, searchParams])
 
   const handlePaymentSuccess = async () => {
-    setIsProcessingPayment(true)
     console.log('[Dashboard] 🔄 Payment success detected, syncing subscription...')
     
+    // Keep dashboard in loading state until subscription is synced
+    setIsLoading(true)
+    setIsProcessingPayment(true)
+    
     let attempts = 0
-    const maxAttempts = 5
+    const maxAttempts = 10
     
     const syncAndCheckStatus = async (): Promise<boolean> => {
       try {
-        // Call check-subscription which now syncs Stripe -> Database
-        console.log(`[Dashboard] Attempt ${attempts + 1}/${maxAttempts}: Calling check-subscription...`)
+        attempts++
+        console.log(`[Dashboard] Attempt ${attempts}/${maxAttempts}: Calling check-subscription...`)
         const { data, error } = await supabase.functions.invoke('check-subscription')
         
         if (error) {
           console.error('[Dashboard] check-subscription error:', error)
-          throw error
+          return false
         }
         
         console.log('[Dashboard] check-subscription response:', data)
@@ -179,13 +182,14 @@ const Dashboard = () => {
         // check-subscription now returns subscription_tier and updates DB
         if (data?.subscription_tier && data.subscription_tier !== 'basico') {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
-          setIsProcessingPayment(false)
-          toast.success(`Plano ${data.subscription_tier.toUpperCase()} ativado com sucesso!`)
-          searchParams.delete('payment')
-          setSearchParams(searchParams)
           
-          // Force reload subscription context
-          window.location.reload()
+          // Clear URL params before reload
+          searchParams.delete('payment')
+          setSearchParams(searchParams, { replace: true })
+          
+          // Small delay then reload to get fresh data with new plan
+          await new Promise(resolve => setTimeout(resolve, 500))
+          window.location.href = '/dashboard'
           return true
         }
         
@@ -197,23 +201,34 @@ const Dashboard = () => {
       }
     }
     
-    // Initial delay to allow Stripe webhook processing
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Initial delay to allow Stripe to process
+    await new Promise(resolve => setTimeout(resolve, 1500))
     
-    const pollStatus = setInterval(async () => {
-      attempts++
+    // Poll with increasing intervals
+    const poll = async () => {
       const processed = await syncAndCheckStatus()
       
-      if (processed || attempts >= maxAttempts) {
-        clearInterval(pollStatus)
-        if (!processed) {
-          setIsProcessingPayment(false)
-          toast.warning('Estamos processando sua assinatura. Por favor, aguarde alguns segundos e atualize a página.')
-          searchParams.delete('payment')
-          setSearchParams(searchParams)
-        }
+      if (processed) {
+        return // Success - page will reload
       }
-    }, 3000)
+      
+      if (attempts >= maxAttempts) {
+        // Max attempts reached - give up gracefully
+        setIsLoading(false)
+        setIsProcessingPayment(false)
+        searchParams.delete('payment')
+        setSearchParams(searchParams, { replace: true })
+        toast.success('Plano atualizado! Carregando dados...')
+        loadDashboardDataOptimized(true)
+        return
+      }
+      
+      // Wait and try again
+      await new Promise(resolve => setTimeout(resolve, 2000))
+      await poll()
+    }
+    
+    await poll()
   }
 
   // Sempre recarregar quando o Dashboard é montado (volta de outra página)

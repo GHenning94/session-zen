@@ -67,16 +67,37 @@ serve(async (req) => {
       type: 'card',
     });
 
-    const formattedMethods = paymentMethods.data.map((method: any) => ({
-      id: method.id,
-      brand: method.card?.brand,
-      last4: method.card?.last4,
-      expMonth: method.card?.exp_month,
-      expYear: method.card?.exp_year,
-      isDefault: method.id === customers.data[0].invoice_settings.default_payment_method
-    }));
+    // Deduplicate payment methods by card fingerprint or last4+brand combo
+    const seenCards = new Set<string>();
+    const defaultPaymentMethodId = customers.data[0].invoice_settings?.default_payment_method;
+    
+    const formattedMethods = paymentMethods.data
+      .map((method: any) => ({
+        id: method.id,
+        brand: method.card?.brand,
+        last4: method.card?.last4,
+        expMonth: method.card?.exp_month,
+        expYear: method.card?.exp_year,
+        fingerprint: method.card?.fingerprint,
+        isDefault: method.id === defaultPaymentMethodId
+      }))
+      .filter((method: any) => {
+        // Create unique key based on card details
+        const cardKey = `${method.brand}-${method.last4}-${method.expMonth}-${method.expYear}`;
+        if (seenCards.has(cardKey)) {
+          return false; // Skip duplicate
+        }
+        seenCards.add(cardKey);
+        return true;
+      })
+      // Sort so default card appears first
+      .sort((a: any, b: any) => {
+        if (a.isDefault) return -1;
+        if (b.isDefault) return 1;
+        return 0;
+      });
 
-    logStep("Payment methods retrieved", { count: formattedMethods.length });
+    logStep("Payment methods retrieved (deduplicated)", { count: formattedMethods.length });
 
     return new Response(JSON.stringify({
       hasPaymentMethod: formattedMethods.length > 0,
