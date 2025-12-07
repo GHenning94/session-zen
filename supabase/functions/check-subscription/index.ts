@@ -37,7 +37,7 @@ serve(async (req) => {
     logStep("Stripe key verified");
 
     // Use the service role key to perform writes (upsert) in Supabase
-    const supabaseClient = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
       { auth: { persistSession: false } }
@@ -50,7 +50,7 @@ serve(async (req) => {
     const token = authHeader.replace("Bearer ", "");
     logStep("Authenticating user with token");
     
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
+    const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     const user = userData.user;
     if (!user?.email) throw new Error("User not authenticated or email not available");
@@ -81,10 +81,13 @@ serve(async (req) => {
     });
     const hasActiveSub = subscriptions.data.length > 0;
     let subscriptionTier = "basico";
-    let subscriptionEnd = null;
+    let subscriptionEnd: string | null = null;
+    let billingInterval: string | null = null;
+    let subscriptionId: string | null = null;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
+      subscriptionId = subscription.id;
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       
@@ -92,21 +95,72 @@ serve(async (req) => {
       const priceId = subscription.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
       const amount = price.unit_amount || 0;
+      
+      // Determine billing interval
+      billingInterval = price.recurring?.interval === 'year' ? 'yearly' : 'monthly';
+      
       if (amount <= 2999) {
         subscriptionTier = "pro";
       } else {
         subscriptionTier = "premium";
       }
-      logStep("Determined subscription tier", { priceId, amount, subscriptionTier });
+      logStep("Determined subscription tier", { priceId, amount, subscriptionTier, billingInterval });
+
+      // ✅ CRITICAL: Update the database with subscription info
+      // This ensures the subscription is saved even if webhook fails
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({
+          subscription_plan: subscriptionTier,
+          subscription_end_date: subscriptionEnd,
+          billing_interval: billingInterval,
+          stripe_customer_id: customerId,
+          stripe_subscription_id: subscriptionId,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
+
+      if (updateError) {
+        logStep("Error updating profile", { error: updateError.message });
+      } else {
+        logStep("✅ Profile updated successfully with subscription info", { 
+          subscriptionTier, 
+          subscriptionEnd,
+          billingInterval 
+        });
+      }
     } else {
       logStep("No active subscription found");
+      
+      // Check if user had a subscription but it expired
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('subscription_plan, stripe_customer_id')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (profile?.subscription_plan && profile.subscription_plan !== 'basico') {
+        // User had a subscription but it's no longer active - reset to basic
+        logStep("User had subscription but it's now inactive, resetting to basic");
+        await supabaseAdmin
+          .from('profiles')
+          .update({
+            subscription_plan: 'basico',
+            subscription_end_date: null,
+            billing_interval: null,
+            stripe_subscription_id: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
+      }
     }
 
     logStep("Returning subscription info", { subscribed: hasActiveSub, subscriptionTier });
     return new Response(JSON.stringify({
       subscribed: hasActiveSub,
       subscription_tier: subscriptionTier,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      plan: subscriptionTier // Added for compatibility with get-subscription-status
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
