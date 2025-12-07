@@ -28,7 +28,7 @@ serve(async (req) => {
     // Get profile with subscription data
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("subscription_plan, billing_interval, stripe_customer_id, subscription_start_date, subscription_cancel_at")
+      .select("subscription_plan, billing_interval, stripe_customer_id, subscription_end_date, subscription_cancel_at")
       .eq("user_id", user.id)
       .single();
 
@@ -83,7 +83,7 @@ serve(async (req) => {
             plan: profile.subscription_plan,
             status: subscription.status,
             billing_interval: profile.billing_interval,
-            start_date: profile.subscription_start_date || new Date(subscription.created * 1000).toISOString(),
+            start_date: new Date(subscription.created * 1000).toISOString(),
             next_billing_date: subscription.current_period_end ? new Date(subscription.current_period_end * 1000).toISOString() : null,
             cancel_at: subscription.cancel_at ? new Date(subscription.cancel_at * 1000).toISOString() : (profile.subscription_cancel_at || null),
             is_canceled: subscription.cancel_at_period_end || false,
@@ -104,7 +104,7 @@ serve(async (req) => {
       plan: profile.subscription_plan,
       status: "active",
       billing_interval: profile.billing_interval,
-      start_date: profile.subscription_start_date,
+      start_date: null,
       next_billing_date: null,
       cancel_at: profile.subscription_cancel_at,
       is_canceled: !!profile.subscription_cancel_at
