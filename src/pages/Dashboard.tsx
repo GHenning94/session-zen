@@ -32,6 +32,7 @@ import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useTerminology } from "@/hooks/useTerminology"
 import { NewClientModal } from "@/components/NewClientModal"
 import { NewPaymentModal } from "@/components/NewPaymentModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
@@ -48,6 +49,7 @@ const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { currentPlan } = useSubscription()
+  const { clientTerm, clientTermPlural } = useTerminology()
   const { subscribe } = useGlobalRealtime()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
@@ -987,7 +989,7 @@ const Dashboard = () => {
       bgColor: "bg-primary/10"
     },
     {
-      title: "Clientes Ativos",
+      title: `${clientTermPlural} Ativos`,
       value: dashboardData.activeClients.toString(),
       change: "+5 este mês",
       icon: Users,
@@ -1359,7 +1361,7 @@ const Dashboard = () => {
                   </Button>
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewClient}>
                     <Users className="w-6 h-6 text-success" />
-                    <span>Adicionar Cliente</span>
+                    <span>Adicionar {clientTerm}</span>
                   </Button>
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewPayment}>
                     <DollarSign className="w-6 h-6 text-success" />
@@ -1668,10 +1670,10 @@ const Dashboard = () => {
                     <CardHeader className="pb-2">
                       <CardTitle className="flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-success" />
-                        Ticket Médio por Cliente
+                        Ticket Médio por {clientTerm}
                       </CardTitle>
                       <CardDescription>
-                        Valor médio por sessão de cada cliente
+                        Valor médio por sessão de cada {clientTerm.toLowerCase()}
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -1707,7 +1709,7 @@ const Dashboard = () => {
                           }) : (
                             <div className="text-center py-8">
                               <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                              <p className="text-muted-foreground">Nenhum cliente com sessões realizadas</p>
+                              <p className="text-muted-foreground">Nenhum {clientTerm.toLowerCase()} com sessões realizadas</p>
                             </div>
                           )}
                         </div>
@@ -1845,10 +1847,10 @@ const Dashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
-                  Top 5 Clientes
+                  Top 5 {clientTermPlural}
                 </CardTitle>
                 <CardDescription>
-                  Clientes que mais geraram receita
+                  {clientTermPlural} que mais geraram receita
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-full">
@@ -1914,7 +1916,7 @@ const Dashboard = () => {
                   )) : (
                     <div className="text-center py-8">
                       <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Nenhum cliente com pagamentos ainda</p>
+                      <p className="text-muted-foreground">Nenhum {clientTerm.toLowerCase()} com pagamentos ainda</p>
                     </div>
                   )}
                 </div>
@@ -1926,10 +1928,10 @@ const Dashboard = () => {
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
-                  Clientes Recentes
+                  {clientTermPlural} Recentes
                 </CardTitle>
                 <CardDescription>
-                  Últimos clientes adicionados
+                  Últimos {clientTermPlural.toLowerCase()} adicionados
                 </CardDescription>
               </CardHeader>
               <CardContent className="h-full">
@@ -1978,9 +1980,9 @@ const Dashboard = () => {
                   )) : (
                     <div className="text-center py-8">
                       <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Nenhum cliente adicionado ainda</p>
+                      <p className="text-muted-foreground">Nenhum {clientTerm.toLowerCase()} adicionado ainda</p>
                       <Button variant="outline" className="mt-2" onClick={() => navigate("/clientes")}>
-                        Adicionar Cliente
+                        Adicionar {clientTerm}
                       </Button>
                     </div>
                   )}

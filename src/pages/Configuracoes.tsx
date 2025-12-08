@@ -853,15 +853,12 @@ const Configuracoes = () => {
                 <CardDescription>Gerencie sua assinatura e métodos de pagamento</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* 1. Assinatura */}
                 <SubscriptionInfo />
 
                 {settings.subscription_plan && settings.subscription_plan !== 'basico' && (
                   <>
-                    <div className="border-t pt-6">
-                      <h3 className="text-lg font-semibold mb-4">Histórico de Faturas</h3>
-                      <SubscriptionInvoices />
-                    </div>
-
+                    {/* 2. Métodos de Pagamento */}
                     <div className="border-t pt-6">
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-semibold">Métodos de Pagamento</h3>
@@ -893,6 +890,12 @@ const Configuracoes = () => {
                           Nenhum método de pagamento cadastrado
                         </p>
                       )}
+                    </div>
+
+                    {/* 3. Histórico de Faturas */}
+                    <div className="border-t pt-6">
+                      <h3 className="text-lg font-semibold mb-4">Histórico de Cobranças</h3>
+                      <SubscriptionInvoices />
                     </div>
                   </>
                 )}

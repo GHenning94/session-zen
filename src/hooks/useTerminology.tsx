@@ -6,6 +6,9 @@ import { supabase } from '@/integrations/supabase/client'
 const PATIENT_PROFESSIONS = [
   'psicólogo',
   'psicologa',
+  'psicólogo(a)',
+  'psicologo',
+  'psicologa(a)',
   'psicanalista',
   'terapeuta',
   'terapeuta familiar',
