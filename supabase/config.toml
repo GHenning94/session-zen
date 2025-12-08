@@ -127,5 +127,17 @@ verify_jwt = false
 [functions.admin-mark-notification-read]
 verify_jwt = false
 
+[functions.cancel-subscription]
+verify_jwt = true
+
+[functions.send-downgrade-email]
+verify_jwt = false
+
+[functions.send-upgrade-email]
+verify_jwt = false
+
+[functions.get-subscription-status]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
