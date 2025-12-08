@@ -7,6 +7,7 @@ import { ThemeProvider } from 'next-themes'
 import { AuthProvider } from '@/hooks/useAuth'
 import { SubscriptionProvider } from '@/hooks/useSubscription'
 import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
+import { TerminologyProvider } from '@/hooks/useTerminology'
 import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
@@ -114,6 +115,7 @@ const App = () => (
         <TooltipProvider>
           <AuthProvider>
             <SubscriptionProvider>
+              <TerminologyProvider>
               <RealtimeSyncProvider>
                 <ProfileModalProvider>
                   <BrowserRouter>
@@ -357,6 +359,7 @@ const App = () => (
               <Sonner />
             </ProfileModalProvider>
           </RealtimeSyncProvider>
+              </TerminologyProvider>
         </SubscriptionProvider>
       </AuthProvider>
     </TooltipProvider>

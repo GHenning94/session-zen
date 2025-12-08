@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useTerminology } from "@/hooks/useTerminology"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
 import { ClientDetailsModal } from "@/components/ClientDetailsModal"
 import { NewClientModal } from "@/components/NewClientModal"
@@ -37,6 +38,7 @@ const Clientes = () => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { currentPlan, planLimits, canAddClient } = useSubscription()
+  const { clientTerm, clientTermPlural, getClientTerm } = useTerminology()
   const navigate = useNavigate()
   const [searchTerm, setSearchTerm] = useState("")
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
@@ -394,9 +396,9 @@ const Clientes = () => {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Clientes</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{clientTermPlural}</h1>
             <p className="text-muted-foreground">
-              Gerencie seus pacientes e acompanhe seu progresso
+              Gerencie seus {clientTermPlural.toLowerCase()} e acompanhe seu progresso
             </p>
           </div>
           <div className="flex gap-2">
@@ -415,7 +417,7 @@ const Clientes = () => {
               }}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Novo Cliente {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
+              Novo {clientTerm} {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
             </Button>
           </div>
         </div>
@@ -423,12 +425,12 @@ const Clientes = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
           <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Total de Clientes Ativos</CardTitle>
+              <CardTitle className="text-lg">Total de {clientTermPlural} Ativos</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-primary">{activeClients.length}</div>
               <p className="text-sm text-muted-foreground">
-                {canAddMore ? 'Clientes ativos no sistema' : `Limite do plano ${currentPlan} atingido`}
+                {canAddMore ? `${clientTermPlural} ativos no sistema` : `Limite do plano ${currentPlan} atingido`}
               </p>
             </CardContent>
           </Card>
@@ -440,20 +442,20 @@ const Clientes = () => {
             <CardContent>
               <div className="text-2xl font-bold text-primary capitalize">{currentPlan}</div>
               <p className="text-sm text-muted-foreground">
-                {activeClients.length}/{planLimits.maxClients === Infinity ? '∞' : planLimits.maxClients} clientes ativos
+                {activeClients.length}/{planLimits.maxClients === Infinity ? '∞' : planLimits.maxClients} {clientTermPlural.toLowerCase()} ativos
               </p>
             </CardContent>
           </Card>
           
           <Card className="shadow-soft w-full">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Total de Clientes Inativos</CardTitle>
+              <CardTitle className="text-lg">Total de {clientTermPlural} Inativos</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold" style={{ color: 'hsl(45 93% 47%)' }}>
                 {inactiveClients.length}
               </div>
-              <p className="text-sm text-muted-foreground">Clientes desativados</p>
+              <p className="text-sm text-muted-foreground">{clientTermPlural} desativados</p>
             </CardContent>
           </Card>
         </div>
@@ -489,19 +491,19 @@ const Clientes = () => {
 
         <Card className="shadow-soft">
           <CardHeader>
-            <CardTitle>Lista de Clientes</CardTitle>
+            <CardTitle>Lista de {clientTermPlural}</CardTitle>
             <CardDescription>
-              {filteredClients.length} cliente(s) encontrado(s)
+              {filteredClients.length} {getClientTerm(filteredClients.length).toLowerCase()}(s) encontrado(s)
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">
-                <p className="text-muted-foreground">Carregando clientes...</p>
+                <p className="text-muted-foreground">Carregando {clientTermPlural.toLowerCase()}...</p>
               </div>
             ) : filteredClients.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                Nenhum cliente encontrado.
+                Nenhum {clientTerm.toLowerCase()} encontrado.
               </div>
             ) : (
               <div className="space-y-4">

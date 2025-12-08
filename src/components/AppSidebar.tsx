@@ -35,12 +35,14 @@ import {
 } from "@/components/ui/sidebar"
 import { PremiumBanner } from "@/components/PremiumBanner"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useTerminology } from "@/hooks/useTerminology"
 import { Badge } from "@/components/ui/badge"
 
-const menuItems = [
+// Menu items will be generated dynamically based on terminology
+const getMenuItems = (clientTermPlural: string) => [
     { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
     { title: "Agenda", url: "/agenda", icon: Calendar },
-    { title: "Clientes", url: "/clientes", icon: Users },
+    { title: clientTermPlural, url: "/clientes", icon: Users },
     { title: "Sessões", url: "/sessoes", icon: NotebookPen },
     { title: "Sessões Recorrentes", url: "/sessoes-recorrentes", icon: Repeat },
     { title: "Pacotes", url: "/pacotes", icon: Package },
@@ -61,7 +63,9 @@ export function AppSidebar() {
   const { state, setOpen, open } = useSidebar()
   const location = useLocation()
   const { currentPlan, isLoading } = useSubscription()
+  const { clientTermPlural } = useTerminology()
   const currentPath = location.pathname
+  const menuItems = getMenuItems(clientTermPlural)
 
   const showBanner = !isLoading && currentPlan === 'basico'
   const isCollapsed = state === "collapsed"

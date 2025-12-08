@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge"
 const PREDEFINED_PROFESSIONS = [
   "Psicólogo",
   "Psicanalista", 
-  "Psiquiatra",
   "Terapeuta",
   "Neurologista",
   "Psicoterapeuta",

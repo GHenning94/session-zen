@@ -28,7 +28,7 @@ serve(async (req) => {
     // Get profile with subscription data
     const { data: profile, error: profileError } = await supabaseClient
       .from("profiles")
-      .select("stripe_customer_id, subscription_plan")
+      .select("stripe_customer_id, subscription_plan, nome")
       .eq("user_id", user.id)
       .single();
 
@@ -90,6 +90,27 @@ serve(async (req) => {
         titulo: "Assinatura Cancelada",
         conteudo: `Seu plano ${profile.subscription_plan} ficará ativo até ${new Date(cancelAt).toLocaleDateString('pt-BR')}. Após essa data, você retornará ao plano gratuito.`
       });
+
+    // Send remarketing email
+    try {
+      const serviceRoleClient = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+      );
+
+      await serviceRoleClient.functions.invoke('send-downgrade-email', {
+        body: {
+          email: user.email,
+          userName: profile.nome || 'Profissional',
+          previousPlan: profile.subscription_plan,
+          cancelAt: cancelAt
+        }
+      });
+      console.log("[cancel-subscription] Remarketing email sent successfully");
+    } catch (emailError) {
+      console.error("[cancel-subscription] Failed to send remarketing email:", emailError);
+      // Don't fail the cancellation if email fails
+    }
 
     return new Response(JSON.stringify({
       success: true,

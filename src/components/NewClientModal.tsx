@@ -10,6 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
+import { useTerminology } from "@/hooks/useTerminology"
 import { supabase } from "@/integrations/supabase/client"
 import { Plus, Zap, ArrowUpRight, Trash2 } from "lucide-react"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
@@ -26,6 +27,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
   const { toast } = useToast()
   const { user } = useAuth()
   const { planLimits, canAddClient } = useSubscription()
+  const { clientTerm, clientTermPlural } = useTerminology()
   const [isLoading, setIsLoading] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [isQuickRegistration, setIsQuickRegistration] = useState(true)
