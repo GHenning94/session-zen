@@ -14,7 +14,20 @@ serve(async (req) => {
   }
 
   try {
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      console.log('[get-subscription-invoices] ⚠️ No STRIPE_SECRET_KEY configured');
+      return new Response(JSON.stringify({ 
+        invoices: [],
+        subscription: null,
+        currentPlan: 'basico'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -37,10 +50,12 @@ serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    // Get user profile to find Stripe customer
+    console.log('[get-subscription-invoices] 📋 Fetching invoices for user:', user.id);
+
+    // Get user profile to find Stripe customer and subscription info
     const { data: profile, error: profileError } = await supabase
       .from('profiles')
-      .select('*')
+      .select('subscription_plan, stripe_customer_id, stripe_subscription_id, billing_interval')
       .eq('user_id', user.id)
       .single();
 
@@ -48,54 +63,114 @@ serve(async (req) => {
       throw new Error('Profile not found');
     }
 
-    // Find Stripe customer by email
-    const customers = await stripe.customers.list({
-      email: user.email,
-      limit: 1
-    });
-
-    if (customers.data.length === 0) {
-      return new Response(JSON.stringify({ 
-        invoices: [],
-        subscription: null,
-        currentPlan: profile.subscription_plan
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 200,
+    // Se não tem customer_id, buscar por email
+    let customerId = profile.stripe_customer_id;
+    
+    if (!customerId) {
+      const customers = await stripe.customers.list({
+        email: user.email,
+        limit: 1
       });
+
+      if (customers.data.length === 0) {
+        console.log('[get-subscription-invoices] ℹ️ No Stripe customer found');
+        return new Response(JSON.stringify({ 
+          invoices: [],
+          subscription: null,
+          currentPlan: profile.subscription_plan || 'basico'
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        });
+      }
+      
+      customerId = customers.data[0].id;
     }
 
-    const customer = customers.data[0];
+    console.log('[get-subscription-invoices] 👤 Customer ID:', customerId);
 
-    // Get active subscriptions
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customer.id,
-      status: 'active',
-      limit: 1
-    });
-
+    // Get active subscription
     let subscriptionInfo = null;
-    if (subscriptions.data.length > 0) {
-      const subscription = subscriptions.data[0];
-      subscriptionInfo = {
-        id: subscription.id,
-        status: subscription.status,
-        current_period_end: subscription.current_period_end,
-        current_period_start: subscription.current_period_start,
-        cancel_at_period_end: subscription.cancel_at_period_end,
-      };
+    let subscriptionId = profile.stripe_subscription_id;
+
+    if (subscriptionId) {
+      try {
+        const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+        if (subscription && (subscription.status === 'active' || subscription.status === 'canceled')) {
+          subscriptionInfo = {
+            id: subscription.id,
+            status: subscription.status,
+            current_period_end: subscription.current_period_end,
+            current_period_start: subscription.current_period_start,
+            cancel_at_period_end: subscription.cancel_at_period_end,
+          };
+        }
+      } catch (subErr) {
+        console.log('[get-subscription-invoices] ⚠️ Could not retrieve subscription:', subErr);
+      }
     }
 
-    // Get invoices - only paid invoices (real transactions)
-    const invoices = await stripe.invoices.list({
-      customer: customer.id,
-      limit: 12,
-      status: 'paid' // Only show paid invoices, not drafts or open
-    });
+    // Se não encontrou pelo ID, buscar pela lista
+    if (!subscriptionInfo) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: 'all',
+        limit: 1
+      });
 
-    // Filter to only include real paid invoices with actual amounts
+      if (subscriptions.data.length > 0) {
+        const subscription = subscriptions.data[0];
+        subscriptionInfo = {
+          id: subscription.id,
+          status: subscription.status,
+          current_period_end: subscription.current_period_end,
+          current_period_start: subscription.current_period_start,
+          cancel_at_period_end: subscription.cancel_at_period_end,
+        };
+        subscriptionId = subscription.id;
+      }
+    }
+
+    console.log('[get-subscription-invoices] 📅 Subscription info:', subscriptionInfo);
+
+    // ✅ IMPORTANTE: Buscar apenas faturas PAGAS da assinatura atual
+    // Isso evita mostrar faturas de teste ou de assinaturas antigas
+    const invoiceListParams: Stripe.InvoiceListParams = {
+      customer: customerId,
+      limit: 12,
+      status: 'paid'
+    };
+
+    // Se temos uma assinatura, filtrar apenas faturas dessa assinatura
+    if (subscriptionId) {
+      invoiceListParams.subscription = subscriptionId;
+    }
+
+    const invoices = await stripe.invoices.list(invoiceListParams);
+
+    console.log('[get-subscription-invoices] 📃 Raw invoices count:', invoices.data.length);
+
+    // ✅ Filtrar apenas faturas reais com valores pagos
+    // Excluir faturas de $0 (prorated credits, trials, etc)
     const formattedInvoices = invoices.data
-      .filter(invoice => invoice.amount_paid > 0 && invoice.status === 'paid')
+      .filter(invoice => {
+        const hasAmount = invoice.amount_paid > 0;
+        const isPaid = invoice.status === 'paid';
+        const isNotDraft = !invoice.draft;
+        
+        // Log para debug
+        if (!hasAmount || !isPaid) {
+          console.log('[get-subscription-invoices] ⏭️ Skipping invoice:', {
+            id: invoice.id,
+            number: invoice.number,
+            amount_paid: invoice.amount_paid,
+            status: invoice.status,
+            reason: !hasAmount ? 'zero amount' : 'not paid'
+          });
+        }
+        
+        return hasAmount && isPaid && isNotDraft;
+      })
       .map(invoice => ({
         id: invoice.id,
         number: invoice.number,
@@ -109,17 +184,19 @@ serve(async (req) => {
         invoice_pdf: invoice.invoice_pdf,
       }));
 
+    console.log('[get-subscription-invoices] ✅ Filtered invoices count:', formattedInvoices.length);
+
     return new Response(JSON.stringify({ 
       invoices: formattedInvoices,
       subscription: subscriptionInfo,
-      currentPlan: profile.subscription_plan
+      currentPlan: profile.subscription_plan || 'basico'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });
 
   } catch (error) {
-    console.error('Error fetching invoices:', error);
+    console.error('[get-subscription-invoices] ❌ Error:', error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { 
