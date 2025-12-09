@@ -608,7 +608,6 @@ const Configuracoes = () => {
                         <SelectItem value="psicanalista">Psicanalista</SelectItem>
                         <SelectItem value="terapeuta">Terapeuta</SelectItem>
                         <SelectItem value="coach">Coach</SelectItem>
-                        <SelectItem value="psiquiatra">Psiquiatra</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -635,16 +634,6 @@ const Configuracoes = () => {
                         value={settings.crp || ''} 
                         onChange={(e) => handleCRPChange(e.target.value)}
                         placeholder="00/00000"
-                      />
-                    </div>
-                  )}
-                  {settings.profissao === 'psiquiatra' && (
-                    <div className="space-y-2">
-                      <Label>CRM</Label>
-                      <Input 
-                        value={settings.crp || ''} 
-                        onChange={(e) => handleCRMChange(e.target.value)}
-                        placeholder="000000-UF"
                       />
                     </div>
                   )}
