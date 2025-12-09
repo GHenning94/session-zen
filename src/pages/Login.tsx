@@ -632,7 +632,6 @@ const Login = () => {
                       <SelectItem value="psicanalista">Psicanalista</SelectItem>
                       <SelectItem value="terapeuta">Terapeuta</SelectItem>
                       <SelectItem value="coach">Coach</SelectItem>
-                      <SelectItem value="psiquiatra">Psiquiatra</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
