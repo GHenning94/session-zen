@@ -156,12 +156,8 @@ export const PaymentDetailsModal = ({
                       value={selectedMethod} 
                       onValueChange={(value) => {
                         setSelectedMethod(value)
-                        // Atualizar método de pagamento
-                        if (payment.session_id) {
-                          // É uma sessão
-                          onUpdatePaymentStatus(payment.session_id, selectedStatus, value)
-                        } else if (payment.id) {
-                          // É um pagamento de pacote
+                        // Sempre usar payment.id - é o ID do registro na tabela payments
+                        if (payment.id) {
                           onUpdatePaymentStatus(payment.id, selectedStatus, value)
                         }
                       }}
@@ -194,9 +190,8 @@ export const PaymentDetailsModal = ({
                       value={selectedStatus} 
                       onValueChange={(value) => {
                         setSelectedStatus(value)
-                        if (payment.session_id) {
-                          onUpdatePaymentStatus(payment.session_id, value, selectedMethod)
-                        } else if (payment.id) {
+                        // Sempre usar payment.id - é o ID do registro na tabela payments
+                        if (payment.id) {
                           onUpdatePaymentStatus(payment.id, value, selectedMethod)
                         }
                       }}
