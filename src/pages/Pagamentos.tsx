@@ -17,6 +17,7 @@ import {
   Smartphone,
   Building2,
   Banknote,
+  Package,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
@@ -53,6 +54,7 @@ const [isLoading, setIsLoading] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null)
   const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
+  const [viewedPaymentIds, setViewedPaymentIds] = useState<Set<string>>(new Set())
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -231,6 +233,10 @@ const getSessionPayments = () => {
   const openDetailsModal = (payment: any) => {
     setSelectedPayment(payment)
     setDetailsModalOpen(true)
+    // Marcar pagamento como visualizado para parar o blinking
+    if (payment.id) {
+      setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+    }
   }
 
   const handleGenerateReceipt = (payment: any) => {
@@ -671,16 +677,19 @@ const pastPayments = filteredPayments.filter(item => {
                           // Verificar se pagamento precisa de atenção (bolinha vermelha)
                            const needsAttention = isOverdue(payment.raw)
                           
-                         return (
+                           return (
                            <div 
                              key={payment.id} 
                              className={cn(
                                "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative",
-                               highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                               highlightedPaymentId === payment.session_id && !viewedPaymentIds.has(payment.id) && "animate-pulse bg-primary/10 border-primary"
                              )}
                              onClick={() => {
                                setSelectedPayment(payment)
                                setDetailsModalOpen(true)
+                               if (payment.id) {
+                                 setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+                               }
                              }}
                            >
                              {needsAttention && (
@@ -709,13 +718,11 @@ const pastPayments = filteredPayments.filter(item => {
                                        <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                      )}
                                    </div>
-                                   {payment.type === 'package' && (
-                                     <Badge variant="outline" className="text-xs">
-                                       Pacote
-                                     </Badge>
-                                   )}
-                                   <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                                     {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                    {payment.type === 'package' && (
+                                      <Package className="w-4 h-4 text-primary" />
+                                    )}
+                                    <Badge variant={getStatusColor(payment.status)} className="text-xs">
+                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                    </Badge>
                                  </div>
                                  {payment.type === 'package' && (
@@ -767,11 +774,14 @@ const pastPayments = filteredPayments.filter(item => {
                       key={payment.id} 
                       className={cn(
                         "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative",
-                        highlightedPaymentId === payment.session_id && "animate-pulse bg-primary/10 border-primary"
+                        highlightedPaymentId === payment.session_id && !viewedPaymentIds.has(payment.id) && "animate-pulse bg-primary/10 border-primary"
                       )}
                       onClick={() => {
                         setSelectedPayment(payment)
                         setDetailsModalOpen(true)
+                        if (payment.id) {
+                          setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+                        }
                       }}
                     >
                       {needsAttention && (
@@ -801,9 +811,7 @@ const pastPayments = filteredPayments.filter(item => {
                                )}
                              </div>
                              {payment.type === 'package' && (
-                               <Badge variant="outline" className="text-xs">
-                                 Pacote
-                               </Badge>
+                               <Package className="w-4 h-4 text-primary" />
                              )}
                              <Badge variant={getStatusColor(payment.status)} className="text-xs">
                                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}

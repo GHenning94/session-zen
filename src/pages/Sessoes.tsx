@@ -20,7 +20,7 @@ import { SessionModal } from '@/components/SessionModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
-import { formatClientName } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { calculateSessionStatus, sessionNeedsAttention } from "@/utils/sessionStatusUtils"
 import { useNavigate } from 'react-router-dom'
 import { TextPreview } from '@/components/TextPreview'
@@ -354,7 +354,7 @@ export default function Sessoes() {
       case 'realizada': return 'Realizada'
       case 'agendada': return 'Agendada'
       case 'cancelada': return 'Cancelada'
-      case 'falta': return 'Falta'
+      case 'falta': return 'Faltou'
       default: return status
     }
   }
@@ -651,12 +651,12 @@ export default function Sessoes() {
                                   />
                                    <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-2">
-                                      <h3 className="text-lg font-semibold">{formatClientName(session.clients?.nome || 'Cliente não encontrado')}</h3>
+                                      <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
                                       <Badge variant={getStatusColor(session.status)}>
                                         {getStatusLabel(session.status)}
                                       </Badge>
                                       {session.package_id && (
-                                        <Badge variant="secondary" className="text-xs">
+                                        <Badge variant="info" className="text-xs">
                                           <Package className="h-3 w-3 mr-1" />
                                           Pacote
                                         </Badge>
@@ -731,12 +731,12 @@ export default function Sessoes() {
                             />
                              <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-semibold">{formatClientName(session.clients?.nome || 'Cliente não encontrado')}</h3>
+                                <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
                                 {session.package_id && (
-                                  <Badge variant="secondary" className="text-xs">
+                                  <Badge variant="info" className="text-xs">
                                     <Package className="h-3 w-3 mr-1" />
                                     Pacote
                                   </Badge>
@@ -806,7 +806,7 @@ export default function Sessoes() {
                             />
                             <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 mb-2">
-                              <h3 className="text-lg font-semibold">{formatClientName(note.clients?.nome || 'Cliente não encontrado')}</h3>
+                              <h3 className="text-lg font-semibold">{note.clients?.nome || 'Cliente não encontrado'}</h3>
                               {note.sessions && (
                                 <Badge variant="outline" className="text-xs">
                                   {formatDateBR(note.sessions.data)} às {formatTimeBR(note.sessions.horario)}

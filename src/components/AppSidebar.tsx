@@ -123,7 +123,7 @@ export function AppSidebar() {
                       {!isCollapsed && <span className="text-xs ml-2 truncate">{item.title}</span>}
                     </div>
                     {!isCollapsed && isComingSoon && (
-                      <Badge variant="success" className="text-[8px] px-1.5 py-0 whitespace-nowrap">
+                      <Badge variant="warning" className="text-[8px] px-1.5 py-0 whitespace-nowrap">
                         Em breve
                       </Badge>
                     )}
