@@ -382,9 +382,11 @@ const Dashboard = () => {
         supabase.from('payments').select('valor, status, data_pagamento, created_at, sessions:session_id(data)').eq('user_id', user?.id).eq('status', 'pago').gte('created_at', `${new Date().toISOString().slice(0, 7)}-01`).lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         // Buscar sessões futuras incluindo hoje
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, metodo_pagamento, updated_at, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(4),
+        // Buscar pagamentos recentes da tabela PAYMENTS (não sessions)
+        supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
-        supabase.from('sessions').select('client_id, valor, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null).not('valor', 'is', null),
+        // Buscar sessões realizadas para cálculo de ticket médio (contar todas as sessões com status realizada)
+        supabase.from('sessions').select('client_id, valor, status, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null),
         supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
@@ -492,7 +494,8 @@ const Dashboard = () => {
 
       const clientPayments = {}
       allClientsWithPayments?.forEach(session => {
-        if (session.client_id && session.clients?.nome && session.valor) {
+        // Contar TODAS as sessões realizadas, independente de valor
+        if (session.client_id && session.clients?.nome) {
           if (!clientPayments[session.client_id]) {
             clientPayments[session.client_id] = {
               nome: session.clients.nome,
@@ -743,24 +746,11 @@ const Dashboard = () => {
         }
       })
       
-      const sortedPayments = (paymentsData || []).sort((a, b) => {
-        const now = new Date()
-        const dateTimeA = new Date(`${a.data}T${a.horario}`)
-        const dateTimeB = new Date(`${b.data}T${b.horario}`)
-        
-        const isFutureA = dateTimeA >= now
-        const isFutureB = dateTimeB >= now
-        
-        // Pagamentos futuros vêm primeiro
-        if (isFutureA && !isFutureB) return -1
-        if (!isFutureA && isFutureB) return 1
-        
-        // Se ambos são futuros ou ambos são passados, ordenar pela mais próxima
-        if (isFutureA && isFutureB) {
-          return dateTimeA.getTime() - dateTimeB.getTime() // Mais próximo primeiro
-        } else {
-          return dateTimeB.getTime() - dateTimeA.getTime() // Mais recente primeiro
-        }
+      // Ordenar pagamentos recentes por updated_at (mais recente primeiro)
+      const sortedPayments = (paymentsData || []).slice(0, 4).sort((a, b) => {
+        const dateA = new Date(a.updated_at || a.created_at)
+        const dateB = new Date(b.updated_at || b.created_at)
+        return dateB.getTime() - dateA.getTime()
       })
       
       // ✅ ATUALIZAR TODOS OS ESTADOS DE UMA VEZ (BATCH UPDATE)
@@ -1289,23 +1279,28 @@ const Dashboard = () => {
                       </div>
                     ))
                   ) : recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => {
-                    // Determinar status baseado na data E hora da sessão
-                    const sessionDateTime = new Date(`${payment.data}T${payment.horario}`)
-                    const currentDateTime = new Date()
+                    // Status vem diretamente da tabela payments agora
+                    const displayStatus = payment.status || 'pendente'
                     
-                    // Status correto: se status da sessão é 'realizada', então está pago, caso contrário pendente
-                    let displayStatus: string
-                    if (payment.status === 'realizada') {
-                      displayStatus = 'pago'
-                    } else {
-                      displayStatus = 'pendente'
-                    }
+                    // Data/hora vem de sessions (se for pagamento de sessão) ou da data do pagamento
+                    const paymentDate = payment.sessions?.data || payment.data_pagamento || payment.created_at?.split('T')[0]
+                    const paymentTime = payment.sessions?.horario || null
 
       const getStatusColor = (status: string) => {
         switch (status) {
           case 'pago': return 'success'
           case 'pendente': return 'warning'
+          case 'cancelado': return 'destructive'
           default: return 'warning'
+        }
+      }
+
+      const getStatusLabel = (status: string) => {
+        switch (status) {
+          case 'pago': return 'Pago'
+          case 'pendente': return 'Pendente'
+          case 'cancelado': return 'Cancelado'
+          default: return status
         }
       }
                     
@@ -1317,7 +1312,8 @@ const Dashboard = () => {
                         <div>
                           <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
                           <p className="text-xs text-muted-foreground">
-                            {formatDateBR(payment.data)} às {formatTimeBR(payment.horario)}
+                            {paymentDate ? formatDateBR(paymentDate) : 'Sem data'}
+                            {paymentTime ? ` às ${formatTimeBR(paymentTime)}` : ''}
                           </p>
                         </div>
                         <div className="text-right">
@@ -1326,7 +1322,7 @@ const Dashboard = () => {
                             variant={getStatusColor(displayStatus)}
                             className="text-xs"
                           >
-                            {displayStatus === 'pago' ? 'Pago' : 'Pendente'}
+                            {getStatusLabel(displayStatus)}
                           </Badge>
                        </div>
                     </div>
