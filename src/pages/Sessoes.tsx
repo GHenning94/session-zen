@@ -344,7 +344,8 @@ export default function Sessoes() {
       case 'realizada': return 'success'
       case 'agendada': return 'info'
       case 'cancelada': return 'destructive'
-      case 'falta': return 'warning'
+      case 'falta': 
+      case 'faltou': return 'warning'
       default: return 'outline'
     }
   }
@@ -354,7 +355,8 @@ export default function Sessoes() {
       case 'realizada': return 'Realizada'
       case 'agendada': return 'Agendada'
       case 'cancelada': return 'Cancelada'
-      case 'falta': return 'Faltou'
+      case 'falta': 
+      case 'faltou': return 'Faltou'
       default: return status
     }
   }
@@ -424,7 +426,7 @@ export default function Sessoes() {
     realizadas: sessions.filter(s => s.status === 'realizada').length,
     agendadas: sessions.filter(s => s.status === 'agendada').length,
     canceladas: sessions.filter(s => s.status === 'cancelada').length,
-    faltas: sessions.filter(s => s.status === 'falta').length,
+    faltas: sessions.filter(s => s.status === 'falta' || s.status === 'faltou').length,
     totalFaturado: sessions
       .filter(s => s.status === 'realizada' && s.valor)
       .reduce((sum, s) => sum + (s.valor || 0), 0)
