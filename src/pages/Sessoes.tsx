@@ -37,6 +37,7 @@ interface Session {
   anotacoes?: string
   client_id: string
   package_id?: string
+  recurring_session_id?: string
   clients?: {
     nome: string
     avatar_url?: string
@@ -107,7 +108,7 @@ export default function Sessoes() {
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
         .select(`
-          id, data, horario, status, valor, anotacoes, client_id, package_id,
+          id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
           metodo_pagamento, session_type, google_event_id, created_at, updated_at,
           clients (nome, ativo, avatar_url)
         `)
@@ -356,7 +357,7 @@ export default function Sessoes() {
       case 'agendada': return 'Agendada'
       case 'cancelada': return 'Cancelada'
       case 'falta': 
-      case 'faltou': return 'Faltou'
+      case 'faltou': return 'Falta'
       default: return status
     }
   }
@@ -658,10 +659,10 @@ export default function Sessoes() {
                                         {getStatusLabel(session.status)}
                                       </Badge>
                                       {session.package_id && (
-                                        <Badge variant="info" className="text-xs">
-                                          <Package className="h-3 w-3 mr-1" />
-                                          Pacote
-                                        </Badge>
+                                        <Package className="h-4 w-4 text-primary" />
+                                      )}
+                                      {session.recurring_session_id && (
+                                        <Clock className="h-4 w-4 text-primary" />
                                       )}
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
@@ -738,10 +739,10 @@ export default function Sessoes() {
                                   {getStatusLabel(session.status)}
                                 </Badge>
                                 {session.package_id && (
-                                  <Badge variant="info" className="text-xs">
-                                    <Package className="h-3 w-3 mr-1" />
-                                    Pacote
-                                  </Badge>
+                                  <Package className="h-4 w-4 text-primary" />
+                                )}
+                                {session.recurring_session_id && (
+                                  <Clock className="h-4 w-4 text-primary" />
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">

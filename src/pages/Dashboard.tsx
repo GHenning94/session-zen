@@ -24,7 +24,8 @@ import {
   Crown,
   Loader2,
   Pill,
-  Baby
+  Baby,
+  Package
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -381,7 +382,7 @@ const Dashboard = () => {
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('payments').select('valor, status, data_pagamento, created_at, sessions:session_id(data)').eq('user_id', user?.id).eq('status', 'pago').gte('created_at', `${new Date().toISOString().slice(0, 7)}-01`).lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         // Buscar sessões futuras incluindo hoje
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, package_id, recurring_session_id, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
         // Buscar pagamentos recentes da tabela PAYMENTS (não sessions)
         supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
@@ -1171,31 +1172,51 @@ const Dashboard = () => {
                              size="lg"
                            />
                            <div>
-                             <div className="flex items-center gap-2">
-                               <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
-                               <TooltipProvider>
-                                 {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
-                                   <Tooltip>
-                                     <TooltipTrigger>
-                                       <Pill className="w-4 h-4 text-blue-500" />
-                                     </TooltipTrigger>
-                                     <TooltipContent>
-                                       <p>Faz uso de medicamentos</p>
-                                     </TooltipContent>
-                                   </Tooltip>
-                                 )}
-                                 {session.clients?.eh_crianca_adolescente && (
-                                   <Tooltip>
-                                     <TooltipTrigger>
-                                       <Baby className="w-4 h-4 text-pink-500" />
-                                     </TooltipTrigger>
-                                     <TooltipContent>
-                                       <p>Criança/Adolescente</p>
-                                     </TooltipContent>
-                                   </Tooltip>
-                                 )}
-                               </TooltipProvider>
-                             </div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
+                                <TooltipProvider>
+                                  {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Pill className="w-4 h-4 text-blue-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Faz uso de medicamentos</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {session.clients?.eh_crianca_adolescente && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Baby className="w-4 h-4 text-pink-500" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Criança/Adolescente</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {session.package_id && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Package className="w-4 h-4 text-primary" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Sessão de pacote</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {session.recurring_session_id && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Clock className="w-4 h-4 text-primary" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Sessão recorrente</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                </TooltipProvider>
+                              </div>
                              <p className="text-sm text-muted-foreground">
                                {formatTimeBR(session.horario)}
                              </p>
