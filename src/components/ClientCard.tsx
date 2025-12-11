@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { User, Mail, Phone, Pill, Baby } from "lucide-react"
@@ -11,6 +12,7 @@ interface ClientCardProps {
 
 export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps) => {
   const { avatarUrl, isLoading, hasError } = useAvatarUrl(client.avatar_url)
+  const [imageError, setImageError] = useState(false)
   
   // Log avatar information for debugging
   if (client.avatar_url) {
@@ -24,6 +26,8 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
     })
   }
 
+  const showFallbackIcon = !avatarUrl || hasError || imageError
+
   return (
     <div
       className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
@@ -35,7 +39,9 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
             <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center overflow-hidden">
               {isLoading ? (
                 <div className="w-6 h-6 animate-pulse bg-muted-foreground/20 rounded-full" />
-              ) : avatarUrl && !hasError ? (
+              ) : showFallbackIcon ? (
+                <User className="w-6 h-6 text-muted-foreground" />
+              ) : (
                 <img 
                   src={avatarUrl} 
                   alt={client.nome} 
@@ -43,20 +49,11 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
                   onLoad={() => {
                     console.log('[ClientCard] ✅ Image loaded successfully:', avatarUrl.substring(0, 100))
                   }}
-                  onError={(e) => {
+                  onError={() => {
                     console.error('[ClientCard] ❌ Image failed to load:', avatarUrl)
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                    const parent = target.parentElement
-                    if (parent && !parent.querySelector('svg')) {
-                      const icon = document.createElement('div')
-                      icon.innerHTML = '<svg class="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg>'
-                      parent.appendChild(icon.firstChild!)
-                    }
+                    setImageError(true)
                   }}
                 />
-              ) : (
-                <User className="w-6 h-6 text-muted-foreground" />
               )}
             </div>
           </div>
