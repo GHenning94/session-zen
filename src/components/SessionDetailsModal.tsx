@@ -16,7 +16,8 @@ import {
   CreditCard,
   Eye,
   StickyNote,
-  Package
+  Package,
+  Repeat
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
@@ -91,17 +92,19 @@ export const SessionDetailsModal = ({
               <User className={`w-8 h-8 text-muted-foreground ${avatarUrl ? 'hidden' : ''}`} />
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-2xl">{session.clients?.nome || 'Cliente não encontrado'}</DialogTitle>
+              <DialogTitle className="text-2xl flex items-center gap-2">
+                {session.clients?.nome || 'Cliente não encontrado'}
+                {session.package_id && (
+                  <Package className="h-5 w-5 text-primary" />
+                )}
+                {session.recurring_session_id && (
+                  <Repeat className="h-5 w-5 text-primary" />
+                )}
+              </DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={getStatusColor(session.status)}>
                   {getStatusLabel(session.status)}
                 </Badge>
-                {session.package_id && (
-                  <Badge variant="secondary">
-                    <Package className="h-3 w-3 mr-1" />
-                    Pacote
-                  </Badge>
-                )}
               </div>
             </div>
           </div>

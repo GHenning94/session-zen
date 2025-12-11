@@ -14,7 +14,8 @@ import {
   Receipt,
   CheckCircle,
   User,
-  Package
+  Package,
+  Repeat
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
@@ -99,10 +100,10 @@ export const PaymentDetailsModal = ({
               <DialogTitle className="text-2xl flex items-center gap-2">
                 {payment.client}
                 {isPackagePayment && (
-                  <Badge variant="info" className="text-[10px] px-2 py-0.5">
-                    <Package className="w-3 h-3 mr-1" />
-                    Pacote
-                  </Badge>
+                  <Package className="w-5 h-5 text-primary" />
+                )}
+                {payment.recurring_session_id && (
+                  <Repeat className="w-5 h-5 text-primary" />
                 )}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-1">

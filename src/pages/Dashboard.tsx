@@ -25,7 +25,8 @@ import {
   Loader2,
   Pill,
   Baby,
-  Package
+  Package,
+  Repeat
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -1208,7 +1209,7 @@ const Dashboard = () => {
                                   {session.recurring_session_id && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <Clock className="w-4 h-4 text-primary" />
+                                        <Repeat className="w-4 h-4 text-primary" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Sessão recorrente</p>
