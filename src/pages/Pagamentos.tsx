@@ -718,12 +718,12 @@ const pastPayments = filteredPayments.filter(item => {
                                        <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                      )}
                                    </div>
+                                    <Badge variant={getStatusColor(payment.status)}>
+                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                    </Badge>
                                     {payment.type === 'package' && (
                                       <Package className="w-4 h-4 text-primary" />
                                     )}
-                                    <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                                   </Badge>
                                  </div>
                                  {payment.type === 'package' && (
                                    <div className="text-xs text-muted-foreground mt-1">
@@ -810,12 +810,12 @@ const pastPayments = filteredPayments.filter(item => {
                                  <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                )}
                              </div>
+                             <Badge variant={getStatusColor(payment.status)}>
+                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                             </Badge>
                              {payment.type === 'package' && (
                                <Package className="w-4 h-4 text-primary" />
                              )}
-                             <Badge variant={getStatusColor(payment.status)} className="text-xs">
-                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                             </Badge>
                            </div>
                            {payment.type === 'package' && (
                              <div className="text-xs text-muted-foreground mt-1">
