@@ -18,6 +18,7 @@ import {
   Building2,
   Banknote,
   Package,
+  Repeat,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
@@ -77,7 +78,7 @@ const [isLoading, setIsLoading] = useState(false)
           id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
           observacoes, created_at, package_id, session_id, client_id,
           packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio),
-          sessions:session_id (data, horario, status, valor, metodo_pagamento)
+          sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -174,6 +175,7 @@ const getSessionPayments = () => {
       package_sessions: p.packages ? `${p.packages.sessoes_consumidas || 0}/${p.packages.total_sessoes || 0}` : undefined,
       package_data_inicio: p.packages?.data_inicio,
       package_data_fim: p.packages?.data_fim,
+      recurring_session_id: p.sessions?.recurring_session_id,
       type: isPackage ? 'package' : 'session',
       raw: p,
     }
@@ -681,8 +683,7 @@ const pastPayments = filteredPayments.filter(item => {
                            <div 
                              key={payment.id} 
                              className={cn(
-                               "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative",
-                               highlightedPaymentId === payment.session_id && !viewedPaymentIds.has(payment.id) && "animate-pulse bg-primary/10 border-primary"
+                               "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative"
                              )}
                              onClick={() => {
                                setSelectedPayment(payment)
@@ -702,7 +703,18 @@ const pastPayments = filteredPayments.filter(item => {
                                  <StatusIcon className="w-5 h-5 text-primary" />
                                </div>
                                <div className="flex-1">
-                                 <h3 className="font-medium">{payment.client}</h3>
+                                 <div className="flex items-center gap-2 mb-1">
+                                   <h3 className="font-medium">{payment.client}</h3>
+                                   <Badge variant={getStatusColor(payment.status)}>
+                                     {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                   </Badge>
+                                   {payment.type === 'package' && (
+                                     <Package className="w-4 h-4 text-primary" />
+                                   )}
+                                   {payment.recurring_session_id && (
+                                     <Repeat className="w-4 h-4 text-primary" />
+                                   )}
+                                 </div>
                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                    <div className="flex items-center gap-1">
                                      <Calendar className="w-3 h-3" />
@@ -718,12 +730,6 @@ const pastPayments = filteredPayments.filter(item => {
                                        <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                      )}
                                    </div>
-                                    <Badge variant={getStatusColor(payment.status)}>
-                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                                    </Badge>
-                                    {payment.type === 'package' && (
-                                      <Package className="w-4 h-4 text-primary" />
-                                    )}
                                  </div>
                                  {payment.type === 'package' && (
                                    <div className="text-xs text-muted-foreground mt-1">
@@ -773,8 +779,7 @@ const pastPayments = filteredPayments.filter(item => {
                     <div 
                       key={payment.id} 
                       className={cn(
-                        "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative",
-                        highlightedPaymentId === payment.session_id && !viewedPaymentIds.has(payment.id) && "animate-pulse bg-primary/10 border-primary"
+                        "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative"
                       )}
                       onClick={() => {
                         setSelectedPayment(payment)
@@ -794,7 +799,18 @@ const pastPayments = filteredPayments.filter(item => {
                            <StatusIcon className="w-5 h-5 text-primary" />
                          </div>
                          <div className="flex-1">
-                           <h3 className="font-medium">{payment.client}</h3>
+                           <div className="flex items-center gap-2 mb-1">
+                             <h3 className="font-medium">{payment.client}</h3>
+                             <Badge variant={getStatusColor(payment.status)}>
+                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                             </Badge>
+                             {payment.type === 'package' && (
+                               <Package className="w-4 h-4 text-primary" />
+                             )}
+                             {payment.recurring_session_id && (
+                               <Repeat className="w-4 h-4 text-primary" />
+                             )}
+                           </div>
                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
                              <div className="flex items-center gap-1">
                                <Calendar className="w-3 h-3" />
@@ -810,12 +826,6 @@ const pastPayments = filteredPayments.filter(item => {
                                  <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
                                )}
                              </div>
-                             <Badge variant={getStatusColor(payment.status)}>
-                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                             </Badge>
-                             {payment.type === 'package' && (
-                               <Package className="w-4 h-4 text-primary" />
-                             )}
                            </div>
                            {payment.type === 'package' && (
                              <div className="text-xs text-muted-foreground mt-1">
