@@ -218,42 +218,45 @@ export const PaymentDetailsModal = ({
           {payment.status === 'pago' && !isPackagePayment && (
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 onGenerateReceipt(payment)
                 onOpenChange(false)
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5"
             >
               <Receipt className="w-4 h-4" />
-              Gerar Recibo
+              Recibo
             </Button>
           )}
 
           {!isPackagePayment && payment.session_id && (
             <Button
               variant="outline"
+              size="sm"
               onClick={() => {
                 onViewSession(payment.session_id)
                 onOpenChange(false)
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5"
             >
               <Calendar className="w-4 h-4" />
-              Ver Sessão
+              Sessão
             </Button>
           )}
 
           {!onUpdatePaymentStatus && payment.status === 'pendente' && onMarkAsPaid && !isPackagePayment && (
             <Button
               variant="default"
+              size="sm"
               onClick={() => {
                 onMarkAsPaid(payment.session_id)
                 onOpenChange(false)
               }}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5"
             >
               <CheckCircle className="w-4 h-4" />
-              Marcar como Pago
+              Marcar Pago
             </Button>
           )}
         </div>
