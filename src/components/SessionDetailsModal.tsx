@@ -171,20 +171,22 @@ export const SessionDetailsModal = ({
         <div className="flex flex-wrap gap-2 pt-4 border-t mt-6">
           <Button
             variant="outline"
+            size="sm"
             onClick={() => onViewAgenda(session.id)}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5"
           >
             <Eye className="w-4 h-4" />
-            Ver na Agenda
+            Agenda
           </Button>
 
           <Button
             variant="outline"
+            size="sm"
             onClick={() => {
               onEdit(session)
               onOpenChange(false)
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5"
           >
             <Edit2 className="w-4 h-4" />
             Editar
@@ -192,38 +194,38 @@ export const SessionDetailsModal = ({
           
           <Button
             variant="outline"
+            size="sm"
             onClick={() => {
               onAddNote(session)
               onOpenChange(false)
             }}
-            className="flex items-center gap-2"
+            className="flex items-center gap-1.5"
           >
             <StickyNote className="w-4 h-4" />
-            Adicionar Anotação
+            Anotação
           </Button>
 
           {session.status === 'realizada' && session.valor && (
             <Button
               variant="outline"
+              size="sm"
               onClick={() => onViewPayment(session.id)}
-              className="flex items-center gap-2"
+              className="flex items-center gap-1.5"
             >
               <CreditCard className="w-4 h-4" />
-              Ver Pagamento
+              Pagamento
             </Button>
           )}
 
-          
           <Button
             variant="destructive"
+            size="sm"
             onClick={() => {
               onDelete(session.id)
               onOpenChange(false)
             }}
-            className="flex items-center gap-2"
           >
             <Trash2 className="w-4 h-4" />
-            Excluir
           </Button>
         </div>
       </DialogContent>

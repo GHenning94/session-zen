@@ -91,7 +91,8 @@ export default function Sessoes() {
     client: '',
     startDate: '',
     endDate: '',
-    search: ''
+    search: '',
+    sessionType: ''
   })
 
   useEffect(() => {
@@ -378,8 +379,20 @@ export default function Sessoes() {
       if (filters.endDate) {
         matchesDate = matchesDate && session.data <= filters.endDate
       }
+
+      // Filtro por tipo de sessão
+      let matchesType = true
+      if (filters.sessionType && filters.sessionType !== "all") {
+        if (filters.sessionType === "individual") {
+          matchesType = !session.package_id && !session.recurring_session_id
+        } else if (filters.sessionType === "package") {
+          matchesType = !!session.package_id
+        } else if (filters.sessionType === "recurring") {
+          matchesType = !!session.recurring_session_id
+        }
+      }
       
-      return matchesStatus && matchesClient && matchesSearch && matchesDate
+      return matchesStatus && matchesClient && matchesSearch && matchesDate && matchesType
     })
     .sort((a, b) => {
       const now = new Date()
@@ -536,7 +549,7 @@ export default function Sessoes() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
               <div>
                 <Label htmlFor="search">Buscar</Label>
                 <Input
@@ -576,6 +589,21 @@ export default function Sessoes() {
                     <SelectItem value="agendada">Agendadas</SelectItem>
                     <SelectItem value="cancelada">Canceladas</SelectItem>
                     <SelectItem value="falta">Faltas</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="type-filter">Tipo</Label>
+                <Select value={filters.sessionType} onValueChange={(value) => setFilters(prev => ({ ...prev, sessionType: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todos os tipos" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="individual">Individual</SelectItem>
+                    <SelectItem value="package">Pacote</SelectItem>
+                    <SelectItem value="recurring">Recorrente</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
