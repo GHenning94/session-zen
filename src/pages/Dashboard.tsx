@@ -1196,26 +1196,6 @@ const Dashboard = () => {
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
-                                  {session.package_id && (
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Package className="w-4 h-4 text-primary" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Sessão de pacote</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                  {session.recurring_session_id && (
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Repeat className="w-4 h-4 text-primary" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Sessão recorrente</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
                                 </TooltipProvider>
                               </div>
                              <p className="text-sm text-muted-foreground">
@@ -1228,22 +1208,46 @@ const Dashboard = () => {
                       </div>
                        <div className="text-right">
                           <p className="font-medium">{formatDateBR(session.data)}</p>
-                         <Badge 
-                           variant={
-                             session.status === 'realizada' ? 'success' :
-                             session.status === 'agendada' ? 'info' :
-                             session.status === 'cancelada' ? 'destructive' :
-                             session.status === 'falta' ? 'warning' :
-                             'info'
-                           }
-                           className="text-xs"
-                         >
-                           {session.status === 'realizada' ? 'Realizada' :
-                            session.status === 'agendada' ? 'Agendada' :
-                            session.status === 'cancelada' ? 'Cancelada' :
-                            session.status === 'falta' ? 'Falta' :
-                            'Agendada'}
-                         </Badge>
+                          <div className="flex items-center justify-end gap-1.5 mt-1">
+                            <TooltipProvider>
+                              {session.package_id && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Package className="w-4 h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Sessão de pacote</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {session.recurring_session_id && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Repeat className="w-4 h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Sessão recorrente</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </TooltipProvider>
+                            <Badge 
+                              variant={
+                                session.status === 'realizada' ? 'success' :
+                                session.status === 'agendada' ? 'info' :
+                                session.status === 'cancelada' ? 'destructive' :
+                                session.status === 'falta' ? 'warning' :
+                                'info'
+                              }
+                              className="text-xs"
+                            >
+                              {session.status === 'realizada' ? 'Realizada' :
+                               session.status === 'agendada' ? 'Agendada' :
+                               session.status === 'cancelada' ? 'Cancelada' :
+                               session.status === 'falta' ? 'Falta' :
+                               'Agendada'}
+                            </Badge>
+                          </div>
                         </div>
                     </div>
                    </Card>
