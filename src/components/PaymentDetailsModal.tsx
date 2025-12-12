@@ -97,19 +97,19 @@ export const PaymentDetailsModal = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <DialogTitle className="text-2xl flex items-center gap-2">
+              <DialogTitle className="text-2xl">
                 {payment.client}
+              </DialogTitle>
+              <div className="flex items-center gap-2 mt-1">
+                <Badge variant={getStatusColor(payment.status)}>
+                  {getStatusLabel(payment.status)}
+                </Badge>
                 {isPackagePayment && (
                   <Package className="w-5 h-5 text-primary" />
                 )}
                 {payment.recurring_session_id && (
                   <Repeat className="w-5 h-5 text-primary" />
                 )}
-              </DialogTitle>
-              <div className="flex items-center gap-2 mt-1">
-                <Badge variant={getStatusColor(payment.status)}>
-                  {getStatusLabel(payment.status)}
-                </Badge>
               </div>
             </div>
           </div>
