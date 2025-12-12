@@ -475,7 +475,7 @@ export default function Sessoes() {
               variant={activeTab === 'notes' ? 'default' : 'outline'}
               onClick={() => setActiveTab('notes')}
             >
-              Lembretes
+              Anotações
             </Button>
           </div>
         </div>
@@ -789,12 +789,12 @@ export default function Sessoes() {
         {activeTab === 'notes' && (
           <Card className="shadow-soft">
             <CardHeader>
-              <CardTitle>Lembretes de sessões</CardTitle>
+              <CardTitle>Anotações de sessões</CardTitle>
             </CardHeader>
             <CardContent>
               {filteredNotes.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
-                  Nenhum lembrete encontrado.
+                  Nenhuma anotação encontrada.
                 </div>
               ) : (
                 <div className="space-y-4">
