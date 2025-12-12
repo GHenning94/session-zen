@@ -199,7 +199,7 @@ export const SessionDetailsModal = ({
             className="flex items-center gap-2"
           >
             <StickyNote className="w-4 h-4" />
-            Adicionar Lembrete
+            Adicionar Anotação
           </Button>
 
           {session.status === 'realizada' && session.valor && (
