@@ -444,9 +444,9 @@ export const SessionModal = ({
               </div>
             )}
 
-            {/* Anotações */}
+            {/* Observações */}
             <div className="col-span-2">
-              <Label htmlFor="anotacoes">Anotações</Label>
+              <Label htmlFor="anotacoes">Observações</Label>
               <Textarea
                 id="anotacoes"
                 placeholder="Observações sobre a sessão..."
