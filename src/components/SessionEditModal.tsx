@@ -4,11 +4,13 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { formatTimeForDatabase } from "@/lib/utils"
+import { Package, Repeat } from "lucide-react"
 
 interface SessionEditModalProps {
   session: any
@@ -127,7 +129,19 @@ export const SessionEditModal = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>Editar Sessão</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Editar Sessão
+            {session?.package_id && (
+              <Badge variant="outline">
+                <Package className="h-3.5 w-3.5" />
+              </Badge>
+            )}
+            {session?.recurring_session_id && (
+              <Badge variant="outline">
+                <Repeat className="h-3.5 w-3.5" />
+              </Badge>
+            )}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
