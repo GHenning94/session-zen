@@ -30,6 +30,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
     useEffect(() => {
       // Inject global styles for ReactQuill
       const style = document.createElement('style')
+      style.id = 'rich-text-editor-styles'
       style.textContent = `
         .ql-editor {
           word-wrap: break-word !important;
@@ -41,6 +42,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
           overflow-x: hidden !important;
           width: 100% !important;
           box-sizing: border-box !important;
+          color: #1f2937 !important;
         }
         .ql-container {
           max-height: 400px !important;
@@ -52,6 +54,7 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
           border-right: 1px solid #ccc !important;
           border-bottom: none !important;
           border-radius: 6px 6px 0 0 !important;
+          background-color: #f9fafb !important;
         }
         .ql-container.ql-snow {
           border-top: none !important;
@@ -59,12 +62,26 @@ const RichTextEditor = forwardRef<HTMLDivElement, RichTextEditorProps>(
           border-left: 1px solid #ccc !important;
           border-right: 1px solid #ccc !important;
           border-radius: 0 0 6px 6px !important;
+          background-color: white !important;
+        }
+        .ql-editor.ql-blank::before {
+          color: #9ca3af !important;
         }
       `
+      
+      // Remove existing style if present
+      const existingStyle = document.getElementById('rich-text-editor-styles')
+      if (existingStyle) {
+        existingStyle.remove()
+      }
+      
       document.head.appendChild(style)
       
       return () => {
-        document.head.removeChild(style)
+        const styleToRemove = document.getElementById('rich-text-editor-styles')
+        if (styleToRemove) {
+          styleToRemove.remove()
+        }
       }
     }, [])
 
