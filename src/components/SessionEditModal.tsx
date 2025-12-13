@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
@@ -130,17 +129,12 @@ export const SessionEditModal = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
+            {session?.package_id ? (
+              <Package className="h-4 w-4" />
+            ) : session?.recurring_session_id ? (
+              <Repeat className="h-4 w-4" />
+            ) : null}
             Editar Sessão
-            {session?.package_id && (
-              <Badge variant="outline">
-                <Package className="h-3.5 w-3.5" />
-              </Badge>
-            )}
-            {session?.recurring_session_id && (
-              <Badge variant="outline">
-                <Repeat className="h-3.5 w-3.5" />
-              </Badge>
-            )}
           </DialogTitle>
         </DialogHeader>
 

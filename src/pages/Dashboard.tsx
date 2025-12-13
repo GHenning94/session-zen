@@ -554,12 +554,12 @@ const Dashboard = () => {
         canalPayments[metodo] += Number(session.valor) || 0
       })
 
-      const canalColors = {
-        'pix': '#00D09C',
-        'cartao': '#6366F1', 
-        'dinheiro': '#F59E0B',
-        'transferencia': '#8B5CF6',
-        'A definir': '#6B7280'
+      const canalColors: Record<string, string> = {
+        'pix': 'hsl(var(--chart-1))',
+        'cartao': 'hsl(var(--chart-2))', 
+        'dinheiro': 'hsl(var(--chart-3))',
+        'transferencia': 'hsl(var(--chart-4))',
+        'A definir': 'hsl(var(--chart-5))'
       }
 
       const receitaPorCanalData = Object.entries(canalPayments)
@@ -749,7 +749,7 @@ const Dashboard = () => {
       })
       
       // Ordenar pagamentos recentes por updated_at (mais recente primeiro)
-      const sortedPayments = (paymentsData || []).slice(0, 4).sort((a, b) => {
+      const sortedPayments = (paymentsData || []).slice(0, 5).sort((a, b) => {
         const dateA = new Date(a.updated_at || a.created_at)
         const dateB = new Date(b.updated_at || b.created_at)
         return dateB.getTime() - dateA.getTime()
@@ -1304,7 +1304,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                     ))
-                  ) : recentPayments.length > 0 ? recentPayments.slice(0, 4).map((payment, index) => {
+                  ) : recentPayments.length > 0 ? recentPayments.slice(0, 5).map((payment, index) => {
                     // Status vem diretamente da tabela payments agora
                     const displayStatus = payment.status || 'pendente'
                     
