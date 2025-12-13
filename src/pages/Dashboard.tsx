@@ -555,11 +555,11 @@ const Dashboard = () => {
       })
 
       const canalColors: Record<string, string> = {
-        'pix': 'hsl(var(--chart-1))',
-        'cartao': 'hsl(var(--chart-2))', 
-        'dinheiro': 'hsl(var(--chart-3))',
-        'transferencia': 'hsl(var(--chart-4))',
-        'A definir': 'hsl(var(--chart-5))'
+        'pix': '#00D09C',
+        'cartao': '#6366F1', 
+        'dinheiro': '#F59E0B',
+        'transferencia': '#8B5CF6',
+        'A definir': '#6B7280'
       }
 
       const receitaPorCanalData = Object.entries(canalPayments)

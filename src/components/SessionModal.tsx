@@ -104,7 +104,14 @@ export const SessionModal = ({
           package_id: session.package_id || "",
           recurring_session_id: session.recurring_session_id || ""
         })
-        setSessionType(session.session_type || 'individual')
+        // Determinar tipo de sessão baseado nos IDs
+        if (session.package_id) {
+          setSessionType('pacote')
+        } else if (session.recurring_session_id) {
+          setSessionType('recorrente')
+        } else {
+          setSessionType('individual')
+        }
       } else {
         // Modo criação
         const initialData = selectedDate ? selectedDate.toISOString().split('T')[0] : ""
@@ -292,11 +299,20 @@ export const SessionModal = ({
   }
 
   const getSessionTypeIcon = () => {
-    switch (sessionType) {
-      case 'pacote': return <Package className="h-4 w-4" />
-      case 'recorrente': return <Repeat className="h-4 w-4" />
-      default: return <CalendarIcon className="h-4 w-4" />
+    // Para edição, verificar pelos IDs, não pelo sessionType
+    if (session?.package_id) return <Package className="h-4 w-4" />
+    if (session?.recurring_session_id) return <Repeat className="h-4 w-4" />
+    
+    // Para criação, usar o sessionType selecionado
+    if (!session) {
+      switch (sessionType) {
+        case 'pacote': return <Package className="h-4 w-4" />
+        case 'recorrente': return <Repeat className="h-4 w-4" />
+        default: return null // Não mostrar ícone para individual
+      }
     }
+    
+    return null // Não mostrar ícone para individual
   }
 
   return (
@@ -431,7 +447,7 @@ export const SessionModal = ({
                     <SelectItem value="agendada">Agendada</SelectItem>
                     <SelectItem value="realizada">Realizada</SelectItem>
                     <SelectItem value="cancelada">Cancelada</SelectItem>
-                    <SelectItem value="faltou">Faltou</SelectItem>
+                    <SelectItem value="faltou">Falta</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
