@@ -306,16 +306,6 @@ export const SessionModal = ({
           <DialogTitle className="flex items-center gap-2">
             {getSessionTypeIcon()}
             {session ? 'Editar Sessão' : 'Nova Sessão'}
-            {session?.session_type === 'pacote' && (
-              <Badge variant="outline" className="ml-2">
-                <Package className="h-3.5 w-3.5" />
-              </Badge>
-            )}
-            {session?.session_type === 'recorrente' && (
-              <Badge variant="outline" className="ml-2">
-                <Repeat className="h-3.5 w-3.5" />
-              </Badge>
-            )}
           </DialogTitle>
         </DialogHeader>
 
