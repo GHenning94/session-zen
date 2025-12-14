@@ -873,11 +873,12 @@ const Dashboard = () => {
         canalData[method] += p.valor || 0
       })
 
-      const canalColors = {
-        'pix': '#10B981',
-        'dinheiro': '#3B82F6', 
-        'cartao': '#8B5CF6',
-        'transferencia': '#F59E0B',
+      const canalColors: Record<string, string> = {
+        'pix': '#00D09C',
+        'cartao': '#6366F1', 
+        'dinheiro': '#F59E0B',
+        'transferencia': '#8B5CF6',
+        'A definir': '#6B7280',
         'Outros': '#6B7280'
       }
 

@@ -17,6 +17,8 @@ export interface CalendarSession {
   metodo_pagamento?: string
   created_at: string
   updated_at: string
+  package_id?: string
+  recurring_session_id?: string
 }
 
 export interface CalendarClient {
@@ -56,7 +58,7 @@ export const useCalendarData = () => {
       const [sessionsResult, clientsResult] = await Promise.all([
         supabase
           .from('sessions')
-          .select('id, user_id, client_id, data, horario, valor, anotacoes, status, metodo_pagamento, created_at, updated_at, google_event_id, google_sync_type')
+          .select('id, user_id, client_id, data, horario, valor, anotacoes, status, metodo_pagamento, created_at, updated_at, google_event_id, google_sync_type, package_id, recurring_session_id')
           .eq('user_id', user.id)
           .order('data', { ascending: true }),
         supabase
