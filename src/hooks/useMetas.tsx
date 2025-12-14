@@ -261,7 +261,7 @@ export const useMetas = () => {
       clientes: 'Clientes',
       receita: 'Receita Mensal',
       pacotes: 'Pacotes',
-      ticket_medio: 'Performance'
+      ticket_medio: 'Performance (Taxa de conclusão de sessões)'
     };
     return labels[tipo];
   };
