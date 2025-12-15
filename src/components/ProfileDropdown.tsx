@@ -2,28 +2,42 @@ import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, LogOut, Shield, Palette } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { 
+  User, 
+  LogOut, 
+  Shield, 
+  Palette, 
+  CreditCard, 
+  Building, 
+  Bell,
+  Crown,
+  Gift
+} from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { cn } from "@/lib/utils"
 
 interface Profile {
   nome: string
   profissao: string
   avatar_url?: string
+  subscription_plan?: string
+  is_referral_partner?: boolean
 }
 
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
-  const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '' })
+  const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '', subscription_plan: 'basico', is_referral_partner: false })
   const { avatarUrl } = useAvatarUrl(profile.avatar_url)
 
   useEffect(() => {
@@ -60,7 +74,7 @@ export const ProfileDropdown = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('nome, profissao, avatar_url')
+        .select('nome, profissao, avatar_url, subscription_plan, is_referral_partner')
         .eq('user_id', user.id)
         .single()
 
@@ -71,7 +85,6 @@ export const ProfileDropdown = () => {
         const professionMap: Record<string, string> = {
           'psicologo': 'Psicólogo',
           'psicanalista': 'Psicanalista',
-          'psiquiatra': 'Psiquiatra',
           'terapeuta': 'Terapeuta',
           'neurologista': 'Neurologista',
           'psicoterapeuta': 'Psicoterapeuta',
@@ -91,57 +104,181 @@ export const ProfileDropdown = () => {
     navigate('/')
   }
 
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .slice(0, 2)
+      .join('')
+      .toUpperCase()
+  }
+
+  const isPremium = profile.subscription_plan && profile.subscription_plan !== 'basico'
+
+  const menuItems = {
+    profile: [
+      { icon: User, label: "Meu Perfil", action: () => navigate('/configuracoes?tab=profile') },
+      { icon: Shield, label: "Segurança", action: () => navigate('/configuracoes?tab=security') },
+      { icon: Palette, label: "Preferências", action: () => navigate('/configuracoes?tab=preferences') },
+      { icon: Bell, label: "Notificações", action: () => navigate('/configuracoes?tab=notifications') },
+    ],
+    payments: [
+      { icon: CreditCard, label: "Pagamentos da Plataforma", action: () => navigate('/configuracoes?tab=platform-payments') },
+      { icon: Building, label: "Dados Bancários", action: () => navigate('/configuracoes?tab=bank-details') },
+    ],
+    premium: !isPremium ? [
+      { 
+        icon: Crown, 
+        label: "Upgrade to Premium", 
+        action: () => navigate('/upgrade'),
+        isPremiumItem: true,
+        badge: "-17%"
+      }
+    ] : [],
+    referral: [
+      { icon: Gift, label: "Programa de Indicação", action: () => navigate('/programa-indicacao') }
+    ]
+  }
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all hover:opacity-80">
-          <Avatar className="h-8 w-8 cursor-pointer">
+          <Avatar className="h-10 w-10 cursor-pointer border border-border">
             <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
             <AvatarFallback className="bg-primary/10">
-              <User className="h-4 w-4 text-primary" />
+              {profile.nome ? getInitials(profile.nome) : <User className="h-4 w-4 text-primary" />}
             </AvatarFallback>
           </Avatar>
         </button>
       </DropdownMenuTrigger>
       
-      <DropdownMenuContent align="end" className="w-64">
-        <DropdownMenuLabel>
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{profile.nome || 'Usuário'}</p>
-            <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
-            </p>
-            {profile.profissao && (
-              <p className="text-xs leading-none text-muted-foreground">
-                {profile.profissao}
-              </p>
+      <DropdownMenuContent 
+        align="end" 
+        className="no-scrollbar w-[310px] rounded-2xl bg-muted/50 dark:bg-black/90 p-0"
+      >
+        {/* Main Section */}
+        <section className="bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
+          {/* User Info Header */}
+          <div className="flex items-center p-3">
+            <div className="flex-1 flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-border">
+                <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
+                <AvatarFallback className="bg-primary/10">
+                  {profile.nome ? getInitials(profile.nome) : <User className="h-4 w-4 text-primary" />}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm text-foreground truncate">{profile.nome || 'Usuário'}</h3>
+                <p className="text-muted-foreground text-xs truncate">{user?.email}</p>
+                {profile.profissao && (
+                  <p className="text-muted-foreground text-xs truncate">{profile.profissao}</p>
+                )}
+              </div>
+            </div>
+            {profile.is_referral_partner && (
+              <Badge className="bg-primary/10 text-primary border-primary/20 border text-[10px] rounded-sm">
+                Parceiro
+              </Badge>
             )}
           </div>
-        </DropdownMenuLabel>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={() => navigate('/configuracoes?tab=profile')} className="cursor-pointer">
-          <User className="mr-2 h-4 w-4" />
-          <span>Meu Perfil</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => navigate('/configuracoes?tab=security')} className="cursor-pointer">
-          <Shield className="mr-2 h-4 w-4" />
-          <span>Segurança</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuItem onClick={() => navigate('/configuracoes?tab=preferences')} className="cursor-pointer">
-          <Palette className="mr-2 h-4 w-4" />
-          <span>Preferências</span>
-        </DropdownMenuItem>
-        
-        <DropdownMenuSeparator />
-        
-        <DropdownMenuItem onClick={handleSignOut} className="cursor-pointer text-destructive focus:text-destructive">
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>Sair</span>
-        </DropdownMenuItem>
+
+          {/* Profile Menu Items */}
+          <DropdownMenuGroup>
+            {menuItems.profile.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator />
+
+          {/* Payment Menu Items */}
+          <DropdownMenuGroup>
+            {menuItems.payments.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator />
+
+          {/* Premium Upgrade Item */}
+          {menuItems.premium.length > 0 && (
+            <>
+              <DropdownMenuGroup>
+                {menuItems.premium.map((item, index) => (
+                  <DropdownMenuItem 
+                    key={index}
+                    className={cn(
+                      "p-2 rounded-lg cursor-pointer justify-between",
+                      item.isPremiumItem && "animated-premium hover:opacity-90"
+                    )}
+                    onClick={item.action}
+                  >
+                    <span className="flex items-center gap-2 font-medium text-white">
+                      <item.icon className="h-5 w-5 text-white" />
+                      {item.label}
+                    </span>
+                    {item.badge && (
+                      <Badge className="animated-premium text-white text-[10px] border-white/30 border">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          )}
+
+          {/* Referral Program */}
+          <DropdownMenuGroup>
+            {menuItems.referral.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+        </section>
+
+        {/* Secondary Section - Logout */}
+        <section className="mt-1 p-1 rounded-2xl">
+          <DropdownMenuGroup>
+            <DropdownMenuItem 
+              onClick={handleSignOut} 
+              className="p-2 rounded-lg cursor-pointer text-destructive focus:text-destructive"
+            >
+              <span className="flex items-center gap-2 font-medium">
+                <LogOut className="h-5 w-5" />
+                Sair
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
+        </section>
       </DropdownMenuContent>
     </DropdownMenu>
   )

@@ -1,25 +1,95 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, Users, Crown, Briefcase, Circle } from "lucide-react";
+import { Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, Users, Crown, Briefcase, Circle, LogOut } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import referralGift from "@/assets/referral-gift.jpg";
 
 const ProgramaIndicacao = () => {
   const { user } = useAuth();
   const [isEnrolled, setIsEnrolled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const inviteLink = `https://therapypro.app/convite/${user?.id || 'default'}`;
 
-  const handleEnrollment = () => {
-    setIsEnrolled(true);
-    toast({
-      title: "Parabéns!",
-      description: "Você foi inscrito no programa de indicação com sucesso.",
-    });
+  // Carregar status de parceiro do banco de dados
+  useEffect(() => {
+    const loadPartnerStatus = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('is_referral_partner')
+          .eq('user_id', user.id)
+          .single();
+        
+        if (error) throw error;
+        setIsEnrolled(data?.is_referral_partner || false);
+      } catch (error) {
+        console.error('Erro ao carregar status de parceiro:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadPartnerStatus();
+  }, [user]);
+
+  const handleEnrollment = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_referral_partner: true })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setIsEnrolled(true);
+      toast({
+        title: "Parabéns!",
+        description: "Você foi inscrito no programa de indicação com sucesso.",
+      });
+    } catch (error) {
+      console.error('Erro ao ingressar no programa:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível ingressar no programa. Tente novamente.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLeaveProgram = async () => {
+    if (!user) return;
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_referral_partner: false })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setIsEnrolled(false);
+      toast({
+        title: "Você deixou o programa",
+        description: "Você pode ingressar novamente a qualquer momento.",
+      });
+    } catch (error) {
+      console.error('Erro ao sair do programa:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível sair do programa. Tente novamente.",
+        variant: "destructive",
+      });
+    }
   };
 
   const copyLink = () => {
@@ -61,6 +131,16 @@ const ProgramaIndicacao = () => {
     basicUsers: 88,
     totalEarned: "R$ 2.340,00"
   };
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!isEnrolled) {
     return (
@@ -199,12 +279,23 @@ const ProgramaIndicacao = () => {
   return (
     <Layout>
       <div className="space-y-8">
-        <div className="flex items-center gap-3">
-          <Gift className="w-8 h-8 text-primary" />
-          <div>
-            <h1 className="text-2xl font-bold">Programa de Indicação</h1>
-            <p className="text-muted-foreground">Painel do programa de indicações</p>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Gift className="w-8 h-8 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Programa de Indicação</h1>
+              <p className="text-muted-foreground">Painel do programa de indicações</p>
+            </div>
           </div>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={handleLeaveProgram}
+            className="text-destructive hover:text-destructive"
+          >
+            <LogOut className="w-4 h-4 mr-2" />
+            Deixar Programa
+          </Button>
         </div>
 
         {/* Link de Indicação */}

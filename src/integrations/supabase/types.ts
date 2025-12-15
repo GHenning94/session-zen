@@ -856,6 +856,7 @@ export type Database = {
           especialidade: string | null
           first_login_completed: boolean | null
           id: string
+          is_referral_partner: boolean | null
           nome: string
           pending_new_email: string | null
           profissao: string | null
@@ -888,6 +889,7 @@ export type Database = {
           especialidade?: string | null
           first_login_completed?: boolean | null
           id?: string
+          is_referral_partner?: boolean | null
           nome: string
           pending_new_email?: string | null
           profissao?: string | null
@@ -920,6 +922,7 @@ export type Database = {
           especialidade?: string | null
           first_login_completed?: boolean | null
           id?: string
+          is_referral_partner?: boolean | null
           nome?: string
           pending_new_email?: string | null
           profissao?: string | null
