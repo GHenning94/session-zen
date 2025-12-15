@@ -6,13 +6,14 @@
 
 /* Controle global de overflow e altura */
 html, body {
-  overflow: hidden;
+  overflow-x: hidden;
   max-width: 100vw;
-  height: 100%;
 }
 
-#root {
-  height: 100%;
+/* Layout autenticado - controle de scroll único */
+.app-layout-container {
+  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 
