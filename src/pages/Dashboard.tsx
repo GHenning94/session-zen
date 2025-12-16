@@ -26,7 +26,9 @@ import {
   Pill,
   Baby,
   Package,
-  Repeat
+  Repeat,
+  PenLine,
+  FileText
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -94,6 +96,8 @@ const Dashboard = () => {
     pendingCount: 0
   })
   const [smartNotifications, setSmartNotifications] = useState<any[]>([])
+  const [sessionNotes, setSessionNotes] = useState<any[]>([])
+  const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
   
   // Cooperative cancellation refs
@@ -376,7 +380,9 @@ const Dashboard = () => {
         allPaymentMethodsResult,
         packagesDataResult,
         allSessionsForNotificationsResult,
-        pendingPaymentsResult
+        pendingPaymentsResult,
+        sessionNotesResult,
+        evolucoesResult
       ] = await Promise.all([
         // Buscar TODAS as sessões de hoje, sem considerar horário para filtro inicial
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('data', today).order('horario'),
@@ -392,7 +398,11 @@ const Dashboard = () => {
         supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
-        supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id)
+        supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id),
+        // Buscar anotações de sessões
+        supabase.from('session_notes').select('session_id').eq('user_id', user?.id),
+        // Buscar evoluções
+        supabase.from('evolucoes').select('session_id').eq('user_id', user?.id).not('session_id', 'is', null)
       ])
       
       if (checkStale()) return
@@ -771,6 +781,8 @@ const Dashboard = () => {
       setReceitaPorCanal(receitaPorCanalData)
       setCanalDataCache(receitaPorCanalData)
       setDynamicReminders(reminders)
+      setSessionNotes(sessionNotesResult.data || [])
+      setEvolucoes(evolucoesResult.data || [])
       
       if (checkStale()) return
       
@@ -1228,6 +1240,26 @@ const Dashboard = () => {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Sessão recorrente</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {sessionNotes.some(note => note.session_id === session.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <PenLine className="w-4 h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Possui anotação</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {evolucoes.some(evo => evo.session_id === session.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <FileText className="w-4 h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Possui prontuário</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
