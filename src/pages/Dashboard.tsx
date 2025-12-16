@@ -701,7 +701,7 @@ const Dashboard = () => {
         }
       }
       
-      // Clientes novos
+      // Clientes novos - usar terminologia dinâmica
       if (recentClientsData && recentClientsData.length > 0) {
         const newClientsThisWeek = recentClientsData.filter(client => {
           const clientDate = new Date(client.created_at)
@@ -711,7 +711,8 @@ const Dashboard = () => {
         }).length
         
         if (newClientsThisWeek > 0) {
-          reminders.push(`${newClientsThisWeek} novo${newClientsThisWeek > 1 ? 's' : ''} cliente${newClientsThisWeek > 1 ? 's' : ''} esta semana`)
+          const termToUse = newClientsThisWeek === 1 ? clientTerm.toLowerCase() : clientTermPlural.toLowerCase()
+          reminders.push(`${newClientsThisWeek} novo${newClientsThisWeek > 1 ? 's' : ''} ${termToUse} esta semana`)
         }
       }
 
@@ -835,25 +836,12 @@ const Dashboard = () => {
     console.log('💳 Mudando período dos canais para:', period)
     setCanalPeriod(period)
     
-    if (!user) return
-    
-    const monthsToQuery = parseInt(period)
-    const cacheKey = `canal_${user.id}_${period}`
-    const cached = localStorage.getItem(cacheKey)
-    const cacheTime = localStorage.getItem(`${cacheKey}_time`)
-    
-    if (cached && cacheTime && (Date.now() - parseInt(cacheTime)) < 180000) {
-      console.log('🚀 Loading canal data from cache...')
-      setReceitaPorCanal(JSON.parse(cached))
-      return
-    }
-    
-    // Load filtered data for pie chart
+    // Carregar dados diretamente sem cache para garantir dados corretos
     await loadCanalData(period)
   }, [user])
 
   // Load canal data with period filter (usando payments)
-  const loadCanalData = async (period: '1' | '3' | '6' | '12') => {
+  const loadCanalData = useCallback(async (period: '1' | '3' | '6' | '12') => {
     try {
       if (!user) return
 
@@ -905,16 +893,11 @@ const Dashboard = () => {
 
       console.log('💳 Dados filtrados processados:', filteredCanalData)
       setReceitaPorCanal(filteredCanalData)
-      
-      // Cache the data
-      const cacheKey = `canal_${user.id}_${period}`
-      localStorage.setItem(cacheKey, JSON.stringify(filteredCanalData))
-      localStorage.setItem(`${cacheKey}_time`, Date.now().toString())
 
     } catch (error) {
       console.error('Erro ao carregar dados do canal:', error)
     }
-  }
+  }, [user])
 
   const handleNewSession = () => {
     navigate('/sessoes')

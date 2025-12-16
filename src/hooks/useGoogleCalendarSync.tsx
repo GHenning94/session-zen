@@ -296,72 +296,56 @@ export const useGoogleCalendarSync = () => {
 
       let clientId = null
 
-      // Sempre tenta criar/encontrar cliente baseado nos participantes
-      if (event.attendees && event.attendees.length > 0) {
-        const attendee = event.attendees[0]
-        const clientName = attendee.displayName || event.summary.split(' - ')[1] || event.summary
-        const clientEmail = attendee.email
+      // Extrair nome do cliente do evento
+      const clientName = (event.attendees?.[0]?.displayName || event.summary.split(' - ')[1] || event.summary).trim()
+      const attendeeEmail = event.attendees?.[0]?.email || null
 
-        // Verificar se cliente já existe
-        const { data: existingClient } = await supabase
+      // 1. Primeiro tenta por email se disponível
+      if (attendeeEmail) {
+        const { data: existingByEmail } = await supabase
           .from('clients')
           .select('id')
           .eq('user_id', user.id)
-          .eq('email', clientEmail)
+          .eq('email', attendeeEmail)
           .maybeSingle()
-
-        if (existingClient) {
-          clientId = existingClient.id
-        } else {
-          const { data: newClient, error: clientError } = await supabase
-            .from('clients')
-            .insert([{
-              user_id: user.id,
-              nome: clientName,
-              email: clientEmail,
-              telefone: '',
-              dados_clinicos: event.description || ''
-            }])
-            .select()
-            .single()
-
-          if (clientError) throw clientError
-          clientId = newClient.id
+        
+        if (existingByEmail) {
+          clientId = existingByEmail.id
         }
       }
 
-      // Se não temos cliente, verificar se já existe por nome antes de criar
-      if (!clientId) {
-        const clientName = event.summary.split(' - ')[1] || event.summary
-        
-        // Verificar se já existe cliente com mesmo nome
-        const { data: existingClientByName } = await supabase
+      // 2. Se não encontrou por email, tenta por nome (case-insensitive)
+      if (!clientId && clientName) {
+        const { data: existingByName } = await supabase
           .from('clients')
           .select('id')
           .eq('user_id', user.id)
-          .ilike('nome', clientName)
+          .ilike('nome', clientName.trim())
           .maybeSingle()
-
-        if (existingClientByName) {
-          clientId = existingClientByName.id
-        } else {
-          const { data: newClient, error: clientError } = await supabase
-            .from('clients')
-            .insert([{
-              user_id: user.id,
-              nome: clientName,
-              email: null,
-              telefone: '',
-              dados_clinicos: editable 
-                ? `Criado a partir de evento do Google: ${event.description || ''}`
-                : `Importado do Google Calendar: ${event.description || ''}`
-            }])
-            .select()
-            .single()
-
-          if (clientError) throw clientError
-          clientId = newClient.id
+        
+        if (existingByName) {
+          clientId = existingByName.id
         }
+      }
+
+      // 3. Se ainda não encontrou, cria novo cliente
+      if (!clientId) {
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert([{
+            user_id: user.id,
+            nome: clientName,
+            email: attendeeEmail,
+            telefone: '',
+            dados_clinicos: editable 
+              ? `Criado a partir de evento do Google: ${event.description || ''}`
+              : `Importado do Google Calendar: ${event.description || ''}`
+          }])
+          .select()
+          .single()
+
+        if (clientError) throw clientError
+        clientId = newClient.id
       }
 
       // Criar sessão - se editável, usa valor padrão; se somente leitura, usa NULL
@@ -450,12 +434,12 @@ export const useGoogleCalendarSync = () => {
         ? format(new Date(startDateTime!), "HH:mm")
         : "09:00"
 
-      // Verificar se cliente já existe por email ou nome
-      const clientName = event.summary.split(' - ')[1] || event.summary
+      // Extrair nome do cliente do evento
+      const clientName = (event.summary.split(' - ')[1] || event.summary).trim()
       const attendeeEmail = event.attendees?.[0]?.email || null
       let clientId = null
 
-      // Primeiro tenta por email se disponível
+      // 1. Primeiro tenta por email se disponível
       if (attendeeEmail) {
         const { data: existingByEmail } = await supabase
           .from('clients')
@@ -469,13 +453,13 @@ export const useGoogleCalendarSync = () => {
         }
       }
 
-      // Se não encontrou por email, tenta por nome
-      if (!clientId) {
+      // 2. Se não encontrou por email, tenta por nome (case-insensitive)
+      if (!clientId && clientName) {
         const { data: existingByName } = await supabase
           .from('clients')
           .select('id')
           .eq('user_id', user.id)
-          .ilike('nome', clientName)
+          .ilike('nome', clientName.trim())
           .maybeSingle()
         
         if (existingByName) {
