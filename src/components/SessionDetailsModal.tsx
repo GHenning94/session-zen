@@ -194,18 +194,32 @@ export const SessionDetailsModal = ({
             Agenda
           </Button>
 
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              onEdit(session)
-              onOpenChange(false)
-            }}
-            className="flex items-center gap-1.5"
-          >
-            <Edit2 className="w-4 h-4" />
-            Editar
-          </Button>
+          {/* Botão Editar - desabilitado para sessões somente leitura */}
+          {session.google_sync_type === 'importado' ? (
+            <Button
+              variant="outline"
+              size="sm"
+              disabled
+              className="flex items-center gap-1.5 opacity-50 cursor-not-allowed"
+              title="Sessão importada do Google (somente leitura)"
+            >
+              <Edit2 className="w-4 h-4" />
+              Somente Leitura
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                onEdit(session)
+                onOpenChange(false)
+              }}
+              className="flex items-center gap-1.5"
+            >
+              <Edit2 className="w-4 h-4" />
+              Editar
+            </Button>
+          )}
           
           <Button
             variant="outline"

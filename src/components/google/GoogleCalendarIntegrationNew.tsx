@@ -521,14 +521,15 @@ const GoogleCalendarIntegrationNew = () => {
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Download className="w-4 h-4 text-primary" />
-                      <span>Importar do Google</span>
+                      <span>Importar do Google (somente leitura)</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-sm text-muted-foreground">
-                      Traz o evento do Google Agenda para a plataforma como cópia. 
-                      Alterações feitas no Google <strong>não afetam</strong> automaticamente a cópia importada.
-                      Ideal para eventos que você deseja gerenciar apenas na plataforma.
+                      Traz o evento do Google Agenda para a plataforma em <strong>modo de visualização</strong>. 
+                      A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada.
+                      Ideal para manter eventos sincronizados sem risco de alterações acidentais.
+                      O evento ficará marcado com a tag <Badge variant="secondary" className="mx-1">Importado</Badge>.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -537,14 +538,15 @@ const GoogleCalendarIntegrationNew = () => {
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
                       <Copy className="w-4 h-4 text-primary" />
-                      <span>Criar cópia editável</span>
+                      <span>Criar cópia editável (independente)</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
                     <p className="text-sm text-muted-foreground">
-                      Duplica o evento do Google como uma sessão totalmente editável. 
-                      Não altera o evento original no Google. 
-                      Use quando quiser personalizar os dados do evento na plataforma.
+                      Cria uma <strong>sessão totalmente independente</strong> baseada no evento do Google. 
+                      Você pode editar todos os dados livremente na plataforma.
+                      <strong>Não mantém vínculo</strong> com o Google Calendar - é como criar uma nova sessão manualmente.
+                      Não exibe tag de sincronização pois é uma sessão nativa da plataforma.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
