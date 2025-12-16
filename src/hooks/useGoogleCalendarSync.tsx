@@ -351,16 +351,18 @@ export const useGoogleCalendarSync = () => {
         clientId = newClient.id
       }
 
-      // Buscar valor padrão da configuração do usuário
-      const { data: config } = await supabase
-        .from('configuracoes')
-        .select('valor_padrao')
-        .eq('user_id', user.id)
-        .maybeSingle()
+      // Criar sessão - se editável, usa valor padrão; se somente leitura, usa NULL
+      // Isso evita que o trigger crie pagamento automático para sessões importadas
+      let valorPadrao = null
+      if (editable) {
+        const { data: config } = await supabase
+          .from('configuracoes')
+          .select('valor_padrao')
+          .eq('user_id', user.id)
+          .maybeSingle()
+        valorPadrao = config?.valor_padrao || 0
+      }
 
-      const valorPadrao = config?.valor_padrao || 0
-
-      // Criar sessão - se editável, não vincula ao Google (sessão independente)
       const sessionData: any = {
         user_id: user.id,
         client_id: clientId,
@@ -451,15 +453,7 @@ export const useGoogleCalendarSync = () => {
 
       if (clientError) throw clientError
 
-      // Buscar valor padrão
-      const { data: config } = await supabase
-        .from('configuracoes')
-        .select('valor_padrao')
-        .eq('user_id', user.id)
-        .maybeSingle()
-
-      const valorPadrao = config?.valor_padrao || 0
-
+      // Mirror não define valor inicialmente para evitar criação automática de pagamento
       const { error: sessionError } = await supabase
         .from('sessions')
         .insert([{
@@ -468,7 +462,7 @@ export const useGoogleCalendarSync = () => {
           data: eventDate,
           horario: formatTimeForDatabase(eventTime),
           status: 'agendada',
-          valor: valorPadrao,
+          valor: null, // NULL para evitar trigger de pagamento automático
           anotacoes: event.description || '',
           google_event_id: event.id,
           google_sync_type: 'espelhado' as GoogleSyncType,
