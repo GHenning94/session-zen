@@ -16,10 +16,11 @@ import { useGoogleCalendarSync } from "@/hooks/useGoogleCalendarSync"
 import { PlanProtection } from "@/components/PlanProtection"
 import { GoogleEventCard } from "./GoogleEventCard"
 import { PlatformSessionCard } from "./PlatformSessionCard"
+import { getRecurringMasterId } from "@/types/googleCalendar"
 import { 
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
-  ArrowLeftRight, EyeOff, Copy, Info
+  ArrowLeftRight, EyeOff, Copy, Info, Repeat
 } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -35,6 +36,7 @@ const GoogleCalendarIntegrationNew = () => {
     selectedGoogleEvents,
     selectedPlatformSessions,
     filteredGoogleEvents,
+    groupedRecurringEvents,
     connectToGoogle,
     disconnectFromGoogle,
     loadAllData,
@@ -42,6 +44,8 @@ const GoogleCalendarIntegrationNew = () => {
     mirrorGoogleEvent,
     ignoreGoogleEvent,
     sendToGoogle,
+    importRecurringSeries,
+    getRecurringSeriesInstances,
     batchImportGoogleEvents,
     batchSendToGoogle,
     batchIgnoreGoogleEvents,
@@ -53,6 +57,14 @@ const GoogleCalendarIntegrationNew = () => {
   } = useGoogleCalendarSync()
 
   const [activeInfoTab, setActiveInfoTab] = useState("concepts")
+
+  // Helper para obter contagem de instâncias de série
+  const getSeriesCount = (event: any): number => {
+    const masterId = getRecurringMasterId(event)
+    if (!masterId || !groupedRecurringEvents) return 1
+    const series = groupedRecurringEvents.get(masterId)
+    return series?.totalCount || 1
+  }
 
   // Sessões locais (não importadas do Google)
   const localSessions = platformSessions.filter(s => 
@@ -247,8 +259,10 @@ const GoogleCalendarIntegrationNew = () => {
                             event={event}
                             isSelected={selectedGoogleEvents.has(event.id)}
                             isSyncing={syncing === event.id}
+                            seriesCount={getSeriesCount(event)}
                             onSelect={() => toggleGoogleEventSelection(event.id)}
                             onImport={(createClient) => importGoogleEvent(event, createClient)}
+                            onImportSeries={(createClient) => importRecurringSeries(event, createClient)}
                             onMirror={() => mirrorGoogleEvent(event)}
                             onIgnore={() => ignoreGoogleEvent(event.id).then(() => loadAllData())}
                           />
@@ -259,7 +273,7 @@ const GoogleCalendarIntegrationNew = () => {
                   
                   {filteredGoogleEvents.length > 0 && (
                     <div className="mt-4 pt-4 border-t flex justify-end gap-2">
-                      <Button 
+                      <Button
                         variant="outline" 
                         size="sm"
                         onClick={handleImportAll}
@@ -524,16 +538,26 @@ const GoogleCalendarIntegrationNew = () => {
                 <AccordionItem value="recurring">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <RefreshCw className="w-4 h-4 text-primary" />
-                      <span>Eventos recorrentes</span>
+                      <Repeat className="w-4 h-4 text-primary" />
+                      <span>Eventos recorrentes (séries)</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Eventos recorrentes do Google são tratados individualmente - cada ocorrência 
-                      aparece separadamente na lista. Isso permite maior flexibilidade para gerenciar 
-                      cada sessão de forma independente.
-                    </p>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>
+                        Eventos recorrentes são identificados com o ícone <Badge variant="outline" className="mx-1"><Repeat className="w-3 h-3 mr-1" />Recorrente</Badge> 
+                        e mostram a quantidade de instâncias na série.
+                      </p>
+                      <p>
+                        <strong>Importar única:</strong> Importa apenas a ocorrência selecionada, ideal para casos onde você quer controle individual.
+                      </p>
+                      <p>
+                        <strong>Importar série:</strong> Importa todas as instâncias da série de uma vez, criando um único cliente vinculado a todas as sessões.
+                      </p>
+                      <p className="text-xs pt-2 border-t mt-2">
+                        Cada ocorrência importada mantém referência à série original para rastreamento.
+                      </p>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
               </Accordion>

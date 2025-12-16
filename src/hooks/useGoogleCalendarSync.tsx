@@ -1,9 +1,16 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatTimeForDatabase } from "@/lib/utils"
-import { GoogleEvent, PlatformSession, GoogleSyncType } from "@/types/googleCalendar"
+import { 
+  GoogleEvent, 
+  PlatformSession, 
+  GoogleSyncType, 
+  RecurringEventSeries,
+  isRecurringEvent,
+  getRecurringMasterId 
+} from "@/types/googleCalendar"
 import { format } from "date-fns"
 
 // Configurações Google OAuth
@@ -529,6 +536,188 @@ export const useGoogleCalendarSync = () => {
     }
   }
 
+  // Agrupar eventos recorrentes em séries
+  const groupRecurringEvents = useMemo((): Map<string, RecurringEventSeries> => {
+    const seriesMap = new Map<string, RecurringEventSeries>()
+    
+    for (const event of googleEvents) {
+      const masterId = getRecurringMasterId(event)
+      
+      if (masterId) {
+        const existing = seriesMap.get(masterId)
+        
+        if (existing) {
+          existing.instances.push(event)
+          existing.totalCount++
+          
+          // Atualizar primeira/última instância
+          const eventStart = new Date(event.start.dateTime || event.start.date || '')
+          const firstStart = new Date(existing.firstInstance.start.dateTime || existing.firstInstance.start.date || '')
+          const lastStart = new Date(existing.lastInstance.start.dateTime || existing.lastInstance.start.date || '')
+          
+          if (eventStart < firstStart) {
+            existing.firstInstance = event
+          }
+          if (eventStart > lastStart) {
+            existing.lastInstance = event
+          }
+        } else {
+          seriesMap.set(masterId, {
+            masterId,
+            summary: event.summary,
+            instances: [event],
+            firstInstance: event,
+            lastInstance: event,
+            totalCount: 1,
+            recurrenceRule: event.recurrence?.[0]
+          })
+        }
+      }
+    }
+    
+    // Ordenar instâncias por data
+    seriesMap.forEach(series => {
+      series.instances.sort((a, b) => {
+        const dateA = new Date(a.start.dateTime || a.start.date || '')
+        const dateB = new Date(b.start.dateTime || b.start.date || '')
+        return dateA.getTime() - dateB.getTime()
+      })
+    })
+    
+    return seriesMap
+  }, [googleEvents])
+
+  // Obter todas as instâncias de uma série recorrente
+  const getRecurringSeriesInstances = (event: GoogleEvent): GoogleEvent[] => {
+    const masterId = getRecurringMasterId(event)
+    if (!masterId) return [event]
+    
+    const series = groupRecurringEvents.get(masterId)
+    return series?.instances || [event]
+  }
+
+  // Importar série recorrente inteira
+  const importRecurringSeries = async (event: GoogleEvent, createClient = false): Promise<number> => {
+    const seriesInstances = getRecurringSeriesInstances(event)
+    
+    if (seriesInstances.length <= 1) {
+      // Se só tem uma instância, importar normalmente
+      const success = await importGoogleEvent(event, createClient)
+      return success ? 1 : 0
+    }
+    
+    setSyncing(event.id)
+    let successCount = 0
+    let clientId: string | null = null
+    
+    try {
+      // Criar cliente uma vez se solicitado
+      if (createClient && seriesInstances[0].attendees && seriesInstances[0].attendees.length > 0) {
+        const attendee = seriesInstances[0].attendees[0]
+        const clientName = attendee.displayName || event.summary.split(' - ')[1] || event.summary
+        const clientEmail = attendee.email
+
+        // Verificar se cliente já existe
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user!.id)
+          .eq('email', clientEmail)
+          .maybeSingle()
+
+        if (existingClient) {
+          clientId = existingClient.id
+        } else {
+          const { data: newClient, error: clientError } = await supabase
+            .from('clients')
+            .insert([{
+              user_id: user!.id,
+              nome: clientName,
+              email: clientEmail,
+              telefone: '',
+              dados_clinicos: `Importado do Google Calendar (série recorrente)`
+            }])
+            .select()
+            .single()
+
+          if (!clientError && newClient) {
+            clientId = newClient.id
+          }
+        }
+      }
+      
+      // Se não temos cliente, criar um
+      if (!clientId) {
+        const clientName = event.summary.split(' - ')[1] || event.summary
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert([{
+            user_id: user!.id,
+            nome: clientName,
+            email: '',
+            telefone: '',
+            dados_clinicos: `Importado do Google Calendar (série recorrente)`
+          }])
+          .select()
+          .single()
+
+        if (clientError) throw clientError
+        clientId = newClient.id
+      }
+
+      const masterId = getRecurringMasterId(event)
+      
+      // Importar todas as instâncias
+      for (const instance of seriesInstances) {
+        const startDateTime = instance.start.dateTime || instance.start.date
+        const eventDate = new Date(startDateTime!).toISOString().split('T')[0]
+        const eventTime = instance.start.dateTime 
+          ? format(new Date(startDateTime!), "HH:mm")
+          : "09:00"
+
+        const { error: sessionError } = await supabase
+          .from('sessions')
+          .insert([{
+            user_id: user!.id,
+            client_id: clientId,
+            data: eventDate,
+            horario: formatTimeForDatabase(eventTime),
+            status: 'agendada',
+            anotacoes: instance.description || '',
+            google_event_id: instance.id,
+            google_sync_type: 'imported' as GoogleSyncType,
+            google_attendees: instance.attendees || [],
+            google_location: instance.location || null,
+            google_html_link: instance.htmlLink,
+            google_recurrence_id: masterId,
+            google_last_synced: new Date().toISOString()
+          }])
+
+        if (!sessionError) {
+          successCount++
+        }
+      }
+
+      toast({
+        title: "Série importada!",
+        description: `${successCount} de ${seriesInstances.length} instâncias de "${event.summary}" foram importadas.`,
+      })
+
+      await loadPlatformSessions()
+    } catch (error) {
+      console.error('Erro ao importar série:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível importar a série completa.",
+        variant: "destructive"
+      })
+    } finally {
+      setSyncing(null)
+    }
+    
+    return successCount
+  }
+
   // Ações em lote
   const batchImportGoogleEvents = async (eventIds: string[], createClients = false): Promise<number> => {
     let successCount = 0
@@ -640,6 +829,7 @@ export const useGoogleCalendarSync = () => {
     
     // Computed
     filteredGoogleEvents: getFilteredGoogleEvents(),
+    groupedRecurringEvents: groupRecurringEvents,
     
     // Actions - Connection
     connectToGoogle,
@@ -656,6 +846,10 @@ export const useGoogleCalendarSync = () => {
     ignoreGoogleEvent,
     sendToGoogle,
     updateGoogleEvent,
+    
+    // Actions - Recurring Series
+    getRecurringSeriesInstances,
+    importRecurringSeries,
     
     // Actions - Batch
     batchImportGoogleEvents,
