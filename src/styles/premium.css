@@ -37,8 +37,20 @@
   border-radius: inherit;
 }
 
+/* Animated premium without external shadow/glow */
+.animated-premium-no-shadow {
+  position: relative;
+  background: linear-gradient(-45deg, #FFA63D, #FF3D77, #338AFF, #3CF0C5);
+  background-size: 600% 600%;
+  animation: premium-flow 16s linear infinite;
+  color: #fff;
+  border: none;
+  will-change: background-position;
+  transform: translateZ(0);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .animated-premium, .animated-premium::before { 
+  .animated-premium, .animated-premium::before, .animated-premium-no-shadow { 
     animation: none; 
   }
 }
@@ -49,5 +61,9 @@
 }
 
 [data-animate="true"].animated-premium::before {
+  animation: premium-flow 16s linear infinite !important;
+}
+
+[data-animate="true"].animated-premium-no-shadow {
   animation: premium-flow 16s linear infinite !important;
 }
