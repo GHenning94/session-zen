@@ -683,9 +683,6 @@ export default function Sessoes() {
                                    <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-2">
                                       <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
-                                      {sessionNotes.some(note => note.session_id === session.id) && (
-                                        <PenLine className="h-4 w-4 text-muted-foreground" />
-                                      )}
                                       <Badge variant={getStatusColor(session.status)}>
                                         {getStatusLabel(session.status)}
                                       </Badge>
@@ -694,6 +691,9 @@ export default function Sessoes() {
                                       )}
                                       {session.recurring_session_id && (
                                         <Repeat className="h-4 w-4 text-primary" />
+                                      )}
+                                      {sessionNotes.some(note => note.session_id === session.id) && (
+                                        <PenLine className="h-4 w-4 text-blue-500" />
                                       )}
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
@@ -766,9 +766,6 @@ export default function Sessoes() {
                              <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
-                                {sessionNotes.some(note => note.session_id === session.id) && (
-                                  <PenLine className="h-4 w-4 text-muted-foreground" />
-                                )}
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
@@ -777,6 +774,9 @@ export default function Sessoes() {
                                 )}
                                 {session.recurring_session_id && (
                                   <Repeat className="h-4 w-4 text-primary" />
+                                )}
+                                {sessionNotes.some(note => note.session_id === session.id) && (
+                                  <PenLine className="h-4 w-4 text-blue-500" />
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
@@ -915,6 +915,7 @@ export default function Sessoes() {
           onViewAgenda={handleViewSession}
           onViewPayment={handleViewPayment}
           onAddNote={handleAddNote}
+          hasNotes={selectedSession ? sessionNotes.some(note => note.session_id === selectedSession.id) : false}
         />
 
         <SessionNoteModal
