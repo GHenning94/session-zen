@@ -729,6 +729,7 @@ export default function Sessoes() {
                                       <Badge variant={getStatusColor(session.status)}>
                                         {getStatusLabel(session.status)}
                                       </Badge>
+                                      <GoogleSyncBadge syncType={session.google_sync_type} />
                                       {session.package_id && (
                                         <Package className="h-4 w-4 text-primary" />
                                       )}
@@ -741,7 +742,6 @@ export default function Sessoes() {
                                       {evolucoes.some(evo => evo.session_id === session.id) && (
                                         <FileText className="h-4 w-4 text-primary" />
                                       )}
-                                      <GoogleSyncBadge syncType={session.google_sync_type} />
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
                                       <div className="flex items-center gap-4">
@@ -816,6 +816,7 @@ export default function Sessoes() {
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
+                                <GoogleSyncBadge syncType={session.google_sync_type} />
                                 {session.package_id && (
                                   <Package className="h-4 w-4 text-primary" />
                                 )}
@@ -828,7 +829,6 @@ export default function Sessoes() {
                                 {evolucoes.some(evo => evo.session_id === session.id) && (
                                   <FileText className="h-4 w-4 text-primary" />
                                 )}
-                                <GoogleSyncBadge syncType={session.google_sync_type} />
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
                                 <div className="flex items-center gap-4">
