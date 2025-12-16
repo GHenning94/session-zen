@@ -182,7 +182,7 @@ const GoogleCalendarIntegrationNew = () => {
                     </div>
                     <p className="text-sm text-muted-foreground">
                       {isSignedIn 
-                        ? `${googleEvents.length} eventos do Google • ${platformSessions.length} sessões na plataforma`
+                        ? `${googleEvents.length} eventos do Google (${filteredGoogleEvents.length} pendentes) • ${platformSessions.length} sessões na plataforma`
                         : 'Conecte para visualizar e sincronizar eventos'
                       }
                     </p>
@@ -304,7 +304,15 @@ const GoogleCalendarIntegrationNew = () => {
                     <div className="text-center py-12 text-muted-foreground">
                       <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
                       <p className="font-medium">Nenhum evento pendente</p>
-                      <p className="text-sm mt-1">Todos os eventos foram importados ou ignorados</p>
+                      <p className="text-sm mt-1">
+                        {googleEvents.length > 0 
+                          ? 'Todos os eventos foram importados ou ignorados'
+                          : 'Nenhum evento encontrado no calendário principal dos últimos 30 dias'
+                        }
+                      </p>
+                      <p className="text-xs mt-2 text-muted-foreground/70">
+                        Nota: Apenas eventos do calendário principal são sincronizados. Feriados e outros calendários secundários não aparecem aqui.
+                      </p>
                     </div>
                   ) : (
                     <ScrollArea className="h-[400px] pr-4">
