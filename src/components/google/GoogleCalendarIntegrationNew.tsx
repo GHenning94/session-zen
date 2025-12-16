@@ -75,7 +75,7 @@ const GoogleCalendarIntegrationNew = () => {
   const [activeInfoTab, setActiveInfoTab] = useState("concepts")
 
   // Sessões espelhadas (para detecção de conflitos)
-  const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'mirrored')
+  const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'espelhado')
 
   // Detectar conflitos automaticamente quando os dados são carregados
   useEffect(() => {

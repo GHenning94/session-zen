@@ -1,6 +1,6 @@
 // Google Calendar Integration Types
 
-export type GoogleSyncType = 'local' | 'imported' | 'mirrored' | 'sent' | 'ignored' | 'cancelled';
+export type GoogleSyncType = 'local' | 'importado' | 'espelhado' | 'enviado' | 'ignorado' | 'cancelado';
 
 export interface GoogleEvent {
   id: string;
@@ -125,27 +125,27 @@ export const SYNC_TYPE_LABELS: Record<GoogleSyncType, { label: string; color: st
     color: 'secondary',
     description: 'Criado apenas na plataforma'
   },
-  imported: {
+  importado: {
     label: 'Importado',
     color: 'info',
     description: 'Importado do Google (somente leitura)'
   },
-  mirrored: {
+  espelhado: {
     label: 'Espelhado',
     color: 'success',
     description: 'Sincronização bidirecional com Google'
   },
-  sent: {
+  enviado: {
     label: 'Enviado',
     color: 'warning',
     description: 'Enviado para o Google (one-way)'
   },
-  ignored: {
+  ignorado: {
     label: 'Ignorado',
     color: 'outline',
     description: 'Evento ignorado do Google'
   },
-  cancelled: {
+  cancelado: {
     label: 'Cancelado',
     color: 'destructive',
     description: 'Evento cancelado no Google Calendar'

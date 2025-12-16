@@ -102,7 +102,7 @@ export const useConflictDetection = () => {
     session: PlatformSession,
     googleEvent: GoogleEvent
   ): SyncConflict | null => {
-    if (session.google_sync_type !== 'mirrored') return null
+    if (session.google_sync_type !== 'espelhado') return null
     
     const differences: ConflictDiff[] = [
       ...compareDateTime(session, googleEvent),
@@ -189,7 +189,7 @@ export const useConflictDetection = () => {
     
     try {
       for (const session of mirroredSessions) {
-        if (session.google_sync_type !== 'mirrored' || !session.google_event_id) continue
+        if (session.google_sync_type !== 'espelhado' || !session.google_event_id) continue
         
         const matchingEvent = googleEvents.find(e => e.id === session.google_event_id)
         if (!matchingEvent) continue

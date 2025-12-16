@@ -272,7 +272,7 @@ export const useGoogleCalendarSync = () => {
           .insert([{
             user_id: user.id,
             nome: clientName,
-            email: '',
+            email: null,
             telefone: '',
             dados_clinicos: `Importado do Google Calendar: ${event.description || ''}`
           }])
@@ -294,7 +294,7 @@ export const useGoogleCalendarSync = () => {
           status: 'agendada',
           anotacoes: event.description || '',
           google_event_id: event.id,
-          google_sync_type: 'imported' as GoogleSyncType,
+          google_sync_type: 'importado' as GoogleSyncType,
           google_attendees: event.attendees || [],
           google_location: event.location || null,
           google_html_link: event.htmlLink,
@@ -344,7 +344,7 @@ export const useGoogleCalendarSync = () => {
         .insert([{
           user_id: user.id,
           nome: clientName,
-          email: event.attendees?.[0]?.email || '',
+          email: event.attendees?.[0]?.email || null,
           telefone: '',
           dados_clinicos: `Espelhado do Google Calendar: ${event.description || ''}`
         }])
@@ -363,7 +363,7 @@ export const useGoogleCalendarSync = () => {
           status: 'agendada',
           anotacoes: event.description || '',
           google_event_id: event.id,
-          google_sync_type: 'mirrored' as GoogleSyncType,
+          google_sync_type: 'espelhado' as GoogleSyncType,
           google_attendees: event.attendees || [],
           google_location: event.location || null,
           google_html_link: event.htmlLink,
@@ -483,7 +483,7 @@ export const useGoogleCalendarSync = () => {
     try {
       // Buscar sessões que têm google_event_id
       const syncedSessions = platformSessions.filter(s => 
-        s.google_event_id && (s.google_sync_type === 'mirrored' || s.google_sync_type === 'sent' || s.google_sync_type === 'imported')
+        s.google_event_id && (s.google_sync_type === 'espelhado' || s.google_sync_type === 'enviado' || s.google_sync_type === 'importado')
       )
 
       let cancelledCount = 0
@@ -505,7 +505,7 @@ export const useGoogleCalendarSync = () => {
             await supabase
               .from('sessions')
               .update({ 
-                google_sync_type: 'cancelled',
+                google_sync_type: 'cancelado',
                 google_last_synced: new Date().toISOString()
               })
               .eq('id', session.id)
@@ -519,7 +519,7 @@ export const useGoogleCalendarSync = () => {
               await supabase
                 .from('sessions')
                 .update({ 
-                  google_sync_type: 'cancelled',
+                  google_sync_type: 'cancelado',
                   google_last_synced: new Date().toISOString()
                 })
                 .eq('id', session.id)
@@ -552,7 +552,7 @@ export const useGoogleCalendarSync = () => {
     const accessToken = localStorage.getItem('google_access_token')
     if (!accessToken || !user) return { updated: 0, conflicts: 0 }
 
-    const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'mirrored')
+    const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'espelhado')
     let updatedCount = 0
     let conflictCount = 0
 
@@ -578,7 +578,7 @@ export const useGoogleCalendarSync = () => {
               // Evento foi excluído no Google
               await supabase
                 .from('sessions')
-                .update({ google_sync_type: 'cancelled' })
+                .update({ google_sync_type: 'cancelado' })
                 .eq('id', session.id)
             }
             continue
@@ -658,7 +658,7 @@ export const useGoogleCalendarSync = () => {
     if (!accessToken || !user) return 0
 
     const mirroredSessions = platformSessions.filter(s => 
-      s.google_sync_type === 'mirrored' && s.google_event_id
+      s.google_sync_type === 'espelhado' && s.google_event_id
     )
     let updatedCount = 0
 
@@ -732,7 +732,7 @@ export const useGoogleCalendarSync = () => {
         .from('sessions')
         .update({
           google_event_id: createdEvent.id,
-          google_sync_type: 'sent' as GoogleSyncType,
+          google_sync_type: 'enviado' as GoogleSyncType,
           google_html_link: createdEvent.htmlLink,
           google_last_synced: new Date().toISOString()
         })
@@ -960,7 +960,7 @@ export const useGoogleCalendarSync = () => {
             status: 'agendada',
             anotacoes: instance.description || '',
             google_event_id: instance.id,
-            google_sync_type: 'imported' as GoogleSyncType,
+            google_sync_type: 'importado' as GoogleSyncType,
             google_attendees: instance.attendees || [],
             google_location: instance.location || null,
             google_html_link: instance.htmlLink,
