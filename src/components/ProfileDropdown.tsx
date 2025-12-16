@@ -266,7 +266,7 @@ export const ProfileDropdown = () => {
         </section>
 
         {/* Secondary Section - Logout */}
-        <section className="mt-1 bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
+        <section className="mt-1 bg-background rounded-2xl p-1">
           <DropdownMenuGroup>
             <DropdownMenuItem 
               onClick={handleSignOut} 
