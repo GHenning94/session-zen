@@ -26,6 +26,27 @@ export interface GoogleEvent {
   recurringEventId?: string;
 }
 
+// Estrutura para agrupar eventos recorrentes
+export interface RecurringEventSeries {
+  masterId: string;
+  summary: string;
+  instances: GoogleEvent[];
+  firstInstance: GoogleEvent;
+  lastInstance: GoogleEvent;
+  totalCount: number;
+  recurrenceRule?: string;
+}
+
+// Helper para verificar se evento é parte de série recorrente
+export const isRecurringEvent = (event: GoogleEvent): boolean => {
+  return !!(event.recurringEventId || (event.recurrence && event.recurrence.length > 0));
+};
+
+// Helper para obter o ID master da série
+export const getRecurringMasterId = (event: GoogleEvent): string | null => {
+  return event.recurringEventId || (event.recurrence ? event.id : null);
+};
+
 export interface PlatformSession {
   id: string;
   data: string;
