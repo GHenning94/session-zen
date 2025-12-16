@@ -14,7 +14,12 @@ import {
   ConflictResolution,
 } from '@/types/googleCalendar'
 
-export const useConflictDetection = () => {
+interface UseConflictDetectionProps {
+  getAccessToken?: () => Promise<string | null>
+}
+
+export const useConflictDetection = (props?: UseConflictDetectionProps) => {
+  const getAccessToken = props?.getAccessToken
   const { toast } = useToast()
   const { user } = useAuth()
   const [conflicts, setConflicts] = useState<SyncConflict[]>([])
@@ -443,11 +448,18 @@ export const useConflictDetection = () => {
     setIsResolving(conflictId)
     
     try {
-      const accessToken = localStorage.getItem('google_access_token')
-      if (!accessToken && resolution !== 'dismiss') {
+      // Obter token usando a função passada ou localStorage como fallback
+      let accessToken: string | null = null
+      if (getAccessToken) {
+        accessToken = await getAccessToken()
+      } else {
+        accessToken = localStorage.getItem('google_access_token')
+      }
+      
+      if (!accessToken && resolution !== 'dismiss' && resolution !== 'keep_google') {
         toast({
-          title: 'Erro',
-          description: 'Reconecte-se ao Google Calendar.',
+          title: 'Erro de conexão',
+          description: 'Reconecte-se ao Google Calendar para resolver este conflito.',
           variant: 'destructive',
         })
         return false

@@ -149,6 +149,45 @@ export const useGoogleCalendarSync = () => {
     })
   }
 
+  // Obter token de acesso válido (com verificação)
+  const getAccessToken = useCallback(async (): Promise<string | null> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken) return null
+
+    // Verificar se token está válido fazendo uma chamada simples
+    try {
+      const response = await fetch(
+        'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1',
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        }
+      )
+
+      if (response.ok) {
+        return accessToken
+      }
+
+      if (response.status === 401) {
+        // Token expirado
+        localStorage.removeItem('google_access_token')
+        setIsSignedIn(false)
+        toast({
+          title: "Sessão expirada",
+          description: "Reconecte-se ao Google Calendar.",
+          variant: "destructive"
+        })
+        return null
+      }
+
+      return accessToken
+    } catch (error) {
+      console.error('Erro ao verificar token:', error)
+      return accessToken // Retorna o token mesmo em caso de erro de rede
+    }
+  }, [toast])
+
   // Carregar eventos do Google
   const loadGoogleEvents = async () => {
     const accessToken = localStorage.getItem('google_access_token')
@@ -1281,6 +1320,7 @@ export const useGoogleCalendarSync = () => {
     syncMirroredSessions,
     pushMirroredChangesToGoogle,
     checkCancelledEvents,
+    getAccessToken,
     
     // Actions - Recurring Series
     getRecurringSeriesInstances,
