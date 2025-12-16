@@ -1255,14 +1255,7 @@ const Dashboard = () => {
                                 </Tooltip>
                               )}
                               {session.recurring_session_id && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Repeat className="w-4 h-4 text-primary" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Sessão recorrente</p>
-                                  </TooltipContent>
-                                </Tooltip>
+                                <Badge variant="outline" className="text-xs">Recorrente</Badge>
                               )}
                             </TooltipProvider>
                             <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} />

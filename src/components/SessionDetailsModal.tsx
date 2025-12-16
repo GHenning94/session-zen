@@ -111,7 +111,7 @@ export const SessionDetailsModal = ({
                   <Package className="h-5 w-5 text-primary" />
                 )}
                 {session.recurring_session_id && (
-                  <Repeat className="h-5 w-5 text-primary" />
+                  <Badge variant="outline" className="text-xs">Recorrente</Badge>
                 )}
                 {hasNotes && (
                   <PenLine className="h-5 w-5 text-primary" />
