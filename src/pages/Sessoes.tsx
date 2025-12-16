@@ -93,7 +93,8 @@ export default function Sessoes() {
     startDate: '',
     endDate: '',
     search: '',
-    sessionType: ''
+    sessionType: '',
+    googleSync: ''
   })
 
   useEffect(() => {
@@ -401,8 +402,19 @@ export default function Sessoes() {
           matchesType = !!session.recurring_session_id
         }
       }
+
+      // Filtro por sincronização Google
+      let matchesGoogleSync = true
+      if (filters.googleSync && filters.googleSync !== "all") {
+        const syncType = (session as any).google_sync_type
+        if (filters.googleSync === "local") {
+          matchesGoogleSync = !syncType || syncType === 'local'
+        } else {
+          matchesGoogleSync = syncType === filters.googleSync
+        }
+      }
       
-      return matchesStatus && matchesClient && matchesSearch && matchesDate && matchesType
+      return matchesStatus && matchesClient && matchesSearch && matchesDate && matchesType && matchesGoogleSync
     })
     .sort((a, b) => {
       const now = new Date()
@@ -615,6 +627,22 @@ export default function Sessoes() {
                     <SelectItem value="individual">Individual</SelectItem>
                     <SelectItem value="package">Pacote</SelectItem>
                     <SelectItem value="recurring">Recorrente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="google-sync-filter">Sincronização</Label>
+                <Select value={filters.googleSync} onValueChange={(value) => setFilters(prev => ({ ...prev, googleSync: value }))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Todas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todas</SelectItem>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="imported">Importado do Google</SelectItem>
+                    <SelectItem value="mirrored">Espelhado</SelectItem>
+                    <SelectItem value="sent">Enviado ao Google</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

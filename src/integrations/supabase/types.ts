@@ -1161,7 +1161,13 @@ export type Database = {
           client_id: string
           created_at: string | null
           data: string
+          google_attendees: Json | null
           google_event_id: string | null
+          google_html_link: string | null
+          google_ignored: boolean | null
+          google_last_synced: string | null
+          google_location: string | null
+          google_recurrence_id: string | null
           google_sync_type: string | null
           horario: string
           id: string
@@ -1180,7 +1186,13 @@ export type Database = {
           client_id: string
           created_at?: string | null
           data: string
+          google_attendees?: Json | null
           google_event_id?: string | null
+          google_html_link?: string | null
+          google_ignored?: boolean | null
+          google_last_synced?: string | null
+          google_location?: string | null
+          google_recurrence_id?: string | null
           google_sync_type?: string | null
           horario: string
           id?: string
@@ -1199,7 +1211,13 @@ export type Database = {
           client_id?: string
           created_at?: string | null
           data?: string
+          google_attendees?: Json | null
           google_event_id?: string | null
+          google_html_link?: string | null
+          google_ignored?: boolean | null
+          google_last_synced?: string | null
+          google_location?: string | null
+          google_recurrence_id?: string | null
           google_sync_type?: string | null
           horario?: string
           id?: string
