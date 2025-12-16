@@ -712,7 +712,7 @@ const pastPayments = filteredPayments.filter(item => {
                                      <Package className="w-4 h-4 text-primary" />
                                    )}
                                    {payment.recurring_session_id && (
-                                     <Badge variant="outline" className="text-xs">Recorrente</Badge>
+                                     <Repeat className="w-4 h-4 text-primary" />
                                    )}
                                  </div>
                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -808,7 +808,7 @@ const pastPayments = filteredPayments.filter(item => {
                                <Package className="w-4 h-4 text-primary" />
                              )}
                              {payment.recurring_session_id && (
-                               <Badge variant="outline" className="text-xs">Recorrente</Badge>
+                               <Repeat className="w-4 h-4 text-primary" />
                              )}
                            </div>
                            <div className="flex items-center gap-4 text-sm text-muted-foreground">

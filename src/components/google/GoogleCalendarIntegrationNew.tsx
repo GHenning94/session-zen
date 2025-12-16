@@ -627,7 +627,7 @@ const GoogleCalendarIntegrationNew = () => {
                   <AccordionContent>
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p>
-                        Eventos recorrentes são identificados com o ícone <Badge variant="outline" className="mx-1"><Repeat className="w-3 h-3 mr-1" />Recorrente</Badge> 
+                        Eventos recorrentes são identificados com a tag <Badge variant="outline" className="mx-1">Recorrente</Badge> 
                         e mostram a quantidade de instâncias na série.
                       </p>
                       <p>
