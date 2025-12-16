@@ -54,6 +54,12 @@ export const PlatformSessionCard = ({
   }
 
   const getStatusBadge = () => {
+    // Se a sessão foi cancelada no Google, não mostrar badge de status separado
+    // (já é mostrado pelo getSyncBadge como "Cancelado no Google")
+    if (session.google_sync_type === 'cancelado') {
+      return null
+    }
+
     const statusColors: Record<string, string> = {
       'realizada': 'success',
       'agendada': 'info',
@@ -77,8 +83,10 @@ export const PlatformSessionCard = ({
     )
   }
 
-  const canSendToGoogle = !session.google_event_id && session.google_sync_type !== 'importado'
-  const canMirror = session.google_sync_type !== 'espelhado'
+  // Pode enviar se não está no Google ainda
+  const canSendToGoogle = !session.google_event_id
+  // Pode espelhar se não está espelhado ainda (mesmo se já foi enviado)
+  const canMirror = session.google_sync_type !== 'espelhado' && session.google_sync_type !== 'cancelado'
 
   return (
     <Card className={`p-4 transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
@@ -180,10 +188,10 @@ export const PlatformSessionCard = ({
                   Enviar para Google
                 </DropdownMenuItem>
               )}
-              {canMirror && !session.google_event_id && (
+              {canMirror && (
                 <DropdownMenuItem onClick={onMirror}>
                   <RefreshCw className="w-4 h-4 mr-2" />
-                  Espelhar com Google
+                  {session.google_event_id ? 'Ativar Espelhamento' : 'Espelhar com Google'}
                 </DropdownMenuItem>
               )}
               {session.google_html_link && (

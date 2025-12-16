@@ -44,6 +44,7 @@ const GoogleCalendarIntegrationNew = () => {
     loadAllData,
     importGoogleEvent,
     mirrorGoogleEvent,
+    mirrorPlatformSession,
     ignoreGoogleEvent,
     sendToGoogle,
     importRecurringSeries,
@@ -192,16 +193,6 @@ const GoogleCalendarIntegrationNew = () => {
                     >
                       <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                       Sincronizar Tudo
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={checkCancelledEvents}
-                      disabled={loading}
-                      title="Verificar eventos cancelados no Google"
-                    >
-                      <XCircle className="w-4 h-4 mr-2" />
-                      Verificar Cancelados
                     </Button>
                     <Button 
                       variant="outline" 
@@ -424,7 +415,7 @@ const GoogleCalendarIntegrationNew = () => {
                                 isSyncing={syncing === session.id}
                                 onSelect={() => togglePlatformSessionSelection(session.id)}
                                 onSendToGoogle={() => sendToGoogle(session)}
-                                onMirror={() => {}}
+                                onMirror={() => mirrorPlatformSession(session)}
                               />
                             ))}
                           </div>
@@ -449,8 +440,8 @@ const GoogleCalendarIntegrationNew = () => {
                                 isSelected={false}
                                 isSyncing={syncing === session.id}
                                 onSelect={() => {}}
-                                onSendToGoogle={() => {}}
-                                onMirror={() => {}}
+                                onSendToGoogle={() => sendToGoogle(session)}
+                                onMirror={() => mirrorPlatformSession(session)}
                               />
                             ))}
                           </div>
@@ -476,7 +467,7 @@ const GoogleCalendarIntegrationNew = () => {
                                 isSyncing={syncing === session.id}
                                 onSelect={() => {}}
                                 onSendToGoogle={() => sendToGoogle(session)}
-                                onMirror={() => {}}
+                                onMirror={() => mirrorPlatformSession(session)}
                               />
                             ))}
                           </div>
