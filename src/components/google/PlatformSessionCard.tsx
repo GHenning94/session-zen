@@ -77,8 +77,8 @@ export const PlatformSessionCard = ({
     )
   }
 
-  const canSendToGoogle = !session.google_event_id && session.google_sync_type !== 'imported'
-  const canMirror = session.google_sync_type !== 'mirrored'
+  const canSendToGoogle = !session.google_event_id && session.google_sync_type !== 'importado'
+  const canMirror = session.google_sync_type !== 'espelhado'
 
   return (
     <Card className={`p-4 transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}>

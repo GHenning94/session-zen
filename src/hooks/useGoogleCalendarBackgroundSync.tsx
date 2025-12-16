@@ -61,7 +61,7 @@ export const useGoogleCalendarBackgroundSync = () => {
       // 2. Verificar eventos cancelados
       const syncedSessions = platformSessions?.filter(s => 
         s.google_event_id && 
-        (s.google_sync_type === 'mirrored' || s.google_sync_type === 'sent' || s.google_sync_type === 'imported')
+        (s.google_sync_type === 'espelhado' || s.google_sync_type === 'enviado' || s.google_sync_type === 'importado')
       ) || []
 
       for (const session of syncedSessions) {
@@ -80,7 +80,7 @@ export const useGoogleCalendarBackgroundSync = () => {
             await supabase
               .from('sessions')
               .update({ 
-                google_sync_type: 'cancelled',
+                google_sync_type: 'cancelado',
                 google_last_synced: new Date().toISOString()
               })
               .eq('id', session.id)
@@ -91,7 +91,7 @@ export const useGoogleCalendarBackgroundSync = () => {
               await supabase
                 .from('sessions')
                 .update({ 
-                  google_sync_type: 'cancelled',
+                  google_sync_type: 'cancelado',
                   google_last_synced: new Date().toISOString()
                 })
                 .eq('id', session.id)
@@ -104,7 +104,7 @@ export const useGoogleCalendarBackgroundSync = () => {
       }
 
       // 3. Sincronizar sessões espelhadas
-      const mirroredSessions = platformSessions?.filter(s => s.google_sync_type === 'mirrored') || []
+      const mirroredSessions = platformSessions?.filter(s => s.google_sync_type === 'espelhado') || []
       const { format } = await import('date-fns')
       const { formatTimeForDatabase } = await import('@/lib/utils')
 

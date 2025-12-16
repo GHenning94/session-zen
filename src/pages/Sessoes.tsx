@@ -643,10 +643,10 @@ export default function Sessoes() {
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="local">Local</SelectItem>
-                    <SelectItem value="imported">Importado do Google</SelectItem>
-                    <SelectItem value="mirrored">Espelhado</SelectItem>
-                    <SelectItem value="sent">Enviado ao Google</SelectItem>
-                    <SelectItem value="cancelled">Cancelado no Google</SelectItem>
+                    <SelectItem value="importado">Importado do Google</SelectItem>
+                    <SelectItem value="espelhado">Espelhado</SelectItem>
+                    <SelectItem value="enviado">Enviado ao Google</SelectItem>
+                    <SelectItem value="cancelado">Cancelado no Google</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

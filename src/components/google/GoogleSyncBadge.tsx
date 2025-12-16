@@ -21,15 +21,15 @@ export const GoogleSyncBadge = ({ syncType, showLabel = true, size = 'sm' }: Goo
   const getIcon = () => {
     const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'
     switch (syncType) {
-      case 'imported':
+      case 'importado':
         return <Download className={iconSize} />
-      case 'mirrored':
+      case 'espelhado':
         return <RefreshCw className={iconSize} />
-      case 'sent':
+      case 'enviado':
         return <Upload className={iconSize} />
-      case 'ignored':
+      case 'ignorado':
         return <CloudOff className={iconSize} />
-      case 'cancelled':
+      case 'cancelado':
         return <XCircle className={iconSize} />
       default:
         return <Cloud className={iconSize} />
@@ -38,15 +38,15 @@ export const GoogleSyncBadge = ({ syncType, showLabel = true, size = 'sm' }: Goo
 
   const getBadgeVariant = () => {
     switch (syncType) {
-      case 'imported':
+      case 'importado':
         return 'info'
-      case 'mirrored':
+      case 'espelhado':
         return 'success'
-      case 'sent':
+      case 'enviado':
         return 'warning'
-      case 'ignored':
+      case 'ignorado':
         return 'outline'
-      case 'cancelled':
+      case 'cancelado':
         return 'destructive'
       default:
         return 'secondary'

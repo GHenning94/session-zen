@@ -110,7 +110,7 @@ const GoogleCalendarIntegration = () => {
           .insert([{
             user_id: user.id,
             nome: clientName,
-            email: '',
+            email: null,
             telefone: '',
             dados_clinicos: event.description || 'Importado do Google Calendar'
           }])
