@@ -605,7 +605,7 @@ const GoogleCalendarIntegrationNew = () => {
                 <AccordionItem value="ignore">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <EyeOff className="w-4 h-4 text-muted-foreground" />
+                      <EyeOff className="w-4 h-4 text-primary" />
                       <span>Ignorar evento</span>
                     </div>
                   </AccordionTrigger>
@@ -631,7 +631,7 @@ const GoogleCalendarIntegrationNew = () => {
                   <AccordionContent>
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p>
-                        Eventos recorrentes são identificados com a tag <Badge variant="outline" className="mx-1">Recorrente</Badge> 
+                        Eventos recorrentes são identificados com a tag <Badge variant="outline" className="mx-1">G: Recorrente</Badge> 
                         e mostram a quantidade de instâncias na série.
                       </p>
                       <p>

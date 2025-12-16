@@ -81,14 +81,14 @@ export const GoogleEventCard = ({
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Badge variant="outline">
-                        {hasMultipleInstances ? `${seriesCount} eventos` : 'Recorrente'}
+                        {hasMultipleInstances ? `G: ${seriesCount} eventos` : 'G: Recorrente'}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
                         {hasMultipleInstances 
                           ? `Série com ${seriesCount} instâncias` 
-                          : 'Evento recorrente'}
+                          : 'Evento recorrente do Google'}
                       </p>
                     </TooltipContent>
                   </Tooltip>
