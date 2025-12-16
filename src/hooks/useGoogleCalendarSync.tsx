@@ -382,9 +382,11 @@ export const useGoogleCalendarSync = () => {
         sessionData.google_last_synced = new Date().toISOString()
       }
 
-      const { error: sessionError } = await supabase
+      const { data: newSession, error: sessionError } = await supabase
         .from('sessions')
         .insert([sessionData])
+        .select()
+        .single()
 
       if (sessionError) throw sessionError
 
@@ -396,11 +398,11 @@ export const useGoogleCalendarSync = () => {
       })
 
       // Criar notificação para lembrar de definir valor/pagamento em sessões importadas
-      if (!editable) {
+      if (!editable && newSession) {
         await supabase.from('notifications').insert([{
           user_id: user.id,
           titulo: "Defina o valor da sessão importada",
-          conteudo: `A sessão "${event.summary}" foi importada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento.`,
+          conteudo: `A sessão "Sessão - ${event.summary}" foi importada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
           lida: false
         }])
       }

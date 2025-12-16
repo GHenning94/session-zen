@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -17,12 +18,12 @@ import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 import { SessionNoteModal } from '@/components/SessionNoteModal'
 import { SessionModal } from '@/components/SessionModal'
+import { SessionEditModal } from '@/components/SessionEditModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
 import { Skeleton } from '@/components/ui/skeleton'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { cn } from '@/lib/utils'
 import { calculateSessionStatus, sessionNeedsAttention } from "@/utils/sessionStatusUtils"
-import { useNavigate } from 'react-router-dom'
 import { TextPreview } from '@/components/TextPreview'
 import { ClientAvatar } from '@/components/ClientAvatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -69,6 +70,7 @@ export default function Sessoes() {
   const { user } = useAuth()
   const { toast } = useToast()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   
   // Estados principais
   const [sessions, setSessions] = useState<Session[]>([])
@@ -99,6 +101,20 @@ export default function Sessoes() {
     sessionType: '',
     googleSync: ''
   })
+
+  // Handle URL parameter for editing session
+  useEffect(() => {
+    const editSessionId = searchParams.get('edit')
+    if (editSessionId && sessions.length > 0) {
+      const sessionToEdit = sessions.find(s => s.id === editSessionId)
+      if (sessionToEdit) {
+        setSelectedSession(sessionToEdit)
+        setEditModalOpen(true)
+        // Clear the URL parameter
+        setSearchParams({})
+      }
+    }
+  }, [searchParams, sessions])
 
   useEffect(() => {
     if (user) {
@@ -978,11 +994,12 @@ export default function Sessoes() {
           editingNote={editingNote}
         />
         
-        <SessionModal
+        <SessionEditModal
           session={selectedSession}
+          clients={clients}
           open={editModalOpen}
           onOpenChange={setEditModalOpen}
-          onSuccess={loadData}
+          onSessionUpdated={loadData}
         />
 
         <SessionModal

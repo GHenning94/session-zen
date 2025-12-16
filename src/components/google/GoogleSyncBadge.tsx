@@ -1,6 +1,5 @@
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Cloud, CloudOff, Download, Upload, RefreshCw, XCircle } from "lucide-react"
 import { GoogleSyncType, SYNC_TYPE_LABELS } from "@/types/googleCalendar"
 
 interface GoogleSyncBadgeProps {
@@ -18,50 +17,14 @@ export const GoogleSyncBadge = ({ syncType, showLabel = true, size = 'sm' }: Goo
   const syncInfo = SYNC_TYPE_LABELS[syncType as GoogleSyncType]
   if (!syncInfo) return null
 
-  const getIcon = () => {
-    const iconSize = size === 'sm' ? 'h-3 w-3' : 'h-4 w-4'
-    switch (syncType) {
-      case 'importado':
-        return <Download className={iconSize} />
-      case 'espelhado':
-        return <RefreshCw className={iconSize} />
-      case 'enviado':
-        return <Upload className={iconSize} />
-      case 'ignorado':
-        return <CloudOff className={iconSize} />
-      case 'cancelado':
-        return <XCircle className={iconSize} />
-      default:
-        return <Cloud className={iconSize} />
-    }
-  }
-
-  const getBadgeVariant = () => {
-    switch (syncType) {
-      case 'importado':
-        return 'info'
-      case 'espelhado':
-        return 'success'
-      case 'enviado':
-        return 'warning'
-      case 'ignorado':
-        return 'outline'
-      case 'cancelado':
-        return 'destructive'
-      default:
-        return 'secondary'
-    }
-  }
-
   return (
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
           <Badge 
-            variant={getBadgeVariant() as any} 
-            className={`gap-1 ${size === 'sm' ? 'text-xs py-0 px-1.5' : ''}`}
+            variant="outline" 
+            className={`${size === 'sm' ? 'text-xs py-0 px-1.5' : ''}`}
           >
-            {getIcon()}
             {showLabel && <span>{syncInfo.label}</span>}
           </Badge>
         </TooltipTrigger>
