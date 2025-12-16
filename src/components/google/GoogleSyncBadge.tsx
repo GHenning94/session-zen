@@ -1,6 +1,6 @@
 import { Badge } from "@/components/ui/badge"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Cloud, CloudOff, Download, Upload, RefreshCw } from "lucide-react"
+import { Cloud, CloudOff, Download, Upload, RefreshCw, XCircle } from "lucide-react"
 import { GoogleSyncType, SYNC_TYPE_LABELS } from "@/types/googleCalendar"
 
 interface GoogleSyncBadgeProps {
@@ -29,6 +29,8 @@ export const GoogleSyncBadge = ({ syncType, showLabel = true, size = 'sm' }: Goo
         return <Upload className={iconSize} />
       case 'ignored':
         return <CloudOff className={iconSize} />
+      case 'cancelled':
+        return <XCircle className={iconSize} />
       default:
         return <Cloud className={iconSize} />
     }
@@ -44,6 +46,8 @@ export const GoogleSyncBadge = ({ syncType, showLabel = true, size = 'sm' }: Goo
         return 'warning'
       case 'ignored':
         return 'outline'
+      case 'cancelled':
+        return 'destructive'
       default:
         return 'secondary'
     }
