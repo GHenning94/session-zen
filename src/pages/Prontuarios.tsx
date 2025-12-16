@@ -385,13 +385,13 @@ export default function Prontuarios() {
                         </div>
                       )}
                       {clientAnamnese.diagnostico_inicial && (
-                        <div>
+                        <div className="md:col-span-2">
                           <Label className="text-sm font-medium">Diagnóstico Inicial</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.diagnostico_inicial}</p>
                         </div>
                       )}
                       {clientAnamnese.observacoes_adicionais && (
-                        <div>
+                        <div className="md:col-span-2">
                           <Label className="text-sm font-medium">Observações Adicionais</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.observacoes_adicionais}</p>
                         </div>
