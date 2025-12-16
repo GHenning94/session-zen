@@ -116,6 +116,15 @@ export const ProfileDropdown = () => {
   const isPremium = profile.subscription_plan && profile.subscription_plan !== 'basico'
 
   const menuItems = {
+    premium: !isPremium ? [
+      { 
+        icon: Crown, 
+        label: "Desbloquear Premium", 
+        action: () => navigate('/upgrade'),
+        isPremiumItem: true,
+        badge: "-17%"
+      }
+    ] : [],
     profile: [
       { icon: User, label: "Meu Perfil", action: () => navigate('/configuracoes?tab=profile') },
       { icon: Shield, label: "Segurança", action: () => navigate('/configuracoes?tab=security') },
@@ -123,18 +132,9 @@ export const ProfileDropdown = () => {
       { icon: Bell, label: "Notificações", action: () => navigate('/configuracoes?tab=notifications') },
     ],
     payments: [
-      { icon: CreditCard, label: "Pagamentos da Plataforma", action: () => navigate('/configuracoes?tab=platform-payments') },
+      { icon: CreditCard, label: "Assinatura", action: () => navigate('/configuracoes?tab=platform-payments') },
       { icon: Building, label: "Dados Bancários", action: () => navigate('/configuracoes?tab=bank-details') },
     ],
-    premium: !isPremium ? [
-      { 
-        icon: Crown, 
-        label: "Upgrade to Premium", 
-        action: () => navigate('/upgrade'),
-        isPremiumItem: true,
-        badge: "-17%"
-      }
-    ] : [],
     referral: [
       { icon: Gift, label: "Programa de Indicação", action: () => navigate('/programa-indicacao') }
     ]
@@ -176,12 +176,36 @@ export const ProfileDropdown = () => {
                 )}
               </div>
             </div>
-            {profile.is_referral_partner && (
-              <Badge className="bg-primary/10 text-primary border-primary/20 border text-[10px] rounded-sm">
-                Parceiro
-              </Badge>
-            )}
           </div>
+
+          {/* Premium Upgrade Item - Above Profile */}
+          {menuItems.premium.length > 0 && (
+            <>
+              <DropdownMenuGroup>
+                {menuItems.premium.map((item, index) => (
+                  <DropdownMenuItem 
+                    key={index}
+                    className={cn(
+                      "p-2 rounded-lg cursor-pointer justify-between",
+                      item.isPremiumItem && "animated-premium-no-shadow hover:opacity-90"
+                    )}
+                    onClick={item.action}
+                  >
+                    <span className="flex items-center gap-2 font-medium text-white">
+                      <item.icon className="h-5 w-5 text-white" />
+                      {item.label}
+                    </span>
+                    {item.badge && (
+                      <Badge className="animated-premium-no-shadow text-white text-[10px] border-white/30 border">
+                        {item.badge}
+                      </Badge>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+            </>
+          )}
 
           {/* Profile Menu Items */}
           <DropdownMenuGroup>
@@ -219,47 +243,23 @@ export const ProfileDropdown = () => {
 
           <DropdownMenuSeparator />
 
-          {/* Premium Upgrade Item */}
-          {menuItems.premium.length > 0 && (
-            <>
-              <DropdownMenuGroup>
-                {menuItems.premium.map((item, index) => (
-                  <DropdownMenuItem 
-                    key={index}
-                    className={cn(
-                      "p-2 rounded-lg cursor-pointer justify-between",
-                      item.isPremiumItem && "animated-premium hover:opacity-90"
-                    )}
-                    onClick={item.action}
-                  >
-                    <span className="flex items-center gap-2 font-medium text-white">
-                      <item.icon className="h-5 w-5 text-white" />
-                      {item.label}
-                    </span>
-                    {item.badge && (
-                      <Badge className="animated-premium text-white text-[10px] border-white/30 border">
-                        {item.badge}
-                      </Badge>
-                    )}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-              <DropdownMenuSeparator />
-            </>
-          )}
-
           {/* Referral Program */}
           <DropdownMenuGroup>
             {menuItems.referral.map((item, index) => (
               <DropdownMenuItem 
                 key={index}
-                className="p-2 rounded-lg cursor-pointer"
+                className="p-2 rounded-lg cursor-pointer justify-between"
                 onClick={item.action}
               >
                 <span className="flex items-center gap-2 font-medium">
                   <item.icon className="h-5 w-5 text-muted-foreground" />
                   {item.label}
                 </span>
+                {profile.is_referral_partner && (
+                  <Badge className="bg-green-500 text-white text-[10px] border-0">
+                    Ativo
+                  </Badge>
+                )}
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
