@@ -8,7 +8,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { GoogleEvent, isRecurringEvent } from "@/types/googleCalendar"
 import { 
   Calendar, Clock, MapPin, Users, Link, Download, Copy, RefreshCw, 
-  EyeOff, UserPlus, MoreHorizontal, ExternalLink, Repeat, List
+  EyeOff, UserPlus, MoreHorizontal, ExternalLink, List
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -80,9 +80,8 @@ export const GoogleEventCard = ({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant="outline" className="gap-1">
-                        <Repeat className="w-3 h-3" />
-                        {hasMultipleInstances ? seriesCount : 'Recorrente'}
+                      <Badge variant="outline">
+                        {hasMultipleInstances ? `${seriesCount} eventos` : 'Recorrente'}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>

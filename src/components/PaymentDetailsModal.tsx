@@ -108,7 +108,7 @@ export const PaymentDetailsModal = ({
                   <Package className="w-5 h-5 text-primary" />
                 )}
                 {payment.recurring_session_id && (
-                  <Badge variant="outline" className="text-xs">Recorrente</Badge>
+                  <Repeat className="w-5 h-5 text-primary" />
                 )}
               </div>
             </div>
