@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -20,7 +21,8 @@ import {
   User,
   CreditCard,
   Settings,
-  X
+  X,
+  Edit2
 } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -35,6 +37,7 @@ interface Notification {
 }
 
 const NotificationDropdown = () => {
+  const navigate = useNavigate()
   const { 
     notifications, 
     unreadCount, 
@@ -48,6 +51,17 @@ const NotificationDropdown = () => {
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
   const [sideSheetOpen, setSideSheetOpen] = useState(false)
   const [allNotificationsOpen, setAllNotificationsOpen] = useState(false)
+
+  // Extrair SESSION_ID do conteúdo da notificação
+  const extractSessionId = (conteudo: string): string | null => {
+    const match = conteudo.match(/\[SESSION_ID:([^\]]+)\]/)
+    return match ? match[1] : null
+  }
+
+  // Remover SESSION_ID do texto exibido
+  const getDisplayContent = (conteudo: string): string => {
+    return conteudo.replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
+  }
 
   const getNotificationIcon = (titulo: string) => {
     if (titulo.toLowerCase().includes('agendamento') || titulo.toLowerCase().includes('sessão')) return <Calendar className="w-4 h-4" />
@@ -94,6 +108,12 @@ const NotificationDropdown = () => {
     }
   }
 
+  const handleEditSession = (sessionId: string) => {
+    setSideSheetOpen(false)
+    setAllNotificationsOpen(false)
+    navigate(`/sessoes?edit=${sessionId}`)
+  }
+
   const NotificationItem = ({ 
     notification, 
     onClick, 
@@ -137,7 +157,7 @@ const NotificationDropdown = () => {
         </div>
         
         <p className={`text-xs text-muted-foreground mt-1 ${showFullContent ? '' : 'line-clamp-2'}`}>
-          {notification.conteudo}
+          {getDisplayContent(notification.conteudo)}
         </p>
         
         <p className="text-xs text-muted-foreground/70 mt-2">
@@ -267,24 +287,36 @@ const NotificationDropdown = () => {
               <Separator />
               
               <div className="prose prose-sm dark:prose-invert">
-                <p className="text-foreground whitespace-pre-wrap">{selectedNotification.conteudo}</p>
+                <p className="text-foreground whitespace-pre-wrap">{getDisplayContent(selectedNotification.conteudo)}</p>
               </div>
               
               <div className="flex gap-2 pt-4">
-                <Button 
-                  variant="outline" 
-                  className="flex-1"
-                  onClick={() => setSideSheetOpen(false)}
-                >
-                  Fechar
-                </Button>
-                <Button 
-                  variant="destructive"
-                  onClick={() => handleDelete(selectedNotification.id)}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Excluir
-                </Button>
+                {extractSessionId(selectedNotification.conteudo) ? (
+                  <Button 
+                    className="flex-1"
+                    onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Editar Sessão
+                  </Button>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      className="flex-1"
+                      onClick={() => setSideSheetOpen(false)}
+                    >
+                      Fechar
+                    </Button>
+                    <Button 
+                      variant="destructive"
+                      onClick={() => handleDelete(selectedNotification.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Excluir
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           )}
@@ -370,19 +402,29 @@ const NotificationDropdown = () => {
                     
                     <div className="prose prose-sm dark:prose-invert max-w-none">
                       <p className="text-foreground whitespace-pre-wrap text-base leading-relaxed">
-                        {selectedNotification.conteudo}
+                        {getDisplayContent(selectedNotification.conteudo)}
                       </p>
                     </div>
                     
                     <div className="pt-4">
-                      <Button 
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleDelete(selectedNotification.id)}
-                      >
-                        <Trash2 className="w-4 h-4 mr-2" />
-                        Excluir notificação
-                      </Button>
+                      {extractSessionId(selectedNotification.conteudo) ? (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
+                        >
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Editar Sessão
+                        </Button>
+                      ) : (
+                        <Button 
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleDelete(selectedNotification.id)}
+                        >
+                          <Trash2 className="w-4 h-4 mr-2" />
+                          Excluir notificação
+                        </Button>
+                      )}
                     </div>
                   </div>
                 </ScrollArea>
