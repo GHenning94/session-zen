@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, PenLine } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -733,7 +733,7 @@ export default function Sessoes() {
                                         <Package className="h-4 w-4 text-primary" />
                                       )}
                                       {session.recurring_session_id && (
-                                        <Repeat className="h-4 w-4 text-primary" />
+                                        <Badge variant="outline" className="text-xs">Recorrente</Badge>
                                       )}
                                       {sessionNotes.some(note => note.session_id === session.id) && (
                                         <PenLine className="h-4 w-4 text-primary" />
@@ -820,7 +820,7 @@ export default function Sessoes() {
                                   <Package className="h-4 w-4 text-primary" />
                                 )}
                                 {session.recurring_session_id && (
-                                  <Repeat className="h-4 w-4 text-primary" />
+                                  <Badge variant="outline" className="text-xs">Recorrente</Badge>
                                 )}
                                 {sessionNotes.some(note => note.session_id === session.id) && (
                                   <PenLine className="h-4 w-4 text-primary" />
