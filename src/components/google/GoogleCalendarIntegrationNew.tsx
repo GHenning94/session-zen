@@ -307,7 +307,7 @@ const GoogleCalendarIntegrationNew = () => {
                       <p className="text-sm mt-1">
                         {googleEvents.length > 0 
                           ? 'Todos os eventos foram importados ou ignorados'
-                          : 'Nenhum evento encontrado no calendário principal dos últimos 30 dias'
+                          : 'Nenhum evento encontrado no calendário principal nos próximos 30 dias'
                         }
                       </p>
                       <p className="text-xs mt-2 text-muted-foreground/70">
