@@ -129,10 +129,17 @@ export const useOptimizedGoogleCalendar = () => {
 
     setLoading(true)
     try {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const timeMin = today.toISOString()
-      const timeMax = new Date(today.getFullYear(), 11, 31, 23, 59, 59).toISOString()
+      // Buscar eventos dos últimos 30 dias até o fim do próximo ano
+      const thirtyDaysAgo = new Date()
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+      thirtyDaysAgo.setHours(0, 0, 0, 0)
+      const timeMin = thirtyDaysAgo.toISOString()
+      
+      const nextYear = new Date()
+      nextYear.setFullYear(nextYear.getFullYear() + 1)
+      nextYear.setMonth(11, 31)
+      nextYear.setHours(23, 59, 59, 999)
+      const timeMax = nextYear.toISOString()
       
       const response = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=250&singleEvents=true&orderBy=startTime`,
