@@ -226,7 +226,7 @@ const NotificationDropdown = () => {
           
           {/* Secondary Section - View All */}
           {notifications.length > 0 && (
-            <section className="mt-1 bg-background dark:bg-zinc-900 rounded-2xl p-1">
+            <section className="mt-1 bg-background dark:bg-transparent rounded-2xl p-1">
               <Button 
                 variant="ghost" 
                 className="w-full p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground justify-center"
