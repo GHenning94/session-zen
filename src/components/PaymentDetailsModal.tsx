@@ -150,40 +150,13 @@ export const PaymentDetailsModal = ({
                   <label className="text-sm text-muted-foreground">Valor</label>
                   <p className="font-medium text-lg">{formatCurrencyBR(payment.value)}</p>
                 </div>
-                {onUpdatePaymentStatus ? (
-                  <div>
-                    <label className="text-sm text-muted-foreground">Método de Pagamento</label>
-                    <Select 
-                      value={selectedMethod} 
-                      onValueChange={(value) => {
-                        setSelectedMethod(value)
-                        // Sempre usar payment.id - é o ID do registro na tabela payments
-                        if (payment.id) {
-                          onUpdatePaymentStatus(payment.id, selectedStatus, value)
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-full mt-1">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="z-50 bg-background">
-                        <SelectItem value="A definir">💳 A Definir</SelectItem>
-                        <SelectItem value="dinheiro">💵 Dinheiro</SelectItem>
-                        <SelectItem value="pix">📱 PIX</SelectItem>
-                        <SelectItem value="cartao">💳 Cartão</SelectItem>
-                        <SelectItem value="transferencia">🏦 Transferência Bancária</SelectItem>
-                      </SelectContent>
-                    </Select>
+                <div>
+                  <label className="text-sm text-muted-foreground">Método de Pagamento</label>
+                  <div className="flex items-center gap-2 mt-1">
+                    {getPaymentMethodIcon(payment.method)}
+                    <p className="font-medium capitalize">{payment.method === 'A definir' ? 'A Definir' : payment.method}</p>
                   </div>
-                ) : (
-                  <div>
-                    <label className="text-sm text-muted-foreground">Método de Pagamento</label>
-                    <div className="flex items-center gap-2 mt-1">
-                      {getPaymentMethodIcon(payment.method)}
-                      <p className="font-medium capitalize">{payment.method}</p>
-                    </div>
-                  </div>
-                )}
+                </div>
                 {onUpdatePaymentStatus && (
                   <div>
                     <label className="text-sm text-muted-foreground">Status</label>

@@ -8,7 +8,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
-import { formatCurrencyBR } from "@/utils/formatters"
 import { formatTimeForDatabase } from "@/lib/utils"
 import { Package, Repeat, Info } from "lucide-react"
 
@@ -34,6 +33,7 @@ export const SessionEditModal = ({
     horario: '',
     valor: '',
     metodo_pagamento: '',
+    status: '',
     anotacoes: ''
   })
   const [loading, setLoading] = useState(false)
@@ -47,6 +47,7 @@ export const SessionEditModal = ({
         horario: session.horario ? session.horario.slice(0, 5) : '',
         valor: session.valor?.toString() || '',
         metodo_pagamento: session.metodo_pagamento || '',
+        status: session.status || 'agendada',
         anotacoes: session.anotacoes || ''
       })
       setShowReactivationMessage(false)
@@ -61,14 +62,6 @@ export const SessionEditModal = ({
     setShowReactivationMessage(selectedClient && !selectedClient.ativo)
   }
 
-  const calculateStatus = (date: string, time: string) => {
-    const sessionDateTime = new Date(`${date}T${time}:00`)
-    const currentDateTime = new Date()
-    
-    // Se ainda não chegou a hora da sessão, é "agendada"
-    // Se já passou da hora, é "realizada"
-    return sessionDateTime <= currentDateTime ? 'realizada' : 'agendada'
-  }
 
   // Verificar se a sessão é somente leitura (importada do Google)
   const isReadOnly = session?.google_sync_type === 'importado'
@@ -90,6 +83,15 @@ export const SessionEditModal = ({
 
         if (error) throw error
 
+        // Atualizar pagamento relacionado
+        await supabase
+          .from('payments')
+          .update({
+            valor: parseFloat(formData.valor) || 0,
+            metodo_pagamento: formData.metodo_pagamento || 'A definir'
+          })
+          .eq('session_id', session.id)
+
         toast({
           title: "Sessão atualizada",
           description: "Valor e método de pagamento atualizados com sucesso.",
@@ -99,9 +101,6 @@ export const SessionEditModal = ({
         onOpenChange(false)
         return
       }
-
-      // Calcular status automaticamente
-      const autoStatus = calculateStatus(formData.data, formData.horario)
 
       // Verificar se o cliente está inativo e reativá-lo se necessário
       const selectedClient = clients.find(c => c.id === formData.client_id)
@@ -117,6 +116,7 @@ export const SessionEditModal = ({
         })
       }
 
+      // Atualizar sessão
       const { error } = await supabase
         .from('sessions')
         .update({
@@ -124,10 +124,24 @@ export const SessionEditModal = ({
           data: formData.data,
           horario: formatTimeForDatabase(formData.horario),
           valor: parseFloat(formData.valor) || null,
-          status: autoStatus,
+          metodo_pagamento: formData.metodo_pagamento || null,
+          status: formData.status,
           anotacoes: formData.anotacoes || null
         })
         .eq('id', session.id)
+
+      if (error) {
+        throw error
+      }
+
+      // Atualizar pagamento relacionado (se existir) com valor e método de pagamento
+      const { error: paymentError } = await supabase
+        .from('payments')
+        .update({
+          valor: parseFloat(formData.valor) || 0,
+          metodo_pagamento: formData.metodo_pagamento || 'A definir'
+        })
+        .eq('session_id', session.id)
 
       if (error) {
         throw error
@@ -301,11 +315,42 @@ export const SessionEditModal = ({
               />
             </div>
             <div>
-              <Label>Status</Label>
-              <div className="p-2 bg-muted rounded-md text-sm text-muted-foreground">
-                Status será calculado automaticamente baseado na data/hora
-              </div>
+              <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+              <Select
+                value={formData.metodo_pagamento}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, metodo_pagamento: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                  <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                  <SelectItem value="transferencia">Transferência</SelectItem>
+                  <SelectItem value="boleto">Boleto</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+
+          <div>
+            <Label htmlFor="status">Status</Label>
+            <Select
+              value={formData.status}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione o status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="agendada">Agendada</SelectItem>
+                <SelectItem value="realizada">Realizada</SelectItem>
+                <SelectItem value="faltou">Faltou</SelectItem>
+                <SelectItem value="cancelada">Cancelada</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
