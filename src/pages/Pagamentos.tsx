@@ -34,6 +34,7 @@ import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
+import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -63,10 +64,10 @@ const [isLoading, setIsLoading] = useState(false)
     
     setIsLoading(true)
     try {
-      // Carregar sessões (apenas campos necessários)
+      // Carregar sessões (apenas campos necessários + google_sync_type)
       const { data: sessionsData, error: sessionsError } = await supabase
         .from('sessions')
-        .select('id, data, horario, status, valor, metodo_pagamento, client_id, package_id')
+        .select('id, data, horario, status, valor, metodo_pagamento, client_id, package_id, google_sync_type')
         .eq('user_id', user.id)
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
@@ -78,7 +79,7 @@ const [isLoading, setIsLoading] = useState(false)
           id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
           observacoes, created_at, package_id, session_id, client_id,
           packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio),
-          sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id)
+          sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -176,6 +177,7 @@ const getSessionPayments = () => {
       package_data_inicio: p.packages?.data_inicio,
       package_data_fim: p.packages?.data_fim,
       recurring_session_id: p.sessions?.recurring_session_id,
+      google_sync_type: p.sessions?.google_sync_type,
       type: isPackage ? 'package' : 'session',
       raw: p,
     }
@@ -708,12 +710,15 @@ const pastPayments = filteredPayments.filter(item => {
                                    <Badge variant={getStatusColor(payment.status)}>
                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                    </Badge>
-                                   {payment.type === 'package' && (
-                                     <Package className="w-4 h-4 text-primary" />
-                                   )}
-                                   {payment.recurring_session_id && (
-                                     <Repeat className="w-4 h-4 text-primary" />
-                                   )}
+                                    {payment.type === 'package' && (
+                                      <Package className="w-4 h-4 text-primary" />
+                                    )}
+                                    {payment.recurring_session_id && (
+                                      <Repeat className="w-4 h-4 text-primary" />
+                                    )}
+                                    {payment.google_sync_type && (
+                                      <GoogleSyncBadge syncType={payment.google_sync_type} />
+                                    )}
                                  </div>
                                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                    <div className="flex items-center gap-1">
@@ -804,12 +809,15 @@ const pastPayments = filteredPayments.filter(item => {
                              <Badge variant={getStatusColor(payment.status)}>
                                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                              </Badge>
-                             {payment.type === 'package' && (
-                               <Package className="w-4 h-4 text-primary" />
-                             )}
-                             {payment.recurring_session_id && (
-                               <Repeat className="w-4 h-4 text-primary" />
-                             )}
+                              {payment.type === 'package' && (
+                                <Package className="w-4 h-4 text-primary" />
+                              )}
+                              {payment.recurring_session_id && (
+                                <Repeat className="w-4 h-4 text-primary" />
+                              )}
+                              {payment.google_sync_type && (
+                                <GoogleSyncBadge syncType={payment.google_sync_type} />
+                              )}
                            </div>
                            <div className="flex items-center gap-4 text-sm text-muted-foreground">
                              <div className="flex items-center gap-1">

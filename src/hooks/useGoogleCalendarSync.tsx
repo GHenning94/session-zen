@@ -330,25 +330,38 @@ export const useGoogleCalendarSync = () => {
         }
       }
 
-      // Se não temos cliente, criar um temporário
+      // Se não temos cliente, verificar se já existe por nome antes de criar
       if (!clientId) {
         const clientName = event.summary.split(' - ')[1] || event.summary
-        const { data: newClient, error: clientError } = await supabase
+        
+        // Verificar se já existe cliente com mesmo nome
+        const { data: existingClientByName } = await supabase
           .from('clients')
-          .insert([{
-            user_id: user.id,
-            nome: clientName,
-            email: null,
-            telefone: '',
-            dados_clinicos: editable 
-              ? `Criado a partir de evento do Google: ${event.description || ''}`
-              : `Importado do Google Calendar: ${event.description || ''}`
-          }])
-          .select()
-          .single()
+          .select('id')
+          .eq('user_id', user.id)
+          .ilike('nome', clientName)
+          .maybeSingle()
 
-        if (clientError) throw clientError
-        clientId = newClient.id
+        if (existingClientByName) {
+          clientId = existingClientByName.id
+        } else {
+          const { data: newClient, error: clientError } = await supabase
+            .from('clients')
+            .insert([{
+              user_id: user.id,
+              nome: clientName,
+              email: null,
+              telefone: '',
+              dados_clinicos: editable 
+                ? `Criado a partir de evento do Google: ${event.description || ''}`
+                : `Importado do Google Calendar: ${event.description || ''}`
+            }])
+            .select()
+            .single()
+
+          if (clientError) throw clientError
+          clientId = newClient.id
+        }
       }
 
       // Criar sessão - se editável, usa valor padrão; se somente leitura, usa NULL
@@ -437,28 +450,63 @@ export const useGoogleCalendarSync = () => {
         ? format(new Date(startDateTime!), "HH:mm")
         : "09:00"
 
-      // Criar cliente temporário
+      // Verificar se cliente já existe por email ou nome
       const clientName = event.summary.split(' - ')[1] || event.summary
-      const { data: newClient, error: clientError } = await supabase
-        .from('clients')
-        .insert([{
-          user_id: user.id,
-          nome: clientName,
-          email: event.attendees?.[0]?.email || null,
-          telefone: '',
-          dados_clinicos: `Espelhado do Google Calendar: ${event.description || ''}`
-        }])
-        .select()
-        .single()
+      const attendeeEmail = event.attendees?.[0]?.email || null
+      let clientId = null
 
-      if (clientError) throw clientError
+      // Primeiro tenta por email se disponível
+      if (attendeeEmail) {
+        const { data: existingByEmail } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('email', attendeeEmail)
+          .maybeSingle()
+        
+        if (existingByEmail) {
+          clientId = existingByEmail.id
+        }
+      }
+
+      // Se não encontrou por email, tenta por nome
+      if (!clientId) {
+        const { data: existingByName } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .ilike('nome', clientName)
+          .maybeSingle()
+        
+        if (existingByName) {
+          clientId = existingByName.id
+        }
+      }
+
+      // Se ainda não encontrou, cria novo cliente
+      if (!clientId) {
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert([{
+            user_id: user.id,
+            nome: clientName,
+            email: attendeeEmail,
+            telefone: '',
+            dados_clinicos: `Espelhado do Google Calendar: ${event.description || ''}`
+          }])
+          .select()
+          .single()
+
+        if (clientError) throw clientError
+        clientId = newClient.id
+      }
 
       // Mirror não define valor inicialmente para evitar criação automática de pagamento
       const { error: sessionError } = await supabase
         .from('sessions')
         .insert([{
           user_id: user.id,
-          client_id: newClient.id,
+          client_id: clientId,
           data: eventDate,
           horario: formatTimeForDatabase(eventTime),
           status: 'agendada',
