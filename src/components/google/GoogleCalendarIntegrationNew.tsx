@@ -60,9 +60,10 @@ const GoogleCalendarIntegrationNew = () => {
     markAttendeesAsClients,
     syncMirroredSessions,
     checkCancelledEvents,
+    getAccessToken,
   } = useGoogleCalendarSync()
 
-  // Hook de detecção de conflitos
+  // Hook de detecção de conflitos (com função de token)
   const {
     conflicts,
     conflictStats,
@@ -71,19 +72,28 @@ const GoogleCalendarIntegrationNew = () => {
     detectAllConflicts,
     resolveConflict,
     resolveAllConflicts,
-  } = useConflictDetection()
+  } = useConflictDetection({ getAccessToken })
 
   const [activeInfoTab, setActiveInfoTab] = useState("concepts")
 
   // Sessões espelhadas (para detecção de conflitos)
   const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'espelhado')
 
+  // Handler para verificar conflitos (recarrega dados primeiro)
+  const handleDetectConflicts = async () => {
+    // Recarregar dados do Google e plataforma
+    // A detecção será feita automaticamente pelo useEffect quando os dados atualizarem
+    await loadAllData()
+  }
+
   // Detectar conflitos automaticamente quando os dados são carregados
   useEffect(() => {
     if (isSignedIn && mirroredSessions.length > 0 && googleEvents.length > 0) {
-      detectAllConflicts(mirroredSessions, googleEvents)
+      // Usar os dados mais recentes calculados a partir do estado atual
+      const currentMirroredSessions = platformSessions.filter(s => s.google_sync_type === 'espelhado')
+      detectAllConflicts(currentMirroredSessions, googleEvents)
     }
-  }, [isSignedIn, platformSessions.length, googleEvents.length])
+  }, [isSignedIn, platformSessions, googleEvents, detectAllConflicts])
 
   // Helper para obter contagem de instâncias de série
   const getSeriesCount = (event: any): number => {
@@ -499,9 +509,9 @@ const GoogleCalendarIntegrationNew = () => {
             <ConflictDetectionPanel
               conflicts={conflicts}
               conflictStats={conflictStats}
-              isDetecting={isDetecting}
+              isDetecting={isDetecting || loading}
               isResolving={isResolving}
-              onDetect={() => detectAllConflicts(mirroredSessions, googleEvents)}
+              onDetect={handleDetectConflicts}
               onResolve={resolveConflict}
               onResolveAll={resolveAllConflicts}
             />
