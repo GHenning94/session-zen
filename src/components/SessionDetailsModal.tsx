@@ -17,7 +17,8 @@ import {
   Eye,
   StickyNote,
   Package,
-  Repeat
+  Repeat,
+  PenLine
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
@@ -34,6 +35,7 @@ interface SessionDetailsModalProps {
   onViewAgenda: (sessionId: string) => void
   onViewPayment: (sessionId: string) => void
   onAddNote: (session: any) => void
+  hasNotes?: boolean
 }
 
 export const SessionDetailsModal = ({
@@ -46,7 +48,8 @@ export const SessionDetailsModal = ({
   onMarkNoShow,
   onViewAgenda,
   onViewPayment,
-  onAddNote
+  onAddNote,
+  hasNotes = false
 }: SessionDetailsModalProps) => {
   const { avatarUrl } = useAvatarUrl(session?.clients?.avatar_url)
   
@@ -106,6 +109,9 @@ export const SessionDetailsModal = ({
                 )}
                 {session.recurring_session_id && (
                   <Repeat className="h-5 w-5 text-primary" />
+                )}
+                {hasNotes && (
+                  <PenLine className="h-5 w-5 text-blue-500" />
                 )}
               </div>
             </div>
