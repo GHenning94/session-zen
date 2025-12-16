@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2 } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
 import {
@@ -37,6 +37,7 @@ import { formatPhone, formatCRP, formatCRM, validatePassword } from "@/utils/inp
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
 import { cleanupInvalidSession } from "@/utils/sessionCleanup"
 import { useNavigate } from "react-router-dom"
+import { useGoogleCalendarBackgroundSync } from "@/hooks/useGoogleCalendarBackgroundSync"
 
 type AllSettings = Record<string, any>;
 
@@ -46,6 +47,7 @@ const Configuracoes = () => {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
+  const { isAutoSyncEnabled, toggleAutoSync, isSyncing, lastSyncResult, manualSync } = useGoogleCalendarBackgroundSync()
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
@@ -1032,6 +1034,61 @@ const Configuracoes = () => {
                 <Button onClick={handleSave} disabled={isLoading}>
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Preferências
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Card de sincronização Google Calendar */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className={isSyncing ? "animate-spin" : ""} /> Google Calendar - Sincronização Automática
+                </CardTitle>
+                <CardDescription>
+                  Sincronize automaticamente eventos espelhados e detecte cancelamentos
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Sincronização automática</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Verifica conflitos e eventos cancelados a cada 15 minutos
+                    </p>
+                  </div>
+                  <Switch
+                    checked={isAutoSyncEnabled}
+                    onCheckedChange={toggleAutoSync}
+                    disabled={!localStorage.getItem('google_access_token')}
+                  />
+                </div>
+
+                {!localStorage.getItem('google_access_token') && (
+                  <p className="text-sm text-muted-foreground italic">
+                    Conecte-se ao Google Calendar na página de Integrações para ativar esta funcionalidade.
+                  </p>
+                )}
+
+                {lastSyncResult && (
+                  <div className="p-3 bg-muted rounded-lg text-sm">
+                    <p className="font-medium mb-1">Última sincronização:</p>
+                    <p className="text-muted-foreground">
+                      {lastSyncResult.timestamp.toLocaleString('pt-BR')}
+                    </p>
+                    <p className="text-muted-foreground">
+                      {lastSyncResult.mirroredUpdated} atualizada(s), {lastSyncResult.conflicts} conflito(s), {lastSyncResult.cancelled} cancelada(s)
+                    </p>
+                  </div>
+                )}
+
+                <Button 
+                  variant="outline" 
+                  onClick={manualSync} 
+                  disabled={isSyncing || !localStorage.getItem('google_access_token')}
+                  className="w-full"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
+                  {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
                 </Button>
               </CardContent>
             </Card>
