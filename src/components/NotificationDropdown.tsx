@@ -222,20 +222,21 @@ const NotificationDropdown = () => {
                 </div>
               </ScrollArea>
             )}
+            
+            {/* View All Button */}
+            {notifications.length > 0 && (
+              <>
+                <Separator className="mx-1 my-1" />
+                <Button 
+                  variant="ghost" 
+                  className="w-full p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground justify-center"
+                  onClick={handleViewAllNotifications}
+                >
+                  Ver todas as notificações
+                </Button>
+              </>
+            )}
           </section>
-          
-          {/* Secondary Section - View All */}
-          {notifications.length > 0 && (
-            <section className="mt-1 bg-white dark:bg-zinc-900 rounded-2xl p-1 shadow border border-border">
-              <Button 
-                variant="ghost" 
-                className="w-full p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground justify-center"
-                onClick={handleViewAllNotifications}
-              >
-                Ver todas as notificações
-              </Button>
-            </section>
-          )}
         </DropdownMenuContent>
       </DropdownMenu>
 
