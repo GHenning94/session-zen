@@ -169,67 +169,72 @@ const NotificationDropdown = () => {
         
         <DropdownMenuContent 
           align="end" 
-          className="w-96 p-0 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl"
+          className="w-[340px] rounded-2xl bg-muted/50 dark:bg-black/90 p-0"
         >
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b border-border/50">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-foreground">Notificações</h3>
+          {/* Main Section */}
+          <section className="bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
+            {/* Header */}
+            <div className="flex items-center justify-between p-3">
+              <div className="flex items-center gap-2">
+                <h3 className="font-semibold text-sm text-foreground">Notificações</h3>
+                {unreadCount > 0 && (
+                  <Badge variant="secondary" className="text-xs">
+                    {unreadCount}
+                  </Badge>
+                )}
+              </div>
               {unreadCount > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  {unreadCount} nova{unreadCount !== 1 ? 's' : ''}
-                </Badge>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleMarkAllAsRead}
+                  className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                >
+                  <CheckCheck className="w-3 h-3 mr-1" />
+                  Marcar todas
+                </Button>
               )}
             </div>
-            {unreadCount > 0 && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={handleMarkAllAsRead}
-                className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-              >
-                <CheckCheck className="w-3 h-3 mr-1" />
-                Marcar todas
-              </Button>
-            )}
-          </div>
-          
-          {/* Content */}
-          {loading ? (
-            <div className="p-6 text-center text-sm text-muted-foreground">
-              Carregando notificações...
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="p-8 text-center text-sm text-muted-foreground">
-              <BellOff className="w-10 h-10 mx-auto mb-3 opacity-30" />
-              <p>Nenhuma notificação</p>
-            </div>
-          ) : (
-            <ScrollArea className="h-80">
-              <div className="p-2 space-y-1">
-                {notifications.slice(0, 5).map((notification) => (
-                  <NotificationItem
-                    key={notification.id}
-                    notification={notification}
-                    onClick={() => handleNotificationClick(notification)}
-                    onDelete={handleDelete}
-                  />
-                ))}
+            
+            <Separator className="mx-1" />
+            
+            {/* Content */}
+            {loading ? (
+              <div className="p-6 text-center text-sm text-muted-foreground">
+                Carregando notificações...
               </div>
-            </ScrollArea>
-          )}
+            ) : notifications.length === 0 ? (
+              <div className="p-8 text-center text-sm text-muted-foreground">
+                <BellOff className="w-10 h-10 mx-auto mb-3 opacity-30" />
+                <p>Nenhuma notificação</p>
+              </div>
+            ) : (
+              <ScrollArea className="max-h-80">
+                <div className="p-1 space-y-0.5">
+                  {notifications.slice(0, 5).map((notification) => (
+                    <NotificationItem
+                      key={notification.id}
+                      notification={notification}
+                      onClick={() => handleNotificationClick(notification)}
+                      onDelete={handleDelete}
+                    />
+                  ))}
+                </div>
+              </ScrollArea>
+            )}
+          </section>
           
-          {/* Footer */}
+          {/* Secondary Section - View All */}
           {notifications.length > 0 && (
-            <div className="p-2 border-t border-border/50">
+            <section className="mt-1 bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
               <Button 
                 variant="ghost" 
-                className="w-full text-sm text-muted-foreground hover:text-foreground"
+                className="w-full p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground justify-center"
                 onClick={handleViewAllNotifications}
               >
                 Ver todas as notificações
               </Button>
-            </div>
+            </section>
           )}
         </DropdownMenuContent>
       </DropdownMenu>
