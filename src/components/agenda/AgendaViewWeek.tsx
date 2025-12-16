@@ -10,6 +10,7 @@ import { cn, formatClientName } from '@/lib/utils'
 import { formatTimeBR } from '@/utils/formatters'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { sessionNeedsAttention } from '@/utils/sessionStatusUtils'
+import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 
 interface Session {
   id: string
@@ -18,6 +19,7 @@ interface Session {
   client_id: string
   status: string
   valor?: number
+  google_sync_type?: string
 }
 
 interface Client {
@@ -276,6 +278,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                   <span className="text-[10px] truncate">
                                     {formatClientName(clients.find(c => c.id === session.client_id)?.nome || 'N/A')}
                                   </span>
+                                  <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                                 </div>
                                 
                                 <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">

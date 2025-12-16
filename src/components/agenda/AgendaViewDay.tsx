@@ -10,6 +10,7 @@ import { formatTimeBR } from '@/utils/formatters'
 import { useInterval } from 'react-use'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { sessionNeedsAttention } from '@/utils/sessionStatusUtils'
+import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 
 interface Session {
   id: string
@@ -20,6 +21,7 @@ interface Session {
   valor?: number
   anotacoes?: string
   package_id?: string
+  google_sync_type?: string
 }
 
 interface Client {
@@ -227,6 +229,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                   Pacote
                                 </Badge>
                               )}
+                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                             </div>
                             <div className="flex items-center gap-1">
                               {session.valor && (

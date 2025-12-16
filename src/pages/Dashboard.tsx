@@ -48,6 +48,7 @@ import { cn } from "@/lib/utils"
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { toast } from "sonner"
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime"
+import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -389,7 +390,7 @@ const Dashboard = () => {
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('payments').select('valor, status, data_pagamento, created_at, sessions:session_id(data)').eq('user_id', user?.id).eq('status', 'pago').gte('created_at', `${new Date().toISOString().slice(0, 7)}-01`).lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
         // Buscar sessões futuras incluindo hoje
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, package_id, recurring_session_id, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, package_id, recurring_session_id, google_sync_type, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
         // Buscar pagamentos recentes da tabela PAYMENTS (não sessions)
         supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
@@ -1264,7 +1265,8 @@ const Dashboard = () => {
                                 </Tooltip>
                               )}
                             </TooltipProvider>
-                            <Badge 
+                            <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} />
+                            <Badge
                               variant={
                                 session.status === 'realizada' ? 'success' :
                                 session.status === 'agendada' ? 'info' :
