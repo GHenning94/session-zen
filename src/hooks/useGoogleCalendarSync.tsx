@@ -402,7 +402,7 @@ export const useGoogleCalendarSync = () => {
         await supabase.from('notifications').insert([{
           user_id: user.id,
           titulo: "Defina o valor da sessão importada",
-          conteudo: `A sessão "Sessão - ${event.summary}" foi importada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
+          conteudo: `A sessão "${event.summary}" foi importada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
           lida: false
         }])
       }
