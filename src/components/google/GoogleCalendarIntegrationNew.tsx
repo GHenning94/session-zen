@@ -107,28 +107,33 @@ const GoogleCalendarIntegrationNew = () => {
     if (selectedGoogleEvents.size === 0) return
     const count = await batchImportGoogleEvents(Array.from(selectedGoogleEvents), true)
     clearSelections()
+    await loadAllData()
   }
 
   const handleBatchSend = async () => {
     if (selectedPlatformSessions.size === 0) return
     const count = await batchSendToGoogle(Array.from(selectedPlatformSessions))
     clearSelections()
+    await loadAllData()
   }
 
   const handleBatchIgnore = async () => {
     if (selectedGoogleEvents.size === 0) return
     await batchIgnoreGoogleEvents(Array.from(selectedGoogleEvents))
+    clearSelections()
     await loadAllData()
   }
 
   const handleImportAll = async () => {
     const eventIds = filteredGoogleEvents.map(e => e.id)
-    await batchImportGoogleEvents(eventIds, true)
+    const count = await batchImportGoogleEvents(eventIds, true)
+    await loadAllData()
   }
 
   const handleSendAll = async () => {
     const sessionIds = localSessions.map(s => s.id)
-    await batchSendToGoogle(sessionIds)
+    const count = await batchSendToGoogle(sessionIds)
+    await loadAllData()
   }
 
   return (
@@ -239,7 +244,9 @@ const GoogleCalendarIntegrationNew = () => {
                         className="w-5 h-5"
                       />
                       Eventos do Google
-                      <Badge variant="secondary">{filteredGoogleEvents.length}</Badge>
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-semibold">
+                        {filteredGoogleEvents.length}
+                      </span>
                     </CardTitle>
                   </div>
                   
@@ -343,12 +350,50 @@ const GoogleCalendarIntegrationNew = () => {
                     <CardTitle className="text-lg flex items-center gap-2">
                       <Calendar className="w-5 h-5 text-primary" />
                       Sessões da Plataforma
-                      <Badge variant="secondary">{platformSessions.length}</Badge>
+                      <span className="flex items-center justify-center w-6 h-6 rounded-full bg-amber-500 text-white text-xs font-semibold">
+                        {platformSessions.length}
+                      </span>
                     </CardTitle>
                   </div>
                   
+                  {/* Ações em lote */}
+                  <div className="flex flex-wrap items-center gap-2 pt-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={selectAllPlatformSessions}
+                      disabled={localSessions.length === 0}
+                    >
+                      <CheckSquare className="w-4 h-4 mr-1" />
+                      Selecionar todos
+                    </Button>
+                    {selectedPlatformSessions.size > 0 && (
+                      <>
+                        <Separator orientation="vertical" className="h-4" />
+                        <Badge variant="outline">{selectedPlatformSessions.size} selecionados</Badge>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={handleBatchSend}
+                          disabled={loading}
+                        >
+                          <Upload className="w-4 h-4 mr-1" />
+                          Enviar para Google
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={clearSelections}
+                        >
+                          Limpar
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
                   {/* Filtros */}
-                  <Tabs defaultValue="local" className="w-full pt-2">
+                  <Tabs defaultValue="local" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="local">
                         Locais ({localSessions.length})
@@ -362,42 +407,6 @@ const GoogleCalendarIntegrationNew = () => {
                     </TabsList>
                     
                     <TabsContent value="local" className="mt-3">
-                      {/* Ações para sessões locais */}
-                      {localSessions.length > 0 && (
-                        <div className="flex flex-wrap items-center gap-2 mb-3">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={selectAllPlatformSessions}
-                          >
-                            <CheckSquare className="w-4 h-4 mr-1" />
-                            Selecionar todos
-                          </Button>
-                          {selectedPlatformSessions.size > 0 && (
-                            <>
-                              <Separator orientation="vertical" className="h-4" />
-                              <Badge variant="outline">{selectedPlatformSessions.size} selecionados</Badge>
-                              <Button 
-                                variant="default" 
-                                size="sm"
-                                onClick={handleBatchSend}
-                                disabled={loading}
-                              >
-                                <Upload className="w-4 h-4 mr-1" />
-                                Enviar para Google
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={clearSelections}
-                              >
-                                Limpar
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      )}
-                      
                       {localSessions.length === 0 ? (
                         <div className="text-center py-12 text-muted-foreground">
                           <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -420,20 +429,6 @@ const GoogleCalendarIntegrationNew = () => {
                             ))}
                           </div>
                         </ScrollArea>
-                      )}
-                      
-                      {localSessions.length > 0 && (
-                        <div className="mt-4 pt-4 border-t flex justify-end gap-2">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={handleSendAll}
-                            disabled={loading}
-                          >
-                            <Upload className="w-4 h-4 mr-1" />
-                            Enviar todos para Google
-                          </Button>
-                        </div>
                       )}
                     </TabsContent>
                     
@@ -489,7 +484,21 @@ const GoogleCalendarIntegrationNew = () => {
                       )}
                     </TabsContent>
                   </Tabs>
-                </CardHeader>
+                  
+                  {localSessions.length > 0 && (
+                    <div className="mt-4 pt-4 border-t flex justify-end gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleSendAll}
+                        disabled={loading}
+                      >
+                        <Upload className="w-4 h-4 mr-1" />
+                        Enviar todos para Google
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
               </Card>
             </div>
           )}
