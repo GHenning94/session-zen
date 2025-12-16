@@ -73,24 +73,48 @@ export const SessionEditModal = ({
     try {
       // Se for importada (read-only), só atualiza valor e método de pagamento
       if (isReadOnly) {
+        const valorNumerico = parseFloat(formData.valor) || null
+
         const { error } = await supabase
           .from('sessions')
           .update({
-            valor: parseFloat(formData.valor) || null,
+            valor: valorNumerico,
             metodo_pagamento: formData.metodo_pagamento || null
           })
           .eq('id', session.id)
 
         if (error) throw error
 
-        // Atualizar pagamento relacionado
-        await supabase
+        // Verificar se já existe pagamento para esta sessão
+        const { data: existingPayment } = await supabase
           .from('payments')
-          .update({
-            valor: parseFloat(formData.valor) || 0,
-            metodo_pagamento: formData.metodo_pagamento || 'A definir'
-          })
+          .select('id')
           .eq('session_id', session.id)
+          .maybeSingle()
+
+        if (existingPayment) {
+          // Atualizar pagamento existente
+          await supabase
+            .from('payments')
+            .update({
+              valor: valorNumerico || 0,
+              metodo_pagamento: formData.metodo_pagamento || 'A definir'
+            })
+            .eq('session_id', session.id)
+        } else if (valorNumerico && valorNumerico > 0) {
+          // Criar pagamento novo se definiu valor
+          await supabase
+            .from('payments')
+            .insert([{
+              user_id: session.user_id,
+              session_id: session.id,
+              client_id: session.client_id,
+              valor: valorNumerico,
+              status: 'pendente',
+              data_vencimento: session.data,
+              metodo_pagamento: formData.metodo_pagamento || 'A definir'
+            }])
+        }
 
         toast({
           title: "Sessão atualizada",
@@ -116,6 +140,8 @@ export const SessionEditModal = ({
         })
       }
 
+      const valorNumerico = parseFloat(formData.valor) || null
+
       // Atualizar sessão
       const { error } = await supabase
         .from('sessions')
@@ -123,7 +149,7 @@ export const SessionEditModal = ({
           client_id: formData.client_id,
           data: formData.data,
           horario: formatTimeForDatabase(formData.horario),
-          valor: parseFloat(formData.valor) || null,
+          valor: valorNumerico,
           metodo_pagamento: formData.metodo_pagamento || null,
           status: formData.status,
           anotacoes: formData.anotacoes || null
@@ -134,17 +160,35 @@ export const SessionEditModal = ({
         throw error
       }
 
-      // Atualizar pagamento relacionado (se existir) com valor e método de pagamento
-      const { error: paymentError } = await supabase
+      // Verificar se já existe pagamento para esta sessão
+      const { data: existingPayment } = await supabase
         .from('payments')
-        .update({
-          valor: parseFloat(formData.valor) || 0,
-          metodo_pagamento: formData.metodo_pagamento || 'A definir'
-        })
+        .select('id')
         .eq('session_id', session.id)
+        .maybeSingle()
 
-      if (error) {
-        throw error
+      if (existingPayment) {
+        // Atualizar pagamento existente
+        await supabase
+          .from('payments')
+          .update({
+            valor: valorNumerico || 0,
+            metodo_pagamento: formData.metodo_pagamento || 'A definir'
+          })
+          .eq('session_id', session.id)
+      } else if (valorNumerico && valorNumerico > 0) {
+        // Criar pagamento novo se definiu valor
+        await supabase
+          .from('payments')
+          .insert([{
+            user_id: session.user_id,
+            session_id: session.id,
+            client_id: session.client_id,
+            valor: valorNumerico,
+            status: 'pendente',
+            data_vencimento: formData.data,
+            metodo_pagamento: formData.metodo_pagamento || 'A definir'
+          }])
       }
 
       toast({
