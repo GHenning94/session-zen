@@ -188,23 +188,21 @@ export const useGoogleCalendarSync = () => {
     }
   }, [toast])
 
-  // Carregar eventos do Google (últimos 30 dias até fim do ano)
+  // Carregar eventos do Google (hoje até 30 dias à frente)
   const loadGoogleEvents = async () => {
     const accessToken = localStorage.getItem('google_access_token')
     if (!accessToken) return
 
     try {
-      // Buscar eventos dos últimos 30 dias até o fim do próximo ano
-      const thirtyDaysAgo = new Date()
-      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
-      thirtyDaysAgo.setHours(0, 0, 0, 0)
-      const timeMin = thirtyDaysAgo.toISOString()
+      // Buscar eventos de hoje até 30 dias à frente
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const timeMin = today.toISOString()
       
-      const nextYear = new Date()
-      nextYear.setFullYear(nextYear.getFullYear() + 1)
-      nextYear.setMonth(11, 31)
-      nextYear.setHours(23, 59, 59, 999)
-      const timeMax = nextYear.toISOString()
+      const thirtyDaysAhead = new Date()
+      thirtyDaysAhead.setDate(thirtyDaysAhead.getDate() + 30)
+      thirtyDaysAhead.setHours(23, 59, 59, 999)
+      const timeMax = thirtyDaysAhead.toISOString()
       
       const response = await fetch(
         `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=500&singleEvents=true&orderBy=startTime`,
