@@ -236,8 +236,10 @@ export const useGoogleCalendarSync = () => {
     }
   }
 
-  // Importar evento do Google (somente leitura)
-  const importGoogleEvent = async (event: GoogleEvent, createClient = false): Promise<boolean> => {
+  // Importar evento do Google
+  // editable = false: somente leitura (google_sync_type: 'importado')
+  // editable = true: cópia editável independente (sem google_sync_type)
+  const importGoogleEvent = async (event: GoogleEvent, editable = false): Promise<boolean> => {
     if (!user) return false
 
     setSyncing(event.id)
@@ -250,7 +252,8 @@ export const useGoogleCalendarSync = () => {
 
       let clientId = null
 
-      if (createClient && event.attendees && event.attendees.length > 0) {
+      // Sempre tenta criar/encontrar cliente baseado nos participantes
+      if (event.attendees && event.attendees.length > 0) {
         const attendee = event.attendees[0]
         const clientName = attendee.displayName || event.summary.split(' - ')[1] || event.summary
         const clientEmail = attendee.email
@@ -293,7 +296,9 @@ export const useGoogleCalendarSync = () => {
             nome: clientName,
             email: null,
             telefone: '',
-            dados_clinicos: `Importado do Google Calendar: ${event.description || ''}`
+            dados_clinicos: editable 
+              ? `Criado a partir de evento do Google: ${event.description || ''}`
+              : `Importado do Google Calendar: ${event.description || ''}`
           }])
           .select()
           .single()
@@ -311,31 +316,39 @@ export const useGoogleCalendarSync = () => {
 
       const valorPadrao = config?.valor_padrao || 0
 
-      // Criar sessão importada (o trigger cria o pagamento automaticamente se valor > 0)
+      // Criar sessão - se editável, não vincula ao Google (sessão independente)
+      const sessionData: any = {
+        user_id: user.id,
+        client_id: clientId,
+        data: eventDate,
+        horario: formatTimeForDatabase(eventTime),
+        status: 'agendada',
+        valor: valorPadrao,
+        anotacoes: event.description || ''
+      }
+
+      // Se NÃO é editável, é somente leitura - vincula ao Google
+      if (!editable) {
+        sessionData.google_event_id = event.id
+        sessionData.google_sync_type = 'importado' as GoogleSyncType
+        sessionData.google_attendees = event.attendees || []
+        sessionData.google_location = event.location || null
+        sessionData.google_html_link = event.htmlLink
+        sessionData.google_recurrence_id = event.recurringEventId || null
+        sessionData.google_last_synced = new Date().toISOString()
+      }
+
       const { error: sessionError } = await supabase
         .from('sessions')
-        .insert([{
-          user_id: user.id,
-          client_id: clientId,
-          data: eventDate,
-          horario: formatTimeForDatabase(eventTime),
-          status: 'agendada',
-          valor: valorPadrao,
-          anotacoes: event.description || '',
-          google_event_id: event.id,
-          google_sync_type: 'importado' as GoogleSyncType,
-          google_attendees: event.attendees || [],
-          google_location: event.location || null,
-          google_html_link: event.htmlLink,
-          google_recurrence_id: event.recurringEventId || null,
-          google_last_synced: new Date().toISOString()
-        }])
+        .insert([sessionData])
 
       if (sessionError) throw sessionError
 
       toast({
-        title: "Evento importado!",
-        description: `"${event.summary}" foi importado com sucesso.`,
+        title: editable ? "Cópia criada!" : "Evento importado!",
+        description: editable 
+          ? `"${event.summary}" foi copiado como sessão editável.`
+          : `"${event.summary}" foi importado (somente leitura).`,
       })
 
       await loadPlatformSessions()

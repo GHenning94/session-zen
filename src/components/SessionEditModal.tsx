@@ -124,6 +124,32 @@ export const SessionEditModal = ({
     }
   }
 
+  // Verificar se a sessão é somente leitura (importada do Google)
+  const isReadOnly = session?.google_sync_type === 'importado'
+
+  if (isReadOnly) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              Sessão Somente Leitura
+            </DialogTitle>
+          </DialogHeader>
+          <div className="py-4 text-center text-muted-foreground">
+            <p>Esta sessão foi importada do Google Calendar como somente leitura.</p>
+            <p className="mt-2">Para editar, crie uma "cópia editável" do evento.</p>
+          </div>
+          <div className="flex justify-end">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Fechar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
