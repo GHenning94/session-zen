@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, ClipboardList } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -70,6 +70,7 @@ export default function Sessoes() {
   // Estados principais
   const [sessions, setSessions] = useState<Session[]>([])
   const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([])
+  const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'sessions' | 'notes'>('sessions')
@@ -130,6 +131,14 @@ export default function Sessoes() {
 
       if (notesError) throw notesError
 
+      // Carregar evoluções (apenas session_id para verificar linkagem)
+      const { data: evolucoesData, error: evolucoesError } = await supabase
+        .from('evolucoes')
+        .select('id, session_id')
+        .not('session_id', 'is', null)
+
+      if (evolucoesError) throw evolucoesError
+
       // Carregar clientes (apenas campos necessários)
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
@@ -141,6 +150,7 @@ export default function Sessoes() {
       // Não atualizar status automaticamente - manter como está
       setSessions(sessionsData || [])
       setSessionNotes(notesData || [])
+      setEvolucoes(evolucoesData || [])
       setClients(clientsData || [])
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
@@ -693,7 +703,10 @@ export default function Sessoes() {
                                         <Repeat className="h-4 w-4 text-primary" />
                                       )}
                                       {sessionNotes.some(note => note.session_id === session.id) && (
-                                        <PenLine className="h-4 w-4 text-blue-500" />
+                                        <PenLine className="h-4 w-4 text-primary" />
+                                      )}
+                                      {evolucoes.some(evo => evo.session_id === session.id) && (
+                                        <ClipboardList className="h-4 w-4 text-primary" />
                                       )}
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
@@ -776,7 +789,10 @@ export default function Sessoes() {
                                   <Repeat className="h-4 w-4 text-primary" />
                                 )}
                                 {sessionNotes.some(note => note.session_id === session.id) && (
-                                  <PenLine className="h-4 w-4 text-blue-500" />
+                                  <PenLine className="h-4 w-4 text-primary" />
+                                )}
+                                {evolucoes.some(evo => evo.session_id === session.id) && (
+                                  <ClipboardList className="h-4 w-4 text-primary" />
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
@@ -916,6 +932,7 @@ export default function Sessoes() {
           onViewPayment={handleViewPayment}
           onAddNote={handleAddNote}
           hasNotes={selectedSession ? sessionNotes.some(note => note.session_id === selectedSession.id) : false}
+          hasEvolution={selectedSession ? evolucoes.some(evo => evo.session_id === selectedSession.id) : false}
         />
 
         <SessionNoteModal

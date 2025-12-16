@@ -67,7 +67,8 @@ export const getSessionStatusColor = (status: string) => {
     case 'realizada': return 'success'
     case 'agendada': return 'info'
     case 'cancelada': return 'destructive'
-    case 'falta': return 'warning'
+    case 'falta':
+    case 'faltou': return 'warning'
     default: return 'outline'
   }
 }
@@ -80,7 +81,8 @@ export const getSessionStatusLabel = (status: string) => {
     case 'realizada': return 'Realizada'
     case 'agendada': return 'Agendada'
     case 'cancelada': return 'Cancelada'
-    case 'falta': return 'Falta'
+    case 'falta':
+    case 'faltou': return 'Falta'
     default: return status
   }
 }
