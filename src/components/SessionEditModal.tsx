@@ -5,11 +5,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { formatTimeForDatabase } from "@/lib/utils"
-import { Package, Repeat } from "lucide-react"
+import { Package, Repeat, Info } from "lucide-react"
 
 interface SessionEditModalProps {
   session: any
@@ -32,6 +33,7 @@ export const SessionEditModal = ({
     data: '',
     horario: '',
     valor: '',
+    metodo_pagamento: '',
     anotacoes: ''
   })
   const [loading, setLoading] = useState(false)
@@ -44,6 +46,7 @@ export const SessionEditModal = ({
         data: session.data || '',
         horario: session.horario ? session.horario.slice(0, 5) : '',
         valor: session.valor?.toString() || '',
+        metodo_pagamento: session.metodo_pagamento || '',
         anotacoes: session.anotacoes || ''
       })
       setShowReactivationMessage(false)
@@ -67,14 +70,39 @@ export const SessionEditModal = ({
     return sessionDateTime <= currentDateTime ? 'realizada' : 'agendada'
   }
 
+  // Verificar se a sessão é somente leitura (importada do Google)
+  const isReadOnly = session?.google_sync_type === 'importado'
+
   const handleSave = async () => {
     if (!session) return
 
-    // Calcular status automaticamente
-    const autoStatus = calculateStatus(formData.data, formData.horario)
-
     setLoading(true)
     try {
+      // Se for importada (read-only), só atualiza valor e método de pagamento
+      if (isReadOnly) {
+        const { error } = await supabase
+          .from('sessions')
+          .update({
+            valor: parseFloat(formData.valor) || null,
+            metodo_pagamento: formData.metodo_pagamento || null
+          })
+          .eq('id', session.id)
+
+        if (error) throw error
+
+        toast({
+          title: "Sessão atualizada",
+          description: "Valor e método de pagamento atualizados com sucesso.",
+        })
+
+        onSessionUpdated()
+        onOpenChange(false)
+        return
+      }
+
+      // Calcular status automaticamente
+      const autoStatus = calculateStatus(formData.data, formData.horario)
+
       // Verificar se o cliente está inativo e reativá-lo se necessário
       const selectedClient = clients.find(c => c.id === formData.client_id)
       if (selectedClient && !selectedClient.ativo) {
@@ -124,26 +152,69 @@ export const SessionEditModal = ({
     }
   }
 
-  // Verificar se a sessão é somente leitura (importada do Google)
-  const isReadOnly = session?.google_sync_type === 'importado'
-
+  // Modal para sessões importadas (edição limitada)
   if (isReadOnly) {
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[400px]">
+        <DialogContent className="sm:max-w-[450px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              Sessão Somente Leitura
+              Editar Valor e Pagamento
             </DialogTitle>
           </DialogHeader>
-          <div className="py-4 text-center text-muted-foreground">
-            <p>Esta sessão foi importada do Google Calendar como somente leitura.</p>
-            <p className="mt-2">Para editar, crie uma "cópia editável" do evento.</p>
-          </div>
-          <div className="flex justify-end">
-            <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Fechar
-            </Button>
+          
+          <Alert className="bg-muted/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Esta sessão foi importada do Google Calendar. Apenas o valor e método de pagamento podem ser editados para fins de métricas.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="valor">Valor</Label>
+              <Input
+                id="valor"
+                type="number"
+                step="0.01"
+                placeholder="Ex: 150.00"
+                value={formData.valor}
+                onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+              <Select
+                value={formData.metodo_pagamento}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, metodo_pagamento: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                  <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                  <SelectItem value="transferencia">Transferência</SelectItem>
+                  <SelectItem value="boleto">Boleto</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex gap-2 justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>

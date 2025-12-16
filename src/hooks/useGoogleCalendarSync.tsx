@@ -395,6 +395,16 @@ export const useGoogleCalendarSync = () => {
           : `"${event.summary}" foi importado (somente leitura).`,
       })
 
+      // Criar notificação para lembrar de definir valor/pagamento em sessões importadas
+      if (!editable) {
+        await supabase.from('notifications').insert([{
+          user_id: user.id,
+          titulo: "Defina o valor da sessão importada",
+          conteudo: `A sessão "${event.summary}" foi importada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento.`,
+          lida: false
+        }])
+      }
+
       await loadPlatformSessions()
       return true
     } catch (error) {
