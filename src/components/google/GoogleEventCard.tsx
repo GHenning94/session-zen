@@ -23,6 +23,7 @@ interface GoogleEventCardProps {
   onImportSeries?: (createClient?: boolean) => void
   onMirror: () => void
   onIgnore: () => void
+  onMarkAsClient?: () => void
 }
 
 export const GoogleEventCard = ({
@@ -34,7 +35,8 @@ export const GoogleEventCard = ({
   onImport,
   onImportSeries,
   onMirror,
-  onIgnore
+  onIgnore,
+  onMarkAsClient
 }: GoogleEventCardProps) => {
   const formatEventDateTime = (start: any, end: any) => {
     if (start.dateTime && end.dateTime) {
@@ -195,6 +197,15 @@ export const GoogleEventCard = ({
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Espelhar com Google
               </DropdownMenuItem>
+              {event.attendees && event.attendees.length > 0 && onMarkAsClient && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={onMarkAsClient}>
+                    <UserPlus className="w-4 h-4 mr-2" />
+                    Marcar participantes como clientes
+                  </DropdownMenuItem>
+                </>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onIgnore} className="text-muted-foreground">
                 <EyeOff className="w-4 h-4 mr-2" />

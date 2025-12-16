@@ -410,6 +410,281 @@ export const useGoogleCalendarSync = () => {
     return true
   }
 
+  // Marcar participantes do evento como clientes
+  const markAttendeesAsClients = async (event: GoogleEvent): Promise<number> => {
+    if (!user || !event.attendees || event.attendees.length === 0) {
+      toast({
+        title: "Sem participantes",
+        description: "Este evento não tem participantes para adicionar como clientes.",
+        variant: "destructive"
+      })
+      return 0
+    }
+
+    setSyncing(event.id)
+    let createdCount = 0
+
+    try {
+      for (const attendee of event.attendees) {
+        const clientName = attendee.displayName || attendee.email.split('@')[0]
+        const clientEmail = attendee.email
+
+        // Verificar se cliente já existe
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('email', clientEmail)
+          .maybeSingle()
+
+        if (!existingClient) {
+          const { error: clientError } = await supabase
+            .from('clients')
+            .insert([{
+              user_id: user.id,
+              nome: clientName,
+              email: clientEmail,
+              telefone: '',
+              dados_clinicos: `Adicionado automaticamente do evento: ${event.summary}`
+            }])
+
+          if (!clientError) {
+            createdCount++
+          }
+        }
+      }
+
+      toast({
+        title: "Clientes adicionados!",
+        description: createdCount > 0 
+          ? `${createdCount} novo(s) cliente(s) foram adicionados à sua lista.`
+          : "Todos os participantes já estão na sua lista de clientes.",
+      })
+
+      return createdCount
+    } catch (error) {
+      console.error('Erro ao adicionar clientes:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível adicionar os clientes.",
+        variant: "destructive"
+      })
+      return 0
+    } finally {
+      setSyncing(null)
+    }
+  }
+
+  // Verificar eventos cancelados no Google
+  const checkCancelledEvents = async (): Promise<number> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken || !user) return 0
+
+    try {
+      // Buscar sessões que têm google_event_id
+      const syncedSessions = platformSessions.filter(s => 
+        s.google_event_id && (s.google_sync_type === 'mirrored' || s.google_sync_type === 'sent' || s.google_sync_type === 'imported')
+      )
+
+      let cancelledCount = 0
+
+      for (const session of syncedSessions) {
+        try {
+          const response = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/primary/events/${session.google_event_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+              },
+            }
+          )
+
+          if (response.status === 404) {
+            // Evento foi excluído no Google
+            await supabase
+              .from('sessions')
+              .update({ 
+                google_sync_type: 'cancelled',
+                google_last_synced: new Date().toISOString()
+              })
+              .eq('id', session.id)
+            cancelledCount++
+            continue
+          }
+
+          if (response.ok) {
+            const eventData = await response.json()
+            if (eventData.status === 'cancelled') {
+              await supabase
+                .from('sessions')
+                .update({ 
+                  google_sync_type: 'cancelled',
+                  google_last_synced: new Date().toISOString()
+                })
+                .eq('id', session.id)
+              cancelledCount++
+            }
+          }
+        } catch (error) {
+          console.error(`Erro ao verificar evento ${session.google_event_id}:`, error)
+        }
+      }
+
+      if (cancelledCount > 0) {
+        toast({
+          title: "Eventos cancelados detectados",
+          description: `${cancelledCount} evento(s) foram cancelados no Google Calendar.`,
+          variant: "destructive"
+        })
+        await loadPlatformSessions()
+      }
+
+      return cancelledCount
+    } catch (error) {
+      console.error('Erro ao verificar eventos cancelados:', error)
+      return 0
+    }
+  }
+
+  // Sincronizar todas as sessões espelhadas com o Google
+  const syncMirroredSessions = async (): Promise<{ updated: number; conflicts: number }> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken || !user) return { updated: 0, conflicts: 0 }
+
+    const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'mirrored')
+    let updatedCount = 0
+    let conflictCount = 0
+
+    setLoading(true)
+    try {
+      for (const session of mirroredSessions) {
+        if (!session.google_event_id) continue
+
+        try {
+          // Buscar evento atual no Google
+          const response = await fetch(
+            `https://www.googleapis.com/calendar/v3/calendars/primary/events/${session.google_event_id}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Accept': 'application/json',
+              },
+            }
+          )
+
+          if (!response.ok) {
+            if (response.status === 404) {
+              // Evento foi excluído no Google
+              await supabase
+                .from('sessions')
+                .update({ google_sync_type: 'cancelled' })
+                .eq('id', session.id)
+            }
+            continue
+          }
+
+          const googleEvent = await response.json()
+          
+          // Comparar datas/horários
+          const googleStart = new Date(googleEvent.start.dateTime || googleEvent.start.date)
+          const sessionStart = new Date(`${session.data}T${session.horario}`)
+          
+          const googleDate = googleStart.toISOString().split('T')[0]
+          const googleTime = format(googleStart, "HH:mm")
+          
+          const platformDate = session.data
+          const platformTime = session.horario.substring(0, 5)
+
+          // Se Google foi atualizado mais recentemente, atualizar plataforma
+          const googleUpdated = new Date(googleEvent.updated)
+          const platformSynced = session.google_last_synced ? new Date(session.google_last_synced) : new Date(0)
+
+          if (googleDate !== platformDate || googleTime !== platformTime) {
+            if (googleUpdated > platformSynced) {
+              // Atualizar plataforma com dados do Google
+              await supabase
+                .from('sessions')
+                .update({
+                  data: googleDate,
+                  horario: formatTimeForDatabase(googleTime),
+                  anotacoes: googleEvent.description || session.anotacoes,
+                  google_location: googleEvent.location || null,
+                  google_last_synced: new Date().toISOString()
+                })
+                .eq('id', session.id)
+              updatedCount++
+            } else {
+              // Há conflito - plataforma foi modificada
+              conflictCount++
+            }
+          } else {
+            // Atualizar timestamp de sync
+            await supabase
+              .from('sessions')
+              .update({ google_last_synced: new Date().toISOString() })
+              .eq('id', session.id)
+          }
+        } catch (error) {
+          console.error(`Erro ao sincronizar sessão ${session.id}:`, error)
+        }
+      }
+
+      if (updatedCount > 0 || conflictCount > 0) {
+        toast({
+          title: "Sincronização concluída",
+          description: `${updatedCount} sessão(ões) atualizada(s)${conflictCount > 0 ? `, ${conflictCount} conflito(s) detectado(s)` : ''}.`,
+        })
+        await loadPlatformSessions()
+      }
+
+      return { updated: updatedCount, conflicts: conflictCount }
+    } catch (error) {
+      console.error('Erro ao sincronizar sessões espelhadas:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível sincronizar as sessões.",
+        variant: "destructive"
+      })
+      return { updated: 0, conflicts: 0 }
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Enviar alterações da plataforma para o Google (sessões espelhadas)
+  const pushMirroredChangesToGoogle = async (): Promise<number> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken || !user) return 0
+
+    const mirroredSessions = platformSessions.filter(s => 
+      s.google_sync_type === 'mirrored' && s.google_event_id
+    )
+    let updatedCount = 0
+
+    setLoading(true)
+    try {
+      for (const session of mirroredSessions) {
+        const success = await updateGoogleEvent(session)
+        if (success) updatedCount++
+      }
+
+      if (updatedCount > 0) {
+        toast({
+          title: "Alterações enviadas!",
+          description: `${updatedCount} evento(s) atualizado(s) no Google Calendar.`,
+        })
+      }
+
+      return updatedCount
+    } catch (error) {
+      console.error('Erro ao enviar alterações para o Google:', error)
+      return 0
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Enviar sessão para o Google
   const sendToGoogle = async (session: PlatformSession): Promise<boolean> => {
     const accessToken = localStorage.getItem('google_access_token')
@@ -846,6 +1121,12 @@ export const useGoogleCalendarSync = () => {
     ignoreGoogleEvent,
     sendToGoogle,
     updateGoogleEvent,
+    markAttendeesAsClients,
+    
+    // Actions - Sync
+    syncMirroredSessions,
+    pushMirroredChangesToGoogle,
+    checkCancelledEvents,
     
     // Actions - Recurring Series
     getRecurringSeriesInstances,

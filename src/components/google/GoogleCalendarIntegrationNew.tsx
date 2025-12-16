@@ -22,7 +22,7 @@ import { getRecurringMasterId } from "@/types/googleCalendar"
 import { 
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
-  ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle
+  ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle, XCircle
 } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -56,6 +56,9 @@ const GoogleCalendarIntegrationNew = () => {
     selectAllGoogleEvents,
     selectAllPlatformSessions,
     clearSelections,
+    markAttendeesAsClients,
+    syncMirroredSessions,
+    checkCancelledEvents,
   } = useGoogleCalendarSync()
 
   // Hook de detecção de conflitos
@@ -171,15 +174,29 @@ const GoogleCalendarIntegrationNew = () => {
                 </div>
                 
                 {isSignedIn ? (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={loadAllData}
+                      onClick={async () => {
+                        await loadAllData()
+                        await checkCancelledEvents()
+                        await syncMirroredSessions()
+                      }}
                       disabled={loading}
                     >
                       <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                      Sincronizar
+                      Sincronizar Tudo
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={checkCancelledEvents}
+                      disabled={loading}
+                      title="Verificar eventos cancelados no Google"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      Verificar Cancelados
                     </Button>
                     <Button 
                       variant="outline" 
@@ -296,6 +313,7 @@ const GoogleCalendarIntegrationNew = () => {
                             onImportSeries={(createClient) => importRecurringSeries(event, createClient)}
                             onMirror={() => mirrorGoogleEvent(event)}
                             onIgnore={() => ignoreGoogleEvent(event.id).then(() => loadAllData())}
+                            onMarkAsClient={() => markAttendeesAsClients(event)}
                           />
                         ))}
                       </div>

@@ -646,6 +646,7 @@ export default function Sessoes() {
                     <SelectItem value="imported">Importado do Google</SelectItem>
                     <SelectItem value="mirrored">Espelhado</SelectItem>
                     <SelectItem value="sent">Enviado ao Google</SelectItem>
+                    <SelectItem value="cancelled">Cancelado no Google</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
