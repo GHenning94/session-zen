@@ -19,6 +19,8 @@ export interface CalendarSession {
   updated_at: string
   package_id?: string
   recurring_session_id?: string
+  google_event_id?: string
+  google_sync_type?: string
 }
 
 export interface CalendarClient {

@@ -9,6 +9,7 @@ import { ptBR } from "date-fns/locale"
 import { formatTimeBR } from "@/utils/formatters"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { sessionNeedsAttention } from "@/utils/sessionStatusUtils"
+import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
 
 interface AgendaViewMonthProps {
   selectedDate: Date
@@ -184,6 +185,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             {formatClientName(getClientName(session.client_id))}
                           </span>
                         </div>
+                        <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                       </div>
 
                       <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
