@@ -27,6 +27,7 @@ import { TextPreview } from '@/components/TextPreview'
 import { ClientAvatar } from '@/components/ClientAvatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
+import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 
 interface Session {
   id: string
@@ -38,6 +39,8 @@ interface Session {
   client_id: string
   package_id?: string
   recurring_session_id?: string
+  google_sync_type?: string
+  google_event_id?: string
   clients?: {
     nome: string
     avatar_url?: string
@@ -112,7 +115,7 @@ export default function Sessoes() {
         .from('sessions')
         .select(`
           id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
-          metodo_pagamento, session_type, google_event_id, created_at, updated_at,
+          metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
           clients (nome, ativo, avatar_url)
         `)
         .order('data', { ascending: false })
@@ -737,6 +740,7 @@ export default function Sessoes() {
                                       {evolucoes.some(evo => evo.session_id === session.id) && (
                                         <FileText className="h-4 w-4 text-primary" />
                                       )}
+                                      <GoogleSyncBadge syncType={session.google_sync_type} />
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
                                       <div className="flex items-center gap-4">
@@ -823,6 +827,7 @@ export default function Sessoes() {
                                 {evolucoes.some(evo => evo.session_id === session.id) && (
                                   <FileText className="h-4 w-4 text-primary" />
                                 )}
+                                <GoogleSyncBadge syncType={session.google_sync_type} />
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
                                 <div className="flex items-center gap-4">

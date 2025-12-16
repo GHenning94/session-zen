@@ -23,6 +23,7 @@ import {
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { GoogleSyncBadge } from "./google/GoogleSyncBadge"
 
 interface SessionDetailsModalProps {
   open: boolean
@@ -118,6 +119,7 @@ export const SessionDetailsModal = ({
                 {hasEvolution && (
                   <FileText className="h-5 w-5 text-primary" />
                 )}
+                <GoogleSyncBadge syncType={session.google_sync_type} />
               </div>
             </div>
           </div>
