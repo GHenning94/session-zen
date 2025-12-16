@@ -18,8 +18,7 @@ import {
   StickyNote,
   Package,
   Repeat,
-  PenLine,
-  ClipboardList
+  PenLine
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
@@ -117,7 +116,7 @@ export const SessionDetailsModal = ({
                   <PenLine className="h-5 w-5 text-primary" />
                 )}
                 {hasEvolution && (
-                  <ClipboardList className="h-5 w-5 text-primary" />
+                  <FileText className="h-5 w-5 text-primary" />
                 )}
               </div>
             </div>

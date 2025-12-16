@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, ClipboardList } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -498,6 +498,7 @@ export default function Sessoes() {
               variant={activeTab === 'notes' ? 'default' : 'outline'}
               onClick={() => setActiveTab('notes')}
             >
+              <PenLine className="h-4 w-4 mr-2" />
               Anotações
             </Button>
           </div>
@@ -706,7 +707,7 @@ export default function Sessoes() {
                                         <PenLine className="h-4 w-4 text-primary" />
                                       )}
                                       {evolucoes.some(evo => evo.session_id === session.id) && (
-                                        <ClipboardList className="h-4 w-4 text-primary" />
+                                        <FileText className="h-4 w-4 text-primary" />
                                       )}
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
@@ -792,7 +793,7 @@ export default function Sessoes() {
                                   <PenLine className="h-4 w-4 text-primary" />
                                 )}
                                 {evolucoes.some(evo => evo.session_id === session.id) && (
-                                  <ClipboardList className="h-4 w-4 text-primary" />
+                                  <FileText className="h-4 w-4 text-primary" />
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
