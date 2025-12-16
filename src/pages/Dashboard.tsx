@@ -1223,6 +1223,26 @@ const Dashboard = () => {
                           <p className="font-medium">{formatDateBR(session.data)}</p>
                           <div className="flex items-center justify-end gap-1.5 mt-1">
                             <TooltipProvider>
+                              {evolucoes.some(evo => evo.session_id === session.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <FileText className="w-4 h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Possui prontuário</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {sessionNotes.some(note => note.session_id === session.id) && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <PenLine className="w-4 h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Possui anotação</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                               {session.package_id && (
                                 <Tooltip>
                                   <TooltipTrigger>
@@ -1240,26 +1260,6 @@ const Dashboard = () => {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Sessão recorrente</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                              {sessionNotes.some(note => note.session_id === session.id) && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <PenLine className="w-4 h-4 text-primary" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Possui anotação</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                              {evolucoes.some(evo => evo.session_id === session.id) && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <FileText className="w-4 h-4 text-primary" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Possui prontuário</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
