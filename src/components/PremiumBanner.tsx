@@ -44,10 +44,7 @@ export const PremiumBanner = ({ shouldShow }: PremiumBannerProps) => {
     >
       <div className="flex items-center gap-2 relative z-10">
         <Crown className="w-4 h-4 text-white shrink-0" />
-        <div className="text-left">
-          <div className="text-white font-semibold text-[10px] leading-tight">Premium</div>
-          <div className="text-white/80 text-[8px] leading-tight">Desbloquear</div>
-        </div>
+        <span className="text-white font-semibold text-xs whitespace-nowrap">Desbloquear Premium</span>
       </div>
     </Button>
   )

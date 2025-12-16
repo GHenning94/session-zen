@@ -177,47 +177,45 @@ export const AnamneseModal = ({
         </DialogHeader>
 
         <div className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="motivo_consulta">Motivo da Consulta</Label>
-              <Textarea
-                id="motivo_consulta"
-                value={anamnese.motivo_consulta}
-                onChange={(e) => {
-                  const validation = validateMedicalDataInput(e.target.value)
-                  if (validation.isValid) {
-                    setAnamnese(prev => ({ ...prev, motivo_consulta: e.target.value }))
-                  }
-                }}
-                placeholder="Por que o cliente procurou atendimento?"
-                className="min-h-[80px]"
-                maxLength={10000}
-              />
-              <div className="flex justify-between text-xs text-muted-foreground mt-1">
-                <span>{anamnese.motivo_consulta.length}/10000 caracteres</span>
-                {anamnese.motivo_consulta.length > 9000 && (
-                  <span className="text-warning flex items-center gap-1">
-                    <AlertTriangle className="w-3 h-3" />
-                    Próximo ao limite
-                  </span>
-                )}
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor="queixa_principal">Queixa Principal</Label>
-              <Textarea
-                id="queixa_principal"
-                value={anamnese.queixa_principal}
-                onChange={(e) => setAnamnese(prev => ({ ...prev, queixa_principal: e.target.value }))}
-                placeholder="Principal sintoma ou problema relatado"
-                className="min-h-[80px]"
-              />
+          <div>
+            <Label htmlFor="motivo_consulta" className="font-bold">Motivo da Consulta</Label>
+            <Textarea
+              id="motivo_consulta"
+              value={anamnese.motivo_consulta}
+              onChange={(e) => {
+                const validation = validateMedicalDataInput(e.target.value)
+                if (validation.isValid) {
+                  setAnamnese(prev => ({ ...prev, motivo_consulta: e.target.value }))
+                }
+              }}
+              placeholder="Por que o cliente procurou atendimento?"
+              className="min-h-[80px]"
+              maxLength={10000}
+            />
+            <div className="flex justify-between text-xs text-muted-foreground mt-1">
+              <span>{anamnese.motivo_consulta.length}/10000 caracteres</span>
+              {anamnese.motivo_consulta.length > 9000 && (
+                <span className="text-warning flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  Próximo ao limite
+                </span>
+              )}
             </div>
           </div>
 
           <div>
-            <Label htmlFor="historico_familiar">Histórico Familiar</Label>
+            <Label htmlFor="queixa_principal" className="font-bold">Queixa Principal</Label>
+            <Textarea
+              id="queixa_principal"
+              value={anamnese.queixa_principal}
+              onChange={(e) => setAnamnese(prev => ({ ...prev, queixa_principal: e.target.value }))}
+              placeholder="Principal sintoma ou problema relatado"
+              className="min-h-[80px]"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="historico_familiar" className="font-bold">Histórico Familiar</Label>
             <Textarea
               id="historico_familiar"
               value={anamnese.historico_familiar}
@@ -228,7 +226,7 @@ export const AnamneseModal = ({
           </div>
 
           <div>
-            <Label htmlFor="historico_medico">Histórico Médico/Psicológico</Label>
+            <Label htmlFor="historico_medico" className="font-bold">Histórico Médico/Psicológico</Label>
             <Textarea
               id="historico_medico"
               value={anamnese.historico_medico}
@@ -239,7 +237,7 @@ export const AnamneseModal = ({
           </div>
 
           <div>
-            <Label htmlFor="antecedentes_relevantes">Antecedentes Relevantes</Label>
+            <Label htmlFor="antecedentes_relevantes" className="font-bold">Antecedentes Relevantes</Label>
             <Textarea
               id="antecedentes_relevantes"
               value={anamnese.antecedentes_relevantes}
@@ -249,27 +247,25 @@ export const AnamneseModal = ({
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="diagnostico_inicial">Diagnóstico Inicial (Opcional)</Label>
-              <Input
-                id="diagnostico_inicial"
-                value={anamnese.diagnostico_inicial}
-                onChange={(e) => setAnamnese(prev => ({ ...prev, diagnostico_inicial: e.target.value }))}
-                placeholder="Hipótese diagnóstica inicial"
-              />
-            </div>
+          <div>
+            <Label htmlFor="diagnostico_inicial" className="font-bold">Diagnóstico Inicial (Opcional)</Label>
+            <Input
+              id="diagnostico_inicial"
+              value={anamnese.diagnostico_inicial}
+              onChange={(e) => setAnamnese(prev => ({ ...prev, diagnostico_inicial: e.target.value }))}
+              placeholder="Hipótese diagnóstica inicial"
+            />
+          </div>
 
-            <div>
-              <Label htmlFor="observacoes_adicionais">Observações Adicionais</Label>
-              <Textarea
-                id="observacoes_adicionais"
-                value={anamnese.observacoes_adicionais}
-                onChange={(e) => setAnamnese(prev => ({ ...prev, observacoes_adicionais: e.target.value }))}
-                placeholder="Outras observações relevantes"
-                className="min-h-[80px]"
-              />
-            </div>
+          <div>
+            <Label htmlFor="observacoes_adicionais" className="font-bold">Observações Adicionais</Label>
+            <Textarea
+              id="observacoes_adicionais"
+              value={anamnese.observacoes_adicionais}
+              onChange={(e) => setAnamnese(prev => ({ ...prev, observacoes_adicionais: e.target.value }))}
+              placeholder="Outras observações relevantes"
+              className="min-h-[80px]"
+            />
           </div>
 
           <div className="flex gap-2 justify-end">
