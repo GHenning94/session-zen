@@ -130,14 +130,18 @@ export const ConflictResolutionCard = ({
                   <div className="bg-primary/10 rounded p-2">
                     <span className="text-xs text-muted-foreground block mb-1">Plataforma</span>
                     <span className="font-mono text-xs break-all">
-                      {diff.platformValue || '(vazio)'}
+                      {diff.field === 'date' && diff.platformValue 
+                        ? format(new Date(diff.platformValue + 'T00:00:00'), 'dd/MM/yy')
+                        : diff.platformValue || '(vazio)'}
                     </span>
                   </div>
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   <div className="bg-blue-500/10 rounded p-2">
                     <span className="text-xs text-muted-foreground block mb-1">Google</span>
                     <span className="font-mono text-xs break-all">
-                      {diff.googleValue || '(vazio)'}
+                      {diff.field === 'date' && diff.googleValue 
+                        ? format(new Date(diff.googleValue + 'T00:00:00'), 'dd/MM/yy')
+                        : diff.googleValue || '(vazio)'}
                     </span>
                   </div>
                 </div>

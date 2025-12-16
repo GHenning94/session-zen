@@ -117,16 +117,35 @@ export const useGoogleCalendarSync = () => {
     }
   }
 
-  // Desconectar do Google
+  // Desconectar do Google (preserva sessões como locais)
   const disconnectFromGoogle = async () => {
+    if (user) {
+      // Converter todas as sessões sincronizadas para locais (preservar dados)
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          google_sync_type: 'local',
+          google_event_id: null,
+          google_html_link: null,
+          google_last_synced: null
+        })
+        .eq('user_id', user.id)
+        .not('google_sync_type', 'is', null)
+
+      if (error) {
+        console.error('Erro ao preservar sessões:', error)
+      }
+    }
+
     localStorage.removeItem('google_access_token')
+    localStorage.removeItem('google_ignored_events')
     setIsSignedIn(false)
     setGoogleEvents([])
     setSelectedGoogleEvents(new Set())
     
     toast({
       title: "Desconectado",
-      description: "Google Calendar desconectado com sucesso.",
+      description: "Google Calendar desconectado. Suas sessões foram preservadas.",
     })
   }
 
@@ -283,7 +302,16 @@ export const useGoogleCalendarSync = () => {
         clientId = newClient.id
       }
 
-      // Criar sessão importada
+      // Buscar valor padrão da configuração do usuário
+      const { data: config } = await supabase
+        .from('configuracoes')
+        .select('valor_padrao')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const valorPadrao = config?.valor_padrao || 0
+
+      // Criar sessão importada (o trigger cria o pagamento automaticamente se valor > 0)
       const { error: sessionError } = await supabase
         .from('sessions')
         .insert([{
@@ -292,6 +320,7 @@ export const useGoogleCalendarSync = () => {
           data: eventDate,
           horario: formatTimeForDatabase(eventTime),
           status: 'agendada',
+          valor: valorPadrao,
           anotacoes: event.description || '',
           google_event_id: event.id,
           google_sync_type: 'importado' as GoogleSyncType,
@@ -353,6 +382,15 @@ export const useGoogleCalendarSync = () => {
 
       if (clientError) throw clientError
 
+      // Buscar valor padrão
+      const { data: config } = await supabase
+        .from('configuracoes')
+        .select('valor_padrao')
+        .eq('user_id', user.id)
+        .maybeSingle()
+
+      const valorPadrao = config?.valor_padrao || 0
+
       const { error: sessionError } = await supabase
         .from('sessions')
         .insert([{
@@ -361,6 +399,7 @@ export const useGoogleCalendarSync = () => {
           data: eventDate,
           horario: formatTimeForDatabase(eventTime),
           status: 'agendada',
+          valor: valorPadrao,
           anotacoes: event.description || '',
           google_event_id: event.id,
           google_sync_type: 'espelhado' as GoogleSyncType,
@@ -690,6 +729,15 @@ export const useGoogleCalendarSync = () => {
     const accessToken = localStorage.getItem('google_access_token')
     if (!accessToken || !user) return false
 
+    // Prevenir duplicação: verificar se já tem google_event_id
+    if (session.google_event_id) {
+      toast({
+        title: "Já sincronizado",
+        description: "Esta sessão já está no Google Calendar.",
+      })
+      return false
+    }
+
     setSyncing(session.id)
     try {
       const startDateTime = new Date(`${session.data}T${session.horario}`)
@@ -752,6 +800,98 @@ export const useGoogleCalendarSync = () => {
       toast({
         title: "Erro",
         description: "Não foi possível enviar a sessão para o Google Calendar.",
+        variant: "destructive"
+      })
+      return false
+    } finally {
+      setSyncing(null)
+    }
+  }
+
+  // Espelhar sessão da plataforma com o Google (enviar + sincronização bidirecional)
+  const mirrorPlatformSession = async (session: PlatformSession): Promise<boolean> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken || !user) return false
+
+    // Se já está espelhado, não precisa fazer nada
+    if (session.google_sync_type === 'espelhado') {
+      toast({
+        title: "Já espelhado",
+        description: "Esta sessão já está com espelhamento ativo.",
+      })
+      return false
+    }
+
+    setSyncing(session.id)
+    try {
+      let googleEventId = session.google_event_id
+      let googleHtmlLink = session.google_html_link
+
+      // Se ainda não está no Google, enviar primeiro
+      if (!googleEventId) {
+        const startDateTime = new Date(`${session.data}T${session.horario}`)
+        const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
+
+        const googleEvent = {
+          summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+          description: session.anotacoes || '',
+          start: {
+            dateTime: startDateTime.toISOString(),
+            timeZone: 'America/Sao_Paulo',
+          },
+          end: {
+            dateTime: endDateTime.toISOString(),
+            timeZone: 'America/Sao_Paulo',
+          },
+          attendees: session.clients?.email ? [{ email: session.clients.email }] : undefined,
+        }
+
+        const response = await fetch(
+          'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(googleEvent)
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`)
+        }
+
+        const createdEvent = await response.json()
+        googleEventId = createdEvent.id
+        googleHtmlLink = createdEvent.htmlLink
+      }
+
+      // Atualizar sessão para espelhado
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          google_event_id: googleEventId,
+          google_sync_type: 'espelhado' as GoogleSyncType,
+          google_html_link: googleHtmlLink,
+          google_last_synced: new Date().toISOString()
+        })
+        .eq('id', session.id)
+
+      if (error) throw error
+
+      toast({
+        title: "Espelhamento ativado!",
+        description: "A sessão agora será sincronizada bidirecionalmente com o Google.",
+      })
+
+      await loadAllData()
+      return true
+    } catch (error) {
+      console.error('Erro ao espelhar sessão:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível ativar o espelhamento.",
         variant: "destructive"
       })
       return false
@@ -1118,6 +1258,7 @@ export const useGoogleCalendarSync = () => {
     // Actions - Single
     importGoogleEvent,
     mirrorGoogleEvent,
+    mirrorPlatformSession,
     ignoreGoogleEvent,
     sendToGoogle,
     updateGoogleEvent,
