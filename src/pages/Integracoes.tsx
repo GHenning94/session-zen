@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
-import GoogleCalendarIntegration from "@/components/google/GoogleCalendarIntegration"
+import GoogleCalendarIntegrationNew from "@/components/google/GoogleCalendarIntegrationNew"
 import { Badge } from "@/components/ui/badge"
 
 type AllSettings = Record<string, any>;
@@ -104,7 +104,7 @@ const Integracoes = () => {
           </TabsList>
           
           <TabsContent value="google-calendar" className="space-y-6">
-            <GoogleCalendarIntegration />
+            <GoogleCalendarIntegrationNew />
           </TabsContent>
           
           <TabsContent value="google-drive" className="space-y-6">

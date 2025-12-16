@@ -1,0 +1,672 @@
+import { useState, useEffect, useCallback } from "react"
+import { useAuth } from "@/hooks/useAuth"
+import { useToast } from "@/hooks/use-toast"
+import { supabase } from "@/integrations/supabase/client"
+import { formatTimeForDatabase } from "@/lib/utils"
+import { GoogleEvent, PlatformSession, GoogleSyncType } from "@/types/googleCalendar"
+import { format } from "date-fns"
+
+// Configurações Google OAuth
+const GOOGLE_CLIENT_ID = "1039606606801-9ofdjvl0abgcr808q3i1jgmb6kojdk9d.apps.googleusercontent.com"
+const SCOPES = 'https://www.googleapis.com/auth/calendar'
+
+export const useGoogleCalendarSync = () => {
+  const { user } = useAuth()
+  const { toast } = useToast()
+  
+  const [isInitialized, setIsInitialized] = useState(false)
+  const [isSignedIn, setIsSignedIn] = useState(false)
+  const [googleEvents, setGoogleEvents] = useState<GoogleEvent[]>([])
+  const [platformSessions, setPlatformSessions] = useState<PlatformSession[]>([])
+  const [loading, setLoading] = useState(false)
+  const [syncing, setSyncing] = useState<string | null>(null)
+  const [selectedGoogleEvents, setSelectedGoogleEvents] = useState<Set<string>>(new Set())
+  const [selectedPlatformSessions, setSelectedPlatformSessions] = useState<Set<string>>(new Set())
+
+  // Inicializar Google API
+  const initializeGoogleAPI = async () => {
+    if (typeof window === 'undefined') return
+    
+    try {
+      if ((window as any).google?.accounts) {
+        setIsInitialized(true)
+        return
+      }
+
+      const existingScript = document.querySelector('script[src="https://accounts.google.com/gsi/client"]')
+      if (existingScript) {
+        existingScript.addEventListener('load', () => setIsInitialized(true))
+        return
+      }
+
+      const script = document.createElement('script')
+      script.src = 'https://accounts.google.com/gsi/client'
+      script.async = true
+      script.defer = true
+      
+      script.onload = () => {
+        console.log('Google API carregada com sucesso')
+        setIsInitialized(true)
+      }
+      
+      script.onerror = () => {
+        console.error('Erro ao carregar Google API')
+        toast({
+          title: "Erro",
+          description: "Falha ao carregar API do Google",
+          variant: "destructive"
+        })
+      }
+      
+      document.head.appendChild(script)
+    } catch (error) {
+      console.error('Erro ao inicializar Google API:', error)
+    }
+  }
+
+  useEffect(() => {
+    initializeGoogleAPI()
+  }, [])
+
+  // Conectar com Google
+  const connectToGoogle = async () => {
+    if (!isInitialized) {
+      toast({
+        title: "Aguarde",
+        description: "Inicializando conexão com Google...",
+      })
+      return
+    }
+
+    try {
+      setLoading(true)
+      
+      const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: SCOPES,
+        callback: async (response: any) => {
+          if (response.access_token) {
+            localStorage.setItem('google_access_token', response.access_token)
+            setIsSignedIn(true)
+            toast({
+              title: "Conectado!",
+              description: "Google Calendar conectado com sucesso.",
+            })
+            await loadAllData()
+          }
+        },
+      })
+      
+      tokenClient.requestAccessToken()
+    } catch (error) {
+      console.error('Erro ao conectar:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível conectar com o Google Calendar.",
+        variant: "destructive"
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Desconectar do Google
+  const disconnectFromGoogle = async () => {
+    localStorage.removeItem('google_access_token')
+    setIsSignedIn(false)
+    setGoogleEvents([])
+    setSelectedGoogleEvents(new Set())
+    
+    toast({
+      title: "Desconectado",
+      description: "Google Calendar desconectado com sucesso.",
+    })
+  }
+
+  // Carregar eventos do Google
+  const loadGoogleEvents = async () => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken) return
+
+    try {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const timeMin = today.toISOString()
+      const timeMax = new Date(today.getFullYear(), 11, 31, 23, 59, 59).toISOString()
+      
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=500&singleEvents=true&orderBy=startTime`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          localStorage.removeItem('google_access_token')
+          setIsSignedIn(false)
+          toast({
+            title: "Token expirado",
+            description: "Reconecte-se ao Google Calendar.",
+            variant: "destructive"
+          })
+          return
+        }
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setGoogleEvents(data.items || [])
+      return data.items || []
+    } catch (error) {
+      console.error('Erro ao carregar eventos do Google:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os eventos do Google Calendar.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Carregar sessões da plataforma
+  const loadPlatformSessions = async () => {
+    if (!user) return
+
+    try {
+      const { data, error } = await supabase
+        .from('sessions')
+        .select(`
+          id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
+          google_event_id, google_sync_type, google_ignored, google_attendees, google_location,
+          google_html_link, google_recurrence_id, google_last_synced,
+          clients (id, nome, email, avatar_url)
+        `)
+        .order('data', { ascending: true })
+        .order('horario', { ascending: true })
+
+      if (error) throw error
+      setPlatformSessions((data as any) || [])
+      return data || []
+    } catch (error) {
+      console.error('Erro ao carregar sessões:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar as sessões.",
+        variant: "destructive"
+      })
+    }
+  }
+
+  // Carregar todos os dados
+  const loadAllData = async () => {
+    setLoading(true)
+    try {
+      await Promise.all([loadGoogleEvents(), loadPlatformSessions()])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Importar evento do Google (somente leitura)
+  const importGoogleEvent = async (event: GoogleEvent, createClient = false): Promise<boolean> => {
+    if (!user) return false
+
+    setSyncing(event.id)
+    try {
+      const startDateTime = event.start.dateTime || event.start.date
+      const eventDate = new Date(startDateTime!).toISOString().split('T')[0]
+      const eventTime = event.start.dateTime 
+        ? format(new Date(startDateTime!), "HH:mm")
+        : "09:00"
+
+      let clientId = null
+
+      if (createClient && event.attendees && event.attendees.length > 0) {
+        const attendee = event.attendees[0]
+        const clientName = attendee.displayName || event.summary.split(' - ')[1] || event.summary
+        const clientEmail = attendee.email
+
+        // Verificar se cliente já existe
+        const { data: existingClient } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('email', clientEmail)
+          .maybeSingle()
+
+        if (existingClient) {
+          clientId = existingClient.id
+        } else {
+          const { data: newClient, error: clientError } = await supabase
+            .from('clients')
+            .insert([{
+              user_id: user.id,
+              nome: clientName,
+              email: clientEmail,
+              telefone: '',
+              dados_clinicos: event.description || ''
+            }])
+            .select()
+            .single()
+
+          if (clientError) throw clientError
+          clientId = newClient.id
+        }
+      }
+
+      // Se não temos cliente, criar um temporário
+      if (!clientId) {
+        const clientName = event.summary.split(' - ')[1] || event.summary
+        const { data: newClient, error: clientError } = await supabase
+          .from('clients')
+          .insert([{
+            user_id: user.id,
+            nome: clientName,
+            email: '',
+            telefone: '',
+            dados_clinicos: `Importado do Google Calendar: ${event.description || ''}`
+          }])
+          .select()
+          .single()
+
+        if (clientError) throw clientError
+        clientId = newClient.id
+      }
+
+      // Criar sessão importada
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .insert([{
+          user_id: user.id,
+          client_id: clientId,
+          data: eventDate,
+          horario: formatTimeForDatabase(eventTime),
+          status: 'agendada',
+          anotacoes: event.description || '',
+          google_event_id: event.id,
+          google_sync_type: 'imported' as GoogleSyncType,
+          google_attendees: event.attendees || [],
+          google_location: event.location || null,
+          google_html_link: event.htmlLink,
+          google_recurrence_id: event.recurringEventId || null,
+          google_last_synced: new Date().toISOString()
+        }])
+
+      if (sessionError) throw sessionError
+
+      toast({
+        title: "Evento importado!",
+        description: `"${event.summary}" foi importado com sucesso.`,
+      })
+
+      await loadPlatformSessions()
+      return true
+    } catch (error) {
+      console.error('Erro ao importar evento:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível importar o evento.",
+        variant: "destructive"
+      })
+      return false
+    } finally {
+      setSyncing(null)
+    }
+  }
+
+  // Espelhar evento (sincronização bidirecional)
+  const mirrorGoogleEvent = async (event: GoogleEvent): Promise<boolean> => {
+    if (!user) return false
+
+    setSyncing(event.id)
+    try {
+      // Primeiro importa, depois marca como espelhado
+      const startDateTime = event.start.dateTime || event.start.date
+      const eventDate = new Date(startDateTime!).toISOString().split('T')[0]
+      const eventTime = event.start.dateTime 
+        ? format(new Date(startDateTime!), "HH:mm")
+        : "09:00"
+
+      // Criar cliente temporário
+      const clientName = event.summary.split(' - ')[1] || event.summary
+      const { data: newClient, error: clientError } = await supabase
+        .from('clients')
+        .insert([{
+          user_id: user.id,
+          nome: clientName,
+          email: event.attendees?.[0]?.email || '',
+          telefone: '',
+          dados_clinicos: `Espelhado do Google Calendar: ${event.description || ''}`
+        }])
+        .select()
+        .single()
+
+      if (clientError) throw clientError
+
+      const { error: sessionError } = await supabase
+        .from('sessions')
+        .insert([{
+          user_id: user.id,
+          client_id: newClient.id,
+          data: eventDate,
+          horario: formatTimeForDatabase(eventTime),
+          status: 'agendada',
+          anotacoes: event.description || '',
+          google_event_id: event.id,
+          google_sync_type: 'mirrored' as GoogleSyncType,
+          google_attendees: event.attendees || [],
+          google_location: event.location || null,
+          google_html_link: event.htmlLink,
+          google_recurrence_id: event.recurringEventId || null,
+          google_last_synced: new Date().toISOString()
+        }])
+
+      if (sessionError) throw sessionError
+
+      toast({
+        title: "Espelhamento ativado!",
+        description: `"${event.summary}" será sincronizado bidirecionalmente.`,
+      })
+
+      await loadPlatformSessions()
+      return true
+    } catch (error) {
+      console.error('Erro ao espelhar evento:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível espelhar o evento.",
+        variant: "destructive"
+      })
+      return false
+    } finally {
+      setSyncing(null)
+    }
+  }
+
+  // Ignorar evento do Google
+  const ignoreGoogleEvent = async (eventId: string): Promise<boolean> => {
+    // Marca localmente como ignorado (armazenar no localStorage ou na sessão)
+    const ignoredEvents = JSON.parse(localStorage.getItem('google_ignored_events') || '[]')
+    if (!ignoredEvents.includes(eventId)) {
+      ignoredEvents.push(eventId)
+      localStorage.setItem('google_ignored_events', JSON.stringify(ignoredEvents))
+    }
+    
+    toast({
+      title: "Evento ignorado",
+      description: "O evento não aparecerá mais na lista.",
+    })
+    
+    return true
+  }
+
+  // Enviar sessão para o Google
+  const sendToGoogle = async (session: PlatformSession): Promise<boolean> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken || !user) return false
+
+    setSyncing(session.id)
+    try {
+      const startDateTime = new Date(`${session.data}T${session.horario}`)
+      const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000) // +1 hora
+
+      const googleEvent = {
+        summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+        description: session.anotacoes || '',
+        start: {
+          dateTime: startDateTime.toISOString(),
+          timeZone: 'America/Sao_Paulo',
+        },
+        end: {
+          dateTime: endDateTime.toISOString(),
+          timeZone: 'America/Sao_Paulo',
+        },
+        attendees: session.clients?.email ? [{ email: session.clients.email }] : undefined,
+      }
+
+      const response = await fetch(
+        'https://www.googleapis.com/calendar/v3/calendars/primary/events',
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(googleEvent)
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const createdEvent = await response.json()
+
+      // Atualizar sessão com referência ao evento do Google
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          google_event_id: createdEvent.id,
+          google_sync_type: 'sent' as GoogleSyncType,
+          google_html_link: createdEvent.htmlLink,
+          google_last_synced: new Date().toISOString()
+        })
+        .eq('id', session.id)
+
+      if (error) throw error
+
+      toast({
+        title: "Enviado para o Google!",
+        description: "A sessão foi publicada no Google Calendar.",
+      })
+
+      await loadAllData()
+      return true
+    } catch (error) {
+      console.error('Erro ao enviar para o Google:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível enviar a sessão para o Google Calendar.",
+        variant: "destructive"
+      })
+      return false
+    } finally {
+      setSyncing(null)
+    }
+  }
+
+  // Atualizar evento no Google (para sessões espelhadas)
+  const updateGoogleEvent = async (session: PlatformSession): Promise<boolean> => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (!accessToken || !session.google_event_id) return false
+
+    try {
+      const startDateTime = new Date(`${session.data}T${session.horario}`)
+      const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
+
+      const googleEvent = {
+        summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+        description: session.anotacoes || '',
+        start: {
+          dateTime: startDateTime.toISOString(),
+          timeZone: 'America/Sao_Paulo',
+        },
+        end: {
+          dateTime: endDateTime.toISOString(),
+          timeZone: 'America/Sao_Paulo',
+        },
+      }
+
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${session.google_event_id}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(googleEvent)
+        }
+      )
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      // Atualizar timestamp de sincronização
+      await supabase
+        .from('sessions')
+        .update({ google_last_synced: new Date().toISOString() })
+        .eq('id', session.id)
+
+      return true
+    } catch (error) {
+      console.error('Erro ao atualizar evento no Google:', error)
+      return false
+    }
+  }
+
+  // Ações em lote
+  const batchImportGoogleEvents = async (eventIds: string[], createClients = false): Promise<number> => {
+    let successCount = 0
+    for (const eventId of eventIds) {
+      const event = googleEvents.find(e => e.id === eventId)
+      if (event) {
+        const success = await importGoogleEvent(event, createClients)
+        if (success) successCount++
+      }
+    }
+    return successCount
+  }
+
+  const batchSendToGoogle = async (sessionIds: string[]): Promise<number> => {
+    let successCount = 0
+    for (const sessionId of sessionIds) {
+      const session = platformSessions.find(s => s.id === sessionId)
+      if (session && !session.google_event_id) {
+        const success = await sendToGoogle(session)
+        if (success) successCount++
+      }
+    }
+    return successCount
+  }
+
+  const batchIgnoreGoogleEvents = async (eventIds: string[]): Promise<number> => {
+    let successCount = 0
+    for (const eventId of eventIds) {
+      const success = await ignoreGoogleEvent(eventId)
+      if (success) successCount++
+    }
+    setSelectedGoogleEvents(new Set())
+    return successCount
+  }
+
+  // Toggle seleção
+  const toggleGoogleEventSelection = (eventId: string) => {
+    setSelectedGoogleEvents(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(eventId)) {
+        newSet.delete(eventId)
+      } else {
+        newSet.add(eventId)
+      }
+      return newSet
+    })
+  }
+
+  const togglePlatformSessionSelection = (sessionId: string) => {
+    setSelectedPlatformSessions(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(sessionId)) {
+        newSet.delete(sessionId)
+      } else {
+        newSet.add(sessionId)
+      }
+      return newSet
+    })
+  }
+
+  const selectAllGoogleEvents = () => {
+    const ignoredEvents = JSON.parse(localStorage.getItem('google_ignored_events') || '[]')
+    const importedEventIds = platformSessions.map(s => s.google_event_id).filter(Boolean)
+    const availableEvents = googleEvents.filter(e => 
+      !ignoredEvents.includes(e.id) && !importedEventIds.includes(e.id)
+    )
+    setSelectedGoogleEvents(new Set(availableEvents.map(e => e.id)))
+  }
+
+  const selectAllPlatformSessions = () => {
+    const localSessions = platformSessions.filter(s => !s.google_sync_type || s.google_sync_type === 'local')
+    setSelectedPlatformSessions(new Set(localSessions.map(s => s.id)))
+  }
+
+  const clearSelections = () => {
+    setSelectedGoogleEvents(new Set())
+    setSelectedPlatformSessions(new Set())
+  }
+
+  // Verificar se já está conectado ao carregar
+  useEffect(() => {
+    const accessToken = localStorage.getItem('google_access_token')
+    if (accessToken && isInitialized) {
+      setIsSignedIn(true)
+      loadAllData()
+    }
+  }, [isInitialized, user])
+
+  // Filtrar eventos ignorados e já importados
+  const getFilteredGoogleEvents = useCallback(() => {
+    const ignoredEvents = JSON.parse(localStorage.getItem('google_ignored_events') || '[]')
+    const importedEventIds = platformSessions.map(s => s.google_event_id).filter(Boolean)
+    
+    return googleEvents.filter(event => 
+      !ignoredEvents.includes(event.id) && !importedEventIds.includes(event.id)
+    )
+  }, [googleEvents, platformSessions])
+
+  return {
+    // State
+    isInitialized,
+    isSignedIn,
+    googleEvents,
+    platformSessions,
+    loading,
+    syncing,
+    selectedGoogleEvents,
+    selectedPlatformSessions,
+    
+    // Computed
+    filteredGoogleEvents: getFilteredGoogleEvents(),
+    
+    // Actions - Connection
+    connectToGoogle,
+    disconnectFromGoogle,
+    
+    // Actions - Load
+    loadAllData,
+    loadGoogleEvents,
+    loadPlatformSessions,
+    
+    // Actions - Single
+    importGoogleEvent,
+    mirrorGoogleEvent,
+    ignoreGoogleEvent,
+    sendToGoogle,
+    updateGoogleEvent,
+    
+    // Actions - Batch
+    batchImportGoogleEvents,
+    batchSendToGoogle,
+    batchIgnoreGoogleEvents,
+    
+    // Selection
+    toggleGoogleEventSelection,
+    togglePlatformSessionSelection,
+    selectAllGoogleEvents,
+    selectAllPlatformSessions,
+    clearSelections,
+  }
+}
