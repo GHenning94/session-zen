@@ -18,7 +18,8 @@ import {
   StickyNote,
   Package,
   Repeat,
-  PenLine
+  PenLine,
+  ClipboardList
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
@@ -36,6 +37,7 @@ interface SessionDetailsModalProps {
   onViewPayment: (sessionId: string) => void
   onAddNote: (session: any) => void
   hasNotes?: boolean
+  hasEvolution?: boolean
 }
 
 export const SessionDetailsModal = ({
@@ -49,7 +51,8 @@ export const SessionDetailsModal = ({
   onViewAgenda,
   onViewPayment,
   onAddNote,
-  hasNotes = false
+  hasNotes = false,
+  hasEvolution = false
 }: SessionDetailsModalProps) => {
   const { avatarUrl } = useAvatarUrl(session?.clients?.avatar_url)
   
@@ -111,7 +114,10 @@ export const SessionDetailsModal = ({
                   <Repeat className="h-5 w-5 text-primary" />
                 )}
                 {hasNotes && (
-                  <PenLine className="h-5 w-5 text-blue-500" />
+                  <PenLine className="h-5 w-5 text-primary" />
+                )}
+                {hasEvolution && (
+                  <ClipboardList className="h-5 w-5 text-primary" />
                 )}
               </div>
             </div>
