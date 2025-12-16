@@ -1,7 +1,9 @@
-import { useState, useCallback, useMemo } from 'react'
+import { useState, useCallback, useMemo, useRef } from 'react'
 import { useToast } from '@/hooks/use-toast'
+import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { formatTimeForDatabase } from '@/lib/utils'
 import {
   GoogleEvent,
@@ -14,9 +16,13 @@ import {
 
 export const useConflictDetection = () => {
   const { toast } = useToast()
+  const { user } = useAuth()
   const [conflicts, setConflicts] = useState<SyncConflict[]>([])
   const [isDetecting, setIsDetecting] = useState(false)
   const [isResolving, setIsResolving] = useState<string | null>(null)
+  
+  // Track notified conflicts to avoid duplicate notifications
+  const notifiedConflictIds = useRef<Set<string>>(new Set())
 
   // Comparar data/hora entre plataforma e Google
   const compareDateTime = (session: PlatformSession, event: GoogleEvent): ConflictDiff[] => {
@@ -122,6 +128,56 @@ export const useConflictDetection = () => {
     }
   }, [])
 
+  // Criar notificação no banco de dados
+  const createConflictNotification = useCallback(async (
+    conflict: SyncConflict,
+    isNew: boolean = true
+  ) => {
+    if (!user) return
+    
+    // Skip if already notified for this session conflict
+    const conflictKey = `${conflict.sessionId}-${conflict.severity}`
+    if (notifiedConflictIds.current.has(conflictKey)) return
+    
+    const clientName = conflict.sessionData.clients?.nome || 'Cliente'
+    const sessionDate = format(new Date(conflict.sessionData.data), "d 'de' MMMM", { locale: ptBR })
+    const severityLabels = { high: 'Alta', medium: 'Média', low: 'Baixa' }
+    
+    const titulo = conflict.severity === 'high' 
+      ? `⚠️ Conflito urgente: ${clientName}`
+      : `Conflito de sincronização: ${clientName}`
+    
+    const fieldsChanged = conflict.differences.map(d => {
+      const labels: Record<ConflictField, string> = {
+        date: 'data',
+        time: 'horário',
+        description: 'descrição',
+        location: 'localização',
+        attendees: 'participantes'
+      }
+      return labels[d.field]
+    }).join(', ')
+    
+    const conteudo = `Detectadas diferenças em ${fieldsChanged} na sessão de ${sessionDate}. ` +
+      `Prioridade: ${severityLabels[conflict.severity]}. ` +
+      `Acesse Integrações > Google Calendar para resolver.`
+    
+    try {
+      await supabase
+        .from('notifications')
+        .insert([{
+          user_id: user.id,
+          titulo,
+          conteudo,
+          lida: false
+        }])
+      
+      notifiedConflictIds.current.add(conflictKey)
+    } catch (error) {
+      console.error('Erro ao criar notificação de conflito:', error)
+    }
+  }, [user])
+
   // Detectar todos os conflitos
   const detectAllConflicts = useCallback(async (
     mirroredSessions: PlatformSession[],
@@ -129,6 +185,7 @@ export const useConflictDetection = () => {
   ) => {
     setIsDetecting(true)
     const detectedConflicts: SyncConflict[] = []
+    const newConflicts: SyncConflict[] = []
     
     try {
       for (const session of mirroredSessions) {
@@ -140,17 +197,66 @@ export const useConflictDetection = () => {
         const conflict = detectConflictForSession(session, matchingEvent)
         if (conflict) {
           detectedConflicts.push(conflict)
+          
+          // Check if this is a new conflict (not already notified)
+          const conflictKey = `${conflict.sessionId}-${conflict.severity}`
+          if (!notifiedConflictIds.current.has(conflictKey)) {
+            newConflicts.push(conflict)
+          }
         }
       }
       
       setConflicts(detectedConflicts)
       
+      // Create notifications for new conflicts
+      if (newConflicts.length > 0) {
+        const highPriorityConflicts = newConflicts.filter(c => c.severity === 'high')
+        const otherConflicts = newConflicts.filter(c => c.severity !== 'high')
+        
+        // Create individual notifications for high priority conflicts
+        for (const conflict of highPriorityConflicts) {
+          await createConflictNotification(conflict)
+        }
+        
+        // Create a single summary notification for medium/low priority if multiple
+        if (otherConflicts.length > 0) {
+          if (otherConflicts.length === 1) {
+            await createConflictNotification(otherConflicts[0])
+          } else {
+            // Create summary notification
+            const summaryKey = `summary-${Date.now()}`
+            if (!notifiedConflictIds.current.has(summaryKey) && user) {
+              try {
+                await supabase
+                  .from('notifications')
+                  .insert([{
+                    user_id: user.id,
+                    titulo: `${otherConflicts.length} conflitos de sincronização`,
+                    conteudo: `Foram detectados ${otherConflicts.length} conflitos de baixa/média prioridade em sessões espelhadas com o Google Calendar. Acesse Integrações para revisar.`,
+                    lida: false
+                  }])
+                
+                notifiedConflictIds.current.add(summaryKey)
+                otherConflicts.forEach(c => {
+                  notifiedConflictIds.current.add(`${c.sessionId}-${c.severity}`)
+                })
+              } catch (error) {
+                console.error('Erro ao criar notificação resumo:', error)
+              }
+            }
+          }
+        }
+      }
+      
+      // Show toast for user feedback
       if (detectedConflicts.length > 0) {
         const highCount = detectedConflicts.filter(c => c.severity === 'high').length
+        const newCount = newConflicts.length
+        
         toast({
           title: `${detectedConflicts.length} conflito(s) detectado(s)`,
-          description: highCount > 0 
-            ? `${highCount} conflito(s) de alta prioridade requerem atenção.`
+          description: newCount > 0 
+            ? `${newCount} novo(s) conflito(s)${highCount > 0 ? `, ${highCount} de alta prioridade` : ''}.`
             : 'Revise os conflitos para manter seus dados sincronizados.',
           variant: highCount > 0 ? 'destructive' : 'default',
         })
@@ -168,7 +274,7 @@ export const useConflictDetection = () => {
     } finally {
       setIsDetecting(false)
     }
-  }, [detectConflictForSession, toast])
+  }, [detectConflictForSession, createConflictNotification, user, toast])
 
   // Resolver conflito mantendo dados da plataforma
   const resolveKeepPlatform = useCallback(async (
@@ -366,6 +472,10 @@ export const useConflictDetection = () => {
       }
       
       if (success) {
+        // Clear notified state for this conflict so it can be re-notified if it recurs
+        const conflictKey = `${conflict.sessionId}-${conflict.severity}`
+        notifiedConflictIds.current.delete(conflictKey)
+        
         setConflicts(prev => prev.filter(c => c.id !== conflictId))
         toast({
           title: 'Conflito resolvido',
@@ -411,6 +521,7 @@ export const useConflictDetection = () => {
   // Limpar todos os conflitos
   const clearAllConflicts = useCallback(() => {
     setConflicts([])
+    notifiedConflictIds.current.clear()
   }, [])
 
   // Estatísticas de conflitos
