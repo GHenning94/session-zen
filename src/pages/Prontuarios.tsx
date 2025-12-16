@@ -353,46 +353,46 @@ export default function Prontuarios() {
                 </CardHeader>
                 <CardContent>
                   {clientAnamnese ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
                       {clientAnamnese.motivo_consulta && (
                         <div>
-                          <Label className="text-sm font-medium">Motivo da Consulta</Label>
+                          <Label className="text-sm font-bold">Motivo da Consulta</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.motivo_consulta}</p>
                         </div>
                       )}
                       {clientAnamnese.queixa_principal && (
                         <div>
-                          <Label className="text-sm font-medium">Queixa Principal</Label>
+                          <Label className="text-sm font-bold">Queixa Principal</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.queixa_principal}</p>
                         </div>
                       )}
                       {clientAnamnese.historico_familiar && (
-                        <div className="md:col-span-2">
-                          <Label className="text-sm font-medium">Histórico Familiar</Label>
+                        <div>
+                          <Label className="text-sm font-bold">Histórico Familiar</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.historico_familiar}</p>
                         </div>
                       )}
                       {clientAnamnese.historico_medico && (
-                        <div className="md:col-span-2">
-                          <Label className="text-sm font-medium">Histórico Médico/Psicológico</Label>
+                        <div>
+                          <Label className="text-sm font-bold">Histórico Médico/Psicológico</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.historico_medico}</p>
                         </div>
                       )}
                       {clientAnamnese.antecedentes_relevantes && (
-                        <div className="md:col-span-2">
-                          <Label className="text-sm font-medium">Antecedentes Relevantes</Label>
+                        <div>
+                          <Label className="text-sm font-bold">Antecedentes Relevantes</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.antecedentes_relevantes}</p>
                         </div>
                       )}
                       {clientAnamnese.diagnostico_inicial && (
-                        <div className="md:col-span-2">
-                          <Label className="text-sm font-medium">Diagnóstico Inicial</Label>
+                        <div>
+                          <Label className="text-sm font-bold">Diagnóstico Inicial</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.diagnostico_inicial}</p>
                         </div>
                       )}
                       {clientAnamnese.observacoes_adicionais && (
-                        <div className="md:col-span-2">
-                          <Label className="text-sm font-medium">Observações Adicionais</Label>
+                        <div>
+                          <Label className="text-sm font-bold">Observações Adicionais</Label>
                           <p className="mt-1 text-sm">{clientAnamnese.observacoes_adicionais}</p>
                         </div>
                       )}

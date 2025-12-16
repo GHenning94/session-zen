@@ -67,7 +67,7 @@ export function AppSidebar() {
   const currentPath = location.pathname
   const menuItems = getMenuItems(clientTermPlural)
 
-  const showBanner = !isLoading && currentPlan === 'basico'
+  const showBanner = !isLoading && currentPlan !== 'premium'
   const isCollapsed = state === "collapsed"
 
   const isActive = (path: string) => currentPath === path

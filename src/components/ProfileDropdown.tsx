@@ -113,7 +113,7 @@ export const ProfileDropdown = () => {
       .toUpperCase()
   }
 
-  const isPremium = profile.subscription_plan && profile.subscription_plan !== 'basico'
+  const isPremium = profile.subscription_plan === 'premium'
 
   const menuItems = {
     premium: !isPremium ? [
