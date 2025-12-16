@@ -141,12 +141,12 @@ export const GoogleEventCard = ({
                   {isSyncing ? (
                     <RefreshCw className="w-4 h-4 animate-spin" />
                   ) : (
-                    <Download className="w-4 h-4" />
+                    <Copy className="w-4 h-4" />
                   )}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Importar para a plataforma</p>
+                <p>Criar cópia editável</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -206,7 +206,7 @@ export const GoogleEventCard = ({
                 </>
               )}
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onIgnore} className="text-muted-foreground">
+              <DropdownMenuItem onClick={onIgnore}>
                 <EyeOff className="w-4 h-4 mr-2" />
                 Ignorar evento
               </DropdownMenuItem>

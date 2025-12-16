@@ -545,9 +545,10 @@ const GoogleCalendarIntegrationNew = () => {
                   <AccordionContent>
                     <p className="text-sm text-muted-foreground">
                       Traz o evento do Google Agenda para a plataforma em <strong>modo de visualização</strong>. 
-                      A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada.
+                      A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada 
+                      (exceto valor e método de pagamento, para fins de métricas).
                       Ideal para manter eventos sincronizados sem risco de alterações acidentais.
-                      O evento ficará marcado com a tag <Badge variant="secondary" className="mx-1">Importado</Badge>.
+                      O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Importado</Badge>.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -572,7 +573,7 @@ const GoogleCalendarIntegrationNew = () => {
                 <AccordionItem value="mirror">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <ArrowLeftRight className="w-4 h-4 text-success" />
+                      <ArrowLeftRight className="w-4 h-4 text-primary" />
                       <span>Espelhar com Google (bidirecional)</span>
                     </div>
                   </AccordionTrigger>
@@ -580,7 +581,7 @@ const GoogleCalendarIntegrationNew = () => {
                     <p className="text-sm text-muted-foreground">
                       Sincronização em duas vias. Alterações feitas na plataforma atualizam o Google 
                       e vice-versa. Funciona com eventos únicos e recorrentes.
-                      O evento ficará marcado com a tag <Badge variant="success" className="mx-1">Espelhado</Badge>.
+                      O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Espelhado</Badge>.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -588,7 +589,7 @@ const GoogleCalendarIntegrationNew = () => {
                 <AccordionItem value="send">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-warning" />
+                      <Upload className="w-4 h-4 text-primary" />
                       <span>Enviar para Google</span>
                     </div>
                   </AccordionTrigger>
@@ -596,7 +597,7 @@ const GoogleCalendarIntegrationNew = () => {
                     <p className="text-sm text-muted-foreground">
                       Publica o evento da plataforma no Google Agenda (sentido único). 
                       Alterações futuras no Google <strong>não afetam</strong> a plataforma.
-                      O evento ficará marcado com a tag <Badge variant="warning" className="mx-1">Enviado</Badge>.
+                      O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Enviado</Badge>.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -613,6 +614,9 @@ const GoogleCalendarIntegrationNew = () => {
                       Remove o evento da lista de pendentes sem afetar o Google. 
                       O evento não aparecerá na página de Sessões e não será importado automaticamente.
                       Útil para eventos pessoais que não são sessões de atendimento.
+                    </p>
+                    <p className="text-xs mt-2 text-muted-foreground/80 border-t pt-2">
+                      <strong>Nota:</strong> Sessões importadas requerem definição manual de valor e método de pagamento para contabilização correta nas métricas.
                     </p>
                   </AccordionContent>
                 </AccordionItem>
@@ -653,7 +657,7 @@ const GoogleCalendarIntegrationNew = () => {
                   <AccordionContent>
                     <div className="space-y-2 text-sm text-muted-foreground">
                       <p>
-                        Sessões <Badge variant="success" className="mx-1">Espelhadas</Badge> são monitoradas automaticamente para detectar conflitos 
+                        Sessões <Badge variant="outline" className="mx-1">G: Espelhadas</Badge> são monitoradas automaticamente para detectar conflitos 
                         quando há alterações em ambos os lados (plataforma e Google).
                       </p>
                       <p>

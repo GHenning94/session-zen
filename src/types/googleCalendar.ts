@@ -126,28 +126,28 @@ export const SYNC_TYPE_LABELS: Record<GoogleSyncType, { label: string; color: st
     description: 'Criado apenas na plataforma'
   },
   importado: {
-    label: 'Importado',
-    color: 'info',
+    label: 'G: Importado',
+    color: 'outline',
     description: 'Importado do Google (somente leitura)'
   },
   espelhado: {
-    label: 'Espelhado',
-    color: 'success',
+    label: 'G: Espelhado',
+    color: 'outline',
     description: 'Sincronização bidirecional com Google'
   },
   enviado: {
-    label: 'Enviado',
-    color: 'warning',
+    label: 'G: Enviado',
+    color: 'outline',
     description: 'Enviado para o Google (one-way)'
   },
   ignorado: {
-    label: 'Ignorado',
+    label: 'G: Ignorado',
     color: 'outline',
     description: 'Evento ignorado do Google'
   },
   cancelado: {
-    label: 'Cancelado',
-    color: 'destructive',
+    label: 'G: Cancelado',
+    color: 'outline',
     description: 'Evento cancelado no Google Calendar'
   }
 };
