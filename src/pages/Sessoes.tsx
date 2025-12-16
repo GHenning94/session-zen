@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -683,6 +683,9 @@ export default function Sessoes() {
                                    <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-2">
                                       <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
+                                      {sessionNotes.some(note => note.session_id === session.id) && (
+                                        <PenLine className="h-4 w-4 text-muted-foreground" />
+                                      )}
                                       <Badge variant={getStatusColor(session.status)}>
                                         {getStatusLabel(session.status)}
                                       </Badge>
@@ -763,6 +766,9 @@ export default function Sessoes() {
                              <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
+                                {sessionNotes.some(note => note.session_id === session.id) && (
+                                  <PenLine className="h-4 w-4 text-muted-foreground" />
+                                )}
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
