@@ -221,28 +221,79 @@ const BookingPage = () => {
 
   const paymentMethods = [{ key: 'aceita_pix', label: 'Pix' }, { key: 'aceita_cartao', label: 'Cartão de Crédito' }, { key: 'aceita_transferencia', label: 'Transferência' }, { key: 'aceita_dinheiro', label: 'Dinheiro' }].filter(method => config[method.key])
 
-  // Sanitize custom CSS to prevent injection attacks
+  // Sanitize custom CSS to prevent injection attacks with whitelist approach
   const sanitizeCSS = (css: string): string => {
     if (!css) return '';
     
-    // Block dangerous CSS patterns that can lead to data exfiltration or code execution
+    // Enforce length limit to prevent DoS
+    const MAX_CSS_LENGTH = 5000;
+    if (css.length > MAX_CSS_LENGTH) {
+      console.warn('[CSS Sanitization] CSS exceeds max length, truncating');
+      css = css.substring(0, MAX_CSS_LENGTH);
+    }
+    
+    // Whitelist of allowed CSS properties (safe for styling)
+    const allowedProperties = new Set([
+      'color', 'background-color', 'background', 'font-size', 'font-family', 'font-weight',
+      'font-style', 'text-align', 'text-decoration', 'line-height', 'letter-spacing',
+      'margin', 'margin-top', 'margin-right', 'margin-bottom', 'margin-left',
+      'padding', 'padding-top', 'padding-right', 'padding-bottom', 'padding-left',
+      'border', 'border-radius', 'border-color', 'border-width', 'border-style',
+      'border-top', 'border-right', 'border-bottom', 'border-left',
+      'width', 'max-width', 'min-width', 'height', 'max-height', 'min-height',
+      'display', 'flex', 'flex-direction', 'justify-content', 'align-items', 'gap',
+      'grid', 'grid-template-columns', 'grid-template-rows', 'grid-gap',
+      'box-shadow', 'text-shadow', 'opacity', 'transition', 'transform',
+      'cursor', 'overflow', 'visibility', 'list-style', 'list-style-type',
+    ]);
+    
+    // Block dangerous CSS patterns
     const dangerousPatterns = [
-      /url\s*\(/gi,           // External resource loading (data exfiltration)
+      /url\s*\(/gi,           // External resource loading
       /@import/gi,            // External stylesheet loading
       /expression\s*\(/gi,    // IE expression() - code execution
       /behavior\s*:/gi,       // IE behavior - code execution
       /javascript\s*:/gi,     // JavaScript protocol
-      /-moz-binding/gi,       // Firefox binding (deprecated but dangerous)
+      /-moz-binding/gi,       // Firefox binding
       /vbscript\s*:/gi,       // VBScript protocol
-      /data\s*:/gi,           // Data URIs (can be used for obfuscation)
+      /data\s*:/gi,           // Data URIs
+      /position\s*:\s*(fixed|absolute)/gi,  // Prevent overlay attacks
+      /z-index\s*:/gi,        // Prevent layer manipulation
     ];
     
     let sanitized = css;
+    
+    // Remove dangerous patterns
     dangerousPatterns.forEach(pattern => {
       sanitized = sanitized.replace(pattern, '/* blocked */');
     });
     
-    return sanitized;
+    // Parse and filter CSS rules to only allow whitelisted properties
+    const filteredRules: string[] = [];
+    const ruleRegex = /([^{]+)\{([^}]+)\}/g;
+    let match;
+    
+    while ((match = ruleRegex.exec(sanitized)) !== null) {
+      const selector = match[1].trim();
+      const declarations = match[2];
+      
+      // Filter declarations to only allowed properties
+      const filteredDeclarations = declarations
+        .split(';')
+        .map(decl => decl.trim())
+        .filter(decl => {
+          if (!decl) return false;
+          const property = decl.split(':')[0]?.trim().toLowerCase();
+          return property && allowedProperties.has(property);
+        })
+        .join('; ');
+      
+      if (filteredDeclarations) {
+        filteredRules.push(`${selector} { ${filteredDeclarations}; }`);
+      }
+    }
+    
+    return filteredRules.join('\n');
   };
 
   return (

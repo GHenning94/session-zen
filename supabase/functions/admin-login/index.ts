@@ -58,7 +58,29 @@ Deno.serve(async (req) => {
       )
     }
 
-    if (email !== adminEmail || password !== adminPassword) {
+    // Use constant-time comparison to prevent timing attacks
+    const encoder = new TextEncoder();
+    const maxLen = 256;
+    
+    const emailBytes = encoder.encode((email || '').padEnd(maxLen, '\0').slice(0, maxLen));
+    const adminEmailBytes = encoder.encode((adminEmail || '').padEnd(maxLen, '\0').slice(0, maxLen));
+    const passwordBytes = encoder.encode((password || '').padEnd(maxLen, '\0').slice(0, maxLen));
+    const adminPasswordBytes = encoder.encode((adminPassword || '').padEnd(maxLen, '\0').slice(0, maxLen));
+
+    // Constant-time comparison using XOR
+    let emailMatch = 0;
+    let passwordMatch = 0;
+    for (let i = 0; i < maxLen; i++) {
+      emailMatch |= emailBytes[i] ^ adminEmailBytes[i];
+      passwordMatch |= passwordBytes[i] ^ adminPasswordBytes[i];
+    }
+
+    const credentialsValid = emailMatch === 0 && passwordMatch === 0;
+
+    if (!credentialsValid) {
+      // Add artificial delay to prevent timing analysis
+      await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 200));
+      
       console.error('[Admin Login] Invalid credentials')
       return new Response(
         JSON.stringify({ error: 'Credenciais inválidas' }),

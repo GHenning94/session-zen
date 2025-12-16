@@ -15,16 +15,23 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 
-// Fetch Stripe key from environment or use fallback
-const getStripeKey = () => {
-  const envKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY
-  if (envKey) return envKey
-  
-  // Fallback to hardcoded key if env var not set
-  return 'pk_live_51QT8oWCJopckKnVm5NfCgVsvkH0lElE2ipUVhfrcg2go4XhikZQ1OSsWEfgv8DgGZJUQqLkQ4W4M8avH8HnLFn0100e90pTSYo'
-}
+// Fetch Stripe key from environment - requires VITE_STRIPE_PUBLIC_KEY to be set
+const getStripeKey = (): string => {
+  const envKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+  if (!envKey) {
+    console.error('[Stripe] VITE_STRIPE_PUBLIC_KEY environment variable not configured');
+    throw new Error('Stripe key not configured. Please set VITE_STRIPE_PUBLIC_KEY environment variable.');
+  }
+  return envKey;
+};
 
-const stripePromise = loadStripe(getStripeKey());
+// Initialize Stripe promise - will throw if key not configured
+let stripePromise: ReturnType<typeof loadStripe> | null = null;
+try {
+  stripePromise = loadStripe(getStripeKey());
+} catch (error) {
+  console.error('[Stripe] Failed to initialize:', error);
+}
 
 interface UpdatePaymentMethodModalProps {
   open: boolean;
