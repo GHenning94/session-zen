@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -13,14 +13,16 @@ import {
 } from "@/components/ui/accordion"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useGoogleCalendarSync } from "@/hooks/useGoogleCalendarSync"
+import { useConflictDetection } from "@/hooks/useConflictDetection"
 import { PlanProtection } from "@/components/PlanProtection"
 import { GoogleEventCard } from "./GoogleEventCard"
 import { PlatformSessionCard } from "./PlatformSessionCard"
+import { ConflictDetectionPanel } from "./ConflictDetectionPanel"
 import { getRecurringMasterId } from "@/types/googleCalendar"
 import { 
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
-  ArrowLeftRight, EyeOff, Copy, Info, Repeat
+  ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle
 } from "lucide-react"
 import { TooltipProvider } from "@/components/ui/tooltip"
 
@@ -56,7 +58,28 @@ const GoogleCalendarIntegrationNew = () => {
     clearSelections,
   } = useGoogleCalendarSync()
 
+  // Hook de detecção de conflitos
+  const {
+    conflicts,
+    conflictStats,
+    isDetecting,
+    isResolving,
+    detectAllConflicts,
+    resolveConflict,
+    resolveAllConflicts,
+  } = useConflictDetection()
+
   const [activeInfoTab, setActiveInfoTab] = useState("concepts")
+
+  // Sessões espelhadas (para detecção de conflitos)
+  const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'mirrored')
+
+  // Detectar conflitos automaticamente quando os dados são carregados
+  useEffect(() => {
+    if (isSignedIn && mirroredSessions.length > 0 && googleEvents.length > 0) {
+      detectAllConflicts(mirroredSessions, googleEvents)
+    }
+  }, [isSignedIn, platformSessions.length, googleEvents.length])
 
   // Helper para obter contagem de instâncias de série
   const getSeriesCount = (event: any): number => {
@@ -127,9 +150,17 @@ const GoogleCalendarIntegrationNew = () => {
                   <div className={`w-3 h-3 rounded-full`} 
                        style={{ backgroundColor: isSignedIn ? 'hsl(var(--success))' : '#d1d5db' }} />
                   <div>
-                    <p className="font-medium">
-                      {isSignedIn ? 'Conectado' : 'Não conectado'}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium">
+                        {isSignedIn ? 'Conectado' : 'Não conectado'}
+                      </p>
+                      {isSignedIn && conflictStats.total > 0 && (
+                        <Badge variant="destructive" className="gap-1">
+                          <AlertTriangle className="w-3 h-3" />
+                          {conflictStats.total} conflito{conflictStats.total !== 1 ? 's' : ''}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">
                       {isSignedIn 
                         ? `${googleEvents.length} eventos do Google • ${platformSessions.length} sessões na plataforma`
@@ -445,6 +476,19 @@ const GoogleCalendarIntegrationNew = () => {
             </div>
           )}
 
+          {/* Painel de Detecção de Conflitos */}
+          {isSignedIn && mirroredSessions.length > 0 && (
+            <ConflictDetectionPanel
+              conflicts={conflicts}
+              conflictStats={conflictStats}
+              isDetecting={isDetecting}
+              isResolving={isResolving}
+              onDetect={() => detectAllConflicts(mirroredSessions, googleEvents)}
+              onResolve={resolveConflict}
+              onResolveAll={resolveAllConflicts}
+            />
+          )}
+
           {/* Área Informativa */}
           <Card className="shadow-soft border-border">
             <CardHeader>
@@ -556,6 +600,33 @@ const GoogleCalendarIntegrationNew = () => {
                       </p>
                       <p className="text-xs pt-2 border-t mt-2">
                         Cada ocorrência importada mantém referência à série original para rastreamento.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
+                <AccordionItem value="conflicts">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-destructive" />
+                      <span>Detecção de conflitos</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>
+                        Sessões <Badge variant="success" className="mx-1">Espelhadas</Badge> são monitoradas automaticamente para detectar conflitos 
+                        quando há alterações em ambos os lados (plataforma e Google).
+                      </p>
+                      <p>
+                        <strong>Prioridade Alta:</strong> Conflitos de data/horário que podem causar problemas de agendamento.
+                      </p>
+                      <p>
+                        <strong>Prioridade Média/Baixa:</strong> Diferenças em descrição, localização ou outros detalhes.
+                      </p>
+                      <p>
+                        Você pode resolver conflitos mantendo os dados da plataforma, do Google, 
+                        ou fazendo um merge manual escolhendo campo a campo.
                       </p>
                     </div>
                   </AccordionContent>

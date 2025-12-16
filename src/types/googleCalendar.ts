@@ -146,3 +146,31 @@ export const SYNC_TYPE_LABELS: Record<GoogleSyncType, { label: string; color: st
     description: 'Evento ignorado do Google'
   }
 };
+
+// Tipos para detecção de conflitos
+export type ConflictField = 'date' | 'time' | 'description' | 'location' | 'attendees';
+
+export interface ConflictDiff {
+  field: ConflictField;
+  platformValue: string;
+  googleValue: string;
+}
+
+export interface SyncConflict {
+  id: string;
+  sessionId: string;
+  googleEventId: string;
+  sessionData: PlatformSession;
+  googleEventData: GoogleEvent;
+  differences: ConflictDiff[];
+  detectedAt: string;
+  severity: 'low' | 'medium' | 'high';
+}
+
+export type ConflictResolution = 'keep_platform' | 'keep_google' | 'merge' | 'dismiss';
+
+export interface ConflictResolutionChoice {
+  conflictId: string;
+  resolution: ConflictResolution;
+  mergedData?: Partial<PlatformSession>;
+}
