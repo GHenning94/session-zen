@@ -12,6 +12,7 @@ export interface Package {
   sessoes_consumidas: number;
   valor_total: number;
   valor_por_sessao?: number;
+  metodo_pagamento?: string;
   status: 'ativo' | 'concluido' | 'cancelado';
   data_inicio?: string;
   data_fim?: string;

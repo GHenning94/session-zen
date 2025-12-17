@@ -71,7 +71,7 @@ export const PackageModal = ({
           total_sessoes: packageToEdit.total_sessoes,
           valor_total: packageToEdit.valor_total,
           valor_por_sessao: packageToEdit.valor_por_sessao || 0,
-          metodo_pagamento: (packageToEdit as any).metodo_pagamento || '',
+          metodo_pagamento: packageToEdit.metodo_pagamento || '',
           data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
           data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
           observacoes: packageToEdit.observacoes || ''
