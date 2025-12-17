@@ -309,12 +309,14 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           </div>
 
           {/* Dynamic Status Reminder */}
-          {renderStatusReminder()}
+          <div className="mt-2">
+            {renderStatusReminder()}
+          </div>
         </div>
 
         {/* Carousel Navigation Dots */}
         {activePackages.length > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-1">
+          <div className="flex items-center justify-center gap-2 pt-3 mt-2">
             <Button
               variant="ghost"
               size="icon"

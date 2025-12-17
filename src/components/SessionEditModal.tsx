@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatTimeForDatabase } from "@/lib/utils"
 import { Package, Repeat, Info } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 
 // Função para atualizar evento no Google Calendar
 const updateGoogleCalendarEvent = async (session: any, clientName: string): Promise<boolean> => {
@@ -90,6 +91,32 @@ export const SessionEditModal = ({
   })
   const [loading, setLoading] = useState(false)
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
+
+  // Fetch package data for package sessions
+  const { data: packageData } = useQuery({
+    queryKey: ['package-for-session', session?.package_id],
+    queryFn: async () => {
+      if (!session?.package_id) return null
+      const { data, error } = await supabase
+        .from('packages')
+        .select('id, valor_por_sessao, valor_total, total_sessoes')
+        .eq('id', session.package_id)
+        .single()
+      if (error) throw error
+      return data
+    },
+    enabled: !!session?.package_id && open
+  })
+
+  // Calculate package session value
+  const getPackageSessionValue = (): number => {
+    if (!packageData) return session?.valor || 0
+    if (packageData.valor_por_sessao) return packageData.valor_por_sessao
+    if (packageData.valor_total && packageData.total_sessoes) {
+      return packageData.valor_total / packageData.total_sessoes
+    }
+    return session?.valor || 0
+  }
 
   useEffect(() => {
     if (session) {
@@ -429,7 +456,7 @@ export const SessionEditModal = ({
               <Input
                 id="valor"
                 type="text"
-                value={`R$ ${parseFloat(formData.valor || '0').toFixed(2)}`}
+                value={`R$ ${getPackageSessionValue().toFixed(2)}`}
                 disabled
                 className="bg-muted"
               />

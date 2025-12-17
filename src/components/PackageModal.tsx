@@ -47,7 +47,7 @@ export const PackageModal = ({
   });
 
   // Carregar clientes
-  const { data: clients = [] } = useQuery({
+  const { data: clients = [], isLoading: clientsLoading } = useQuery({
     queryKey: ['clients', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,6 +61,9 @@ export const PackageModal = ({
     },
     enabled: !!user && open
   });
+
+  // Buscar nome do cliente selecionado (para quando está editando e clientes ainda não carregaram)
+  const selectedClientName = clients.find(c => c.id === formData.client_id)?.nome;
 
   useEffect(() => {
     if (open) {
@@ -179,7 +182,9 @@ export const PackageModal = ({
                 disabled={!!packageToEdit} // Não permite trocar cliente em edição
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cliente" />
+                  <SelectValue placeholder={clientsLoading ? "Carregando..." : "Selecione um cliente"}>
+                    {selectedClientName || (formData.client_id ? "Carregando..." : undefined)}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {clients.map((client: any) => (
