@@ -46,6 +46,7 @@ export const SessionModal = ({
     data: "",
     horario: "",
     valor: "",
+    metodo_pagamento: "",
     status: "agendada",
     anotacoes: "",
     package_id: "",
@@ -99,6 +100,7 @@ export const SessionModal = ({
           data: session.data || "",
           horario: session.horario ? session.horario.slice(0, 5) : "",
           valor: session.valor?.toString() || "",
+          metodo_pagamento: session.metodo_pagamento || "",
           status: session.status || "agendada",
           anotacoes: session.anotacoes || "",
           package_id: session.package_id || "",
@@ -120,6 +122,7 @@ export const SessionModal = ({
           data: initialData,
           horario: "",
           valor: "",
+          metodo_pagamento: "",
           status: "agendada",
           anotacoes: "",
           package_id: "",
@@ -194,6 +197,7 @@ export const SessionModal = ({
         data: formData.data,
         horario: formatTimeForDatabase(formData.horario),
         valor: formData.valor ? parseFloat(formData.valor) : null,
+        metodo_pagamento: formData.metodo_pagamento || null,
         status: formData.status,
         anotacoes: formData.anotacoes || null,
         session_type: sessionType,
@@ -216,7 +220,8 @@ export const SessionModal = ({
             .from('payments')
             .update({ 
               valor: sessionData.valor,
-              data_vencimento: sessionData.data
+              data_vencimento: sessionData.data,
+              metodo_pagamento: sessionData.metodo_pagamento || 'A definir'
             })
             .eq('session_id', session.id)
           
@@ -417,19 +422,40 @@ export const SessionModal = ({
               />
             </div>
 
-            {/* Valor (apenas se não for de pacote) */}
+            {/* Valor e Método de Pagamento (apenas se não for de pacote) */}
             {sessionType !== 'pacote' && (
-              <div>
-                <Label htmlFor="valor">Valor (R$)</Label>
-                <Input
-                  id="valor"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={formData.valor}
-                  onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                />
-              </div>
+              <>
+                <div>
+                  <Label htmlFor="valor">Valor (R$)</Label>
+                  <Input
+                    id="valor"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={formData.valor}
+                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                  <Select
+                    value={formData.metodo_pagamento}
+                    onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                      <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                      <SelectItem value="transferencia">Transferência</SelectItem>
+                      <SelectItem value="boleto">Boleto</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </>
             )}
 
             {/* Status (apenas em edição) */}

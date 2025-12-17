@@ -272,8 +272,8 @@ const GoogleCalendarIntegrationNew = () => {
                           onClick={handleBatchImport}
                           disabled={loading}
                         >
-                          <Download className="w-4 h-4 mr-1" />
-                          Importar
+                          <Copy className="w-4 h-4 mr-1" />
+                          Copiar
                         </Button>
                         <Button 
                           variant="outline" 
@@ -344,8 +344,8 @@ const GoogleCalendarIntegrationNew = () => {
                         onClick={handleImportAll}
                         disabled={loading}
                       >
-                        <Download className="w-4 h-4 mr-1" />
-                        Importar todos
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copiar todos
                       </Button>
                     </div>
                   )}

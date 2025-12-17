@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
 import { PlatformSession, GoogleSyncType, SYNC_TYPE_LABELS } from "@/types/googleCalendar"
 import { 
   Calendar, Clock, Upload, RefreshCw, MoreHorizontal, ExternalLink, 
@@ -33,12 +32,9 @@ export const PlatformSessionCard = ({
 }: PlatformSessionCardProps) => {
   const getSyncBadge = () => {
     const syncType = session.google_sync_type as GoogleSyncType
+    // Não mostrar badge "Local" - apenas mostrar se tem sync type definido
     if (!syncType || syncType === 'local') {
-      return (
-        <Badge variant="secondary" className="text-xs">
-          Local
-        </Badge>
-      )
+      return null
     }
     
     const config = SYNC_TYPE_LABELS[syncType]
@@ -168,38 +164,42 @@ export const PlatformSessionCard = ({
                 </TooltipContent>
               </Tooltip>
             )}
+            {canMirror && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={onMirror}
+                    disabled={isSyncing}
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{session.google_event_id ? 'Ativar Espelhamento' : 'Espelhar com Google'}</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {session.google_html_link && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8"
+                    onClick={() => window.open(session.google_html_link!, '_blank')}
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Ver no Google</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
           </TooltipProvider>
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="icon" variant="ghost" className="h-8 w-8">
-                <MoreHorizontal className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {canSendToGoogle && (
-                <DropdownMenuItem onClick={onSendToGoogle}>
-                  <Upload className="w-4 h-4 mr-2" />
-                  Enviar para Google
-                </DropdownMenuItem>
-              )}
-              {canMirror && (
-                <DropdownMenuItem onClick={onMirror}>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  {session.google_event_id ? 'Ativar Espelhamento' : 'Espelhar com Google'}
-                </DropdownMenuItem>
-              )}
-              {session.google_html_link && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => window.open(session.google_html_link!, '_blank')}>
-                    <ExternalLink className="w-4 h-4 mr-2" />
-                    Ver no Google
-                  </DropdownMenuItem>
-                </>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
       
