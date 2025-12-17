@@ -1,4 +1,4 @@
-import { createContext, useContext, ReactNode, useCallback } from 'react'
+import { createContext, useContext, ReactNode, useCallback, useEffect } from 'react'
 import { getSignedUrl } from '@/utils/storageUtils'
 
 /**
@@ -120,7 +120,7 @@ export const AvatarCacheProvider = ({ children }: AvatarCacheProviderProps) => {
   }, [getCachedAvatar])
 
   // Limpar cache expirado periodicamente
-  useCallback(() => {
+  useEffect(() => {
     const interval = setInterval(() => {
       const now = Date.now()
       let removed = 0
