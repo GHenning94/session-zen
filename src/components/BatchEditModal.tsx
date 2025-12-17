@@ -87,7 +87,7 @@ export function BatchEditModal({ open, onClose, onConfirm, selectedCount, type }
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Editar {selectedCount} {type === 'sessions' ? 'sessão' : 'pagamento'}{selectedCount !== 1 ? (type === 'sessions' ? 'ões' : 's') : ''}</DialogTitle>
+          <DialogTitle>Editar {selectedCount} {type === 'sessions' ? (selectedCount === 1 ? 'sessão' : 'sessões') : (selectedCount === 1 ? 'pagamento' : 'pagamentos')}</DialogTitle>
           <DialogDescription>
             Selecione os campos que deseja alterar. As mudanças serão aplicadas a todos os itens selecionados.
           </DialogDescription>

@@ -300,7 +300,10 @@ export const ClientDetailsModal = ({
         <div className="flex flex-wrap gap-2 pt-4 border-t mt-6">
           <Button
             variant="outline"
-            onClick={() => onEdit(client)}
+            onClick={() => {
+              onOpenChange(false)
+              onEdit(client)
+            }}
             className="flex items-center gap-2"
           >
             <Edit2 className="w-4 h-4" />
@@ -309,7 +312,10 @@ export const ClientDetailsModal = ({
           
           <Button
             variant="outline"
-            onClick={() => onOpenProntuario(client.id)}
+            onClick={() => {
+              onOpenChange(false)
+              onOpenProntuario(client.id)
+            }}
             className="flex items-center gap-2"
           >
             <FileText className="w-4 h-4" />
@@ -318,7 +324,10 @@ export const ClientDetailsModal = ({
           
           <Button
             variant="outline"
-            onClick={() => onToggleStatus(client.id, client.ativo !== false)}
+            onClick={() => {
+              onOpenChange(false)
+              onToggleStatus(client.id, client.ativo !== false)
+            }}
             className="flex items-center gap-2"
           >
             {client.ativo !== false ? (
