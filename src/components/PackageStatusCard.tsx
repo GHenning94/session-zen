@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
-import { Package, AlertCircle, CheckCircle, Clock } from 'lucide-react'
+import { Package, ChevronLeft, ChevronRight } from 'lucide-react'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { useNavigate } from 'react-router-dom'
+import { Button } from '@/components/ui/button'
 
 interface PackageStats {
   totalPackages: number
@@ -23,6 +25,10 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const navigate = useNavigate()
   const completionRate = stats.totalSessions > 0 
     ? Math.round((stats.consumedSessions / stats.totalSessions) * 100) 
+    : 0
+
+  const revenuePerSession = stats.totalSessions > 0 
+    ? stats.totalRevenue / stats.totalSessions 
     : 0
 
   return (
@@ -59,31 +65,16 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
         <div className="grid grid-cols-2 gap-4 pt-2 border-t">
           <div>
-            <p className="text-xs text-muted-foreground">Receita Total</p>
+            <p className="text-xs text-muted-foreground">Receita/Sessão</p>
             <p className="text-sm font-semibold text-primary">
-              {formatCurrencyBR(stats.totalRevenue)}
+              {formatCurrencyBR(revenuePerSession)}
             </p>
           </div>
           <div>
-            {stats.packagesNearEnd > 0 ? (
-              <div className="flex items-center gap-1">
-                <AlertCircle className="h-3 w-3 text-warning" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Alerta</p>
-                  <p className="text-sm font-semibold text-warning">
-                    {stats.packagesNearEnd} acabando
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1">
-                <CheckCircle className="h-3 w-3 text-success" />
-                <div>
-                  <p className="text-xs text-muted-foreground">Status</p>
-                  <p className="text-sm font-semibold text-success">Todos OK</p>
-                </div>
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground">Receita Total</p>
+            <p className="text-sm font-semibold">
+              {formatCurrencyBR(stats.totalRevenue)}
+            </p>
           </div>
         </div>
       </CardContent>

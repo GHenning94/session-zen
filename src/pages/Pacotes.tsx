@@ -11,12 +11,18 @@ import { PackageModal } from '@/components/PackageModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '@/hooks/useAuth';
+import { formatPaymentMethod } from '@/utils/formatters';
 
 export default function Pacotes() {
   const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
   const { getPackageProgress } = usePackages();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
+  // Fetch packages with client info
   const { data: packages, refetch } = useQuery({
     queryKey: ['packages'],
     queryFn: async () => {
@@ -36,6 +42,94 @@ export default function Pacotes() {
     }
   });
 
+  // Fetch sessions count per package
+  const { data: sessionCounts } = useQuery({
+    queryKey: ['package-session-counts'],
+    queryFn: async () => {
+      if (!packages || packages.length === 0) return {};
+      
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('package_id')
+        .in('package_id', packages.map(p => p.id));
+
+      if (error) throw error;
+      
+      const counts: { [key: string]: number } = {};
+      data?.forEach(s => {
+        if (s.package_id) {
+          counts[s.package_id] = (counts[s.package_id] || 0) + 1;
+        }
+      });
+      return counts;
+    },
+    enabled: !!packages && packages.length > 0
+  });
+
+  // Check for packages without sessions and send notification
+  useEffect(() => {
+    const checkAndNotifyPackages = async () => {
+      if (!packages || !sessionCounts || !user) return;
+
+      for (const pkg of packages) {
+        if (pkg.status !== 'ativo') continue;
+        
+        const createdSessions = sessionCounts[pkg.id] || 0;
+        const hasMissingPaymentMethod = !(pkg as any).metodo_pagamento || (pkg as any).metodo_pagamento === 'A definir';
+        
+        // Check if notification already sent recently (stored in localStorage)
+        const notificationKey = `package_notification_${pkg.id}`;
+        const lastNotified = localStorage.getItem(notificationKey);
+        const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+        
+        if (lastNotified && parseInt(lastNotified) > oneDayAgo) continue;
+
+        // Send notification for missing sessions
+        if (createdSessions < pkg.total_sessoes) {
+          const { data: existingNotification } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', user.id)
+            .ilike('titulo', `%${pkg.nome}%`)
+            .ilike('conteudo', '%criar sessões%')
+            .eq('lida', false)
+            .maybeSingle();
+
+          if (!existingNotification) {
+            await supabase.from('notifications').insert({
+              user_id: user.id,
+              titulo: `Pacote "${pkg.nome}" - Sessões pendentes`,
+              conteudo: `O pacote "${pkg.nome}" ainda não tem todas as sessões criadas (${createdSessions}/${pkg.total_sessoes}). Clique para criar as sessões. [REDIRECT:/pacotes]`
+            });
+            localStorage.setItem(notificationKey, Date.now().toString());
+          }
+        }
+
+        // Send notification for missing payment method
+        if (hasMissingPaymentMethod) {
+          const { data: existingPaymentNotification } = await supabase
+            .from('notifications')
+            .select('id')
+            .eq('user_id', user.id)
+            .ilike('titulo', `%${pkg.nome}%`)
+            .ilike('conteudo', '%método de pagamento%')
+            .eq('lida', false)
+            .maybeSingle();
+
+          if (!existingPaymentNotification) {
+            await supabase.from('notifications').insert({
+              user_id: user.id,
+              titulo: `Pacote "${pkg.nome}" - Método de pagamento`,
+              conteudo: `Defina o método de pagamento do pacote "${pkg.nome}" para manter suas métricas atualizadas. [PACKAGE_EDIT:${pkg.id}]`
+            });
+          }
+        }
+      }
+    };
+
+    checkAndNotifyPackages();
+  }, [packages, sessionCounts, user]);
+
   const statusConfig = {
     ativo: { label: 'Ativo', variant: 'default' as const, color: 'bg-green-500' },
     concluido: { label: 'Concluído', variant: 'secondary' as const, color: 'bg-blue-500' },
@@ -51,6 +145,20 @@ export default function Pacotes() {
     setSelectedPackage(null);
     setIsPackageModalOpen(false);
   };
+
+  // Check URL for package edit redirect
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const editPackageId = params.get('edit');
+    if (editPackageId && packages) {
+      const pkg = packages.find(p => p.id === editPackageId);
+      if (pkg) {
+        handleEditPackage(pkg);
+        // Clear URL param
+        window.history.replaceState({}, '', '/pacotes');
+      }
+    }
+  }, [packages]);
 
   return (
     <Layout>
@@ -122,6 +230,8 @@ export default function Pacotes() {
           {packages?.map((pkg: any) => {
             const progress = getPackageProgress(pkg);
             const config = statusConfig[pkg.status];
+            const createdSessions = sessionCounts?.[pkg.id] || 0;
+            const allSessionsCreated = createdSessions >= pkg.total_sessoes;
 
             return (
               <Card key={pkg.id} className="hover:shadow-lg transition-shadow">
@@ -155,6 +265,20 @@ export default function Pacotes() {
                     )}
                   </div>
 
+                  {/* Sessions Created Progress */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Sessões Criadas</span>
+                      <span className="font-medium">
+                        {createdSessions} / {pkg.total_sessoes}
+                      </span>
+                    </div>
+                    <Progress 
+                      value={(createdSessions / pkg.total_sessoes) * 100} 
+                      className="h-2" 
+                    />
+                  </div>
+
                   {/* Package Info */}
                   <div className="space-y-2 text-sm">
                     <div className="flex justify-between">
@@ -167,6 +291,12 @@ export default function Pacotes() {
                         R$ {pkg.valor_por_sessao?.toFixed(2) || (pkg.valor_total / pkg.total_sessoes).toFixed(2)}
                       </span>
                     </div>
+                    {pkg.metodo_pagamento && pkg.metodo_pagamento !== 'A definir' && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Pagamento:</span>
+                        <span className="font-medium">{formatPaymentMethod(pkg.metodo_pagamento)}</span>
+                      </div>
+                    )}
                     {pkg.data_inicio && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Início:</span>
@@ -191,17 +321,24 @@ export default function Pacotes() {
                     >
                       Editar
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => {
-                        // TODO: Navigate to sessions filtered by package
-                        window.location.href = `/sessoes?package_id=${pkg.id}`;
-                      }}
-                    >
-                      Ver Sessões
-                    </Button>
+                    {allSessionsCreated ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigate(`/sessoes?package_id=${pkg.id}`)}
+                      >
+                        Ver Sessões
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigate(`/sessoes?package_id=${pkg.id}&create=true`)}
+                      >
+                        Criar Sessões
+                      </Button>
+                    )}
                   </div>
                 </CardContent>
               </Card>
