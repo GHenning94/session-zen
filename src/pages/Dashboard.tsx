@@ -43,7 +43,7 @@ import { UpgradePlanCard } from "@/components/UpgradePlanCard"
 import { ActionableNotificationsBanner } from "@/components/ActionableNotificationsBanner"
 import { TutorialButton } from "@/components/TutorialButton"
 import { TutorialModal } from "@/components/TutorialModal"
-import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { formatCurrencyBR, formatTimeBR, formatDateBR, formatPaymentMethod } from "@/utils/formatters"
 import { cn } from "@/lib/utils"
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { toast } from "sonner"
@@ -567,7 +567,9 @@ const Dashboard = () => {
 
       const canalColors: Record<string, string> = {
         'pix': '#00D09C',
-        'cartao': '#6366F1', 
+        'cartao': '#6366F1',
+        'cartao_credito': '#6366F1',
+        'cartao_debito': '#818CF8',
         'dinheiro': '#F59E0B',
         'transferencia': '#8B5CF6',
         'A definir': '#6B7280'
@@ -575,7 +577,7 @@ const Dashboard = () => {
 
       const receitaPorCanalData = Object.entries(canalPayments)
         .map(([canal, valor]: [string, any]) => ({
-          canal: canal.charAt(0).toUpperCase() + canal.slice(1),
+          canal: formatPaymentMethod(canal),
           valor: valor,
           color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
         }))

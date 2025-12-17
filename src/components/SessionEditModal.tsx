@@ -21,7 +21,7 @@ const updateGoogleCalendarEvent = async (session: any, clientName: string): Prom
     const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
 
     const googleEvent = {
-      summary: `Sessão - ${clientName}`,
+      summary: clientName,
       description: session.anotacoes || '',
       start: {
         dateTime: startDateTime.toISOString(),
