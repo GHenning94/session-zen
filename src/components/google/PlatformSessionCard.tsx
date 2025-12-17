@@ -114,7 +114,12 @@ export const PlatformSessionCard = ({
                 </Tooltip>
               )}
               {session.recurring_session_id && (
-                <Badge variant="outline">Recorrente</Badge>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Repeat className="w-4 h-4 text-primary" />
+                  </TooltipTrigger>
+                  <TooltipContent>Sessão recorrente</TooltipContent>
+                </Tooltip>
               )}
               {getStatusBadge()}
               {getSyncBadge()}
