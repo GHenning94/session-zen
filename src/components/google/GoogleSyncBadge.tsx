@@ -25,7 +25,7 @@ export const GoogleSyncBadge = ({ syncType, showLabel = true, size = 'sm' }: Goo
             variant="outline" 
             className={`${size === 'sm' ? 'text-xs py-0 px-1.5' : ''}`}
           >
-            {showLabel && <span>{syncInfo.label}</span>}
+            {showLabel ? syncInfo.label : `G: ${syncInfo.label.split(': ')[1] || syncInfo.label}`}
           </Badge>
         </TooltipTrigger>
         <TooltipContent>
