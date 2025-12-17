@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -29,6 +29,7 @@ import { ClientAvatar } from '@/components/ClientAvatar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
+import { BatchSelectionBar, SelectableItemCheckbox } from '@/components/BatchSelectionBar'
 
 interface Session {
   id: string
@@ -90,6 +91,9 @@ export default function Sessoes() {
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
   const [selectedNoteForEvolucao, setSelectedNoteForEvolucao] = useState<SessionNote | null>(null)
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
+  
+  // Estado para seleção em lote
+  const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set())
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -262,7 +266,69 @@ export default function Sessoes() {
     }
   }
 
-  const handleViewSession = (sessionId: string) => {
+  // Funções de seleção em lote
+  const toggleSessionSelection = (sessionId: string) => {
+    setSelectedSessions(prev => {
+      const next = new Set(prev)
+      if (next.has(sessionId)) {
+        next.delete(sessionId)
+      } else {
+        next.add(sessionId)
+      }
+      return next
+    })
+  }
+
+  const selectAllSessions = () => {
+    setSelectedSessions(new Set(filteredSessions.map(s => s.id)))
+  }
+
+  const clearSessionSelection = () => {
+    setSelectedSessions(new Set())
+  }
+
+  const handleBatchDeleteSessions = async () => {
+    try {
+      const ids = Array.from(selectedSessions)
+      const { error } = await supabase
+        .from('sessions')
+        .delete()
+        .in('id', ids)
+
+      if (error) throw error
+
+      toast({
+        title: "Sessões excluídas",
+        description: `${ids.length} sessão(ões) excluída(s) com sucesso.`,
+      })
+      setSelectedSessions(new Set())
+      await loadData()
+      window.dispatchEvent(new Event('sessionUpdated'))
+    } catch (error) {
+      console.error('Erro ao excluir sessões:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível excluir as sessões.",
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleBatchEditSessions = () => {
+    if (selectedSessions.size === 1) {
+      const sessionId = Array.from(selectedSessions)[0]
+      const session = sessions.find(s => s.id === sessionId)
+      if (session) {
+        setSelectedSession(session)
+        setEditModalOpen(true)
+      }
+    } else {
+      toast({
+        title: "Edição em lote",
+        description: "Para editar múltiplas sessões, selecione uma de cada vez.",
+      })
+    }
+  }
     try {
       const session = sessions.find(s => s.id === sessionId)
       if (session) {
@@ -681,6 +747,20 @@ export default function Sessoes() {
               <CardTitle>Histórico de Sessões</CardTitle>
             </CardHeader>
             <CardContent>
+                {/* Barra de seleção em lote */}
+                {filteredSessions.length > 0 && (
+                  <BatchSelectionBar
+                    selectedCount={selectedSessions.size}
+                    totalCount={filteredSessions.length}
+                    onSelectAll={selectAllSessions}
+                    onClearSelection={clearSessionSelection}
+                    onBatchDelete={handleBatchDeleteSessions}
+                    onBatchEdit={handleBatchEditSessions}
+                    showDelete={true}
+                    showEdit={true}
+                  />
+                )}
+                
                 {loading ? (
                   <div className="text-center py-8">
                     <p className="text-muted-foreground">Carregando sessões...</p>
@@ -711,11 +791,13 @@ export default function Sessoes() {
                               className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
                               onClick={() => handleSessionClick(session)}
                             >
-                              {needsAttention && (
-                                <div className="absolute top-4 left-4">
-                                  <PulsingDot color="warning" size="md" />
-                                </div>
-                              )}
+                              <div className="absolute top-4 left-4 flex items-center gap-2">
+                                <SelectableItemCheckbox
+                                  isSelected={selectedSessions.has(session.id)}
+                                  onSelect={() => toggleSessionSelection(session.id)}
+                                />
+                                {needsAttention && <PulsingDot color="warning" size="md" />}
+                              </div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4 flex-1">
                                   <ClientAvatar 

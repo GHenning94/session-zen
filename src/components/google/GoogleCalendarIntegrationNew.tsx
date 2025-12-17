@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   Accordion,
   AccordionContent,
@@ -14,19 +15,24 @@ import {
 import { useSubscription } from "@/hooks/useSubscription"
 import { useGoogleCalendarSync } from "@/hooks/useGoogleCalendarSync"
 import { useConflictDetection } from "@/hooks/useConflictDetection"
+import { useActionHistory } from "@/hooks/useActionHistory"
 import { PlanProtection } from "@/components/PlanProtection"
 import { GoogleEventCard } from "./GoogleEventCard"
 import { PlatformSessionCard } from "./PlatformSessionCard"
 import { ConflictDetectionPanel } from "./ConflictDetectionPanel"
 import { SeriesSelectionModal } from "./SeriesSelectionModal"
+import { ActionHistoryPanel } from "./ActionHistoryPanel"
 import { getRecurringMasterId, GoogleEvent, isRecurringEvent } from "@/types/googleCalendar"
 import { 
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
-  ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle, XCircle
+  ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle, XCircle,
+  History, BookOpen
 } from "lucide-react"
 import { TooltipProvider} from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
+import { format } from "date-fns"
+import { ptBR } from "date-fns/locale"
 
 type SeriesActionType = 'import' | 'copy' | 'mirror' | 'ignore'
 
@@ -79,6 +85,9 @@ const GoogleCalendarIntegrationNew = () => {
     resolveAllConflicts,
   } = useConflictDetection({ getAccessToken })
 
+  // Hook de histórico de ações
+  const { history, addToHistory, clearHistory, undoAction } = useActionHistory()
+
   const [activeInfoTab, setActiveInfoTab] = useState("concepts")
   
   // State para o modal de seleção de série
@@ -86,6 +95,59 @@ const GoogleCalendarIntegrationNew = () => {
   const [seriesModalEvents, setSeriesModalEvents] = useState<GoogleEvent[]>([])
   const [seriesModalAction, setSeriesModalAction] = useState<SeriesActionType>('import')
   const [seriesModalLoading, setSeriesModalLoading] = useState(false)
+
+  // Função helper para formatar data do evento
+  const formatEventDate = (event: GoogleEvent) => {
+    const dateStr = event.start?.dateTime || event.start?.date
+    if (!dateStr) return 'Data não disponível'
+    return format(new Date(dateStr), "dd/MM/yy", { locale: ptBR })
+  }
+
+  // Wrappers para ações com histórico
+  const handleImportWithHistory = async (event: GoogleEvent, isEditable: boolean) => {
+    const sessionId = await importGoogleEvent(event, isEditable)
+    if (sessionId) {
+      addToHistory({
+        type: isEditable ? 'copy' : 'import',
+        eventId: event.id,
+        eventTitle: event.summary || 'Evento sem título',
+        eventDate: formatEventDate(event),
+        canUndo: true,
+        undoData: { sessionId }
+      })
+    }
+    return sessionId
+  }
+
+  const handleMirrorWithHistory = async (event: GoogleEvent) => {
+    const sessionId = await mirrorGoogleEvent(event)
+    if (sessionId) {
+      addToHistory({
+        type: 'mirror',
+        eventId: event.id,
+        eventTitle: event.summary || 'Evento sem título',
+        eventDate: formatEventDate(event),
+        canUndo: true,
+        undoData: { sessionId }
+      })
+    }
+    return sessionId
+  }
+
+  const handleIgnoreWithHistory = async (eventId: string, event: GoogleEvent) => {
+    const sessionId = await ignoreGoogleEvent(eventId)
+    if (sessionId) {
+      addToHistory({
+        type: 'ignore',
+        eventId: eventId,
+        eventTitle: event.summary || 'Evento sem título',
+        eventDate: formatEventDate(event),
+        canUndo: true,
+        undoData: { sessionId }
+      })
+    }
+    return sessionId
+  }
 
   // Sessões espelhadas (para detecção de conflitos)
   const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'espelhado')
@@ -348,6 +410,17 @@ const GoogleCalendarIntegrationNew = () => {
             </CardContent>
           </Card>
 
+          {/* Aviso no topo */}
+          {isSignedIn && (
+            <Alert className="bg-warning/10 border-warning/30">
+              <BookOpen className="h-4 w-4 text-warning" />
+              <AlertDescription className="text-sm">
+                <strong>Recomendação:</strong> Leia a <strong>legenda</strong> abaixo para entender o funcionamento completo da integração. 
+                Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
+              </AlertDescription>
+            </Alert>
+          )}
+
           {/* Cards lado a lado */}
           {isSignedIn && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -442,13 +515,13 @@ const GoogleCalendarIntegrationNew = () => {
                             isSyncing={syncing === event.id}
                             seriesCount={getSeriesCount(event)}
                             onSelect={() => toggleGoogleEventSelection(event.id)}
-                            onImport={() => importGoogleEvent(event, false)}
-                            onCopy={() => importGoogleEvent(event, true)}
+                            onImport={() => handleImportWithHistory(event, false).then(() => loadAllData())}
+                            onCopy={() => handleImportWithHistory(event, true).then(() => loadAllData())}
                             onImportSeries={() => handleSeriesAction(event, 'import')}
                             onCopySeries={() => handleSeriesAction(event, 'copy')}
-                            onMirror={() => mirrorGoogleEvent(event)}
+                            onMirror={() => handleMirrorWithHistory(event).then(() => loadAllData())}
                             onMirrorSeries={() => handleSeriesAction(event, 'mirror')}
-                            onIgnore={() => ignoreGoogleEvent(event.id).then(() => loadAllData())}
+                            onIgnore={() => handleIgnoreWithHistory(event.id, event).then(() => loadAllData())}
                             onIgnoreSeries={() => handleSeriesAction(event, 'ignore')}
                             onMarkAsClient={() => markAttendeesAsClients(event)}
                           />
@@ -646,7 +719,14 @@ const GoogleCalendarIntegrationNew = () => {
             />
           )}
 
-          {/* Área Informativa */}
+          {/* Histórico de Ações */}
+          {isSignedIn && (
+            <ActionHistoryPanel 
+              history={history}
+              onUndo={undoAction}
+              onClearHistory={clearHistory}
+            />
+          )}
           <Card className="shadow-soft border-border">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
@@ -664,13 +744,21 @@ const GoogleCalendarIntegrationNew = () => {
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Traz o evento do Google Agenda para a plataforma em <strong>modo de visualização</strong>. 
-                      A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada 
-                      (exceto valor e método de pagamento, para fins de métricas).
-                      Ideal para manter eventos sincronizados sem risco de alterações acidentais.
-                      O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Importado</Badge>.
-                    </p>
+                    <div className="space-y-3">
+                      <p className="text-sm text-muted-foreground">
+                        Traz o evento do Google Agenda para a plataforma em <strong>modo de visualização</strong>. 
+                        A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada 
+                        (exceto valor e método de pagamento, para fins de métricas).
+                        Ideal para manter eventos sincronizados sem risco de alterações acidentais.
+                        O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Importado</Badge>.
+                      </p>
+                      <div className="p-3 rounded-md bg-warning/10 border border-warning/20">
+                        <p className="text-sm text-muted-foreground">
+                          <strong className="text-warning">⚠️ Atenção:</strong> Ao <strong>importar</strong> eventos, eles serão removidos da lista de eventos do Google nesta página.
+                          Se você deseja manter os eventos visíveis no Google Calendar e ter controle total na plataforma, considere usar <strong>Copiar</strong> ou <strong>Espelhar</strong>.
+                        </p>
+                      </div>
+                    </div>
                   </AccordionContent>
                 </AccordionItem>
                 
@@ -794,25 +882,25 @@ const GoogleCalendarIntegrationNew = () => {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="warning">
+                <AccordionItem value="history">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-warning" />
-                      <span>Aviso importante sobre importação</span>
+                      <History className="w-4 h-4 text-primary" />
+                      <span>Histórico de Ações</span>
                     </div>
                   </AccordionTrigger>
                   <AccordionContent>
-                    <div className="space-y-2 text-sm text-muted-foreground p-3 rounded-md bg-warning/10 border border-warning/20">
+                    <div className="space-y-2 text-sm text-muted-foreground">
                       <p>
-                        <strong>Atenção:</strong> Ao <strong>importar</strong> eventos (somente leitura), eles serão removidos da lista de eventos do Google nesta página.
+                        Todas as ações realizadas (importar, copiar, espelhar, ignorar) são registradas no <strong>Histórico de Ações</strong> acima.
                       </p>
                       <p>
-                        Se você deseja manter os eventos visíveis no Google Calendar e ter controle total na plataforma, considere:
+                        <strong>Desfazer ações:</strong> Você pode reverter qualquer ação clicando em "Desfazer" no histórico. 
+                        Isso é útil quando você importa ou ignora um evento por engano.
                       </p>
-                      <ul className="list-disc pl-4 space-y-1">
-                        <li><strong>Copiar:</strong> Cria uma sessão independente e editável (não afeta o Google)</li>
-                        <li><strong>Espelhar:</strong> Mantém sincronização bidirecional entre as duas plataformas</li>
-                      </ul>
+                      <p className="text-xs pt-2 border-t mt-2">
+                        O histórico é mantido apenas durante a sessão atual. Ao recarregar a página, o histórico será limpo.
+                      </p>
                     </div>
                   </AccordionContent>
                 </AccordionItem>

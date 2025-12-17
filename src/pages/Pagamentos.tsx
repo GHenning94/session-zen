@@ -35,6 +35,7 @@ import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
+import { BatchSelectionBar, SelectableItemCheckbox } from "@/components/BatchSelectionBar"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -57,6 +58,7 @@ const [isLoading, setIsLoading] = useState(false)
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null)
   const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
   const [viewedPaymentIds, setViewedPaymentIds] = useState<Set<string>>(new Set())
+  const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set())
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -315,6 +317,37 @@ const getSessionPayments = () => {
       await markAsPaid(selectedSessionId, method)
       setPaymentModalOpen(false)
       setSelectedSessionId(null)
+    }
+  }
+
+  // Funções de seleção em lote
+  const togglePaymentSelection = (paymentId: string) => {
+    setSelectedPayments(prev => {
+      const next = new Set(prev)
+      if (next.has(paymentId)) next.delete(paymentId)
+      else next.add(paymentId)
+      return next
+    })
+  }
+
+  const selectAllPayments = () => setSelectedPayments(new Set(filteredPayments.map(p => p.id)))
+  const clearPaymentSelection = () => setSelectedPayments(new Set())
+
+  const handleBatchStatusChange = async (status: string) => {
+    try {
+      const ids = Array.from(selectedPayments)
+      const updateData: any = { status }
+      if (status === 'pago') updateData.data_pagamento = new Date().toISOString().split('T')[0]
+      
+      const { error } = await supabase.from('payments').update(updateData).in('id', ids)
+      if (error) throw error
+      
+      toast({ title: "Status atualizado", description: `${ids.length} pagamento(s) atualizado(s).` })
+      setSelectedPayments(new Set())
+      await loadData()
+      window.dispatchEvent(new Event('paymentUpdated'))
+    } catch (error) {
+      toast({ title: "Erro", description: "Não foi possível atualizar os pagamentos.", variant: "destructive" })
     }
   }
 
@@ -654,6 +687,23 @@ const pastPayments = filteredPayments.filter(item => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Barra de seleção em lote */}
+            {filteredPayments.length > 0 && (
+              <BatchSelectionBar
+                selectedCount={selectedPayments.size}
+                totalCount={filteredPayments.length}
+                onSelectAll={selectAllPayments}
+                onClearSelection={clearPaymentSelection}
+                onBatchStatusChange={handleBatchStatusChange}
+                showStatusChange={true}
+                statusOptions={[
+                  { value: 'pago', label: 'Pago' },
+                  { value: 'pendente', label: 'Pendente' },
+                  { value: 'cancelado', label: 'Cancelado' },
+                ]}
+              />
+            )}
+            
             {isLoading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Carregando pagamentos...</p>
