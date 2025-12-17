@@ -39,11 +39,22 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [currentIndex, setCurrentIndex] = useState(0)
+  const [isTransitioning, setIsTransitioning] = useState(false)
   
   // Swipe gesture state
   const touchStartX = useRef<number | null>(null)
   const touchEndX = useRef<number | null>(null)
   const minSwipeDistance = 50
+
+  // Smooth transition handler
+  const changePackage = (newIndex: number) => {
+    if (newIndex === currentIndex || isTransitioning) return
+    setIsTransitioning(true)
+    setTimeout(() => {
+      setCurrentIndex(newIndex)
+      setTimeout(() => setIsTransitioning(false), 50)
+    }, 150)
+  }
 
   // Fetch active packages with session counts
   const { data: packages = [] } = useQuery({
@@ -87,18 +98,27 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setCurrentIndex(prev => (prev === 0 ? activePackages.length - 1 : prev - 1))
+    const newIndex = currentIndex === 0 ? activePackages.length - 1 : currentIndex - 1
+    changePackage(newIndex)
   }
 
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setCurrentIndex(prev => (prev === activePackages.length - 1 ? 0 : prev + 1))
+    const newIndex = currentIndex === activePackages.length - 1 ? 0 : currentIndex + 1
+    changePackage(newIndex)
   }
 
   const goToIndex = (index: number, e: React.MouseEvent) => {
     e.stopPropagation()
-    setCurrentIndex(index)
+    changePackage(index)
   }
+
+  // Reset index if packages change
+  useEffect(() => {
+    if (currentIndex >= activePackages.length) {
+      setCurrentIndex(0)
+    }
+  }, [activePackages.length, currentIndex])
 
   // Reset index if packages change
   useEffect(() => {
@@ -126,11 +146,13 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     
     if (isLeftSwipe && activePackages.length > 1) {
       // Swipe left = next package
-      setCurrentIndex(prev => (prev === activePackages.length - 1 ? 0 : prev + 1))
+      const newIndex = currentIndex === activePackages.length - 1 ? 0 : currentIndex + 1
+      changePackage(newIndex)
     }
     if (isRightSwipe && activePackages.length > 1) {
       // Swipe right = previous package
-      setCurrentIndex(prev => (prev === 0 ? activePackages.length - 1 : prev - 1))
+      const newIndex = currentIndex === 0 ? activePackages.length - 1 : currentIndex - 1
+      changePackage(newIndex)
     }
     
     touchStartX.current = null
@@ -195,44 +217,52 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
         <Package className="h-4 w-4 text-primary" />
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Package Name */}
-        <div className="space-y-1">
-          <span className="text-lg font-bold truncate block">{currentPackage?.nome}</span>
-          <p className="text-xs text-muted-foreground">Pacote ativo</p>
-        </div>
+        <div 
+          className={`space-y-4 transition-all duration-200 ease-out ${
+            isTransitioning 
+              ? 'opacity-0 transform translate-x-2' 
+              : 'opacity-100 transform translate-x-0'
+          }`}
+        >
+          {/* Package Name */}
+          <div className="space-y-1">
+            <span className="text-lg font-bold truncate block">{currentPackage?.nome}</span>
+            <p className="text-xs text-muted-foreground">Pacote ativo</p>
+          </div>
 
-        {/* Sessions Progress (consumidas) */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Sessões Consumidas</span>
-            <span className="font-medium">{completionRate}%</span>
+          {/* Sessions Progress (consumidas) */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Sessões Consumidas</span>
+              <span className="font-medium">{completionRate}%</span>
+            </div>
+            <Progress value={completionRate} className="h-2" />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{currentPackage?.sessoes_consumidas || 0} consumidas</span>
+              <span>{(currentPackage?.total_sessoes || 0) - (currentPackage?.sessoes_consumidas || 0)} restantes</span>
+            </div>
           </div>
-          <Progress value={completionRate} className="h-2" />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{currentPackage?.sessoes_consumidas || 0} consumidas</span>
-            <span>{(currentPackage?.total_sessoes || 0) - (currentPackage?.sessoes_consumidas || 0)} restantes</span>
-          </div>
-        </div>
 
-        {/* Sessions Created Progress */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-muted-foreground">Sessões Criadas</span>
-            <span className="font-medium">{sessionsCreatedRate}%</span>
+          {/* Sessions Created Progress */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Sessões Criadas</span>
+              <span className="font-medium">{sessionsCreatedRate}%</span>
+            </div>
+            <Progress value={sessionsCreatedRate} className="h-2" />
+            <div className="flex items-center justify-between text-xs text-muted-foreground">
+              <span>{currentPackage?.sessoes_criadas || 0} criadas</span>
+              <span>{currentPackage?.total_sessoes || 0} total</span>
+            </div>
           </div>
-          <Progress value={sessionsCreatedRate} className="h-2" />
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{currentPackage?.sessoes_criadas || 0} criadas</span>
-            <span>{currentPackage?.total_sessoes || 0} total</span>
-          </div>
-        </div>
 
-        {/* Revenue per Session */}
-        <div className="pt-2 border-t">
-          <p className="text-xs text-muted-foreground">Receita/Sessão</p>
-          <p className="text-sm font-semibold text-primary">
-            {formatCurrencyBR(revenuePerSession)}
-          </p>
+          {/* Revenue per Session */}
+          <div className="pt-2 border-t">
+            <p className="text-xs text-muted-foreground">Receita/Sessão</p>
+            <p className="text-sm font-semibold text-primary">
+              {formatCurrencyBR(revenuePerSession)}
+            </p>
+          </div>
         </div>
 
         {/* Carousel Navigation Dots */}
