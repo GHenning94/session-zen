@@ -524,7 +524,7 @@ const GoogleCalendarIntegrationNew = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col min-h-[520px]">
                   {loading ? (
                     <div className="flex items-center justify-center py-12">
                       <RefreshCw className="w-6 h-6 animate-spin mr-2" />
@@ -666,7 +666,7 @@ const GoogleCalendarIntegrationNew = () => {
                     )}
                   </div>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="flex flex-col min-h-[520px]">
                   {/* Filtros */}
                   <Tabs defaultValue="local" className="w-full">
                     <TabsList className="grid w-full grid-cols-3">
@@ -697,6 +697,7 @@ const GoogleCalendarIntegrationNew = () => {
                                 session={session}
                                 isSelected={selectedPlatformSessions.has(session.id)}
                                 isSyncing={syncing === session.id}
+                                showCheckbox={isPlatformSelectionMode}
                                 onSelect={() => togglePlatformSessionSelection(session.id)}
                                 onSendToGoogle={() => sendToGoogle(session)}
                                 onMirror={() => mirrorPlatformSession(session)}
@@ -760,8 +761,11 @@ const GoogleCalendarIntegrationNew = () => {
                     </TabsContent>
                   </Tabs>
                   
+                  {/* Spacer para alinhar com o card da esquerda */}
+                  <div className="flex-grow" />
+                  
                   {localSessions.length > 0 ? (
-                    <div className="mt-4 pt-4 border-t flex justify-end gap-2">
+                    <div className="mt-auto pt-4 border-t flex justify-end gap-2">
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -773,7 +777,7 @@ const GoogleCalendarIntegrationNew = () => {
                       </Button>
                     </div>
                   ) : (
-                    <div className="mt-4 pt-4 border-t flex justify-end gap-2 invisible">
+                    <div className="mt-auto pt-4 border-t flex justify-end gap-2 invisible">
                       <Button variant="outline" size="sm" disabled>
                         <Upload className="w-4 h-4 mr-1" />
                         Enviar todos para Google

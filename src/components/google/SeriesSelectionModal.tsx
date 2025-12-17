@@ -156,6 +156,7 @@ export const SeriesSelectionModal = ({
                     <Checkbox
                       checked={isSelected}
                       onCheckedChange={() => toggleEvent(event.id)}
+                      onClick={(e) => e.stopPropagation()}
                     />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{event.summary}</p>

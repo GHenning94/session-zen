@@ -255,10 +255,10 @@ export const useMetas = () => {
     return metas.find(m => m.tipo === tipo && m.ativa && !m.concluida);
   };
 
-  const getTipoLabel = (tipo: MetaTipo): string => {
+  const getTipoLabel = (tipo: MetaTipo, clientTermPlural: string = 'Clientes'): string => {
     const labels: Record<MetaTipo, string> = {
       sessoes: 'Sessões',
-      clientes: 'Clientes',
+      clientes: clientTermPlural,
       receita: 'Receita Mensal',
       pacotes: 'Pacotes',
       ticket_medio: 'Performance (Taxa de conclusão de sessões)'

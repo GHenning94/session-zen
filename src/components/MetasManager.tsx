@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useMetas, MetaTipo } from '@/hooks/useMetas';
+import { useTerminology } from '@/hooks/useTerminology';
 import { CheckCircle2, Target, Pencil, Trash2, History } from 'lucide-react';
 import { formatCurrencyBR } from '@/utils/formatters';
 import {
@@ -22,6 +23,7 @@ import {
 
 export const MetasManager = () => {
   const { metas, isLoading, createMeta, updateMeta, deleteMeta, getTipoLabel } = useMetas();
+  const { clientTermPlural } = useTerminology();
   const [novoValor, setNovoValor] = useState<Record<MetaTipo, string>>({
     sessoes: '',
     clientes: '',
@@ -136,7 +138,7 @@ export const MetasManager = () => {
               <Card key={tipo}>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">{getTipoLabel(tipo)}</CardTitle>
+                    <CardTitle className="text-lg">{getTipoLabel(tipo, clientTermPlural)}</CardTitle>
                     {!metaAtiva && metaConcluida && (
                       <Badge variant="success" className="flex items-center gap-1">
                         <CheckCircle2 className="h-3 w-3" />
@@ -256,7 +258,7 @@ export const MetasManager = () => {
           return (
             <Card key={tipo}>
               <CardHeader>
-                <CardTitle className="text-lg">{getTipoLabel(tipo)}</CardTitle>
+                <CardTitle className="text-lg">{getTipoLabel(tipo, clientTermPlural)}</CardTitle>
                 <CardDescription>
                   {historico.length} meta{historico.length > 1 ? 's' : ''} concluída{historico.length > 1 ? 's' : ''}
                 </CardDescription>
