@@ -5,6 +5,15 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Hash session token using SHA-256 to match stored hash
+async function hashSessionToken(token: string): Promise<string> {
+  const encoder = new TextEncoder()
+  const data = encoder.encode(token)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -25,11 +34,14 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Buscar sessão
+    // Hash the provided token to compare with stored hash
+    const hashedToken = await hashSessionToken(sessionToken)
+
+    // Buscar sessão usando o token hasheado
     const { data: session, error: sessionError } = await supabase
       .from('admin_sessions')
       .select('*')
-      .eq('session_token', sessionToken)
+      .eq('session_token', hashedToken)
       .eq('revoked', false)
       .single()
 
