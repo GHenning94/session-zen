@@ -461,7 +461,7 @@ export const SessionEditModal = ({
               <SelectContent>
                 <SelectItem value="agendada">Agendada</SelectItem>
                 <SelectItem value="realizada">Realizada</SelectItem>
-                <SelectItem value="faltou">Faltou</SelectItem>
+                <SelectItem value="faltou">Falta</SelectItem>
                 <SelectItem value="cancelada">Cancelada</SelectItem>
               </SelectContent>
             </Select>

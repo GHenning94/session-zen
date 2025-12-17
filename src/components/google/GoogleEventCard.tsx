@@ -163,10 +163,6 @@ export const GoogleEventCard = ({
                 <Download className="w-4 h-4 mr-2" />
                 Importar (somente leitura)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onImport(true)}>
-                <Copy className="w-4 h-4 mr-2" />
-                Criar cópia editável (independente)
-              </DropdownMenuItem>
               
               {/* Opções para série recorrente */}
               {isRecurring && hasMultipleInstances && onImportSeries && (
