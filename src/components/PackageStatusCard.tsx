@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Package, ChevronLeft, ChevronRight } from 'lucide-react'
@@ -39,6 +39,11 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [currentIndex, setCurrentIndex] = useState(0)
+  
+  // Swipe gesture state
+  const touchStartX = useRef<number | null>(null)
+  const touchEndX = useRef<number | null>(null)
+  const minSwipeDistance = 50
 
   // Fetch active packages with session counts
   const { data: packages = [] } = useQuery({
@@ -102,6 +107,36 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     }
   }, [activePackages.length, currentIndex])
 
+  // Swipe gesture handlers
+  const onTouchStart = (e: React.TouchEvent) => {
+    touchEndX.current = null
+    touchStartX.current = e.targetTouches[0].clientX
+  }
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    touchEndX.current = e.targetTouches[0].clientX
+  }
+
+  const onTouchEnd = () => {
+    if (!touchStartX.current || !touchEndX.current) return
+    
+    const distance = touchStartX.current - touchEndX.current
+    const isLeftSwipe = distance > minSwipeDistance
+    const isRightSwipe = distance < -minSwipeDistance
+    
+    if (isLeftSwipe && activePackages.length > 1) {
+      // Swipe left = next package
+      setCurrentIndex(prev => (prev === activePackages.length - 1 ? 0 : prev + 1))
+    }
+    if (isRightSwipe && activePackages.length > 1) {
+      // Swipe right = previous package
+      setCurrentIndex(prev => (prev === 0 ? activePackages.length - 1 : prev - 1))
+    }
+    
+    touchStartX.current = null
+    touchEndX.current = null
+  }
+
   // If no active packages, show summary card
   if (activePackages.length === 0) {
     const completionRate = stats.totalSessions > 0 
@@ -149,8 +184,11 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary"
+      className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary select-none"
       onClick={() => navigate('/pacotes')}
+      onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
+      onTouchEnd={onTouchEnd}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
