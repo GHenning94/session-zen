@@ -878,7 +878,9 @@ const Dashboard = () => {
 
       const canalColors: Record<string, string> = {
         'pix': '#00D09C',
-        'cartao': '#6366F1', 
+        'cartao': '#6366F1',
+        'cartao_credito': '#6366F1',
+        'cartao_debito': '#818CF8',
         'dinheiro': '#F59E0B',
         'transferencia': '#8B5CF6',
         'A definir': '#6B7280',
@@ -887,7 +889,7 @@ const Dashboard = () => {
 
       const filteredCanalData = Object.entries(canalData)
         .map(([canal, valor]) => ({
-          canal: canal.charAt(0).toUpperCase() + canal.slice(1),
+          canal: formatPaymentMethod(canal),
           valor: valor,
           color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
         }))
