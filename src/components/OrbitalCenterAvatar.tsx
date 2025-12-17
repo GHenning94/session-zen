@@ -110,7 +110,7 @@ export const OrbitalCenterAvatar = ({
   };
 
   return (
-    <>
+    <div className="contents">
       <div 
         className="absolute w-24 h-24 rounded-full bg-gradient-primary flex items-center justify-center z-10 group cursor-pointer pointer-events-auto"
         onClick={handleClick}
@@ -184,6 +184,6 @@ export const OrbitalCenterAvatar = ({
           circularCrop={true}
         />
       )}
-    </>
+    </div>
   );
 };

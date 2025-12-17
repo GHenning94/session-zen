@@ -100,7 +100,7 @@ const ThemeTransitionOverlay = () => (
 // Analytics wrapper to track page views
 const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
   useGoogleAnalytics()
-  return <>{children}</>
+  return <div className="contents">{children}</div>
 }
 
 const App = () => (
