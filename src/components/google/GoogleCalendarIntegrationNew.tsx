@@ -186,6 +186,12 @@ const GoogleCalendarIntegrationNew = () => {
                         : 'Conecte para visualizar e sincronizar eventos'
                       }
                     </p>
+                    {isSignedIn && (
+                      <p className="text-xs text-muted-foreground/70 flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        Mostrando eventos dos próximos 30 dias
+                      </p>
+                    )}
                   </div>
                 </div>
                 
