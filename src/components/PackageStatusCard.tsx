@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useQuery } from '@tanstack/react-query'
-import { cn } from '@/lib/utils'
 
 interface PackageWithSessions {
   id: string
@@ -42,8 +41,6 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const { user } = useAuth()
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
-  const [animatedCompletionRate, setAnimatedCompletionRate] = useState(0)
-  const [animatedSessionsCreatedRate, setAnimatedSessionsCreatedRate] = useState(0)
   
   // Swipe gesture state
   const touchStartX = useRef<number | null>(null)
@@ -208,23 +205,6 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     ? Math.round((currentPackage.sessoes_criadas / currentPackage.total_sessoes) * 100) 
     : 0
 
-  // Animate progress bars when values change
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setAnimatedCompletionRate(completionRate)
-      setAnimatedSessionsCreatedRate(sessionsCreatedRate)
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [completionRate, sessionsCreatedRate, currentIndex])
-
-  // Reset animated values on package change for smooth transition
-  useEffect(() => {
-    if (isTransitioning) {
-      setAnimatedCompletionRate(0)
-      setAnimatedSessionsCreatedRate(0)
-    }
-  }, [isTransitioning])
-
   const revenuePerSession = currentPackage?.valor_por_sessao || 
     (currentPackage ? currentPackage.valor_total / currentPackage.total_sessoes : 0)
 
@@ -292,10 +272,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
               <span className="text-muted-foreground">Sessões Consumidas</span>
               <span className="font-medium">{completionRate}%</span>
             </div>
-            <Progress 
-              value={animatedCompletionRate} 
-              className={cn("h-2 transition-all duration-700 ease-out")}
-            />
+            <Progress value={completionRate} className="h-2" />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{currentPackage?.sessoes_consumidas || 0} consumidas</span>
               <span>{(currentPackage?.total_sessoes || 0) - (currentPackage?.sessoes_consumidas || 0)} restantes</span>
@@ -308,10 +285,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
               <span className="text-muted-foreground">Sessões Criadas</span>
               <span className="font-medium">{sessionsCreatedRate}%</span>
             </div>
-            <Progress 
-              value={animatedSessionsCreatedRate} 
-              className={cn("h-2 transition-all duration-700 ease-out")}
-            />
+            <Progress value={sessionsCreatedRate} className="h-2" />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{currentPackage?.sessoes_criadas || 0} criadas</span>
               <span>{currentPackage?.total_sessoes || 0} total</span>
