@@ -16,8 +16,7 @@ import {
   ChevronLeft, 
   ChevronRight,
   RefreshCw,
-  Link,
-  Repeat
+  Link
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -255,13 +254,6 @@ const Agenda = () => {
           </div>
           <div className="flex gap-2">
             <Button 
-              variant="outline"
-              onClick={() => window.location.href = '/sessoes-recorrentes'}
-            >
-              <Repeat className="w-4 h-4 mr-2" />
-              Recorrências
-            </Button>
-            <Button 
               className="bg-gradient-primary hover:opacity-90"
               onClick={() => setIsNewSessionOpen(true)}
             >
@@ -324,10 +316,14 @@ const Agenda = () => {
             {/* Google Calendar Integration */}
             {isGoogleConnected ? (
               <div className="flex items-center gap-2">
-                <Badge variant="secondary" className="bg-success/10 text-success border-success/20">
-                  <Link className="h-3 w-3 mr-1" />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="bg-success/10 text-success border-success/20 hover:bg-success/20"
+                >
+                  <Link className="h-4 w-4 mr-2" />
                   Google Calendar
-                </Badge>
+                </Button>
                 <Button
                   variant="outline"
                   size="sm"
