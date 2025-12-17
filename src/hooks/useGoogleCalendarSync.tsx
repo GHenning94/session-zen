@@ -486,7 +486,7 @@ export const useGoogleCalendarSync = () => {
       }
 
       // Mirror não define valor inicialmente para evitar criação automática de pagamento
-      const { error: sessionError } = await supabase
+      const { data: newSession, error: sessionError } = await supabase
         .from('sessions')
         .insert([{
           user_id: user.id,
@@ -504,8 +504,20 @@ export const useGoogleCalendarSync = () => {
           google_recurrence_id: event.recurringEventId || null,
           google_last_synced: new Date().toISOString()
         }])
+        .select()
+        .single()
 
       if (sessionError) throw sessionError
+
+      // Criar notificação para lembrar de definir valor/pagamento
+      if (newSession) {
+        await supabase.from('notifications').insert([{
+          user_id: user.id,
+          titulo: "Defina o valor da sessão espelhada",
+          conteudo: `A sessão "${event.summary}" foi espelhada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
+          lida: false
+        }])
+      }
 
       toast({
         title: "Espelhamento ativado!",

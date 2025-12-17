@@ -1248,7 +1248,9 @@ const Dashboard = () => {
                                 </Tooltip>
                               )}
                             </TooltipProvider>
-                            <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} />
+                            {session.google_sync_type && (
+                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} />
+                            )}
                             <Badge
                               variant={
                                 session.status === 'realizada' ? 'success' :

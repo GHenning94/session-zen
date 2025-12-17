@@ -117,13 +117,11 @@ const NotificationDropdown = () => {
   const NotificationItem = ({ 
     notification, 
     onClick, 
-    onDelete,
     isSelected = false,
     showFullContent = false
   }: { 
     notification: Notification
     onClick?: () => void
-    onDelete: (id: string, e?: React.MouseEvent) => void
     isSelected?: boolean
     showFullContent?: boolean
   }) => (
@@ -140,21 +138,11 @@ const NotificationDropdown = () => {
       </div>
       
       <div className="flex-1 min-w-0">
-        <div className="flex items-start justify-between gap-2">
-          <h4 className={`text-sm font-medium ${showFullContent ? '' : 'truncate'} ${
-            !notification.lida ? 'text-foreground' : 'text-muted-foreground'
-          }`}>
-            {notification.titulo}
-          </h4>
-          <Button
-            variant="ghost"
-            size="icon" 
-            className="h-6 w-6 shrink-0 text-destructive hover:text-destructive hover:bg-destructive/10"
-            onClick={(e) => onDelete(notification.id, e)}
-          >
-            <Trash2 className="w-3 h-3" />
-          </Button>
-        </div>
+        <h4 className={`text-sm font-medium ${showFullContent ? '' : 'truncate'} ${
+          !notification.lida ? 'text-foreground' : 'text-muted-foreground'
+        }`}>
+          {notification.titulo}
+        </h4>
         
         <p className={`text-xs text-muted-foreground mt-1 ${showFullContent ? '' : 'line-clamp-2'}`}>
           {getDisplayContent(notification.conteudo)}
@@ -236,7 +224,6 @@ const NotificationDropdown = () => {
                       key={notification.id}
                       notification={notification}
                       onClick={() => handleNotificationClick(notification)}
-                      onDelete={handleDelete}
                     />
                   ))}
                 </div>
@@ -290,8 +277,8 @@ const NotificationDropdown = () => {
                 <p className="text-foreground whitespace-pre-wrap">{getDisplayContent(selectedNotification.conteudo)}</p>
               </div>
               
-              <div className="flex gap-2 pt-4">
-                {extractSessionId(selectedNotification.conteudo) ? (
+              {extractSessionId(selectedNotification.conteudo) && (
+                <div className="flex gap-2 pt-4">
                   <Button 
                     className="flex-1"
                     onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
@@ -299,25 +286,8 @@ const NotificationDropdown = () => {
                     <Edit2 className="w-4 h-4 mr-2" />
                     Editar Sessão
                   </Button>
-                ) : (
-                  <>
-                    <Button 
-                      variant="outline" 
-                      className="flex-1"
-                      onClick={() => setSideSheetOpen(false)}
-                    >
-                      Fechar
-                    </Button>
-                    <Button 
-                      variant="destructive"
-                      onClick={() => handleDelete(selectedNotification.id)}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Excluir
-                    </Button>
-                  </>
-                )}
-              </div>
+                </div>
+              )}
             </div>
           )}
         </SheetContent>
@@ -372,7 +342,6 @@ const NotificationDropdown = () => {
                             markAsRead(notification.id)
                           }
                         }}
-                        onDelete={handleDelete}
                         isSelected={selectedNotification?.id === notification.id}
                       />
                     ))
@@ -406,8 +375,8 @@ const NotificationDropdown = () => {
                       </p>
                     </div>
                     
-                    <div className="pt-4">
-                      {extractSessionId(selectedNotification.conteudo) ? (
+                    {extractSessionId(selectedNotification.conteudo) && (
+                      <div className="pt-4">
                         <Button 
                           size="sm"
                           onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
@@ -415,17 +384,8 @@ const NotificationDropdown = () => {
                           <Edit2 className="w-4 h-4 mr-2" />
                           Editar Sessão
                         </Button>
-                      ) : (
-                        <Button 
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(selectedNotification.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Excluir notificação
-                        </Button>
-                      )}
-                    </div>
+                      </div>
+                    )}
                   </div>
                 </ScrollArea>
               ) : (

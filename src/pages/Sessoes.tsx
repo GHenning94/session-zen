@@ -602,22 +602,6 @@ export default function Sessoes() {
                 />
               </div>
               
-              <div>
-                <Label htmlFor="client-filter">Cliente</Label>
-                <Select value={filters.client} onValueChange={(value) => setFilters(prev => ({ ...prev, client: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os clientes" />
-                  </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Todos os clientes</SelectItem>
-                    {clients.map((client) => (
-                      <SelectItem key={client.id} value={client.id}>
-                        {client.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               
               <div>
                 <Label htmlFor="status-filter">Status</Label>
