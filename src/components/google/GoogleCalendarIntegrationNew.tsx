@@ -168,6 +168,15 @@ const GoogleCalendarIntegrationNew = () => {
     }
   }, [isSignedIn, platformSessions, googleEvents, detectAllConflicts])
 
+  // Listener para refresh após undo
+  useEffect(() => {
+    const handleRefresh = () => {
+      loadAllData()
+    }
+    window.addEventListener('googleCalendarRefresh', handleRefresh)
+    return () => window.removeEventListener('googleCalendarRefresh', handleRefresh)
+  }, [loadAllData])
+
   // Helper para obter contagem de instâncias de série
   const getSeriesCount = (event: any): number => {
     const masterId = getRecurringMasterId(event)
@@ -324,6 +333,15 @@ const GoogleCalendarIntegrationNew = () => {
     <PlanProtection feature="hasAdvancedSettings">
       <TooltipProvider>
         <div className="space-y-6">
+          {/* Aviso no topo - acima de tudo */}
+          <Alert className="bg-warning/10 border-warning/30">
+            <BookOpen className="h-4 w-4 text-warning" />
+            <AlertDescription className="text-sm">
+              <strong>Recomendação:</strong> Leia a <strong>legenda</strong> abaixo para entender o funcionamento completo da integração. 
+              Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
+            </AlertDescription>
+          </Alert>
+
           {/* Status da Conexão */}
           <Card className="shadow-soft">
             <CardHeader>
@@ -410,16 +428,6 @@ const GoogleCalendarIntegrationNew = () => {
             </CardContent>
           </Card>
 
-          {/* Aviso no topo */}
-          {isSignedIn && (
-            <Alert className="bg-warning/10 border-warning/30">
-              <BookOpen className="h-4 w-4 text-warning" />
-              <AlertDescription className="text-sm">
-                <strong>Recomendação:</strong> Leia a <strong>legenda</strong> abaixo para entender o funcionamento completo da integração. 
-                Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
-              </AlertDescription>
-            </Alert>
-          )}
 
           {/* Cards lado a lado */}
           {isSignedIn && (
@@ -856,6 +864,29 @@ const GoogleCalendarIntegrationNew = () => {
                   </AccordionContent>
                 </AccordionItem>
                 
+                <AccordionItem value="history">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <History className="w-4 h-4 text-primary" />
+                      <span>Histórico de Ações</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p>
+                        Todas as ações realizadas (importar, copiar, espelhar, ignorar) são registradas no <strong>Histórico de Ações</strong> acima.
+                      </p>
+                      <p>
+                        <strong>Desfazer ações:</strong> Você pode reverter qualquer ação clicando em "Desfazer" no histórico. 
+                        Isso é útil quando você importa ou ignora um evento por engano.
+                      </p>
+                      <p className="text-xs pt-2 border-t mt-2">
+                        O histórico é mantido apenas durante a sessão atual. Ao recarregar a página, o histórico será limpo.
+                      </p>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+                
                 <AccordionItem value="conflicts">
                   <AccordionTrigger className="hover:no-underline">
                     <div className="flex items-center gap-2">
@@ -878,28 +909,6 @@ const GoogleCalendarIntegrationNew = () => {
                       <p>
                         Você pode resolver conflitos mantendo os dados da plataforma, do Google, 
                         ou fazendo um merge manual escolhendo campo a campo.
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                <AccordionItem value="history">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <History className="w-4 h-4 text-primary" />
-                      <span>Histórico de Ações</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>
-                        Todas as ações realizadas (importar, copiar, espelhar, ignorar) são registradas no <strong>Histórico de Ações</strong> acima.
-                      </p>
-                      <p>
-                        <strong>Desfazer ações:</strong> Você pode reverter qualquer ação clicando em "Desfazer" no histórico. 
-                        Isso é útil quando você importa ou ignora um evento por engano.
-                      </p>
-                      <p className="text-xs pt-2 border-t mt-2">
-                        O histórico é mantido apenas durante a sessão atual. Ao recarregar a página, o histórico será limpo.
                       </p>
                     </div>
                   </AccordionContent>

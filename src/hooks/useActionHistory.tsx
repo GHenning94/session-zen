@@ -26,75 +26,86 @@ export function useActionHistory() {
   }, [])
 
   const undoAction = useCallback(async (item: ActionHistoryItem): Promise<boolean> => {
-    if (!item.canUndo || !item.undoData || !user) return false
+    if (!item.canUndo || !user) {
+      console.log('Cannot undo: canUndo=', item.canUndo, 'user=', !!user)
+      return false
+    }
+
+    if (!item.undoData?.sessionId) {
+      console.log('Cannot undo: no sessionId in undoData', item.undoData)
+      return false
+    }
 
     try {
+      console.log('Undoing action:', item.type, 'sessionId:', item.undoData.sessionId)
+      
       switch (item.type) {
         case 'import':
         case 'copy':
           // Desfazer importação: excluir sessão criada
-          if (item.undoData.sessionId) {
-            const { error } = await supabase
-              .from('sessions')
-              .delete()
-              .eq('id', item.undoData.sessionId)
-              .eq('user_id', user.id)
-            
-            if (error) throw error
+          const { error: deleteError } = await supabase
+            .from('sessions')
+            .delete()
+            .eq('id', item.undoData.sessionId)
+          
+          if (deleteError) {
+            console.error('Delete error:', deleteError)
+            throw deleteError
           }
           break
 
         case 'mirror':
           // Desfazer espelhamento: remover google_sync_type da sessão
-          if (item.undoData.sessionId) {
-            const { error } = await supabase
-              .from('sessions')
-              .update({ 
-                google_sync_type: null,
-                google_event_id: null 
-              })
-              .eq('id', item.undoData.sessionId)
-              .eq('user_id', user.id)
-            
-            if (error) throw error
+          const { error: mirrorError } = await supabase
+            .from('sessions')
+            .update({ 
+              google_sync_type: null,
+              google_event_id: null 
+            })
+            .eq('id', item.undoData.sessionId)
+          
+          if (mirrorError) {
+            console.error('Mirror undo error:', mirrorError)
+            throw mirrorError
           }
           break
 
         case 'ignore':
-          // Desfazer ignorar: remover o registro de ignorado
-          // Eventos ignorados são removidos da lista, então precisamos restaurar
-          // Para isso, podemos simplesmente limpar o evento do histórico de ignorados
-          if (item.undoData.sessionId) {
-            const { error } = await supabase
-              .from('sessions')
-              .delete()
-              .eq('id', item.undoData.sessionId)
-              .eq('user_id', user.id)
-              .eq('google_sync_type', 'ignorado')
-            
-            if (error) throw error
+          // Desfazer ignorar: excluir a sessão marcada como ignorada
+          const { error: ignoreError } = await supabase
+            .from('sessions')
+            .delete()
+            .eq('id', item.undoData.sessionId)
+          
+          if (ignoreError) {
+            console.error('Ignore undo error:', ignoreError)
+            throw ignoreError
           }
           break
 
         case 'send':
           // Desfazer envio: remover google_sync_type
-          if (item.undoData.sessionId) {
-            const { error } = await supabase
-              .from('sessions')
-              .update({ 
-                google_sync_type: null,
-                google_event_id: null 
-              })
-              .eq('id', item.undoData.sessionId)
-              .eq('user_id', user.id)
-            
-            if (error) throw error
+          const { error: sendError } = await supabase
+            .from('sessions')
+            .update({ 
+              google_sync_type: null,
+              google_event_id: null 
+            })
+            .eq('id', item.undoData.sessionId)
+          
+          if (sendError) {
+            console.error('Send undo error:', sendError)
+            throw sendError
           }
           break
       }
 
       // Remover do histórico após desfazer com sucesso
       removeFromHistory(item.id)
+      
+      // Dispatch event to refresh data
+      window.dispatchEvent(new Event('googleCalendarRefresh'))
+      
       return true
     } catch (error) {
       console.error('Erro ao desfazer ação:', error)
