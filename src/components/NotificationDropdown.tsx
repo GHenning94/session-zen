@@ -58,9 +58,24 @@ const NotificationDropdown = () => {
     return match ? match[1] : null
   }
 
-  // Remover SESSION_ID do texto exibido
+  // Extrair REDIRECT do conteúdo da notificação
+  const extractRedirect = (conteudo: string): string | null => {
+    const match = conteudo.match(/\[REDIRECT:([^\]]+)\]/)
+    return match ? match[1] : null
+  }
+
+  // Extrair PACKAGE_EDIT do conteúdo da notificação
+  const extractPackageEditId = (conteudo: string): string | null => {
+    const match = conteudo.match(/\[PACKAGE_EDIT:([^\]]+)\]/)
+    return match ? match[1] : null
+  }
+
+  // Remover tags especiais do texto exibido
   const getDisplayContent = (conteudo: string): string => {
-    return conteudo.replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
+    return conteudo
+      .replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
+      .replace(/\s*\[REDIRECT:[^\]]+\]/, '')
+      .replace(/\s*\[PACKAGE_EDIT:[^\]]+\]/, '')
   }
 
   const getNotificationIcon = (titulo: string) => {
@@ -112,6 +127,18 @@ const NotificationDropdown = () => {
     setSideSheetOpen(false)
     setAllNotificationsOpen(false)
     navigate(`/sessoes?edit=${sessionId}`)
+  }
+
+  const handleRedirect = (path: string) => {
+    setSideSheetOpen(false)
+    setAllNotificationsOpen(false)
+    navigate(path)
+  }
+
+  const handleEditPackage = (packageId: string) => {
+    setSideSheetOpen(false)
+    setAllNotificationsOpen(false)
+    navigate(`/pacotes?edit=${packageId}`)
   }
 
   const NotificationItem = ({ 
@@ -291,17 +318,32 @@ const NotificationDropdown = () => {
                 <p className="text-foreground whitespace-pre-wrap">{getDisplayContent(selectedNotification.conteudo)}</p>
               </div>
               
-              {extractSessionId(selectedNotification.conteudo) && (
-                <div className="flex gap-2 pt-4">
+              {/* Action Buttons */}
+              <div className="flex gap-2 pt-4 flex-wrap">
+                {extractSessionId(selectedNotification.conteudo) && (
                   <Button 
-                    className="flex-1"
                     onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
                   >
                     <Edit2 className="w-4 h-4 mr-2" />
                     Editar Sessão
                   </Button>
-                </div>
-              )}
+                )}
+                {extractRedirect(selectedNotification.conteudo) && (
+                  <Button 
+                    onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
+                  >
+                    Ir para Pacotes
+                  </Button>
+                )}
+                {extractPackageEditId(selectedNotification.conteudo) && (
+                  <Button 
+                    onClick={() => handleEditPackage(extractPackageEditId(selectedNotification.conteudo)!)}
+                  >
+                    <Edit2 className="w-4 h-4 mr-2" />
+                    Editar Pacote
+                  </Button>
+                )}
+              </div>
             </div>
           )}
         </SheetContent>
@@ -389,8 +431,9 @@ const NotificationDropdown = () => {
                       </p>
                     </div>
                     
-                    {extractSessionId(selectedNotification.conteudo) && (
-                      <div className="pt-4">
+                    {/* Action Buttons */}
+                    <div className="flex gap-2 pt-4 flex-wrap">
+                      {extractSessionId(selectedNotification.conteudo) && (
                         <Button 
                           size="sm"
                           onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
@@ -398,8 +441,25 @@ const NotificationDropdown = () => {
                           <Edit2 className="w-4 h-4 mr-2" />
                           Editar Sessão
                         </Button>
-                      </div>
-                    )}
+                      )}
+                      {extractRedirect(selectedNotification.conteudo) && (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
+                        >
+                          Ir para Pacotes
+                        </Button>
+                      )}
+                      {extractPackageEditId(selectedNotification.conteudo) && (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleEditPackage(extractPackageEditId(selectedNotification.conteudo)!)}
+                        >
+                          <Edit2 className="w-4 h-4 mr-2" />
+                          Editar Pacote
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </ScrollArea>
               ) : (
