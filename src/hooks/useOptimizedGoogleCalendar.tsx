@@ -399,6 +399,29 @@ export const useOptimizedGoogleCalendar = () => {
     return () => clearInterval(interval)
   }, [isSignedIn, loadEvents])
 
+  // Refresh token when tab becomes visible after being hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && isSignedIn) {
+        // When tab becomes visible, check if token needs refresh
+        const expiresAt = localStorage.getItem('google_token_expires_at')
+        if (expiresAt) {
+          const expiresAtMs = parseInt(expiresAt)
+          const now = Date.now()
+          
+          // If token is expired or will expire soon, refresh it
+          if (expiresAtMs - now < TOKEN_EXPIRY_BUFFER) {
+            console.log('Tab visible - token expired or expiring soon, refreshing...')
+            refreshTokenSilently()
+          }
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [isSignedIn, refreshTokenSilently])
+
   return {
     isInitialized,
     isSignedIn,
