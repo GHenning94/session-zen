@@ -149,7 +149,7 @@ export const useCalendarData = () => {
 
         try {
           await createGoogleEvent({
-            summary: `Sessão - ${clientName}`,
+            summary: clientName,
             description: sessionData.anotacoes || `Sessão agendada com ${clientName}`,
             start: startDateTime.toISOString(),
             end: endDateTime.toISOString()

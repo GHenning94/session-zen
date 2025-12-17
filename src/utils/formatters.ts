@@ -153,3 +153,26 @@ export function formatDateISO(date: string | Date | null | undefined): string {
     return ''
   }
 }
+
+/**
+ * Formatação padronizada de métodos de pagamento
+ * @param method String do método de pagamento
+ * @returns String formatada com acentos e espaços corretos
+ */
+export function formatPaymentMethod(method: string | null | undefined): string {
+  if (!method) return 'A definir'
+  
+  const methodMap: Record<string, string> = {
+    'dinheiro': 'Dinheiro',
+    'pix': 'PIX',
+    'cartao': 'Cartão',
+    'cartao_credito': 'Cartão de Crédito',
+    'cartao_debito': 'Cartão de Débito',
+    'transferencia': 'Transferência',
+    'A definir': 'A definir',
+    'a definir': 'A definir'
+  }
+  
+  const lowerMethod = method.toLowerCase()
+  return methodMap[lowerMethod] || method.charAt(0).toUpperCase() + method.slice(1)
+}

@@ -19,7 +19,7 @@ import {
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
-import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { formatCurrencyBR, formatTimeBR, formatDateBR, formatPaymentMethod } from "@/utils/formatters"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface PaymentDetailsModalProps {
@@ -79,7 +79,9 @@ export const PaymentDetailsModal = ({
     switch (method) {
       case 'dinheiro': return <Banknote className="w-5 h-5" />
       case 'pix': return <Smartphone className="w-5 h-5" />
-      case 'cartao': return <CreditCard className="w-5 h-5" />
+      case 'cartao':
+      case 'cartao_credito':
+      case 'cartao_debito': return <CreditCard className="w-5 h-5" />
       case 'transferencia': return <Building2 className="w-5 h-5" />
       default: return <CreditCard className="w-5 h-5" />
     }
@@ -154,7 +156,7 @@ export const PaymentDetailsModal = ({
                   <label className="text-sm text-muted-foreground">Método de Pagamento</label>
                   <div className="flex items-center gap-2 mt-1">
                     {getPaymentMethodIcon(payment.method)}
-                    <p className="font-medium capitalize">{payment.method === 'A definir' ? 'A Definir' : payment.method}</p>
+                    <p className="font-medium">{formatPaymentMethod(payment.method)}</p>
                   </div>
                 </div>
                 {onUpdatePaymentStatus && (

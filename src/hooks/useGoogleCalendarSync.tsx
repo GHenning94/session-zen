@@ -856,7 +856,7 @@ export const useGoogleCalendarSync = () => {
       const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000) // +1 hora
 
       const googleEvent = {
-        summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+        summary: session.clients?.nome || 'Cliente',
         description: session.anotacoes || '',
         start: {
           dateTime: startDateTime.toISOString(),
@@ -945,7 +945,7 @@ export const useGoogleCalendarSync = () => {
         const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
 
         const googleEvent = {
-          summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+          summary: session.clients?.nome || 'Cliente',
           description: session.anotacoes || '',
           start: {
             dateTime: startDateTime.toISOString(),
@@ -1022,7 +1022,7 @@ export const useGoogleCalendarSync = () => {
       const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
 
       const googleEvent = {
-        summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+        summary: session.clients?.nome || 'Cliente',
         description: session.anotacoes || '',
         start: {
           dateTime: startDateTime.toISOString(),

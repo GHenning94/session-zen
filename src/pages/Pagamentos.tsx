@@ -30,7 +30,7 @@ import { generateReceiptPDF } from "@/utils/receiptGenerator"
 import { useNavigate } from 'react-router-dom'
 import PaymentMethodModal from "@/components/PaymentMethodModal"
 import { PaymentDetailsModal } from "@/components/PaymentDetailsModal"
-import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
+import { formatCurrencyBR, formatTimeBR, formatDateBR, formatPaymentMethod } from "@/utils/formatters"
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { cn } from "@/lib/utils"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
@@ -747,12 +747,12 @@ const pastPayments = filteredPayments.filter(item => {
                              <div className="flex items-center gap-4">
                                <div className="text-right">
                                  <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
-                                 <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                <div className="text-xs text-muted-foreground flex items-center gap-1">
                                    {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
                                    {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
-                                   {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
+                                   {(payment.method === 'cartao' || payment.method === 'cartao_credito' || payment.method === 'cartao_debito') && <CreditCard className="w-3 h-3" />}
                                    {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
-                                   <span className="capitalize">{payment.method}</span>
+                                   <span>{formatPaymentMethod(payment.method)}</span>
                                  </div>
                                </div>
                              </div>
@@ -849,9 +849,9 @@ const pastPayments = filteredPayments.filter(item => {
                            <div className="text-xs text-muted-foreground flex items-center gap-1">
                              {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
                              {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
-                             {payment.method === 'cartao' && <CreditCard className="w-3 h-3" />}
+                             {(payment.method === 'cartao' || payment.method === 'cartao_credito' || payment.method === 'cartao_debito') && <CreditCard className="w-3 h-3" />}
                              {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
-                             <span className="capitalize">{payment.method}</span>
+                             <span>{formatPaymentMethod(payment.method)}</span>
                            </div>
                          </div>
                        </div>

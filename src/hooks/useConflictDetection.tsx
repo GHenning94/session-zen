@@ -292,7 +292,7 @@ export const useConflictDetection = (props?: UseConflictDetectionProps) => {
       const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
 
       const googleEvent = {
-        summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+        summary: session.clients?.nome || 'Cliente',
         description: session.anotacoes || '',
         location: session.google_location || '',
         start: {
@@ -398,7 +398,7 @@ export const useConflictDetection = (props?: UseConflictDetectionProps) => {
       const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
 
       const googleEvent = {
-        summary: `Sessão - ${session.clients?.nome || 'Cliente'}`,
+        summary: session.clients?.nome || 'Cliente',
         description: mergedData.description ?? session.anotacoes ?? '',
         location: mergedData.location ?? session.google_location ?? '',
         start: {
