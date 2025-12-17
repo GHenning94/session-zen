@@ -349,6 +349,9 @@ export const SessionEditModal = ({
     )
   }
 
+  // Check if session is from a package
+  const isPackageSession = !!session?.package_id
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -360,6 +363,9 @@ export const SessionEditModal = ({
               <Repeat className="h-4 w-4" />
             ) : null}
             Editar Sessão
+            {isPackageSession && (
+              <span className="text-xs font-normal text-muted-foreground ml-2">(Sessão de pacote)</span>
+            )}
           </DialogTitle>
         </DialogHeader>
 
@@ -416,38 +422,55 @@ export const SessionEditModal = ({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* For package sessions, show value as read-only and hide payment method */}
+          {isPackageSession ? (
             <div>
-              <Label htmlFor="valor">Valor</Label>
+              <Label htmlFor="valor">Valor (definido pelo pacote)</Label>
               <Input
                 id="valor"
-                type="number"
-                step="0.01"
-                placeholder="Ex: 150.00"
-                value={formData.valor}
-                onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                type="text"
+                value={`R$ ${parseFloat(formData.valor || '0').toFixed(2)}`}
+                disabled
+                className="bg-muted"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                O valor e método de pagamento são definidos no pacote.
+              </p>
             </div>
-            <div>
-              <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
-              <Select
-                value={formData.metodo_pagamento}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, metodo_pagamento: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um método" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="pix">PIX</SelectItem>
-                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                  <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                  <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                  <SelectItem value="transferencia">Transferência</SelectItem>
-                  <SelectItem value="boleto">Boleto</SelectItem>
-                </SelectContent>
-              </Select>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="valor">Valor</Label>
+                <Input
+                  id="valor"
+                  type="number"
+                  step="0.01"
+                  placeholder="Ex: 150.00"
+                  value={formData.valor}
+                  onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                <Select
+                  value={formData.metodo_pagamento}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, metodo_pagamento: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um método" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                    <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                    <SelectItem value="transferencia">Transferência</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-          </div>
+          )}
 
           <div>
             <Label htmlFor="status">Status</Label>

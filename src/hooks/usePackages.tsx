@@ -26,6 +26,7 @@ export interface PackageData {
   total_sessoes: number;
   valor_total: number;
   valor_por_sessao?: number;
+  metodo_pagamento?: string;
   data_inicio?: string;
   data_fim?: string;
   observacoes?: string;
@@ -66,7 +67,7 @@ export const usePackages = () => {
           client_id: data.client_id,
           valor: data.valor_total,
           status: 'pendente',
-          metodo_pagamento: 'A definir',
+          metodo_pagamento: data.metodo_pagamento || 'A definir',
           data_vencimento: data.data_inicio
         });
 

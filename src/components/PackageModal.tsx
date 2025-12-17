@@ -40,6 +40,7 @@ export const PackageModal = ({
     total_sessoes: 10,
     valor_total: 0,
     valor_por_sessao: 0,
+    metodo_pagamento: '',
     data_inicio: undefined as Date | undefined,
     data_fim: undefined as Date | undefined,
     observacoes: ''
@@ -70,6 +71,7 @@ export const PackageModal = ({
           total_sessoes: packageToEdit.total_sessoes,
           valor_total: packageToEdit.valor_total,
           valor_por_sessao: packageToEdit.valor_por_sessao || 0,
+          metodo_pagamento: (packageToEdit as any).metodo_pagamento || '',
           data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
           data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
           observacoes: packageToEdit.observacoes || ''
@@ -82,6 +84,7 @@ export const PackageModal = ({
           total_sessoes: 10,
           valor_total: 0,
           valor_por_sessao: 0,
+          metodo_pagamento: '',
           data_inicio: undefined,
           data_fim: undefined,
           observacoes: ''
@@ -116,12 +119,21 @@ export const PackageModal = ({
       const data = {
         ...formData,
         client_id: formData.client_id,
+        metodo_pagamento: formData.metodo_pagamento || 'A definir',
         data_inicio: formData.data_inicio?.toISOString().split('T')[0],
         data_fim: formData.data_fim?.toISOString().split('T')[0]
       };
 
       if (packageToEdit) {
         await updatePackage(packageToEdit.id, data);
+        
+        // Update payment method in associated payment
+        if (formData.metodo_pagamento) {
+          await supabase
+            .from('payments')
+            .update({ metodo_pagamento: formData.metodo_pagamento })
+            .eq('package_id', packageToEdit.id);
+        }
       } else {
         await createPackage(data);
       }
@@ -136,6 +148,7 @@ export const PackageModal = ({
         total_sessoes: 10,
         valor_total: 0,
         valor_por_sessao: 0,
+        metodo_pagamento: '',
         data_inicio: undefined,
         data_fim: undefined,
         observacoes: ''
@@ -221,6 +234,26 @@ export const PackageModal = ({
                 disabled
                 className="bg-muted"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+              <Select
+                value={formData.metodo_pagamento}
+                onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um método" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pix">PIX</SelectItem>
+                  <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
+                  <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
+                  <SelectItem value="transferencia">Transferência</SelectItem>
+                  <SelectItem value="boleto">Boleto</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             <div>
