@@ -118,12 +118,14 @@ const NotificationDropdown = () => {
     notification, 
     onClick, 
     isSelected = false,
-    showFullContent = false
+    showFullContent = false,
+    showDeleteButton = false
   }: { 
     notification: Notification
     onClick?: () => void
     isSelected?: boolean
     showFullContent?: boolean
+    showDeleteButton?: boolean
   }) => (
     <div 
       className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
@@ -155,6 +157,17 @@ const NotificationDropdown = () => {
           })}
         </p>
       </div>
+      
+      {showDeleteButton && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+          onClick={(e) => handleDelete(notification.id, e)}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   )
 
@@ -217,13 +230,14 @@ const NotificationDropdown = () => {
                 <p>Nenhuma notificação</p>
               </div>
             ) : (
-              <ScrollArea className="max-h-80">
+                <ScrollArea className="max-h-80">
                 <div className="p-1 space-y-0.5">
                   {notifications.slice(0, 5).map((notification) => (
                     <NotificationItem
                       key={notification.id}
                       notification={notification}
                       onClick={() => handleNotificationClick(notification)}
+                      showDeleteButton={true}
                     />
                   ))}
                 </div>

@@ -11,6 +11,58 @@ import { supabase } from "@/integrations/supabase/client"
 import { formatTimeForDatabase } from "@/lib/utils"
 import { Package, Repeat, Info } from "lucide-react"
 
+// Função para atualizar evento no Google Calendar
+const updateGoogleCalendarEvent = async (session: any, clientName: string): Promise<boolean> => {
+  const accessToken = localStorage.getItem('google_access_token')
+  if (!accessToken || !session.google_event_id) return false
+
+  try {
+    const startDateTime = new Date(`${session.data}T${session.horario}`)
+    const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000)
+
+    const googleEvent = {
+      summary: `Sessão - ${clientName}`,
+      description: session.anotacoes || '',
+      start: {
+        dateTime: startDateTime.toISOString(),
+        timeZone: 'America/Sao_Paulo',
+      },
+      end: {
+        dateTime: endDateTime.toISOString(),
+        timeZone: 'America/Sao_Paulo',
+      },
+    }
+
+    const response = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${session.google_event_id}`,
+      {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(googleEvent)
+      }
+    )
+
+    if (!response.ok) {
+      console.error('Erro ao atualizar evento no Google:', response.status)
+      return false
+    }
+
+    // Atualizar timestamp de sincronização
+    await supabase
+      .from('sessions')
+      .update({ google_last_synced: new Date().toISOString() })
+      .eq('id', session.id)
+
+    return true
+  } catch (error) {
+    console.error('Erro ao atualizar evento no Google:', error)
+    return false
+  }
+}
+
 interface SessionEditModalProps {
   session: any
   clients: any[]
@@ -158,6 +210,24 @@ export const SessionEditModal = ({
 
       if (error) {
         throw error
+      }
+
+      // Se sessão espelhada, sincronizar alterações com Google Calendar
+      if (session.google_sync_type === 'espelhado' && session.google_event_id) {
+        const selectedClientName = clients.find(c => c.id === formData.client_id)?.nome || 'Cliente'
+        const updatedSession = {
+          ...session,
+          data: formData.data,
+          horario: formatTimeForDatabase(formData.horario),
+          anotacoes: formData.anotacoes || null
+        }
+        const googleUpdated = await updateGoogleCalendarEvent(updatedSession, selectedClientName)
+        if (googleUpdated) {
+          toast({
+            title: "Sincronizado com Google",
+            description: "Alterações enviadas para o Google Calendar.",
+          })
+        }
       }
 
       // Verificar se já existe pagamento para esta sessão
