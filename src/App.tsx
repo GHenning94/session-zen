@@ -9,6 +9,7 @@ import { SubscriptionProvider } from '@/hooks/useSubscription'
 import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
 import { TerminologyProvider } from '@/hooks/useTerminology'
 import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
+import { GlobalRealtimeProvider } from '@/hooks/useGlobalRealtime'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
@@ -114,10 +115,11 @@ const App = () => (
         <ThemeTransitionOverlay />
         <TooltipProvider>
           <AuthProvider>
-            <SubscriptionProvider>
-              <TerminologyProvider>
-              <RealtimeSyncProvider>
-                <ProfileModalProvider>
+            <GlobalRealtimeProvider>
+              <SubscriptionProvider>
+                <TerminologyProvider>
+                  <RealtimeSyncProvider>
+                    <ProfileModalProvider>
                   <BrowserRouter>
                     <AnalyticsWrapper>
                       <AuthRedirect />
@@ -355,14 +357,15 @@ const App = () => (
                   </Routes>
                 </AnalyticsWrapper>
               </BrowserRouter>
-              <Toaster />
-              <Sonner />
-            </ProfileModalProvider>
-          </RealtimeSyncProvider>
+                    <Toaster />
+                    <Sonner />
+                  </ProfileModalProvider>
+                </RealtimeSyncProvider>
               </TerminologyProvider>
-        </SubscriptionProvider>
-      </AuthProvider>
-    </TooltipProvider>
+            </SubscriptionProvider>
+          </GlobalRealtimeProvider>
+        </AuthProvider>
+      </TooltipProvider>
   </ThemeProvider>
 </QueryClientProvider>
   </ErrorBoundary>
