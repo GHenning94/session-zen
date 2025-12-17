@@ -715,6 +715,7 @@ export type Database = {
           data_fim: string | null
           data_inicio: string | null
           id: string
+          metodo_pagamento: string | null
           nome: string
           observacoes: string | null
           sessoes_consumidas: number | null
@@ -731,6 +732,7 @@ export type Database = {
           data_fim?: string | null
           data_inicio?: string | null
           id?: string
+          metodo_pagamento?: string | null
           nome: string
           observacoes?: string | null
           sessoes_consumidas?: number | null
@@ -747,6 +749,7 @@ export type Database = {
           data_fim?: string | null
           data_inicio?: string | null
           id?: string
+          metodo_pagamento?: string | null
           nome?: string
           observacoes?: string | null
           sessoes_consumidas?: number | null
