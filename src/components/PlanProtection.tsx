@@ -35,7 +35,7 @@ export const PlanProtection = ({
 
   if (!hasAccess()) {
     return (
-      <>
+      <div className="contents">
         {fallback || (
           <div 
             onClick={handleProtectedAction}
@@ -49,9 +49,9 @@ export const PlanProtection = ({
           onOpenChange={setShowUpgradeModal}
           feature={feature}
         />
-      </>
+      </div>
     )
   }
 
-  return <>{children}</>
+  return <div className="contents">{children}</div>
 }

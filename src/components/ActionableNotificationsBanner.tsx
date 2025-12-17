@@ -146,7 +146,7 @@ export const ActionableNotificationsBanner = () => {
   }
 
   return (
-    <>
+    <div className="contents">
       <Card className="mb-6 border-warning/50 bg-warning/5">
         <CardContent className="p-4">
           <div className="flex items-start justify-between gap-4">
@@ -216,6 +216,6 @@ export const ActionableNotificationsBanner = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 };
