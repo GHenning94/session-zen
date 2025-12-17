@@ -17,6 +17,7 @@ interface PlatformSessionCardProps {
   session: PlatformSession
   isSelected: boolean
   isSyncing: boolean
+  showCheckbox?: boolean
   onSelect: () => void
   onSendToGoogle: () => void
   onMirror: () => void
@@ -26,6 +27,7 @@ export const PlatformSessionCard = ({
   session,
   isSelected,
   isSyncing,
+  showCheckbox = false,
   onSelect,
   onSendToGoogle,
   onMirror
@@ -87,12 +89,15 @@ export const PlatformSessionCard = ({
   return (
     <Card className={`p-4 transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
       <div className="flex items-start gap-3">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onSelect}
-          className="mt-1"
-          disabled={!!session.google_event_id}
-        />
+        {showCheckbox && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelect}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1"
+            disabled={!!session.google_event_id}
+          />
+        )}
         
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">
