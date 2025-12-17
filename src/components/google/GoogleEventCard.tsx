@@ -61,6 +61,7 @@ export const GoogleEventCard = ({
 
   const { date, time } = formatEventDateTime(event.start, event.end)
   const isRecurring = isRecurringEvent(event)
+  // Mostrar opção de série para qualquer evento recorrente (mesmo com 1 instância visível)
   const hasMultipleInstances = seriesCount > 1
 
   return (
@@ -164,14 +165,16 @@ export const GoogleEventCard = ({
                 Importar (somente leitura)
               </DropdownMenuItem>
               
-              {/* Opções para série recorrente */}
-              {isRecurring && hasMultipleInstances && onImportSeries && (
+              {/* Opções para série recorrente - mostrar para qualquer evento recorrente */}
+              {isRecurring && onImportSeries && (
                 <>
                   <DropdownMenuSeparator />
                   <DropdownMenuSub>
                     <DropdownMenuSubTrigger>
                       <List className="w-4 h-4 mr-2" />
-                      Importar série ({seriesCount} eventos)
+                      {hasMultipleInstances 
+                        ? `Copiar série (${seriesCount} eventos)` 
+                        : 'Copiar série (buscar todas)'}
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
                       <DropdownMenuItem onClick={() => onImportSeries(false)}>
