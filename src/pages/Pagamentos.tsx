@@ -59,6 +59,7 @@ const [isLoading, setIsLoading] = useState(false)
   const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
   const [viewedPaymentIds, setViewedPaymentIds] = useState<Set<string>>(new Set())
   const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -330,8 +331,21 @@ const getSessionPayments = () => {
     })
   }
 
-  const selectAllPayments = () => setSelectedPayments(new Set(filteredPayments.map(p => p.id)))
-  const clearPaymentSelection = () => setSelectedPayments(new Set())
+  const selectAllPayments = () => {
+    setSelectedPayments(new Set(filteredPayments.map(p => p.id)))
+    setIsSelectionMode(true)
+  }
+  const clearPaymentSelection = () => {
+    setSelectedPayments(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const toggleSelectionMode = () => {
+    if (isSelectionMode) {
+      setSelectedPayments(new Set())
+    }
+    setIsSelectionMode(!isSelectionMode)
+  }
 
   const handleBatchStatusChange = async (status: string) => {
     try {
@@ -701,6 +715,9 @@ const pastPayments = filteredPayments.filter(item => {
                   { value: 'pendente', label: 'Pendente' },
                   { value: 'cancelado', label: 'Cancelado' },
                 ]}
+                selectLabel="Selecionar pagamentos"
+                isSelectionMode={isSelectionMode}
+                onToggleSelectionMode={toggleSelectionMode}
               />
             )}
             
@@ -738,19 +755,29 @@ const pastPayments = filteredPayments.filter(item => {
                                "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative"
                              )}
                              onClick={() => {
-                               setSelectedPayment(payment)
-                               setDetailsModalOpen(true)
-                               if (payment.id) {
-                                 setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+                               if (isSelectionMode) {
+                                 togglePaymentSelection(payment.id)
+                               } else {
+                                 setSelectedPayment(payment)
+                                 setDetailsModalOpen(true)
+                                 if (payment.id) {
+                                   setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+                                 }
                                }
                              }}
                            >
-                             {needsAttention && (
+                             {!isSelectionMode && needsAttention && (
                                <div className="absolute top-4 left-4">
                                  <PulsingDot color="destructive" size="md" />
                                </div>
                              )}
                              <div className="flex items-center gap-4">
+                               {isSelectionMode && (
+                                 <SelectableItemCheckbox
+                                   isSelected={selectedPayments.has(payment.id)}
+                                   onSelect={() => togglePaymentSelection(payment.id)}
+                                 />
+                               )}
                                <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                                  <StatusIcon className="w-5 h-5 text-primary" />
                                </div>
@@ -830,26 +857,36 @@ const pastPayments = filteredPayments.filter(item => {
                    // Lógica de needsAttention unificada
                    const needsAttention = isOverdue(payment.raw)
                    
-                   return (
+                    return (
                     <div 
                       key={payment.id} 
                       className={cn(
                         "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative"
                       )}
                       onClick={() => {
-                        setSelectedPayment(payment)
-                        setDetailsModalOpen(true)
-                        if (payment.id) {
-                          setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+                        if (isSelectionMode) {
+                          togglePaymentSelection(payment.id)
+                        } else {
+                          setSelectedPayment(payment)
+                          setDetailsModalOpen(true)
+                          if (payment.id) {
+                            setViewedPaymentIds(prev => new Set([...prev, payment.id]))
+                          }
                         }
                       }}
                     >
-                      {needsAttention && (
+                      {!isSelectionMode && needsAttention && (
                         <div className="absolute top-4 left-4">
                           <PulsingDot color="destructive" size="md" />
                         </div>
                       )}
                        <div className="flex items-center gap-4">
+                         {isSelectionMode && (
+                           <SelectableItemCheckbox
+                             isSelected={selectedPayments.has(payment.id)}
+                             onSelect={() => togglePaymentSelection(payment.id)}
+                           />
+                         )}
                          <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
                            <StatusIcon className="w-5 h-5 text-primary" />
                          </div>
