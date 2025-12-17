@@ -168,7 +168,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
           <ScrollArea className="h-[600px]" ref={scrollAreaRef}>
             <div className="grid grid-cols-8">
               {timeSlots.map((timeSlot, index) => (
-                <div key={index} className="contents">
+                <React.Fragment key={index}>
                   <div className="p-2 text-center text-xs text-muted-foreground bg-muted border-r border-border min-h-[60px] flex items-center justify-center">
                     <span className={cn(
                       "font-medium",
@@ -316,7 +316,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                       </div>
                     )
                   })}
-                </div>
+                </React.Fragment>
               ))}
             </div>
           </ScrollArea>

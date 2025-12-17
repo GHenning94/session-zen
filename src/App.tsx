@@ -9,7 +9,6 @@ import { SubscriptionProvider } from '@/hooks/useSubscription'
 import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
 import { TerminologyProvider } from '@/hooks/useTerminology'
 import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
-import { GlobalRealtimeProvider } from '@/hooks/useGlobalRealtime'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
@@ -100,7 +99,7 @@ const ThemeTransitionOverlay = () => (
 // Analytics wrapper to track page views
 const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
   useGoogleAnalytics()
-  return <div className="contents">{children}</div>
+  return <>{children}</>
 }
 
 const App = () => (
@@ -115,11 +114,10 @@ const App = () => (
         <ThemeTransitionOverlay />
         <TooltipProvider>
           <AuthProvider>
-            <GlobalRealtimeProvider>
-              <SubscriptionProvider>
-                <TerminologyProvider>
-                  <RealtimeSyncProvider>
-                    <ProfileModalProvider>
+            <SubscriptionProvider>
+              <TerminologyProvider>
+              <RealtimeSyncProvider>
+                <ProfileModalProvider>
                   <BrowserRouter>
                     <AnalyticsWrapper>
                       <AuthRedirect />
@@ -357,15 +355,14 @@ const App = () => (
                   </Routes>
                 </AnalyticsWrapper>
               </BrowserRouter>
-                    <Toaster />
-                    <Sonner />
-                  </ProfileModalProvider>
-                </RealtimeSyncProvider>
+              <Toaster />
+              <Sonner />
+            </ProfileModalProvider>
+          </RealtimeSyncProvider>
               </TerminologyProvider>
-            </SubscriptionProvider>
-          </GlobalRealtimeProvider>
-        </AuthProvider>
-      </TooltipProvider>
+        </SubscriptionProvider>
+      </AuthProvider>
+    </TooltipProvider>
   </ThemeProvider>
 </QueryClientProvider>
   </ErrorBoundary>

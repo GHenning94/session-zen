@@ -66,7 +66,7 @@ export const use2FA = () => {
   const toggleEmail2FA = async (enable: boolean) => {
     try {
       // CORRIGIDO: Usa a função helper
-      const { error } = await invokeAuthenticatedFunction('twofa-setup-email', {
+      const { error } = await invokeAuthenticatedFunction('2fa-setup-email', {
         enable,
       });
 
@@ -92,7 +92,7 @@ export const use2FA = () => {
   const generateAuthenticator = async () => {
     try {
       // CORRIGIDO: Usa a função helper
-      const { data, error } = await invokeAuthenticatedFunction('twofa-setup-authenticator', {
+      const { data, error } = await invokeAuthenticatedFunction('2fa-setup-authenticator', {
         action: 'generate',
       });
 
@@ -112,7 +112,7 @@ export const use2FA = () => {
   const verifyAndEnableAuthenticator = async (code: string) => {
     try {
       // CORRIGIDO: Usa a função helper
-      const { data, error } = await invokeAuthenticatedFunction('twofa-setup-authenticator', {
+      const { data, error } = await invokeAuthenticatedFunction('2fa-setup-authenticator', {
         action: 'verify', enable: true, code,
       });
 
@@ -146,7 +146,7 @@ export const use2FA = () => {
   const disableAuthenticator = async () => {
     try {
       // CORRIGIDO: Usa a função helper
-      const { error } = await invokeAuthenticatedFunction('twofa-setup-authenticator', {
+      const { error } = await invokeAuthenticatedFunction('2fa-setup-authenticator', {
         action: 'disable',
       });
 
@@ -170,7 +170,7 @@ export const use2FA = () => {
   const generateBackupCodes = async () => {
     try {
       // CORRIGIDO: Usa a função helper
-      const { data, error } = await invokeAuthenticatedFunction('twofa-generate-backup-codes', {});
+      const { data, error } = await invokeAuthenticatedFunction('2fa-generate-backup-codes', {});
 
       if (error) throw error;
 

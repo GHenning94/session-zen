@@ -71,7 +71,7 @@ export const CookieNotice = () => {
   if (!isVisible && !showManagement) return null
 
   return (
-    <div className="contents">
+    <>
       {/* Cookie Notice */}
       {isVisible && (
         <div className="fixed bottom-4 left-4 right-4 z-50 max-w-lg mx-auto sm:left-auto sm:right-4 sm:max-w-md">
@@ -203,6 +203,6 @@ export const CookieNotice = () => {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </>
   )
 }

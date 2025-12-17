@@ -66,5 +66,5 @@ export const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
     return <Navigate to="/admin/login" replace />
   }
 
-  return <div className="contents">{children}</div>
+  return <>{children}</>
 }

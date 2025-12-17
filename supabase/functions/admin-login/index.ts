@@ -5,15 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Hash session token using SHA-256 for secure storage
-async function hashSessionToken(token: string): Promise<string> {
-  const encoder = new TextEncoder()
-  const data = encoder.encode(token)
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
-  const hashArray = Array.from(new Uint8Array(hashBuffer))
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
-}
-
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders })
@@ -100,9 +91,8 @@ Deno.serve(async (req) => {
     // Gerar ID único para esta sessão admin (não depende de auth.users)
     const adminUserId = crypto.randomUUID()
     
-    // Criar sessão de admin com token hasheado
+    // Criar sessão de admin
     const sessionToken = crypto.randomUUID()
-    const hashedToken = await hashSessionToken(sessionToken)
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000) // 12 horas
 
     // Extrair apenas o primeiro IP da lista (o IP do cliente real)
@@ -115,12 +105,11 @@ Deno.serve(async (req) => {
     const clientIP = firstIP && /^[\d.:a-fA-F]+$/.test(firstIP) ? firstIP : null
     const userAgent = req.headers.get('user-agent')
 
-    // Store hashed token in database, return original token to client
     const { error: sessionError } = await supabase
       .from('admin_sessions')
       .insert({
         user_id: adminUserId,
-        session_token: hashedToken, // Store hashed version
+        session_token: sessionToken,
         ip_address: clientIP,
         user_agent: userAgent,
         expires_at: expiresAt.toISOString(),
@@ -147,7 +136,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: true,
-        sessionToken, // Return original unhashed token to client
+        sessionToken,
         userId: adminUserId,
         expiresAt: expiresAt.toISOString(),
       }),

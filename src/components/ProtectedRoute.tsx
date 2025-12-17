@@ -45,8 +45,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // Se HÁ usuário válido -> Permite acesso
   console.log('🔒 ProtectedRoute: Acesso permitido para usuário:', user.id);
-  return <div className="contents">{children}</div>;
+  return <>{children}</>;
 };
-
 
 export default ProtectedRoute;

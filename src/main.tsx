@@ -4,6 +4,7 @@ import './index.css'
 import './styles/premium.css'
 import './hooks/useThemeFlashPrevention'
 import { AvatarCacheProvider } from './contexts/AvatarCacheContext'
+import { GlobalRealtimeProvider } from './hooks/useGlobalRealtime'
 
 // Register Service Worker for Web Push Notifications
 if ('serviceWorker' in navigator && 'PushManager' in window) {
@@ -28,7 +29,9 @@ if ('serviceWorker' in navigator && 'PushManager' in window) {
 }
 
 createRoot(document.getElementById("root")!).render(
-  <AvatarCacheProvider>
-    <App />
-  </AvatarCacheProvider>
+  <GlobalRealtimeProvider>
+    <AvatarCacheProvider>
+      <App />
+    </AvatarCacheProvider>
+  </GlobalRealtimeProvider>
 );

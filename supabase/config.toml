@@ -40,17 +40,17 @@ verify_jwt = false
 [functions.validate-registration-token]
 verify_jwt = false
 
-[functions.twofa-setup-email]
+[functions.2fa-setup-email]
 verify_jwt = true
-[functions.twofa-setup-authenticator]
+[functions.2fa-setup-authenticator]
 verify_jwt = true
-[functions.twofa-generate-backup-codes]
+[functions.2fa-generate-backup-codes]
 verify_jwt = true
-[functions.twofa-send-email-code]
+[functions.2fa-send-email-code]
 verify_jwt = true 
-[functions.twofa-verify-code]
+[functions.2fa-verify-code]
 verify_jwt = true 
-[functions.twofa-request-reset]
+[functions.2fa-request-reset]
 verify_jwt = false
 
 [functions.push-broadcast]
@@ -138,30 +138,6 @@ verify_jwt = false
 
 [functions.get-subscription-status]
 verify_jwt = true
-
-[functions.chatgpt-assistant]
-verify_jwt = true
-
-[functions.check-admin-email]
-verify_jwt = false
-
-[functions.create-public-booking]
-verify_jwt = false
-
-[functions.gemini-assistant]
-verify_jwt = true
-
-[functions.google-ads]
-verify_jwt = true
-
-[functions.google-calendar-api]
-verify_jwt = true
-
-[functions.send-confirmation-email]
-verify_jwt = false
-
-[functions.send-password-reset-email]
-verify_jwt = false
 
 [edge_runtime]
 enabled = true
