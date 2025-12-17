@@ -17,6 +17,7 @@ interface GoogleEventCardProps {
   isSelected: boolean
   isSyncing: boolean
   seriesCount?: number
+  showCheckbox?: boolean
   onSelect: () => void
   onImport: () => void
   onCopy: () => void
@@ -34,6 +35,7 @@ export const GoogleEventCard = ({
   isSelected,
   isSyncing,
   seriesCount = 1,
+  showCheckbox = false,
   onSelect,
   onImport,
   onCopy,
@@ -71,13 +73,19 @@ export const GoogleEventCard = ({
   const hasMultipleInstances = seriesCount > 1
 
   return (
-    <Card className={`p-4 transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'}`}>
+    <Card 
+      className={`p-4 transition-all ${isSelected ? 'ring-2 ring-primary bg-primary/5' : 'hover:bg-muted/50'} ${showCheckbox ? 'cursor-pointer' : ''}`}
+      onClick={showCheckbox ? onSelect : undefined}
+    >
       <div className="flex items-start gap-3">
-        <Checkbox
-          checked={isSelected}
-          onCheckedChange={onSelect}
-          className="mt-1"
-        />
+        {showCheckbox && (
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={onSelect}
+            onClick={(e) => e.stopPropagation()}
+            className="mt-1"
+          />
+        )}
         
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">

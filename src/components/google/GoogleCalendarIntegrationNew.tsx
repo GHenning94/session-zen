@@ -93,6 +93,8 @@ const GoogleCalendarIntegrationNew = () => {
   // State para o modal de seleção de série
   const [seriesModalOpen, setSeriesModalOpen] = useState(false)
   const [showWarning, setShowWarning] = useState(true)
+  const [isGoogleSelectionMode, setIsGoogleSelectionMode] = useState(false)
+  const [isPlatformSelectionMode, setIsPlatformSelectionMode] = useState(false)
   const [seriesModalEvents, setSeriesModalEvents] = useState<GoogleEvent[]>([])
   const [seriesModalAction, setSeriesModalAction] = useState<SeriesActionType>('import')
   const [seriesModalLoading, setSeriesModalLoading] = useState(false)
@@ -462,18 +464,35 @@ const GoogleCalendarIntegrationNew = () => {
                   {/* Ações em lote */}
                   <div className="flex flex-wrap items-center gap-2 pt-2">
                     <Button 
-                      variant="ghost" 
+                      variant={isGoogleSelectionMode ? "secondary" : "ghost"} 
                       size="sm"
-                      onClick={selectAllGoogleEvents}
+                      onClick={() => {
+                        setIsGoogleSelectionMode(!isGoogleSelectionMode)
+                        if (isGoogleSelectionMode) clearSelections()
+                      }}
                       disabled={filteredGoogleEvents.length === 0}
                     >
-                      <CheckSquare className="w-4 h-4 mr-1" />
-                      Selecionar todos
+                      {isGoogleSelectionMode ? (
+                        <CheckSquare className="w-4 h-4 mr-1" />
+                      ) : (
+                        <Square className="w-4 h-4 mr-1" />
+                      )}
+                      Selecionar
                     </Button>
+                    {isGoogleSelectionMode && selectedGoogleEvents.size === 0 && (
+                      <span className="text-sm text-muted-foreground">Clique nos itens para selecionar</span>
+                    )}
                     {selectedGoogleEvents.size > 0 && (
                       <>
                         <Separator orientation="vertical" className="h-4" />
                         <Badge variant="outline">{selectedGoogleEvents.size} selecionados</Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={selectAllGoogleEvents}
+                        >
+                          Selecionar todos
+                        </Button>
                         <Button 
                           variant="default" 
                           size="sm"
@@ -494,7 +513,10 @@ const GoogleCalendarIntegrationNew = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={clearSelections}
+                          onClick={() => {
+                            clearSelections()
+                            setIsGoogleSelectionMode(false)
+                          }}
                         >
                           Limpar
                         </Button>
@@ -525,13 +547,14 @@ const GoogleCalendarIntegrationNew = () => {
                   ) : (
                     <ScrollArea className="h-[400px] pr-4">
                       <div className="space-y-3">
-                        {filteredGoogleEvents.map((event) => (
+                         {filteredGoogleEvents.map((event) => (
                           <GoogleEventCard
                             key={event.id}
                             event={event}
                             isSelected={selectedGoogleEvents.has(event.id)}
                             isSyncing={syncing === event.id}
                             seriesCount={getSeriesCount(event)}
+                            showCheckbox={isGoogleSelectionMode}
                             onSelect={() => toggleGoogleEventSelection(event.id)}
                             onImport={() => handleImportWithHistory(event, false).then(() => loadAllData())}
                             onCopy={() => handleImportWithHistory(event, true).then(() => loadAllData())}
@@ -591,18 +614,35 @@ const GoogleCalendarIntegrationNew = () => {
                   {/* Ações em lote */}
                   <div className="flex flex-wrap items-center gap-2 pt-2">
                     <Button 
-                      variant="ghost" 
+                      variant={isPlatformSelectionMode ? "secondary" : "ghost"} 
                       size="sm"
-                      onClick={selectAllPlatformSessions}
+                      onClick={() => {
+                        setIsPlatformSelectionMode(!isPlatformSelectionMode)
+                        if (isPlatformSelectionMode) clearSelections()
+                      }}
                       disabled={localSessions.length === 0}
                     >
-                      <CheckSquare className="w-4 h-4 mr-1" />
-                      Selecionar todos
+                      {isPlatformSelectionMode ? (
+                        <CheckSquare className="w-4 h-4 mr-1" />
+                      ) : (
+                        <Square className="w-4 h-4 mr-1" />
+                      )}
+                      Selecionar
                     </Button>
+                    {isPlatformSelectionMode && selectedPlatformSessions.size === 0 && (
+                      <span className="text-sm text-muted-foreground">Clique nos itens para selecionar</span>
+                    )}
                     {selectedPlatformSessions.size > 0 && (
                       <>
                         <Separator orientation="vertical" className="h-4" />
                         <Badge variant="outline">{selectedPlatformSessions.size} selecionados</Badge>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={selectAllPlatformSessions}
+                        >
+                          Selecionar todos
+                        </Button>
                         <Button 
                           variant="default" 
                           size="sm"
@@ -615,7 +655,10 @@ const GoogleCalendarIntegrationNew = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={clearSelections}
+                          onClick={() => {
+                            clearSelections()
+                            setIsPlatformSelectionMode(false)
+                          }}
                         >
                           Limpar
                         </Button>
@@ -717,7 +760,7 @@ const GoogleCalendarIntegrationNew = () => {
                     </TabsContent>
                   </Tabs>
                   
-                  {localSessions.length > 0 && (
+                  {localSessions.length > 0 ? (
                     <div className="mt-4 pt-4 border-t flex justify-end gap-2">
                       <Button 
                         variant="outline" 
@@ -725,6 +768,13 @@ const GoogleCalendarIntegrationNew = () => {
                         onClick={handleSendAll}
                         disabled={loading}
                       >
+                        <Upload className="w-4 h-4 mr-1" />
+                        Enviar todos para Google
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="mt-4 pt-4 border-t flex justify-end gap-2 invisible">
+                      <Button variant="outline" size="sm" disabled>
                         <Upload className="w-4 h-4 mr-1" />
                         Enviar todos para Google
                       </Button>

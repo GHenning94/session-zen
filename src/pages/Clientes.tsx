@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,6 +20,7 @@ import {
   MessageCircle,
   Baby,
   Link,
+  AlertTriangle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -48,6 +50,7 @@ const Clientes = () => {
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("todos")
+  const [deleteConfirmClient, setDeleteConfirmClient] = useState<any>(null)
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -270,12 +273,21 @@ const Clientes = () => {
   }
 
   const handleDeleteClient = async (clientId: string) => {
+    // Close the details modal and open the confirmation dialog
+    setIsClientDetailsOpen(false)
+    const clientToDelete = clients.find(c => c.id === clientId)
+    setDeleteConfirmClient(clientToDelete)
+  }
+
+  const confirmDeleteClient = async () => {
+    if (!deleteConfirmClient) return
+    
     setIsLoading(true)
     try {
       const { error } = await supabase
         .from('clients')
         .delete()
-        .eq('id', clientId)
+        .eq('id', deleteConfirmClient.id)
       
       if (error) throw error
       
@@ -284,6 +296,7 @@ const Clientes = () => {
         description: "O cliente foi excluído do sistema.",
       })
       
+      setDeleteConfirmClient(null)
       await loadClients()
     } catch (error) {
       console.error('Erro ao deletar cliente:', error)
@@ -543,6 +556,36 @@ const Clientes = () => {
           onToggleStatus={handleToggleClientStatus}
           onOpenProntuario={(clientId) => navigate(`/prontuarios?cliente=${clientId}`)}
         />
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={!!deleteConfirmClient} onOpenChange={(open) => !open && setDeleteConfirmClient(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Confirmar exclusão
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  Tem certeza que deseja excluir <strong>{deleteConfirmClient?.nome}</strong>?
+                </p>
+                <p className="text-destructive font-medium">
+                  Atenção: Esta ação irá excluir permanentemente todas as sessões e pagamentos relacionados a este {clientTerm.toLowerCase()}.
+                </p>
+                <p>Esta ação não pode ser desfeita.</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmDeleteClient}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir {clientTerm}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Layout>
   )
