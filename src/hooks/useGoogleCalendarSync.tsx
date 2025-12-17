@@ -1128,10 +1128,11 @@ export const useGoogleCalendarSync = () => {
     const accessToken = await getAccessToken()
     if (!accessToken) return [event]
 
+    // Para buscar instâncias, precisamos do ID do evento master (recorrente original)
+    // Se temos recurringEventId, usamos. Caso contrário, tentamos com o próprio id
     const masterId = event.recurringEventId || event.id
     
     try {
-      // Buscar instâncias de hoje até 1 ano à frente
       const today = new Date()
       today.setHours(0, 0, 0, 0)
       const timeMin = today.toISOString()
@@ -1140,9 +1141,9 @@ export const useGoogleCalendarSync = () => {
       oneYearAhead.setFullYear(oneYearAhead.getFullYear() + 1)
       const timeMax = oneYearAhead.toISOString()
       
-      // Usar endpoint de instâncias do evento recorrente
-      const response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${masterId}/instances?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=100`,
+      // Primeiro tentar buscar instâncias do evento recorrente
+      let response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(masterId)}/instances?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=100`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -1151,13 +1152,47 @@ export const useGoogleCalendarSync = () => {
         }
       )
 
+      // Se falhar com 404, pode ser que o ID não é do evento master
+      // Tentar buscar eventos com mesmo summary para agrupar manualmente
       if (!response.ok) {
-        console.error('Erro ao buscar instâncias:', response.status)
+        console.warn('Endpoint de instâncias falhou, buscando eventos similares:', response.status)
+        
+        // Buscar todos os eventos no período e filtrar pelo summary
+        const listResponse = await fetch(
+          `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=250&singleEvents=true&orderBy=startTime`,
+          {
+            headers: {
+              'Authorization': `Bearer ${accessToken}`,
+              'Accept': 'application/json',
+            },
+          }
+        )
+        
+        if (!listResponse.ok) {
+          console.error('Erro ao buscar eventos:', listResponse.status)
+          return [event]
+        }
+        
+        const listData = await listResponse.json()
+        const allEvents: GoogleEvent[] = listData.items || []
+        
+        // Filtrar eventos com mesmo nome (summary) e que são recorrentes
+        const similarEvents = allEvents.filter(e => 
+          e.summary === event.summary && 
+          (e.recurringEventId || (e as any).recurrence)
+        )
+        
+        if (similarEvents.length > 1) {
+          return similarEvents
+        }
+        
         return [event]
       }
 
       const data = await response.json()
-      return data.items || [event]
+      const instances = data.items || []
+      
+      return instances.length > 0 ? instances : [event]
     } catch (error) {
       console.error('Erro ao buscar instâncias recorrentes:', error)
       return [event]
@@ -1298,7 +1333,90 @@ export const useGoogleCalendarSync = () => {
     return successCount
   }
 
-  // Ações em lote
+  // Espelhar série recorrente inteira
+  const mirrorRecurringSeries = async (event: GoogleEvent): Promise<number> => {
+    setSyncing(event.id)
+    
+    let seriesInstances = getRecurringSeriesInstances(event)
+    
+    if (seriesInstances.length <= 1 && isRecurringEvent(event)) {
+      toast({
+        title: "Buscando série...",
+        description: "Buscando todas as instâncias do evento recorrente no Google.",
+      })
+      seriesInstances = await fetchRecurringInstances(event)
+    }
+    
+    let successCount = 0
+    
+    try {
+      for (const instance of seriesInstances) {
+        const success = await mirrorGoogleEvent(instance)
+        if (success) successCount++
+      }
+      
+      toast({
+        title: "Série espelhada!",
+        description: `${successCount} de ${seriesInstances.length} instâncias de "${event.summary}" foram espelhadas.`,
+      })
+      
+      await loadPlatformSessions()
+    } catch (error) {
+      console.error('Erro ao espelhar série:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível espelhar a série completa.",
+        variant: "destructive"
+      })
+    } finally {
+      setSyncing(null)
+    }
+    
+    return successCount
+  }
+
+  // Ignorar série recorrente inteira
+  const ignoreRecurringSeries = async (event: GoogleEvent): Promise<number> => {
+    setSyncing(event.id)
+    
+    let seriesInstances = getRecurringSeriesInstances(event)
+    
+    if (seriesInstances.length <= 1 && isRecurringEvent(event)) {
+      toast({
+        title: "Buscando série...",
+        description: "Buscando todas as instâncias do evento recorrente no Google.",
+      })
+      seriesInstances = await fetchRecurringInstances(event)
+    }
+    
+    let successCount = 0
+    
+    try {
+      for (const instance of seriesInstances) {
+        const success = await ignoreGoogleEvent(instance.id)
+        if (success) successCount++
+      }
+      
+      toast({
+        title: "Série ignorada!",
+        description: `${successCount} de ${seriesInstances.length} instâncias de "${event.summary}" foram ignoradas.`,
+      })
+      
+      await loadAllData()
+    } catch (error) {
+      console.error('Erro ao ignorar série:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível ignorar a série completa.",
+        variant: "destructive"
+      })
+    } finally {
+      setSyncing(null)
+    }
+    
+    return successCount
+  }
+
   const batchImportGoogleEvents = async (eventIds: string[], createClients = false): Promise<number> => {
     let successCount = 0
     for (const eventId of eventIds) {
@@ -1438,6 +1556,8 @@ export const useGoogleCalendarSync = () => {
     // Actions - Recurring Series
     getRecurringSeriesInstances,
     importRecurringSeries,
+    mirrorRecurringSeries,
+    ignoreRecurringSeries,
     
     // Actions - Batch
     batchImportGoogleEvents,

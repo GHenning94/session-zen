@@ -1,14 +1,13 @@
-import { useState } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { GoogleEvent, isRecurringEvent } from "@/types/googleCalendar"
 import { 
-  Calendar, Clock, MapPin, Users, Link, Download, Copy, RefreshCw, 
-  EyeOff, UserPlus, MoreHorizontal, ExternalLink, List
+  Calendar, Clock, MapPin, Users, Download, Copy, RefreshCw, 
+  EyeOff, UserPlus, MoreHorizontal, ExternalLink, Layers, FileDown
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -22,7 +21,9 @@ interface GoogleEventCardProps {
   onImport: (createClient?: boolean) => void
   onImportSeries?: (createClient?: boolean) => void
   onMirror: () => void
+  onMirrorSeries?: () => void
   onIgnore: () => void
+  onIgnoreSeries?: () => void
   onMarkAsClient?: () => void
 }
 
@@ -35,7 +36,9 @@ export const GoogleEventCard = ({
   onImport,
   onImportSeries,
   onMirror,
+  onMirrorSeries,
   onIgnore,
+  onIgnoreSeries,
   onMarkAsClient
 }: GoogleEventCardProps) => {
   const formatEventDateTime = (start: any, end: any) => {
@@ -61,7 +64,6 @@ export const GoogleEventCard = ({
 
   const { date, time } = formatEventDateTime(event.start, event.end)
   const isRecurring = isRecurringEvent(event)
-  // Mostrar opção de série para qualquer evento recorrente (mesmo com 1 instância visível)
   const hasMultipleInstances = seriesCount > 1
 
   return (
@@ -81,15 +83,16 @@ export const GoogleEventCard = ({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Badge variant="outline">
-                        {hasMultipleInstances ? `G: ${seriesCount} eventos` : 'G: Recorrente'}
+                      <Badge variant="outline" className="gap-1">
+                        <Layers className="w-3 h-3" />
+                        {hasMultipleInstances ? `${seriesCount}x` : 'Série'}
                       </Badge>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>
                         {hasMultipleInstances 
-                          ? `Série com ${seriesCount} instâncias` 
-                          : 'Evento recorrente do Google'}
+                          ? `Série recorrente com ${seriesCount} eventos visíveis` 
+                          : 'Evento recorrente (buscar série completa ao importar)'}
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -147,7 +150,7 @@ export const GoogleEventCard = ({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Criar cópia editável</p>
+                <p>Criar cópia editável (este evento)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -158,43 +161,64 @@ export const GoogleEventCard = ({
                 <MoreHorizontal className="w-4 h-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              {/* Opções de importação única */}
+            <DropdownMenuContent align="end" className="w-56">
+              {/* IMPORTAR */}
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Importar</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => onImport(false)}>
-                <Download className="w-4 h-4 mr-2" />
-                Importar (somente leitura)
+                <FileDown className="w-4 h-4 mr-2" />
+                Este evento (somente leitura)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onImport(true)}>
+                <Copy className="w-4 h-4 mr-2" />
+                Este evento (cópia editável)
               </DropdownMenuItem>
               
-              {/* Opções para série recorrente - mostrar para qualquer evento recorrente */}
               {isRecurring && onImportSeries && (
                 <>
                   <DropdownMenuSeparator />
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      <List className="w-4 h-4 mr-2" />
-                      {hasMultipleInstances 
-                        ? `Copiar série (${seriesCount} eventos)` 
-                        : 'Copiar série (buscar todas)'}
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem onClick={() => onImportSeries(false)}>
-                        <Download className="w-4 h-4 mr-2" />
-                        Série (somente leitura)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => onImportSeries(true)}>
-                        <Copy className="w-4 h-4 mr-2" />
-                        Série com cliente
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
+                  <DropdownMenuLabel className="text-xs text-muted-foreground">
+                    Importar Série {hasMultipleInstances ? `(${seriesCount} eventos)` : '(buscar todas)'}
+                  </DropdownMenuLabel>
+                  <DropdownMenuItem onClick={() => onImportSeries(false)}>
+                    <FileDown className="w-4 h-4 mr-2" />
+                    Série toda (somente leitura)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => onImportSeries(true)}>
+                    <Copy className="w-4 h-4 mr-2" />
+                    Série toda (cópias editáveis)
+                  </DropdownMenuItem>
                 </>
               )}
               
+              {/* ESPELHAR */}
               <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Espelhar</DropdownMenuLabel>
               <DropdownMenuItem onClick={onMirror}>
                 <RefreshCw className="w-4 h-4 mr-2" />
-                Espelhar com Google
+                Este evento
               </DropdownMenuItem>
+              {isRecurring && onMirrorSeries && (
+                <DropdownMenuItem onClick={onMirrorSeries}>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Série toda
+                </DropdownMenuItem>
+              )}
+              
+              {/* IGNORAR */}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Ignorar</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onIgnore}>
+                <EyeOff className="w-4 h-4 mr-2" />
+                Este evento
+              </DropdownMenuItem>
+              {isRecurring && onIgnoreSeries && (
+                <DropdownMenuItem onClick={onIgnoreSeries}>
+                  <EyeOff className="w-4 h-4 mr-2" />
+                  Série toda
+                </DropdownMenuItem>
+              )}
+              
+              {/* OUTRAS OPÇÕES */}
               {event.attendees && event.attendees.length > 0 && onMarkAsClient && (
                 <>
                   <DropdownMenuSeparator />
@@ -204,15 +228,11 @@ export const GoogleEventCard = ({
                   </DropdownMenuItem>
                 </>
               )}
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={onIgnore}>
-                <EyeOff className="w-4 h-4 mr-2" />
-                Ignorar evento
-              </DropdownMenuItem>
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => window.open(event.htmlLink, '_blank')}>
                 <ExternalLink className="w-4 h-4 mr-2" />
-                Ver no Google
+                Ver no Google Calendar
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -48,6 +48,8 @@ const GoogleCalendarIntegrationNew = () => {
     ignoreGoogleEvent,
     sendToGoogle,
     importRecurringSeries,
+    mirrorRecurringSeries,
+    ignoreRecurringSeries,
     getRecurringSeriesInstances,
     batchImportGoogleEvents,
     batchSendToGoogle,
@@ -334,7 +336,9 @@ const GoogleCalendarIntegrationNew = () => {
                             onImport={(createClient) => importGoogleEvent(event, createClient)}
                             onImportSeries={(createClient) => importRecurringSeries(event, createClient)}
                             onMirror={() => mirrorGoogleEvent(event)}
+                            onMirrorSeries={() => mirrorRecurringSeries(event)}
                             onIgnore={() => ignoreGoogleEvent(event.id).then(() => loadAllData())}
+                            onIgnoreSeries={() => ignoreRecurringSeries(event)}
                             onMarkAsClient={() => markAttendeesAsClients(event)}
                           />
                         ))}
