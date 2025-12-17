@@ -18,16 +18,21 @@ import { PlanProtection } from "@/components/PlanProtection"
 import { GoogleEventCard } from "./GoogleEventCard"
 import { PlatformSessionCard } from "./PlatformSessionCard"
 import { ConflictDetectionPanel } from "./ConflictDetectionPanel"
-import { getRecurringMasterId } from "@/types/googleCalendar"
+import { SeriesSelectionModal } from "./SeriesSelectionModal"
+import { getRecurringMasterId, GoogleEvent, isRecurringEvent } from "@/types/googleCalendar"
 import { 
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
   ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle, XCircle
 } from "lucide-react"
-import { TooltipProvider } from "@/components/ui/tooltip"
+import { TooltipProvider} from "@/components/ui/tooltip"
+import { useToast } from "@/hooks/use-toast"
+
+type SeriesActionType = 'import' | 'copy' | 'mirror' | 'ignore'
 
 const GoogleCalendarIntegrationNew = () => {
   const { hasFeature } = useSubscription()
+  const { toast } = useToast()
   const {
     isInitialized,
     isSignedIn,
@@ -47,9 +52,7 @@ const GoogleCalendarIntegrationNew = () => {
     mirrorPlatformSession,
     ignoreGoogleEvent,
     sendToGoogle,
-    importRecurringSeries,
-    mirrorRecurringSeries,
-    ignoreRecurringSeries,
+    fetchRecurringInstances,
     getRecurringSeriesInstances,
     batchImportGoogleEvents,
     batchSendToGoogle,
@@ -77,6 +80,12 @@ const GoogleCalendarIntegrationNew = () => {
   } = useConflictDetection({ getAccessToken })
 
   const [activeInfoTab, setActiveInfoTab] = useState("concepts")
+  
+  // State para o modal de seleção de série
+  const [seriesModalOpen, setSeriesModalOpen] = useState(false)
+  const [seriesModalEvents, setSeriesModalEvents] = useState<GoogleEvent[]>([])
+  const [seriesModalAction, setSeriesModalAction] = useState<SeriesActionType>('import')
+  const [seriesModalLoading, setSeriesModalLoading] = useState(false)
 
   // Sessões espelhadas (para detecção de conflitos)
   const mirroredSessions = platformSessions.filter(s => s.google_sync_type === 'espelhado')
@@ -147,6 +156,106 @@ const GoogleCalendarIntegrationNew = () => {
     const sessionIds = localSessions.map(s => s.id)
     const count = await batchSendToGoogle(sessionIds)
     await loadAllData()
+  }
+
+  // Handlers para ações em série com modal de seleção
+  const handleSeriesAction = async (event: GoogleEvent, action: SeriesActionType) => {
+    // Buscar todas as instâncias da série
+    toast({
+      title: "Buscando série...",
+      description: "Carregando todos os eventos da série recorrente.",
+    })
+    
+    let seriesInstances = getRecurringSeriesInstances(event)
+    
+    // Se só tem 1 instância local mas é evento recorrente, buscar mais do Google
+    if (seriesInstances.length <= 1 && isRecurringEvent(event)) {
+      seriesInstances = await fetchRecurringInstances(event)
+    }
+    
+    if (seriesInstances.length <= 1) {
+      // Se mesmo assim só tem 1, executar ação diretamente no evento único
+      toast({
+        title: "Série não encontrada",
+        description: "Apenas este evento será processado.",
+      })
+      
+      switch (action) {
+        case 'import':
+          await importGoogleEvent(event, false)
+          break
+        case 'copy':
+          await importGoogleEvent(event, true)
+          break
+        case 'mirror':
+          await mirrorGoogleEvent(event)
+          break
+        case 'ignore':
+          await ignoreGoogleEvent(event.id)
+          break
+      }
+      await loadAllData()
+      return
+    }
+    
+    // Abrir modal para seleção
+    setSeriesModalEvents(seriesInstances)
+    setSeriesModalAction(action)
+    setSeriesModalOpen(true)
+  }
+
+  // Handler para confirmar ação no modal de série
+  const handleSeriesConfirm = async (selectedEventIds: string[]) => {
+    setSeriesModalLoading(true)
+    
+    try {
+      const selectedEvents = seriesModalEvents.filter(e => selectedEventIds.includes(e.id))
+      let successCount = 0
+      
+      for (const event of selectedEvents) {
+        let success = false
+        switch (seriesModalAction) {
+          case 'import':
+            success = await importGoogleEvent(event, false)
+            break
+          case 'copy':
+            success = await importGoogleEvent(event, true)
+            break
+          case 'mirror':
+            success = await mirrorGoogleEvent(event)
+            break
+          case 'ignore':
+            success = await ignoreGoogleEvent(event.id)
+            break
+        }
+        if (success) successCount++
+      }
+      
+      const actionLabels: Record<SeriesActionType, string> = {
+        import: 'importados',
+        copy: 'copiados',
+        mirror: 'espelhados',
+        ignore: 'ignorados'
+      }
+      
+      toast({
+        title: "Operação concluída!",
+        description: `${successCount} de ${selectedEvents.length} eventos foram ${actionLabels[seriesModalAction]}.`,
+      })
+      
+      await loadAllData()
+    } catch (error) {
+      console.error('Erro na operação em série:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível completar a operação.",
+        variant: "destructive"
+      })
+    } finally {
+      setSeriesModalLoading(false)
+      setSeriesModalOpen(false)
+      setSeriesModalEvents([])
+    }
   }
 
   return (
@@ -333,12 +442,14 @@ const GoogleCalendarIntegrationNew = () => {
                             isSyncing={syncing === event.id}
                             seriesCount={getSeriesCount(event)}
                             onSelect={() => toggleGoogleEventSelection(event.id)}
-                            onImport={(createClient) => importGoogleEvent(event, createClient)}
-                            onImportSeries={(createClient) => importRecurringSeries(event, createClient)}
+                            onImport={() => importGoogleEvent(event, false)}
+                            onCopy={() => importGoogleEvent(event, true)}
+                            onImportSeries={() => handleSeriesAction(event, 'import')}
+                            onCopySeries={() => handleSeriesAction(event, 'copy')}
                             onMirror={() => mirrorGoogleEvent(event)}
-                            onMirrorSeries={() => mirrorRecurringSeries(event)}
+                            onMirrorSeries={() => handleSeriesAction(event, 'mirror')}
                             onIgnore={() => ignoreGoogleEvent(event.id).then(() => loadAllData())}
-                            onIgnoreSeries={() => ignoreRecurringSeries(event)}
+                            onIgnoreSeries={() => handleSeriesAction(event, 'ignore')}
                             onMarkAsClient={() => markAttendeesAsClients(event)}
                           />
                         ))}
@@ -683,9 +794,41 @@ const GoogleCalendarIntegrationNew = () => {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
+                <AccordionItem value="warning">
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="w-4 h-4 text-warning" />
+                      <span>Aviso importante sobre importação</span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent>
+                    <div className="space-y-2 text-sm text-muted-foreground p-3 rounded-md bg-warning/10 border border-warning/20">
+                      <p>
+                        <strong>Atenção:</strong> Ao <strong>importar</strong> eventos (somente leitura), eles serão removidos da lista de eventos do Google nesta página.
+                      </p>
+                      <p>
+                        Se você deseja manter os eventos visíveis no Google Calendar e ter controle total na plataforma, considere:
+                      </p>
+                      <ul className="list-disc pl-4 space-y-1">
+                        <li><strong>Copiar:</strong> Cria uma sessão independente e editável (não afeta o Google)</li>
+                        <li><strong>Espelhar:</strong> Mantém sincronização bidirecional entre as duas plataformas</li>
+                      </ul>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
               </Accordion>
             </CardContent>
           </Card>
+
+          {/* Modal de seleção de série */}
+          <SeriesSelectionModal
+            isOpen={seriesModalOpen}
+            onClose={() => setSeriesModalOpen(false)}
+            events={seriesModalEvents}
+            actionType={seriesModalAction}
+            loading={seriesModalLoading}
+            onConfirm={handleSeriesConfirm}
+          />
         </div>
       </TooltipProvider>
     </PlanProtection>

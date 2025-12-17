@@ -1126,12 +1126,11 @@ export const useGoogleCalendarSync = () => {
   // Buscar instâncias de evento recorrente do Google (até 1 ano à frente)
   const fetchRecurringInstances = async (event: GoogleEvent): Promise<GoogleEvent[]> => {
     const accessToken = await getAccessToken()
-    if (!accessToken) return [event]
+    if (!accessToken) {
+      console.error('Token de acesso não disponível')
+      return [event]
+    }
 
-    // Para buscar instâncias, precisamos do ID do evento master (recorrente original)
-    // Se temos recurringEventId, usamos. Caso contrário, tentamos com o próprio id
-    const masterId = event.recurringEventId || event.id
-    
     try {
       const today = new Date()
       today.setHours(0, 0, 0, 0)
@@ -1141,9 +1140,10 @@ export const useGoogleCalendarSync = () => {
       oneYearAhead.setFullYear(oneYearAhead.getFullYear() + 1)
       const timeMax = oneYearAhead.toISOString()
       
-      // Primeiro tentar buscar instâncias do evento recorrente
-      let response = await fetch(
-        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(masterId)}/instances?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=100`,
+      // Estratégia 1: Buscar todos os eventos no período e filtrar por summary e recurringEventId
+      // Esta é a abordagem mais confiável pois não depende do ID do evento master
+      const listResponse = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=500&singleEvents=true&orderBy=startTime`,
         {
           headers: {
             'Authorization': `Bearer ${accessToken}`,
@@ -1151,48 +1151,37 @@ export const useGoogleCalendarSync = () => {
           },
         }
       )
-
-      // Se falhar com 404, pode ser que o ID não é do evento master
-      // Tentar buscar eventos com mesmo summary para agrupar manualmente
-      if (!response.ok) {
-        console.warn('Endpoint de instâncias falhou, buscando eventos similares:', response.status)
-        
-        // Buscar todos os eventos no período e filtrar pelo summary
-        const listResponse = await fetch(
-          `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=250&singleEvents=true&orderBy=startTime`,
-          {
-            headers: {
-              'Authorization': `Bearer ${accessToken}`,
-              'Accept': 'application/json',
-            },
-          }
-        )
-        
-        if (!listResponse.ok) {
-          console.error('Erro ao buscar eventos:', listResponse.status)
-          return [event]
-        }
-        
-        const listData = await listResponse.json()
-        const allEvents: GoogleEvent[] = listData.items || []
-        
-        // Filtrar eventos com mesmo nome (summary) e que são recorrentes
-        const similarEvents = allEvents.filter(e => 
-          e.summary === event.summary && 
-          (e.recurringEventId || (e as any).recurrence)
-        )
-        
-        if (similarEvents.length > 1) {
-          return similarEvents
-        }
-        
+      
+      if (!listResponse.ok) {
+        console.error('Erro ao buscar eventos:', listResponse.status)
         return [event]
       }
-
-      const data = await response.json()
-      const instances = data.items || []
       
-      return instances.length > 0 ? instances : [event]
+      const listData = await listResponse.json()
+      const allEvents: GoogleEvent[] = listData.items || []
+      
+      // Se o evento tem recurringEventId, usar para encontrar todas as instâncias da série
+      if (event.recurringEventId) {
+        const seriesEvents = allEvents.filter(e => 
+          e.recurringEventId === event.recurringEventId
+        )
+        if (seriesEvents.length > 0) {
+          return seriesEvents
+        }
+      }
+      
+      // Fallback: Filtrar eventos com mesmo summary que são recorrentes
+      const similarEvents = allEvents.filter(e => 
+        e.summary === event.summary && 
+        (e.recurringEventId || (e as any).recurrence)
+      )
+      
+      if (similarEvents.length > 1) {
+        return similarEvents
+      }
+      
+      // Se não encontrou múltiplas instâncias, retornar apenas o evento original
+      return [event]
     } catch (error) {
       console.error('Erro ao buscar instâncias recorrentes:', error)
       return [event]
@@ -1555,6 +1544,7 @@ export const useGoogleCalendarSync = () => {
     
     // Actions - Recurring Series
     getRecurringSeriesInstances,
+    fetchRecurringInstances,
     importRecurringSeries,
     mirrorRecurringSeries,
     ignoreRecurringSeries,

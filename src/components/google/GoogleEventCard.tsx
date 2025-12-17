@@ -3,11 +3,11 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu"
 import { GoogleEvent, isRecurringEvent } from "@/types/googleCalendar"
 import { 
   Calendar, Clock, MapPin, Users, Download, Copy, RefreshCw, 
-  EyeOff, UserPlus, MoreHorizontal, ExternalLink, FileDown
+  EyeOff, UserPlus, MoreHorizontal, ExternalLink
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -18,8 +18,10 @@ interface GoogleEventCardProps {
   isSyncing: boolean
   seriesCount?: number
   onSelect: () => void
-  onImport: (createClient?: boolean) => void
-  onImportSeries?: (createClient?: boolean) => void
+  onImport: () => void
+  onCopy: () => void
+  onImportSeries?: () => void
+  onCopySeries?: () => void
   onMirror: () => void
   onMirrorSeries?: () => void
   onIgnore: () => void
@@ -34,7 +36,9 @@ export const GoogleEventCard = ({
   seriesCount = 1,
   onSelect,
   onImport,
+  onCopy,
   onImportSeries,
+  onCopySeries,
   onMirror,
   onMirrorSeries,
   onIgnore,
@@ -138,7 +142,7 @@ export const GoogleEventCard = ({
                   size="icon"
                   variant="ghost"
                   className="h-8 w-8"
-                  onClick={() => onImport(true)}
+                  onClick={onCopy}
                   disabled={isSyncing}
                 >
                   {isSyncing ? (
@@ -162,36 +166,35 @@ export const GoogleEventCard = ({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               {/* IMPORTAR */}
-              <DropdownMenuLabel className="text-xs text-muted-foreground">Importar</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => onImport(false)}>
-                <FileDown className="w-4 h-4 mr-2" />
-                Este evento (somente leitura)
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Importar (somente leitura)</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onImport}>
+                <Download className="w-4 h-4 mr-2" />
+                Este evento
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onImport(true)}>
-                <Copy className="w-4 h-4 mr-2" />
-                Este evento (cópia editável)
-              </DropdownMenuItem>
-              
               {isRecurring && onImportSeries && (
-                <>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuLabel className="text-xs text-muted-foreground">
-                    Importar Série {hasMultipleInstances ? `(${seriesCount} eventos)` : '(buscar todas)'}
-                  </DropdownMenuLabel>
-                  <DropdownMenuItem onClick={() => onImportSeries(false)}>
-                    <FileDown className="w-4 h-4 mr-2" />
-                    Série toda (somente leitura)
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => onImportSeries(true)}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Série toda (cópias editáveis)
-                  </DropdownMenuItem>
-                </>
+                <DropdownMenuItem onClick={onImportSeries}>
+                  <Download className="w-4 h-4 mr-2" />
+                  Série toda
+                </DropdownMenuItem>
+              )}
+              
+              {/* COPIAR */}
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Copiar (editável e independente)</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onCopy}>
+                <Copy className="w-4 h-4 mr-2" />
+                Este evento
+              </DropdownMenuItem>
+              {isRecurring && onCopySeries && (
+                <DropdownMenuItem onClick={onCopySeries}>
+                  <Copy className="w-4 h-4 mr-2" />
+                  Série toda
+                </DropdownMenuItem>
               )}
               
               {/* ESPELHAR */}
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs text-muted-foreground">Espelhar</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs text-muted-foreground">Espelhar (bidirecional)</DropdownMenuLabel>
               <DropdownMenuItem onClick={onMirror}>
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Este evento
