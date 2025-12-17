@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
-import { Package, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Package, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react'
 import { formatCurrencyBR } from '@/utils/formatters'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
@@ -16,6 +16,7 @@ interface PackageWithSessions {
   sessoes_consumidas: number
   valor_total: number
   valor_por_sessao?: number
+  metodo_pagamento?: string
   status: string
   client_id: string
   sessoes_criadas: number
@@ -96,6 +97,16 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const activePackages = packages.filter(p => p.status === 'ativo')
   const currentPackage = activePackages[currentIndex]
 
+  // Check package status
+  const getPackageStatus = (pkg: PackageWithSessions | undefined) => {
+    if (!pkg) return { allSessionsCreated: false, hasPaymentMethod: false }
+    
+    const allSessionsCreated = pkg.sessoes_criadas >= pkg.total_sessoes
+    const hasPaymentMethod = pkg.metodo_pagamento && pkg.metodo_pagamento !== 'A definir'
+    
+    return { allSessionsCreated, hasPaymentMethod }
+  }
+
   const handlePrev = (e: React.MouseEvent) => {
     e.stopPropagation()
     const newIndex = currentIndex === 0 ? activePackages.length - 1 : currentIndex - 1
@@ -112,13 +123,6 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     e.stopPropagation()
     changePackage(index)
   }
-
-  // Reset index if packages change
-  useEffect(() => {
-    if (currentIndex >= activePackages.length) {
-      setCurrentIndex(0)
-    }
-  }, [activePackages.length, currentIndex])
 
   // Reset index if packages change
   useEffect(() => {
@@ -204,6 +208,38 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const revenuePerSession = currentPackage?.valor_por_sessao || 
     (currentPackage ? currentPackage.valor_total / currentPackage.total_sessoes : 0)
 
+  const { allSessionsCreated, hasPaymentMethod } = getPackageStatus(currentPackage)
+  const isComplete = allSessionsCreated && hasPaymentMethod
+
+  // Render status reminder
+  const renderStatusReminder = () => {
+    if (isComplete) {
+      return (
+        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
+          <CheckCircle className="h-3.5 w-3.5 shrink-0" />
+          <span className="text-xs">Pacote configurado</span>
+        </div>
+      )
+    }
+
+    const missingItems: string[] = []
+    if (!allSessionsCreated) {
+      missingItems.push('criar sessões')
+    }
+    if (!hasPaymentMethod) {
+      missingItems.push('definir pagamento')
+    }
+
+    return (
+      <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-warning/10 text-warning">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+        <span className="text-xs">
+          Pendente: {missingItems.join(' e ')}
+        </span>
+      </div>
+    )
+  }
+
   return (
     <Card 
       className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary select-none"
@@ -216,9 +252,9 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
         <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
         <Package className="h-4 w-4 text-primary" />
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="space-y-3">
         <div 
-          className={`space-y-4 transition-all duration-200 ease-out ${
+          className={`space-y-3 transition-all duration-200 ease-out ${
             isTransitioning 
               ? 'opacity-0 transform translate-x-2' 
               : 'opacity-100 transform translate-x-0'
@@ -231,7 +267,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           </div>
 
           {/* Sessions Progress (consumidas) */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Sessões Consumidas</span>
               <span className="font-medium">{completionRate}%</span>
@@ -244,7 +280,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           </div>
 
           {/* Sessions Created Progress */}
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Sessões Criadas</span>
               <span className="font-medium">{sessionsCreatedRate}%</span>
@@ -256,18 +292,29 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
             </div>
           </div>
 
-          {/* Revenue per Session */}
-          <div className="pt-2 border-t">
-            <p className="text-xs text-muted-foreground">Receita/Sessão</p>
-            <p className="text-sm font-semibold text-primary">
-              {formatCurrencyBR(revenuePerSession)}
-            </p>
+          {/* Revenue Info */}
+          <div className="pt-1 border-t flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Receita/Sessão</p>
+              <p className="text-sm font-semibold text-primary">
+                {formatCurrencyBR(revenuePerSession)}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Receita Total</p>
+              <p className="text-sm font-semibold text-primary">
+                {formatCurrencyBR(currentPackage?.valor_total || 0)}
+              </p>
+            </div>
           </div>
+
+          {/* Dynamic Status Reminder */}
+          {renderStatusReminder()}
         </div>
 
         {/* Carousel Navigation Dots */}
         {activePackages.length > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-2">
+          <div className="flex items-center justify-center gap-2 pt-1">
             <Button
               variant="ghost"
               size="icon"

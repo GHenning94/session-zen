@@ -79,6 +79,7 @@ export default function Sessoes() {
   const [sessionNotes, setSessionNotes] = useState<SessionNote[]>([])
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [clients, setClients] = useState<any[]>([])
+  const [packages, setPackages] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState<'sessions' | 'notes'>('sessions')
   
@@ -174,11 +175,19 @@ export default function Sessoes() {
 
       if (clientsError) throw clientsError
 
+      // Carregar pacotes para obter valor_por_sessao
+      const { data: packagesData, error: packagesError } = await supabase
+        .from('packages')
+        .select('id, valor_por_sessao, valor_total, total_sessoes')
+
+      if (packagesError) throw packagesError
+
       // Não atualizar status automaticamente - manter como está
       setSessions(sessionsData || [])
       setSessionNotes(notesData || [])
       setEvolucoes(evolucoesData || [])
       setClients(clientsData || [])
+      setPackages(packagesData || [])
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
       toast({
@@ -523,6 +532,25 @@ export default function Sessoes() {
       case 'faltou': return 'Falta'
       default: return status
     }
+  }
+
+  // Obter valor da sessão (calculado para sessões de pacote)
+  const getSessionValue = (session: Session): number => {
+    // Se a sessão tem valor definido, usar
+    if (session.valor != null && session.valor > 0) {
+      return session.valor
+    }
+    
+    // Se é sessão de pacote, buscar valor do pacote
+    if (session.package_id) {
+      const pkg = packages.find(p => p.id === session.package_id)
+      if (pkg) {
+        // valor_por_sessao tem prioridade, senão calcula
+        return pkg.valor_por_sessao || (pkg.valor_total / pkg.total_sessoes)
+      }
+    }
+    
+    return 0
   }
 
   // Filtrar e ordenar sessões pela mais próxima (futuras primeiro, depois passadas)
@@ -910,7 +938,7 @@ export default function Sessoes() {
                                         </div>
                                         {(session.valor != null || session.package_id) && (
                                           <span className="font-medium text-primary">
-                                            {formatCurrencyBR(session.valor || 0)}
+                                            {formatCurrencyBR(getSessionValue(session))}
                                             {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
                                           </span>
                                         )}
@@ -1006,7 +1034,7 @@ export default function Sessoes() {
                                   </div>
                                   {(session.valor != null || session.package_id) && (
                                     <span className="font-medium text-primary">
-                                      {formatCurrencyBR(session.valor || 0)}
+                                      {formatCurrencyBR(getSessionValue(session))}
                                       {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
                                     </span>
                                   )}
