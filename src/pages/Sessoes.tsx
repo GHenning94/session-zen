@@ -329,6 +329,8 @@ export default function Sessoes() {
       })
     }
   }
+
+  const handleViewInAgenda = (sessionId: string) => {
     try {
       const session = sessions.find(s => s.id === sessionId)
       if (session) {
@@ -1045,7 +1047,7 @@ export default function Sessoes() {
           onDelete={handleDeleteSession}
           onCancel={handleCancelSession}
           onMarkNoShow={handleMarkNoShow}
-          onViewAgenda={handleViewSession}
+          onViewAgenda={handleViewInAgenda}
           onViewPayment={handleViewPayment}
           onAddNote={handleAddNote}
           hasNotes={selectedSession ? sessionNotes.some(note => note.session_id === selectedSession.id) : false}
