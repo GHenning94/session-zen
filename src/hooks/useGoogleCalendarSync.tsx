@@ -348,17 +348,13 @@ export const useGoogleCalendarSync = () => {
         clientId = newClient.id
       }
 
-      // Criar sessão - se editável, usa valor padrão; se somente leitura, usa NULL
-      // Isso evita que o trigger crie pagamento automático para sessões importadas
-      let valorPadrao = null
+      // Criar sessão - TODAS as sessões do Google usam valor padrão para criar pagamento automático
       const { data: config } = await supabase
         .from('configuracoes')
         .select('valor_padrao')
         .eq('user_id', user.id)
         .maybeSingle()
-      if (editable) {
-        valorPadrao = config?.valor_padrao || 0
-      }
+      const valorPadrao = config?.valor_padrao || 0
 
       const sessionData: any = {
         user_id: user.id,
@@ -492,7 +488,7 @@ export const useGoogleCalendarSync = () => {
         .eq('user_id', user.id)
         .maybeSingle()
       
-      const valorPadrao = config?.valor_padrao || null
+      const valorPadrao = config?.valor_padrao || 0
 
       // Criar sessão com valor padrão para acionar trigger de pagamento
       const { data: newSession, error: sessionError } = await supabase
@@ -503,7 +499,7 @@ export const useGoogleCalendarSync = () => {
           data: eventDate,
           horario: formatTimeForDatabase(eventTime),
           status: 'agendada',
-          valor: valorPadrao, // Usar valor padrão para criar pagamento automático
+          valor: valorPadrao,
           anotacoes: event.description || '',
           google_event_id: event.id,
           google_sync_type: 'espelhado' as GoogleSyncType,
