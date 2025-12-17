@@ -908,8 +908,11 @@ export default function Sessoes() {
                                           <Clock className="w-4 h-4" />
                                           <span>{formatTimeBR(session.horario)}</span>
                                         </div>
-                                        {session.valor && (
-                                          <span className="font-medium">{formatCurrencyBR(session.valor)}</span>
+                                        {(session.valor != null || session.package_id) && (
+                                          <span className="font-medium text-primary">
+                                            {formatCurrencyBR(session.valor || 0)}
+                                            {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
+                                          </span>
                                         )}
                                       </div>
                                     </div>
@@ -1001,8 +1004,11 @@ export default function Sessoes() {
                                     <Clock className="w-4 h-4" />
                                     <span>{formatTimeBR(session.horario)}</span>
                                   </div>
-                                  {session.valor && (
-                                    <span className="font-medium">{formatCurrencyBR(session.valor)}</span>
+                                  {(session.valor != null || session.package_id) && (
+                                    <span className="font-medium text-primary">
+                                      {formatCurrencyBR(session.valor || 0)}
+                                      {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
+                                    </span>
                                   )}
                                 </div>
                               </div>
