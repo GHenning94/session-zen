@@ -35,6 +35,9 @@ interface BatchSelectionBarProps {
   statusOptions?: { value: string; label: string }[]
   editLabel?: string
   deleteLabel?: string
+  selectLabel?: string
+  isSelectionMode?: boolean
+  onToggleSelectionMode?: () => void
 }
 
 export function BatchSelectionBar({
@@ -50,7 +53,10 @@ export function BatchSelectionBar({
   showStatusChange = false,
   statusOptions = [],
   editLabel = "Editar selecionados",
-  deleteLabel = "Excluir selecionados"
+  deleteLabel = "Excluir selecionados",
+  selectLabel = "Selecionar",
+  isSelectionMode = false,
+  onToggleSelectionMode
 }: BatchSelectionBarProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
@@ -73,18 +79,38 @@ export function BatchSelectionBar({
     <>
       <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border mb-4">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={selectedCount === totalCount ? onClearSelection : onSelectAll}
-          >
-            {selectedCount === totalCount ? (
-              <CheckSquare className="w-4 h-4 mr-1" />
-            ) : (
-              <Square className="w-4 h-4 mr-1" />
-            )}
-            {selectedCount === totalCount ? 'Desmarcar todos' : 'Selecionar todos'}
-          </Button>
+          {/* Botão de ativar/desativar modo seleção */}
+          {onToggleSelectionMode ? (
+            <Button
+              variant={isSelectionMode ? "secondary" : "ghost"}
+              size="sm"
+              onClick={onToggleSelectionMode}
+            >
+              {isSelectionMode ? (
+                <CheckSquare className="w-4 h-4 mr-1" />
+              ) : (
+                <Square className="w-4 h-4 mr-1" />
+              )}
+              {selectLabel}
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={selectedCount === totalCount ? onClearSelection : onSelectAll}
+            >
+              {selectedCount === totalCount ? (
+                <CheckSquare className="w-4 h-4 mr-1" />
+              ) : (
+                <Square className="w-4 h-4 mr-1" />
+              )}
+              {selectedCount === totalCount ? 'Desmarcar todos' : 'Selecionar todos'}
+            </Button>
+          )}
+
+          {isSelectionMode && selectedCount === 0 && (
+            <span className="text-sm text-muted-foreground">Clique nos itens para selecionar</span>
+          )}
 
           {selectedCount > 0 && (
             <>
@@ -92,6 +118,13 @@ export function BatchSelectionBar({
               <Badge variant="secondary">
                 {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}
               </Badge>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onSelectAll}
+              >
+                Selecionar todos
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

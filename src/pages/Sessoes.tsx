@@ -30,6 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 import { BatchSelectionBar, SelectableItemCheckbox } from '@/components/BatchSelectionBar'
+import { BatchEditModal, BatchEditChanges } from '@/components/BatchEditModal'
 
 interface Session {
   id: string
@@ -94,6 +95,8 @@ export default function Sessoes() {
   
   // Estado para seleção em lote
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [batchEditModalOpen, setBatchEditModalOpen] = useState(false)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -281,10 +284,12 @@ export default function Sessoes() {
 
   const selectAllSessions = () => {
     setSelectedSessions(new Set(filteredSessions.map(s => s.id)))
+    setIsSelectionMode(true)
   }
 
   const clearSessionSelection = () => {
     setSelectedSessions(new Set())
+    setIsSelectionMode(false)
   }
 
   const handleBatchDeleteSessions = async () => {
@@ -315,19 +320,78 @@ export default function Sessoes() {
   }
 
   const handleBatchEditSessions = () => {
-    if (selectedSessions.size === 1) {
-      const sessionId = Array.from(selectedSessions)[0]
-      const session = sessions.find(s => s.id === sessionId)
-      if (session) {
-        setSelectedSession(session)
-        setEditModalOpen(true)
+    if (selectedSessions.size > 0) {
+      setBatchEditModalOpen(true)
+    }
+  }
+
+  const handleBatchEditConfirm = async (changes: BatchEditChanges) => {
+    try {
+      const ids = Array.from(selectedSessions)
+      
+      // Atualizar sessões
+      if (changes.valor !== undefined || changes.metodo_pagamento || changes.status) {
+        const sessionUpdate: any = {}
+        if (changes.valor !== undefined) sessionUpdate.valor = changes.valor
+        if (changes.metodo_pagamento) sessionUpdate.metodo_pagamento = changes.metodo_pagamento
+        if (changes.status) sessionUpdate.status = changes.status
+
+        const { error: sessionError } = await supabase
+          .from('sessions')
+          .update(sessionUpdate)
+          .in('id', ids)
+
+        if (sessionError) throw sessionError
       }
-    } else {
+
+      // Atualizar pagamentos relacionados
+      if (changes.valor !== undefined || changes.metodo_pagamento || changes.status) {
+        const paymentUpdate: any = {}
+        if (changes.valor !== undefined) paymentUpdate.valor = changes.valor
+        if (changes.metodo_pagamento) paymentUpdate.metodo_pagamento = changes.metodo_pagamento
+        if (changes.status) {
+          // Mapear status de sessão para status de pagamento
+          if (changes.status === 'realizada') paymentUpdate.status = 'pago'
+          else if (changes.status === 'cancelada') paymentUpdate.status = 'cancelado'
+          else if (changes.status === 'agendada') paymentUpdate.status = 'pendente'
+        }
+
+        if (Object.keys(paymentUpdate).length > 0) {
+          const { error: paymentError } = await supabase
+            .from('payments')
+            .update(paymentUpdate)
+            .in('session_id', ids)
+
+          if (paymentError) console.error('Erro ao atualizar pagamentos:', paymentError)
+        }
+      }
+
       toast({
-        title: "Edição em lote",
-        description: "Para editar múltiplas sessões, selecione uma de cada vez.",
+        title: "Sessões atualizadas",
+        description: `${ids.length} sessão(ões) atualizada(s) com sucesso.`,
+      })
+      
+      setBatchEditModalOpen(false)
+      setSelectedSessions(new Set())
+      setIsSelectionMode(false)
+      await loadData()
+      window.dispatchEvent(new Event('sessionUpdated'))
+      window.dispatchEvent(new Event('paymentUpdated'))
+    } catch (error) {
+      console.error('Erro ao editar sessões:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar as sessões.",
+        variant: "destructive",
       })
     }
+  }
+
+  const toggleSelectionMode = () => {
+    if (isSelectionMode) {
+      setSelectedSessions(new Set())
+    }
+    setIsSelectionMode(!isSelectionMode)
   }
 
   const handleViewInAgenda = (sessionId: string) => {
@@ -760,6 +824,9 @@ export default function Sessoes() {
                     onBatchEdit={handleBatchEditSessions}
                     showDelete={true}
                     showEdit={true}
+                    selectLabel="Selecionar sessões"
+                    isSelectionMode={isSelectionMode}
+                    onToggleSelectionMode={toggleSelectionMode}
                   />
                 )}
                 
@@ -791,17 +858,21 @@ export default function Sessoes() {
                             <div 
                               key={session.id} 
                               className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
-                              onClick={() => handleSessionClick(session)}
+                              onClick={() => isSelectionMode ? toggleSessionSelection(session.id) : handleSessionClick(session)}
                             >
-                              <div className="absolute top-4 left-4 flex items-center gap-2">
-                                <SelectableItemCheckbox
-                                  isSelected={selectedSessions.has(session.id)}
-                                  onSelect={() => toggleSessionSelection(session.id)}
-                                />
-                                {needsAttention && <PulsingDot color="warning" size="md" />}
-                              </div>
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-4 flex-1">
+                                  {isSelectionMode && (
+                                    <SelectableItemCheckbox
+                                      isSelected={selectedSessions.has(session.id)}
+                                      onSelect={() => toggleSessionSelection(session.id)}
+                                    />
+                                  )}
+                                  {!isSelectionMode && needsAttention && (
+                                    <div className="absolute top-4 left-4">
+                                      <PulsingDot color="warning" size="md" />
+                                    </div>
+                                  )}
                                   <ClientAvatar 
                                     avatarPath={session.clients?.avatar_url}
                                     clientName={session.clients?.nome || 'Cliente'}
@@ -880,15 +951,21 @@ export default function Sessoes() {
                       <div 
                         key={session.id} 
                         className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
-                        onClick={() => handleSessionClick(session)}
+                        onClick={() => isSelectionMode ? toggleSessionSelection(session.id) : handleSessionClick(session)}
                       >
-                        {needsAttention && (
-                          <div className="absolute top-4 left-4">
-                            <PulsingDot color="warning" size="md" />
-                          </div>
-                        )}
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-4 flex-1">
+                            {isSelectionMode && (
+                              <SelectableItemCheckbox
+                                isSelected={selectedSessions.has(session.id)}
+                                onSelect={() => toggleSessionSelection(session.id)}
+                              />
+                            )}
+                            {!isSelectionMode && needsAttention && (
+                              <div className="absolute top-4 left-4">
+                                <PulsingDot color="warning" size="md" />
+                              </div>
+                            )}
                             <ClientAvatar 
                               avatarPath={session.clients?.avatar_url}
                               clientName={session.clients?.nome || 'Cliente'}
@@ -1121,6 +1198,15 @@ export default function Sessoes() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Modal de edição em lote */}
+        <BatchEditModal
+          open={batchEditModalOpen}
+          onClose={() => setBatchEditModalOpen(false)}
+          onConfirm={handleBatchEditConfirm}
+          selectedCount={selectedSessions.size}
+          type="sessions"
+        />
       </div>
     </Layout>
   )

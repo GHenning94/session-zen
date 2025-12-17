@@ -27,7 +27,7 @@ import {
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
   ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle, XCircle,
-  History, BookOpen
+  History, BookOpen, X
 } from "lucide-react"
 import { TooltipProvider} from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
@@ -92,6 +92,7 @@ const GoogleCalendarIntegrationNew = () => {
   
   // State para o modal de seleção de série
   const [seriesModalOpen, setSeriesModalOpen] = useState(false)
+  const [showWarning, setShowWarning] = useState(true)
   const [seriesModalEvents, setSeriesModalEvents] = useState<GoogleEvent[]>([])
   const [seriesModalAction, setSeriesModalAction] = useState<SeriesActionType>('import')
   const [seriesModalLoading, setSeriesModalLoading] = useState(false)
@@ -334,13 +335,22 @@ const GoogleCalendarIntegrationNew = () => {
       <TooltipProvider>
         <div className="space-y-6">
           {/* Aviso no topo - acima de tudo */}
-          <Alert className="bg-warning/10 border-warning/30">
-            <BookOpen className="h-4 w-4 text-warning" />
-            <AlertDescription className="text-sm">
-              <strong>Recomendação:</strong> Leia a <strong>legenda</strong> abaixo para entender o funcionamento completo da integração. 
-              Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
-            </AlertDescription>
-          </Alert>
+          {showWarning && (
+            <Alert className="bg-warning/10 border-warning/30 mt-4">
+              <div className="flex items-center justify-between w-full">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="h-4 w-4 text-warning" />
+                  <AlertDescription className="text-sm">
+                    <strong>Recomendação:</strong> Leia a <strong>legenda</strong> abaixo para entender o funcionamento completo da integração. 
+                    Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
+                  </AlertDescription>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => setShowWarning(false)} className="h-6 w-6 p-0">
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </Alert>
+          )}
 
           {/* Status da Conexão */}
           <Card className="shadow-soft">
@@ -538,14 +548,25 @@ const GoogleCalendarIntegrationNew = () => {
                     </ScrollArea>
                   )}
                   
+                  {/* Spacer para alinhar com o card da direita */}
+                  <div className="flex-grow" />
+                  
                   {filteredGoogleEvents.length > 0 && (
-                    <div className="mt-4 pt-4 border-t flex justify-end gap-2">
+                    <div className="mt-auto pt-4 border-t flex justify-end gap-2">
                       <Button
                         variant="outline" 
                         size="sm"
                         onClick={handleImportAll}
                         disabled={loading}
                       >
+                        <Copy className="w-4 h-4 mr-1" />
+                        Copiar todos
+                      </Button>
+                    </div>
+                  )}
+                  {filteredGoogleEvents.length === 0 && (
+                    <div className="mt-auto pt-4 border-t flex justify-end gap-2 invisible">
+                      <Button variant="outline" size="sm" disabled>
                         <Copy className="w-4 h-4 mr-1" />
                         Copiar todos
                       </Button>
