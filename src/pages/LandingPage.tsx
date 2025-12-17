@@ -103,7 +103,7 @@ const TestimonialsColumn = (props: {
     <div className={props.className}>
       <div className="flex flex-col gap-6 pb-6 bg-background testimonials-column-track" style={{ animationDuration: `${props.duration}s` }}>
         {[...new Array(2)].fill(0).map((_, index) => (
-          <React.Fragment key={index}>
+          <div key={index} className="contents">
             {props.testimonials.map(({ text, imgSrc, name, role }, i) => (
               <div className="testimonial-card-column" key={i}>
                 <div>"{text}"</div>
@@ -122,7 +122,7 @@ const TestimonialsColumn = (props: {
                 </div>
               </div>
             ))}
-          </React.Fragment>
+          </div>
         ))}
       </div>
     </div>
