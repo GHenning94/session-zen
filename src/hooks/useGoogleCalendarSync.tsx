@@ -397,7 +397,7 @@ export const useGoogleCalendarSync = () => {
         await supabase.from('notifications').insert([{
           user_id: user.id,
           titulo: editable ? "Defina o valor da sessão duplicada" : "Defina o valor da sessão importada",
-          conteudo: `A sessão "${event.summary}" foi ${editable ? 'duplicada' : 'importada'} do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
+          conteudo: `A sessão "${clientName}" foi ${editable ? 'duplicada' : 'importada'} do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
           lida: false
         }])
       }
@@ -519,7 +519,7 @@ export const useGoogleCalendarSync = () => {
         await supabase.from('notifications').insert([{
           user_id: user.id,
           titulo: "Defina o valor da sessão espelhada",
-          conteudo: `A sessão "${event.summary}" foi espelhada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
+          conteudo: `A sessão "${clientName}" foi espelhada do Google. Para que ela seja contabilizada corretamente nas métricas, defina o valor e método de pagamento. [SESSION_ID:${newSession.id}]`,
           lida: false
         }])
       }
