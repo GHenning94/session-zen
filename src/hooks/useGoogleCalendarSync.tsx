@@ -1123,17 +1123,70 @@ export const useGoogleCalendarSync = () => {
     return series?.instances || [event]
   }
 
+  // Buscar instâncias de evento recorrente do Google (até 1 ano à frente)
+  const fetchRecurringInstances = async (event: GoogleEvent): Promise<GoogleEvent[]> => {
+    const accessToken = await getAccessToken()
+    if (!accessToken) return [event]
+
+    const masterId = event.recurringEventId || event.id
+    
+    try {
+      // Buscar instâncias de hoje até 1 ano à frente
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const timeMin = today.toISOString()
+      
+      const oneYearAhead = new Date()
+      oneYearAhead.setFullYear(oneYearAhead.getFullYear() + 1)
+      const timeMax = oneYearAhead.toISOString()
+      
+      // Usar endpoint de instâncias do evento recorrente
+      const response = await fetch(
+        `https://www.googleapis.com/calendar/v3/calendars/primary/events/${masterId}/instances?timeMin=${timeMin}&timeMax=${timeMax}&maxResults=100`,
+        {
+          headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Accept': 'application/json',
+          },
+        }
+      )
+
+      if (!response.ok) {
+        console.error('Erro ao buscar instâncias:', response.status)
+        return [event]
+      }
+
+      const data = await response.json()
+      return data.items || [event]
+    } catch (error) {
+      console.error('Erro ao buscar instâncias recorrentes:', error)
+      return [event]
+    }
+  }
+
   // Importar série recorrente inteira
   const importRecurringSeries = async (event: GoogleEvent, createClient = false): Promise<number> => {
-    const seriesInstances = getRecurringSeriesInstances(event)
+    setSyncing(event.id)
     
+    // Primeiro tentar do cache local
+    let seriesInstances = getRecurringSeriesInstances(event)
+    
+    // Se só tem 1 instância local mas é evento recorrente, buscar mais do Google
+    if (seriesInstances.length <= 1 && isRecurringEvent(event)) {
+      toast({
+        title: "Buscando série...",
+        description: "Buscando todas as instâncias do evento recorrente no Google.",
+      })
+      seriesInstances = await fetchRecurringInstances(event)
+    }
+    
+    // Se ainda só tem 1, importar normalmente
     if (seriesInstances.length <= 1) {
-      // Se só tem uma instância, importar normalmente
+      setSyncing(null)
       const success = await importGoogleEvent(event, createClient)
       return success ? 1 : 0
     }
     
-    setSyncing(event.id)
     let successCount = 0
     let clientId: string | null = null
     
