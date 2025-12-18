@@ -248,71 +248,73 @@ export default function Pacotes() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="space-y-4">
-                  {/* Progress Bar */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Progresso</span>
-                      <span className="font-medium">
-                        {progress.consumed} / {progress.total} sessões
-                      </span>
+                <CardContent className="flex flex-col h-full">
+                  <div className="space-y-4 flex-grow">
+                    {/* Progress Bar */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Progresso</span>
+                        <span className="font-medium">
+                          {progress.consumed} / {progress.total} sessões
+                        </span>
+                      </div>
+                      <Progress value={progress.percentage} className="h-2" />
+                      {progress.remaining > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {progress.remaining} sessão{progress.remaining !== 1 ? 'ões' : ''} restante{progress.remaining !== 1 ? 's' : ''}
+                        </p>
+                      )}
                     </div>
-                    <Progress value={progress.percentage} className="h-2" />
-                    {progress.remaining > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {progress.remaining} sessão{progress.remaining !== 1 ? 'ões' : ''} restante{progress.remaining !== 1 ? 's' : ''}
-                      </p>
-                    )}
+
+                    {/* Sessions Created Progress */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Sessões Criadas</span>
+                        <span className="font-medium">
+                          {createdSessions} / {pkg.total_sessoes}
+                        </span>
+                      </div>
+                      <Progress 
+                        value={(createdSessions / pkg.total_sessoes) * 100} 
+                        className="h-2" 
+                      />
+                    </div>
+
+                    {/* Package Info - Fixed height section */}
+                    <div className="space-y-2 text-sm min-h-[120px]">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Valor Total:</span>
+                        <span className="font-medium">R$ {pkg.valor_total.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Valor/Sessão:</span>
+                        <span className="font-medium">
+                          R$ {pkg.valor_por_sessao?.toFixed(2) || (pkg.valor_total / pkg.total_sessoes).toFixed(2)}
+                        </span>
+                      </div>
+                      {pkg.metodo_pagamento && pkg.metodo_pagamento !== 'A definir' && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Pagamento:</span>
+                          <span className="font-medium">{formatPaymentMethod(pkg.metodo_pagamento)}</span>
+                        </div>
+                      )}
+                      {pkg.data_inicio && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Início:</span>
+                          <span>{format(new Date(pkg.data_inicio), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                        </div>
+                      )}
+                      {pkg.data_fim && (
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Término:</span>
+                          <span>{format(new Date(pkg.data_fim), 'dd/MM/yyyy', { locale: ptBR })}</span>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
-                  {/* Sessions Created Progress */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Sessões Criadas</span>
-                      <span className="font-medium">
-                        {createdSessions} / {pkg.total_sessoes}
-                      </span>
-                    </div>
-                    <Progress 
-                      value={(createdSessions / pkg.total_sessoes) * 100} 
-                      className="h-2" 
-                    />
-                  </div>
-
-                  {/* Package Info */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valor Total:</span>
-                      <span className="font-medium">R$ {pkg.valor_total.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valor/Sessão:</span>
-                      <span className="font-medium">
-                        R$ {pkg.valor_por_sessao?.toFixed(2) || (pkg.valor_total / pkg.total_sessoes).toFixed(2)}
-                      </span>
-                    </div>
-                    {pkg.metodo_pagamento && pkg.metodo_pagamento !== 'A definir' && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Pagamento:</span>
-                        <span className="font-medium">{formatPaymentMethod(pkg.metodo_pagamento)}</span>
-                      </div>
-                    )}
-                    {pkg.data_inicio && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Início:</span>
-                        <span>{format(new Date(pkg.data_inicio), 'dd/MM/yyyy', { locale: ptBR })}</span>
-                      </div>
-                    )}
-                    {pkg.data_fim && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Término:</span>
-                        <span>{format(new Date(pkg.data_fim), 'dd/MM/yyyy', { locale: ptBR })}</span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2">
+                  {/* Actions - Always at bottom */}
+                  <div className="flex gap-2 pt-4 mt-auto">
                     <Button
                       variant="outline"
                       size="sm"
