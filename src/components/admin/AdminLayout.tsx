@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button"
 import { LogOut } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
+import { clearAdminSession } from "@/utils/adminApi"
 
 interface AdminLayoutProps {
   children: React.ReactNode
@@ -13,9 +14,8 @@ export const AdminLayout = ({ children }: AdminLayoutProps) => {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    localStorage.removeItem('admin_session_token')
-    localStorage.removeItem('admin_user_id')
-    localStorage.removeItem('admin_session_expires')
+    // Clear client-side session metadata
+    clearAdminSession()
     toast.success('Logout realizado com sucesso')
     navigate('/admin/login')
   }

@@ -3,6 +3,21 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Credentials': 'true',
+}
+
+// Parse cookies from request header
+function parseCookies(cookieHeader: string | null): Record<string, string> {
+  const cookies: Record<string, string> = {}
+  if (!cookieHeader) return cookies
+  
+  cookieHeader.split(';').forEach(cookie => {
+    const [name, ...rest] = cookie.split('=')
+    if (name && rest.length > 0) {
+      cookies[name.trim()] = rest.join('=').trim()
+    }
+  })
+  return cookies
 }
 
 Deno.serve(async (req) => {
@@ -16,7 +31,19 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { sessionToken } = await req.json()
+    // Try to get session token from cookie first, then from body (for backward compatibility)
+    const cookies = parseCookies(req.headers.get('cookie'))
+    let sessionToken = cookies['admin_session']
+    
+    // Fallback to body for backward compatibility during transition
+    if (!sessionToken) {
+      try {
+        const body = await req.json()
+        sessionToken = body.sessionToken
+      } catch {
+        // No body or invalid JSON
+      }
+    }
 
     if (!sessionToken) {
       return new Response(
@@ -54,9 +81,17 @@ Deno.serve(async (req) => {
         .update({ revoked: true, revoked_at: now.toISOString() })
         .eq('id', session.id)
 
+      // Clear the cookie
       return new Response(
         JSON.stringify({ error: 'Sessão expirada', valid: false }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { 
+          status: 401, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json',
+            'Set-Cookie': 'admin_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0'
+          } 
+        }
       )
     }
 
