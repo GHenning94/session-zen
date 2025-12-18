@@ -39,22 +39,34 @@ const AdminLogin = () => {
     setIsLoading(true)
 
     try {
-      const { data, error } = await supabase.functions.invoke('admin-login', {
-        body: {
-          email,
-          password,
-          captchaToken,
-        },
-      })
+      // Use fetch directly to ensure cookies are properly handled
+      const response = await fetch(
+        `https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/admin-login`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4',
+          },
+          credentials: 'include', // Important: include cookies
+          body: JSON.stringify({
+            email,
+            password,
+            captchaToken,
+          }),
+        }
+      )
 
-      if (error || !data.success) {
-        throw new Error(data?.error || error?.message || 'Falha no login')
+      const data = await response.json()
+
+      if (!response.ok || !data.success) {
+        throw new Error(data?.error || 'Falha no login')
       }
 
-      // Salvar sessão
-      localStorage.setItem('admin_session_token', data.sessionToken)
-      localStorage.setItem('admin_user_id', data.userId)
-      localStorage.setItem('admin_session_expires', data.expiresAt)
+      // Store only non-sensitive data in sessionStorage (cleared when browser closes)
+      // The actual session token is stored in an httpOnly cookie by the edge function
+      sessionStorage.setItem('admin_user_id', data.userId)
+      sessionStorage.setItem('admin_session_expires', data.expiresAt)
 
       toast.success('Login realizado com sucesso!')
       navigate('/admin/dashboard')

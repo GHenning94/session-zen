@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useAuth } from "@/hooks/useAuth"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/integrations/supabase/client"
 
 interface GoogleEvent {
   id: string
@@ -28,6 +27,10 @@ interface GoogleEvent {
 const GOOGLE_CLIENT_ID = "1039606606801-9ofdjvl0abgcr808q3i1jgmb6kojdk9d.apps.googleusercontent.com"
 const SCOPES = 'https://www.googleapis.com/auth/calendar'
 
+// Store access token in memory only (not localStorage) for security
+// This means users need to reconnect after page refresh, but it's more secure
+let googleAccessTokenStore: string | null = null
+
 export const useGoogleCalendar = () => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -35,6 +38,17 @@ export const useGoogleCalendar = () => {
   const [isSignedIn, setIsSignedIn] = useState(false)
   const [events, setEvents] = useState<GoogleEvent[]>([])
   const [loading, setLoading] = useState(false)
+  const autoSyncRef = useRef(false)
+
+  // Get access token from memory
+  const getAccessToken = useCallback(() => {
+    return googleAccessTokenStore
+  }, [])
+
+  // Set access token in memory only
+  const setAccessToken = useCallback((token: string | null) => {
+    googleAccessTokenStore = token
+  }, [])
 
   // Inicializar Google API
   const initializeGoogleAPI = async () => {
@@ -111,7 +125,8 @@ export const useGoogleCalendar = () => {
         scope: SCOPES,
         callback: async (response: any) => {
           if (response.access_token) {
-            localStorage.setItem('google_access_token', response.access_token)
+            // Store in memory only (more secure than localStorage)
+            setAccessToken(response.access_token)
             setIsSignedIn(true)
             toast({
               title: "Conectado!",
@@ -138,7 +153,7 @@ export const useGoogleCalendar = () => {
   // Desconectar do Google
   const disconnectFromGoogle = async () => {
     try {
-      localStorage.removeItem('google_access_token')
+      setAccessToken(null)
       setIsSignedIn(false)
       setEvents([])
       
@@ -153,7 +168,7 @@ export const useGoogleCalendar = () => {
 
   // Carregar eventos do Google Calendar
   const loadEvents = async () => {
-    const accessToken = localStorage.getItem('google_access_token')
+    const accessToken = getAccessToken()
     if (!accessToken) {
       console.log('❌ Nenhum token de acesso encontrado')
       return
@@ -187,7 +202,7 @@ export const useGoogleCalendar = () => {
       if (!response.ok) {
         if (response.status === 401) {
           // Token expirado
-          localStorage.removeItem('google_access_token')
+          setAccessToken(null)
           setIsSignedIn(false)
           toast({
             title: "Token expirado",
@@ -204,7 +219,7 @@ export const useGoogleCalendar = () => {
       setEvents(data.items || [])
       
       // Só mostrar toast de sincronização se for chamada manual (não automática)
-      if (!localStorage.getItem('auto-sync-running')) {
+      if (!autoSyncRef.current) {
         toast({
           title: "Sincronização concluída",
           description: `${data.items?.length || 0} eventos carregados do Google Calendar.`,
@@ -231,7 +246,7 @@ export const useGoogleCalendar = () => {
     location?: string
     attendees?: string[]
   }) => {
-    const accessToken = localStorage.getItem('google_access_token')
+    const accessToken = getAccessToken()
     if (!accessToken) return false
 
     try {
@@ -284,9 +299,9 @@ export const useGoogleCalendar = () => {
     return false
   }
 
-  // Verificar se já está conectado ao carregar
+  // Check if already connected on mount (token in memory from previous hook instance)
   useEffect(() => {
-    const accessToken = localStorage.getItem('google_access_token')
+    const accessToken = getAccessToken()
     if (accessToken && isInitialized) {
       setIsSignedIn(true)
       loadEvents()
@@ -297,9 +312,9 @@ export const useGoogleCalendar = () => {
   useEffect(() => {
     if (isSignedIn) {
       const interval = setInterval(() => {
-        localStorage.setItem('auto-sync-running', 'true')
+        autoSyncRef.current = true
         loadEvents().finally(() => {
-          localStorage.removeItem('auto-sync-running')
+          autoSyncRef.current = false
         })
       }, 300000) // 5 minutos
       
