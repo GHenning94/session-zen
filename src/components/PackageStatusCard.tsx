@@ -335,7 +335,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           </div>
 
           {/* Dynamic Status Reminder */}
-          <div className="pt-2">
+          <div className="pt-2 min-h-[70px]">
             {renderStatusReminder()}
           </div>
         </div>
