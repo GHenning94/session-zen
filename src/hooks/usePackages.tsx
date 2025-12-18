@@ -170,6 +170,49 @@ export const usePackages = () => {
     return updatePackage(id, { status: 'cancelado' });
   };
 
+  const deletePackage = async (id: string) => {
+    setLoading(true);
+    try {
+      // Deletar sessões associadas ao pacote
+      const { error: sessionsError } = await supabase
+        .from('sessions')
+        .delete()
+        .eq('package_id', id);
+
+      if (sessionsError) throw sessionsError;
+
+      // Deletar pagamentos associados ao pacote
+      const { error: paymentsError } = await supabase
+        .from('payments')
+        .delete()
+        .eq('package_id', id);
+
+      if (paymentsError) throw paymentsError;
+
+      // Deletar o pacote
+      const { error: packageError } = await supabase
+        .from('packages')
+        .delete()
+        .eq('id', id);
+
+      if (packageError) throw packageError;
+
+      toast({
+        title: 'Pacote excluído',
+        description: 'Pacote e todos os dados associados foram excluídos.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao excluir pacote',
+        description: error.message,
+      });
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getPackageProgress = (pkg: Package) => {
     const percentage = (pkg.sessoes_consumidas / pkg.total_sessoes) * 100;
     const remaining = pkg.total_sessoes - pkg.sessoes_consumidas;
@@ -189,6 +232,7 @@ export const usePackages = () => {
     createSessionsForPackage,
     updatePackage,
     cancelPackage,
+    deletePackage,
     getPackageProgress,
   };
 };

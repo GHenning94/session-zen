@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -8,7 +9,7 @@ import { useState, useEffect } from 'react';
 import { usePackages, Package } from '@/hooks/usePackages';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Package as PackageIcon } from 'lucide-react';
+import { CalendarIcon, Package as PackageIcon, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -31,8 +32,9 @@ export const PackageModal = ({
   clientId,
   onSave 
 }: PackageModalProps) => {
-  const { createPackage, updatePackage, loading } = usePackages();
+  const { createPackage, updatePackage, deletePackage, loading } = usePackages();
   const { user } = useAuth();
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   
   const [formData, setFormData] = useState({
     client_id: clientId || '',
@@ -94,7 +96,7 @@ export const PackageModal = ({
         });
       }
     }
-  }, [packageToEdit, clientId, open]);
+  }, [packageToEdit?.id, clientId, open]);
 
   useEffect(() => {
     // Calcular valor por sessão automaticamente
@@ -158,6 +160,19 @@ export const PackageModal = ({
       });
     } catch (error) {
       console.error('Error saving package:', error);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!packageToEdit) return;
+    
+    try {
+      await deletePackage(packageToEdit.id);
+      setShowDeleteConfirm(false);
+      onOpenChange(false);
+      onSave();
+    } catch (error) {
+      console.error('Error deleting package:', error);
     }
   };
 
@@ -335,18 +350,55 @@ export const PackageModal = ({
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              disabled={loading}
-            >
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={loading}>
-              {loading ? 'Salvando...' : packageToEdit ? 'Atualizar' : 'Criar Pacote'}
-            </Button>
+          <div className="flex gap-2 justify-between pt-4">
+            {packageToEdit ? (
+              <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    disabled={loading}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Excluir
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir Pacote</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Tem certeza que deseja excluir este pacote? Esta ação não pode ser desfeita.
+                      <br /><br />
+                      <strong>Todas as sessões e pagamentos associados a este pacote serão permanentemente excluídos.</strong>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={handleDelete}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      Excluir
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (
+              <div />
+            )}
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={loading}>
+                {loading ? 'Salvando...' : packageToEdit ? 'Atualizar' : 'Criar Pacote'}
+              </Button>
+            </div>
           </div>
         </form>
       </DialogContent>

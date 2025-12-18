@@ -234,8 +234,8 @@ export default function Pacotes() {
             const allSessionsCreated = createdSessions >= pkg.total_sessoes;
 
             return (
-              <Card key={pkg.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
+              <Card key={pkg.id} className="hover:shadow-lg transition-shadow flex flex-col h-[420px]">
+                <CardHeader className="flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <CardTitle className="text-lg">{pkg.nome}</CardTitle>
@@ -248,8 +248,8 @@ export default function Pacotes() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="flex flex-col h-full">
-                  <div className="space-y-4 flex-grow">
+                <CardContent className="flex flex-col flex-grow">
+                  <div className="space-y-4 flex-grow overflow-hidden">
                     {/* Progress Bar */}
                     <div className="space-y-2">
                       <div className="flex justify-between text-sm">
@@ -280,8 +280,8 @@ export default function Pacotes() {
                       />
                     </div>
 
-                    {/* Package Info - Fixed height section */}
-                    <div className="space-y-2 text-sm min-h-[120px]">
+                    {/* Package Info */}
+                    <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">Valor Total:</span>
                         <span className="font-medium">R$ {pkg.valor_total.toFixed(2)}</span>
