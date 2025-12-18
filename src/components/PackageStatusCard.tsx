@@ -42,6 +42,10 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isTransitioning, setIsTransitioning] = useState(false)
   
+  // Animated progress values
+  const [animatedCompletionRate, setAnimatedCompletionRate] = useState(0)
+  const [animatedSessionsCreatedRate, setAnimatedSessionsCreatedRate] = useState(0)
+  
   // Swipe gesture state
   const touchStartX = useRef<number | null>(null)
   const touchEndX = useRef<number | null>(null)
@@ -96,6 +100,30 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
   const activePackages = packages.filter(p => p.status === 'ativo')
   const currentPackage = activePackages[currentIndex]
+
+  // Calculate actual rates
+  const completionRate = currentPackage 
+    ? Math.round((currentPackage.sessoes_consumidas / currentPackage.total_sessoes) * 100) 
+    : 0
+
+  const sessionsCreatedRate = currentPackage 
+    ? Math.round((currentPackage.sessoes_criadas / currentPackage.total_sessoes) * 100) 
+    : 0
+
+  // Animate progress bars when package changes
+  useEffect(() => {
+    // Reset to 0 immediately
+    setAnimatedCompletionRate(0)
+    setAnimatedSessionsCreatedRate(0)
+    
+    // Animate to actual value after a small delay
+    const timeout = setTimeout(() => {
+      setAnimatedCompletionRate(completionRate)
+      setAnimatedSessionsCreatedRate(sessionsCreatedRate)
+    }, 100)
+    
+    return () => clearTimeout(timeout)
+  }, [currentIndex, completionRate, sessionsCreatedRate, currentPackage?.id])
 
   // Check package status
   const getPackageStatus = (pkg: PackageWithSessions | undefined) => {
@@ -165,7 +193,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
   // If no active packages, show summary card
   if (activePackages.length === 0) {
-    const completionRate = stats.totalSessions > 0 
+    const summaryCompletionRate = stats.totalSessions > 0 
       ? Math.round((stats.consumedSessions / stats.totalSessions) * 100) 
       : 0
 
@@ -187,9 +215,9 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">Progresso Geral</span>
-              <span className="font-medium">{completionRate}%</span>
+              <span className="font-medium">{summaryCompletionRate}%</span>
             </div>
-            <Progress value={completionRate} className="h-2" />
+            <Progress value={summaryCompletionRate} className="h-2" />
           </div>
         </CardContent>
       </Card>
@@ -197,14 +225,6 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   }
 
   // Show individual package carousel
-  const completionRate = currentPackage 
-    ? Math.round((currentPackage.sessoes_consumidas / currentPackage.total_sessoes) * 100) 
-    : 0
-
-  const sessionsCreatedRate = currentPackage 
-    ? Math.round((currentPackage.sessoes_criadas / currentPackage.total_sessoes) * 100) 
-    : 0
-
   const revenuePerSession = currentPackage?.valor_por_sessao || 
     (currentPackage ? currentPackage.valor_total / currentPackage.total_sessoes : 0)
 
@@ -215,26 +235,26 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
   const renderStatusReminder = () => {
     if (isComplete) {
       return (
-        <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
-          <CheckCircle className="h-3.5 w-3.5 shrink-0" />
-          <span className="text-xs">Pacote configurado</span>
+        <div className="flex items-center gap-2 px-3 py-2.5 rounded-md bg-green-500/10 text-green-600 dark:text-green-400">
+          <CheckCircle className="h-4 w-4 shrink-0" />
+          <span className="text-sm font-medium">Pacote configurado corretamente</span>
         </div>
       )
     }
 
     const missingItems: string[] = []
     if (!allSessionsCreated) {
-      missingItems.push('criar sessões')
+      missingItems.push('criar todas as sessões')
     }
     if (!hasPaymentMethod) {
-      missingItems.push('definir pagamento')
+      missingItems.push('definir método de pagamento')
     }
 
     return (
-      <div className="flex items-center gap-2 px-2 py-1.5 rounded-md bg-warning/10 text-warning">
-        <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-        <span className="text-xs">
-          Pendente: {missingItems.join(' e ')}
+      <div className="flex items-start gap-2 px-3 py-2.5 rounded-md bg-warning/10 text-warning">
+        <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
+        <span className="text-sm">
+          <span className="font-medium">Pendente:</span> {missingItems.join(' e ')}
         </span>
       </div>
     )
@@ -252,7 +272,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
         <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
         <Package className="h-4 w-4 text-primary" />
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="flex flex-col min-h-[340px]">
         <div 
           className={`space-y-3 transition-all duration-200 ease-out ${
             isTransitioning 
@@ -272,7 +292,10 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
               <span className="text-muted-foreground">Sessões Consumidas</span>
               <span className="font-medium">{completionRate}%</span>
             </div>
-            <Progress value={completionRate} className="h-2" />
+            <Progress 
+              value={animatedCompletionRate} 
+              className="h-2 transition-all duration-500 ease-out" 
+            />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{currentPackage?.sessoes_consumidas || 0} consumidas</span>
               <span>{(currentPackage?.total_sessoes || 0) - (currentPackage?.sessoes_consumidas || 0)} restantes</span>
@@ -285,7 +308,10 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
               <span className="text-muted-foreground">Sessões Criadas</span>
               <span className="font-medium">{sessionsCreatedRate}%</span>
             </div>
-            <Progress value={sessionsCreatedRate} className="h-2" />
+            <Progress 
+              value={animatedSessionsCreatedRate} 
+              className="h-2 transition-all duration-500 ease-out" 
+            />
             <div className="flex items-center justify-between text-xs text-muted-foreground">
               <span>{currentPackage?.sessoes_criadas || 0} criadas</span>
               <span>{currentPackage?.total_sessoes || 0} total</span>
@@ -309,14 +335,17 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           </div>
 
           {/* Dynamic Status Reminder */}
-          <div className="mt-2">
+          <div className="pt-2">
             {renderStatusReminder()}
           </div>
         </div>
 
+        {/* Spacer to push navigation to bottom */}
+        <div className="flex-grow" />
+
         {/* Carousel Navigation Dots */}
         {activePackages.length > 1 && (
-          <div className="flex items-center justify-center gap-2 pt-3 mt-2">
+          <div className="flex items-center justify-center gap-2 pt-4 mt-auto">
             <Button
               variant="ghost"
               size="icon"
