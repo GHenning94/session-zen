@@ -3,6 +3,7 @@ import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { Card } from "@/components/ui/card"
 import { useMetas, MetaTipo } from "@/hooks/useMetas"
+import { useTerminology } from "@/hooks/useTerminology"
 import { useEffect } from "react"
 
 interface BusinessOrbitalViewProps {
@@ -26,6 +27,7 @@ export const BusinessOrbitalView = ({
   upcomingSessionsCount 
 }: BusinessOrbitalViewProps) => {
   const { metas, getMetaAtivaPorTipo, verificarEMarcarMetasConcluidas } = useMetas()
+  const { clientTermPlural } = useTerminology()
   
   const now = new Date()
   const currentMonth = now.toLocaleDateString('pt-BR', { month: 'short' })
@@ -107,10 +109,10 @@ export const BusinessOrbitalView = ({
     },
     {
       id: 2,
-      title: "Clientes",
+      title: clientTermPlural,
       date: currentMonth,
       content: metaClientes
-        ? `Meta: ${metaClientes.valor_meta} clientes\nAtual: ${dashboardData.activeClients} clientes\nBase sólida para crescimento sustentável.`
+        ? `Meta: ${metaClientes.valor_meta} ${clientTermPlural.toLowerCase()}\nAtual: ${dashboardData.activeClients} ${clientTermPlural.toLowerCase()}\nBase sólida para crescimento sustentável.`
         : metaConcluidas.clientes
         ? `Meta ${metaConcluidas.clientes.versao} concluída! Defina uma nova meta para continuar.`
         : 'Defina uma meta em Metas para começar.',
