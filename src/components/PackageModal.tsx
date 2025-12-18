@@ -67,36 +67,39 @@ export const PackageModal = ({
   // Buscar nome do cliente selecionado (para quando está editando e clientes ainda não carregaram)
   const selectedClientName = clients.find(c => c.id === formData.client_id)?.nome;
 
+  // Preencher formulário quando packageToEdit mudar OU quando modal abrir com packageToEdit
   useEffect(() => {
-    if (open) {
-      if (packageToEdit) {
-        setFormData({
-          client_id: packageToEdit.client_id,
-          nome: packageToEdit.nome,
-          total_sessoes: packageToEdit.total_sessoes,
-          valor_total: packageToEdit.valor_total,
-          valor_por_sessao: packageToEdit.valor_por_sessao || 0,
-          metodo_pagamento: packageToEdit.metodo_pagamento || '',
-          data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
-          data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
-          observacoes: packageToEdit.observacoes || ''
-        });
-      } else {
-        // Reset ao abrir para novo
-        setFormData({
-          client_id: clientId || '',
-          nome: '',
-          total_sessoes: 10,
-          valor_total: 0,
-          valor_por_sessao: 0,
-          metodo_pagamento: '',
-          data_inicio: undefined,
-          data_fim: undefined,
-          observacoes: ''
-        });
-      }
+    if (packageToEdit && open) {
+      setFormData({
+        client_id: packageToEdit.client_id,
+        nome: packageToEdit.nome,
+        total_sessoes: packageToEdit.total_sessoes,
+        valor_total: packageToEdit.valor_total,
+        valor_por_sessao: packageToEdit.valor_por_sessao || 0,
+        metodo_pagamento: packageToEdit.metodo_pagamento || '',
+        data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
+        data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
+        observacoes: packageToEdit.observacoes || ''
+      });
     }
-  }, [packageToEdit?.id, clientId, open]);
+  }, [packageToEdit, open]);
+
+  // Reset formulário quando abrir para criar novo pacote
+  useEffect(() => {
+    if (open && !packageToEdit) {
+      setFormData({
+        client_id: clientId || '',
+        nome: '',
+        total_sessoes: 10,
+        valor_total: 0,
+        valor_por_sessao: 0,
+        metodo_pagamento: '',
+        data_inicio: undefined,
+        data_fim: undefined,
+        observacoes: ''
+      });
+    }
+  }, [open, packageToEdit, clientId]);
 
   useEffect(() => {
     // Calcular valor por sessão automaticamente
