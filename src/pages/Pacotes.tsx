@@ -137,15 +137,8 @@ export default function Pacotes() {
   };
 
   const handleEditPackage = (pkg: Package) => {
-    // Primeiro fecha o modal se estiver aberto, limpa o pacote selecionado
-    setIsPackageModalOpen(false);
-    setSelectedPackage(null);
-    
-    // Aguarda o próximo ciclo de render para abrir com o novo pacote
-    setTimeout(() => {
-      setSelectedPackage(pkg);
-      setIsPackageModalOpen(true);
-    }, 0);
+    setSelectedPackage(pkg);
+    setIsPackageModalOpen(true);
   };
 
   const handleCloseModal = () => {

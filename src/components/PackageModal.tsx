@@ -67,12 +67,9 @@ export const PackageModal = ({
   // Buscar nome do cliente selecionado (para quando está editando e clientes ainda não carregaram)
   const selectedClientName = clients.find(c => c.id === formData.client_id)?.nome;
 
-  // Preencher ou resetar formulário baseado no estado do modal e pacote
+  // Preencher formulário quando packageToEdit mudar OU quando modal abrir com packageToEdit
   useEffect(() => {
-    if (!open) return; // Não fazer nada se o modal estiver fechado
-    
-    if (packageToEdit) {
-      // Editar pacote existente - preencher com dados
+    if (packageToEdit && open) {
       setFormData({
         client_id: packageToEdit.client_id,
         nome: packageToEdit.nome,
@@ -84,8 +81,12 @@ export const PackageModal = ({
         data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
         observacoes: packageToEdit.observacoes || ''
       });
-    } else {
-      // Novo pacote - resetar formulário
+    }
+  }, [packageToEdit, open]);
+
+  // Reset formulário quando abrir para criar novo pacote
+  useEffect(() => {
+    if (open && !packageToEdit) {
       setFormData({
         client_id: clientId || '',
         nome: '',
@@ -179,7 +180,7 @@ export const PackageModal = ({
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} key={packageToEdit?.id || 'new'}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
