@@ -309,11 +309,11 @@ const Dashboard = () => {
     return () => document.removeEventListener('visibilitychange', onVisibility)
   }, [user, invalidateCache, loadDashboardDataOptimized])
 
-  // Usar hook global de realtime ao invés de criar 3 canais separados
+  // Usar hook global de realtime ao invés de criar canais separados
   useEffect(() => {
     if (!user) return
 
-    const unsubscribe = subscribe(['sessions', 'clients', 'payments'], () => {
+    const unsubscribe = subscribe(['sessions', 'clients', 'payments', 'packages'], () => {
       invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
       loadDashboardDataOptimized(true, ['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
     })
