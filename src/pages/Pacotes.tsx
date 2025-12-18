@@ -137,8 +137,15 @@ export default function Pacotes() {
   };
 
   const handleEditPackage = (pkg: Package) => {
-    setSelectedPackage(pkg);
-    setIsPackageModalOpen(true);
+    // Primeiro fecha o modal se estiver aberto, limpa o pacote selecionado
+    setIsPackageModalOpen(false);
+    setSelectedPackage(null);
+    
+    // Aguarda o próximo ciclo de render para abrir com o novo pacote
+    setTimeout(() => {
+      setSelectedPackage(pkg);
+      setIsPackageModalOpen(true);
+    }, 0);
   };
 
   const handleCloseModal = () => {
