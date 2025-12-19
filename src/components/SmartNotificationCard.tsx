@@ -77,13 +77,13 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
 
   return (
     <Card>
-      <CardContent className="p-4 space-y-3">
+      <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3">
         {validNotifications.map((notification) => (
           <div
             key={notification.id}
-            className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+            className="flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
           >
-            <div className={`p-2 rounded-full flex items-center justify-center ${
+            <div className={`p-1.5 md:p-2 rounded-full flex items-center justify-center shrink-0 ${
               notification.type === 'payment_overdue' ? 'bg-destructive/10' :
               notification.type === 'recurring_next' ? 'bg-warning/10' :
               notification.priority === 'high' ? 'bg-destructive/10 text-destructive' :
@@ -93,18 +93,18 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
               {getIcon(notification.type)}
             </div>
             
-            <div className="flex-1 space-y-1">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-semibold">{notification.title}</p>
-                <Badge variant={getVariant(notification.priority)} className="text-xs">
+            <div className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center gap-1 md:gap-2 flex-wrap">
+                <p className="text-xs md:text-sm font-semibold truncate">{notification.title}</p>
+                <Badge variant={getVariant(notification.priority)} className="text-[10px] md:text-xs shrink-0">
                   {notification.priority === 'high' ? 'Urgente' : 
                    notification.priority === 'medium' ? 'Atenção' : 'Info'}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground">{notification.message}</p>
+              <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-2">{notification.message}</p>
               
               {notification.metadata?.amount && (
-                <p className="text-xs font-semibold text-primary">
+                <p className="text-[11px] md:text-xs font-semibold text-primary">
                   {formatCurrencyBR(notification.metadata.amount)}
                 </p>
               )}
@@ -119,7 +119,7 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
                   e.stopPropagation();
                   navigate(notification.actionUrl!);
                 }}
-                className="shrink-0"
+                className="shrink-0 h-7 md:h-8 px-2 md:px-3 text-xs"
               >
                 Ver
                 <ArrowRight className="h-3 w-3 ml-1" />
@@ -130,19 +130,19 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
         
         {/* Lembretes Importantes */}
         {validReminders.length > 0 && (
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {validReminders.map((reminder, index) => (
               <div
                 key={index}
-                className="flex items-start gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                className="flex items-start gap-2 md:gap-3 p-2 md:p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
               >
-                <div className="p-2 rounded-full bg-warning/10 flex items-center justify-center">
-                  <AlertCircle className="h-4 w-4 text-warning" />
+                <div className="p-1.5 md:p-2 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                  <AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-warning" />
                 </div>
                 
-                <div className="flex-1 space-y-1">
-                  <p className="text-sm font-semibold">Lembrete</p>
-                  <p className="text-xs text-muted-foreground">{reminder}</p>
+                <div className="flex-1 min-w-0 space-y-1">
+                  <p className="text-xs md:text-sm font-semibold">Lembrete</p>
+                  <p className="text-[11px] md:text-xs text-muted-foreground line-clamp-2">{reminder}</p>
                 </div>
               </div>
             ))}

@@ -1391,17 +1391,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card>
                     <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-primary" />
                           <CardTitle>Receita Financeira</CardTitle>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto justify-center sm:justify-end">
+                        <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:justify-end">
                           <Button 
                             variant={chartPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('1')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             1 mês
                           </Button>
@@ -1409,7 +1409,7 @@ const Dashboard = () => {
                             variant={chartPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('3')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             3 meses
                           </Button>
@@ -1417,7 +1417,7 @@ const Dashboard = () => {
                             variant={chartPeriod === '6' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('6')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             6 meses
                           </Button>
@@ -1425,7 +1425,7 @@ const Dashboard = () => {
                             variant={chartPeriod === '12' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handlePeriodChange('12')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             1 ano
                           </Button>
@@ -1582,17 +1582,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-success" />
                           <CardTitle>Ticket Médio</CardTitle>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto justify-center sm:justify-end">
+                        <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:justify-end">
                           <Button 
                             variant={ticketPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('1')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             1 mês
                           </Button>
@@ -1600,7 +1600,7 @@ const Dashboard = () => {
                             variant={ticketPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('3')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             3 meses
                           </Button>
@@ -1608,7 +1608,7 @@ const Dashboard = () => {
                             variant={ticketPeriod === '6' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('6')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             6 meses
                           </Button>
@@ -1616,7 +1616,7 @@ const Dashboard = () => {
                             variant={ticketPeriod === '12' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleTicketPeriodChange('12')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             1 ano
                           </Button>
@@ -1740,17 +1740,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
                     <CardHeader className="pb-4">
-                      <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
                         </div>
-                        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide w-full sm:w-auto justify-center sm:justify-end">
+                        <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:justify-end">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('1')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             1 mês
                           </Button>
@@ -1758,7 +1758,7 @@ const Dashboard = () => {
                             variant={canalPeriod === '3' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('3')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             3 meses
                           </Button>
@@ -1766,7 +1766,7 @@ const Dashboard = () => {
                             variant={canalPeriod === '6' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('6')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             6 meses
                           </Button>
@@ -1774,7 +1774,7 @@ const Dashboard = () => {
                             variant={canalPeriod === '12' ? 'default' : 'outline'} 
                             size="sm"
                             onClick={() => handleCanalPeriodChange('12')}
-                            className="whitespace-nowrap flex-shrink-0"
+                            className="text-xs md:text-sm px-2 md:px-3"
                           >
                             1 ano
                           </Button>
