@@ -358,7 +358,7 @@ export const SessionEditModal = ({
               </Select>
             </div>
 
-            <div className="flex gap-2 justify-end pt-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
               <Button
                 variant="outline"
                 onClick={() => onOpenChange(false)}
@@ -428,7 +428,7 @@ export const SessionEditModal = ({
             )}
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="data">Data</Label>
               <Input
@@ -465,7 +465,7 @@ export const SessionEditModal = ({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="valor">Valor</Label>
                 <Input
@@ -527,7 +527,7 @@ export const SessionEditModal = ({
             />
           </div>
 
-          <div className="flex gap-2 justify-end">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end">
             <Button
               variant="outline"
               onClick={() => onOpenChange(false)}

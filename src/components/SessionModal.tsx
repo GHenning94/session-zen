@@ -351,7 +351,7 @@ export const SessionModal = ({
             </Tabs>
           )}
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Cliente */}
             <div className="col-span-2">
               <Label htmlFor="client_id">Cliente *</Label>
@@ -493,7 +493,7 @@ export const SessionModal = ({
           </div>
 
           {/* Ações */}
-          <div className="flex gap-2 justify-between pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:justify-between pt-4">
             <div>
               {session && (
                 <Button
@@ -501,12 +501,13 @@ export const SessionModal = ({
                   variant="destructive"
                   onClick={handleDelete}
                   disabled={isLoading}
+                  className="w-full sm:w-auto"
                 >
                   Excluir
                 </Button>
               )}
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
               <Button
                 type="button"
                 variant="outline"

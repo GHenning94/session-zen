@@ -190,7 +190,7 @@ export const PackageModal = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Cliente */}
             <div className="col-span-2">
               <Label htmlFor="client_id">Cliente *</Label>
@@ -353,7 +353,7 @@ export const PackageModal = ({
             </div>
           </div>
 
-          <div className="flex gap-2 justify-between pt-4">
+          <div className="flex flex-col sm:flex-row gap-2 sm:justify-between pt-4">
             {packageToEdit ? (
               <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
                 <AlertDialogTrigger asChild>
@@ -361,6 +361,7 @@ export const PackageModal = ({
                     type="button"
                     variant="destructive"
                     disabled={loading}
+                    className="w-full sm:w-auto"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     Excluir
@@ -389,7 +390,7 @@ export const PackageModal = ({
             ) : (
               <div />
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-col-reverse sm:flex-row gap-2">
               <Button
                 type="button"
                 variant="outline"

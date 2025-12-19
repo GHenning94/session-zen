@@ -260,7 +260,7 @@ export const NewPaymentModal = ({ open, onOpenChange, onPaymentAdded }: NewPayme
           </div>
         </div>
         
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <Button 
             variant="outline" 
             onClick={() => {
