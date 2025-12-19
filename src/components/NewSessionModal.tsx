@@ -248,7 +248,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
               </div>
             )}
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
               <Label htmlFor="date">Data</Label>
               <Input 
@@ -293,7 +293,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
             />
           </div>
         </div>
-        <div className="flex justify-end gap-3">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>

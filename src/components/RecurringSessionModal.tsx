@@ -133,7 +133,7 @@ export const RecurringSessionModal = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="recurrence_type">Tipo de Recorrência</Label>
               <Select
@@ -219,7 +219,7 @@ export const RecurringSessionModal = ({
             <div className="col-span-2 space-y-3">
               <Label>Término da Recorrência</Label>
               
-              <div className="flex items-center gap-4">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   type="button"
                   variant={formData.end_type === 'never' ? 'default' : 'outline'}
@@ -300,7 +300,7 @@ export const RecurringSessionModal = ({
             </div>
           </div>
 
-          <div className="flex gap-2 justify-end pt-4">
+          <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4">
             <Button
               type="button"
               variant="outline"
