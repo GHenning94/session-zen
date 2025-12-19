@@ -553,13 +553,13 @@ const Configuracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
-            <TabsTrigger value="profile">Perfil</TabsTrigger>
-            <TabsTrigger value="security">Segurança</TabsTrigger>
-            <TabsTrigger value="preferences">Preferências</TabsTrigger>
-            <TabsTrigger value="platform-payments">Assinatura</TabsTrigger>
-            <TabsTrigger value="bank-details">Dados Bancários</TabsTrigger>
-            <TabsTrigger value="notifications">Notificações</TabsTrigger>
+          <TabsList className="w-full h-auto flex-wrap gap-1 p-1 md:grid md:grid-cols-6">
+            <TabsTrigger value="profile" className="text-xs md:text-sm px-2 py-1.5">Perfil</TabsTrigger>
+            <TabsTrigger value="security" className="text-xs md:text-sm px-2 py-1.5">Segurança</TabsTrigger>
+            <TabsTrigger value="preferences" className="text-xs md:text-sm px-2 py-1.5">Preferências</TabsTrigger>
+            <TabsTrigger value="platform-payments" className="text-xs md:text-sm px-2 py-1.5">Assinatura</TabsTrigger>
+            <TabsTrigger value="bank-details" className="text-xs md:text-sm px-2 py-1.5">Dados Bancários</TabsTrigger>
+            <TabsTrigger value="notifications" className="text-xs md:text-sm px-2 py-1.5">Notificações</TabsTrigger>
           </TabsList>
           
           <TabsContent value="profile" className="space-y-6">
