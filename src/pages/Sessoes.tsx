@@ -701,53 +701,51 @@ export default function Sessoes() {
           </div>
         </div>
         
-        {/* Estatísticas - Horizontal scroll on mobile */}
-        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-4 md:mb-6">
-          <div className="flex gap-3 md:grid md:grid-cols-6 min-w-max md:min-w-0">
-            <Card className="min-w-[120px] md:min-w-0">
-              <CardContent className="p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold">{stats.total}</div>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Total</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="min-w-[120px] md:min-w-0">
-              <CardContent className="p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-success">{stats.realizadas}</div>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Realizadas</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="min-w-[120px] md:min-w-0">
-              <CardContent className="p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-primary">{stats.agendadas}</div>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Agendadas</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="min-w-[120px] md:min-w-0">
-              <CardContent className="p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-destructive">{stats.canceladas}</div>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Canceladas</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="min-w-[120px] md:min-w-0">
-              <CardContent className="p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-warning">{stats.faltas}</div>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Faltas</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="min-w-[140px] md:min-w-0">
-              <CardContent className="p-3 md:p-4">
-                <div className="text-xl md:text-2xl font-bold text-success">
-                  {formatCurrencyBR(stats.totalFaturado)}
-                </div>
-                <p className="text-[10px] md:text-xs text-muted-foreground">Faturado</p>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Estatísticas - Vertical grid on mobile */}
+        <div className="grid grid-cols-3 md:grid-cols-6 gap-2 md:gap-3 mb-4 md:mb-6">
+          <Card>
+            <CardContent className="p-2 md:p-4">
+              <div className="text-lg md:text-2xl font-bold">{stats.total}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Total</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-2 md:p-4">
+              <div className="text-lg md:text-2xl font-bold text-success">{stats.realizadas}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Realizadas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-2 md:p-4">
+              <div className="text-lg md:text-2xl font-bold text-primary">{stats.agendadas}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Agendadas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-2 md:p-4">
+              <div className="text-lg md:text-2xl font-bold text-destructive">{stats.canceladas}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Canceladas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-2 md:p-4">
+              <div className="text-lg md:text-2xl font-bold text-warning">{stats.faltas}</div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Faltas</p>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-2 md:p-4">
+              <div className="text-lg md:text-2xl font-bold text-success truncate">
+                {formatCurrencyBR(stats.totalFaturado)}
+              </div>
+              <p className="text-[10px] md:text-xs text-muted-foreground">Faturado</p>
+            </CardContent>
+          </Card>
         </div>
         
         {/* Filtros - Collapsible on mobile */}

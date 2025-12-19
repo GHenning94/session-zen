@@ -420,43 +420,41 @@ const Agenda = () => {
           )}
         </div>
 
-        {/* Resumo do Dia - Mobile optimized */}
-        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-          <div className="flex gap-3 md:grid md:grid-cols-3 md:gap-6 min-w-max md:min-w-0">
-            <Card className="shadow-soft min-w-[140px] md:min-w-0">
-              <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
-                <CardTitle className="text-sm md:text-lg">Sessões Hoje</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                <div className="text-2xl md:text-3xl font-bold text-primary">{todaySessionsStats.todaySessionsCount}</div>
-                <p className="text-[10px] md:text-sm text-muted-foreground">Total de atendimentos</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-soft min-w-[140px] md:min-w-0">
-              <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
-                <CardTitle className="text-sm md:text-lg">Receita Prevista</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                <div className="text-2xl md:text-3xl font-bold text-success">
-                  R$ {todaySessionsStats.todayRevenue.toFixed(2)}
-                </div>
-                <p className="text-[10px] md:text-sm text-muted-foreground">Valor total do dia</p>
-              </CardContent>
-            </Card>
-            
-            <Card className="shadow-soft min-w-[140px] md:min-w-0">
-              <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
-                <CardTitle className="text-sm md:text-lg">Taxa de Ocupação</CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
-                <div className="text-2xl md:text-3xl font-bold text-warning">
-                  {todaySessionsStats.occupationRate}%
-                </div>
-                <p className="text-[10px] md:text-sm text-muted-foreground">{todaySessionsStats.todaySessionsCount} de {timeSlots.length} horários</p>
-              </CardContent>
-            </Card>
-          </div>
+        {/* Resumo do Dia - Mobile vertical layout */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-6">
+          <Card className="shadow-soft">
+            <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
+              <CardTitle className="text-sm md:text-lg">Sessões Hoje</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-2xl md:text-3xl font-bold text-primary">{todaySessionsStats.todaySessionsCount}</div>
+              <p className="text-xs md:text-sm text-muted-foreground">Total de atendimentos</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-soft">
+            <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
+              <CardTitle className="text-sm md:text-lg">Receita Prevista</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-2xl md:text-3xl font-bold text-success">
+                R$ {todaySessionsStats.todayRevenue.toFixed(2)}
+              </div>
+              <p className="text-xs md:text-sm text-muted-foreground">Valor total do dia</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="shadow-soft">
+            <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
+              <CardTitle className="text-sm md:text-lg">Taxa de Ocupação</CardTitle>
+            </CardHeader>
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-2xl md:text-3xl font-bold text-warning">
+                {todaySessionsStats.occupationRate}%
+              </div>
+              <p className="text-xs md:text-sm text-muted-foreground">{todaySessionsStats.todaySessionsCount} de {timeSlots.length} horários</p>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </Layout>

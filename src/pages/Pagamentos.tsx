@@ -586,107 +586,105 @@ const pastPayments = filteredPayments.filter(item => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Pagamentos</h1>
-            <p className="text-muted-foreground">
-              Gerencie os pagamentos e acompanhe seu faturamento
-            </p>
-          </div>
+      <div className="space-y-4 md:space-y-6">
+        {/* Header - Mobile optimized */}
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Pagamentos</h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie pagamentos e faturamento
+          </p>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Stats Cards - Vertical on mobile */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
           <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Recebido</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Total Recebido</CardTitle>
+              <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-lg md:text-2xl font-bold text-success">
                 {formatCurrencyBR(totalReceived)}
               </div>
-              <p className="text-sm text-muted-foreground">{paidCount} pagamentos confirmados</p>
+              <p className="text-[10px] md:text-sm text-muted-foreground">{paidCount} confirmados</p>
             </CardContent>
           </Card>
           
           <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendente</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Pendente</CardTitle>
+              <Clock className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-warning">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-lg md:text-2xl font-bold text-warning">
                 {formatCurrencyBR(totalPending)}
               </div>
-              <p className="text-sm text-muted-foreground">{pendingCount} pagamentos pendentes</p>
+              <p className="text-[10px] md:text-sm text-muted-foreground">{pendingCount} pendentes</p>
             </CardContent>
           </Card>
 
           <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Cancelados</CardTitle>
-              <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Cancelados</CardTitle>
+              <AlertCircle className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{cancelledCount}</div>
-              <p className="text-sm text-muted-foreground">{cancelledCount} pagamentos cancelados</p>
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-lg md:text-2xl font-bold text-destructive">{cancelledCount}</div>
+              <p className="text-[10px] md:text-sm text-muted-foreground">{cancelledCount} cancelados</p>
             </CardContent>
           </Card>
           
           <Card className="shadow-soft">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Taxa</CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+              <CardTitle className="text-xs md:text-sm font-medium">Taxa</CardTitle>
+              <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">
-                {(paidCount + pendingCount) > 0 ? ((paidCount / (paidCount + pendingCount)) * 100).toFixed(1) : 0}%
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="text-lg md:text-2xl font-bold text-primary">
+                {(paidCount + pendingCount) > 0 ? ((paidCount / (paidCount + pendingCount)) * 100).toFixed(0) : 0}%
               </div>
-              <p className="text-sm text-muted-foreground">Pagamentos em dia</p>
+              <p className="text-[10px] md:text-sm text-muted-foreground">Em dia</p>
             </CardContent>
           </Card>
         </div>
 
-        {/* Filters */}
+        {/* Filters - Mobile optimized */}
         <Card className="shadow-soft">
-          <CardHeader>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Nome:</label>
+          <CardHeader className="py-3 md:py-4">
+            <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-4">
+              <div className="col-span-2">
+                <label className="text-xs md:text-sm font-medium mb-1 block">Buscar</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar cliente..."
+                    placeholder="Cliente..."
                     value={filterName}
                     onChange={(e) => setFilterName(e.target.value)}
-                    className="w-[200px] pl-9"
+                    className="w-full pl-9 h-9 text-sm"
                   />
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Período:</label>
+              <div>
+                <label className="text-xs md:text-sm font-medium mb-1 block">Período</label>
                 <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="hoje">Hoje</SelectItem>
-                    <SelectItem value="semana">Últimos 7 dias</SelectItem>
-                    <SelectItem value="mes">Último mês</SelectItem>
-                    <SelectItem value="trimestre">Último trimestre</SelectItem>
+                    <SelectItem value="semana">7 dias</SelectItem>
+                    <SelectItem value="mes">Mês</SelectItem>
+                    <SelectItem value="trimestre">Trimestre</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Status:</label>
+              <div>
+                <label className="text-xs md:text-sm font-medium mb-1 block">Status</label>
                 <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-[120px]">
+                  <SelectTrigger className="w-full h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -698,10 +696,10 @@ const pastPayments = filteredPayments.filter(item => {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Canal:</label>
+              <div className="hidden md:block">
+                <label className="text-xs md:text-sm font-medium mb-1 block">Canal</label>
                 <Select value={filterMethod} onValueChange={setFilterMethod}>
-                  <SelectTrigger className="w-[150px]">
+                  <SelectTrigger className="w-full h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -710,15 +708,14 @@ const pastPayments = filteredPayments.filter(item => {
                     <SelectItem value="pix">PIX</SelectItem>
                     <SelectItem value="cartao">Cartão</SelectItem>
                     <SelectItem value="transferencia">Transferência</SelectItem>
-                    <SelectItem value="A definir">A definir</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Tipo:</label>
+              <div className="hidden md:block">
+                <label className="text-xs md:text-sm font-medium mb-1 block">Tipo</label>
                 <Select value={filterPaymentType} onValueChange={setFilterPaymentType}>
-                  <SelectTrigger className="w-[140px]">
+                  <SelectTrigger className="w-full h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -730,19 +727,18 @@ const pastPayments = filteredPayments.filter(item => {
                 </Select>
               </div>
 
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium">Sincronização:</label>
+              <div className="hidden lg:block">
+                <label className="text-xs md:text-sm font-medium mb-1 block">Sincronização</label>
                 <Select value={filterGoogleSync} onValueChange={setFilterGoogleSync}>
-                  <SelectTrigger className="w-[180px]">
+                  <SelectTrigger className="w-full h-9 text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todas</SelectItem>
                     <SelectItem value="local">Local</SelectItem>
-                    <SelectItem value="importado">Importado do Google</SelectItem>
+                    <SelectItem value="importado">Importado</SelectItem>
                     <SelectItem value="espelhado">Espelhado</SelectItem>
-                    <SelectItem value="enviado">Enviado ao Google</SelectItem>
-                    <SelectItem value="cancelado">Cancelado no Google</SelectItem>
+                    <SelectItem value="enviado">Enviado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
