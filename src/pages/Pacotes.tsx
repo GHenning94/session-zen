@@ -162,32 +162,33 @@ export default function Pacotes() {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <PackageIcon className="h-8 w-8" />
-              Pacotes de Sessões
+            <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
+              <PackageIcon className="h-6 w-6 md:h-8 md:w-8" />
+              Pacotes
             </h1>
-            <p className="text-muted-foreground mt-1">
-              Gerencie pacotes de sessões para seus clientes
+            <p className="text-sm text-muted-foreground mt-1">
+              Gerencie pacotes de sessões
             </p>
           </div>
-          <Button onClick={() => setIsPackageModalOpen(true)}>
+          <Button onClick={() => setIsPackageModalOpen(true)} size="sm" className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Novo Pacote
           </Button>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
+        {/* Stats Cards - Grid 2x2 no mobile */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Pacotes Ativos</CardTitle>
-              <PackageIcon className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs md:text-sm font-medium">Pacotes Ativos</CardTitle>
+              <PackageIcon className="h-4 w-4 text-muted-foreground hidden md:block" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 {packages?.filter(p => p.status === 'ativo').length || 0}
               </div>
             </CardContent>
@@ -195,11 +196,11 @@ export default function Pacotes() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Sessões Disponíveis</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs md:text-sm font-medium">Sessões Disp.</CardTitle>
+              <Calendar className="h-4 w-4 text-muted-foreground hidden md:block" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 {packages?.reduce((acc, p) => {
                   if (p.status === 'ativo') {
                     return acc + (p.total_sessoes - p.sessoes_consumidas);
@@ -210,13 +211,13 @@ export default function Pacotes() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="col-span-2 md:col-span-1">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Valor Total Ativo</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-xs md:text-sm font-medium">Valor Total Ativo</CardTitle>
+              <DollarSign className="h-4 w-4 text-muted-foreground hidden md:block" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-xl md:text-2xl font-bold">
                 R$ {packages?.filter(p => p.status === 'ativo')
                   .reduce((acc, p) => acc + p.valor_total, 0)
                   .toFixed(2) || '0.00'}
@@ -226,7 +227,7 @@ export default function Pacotes() {
         </div>
 
         {/* Packages Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-3 md:gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {packages?.map((pkg: any) => {
             const progress = getPackageProgress(pkg);
             const config = statusConfig[pkg.status];
@@ -234,7 +235,7 @@ export default function Pacotes() {
             const allSessionsCreated = createdSessions >= pkg.total_sessoes;
 
             return (
-              <Card key={pkg.id} className="hover:shadow-lg transition-shadow flex flex-col h-[420px]">
+              <Card key={pkg.id} className="hover:shadow-lg transition-shadow flex flex-col min-h-[350px] md:h-[420px]">
                 <CardHeader className="flex-shrink-0">
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">

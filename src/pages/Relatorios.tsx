@@ -80,28 +80,28 @@ export default function Relatorios() {
 
   return (
     <Layout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Relatórios</h1>
-          <p className="text-muted-foreground">
-            Exporte relatórios detalhados em PDF ou Excel
+          <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
+          <p className="text-sm text-muted-foreground">
+            Exporte relatórios em PDF ou Excel
           </p>
         </div>
 
-        {/* Estatísticas Resumidas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full">
+        {/* Estatísticas - Grid 2x2 no mobile */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           {stats.map((stat) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.title} className="w-full">
+              <Card key={stat.title}>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">
+                  <CardTitle className="text-xs md:text-sm font-medium">
                     {stat.title}
                   </CardTitle>
-                  <Icon className="h-4 w-4" style={{ color: stat.color.startsWith('hsl') ? stat.color : undefined }} />
+                  <Icon className="h-4 w-4 hidden md:block" style={{ color: stat.color.startsWith('hsl') ? stat.color : undefined }} />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <div className="text-lg md:text-2xl font-bold">{stat.value}</div>
                 </CardContent>
               </Card>
             )

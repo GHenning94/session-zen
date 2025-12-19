@@ -7,8 +7,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Separator } from "@/components/ui/separator"
 import { 
   User, 
   LogOut, 
@@ -25,6 +29,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 
 interface Profile {
@@ -38,6 +43,8 @@ interface Profile {
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
+  const [open, setOpen] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '', subscription_plan: 'basico', is_referral_partner: false })
   const { avatarUrl } = useAvatarUrl(profile.avatar_url)
 
@@ -144,8 +151,171 @@ export const ProfileDropdown = () => {
     ]
   }
 
+  const handleMenuAction = (action: () => void) => {
+    setOpen(false)
+    action()
+  }
+
+  // Conteúdo do menu (reutilizado entre mobile e desktop)
+  const MenuContent = ({ onAction }: { onAction: (action: () => void) => void }) => (
+    <>
+      {/* User Info Header */}
+      <div className="flex items-center p-3">
+        <div className="flex-1 flex items-center gap-3">
+          <Avatar className="h-10 w-10 border border-border">
+            <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
+            <AvatarFallback className="bg-primary/10">
+              {profile.nome ? getInitials(profile.nome) : <User className="h-4 w-4 text-primary" />}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-semibold text-sm text-foreground truncate">{profile.nome || 'Usuário'}</h3>
+            <p className="text-muted-foreground text-xs truncate">{user?.email}</p>
+            {profile.profissao && (
+              <p className="text-muted-foreground text-xs truncate">{profile.profissao}</p>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Premium Upgrade Item */}
+      {menuItems.premium.length > 0 && (
+        <>
+          {menuItems.premium.map((item, index) => (
+            <button 
+              key={index}
+              className={cn(
+                "w-full flex items-center justify-between p-3 rounded-lg",
+                item.isPremiumItem && "animated-premium-no-shadow"
+              )}
+              onClick={() => onAction(item.action)}
+            >
+              <span className="flex items-center gap-2 font-medium text-white text-sm">
+                <item.icon className="h-5 w-5 text-white" />
+                {item.label}
+              </span>
+              {item.badge && (
+                <Badge className="animated-premium-no-shadow text-white text-[10px] border-white/30 border">
+                  {item.badge}
+                </Badge>
+              )}
+            </button>
+          ))}
+          <Separator />
+        </>
+      )}
+
+      {/* Profile Menu Items */}
+      {menuItems.profile.map((item, index) => (
+        <button 
+          key={`profile-${index}`}
+          className="w-full flex items-center gap-2 p-3 rounded-lg hover:bg-accent text-left"
+          onClick={() => onAction(item.action)}
+        >
+          <item.icon className="h-5 w-5 text-muted-foreground" />
+          <span className="font-medium text-sm">{item.label}</span>
+        </button>
+      ))}
+
+      <Separator />
+
+      {/* Payment Menu Items */}
+      {menuItems.payments.map((item, index) => (
+        <button 
+          key={`payment-${index}`}
+          className="w-full flex items-center gap-2 p-3 rounded-lg hover:bg-accent text-left"
+          onClick={() => onAction(item.action)}
+        >
+          <item.icon className="h-5 w-5 text-muted-foreground" />
+          <span className="font-medium text-sm">{item.label}</span>
+        </button>
+      ))}
+
+      <Separator />
+
+      {/* Referral Program */}
+      {menuItems.referral.map((item, index) => (
+        <button 
+          key={`referral-${index}`}
+          className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent text-left"
+          onClick={() => onAction(item.action)}
+        >
+          <span className="flex items-center gap-2">
+            <item.icon className="h-5 w-5 text-muted-foreground" />
+            <span className="font-medium text-sm">{item.label}</span>
+          </span>
+          {profile.is_referral_partner && (
+            <Badge className="bg-green-500 text-white text-[10px] border-0">
+              Ativo
+            </Badge>
+          )}
+        </button>
+      ))}
+
+      <Separator />
+
+      {/* Support */}
+      {menuItems.support.map((item, index) => (
+        <button 
+          key={`support-${index}`}
+          className="w-full flex items-center gap-2 p-3 rounded-lg hover:bg-accent text-left"
+          onClick={() => onAction(item.action)}
+        >
+          <item.icon className="h-5 w-5 text-muted-foreground" />
+          <span className="font-medium text-sm">{item.label}</span>
+        </button>
+      ))}
+
+      <Separator />
+
+      {/* Logout */}
+      <button 
+        className="w-full flex items-center gap-2 p-3 rounded-lg hover:bg-accent text-left text-destructive"
+        onClick={() => onAction(handleSignOut)}
+      >
+        <LogOut className="h-5 w-5" />
+        <span className="font-medium text-sm">Sair</span>
+      </button>
+    </>
+  )
+
+  // Mobile: usa Sheet
+  if (isMobile) {
+    return (
+      <>
+        <button 
+          className="flex items-center gap-2 rounded-full focus:outline-none transition-all hover:opacity-80"
+          onClick={() => setOpen(true)}
+        >
+          <Avatar className="h-8 w-8 cursor-pointer border border-border">
+            <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
+            <AvatarFallback className="bg-primary/10 text-xs">
+              {profile.nome ? getInitials(profile.nome) : <User className="h-3 w-3 text-primary" />}
+            </AvatarFallback>
+          </Avatar>
+        </button>
+        
+        <Sheet open={open} onOpenChange={setOpen}>
+          <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl p-0">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle>Minha Conta</SheetTitle>
+            </SheetHeader>
+            <ScrollArea className="h-[calc(85vh-60px)]">
+              <div className="p-2">
+                <MenuContent onAction={handleMenuAction} />
+              </div>
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+      </>
+    )
+  }
+
+  // Desktop: usa DropdownMenu
   return (
-    <DropdownMenu>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button className="flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all hover:opacity-80">
           <Avatar className="h-10 w-10 cursor-pointer border border-border">

@@ -11,6 +11,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useNotifications } from "@/hooks/useNotifications"
+import { useIsMobile } from "@/hooks/use-mobile"
 import { 
   Bell, 
   BellOff, 
@@ -38,6 +39,7 @@ interface Notification {
 
 const NotificationDropdown = () => {
   const navigate = useNavigate()
+  const isMobile = useIsMobile()
   const { 
     notifications, 
     unreadCount, 
@@ -198,6 +200,180 @@ const NotificationDropdown = () => {
     </div>
   )
 
+  // Conteúdo das notificações (reutilizado entre mobile e desktop)
+  const NotificationListContent = () => (
+    <section className="bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
+      {/* Header */}
+      <div className="flex items-center justify-between p-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-semibold text-sm text-foreground">Notificações</h3>
+          {unreadCount > 0 && (
+            <Badge variant="secondary" className="text-xs">
+              {unreadCount}
+            </Badge>
+          )}
+        </div>
+        {unreadCount > 0 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleMarkAllAsRead}
+            className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <CheckCheck className="w-3 h-3 mr-1" />
+            Marcar todas
+          </Button>
+        )}
+      </div>
+      
+      <Separator className="mx-1" />
+      
+      {/* Content */}
+      {loading ? (
+        <div className="p-6 text-center text-sm text-muted-foreground">
+          Carregando notificações...
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          <BellOff className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p>Nenhuma notificação</p>
+        </div>
+      ) : (
+        <ScrollArea className={isMobile ? "max-h-[60vh]" : "max-h-80"}>
+          <div className="p-1 space-y-0.5">
+            {notifications.slice(0, isMobile ? 10 : 5).map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onClick={() => handleNotificationClick(notification)}
+                showDeleteButton={true}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+      
+      {/* View All Button */}
+      {notifications.length > 0 && (
+        <>
+          <Separator className="mx-1 my-1" />
+          <Button 
+            variant="ghost" 
+            className="w-full p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground justify-center"
+            onClick={handleViewAllNotifications}
+          >
+            Ver todas as notificações
+          </Button>
+        </>
+      )}
+    </section>
+  )
+
+  // Mobile: usa Sheet
+  if (isMobile) {
+    return (
+      <>
+        <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => setOpen(true)}>
+          <Bell className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Badge>
+          )}
+        </Button>
+        
+        <Sheet open={open} onOpenChange={(newOpen) => {
+          setOpen(newOpen)
+          if (newOpen && unreadCount > 0) {
+            markVisibleAsRead()
+          }
+        }}>
+          <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl p-0">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Notificações
+              </SheetTitle>
+            </SheetHeader>
+            <div className="p-2">
+              <NotificationListContent />
+            </div>
+          </SheetContent>
+        </Sheet>
+        
+        {/* Side Sheet for Single Notification - Mobile */}
+        <Sheet open={sideSheetOpen} onOpenChange={setSideSheetOpen}>
+          <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl p-0">
+            <SheetHeader className="p-4 border-b">
+              <SheetTitle className="flex items-center gap-2">
+                <Bell className="w-5 h-5" />
+                Notificação
+              </SheetTitle>
+            </SheetHeader>
+            
+            {selectedNotification && (
+              <ScrollArea className="h-[calc(70vh-80px)]">
+                <div className="p-4 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 rounded-full bg-primary/10 text-primary shrink-0">
+                      {getNotificationIcon(selectedNotification.titulo)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base font-semibold">{selectedNotification.titulo}</h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {format(new Date(selectedNotification.data), "dd 'de' MMMM 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <p className="text-sm text-foreground whitespace-pre-wrap">
+                    {getDisplayContent(selectedNotification.conteudo)}
+                  </p>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-col gap-2 pt-2">
+                    {extractSessionId(selectedNotification.conteudo) && (
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleEditSession(extractSessionId(selectedNotification.conteudo)!)}
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Editar Sessão
+                      </Button>
+                    )}
+                    {extractRedirect(selectedNotification.conteudo) && (
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
+                      >
+                        Ir para Pacotes
+                      </Button>
+                    )}
+                    {extractPackageEditId(selectedNotification.conteudo) && (
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleEditPackage(extractPackageEditId(selectedNotification.conteudo)!)}
+                      >
+                        <Edit2 className="w-4 h-4 mr-2" />
+                        Editar Pacote
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </ScrollArea>
+            )}
+          </SheetContent>
+        </Sheet>
+      </>
+    )
+  }
+
+  // Desktop: usa DropdownMenu
   return (
     <>
       <DropdownMenu open={open} onOpenChange={handleOpenChange}>
@@ -219,72 +395,7 @@ const NotificationDropdown = () => {
           align="end" 
           className="w-[340px] rounded-2xl bg-muted/50 dark:bg-black/90 p-0"
         >
-          {/* Main Section */}
-          <section className="bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
-            {/* Header */}
-            <div className="flex items-center justify-between p-3">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-sm text-foreground">Notificações</h3>
-                {unreadCount > 0 && (
-                  <Badge variant="secondary" className="text-xs">
-                    {unreadCount}
-                  </Badge>
-                )}
-              </div>
-              {unreadCount > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleMarkAllAsRead}
-                  className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                >
-                  <CheckCheck className="w-3 h-3 mr-1" />
-                  Marcar todas
-                </Button>
-              )}
-            </div>
-            
-            <Separator className="mx-1" />
-            
-            {/* Content */}
-            {loading ? (
-              <div className="p-6 text-center text-sm text-muted-foreground">
-                Carregando notificações...
-              </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                <BellOff className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                <p>Nenhuma notificação</p>
-              </div>
-            ) : (
-                <ScrollArea className="max-h-80">
-                <div className="p-1 space-y-0.5">
-                  {notifications.slice(0, 5).map((notification) => (
-                    <NotificationItem
-                      key={notification.id}
-                      notification={notification}
-                      onClick={() => handleNotificationClick(notification)}
-                      showDeleteButton={true}
-                    />
-                  ))}
-                </div>
-              </ScrollArea>
-            )}
-            
-            {/* View All Button */}
-            {notifications.length > 0 && (
-              <>
-                <Separator className="mx-1 my-1" />
-                <Button 
-                  variant="ghost" 
-                  className="w-full p-2 rounded-lg text-sm text-muted-foreground hover:text-foreground justify-center"
-                  onClick={handleViewAllNotifications}
-                >
-                  Ver todas as notificações
-                </Button>
-              </>
-            )}
-          </section>
+          <NotificationListContent />
         </DropdownMenuContent>
       </DropdownMenu>
 

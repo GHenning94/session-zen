@@ -264,53 +264,54 @@ export default function Prontuarios() {
 
     return (
       <Layout>
-        <div className="p-6 space-y-6">
+        <div className="space-y-4 md:space-y-6">
           {/* Header com informações do cliente */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-3">
               <Button 
                 variant="outline" 
+                size="sm"
                 onClick={handleBackToList}
                 className="shrink-0"
               >
                 ← Voltar
               </Button>
-              <div>
-                <h1 className="text-2xl font-bold">Prontuário - {selectedClient.nome}</h1>
-                <p className="text-muted-foreground">
-                  Cliente desde {format(new Date(selectedClient.created_at), "dd/MM/yyyy", { locale: ptBR })}
+              <div className="min-w-0">
+                <h1 className="text-lg md:text-2xl font-bold truncate">{selectedClient.nome}</h1>
+                <p className="text-xs md:text-sm text-muted-foreground">
+                  Desde {format(new Date(selectedClient.created_at), "dd/MM/yyyy", { locale: ptBR })}
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Resumo do cliente */}
+          {/* Resumo do cliente - Compacto no mobile */}
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base md:text-lg">
                 <ClientAvatar 
                   avatarPath={selectedClient.avatar_url}
                   clientName={selectedClient.nome}
                   size="sm"
                 />
-                Informações do Cliente
+                Informações
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <div>
-                <Label className="text-sm font-medium">Nome</Label>
-                <p>{selectedClient.nome}</p>
+                <Label className="text-xs font-medium text-muted-foreground">Nome</Label>
+                <p className="text-sm">{selectedClient.nome}</p>
               </div>
               {selectedClient.email && (
                 <div>
-                  <Label className="text-sm font-medium">E-mail</Label>
-                  <p>{selectedClient.email}</p>
+                  <Label className="text-xs font-medium text-muted-foreground">E-mail</Label>
+                  <p className="text-sm truncate">{selectedClient.email}</p>
                 </div>
               )}
               {selectedClient.telefone && (
                 <div>
-                  <Label className="text-sm font-medium">Telefone</Label>
-                  <p>{selectedClient.telefone}</p>
+                  <Label className="text-xs font-medium text-muted-foreground">Telefone</Label>
+                  <p className="text-sm">{selectedClient.telefone}</p>
                 </div>
               )}
             </CardContent>
@@ -318,14 +319,16 @@ export default function Prontuarios() {
 
           {/* Abas do prontuário */}
           <Tabs defaultValue="anamnese" className="space-y-4">
-            <TabsList>
-              <TabsTrigger value="anamnese" className="flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Anamnese
+            <TabsList className="w-full grid grid-cols-2">
+              <TabsTrigger value="anamnese" className="flex items-center gap-1.5 text-xs md:text-sm">
+                <BookOpen className="h-3 w-3 md:h-4 md:w-4" />
+                <span className="hidden sm:inline">Anamnese</span>
+                <span className="sm:hidden">Anamnese</span>
               </TabsTrigger>
-              <TabsTrigger value="evolucoes" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
-                Evoluções ({clientEvolucoes.length})
+              <TabsTrigger value="evolucoes" className="flex items-center gap-1.5 text-xs md:text-sm">
+                <FileText className="h-3 w-3 md:h-4 md:w-4" />
+                <span>Evoluções</span>
+                <Badge variant="secondary" className="ml-1 text-[10px] h-5">{clientEvolucoes.length}</Badge>
               </TabsTrigger>
             </TabsList>
 
