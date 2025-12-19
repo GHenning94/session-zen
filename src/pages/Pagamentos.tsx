@@ -36,6 +36,7 @@ import { cn } from "@/lib/utils"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
 import { BatchSelectionBar, SelectableItemCheckbox } from "@/components/BatchSelectionBar"
+import { ClientAvatar } from "@/components/ClientAvatar"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -806,7 +807,7 @@ const pastPayments = filteredPayments.filter(item => {
                            <div 
                              key={payment.id} 
                              className={cn(
-                               "flex flex-col md:flex-row md:items-center md:justify-between p-3 md:p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative gap-3"
+                               "border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
                              )}
                              onClick={() => {
                                if (isSelectionMode) {
@@ -820,70 +821,74 @@ const pastPayments = filteredPayments.filter(item => {
                                }
                              }}
                            >
-                             {!isSelectionMode && needsAttention && (
-                               <div className="absolute top-3 left-3 md:top-4 md:left-4">
-                                 <PulsingDot color="destructive" size="md" />
-                               </div>
-                             )}
-                             <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-                               {isSelectionMode && (
-                                 <SelectableItemCheckbox
-                                   isSelected={selectedPayments.has(payment.id)}
-                                   onSelect={() => togglePaymentSelection(payment.id)}
-                                 />
-                               )}
-                               <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-card rounded-full flex items-center justify-center shrink-0">
-                                 <StatusIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                               </div>
-                               <div className="flex-1 min-w-0">
-                                 <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
-                                   <h3 className="font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-none">{payment.client}</h3>
-                                   <Badge variant={getStatusColor(payment.status)} className="text-[10px] md:text-xs shrink-0">
-                                     {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                                   </Badge>
-                                    {payment.type === 'package' && (
-                                      <Package className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                                    )}
-                                    {payment.recurring_session_id && (
-                                      <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                                    )}
-                                    {payment.google_sync_type && (
-                                      <GoogleSyncBadge syncType={payment.google_sync_type} />
-                                    )}
-                                 </div>
-                                 <div className="flex items-center gap-4 text-xs md:text-sm text-muted-foreground">
-                                   <div className="flex items-center gap-1">
-                                     <Calendar className="w-3 h-3 shrink-0" />
-                                     {payment.type === 'package' ? (
-                                       <span className="truncate">
-                                         {payment.package_data_inicio && payment.package_data_fim ? (
-                                           `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
-                                         ) : (
-                                           formatDateBR(payment.date)
-                                         )}
-                                       </span>
-                                     ) : (
-                                       <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
-                                     )}
-                                   </div>
-                                 </div>
-                                 {payment.type === 'package' && (
-                                   <div className="text-[10px] md:text-xs text-muted-foreground mt-1 truncate">
-                                     {payment.package_name} • {payment.package_sessions} sessões
+                             <div className="flex items-center justify-between">
+                               <div className="flex items-center space-x-4 flex-1">
+                                 {isSelectionMode && (
+                                   <SelectableItemCheckbox
+                                     isSelected={selectedPayments.has(payment.id)}
+                                     onSelect={() => togglePaymentSelection(payment.id)}
+                                   />
+                                 )}
+                                 {!isSelectionMode && needsAttention && (
+                                   <div className="absolute top-4 left-4">
+                                     <PulsingDot color="destructive" size="md" />
                                    </div>
                                  )}
-                               </div>
-                             </div>
-                             
-                             <div className="flex items-center justify-end md:justify-start gap-2 md:gap-4 pl-12 md:pl-0">
-                               <div className="text-right">
-                                 <div className="font-semibold text-base md:text-lg">{formatCurrencyBR(payment.value)}</div>
-                                <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1 justify-end">
-                                   {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
-                                   {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
-                                   {(payment.method === 'cartao' || payment.method === 'cartao_credito' || payment.method === 'cartao_debito') && <CreditCard className="w-3 h-3" />}
-                                   {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
-                                   <span>{formatPaymentMethod(payment.method)}</span>
+                                 <ClientAvatar 
+                                   avatarPath={payment.client_avatar}
+                                   clientName={payment.client || 'Cliente'}
+                                   size="lg"
+                                 />
+                                 <div className="flex-1 min-w-0">
+                                   <div className="flex flex-wrap items-center gap-2 mb-2">
+                                     <h3 className="text-base md:text-lg font-semibold">{payment.client}</h3>
+                                     <Badge variant={getStatusColor(payment.status)}>
+                                       {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                                     </Badge>
+                                     {payment.google_sync_type && (
+                                       <GoogleSyncBadge syncType={payment.google_sync_type} />
+                                     )}
+                                     {payment.type === 'package' && (
+                                       <Package className="h-4 w-4 text-primary" />
+                                     )}
+                                     {payment.recurring_session_id && (
+                                       <Repeat className="h-4 w-4 text-primary" />
+                                     )}
+                                   </div>
+                                   <div className="text-sm text-muted-foreground space-y-1">
+                                     <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                                       <div className="flex items-center gap-1">
+                                         <Calendar className="w-4 h-4 shrink-0" />
+                                         {payment.type === 'package' ? (
+                                           <span>
+                                             {payment.package_data_inicio && payment.package_data_fim ? (
+                                               `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
+                                             ) : (
+                                               formatDateBR(payment.date)
+                                             )}
+                                           </span>
+                                         ) : (
+                                           <span>{formatDateBR(payment.date)}</span>
+                                         )}
+                                       </div>
+                                       {payment.type !== 'package' && (
+                                         <div className="flex items-center gap-1">
+                                           <Clock className="w-4 h-4 shrink-0" />
+                                           <span>{formatTimeBR(payment.time)}</span>
+                                         </div>
+                                       )}
+                                     </div>
+                                     <div className="flex items-center gap-2">
+                                       <span className="font-medium text-primary">
+                                         {formatCurrencyBR(payment.value)}
+                                       </span>
+                                       {payment.type === 'package' && (
+                                         <span className="text-xs text-muted-foreground">
+                                           {payment.package_name} • {payment.package_sessions} sessões
+                                         </span>
+                                       )}
+                                     </div>
+                                   </div>
                                  </div>
                                </div>
                              </div>
@@ -915,7 +920,7 @@ const pastPayments = filteredPayments.filter(item => {
                     <div 
                       key={payment.id} 
                       className={cn(
-                        "flex flex-col md:flex-row md:items-center md:justify-between p-3 md:p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative gap-3"
+                        "border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer relative"
                       )}
                       onClick={() => {
                         if (isSelectionMode) {
@@ -929,74 +934,78 @@ const pastPayments = filteredPayments.filter(item => {
                         }
                       }}
                     >
-                      {!isSelectionMode && needsAttention && (
-                        <div className="absolute top-3 left-3 md:top-4 md:left-4">
-                          <PulsingDot color="destructive" size="md" />
-                        </div>
-                      )}
-                       <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
-                         {isSelectionMode && (
-                           <SelectableItemCheckbox
-                             isSelected={selectedPayments.has(payment.id)}
-                             onSelect={() => togglePaymentSelection(payment.id)}
-                           />
-                         )}
-                         <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-card rounded-full flex items-center justify-center shrink-0">
-                           <StatusIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
-                         </div>
-                         <div className="flex-1 min-w-0">
-                           <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
-                             <h3 className="font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-none">{payment.client}</h3>
-                             <Badge variant={getStatusColor(payment.status)} className="text-[10px] md:text-xs shrink-0">
-                               {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
-                             </Badge>
-                              {payment.type === 'package' && (
-                                <Package className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                              )}
-                              {payment.recurring_session_id && (
-                                <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                              )}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4 flex-1">
+                          {isSelectionMode && (
+                            <SelectableItemCheckbox
+                              isSelected={selectedPayments.has(payment.id)}
+                              onSelect={() => togglePaymentSelection(payment.id)}
+                            />
+                          )}
+                          {!isSelectionMode && needsAttention && (
+                            <div className="absolute top-4 left-4">
+                              <PulsingDot color="destructive" size="md" />
+                            </div>
+                          )}
+                          <ClientAvatar 
+                            avatarPath={payment.client_avatar}
+                            clientName={payment.client || 'Cliente'}
+                            size="lg"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <div className="flex flex-wrap items-center gap-2 mb-2">
+                              <h3 className="text-base md:text-lg font-semibold">{payment.client}</h3>
+                              <Badge variant={getStatusColor(payment.status)}>
+                                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
+                              </Badge>
                               {payment.google_sync_type && (
                                 <GoogleSyncBadge syncType={payment.google_sync_type} />
                               )}
-                           </div>
-                           <div className="flex items-center gap-4 text-xs md:text-sm text-muted-foreground">
-                             <div className="flex items-center gap-1">
-                               <Calendar className="w-3 h-3 shrink-0" />
-                               {payment.type === 'package' ? (
-                                 <span className="truncate">
-                                   {payment.package_data_inicio && payment.package_data_fim ? (
-                                     `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
-                                   ) : (
-                                     formatDateBR(payment.date)
-                                   )}
-                                 </span>
-                               ) : (
-                                 <span>{formatDateBR(payment.date)} às {formatTimeBR(payment.time)}</span>
-                               )}
-                             </div>
-                           </div>
-                           {payment.type === 'package' && (
-                             <div className="text-[10px] md:text-xs text-muted-foreground mt-1 truncate">
-                               {payment.package_name} • {payment.package_sessions} sessões
-                             </div>
-                           )}
-                         </div>
-                       </div>
-                       
-                       <div className="flex items-center justify-end md:justify-start gap-2 md:gap-4 pl-12 md:pl-0">
-                         <div className="text-right">
-                           <div className="font-semibold text-base md:text-lg">{formatCurrencyBR(payment.value)}</div>
-                           <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1 justify-end">
-                             {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
-                             {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
-                             {(payment.method === 'cartao' || payment.method === 'cartao_credito' || payment.method === 'cartao_debito') && <CreditCard className="w-3 h-3" />}
-                             {payment.method === 'transferencia' && <Building2 className="w-3 h-3" />}
-                             <span>{formatPaymentMethod(payment.method)}</span>
-                           </div>
-                         </div>
-                       </div>
-                     </div>
+                              {payment.type === 'package' && (
+                                <Package className="h-4 w-4 text-primary" />
+                              )}
+                              {payment.recurring_session_id && (
+                                <Repeat className="h-4 w-4 text-primary" />
+                              )}
+                            </div>
+                            <div className="text-sm text-muted-foreground space-y-1">
+                              <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                                <div className="flex items-center gap-1">
+                                  <Calendar className="w-4 h-4 shrink-0" />
+                                  {payment.type === 'package' ? (
+                                    <span>
+                                      {payment.package_data_inicio && payment.package_data_fim ? (
+                                        `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
+                                      ) : (
+                                        formatDateBR(payment.date)
+                                      )}
+                                    </span>
+                                  ) : (
+                                    <span>{formatDateBR(payment.date)}</span>
+                                  )}
+                                </div>
+                                {payment.type !== 'package' && (
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4 shrink-0" />
+                                    <span>{formatTimeBR(payment.time)}</span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-primary">
+                                  {formatCurrencyBR(payment.value)}
+                                </span>
+                                {payment.type === 'package' && (
+                                  <span className="text-xs text-muted-foreground">
+                                    {payment.package_name} • {payment.package_sessions} sessões
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                         )
                       })}
                     </div>
