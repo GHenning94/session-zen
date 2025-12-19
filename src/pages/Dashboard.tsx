@@ -1008,13 +1008,13 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
-        {/* Header */}
+      <div className="space-y-4 md:space-y-8">
+        {/* Header - Mobile optimized */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-            <p className="text-muted-foreground">
-              Bem-vindo de volta! Aqui está um resumo do seu dia.
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p className="text-xs md:text-base text-muted-foreground">
+              Resumo do seu dia
             </p>
           </div>
           <TutorialButton onClick={handleOpenTutorial} />
@@ -1023,60 +1023,58 @@ const Dashboard = () => {
         {/* Actionable Notifications Banner */}
         <ActionableNotificationsBanner />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 w-full">
+        {/* Stats Cards - 2x2 grid on mobile */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
         {isLoading ? (
-          // Skeleton loading state
           Array.from({ length: 4 }).map((_, index) => (
-            <Card key={index} className="shadow-soft w-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-10 rounded-full" />
+            <Card key={index} className="shadow-soft">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+                <Skeleton className="h-3 md:h-4 w-16 md:w-24" />
+                <Skeleton className="h-8 w-8 md:h-10 md:w-10 rounded-full" />
               </CardHeader>
-              <CardContent>
-                <Skeleton className="h-8 w-20 mb-2" />
-                <Skeleton className="h-3 w-32" />
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <Skeleton className="h-6 md:h-8 w-16 md:w-20 mb-1 md:mb-2" />
+                <Skeleton className="h-2 md:h-3 w-20 md:w-32" />
               </CardContent>
             </Card>
           ))
         ) : (
           stats.map((stat, index) => (
-            <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow w-full">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
+            <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
+                <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className={`w-10 h-10 rounded-full ${
+                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${
                   index === 0 ? 'bg-primary' : 
                   index === 1 ? 'bg-success' : 
                   index === 2 ? 'bg-success' : 
                   'bg-warning'
                 } flex items-center justify-center`}>
-                  <stat.icon className="w-5 h-5 text-white" />
+                  <stat.icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">{stat.change}</p>
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-lg md:text-2xl font-bold truncate">{stat.value}</div>
+                <p className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.change}</p>
               </CardContent>
             </Card>
           ))
         )}
         </div>
 
-        {/* Pacotes, Pagamentos e Notificações Inteligentes */}
-        {/* Visão Geral do Negócio - Grid com 3 colunas */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Visão Geral do Negócio - Vertical on mobile */}
+        <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
           {isLoading ? (
             <>
               {Array.from({ length: 3 }).map((_, index) => (
                 <Card key={index} className="shadow-soft">
-                  <CardHeader>
-                    <Skeleton className="h-6 w-40 mb-2" />
-                    <Skeleton className="h-4 w-32" />
+                  <CardHeader className="p-3 md:p-6">
+                    <Skeleton className="h-5 md:h-6 w-32 md:w-40 mb-1 md:mb-2" />
+                    <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
                   </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-20 w-full" />
+                  <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                    <Skeleton className="h-16 md:h-20 w-full" />
                   </CardContent>
                 </Card>
               ))}
@@ -1097,88 +1095,77 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
           {/* Próximas Sessões */}
           <Card className="lg:col-span-2 shadow-soft">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="w-5 h-5 text-primary" />
+            <CardHeader className="p-3 md:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                    <Clock className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0" />
                     Próximas Sessões
                   </CardTitle>
-                  <CardDescription>
-                    Suas consultas agendadas para hoje
+                  <CardDescription className="text-xs md:text-sm truncate">
+                    Consultas agendadas para hoje
                   </CardDescription>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate("/agenda")}>
-                  Ver Agenda <ArrowRight className="w-4 h-4 ml-2" />
+                <Button variant="outline" size="sm" onClick={() => navigate("/agenda")} className="shrink-0 text-xs md:text-sm px-2 md:px-4">
+                  <span className="hidden sm:inline">Ver Agenda</span>
+                  <span className="sm:hidden">Ver</span>
+                  <ArrowRight className="w-3 h-3 md:w-4 md:h-4 ml-1 md:ml-2" />
                 </Button>
               </div>
             </CardHeader>
-            <CardContent 
-              className={`transition-all duration-300 ${
-                upcomingSessions.length === 0 
-                  ? 'min-h-[120px]' 
-                  : upcomingSessions.length <= 2 
-                    ? 'min-h-[200px]' 
-                    : upcomingSessions.length <= 4 
-                      ? 'min-h-[350px]' 
-                      : 'min-h-[450px]'
-              }`}
-            >
-              <div className="space-y-4">
+            <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+              <div className="space-y-3 md:space-y-4">
                 {isLoading ? (
-                  // Skeleton for upcoming sessions
                   Array.from({ length: 3 }).map((_, index) => (
-                    <div key={index} className="flex items-center justify-between p-4 border border-border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <Skeleton className="h-12 w-12 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-32" />
-                          <Skeleton className="h-3 w-20" />
-                          <Skeleton className="h-3 w-24" />
+                    <div key={index} className="flex items-center justify-between p-3 md:p-4 border border-border rounded-lg">
+                      <div className="flex items-center gap-2 md:gap-4">
+                        <Skeleton className="h-10 w-10 md:h-12 md:w-12 rounded-full" />
+                        <div className="space-y-1 md:space-y-2">
+                          <Skeleton className="h-3 md:h-4 w-24 md:w-32" />
+                          <Skeleton className="h-2 md:h-3 w-16 md:w-20" />
                         </div>
                       </div>
-                      <div className="text-right space-y-2">
-                        <Skeleton className="h-4 w-24" />
-                        <Skeleton className="h-5 w-20" />
+                      <div className="text-right space-y-1">
+                        <Skeleton className="h-3 md:h-4 w-16 md:w-24" />
+                        <Skeleton className="h-4 md:h-5 w-14 md:w-20" />
                       </div>
                     </div>
                   ))
                  ) : upcomingSessions.length > 0 ? upcomingSessions.slice(0, 4).map((session, index) => {
-                   // Verificar se a sessão precisa de atenção
                    const needsAttention = session.status === 'agendada' && new Date(`${session.data}T${session.horario}`) < new Date()
                    
                    return (
                    <Card 
                      key={session.id || index} 
                      className={cn(
-                       "p-4 hover:shadow-md transition-all cursor-pointer relative",
+                       "p-2 md:p-4 hover:shadow-md transition-all cursor-pointer relative",
                        needsAttention && "border-warning/30"
                      )}
                      onClick={() => navigate('/agenda')}
                    >
                      {needsAttention && (
-                       <div className="absolute top-3 left-3">
-                         <PulsingDot color="warning" size="md" />
+                       <div className="absolute top-2 left-2 md:top-3 md:left-3">
+                         <PulsingDot color="warning" size="sm" />
                        </div>
                      )}
-                      <div className="flex items-center justify-between">
-                         <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                         <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
                            <ClientAvatar 
                              avatarPath={session.clients?.avatar_url}
                              clientName={session.clients?.nome || 'Cliente'}
-                             size="lg"
+                             size="md"
                            />
-                           <div>
-                              <div className="flex items-center gap-2">
-                                <p className="font-medium">{session.clients?.nome || 'Cliente'}</p>
+                           <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1 md:gap-2">
+                                <p className="font-medium text-sm md:text-base truncate">{session.clients?.nome || 'Cliente'}</p>
                                 <TooltipProvider>
                                   {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <Pill className="w-4 h-4 text-blue-500" />
+                                        <Pill className="w-3 h-3 md:w-4 md:h-4 text-blue-500 shrink-0" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Faz uso de medicamentos</p>
@@ -1188,7 +1175,7 @@ const Dashboard = () => {
                                   {session.clients?.eh_crianca_adolescente && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <Baby className="w-4 h-4 text-pink-500" />
+                                        <Baby className="w-3 h-3 md:w-4 md:h-4 text-pink-500 shrink-0" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Criança/Adolescente</p>
@@ -1197,22 +1184,22 @@ const Dashboard = () => {
                                   )}
                                 </TooltipProvider>
                               </div>
-                             <p className="text-sm text-muted-foreground">
+                             <p className="text-xs md:text-sm text-muted-foreground">
                                {formatTimeBR(session.horario)}
                              </p>
-                             <p className="text-sm font-medium text-success">
+                             <p className="text-xs md:text-sm font-medium text-success">
                                {formatCurrencyBR(session.valor || 0)}
                              </p>
                         </div>
                       </div>
-                       <div className="text-right">
-                          <p className="font-medium">{formatDateBR(session.data)}</p>
-                          <div className="flex items-center justify-end gap-1.5 mt-1">
+                       <div className="text-right shrink-0">
+                          <p className="font-medium text-xs md:text-sm">{formatDateBR(session.data)}</p>
+                          <div className="flex items-center justify-end gap-1 mt-1 flex-wrap">
                             <TooltipProvider>
                               {evolucoes.some(evo => evo.session_id === session.id) && (
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <FileText className="w-4 h-4 text-primary" />
+                                    <FileText className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Possui prontuário</p>
@@ -1222,7 +1209,7 @@ const Dashboard = () => {
                               {sessionNotes.some(note => note.session_id === session.id) && (
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <PenLine className="w-4 h-4 text-primary" />
+                                    <PenLine className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Possui anotação</p>
@@ -1232,27 +1219,14 @@ const Dashboard = () => {
                               {session.package_id && (
                                 <Tooltip>
                                   <TooltipTrigger>
-                                    <Package className="w-4 h-4 text-primary" />
+                                    <Package className="w-3 h-3 md:w-4 md:h-4 text-primary" />
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Sessão de pacote</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
-                              {session.recurring_session_id && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Repeat className="w-4 h-4 text-primary" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Sessão recorrente</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
                             </TooltipProvider>
-                            {session.google_sync_type && (
-                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} />
-                            )}
                             <Badge
                               variant={
                                 session.status === 'realizada' ? 'success' :
@@ -1261,7 +1235,7 @@ const Dashboard = () => {
                                 session.status === 'falta' ? 'warning' :
                                 'info'
                               }
-                              className="text-xs"
+                              className="text-[10px] md:text-xs"
                             >
                               {session.status === 'realizada' ? 'Realizada' :
                                session.status === 'agendada' ? 'Agendada' :
@@ -1275,8 +1249,8 @@ const Dashboard = () => {
                    </Card>
                    )
                  }) : (
-                  <div className="flex items-center justify-center h-full">
-                    <p className="text-muted-foreground text-center">Nenhuma sessão agendada</p>
+                  <div className="flex items-center justify-center py-8">
+                    <p className="text-muted-foreground text-center text-sm">Nenhuma sessão agendada</p>
                   </div>
                 )}
                 {upcomingSessions.length > 4 && (
