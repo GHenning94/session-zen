@@ -664,7 +664,7 @@ export default function Sessoes() {
 
   return (
     <Layout>
-      <div className="p-4 md:p-6">
+      <div className="md:p-6">
         {/* Header - Mobile optimized */}
         <div className="flex flex-col gap-3 mb-4 md:mb-6">
           <div className="flex items-center gap-2">
