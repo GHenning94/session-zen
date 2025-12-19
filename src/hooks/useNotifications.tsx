@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
-import { useBrowserNotifications } from '@/hooks/useBrowserNotifications'
 
 interface Notification {
   id: string
@@ -16,7 +15,6 @@ interface Notification {
 export const useNotifications = () => {
   const { user } = useAuth()
   const { toast } = useToast()
-  const { showNotification } = useBrowserNotifications()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -25,7 +23,6 @@ export const useNotifications = () => {
   const isSubscribedRef = useRef(false)
   const isCleaningUpRef = useRef(false)
   const visibilityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const showNotificationRef = useRef(showNotification)
 
   const loadNotifications = useCallback(async () => {
     if (!user) return
@@ -60,17 +57,12 @@ export const useNotifications = () => {
   const startBackgroundPolling = useCallback(() => {
     // Polling disabled - realtime handles everything
     return
-  }, [user, showNotification])
+  }, [user])
 
   const stopBackgroundPolling = useCallback(() => {
     // Polling disabled
     return
   }, [])
-
-  // Keep showNotification ref updated without triggering re-subscriptions
-  useEffect(() => {
-    showNotificationRef.current = showNotification
-  }, [showNotification])
 
   // Set up realtime subscription - ONLY depends on user.id
   useEffect(() => {
@@ -113,14 +105,6 @@ export const useNotifications = () => {
             
             setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
             setUnreadCount((prev) => prev + 1)
-            
-            // Show browser notification only if tab is not visible
-            if (document.visibilityState !== 'visible' && showNotificationRef.current) {
-              showNotificationRef.current(
-                newNotification.titulo,
-                newNotification.conteudo
-              )
-            }
           } else if (payload.eventType === 'UPDATE') {
             const updatedNotification = payload.new as Notification
             setNotifications((prev) =>
