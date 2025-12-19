@@ -176,11 +176,11 @@ const faqData = [
     questions: [
       {
         question: "Quais integrações estão disponíveis?",
-        answer: "Atualmente oferecemos integração com Google Calendar para sincronização de agenda, Google Ads para rastreamento de conversões e lembretes via WhatsApp."
+        answer: "Atualmente oferecemos integração com Google Calendar para sincronização de agenda e lembretes via WhatsApp."
       },
       {
         question: "Como configurar lembretes automáticos?",
-        answer: "Em 'Configurações' > 'Notificações', ative os lembretes de sessão. Você pode configurar notificações por e-mail, push notification e definir quando devem ser enviados."
+        answer: "Em 'Configurações' > 'Notificações', ative os lembretes de sessão. Você pode configurar notificações por e-mail e definir quando devem ser enviados."
       }
     ]
   }

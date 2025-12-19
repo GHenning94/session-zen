@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ClientAvatar } from "@/components/ClientAvatar"
-import { NotificationPermissionBanner } from "@/components/NotificationPermissionBanner"
 import { PackageStatusCard } from "@/components/PackageStatusCard"
 import { BusinessOrbitalView } from "@/components/BusinessOrbitalView"
 import { SmartNotificationCard } from "@/components/SmartNotificationCard"
@@ -1009,7 +1008,6 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <NotificationPermissionBanner />
       <div className="space-y-8">
         {/* Header */}
         <div className="flex items-center justify-between">
