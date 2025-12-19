@@ -3,11 +3,12 @@ import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
 import WhatsAppButton from "@/components/WhatsAppButton"
+import { MobileLayout } from "@/components/MobileLayout"
 import { useAuth } from "@/hooks/useAuth"
 import { useUserTheme } from "@/hooks/useUserTheme"
 import { useInstantTheme } from "@/hooks/useInstantTheme"
 import { useColorTheme } from "@/hooks/useColorTheme"
-import { Skeleton } from "@/components/ui/skeleton"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -15,6 +16,7 @@ interface LayoutProps {
 
 export function Layout({ children }: LayoutProps) {
   const { user, loading } = useAuth()
+  const isMobile = useIsMobile()
   
   // Apply cached theme instantly to prevent flicker
   useInstantTheme(user?.id)
@@ -41,7 +43,13 @@ export function Layout({ children }: LayoutProps) {
   if (!user) {
     return null
   }
+
+  // Mobile layout with bottom navigation
+  if (isMobile) {
+    return <MobileLayout>{children}</MobileLayout>
+  }
   
+  // Desktop layout with sidebar
   return (
     <SidebarProvider>
       <div className="app-layout-container flex w-full bg-background">

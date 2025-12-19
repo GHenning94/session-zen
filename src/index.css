@@ -360,3 +360,39 @@ html.theme-transitioning .theme-transition-overlay {
     transform: rotate(360deg);
   }
 }
+
+/* Mobile Native App Experience */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+  
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
+/* Mobile touch optimizations */
+@media (max-width: 767px) {
+  /* Prevent text selection on interactive elements */
+  button, a, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+    user-select: none;
+  }
+  
+  /* Smoother scrolling on mobile */
+  .overflow-y-auto {
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better touch targets */
+  button, a, [role="button"] {
+    min-height: 44px;
+  }
+  
+  /* Prevent pull-to-refresh interference */
+  body {
+    overscroll-behavior-y: contain;
+  }
+}
