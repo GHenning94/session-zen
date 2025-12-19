@@ -243,24 +243,22 @@ const Agenda = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        {/* Header - Mobile optimized */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Agenda</h1>
-            <p className="text-muted-foreground">
-              Gerencie seus agendamentos e sessões
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Agenda</h1>
+            <p className="text-sm text-muted-foreground">
+              Gerencie seus agendamentos
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button 
-              className="bg-gradient-primary hover:opacity-90"
-              onClick={() => setIsNewSessionOpen(true)}
-            >
-              <Plus className="w-4 w-4 mr-2" />
-              Nova Sessão
-            </Button>
-          </div>
+          <Button 
+            className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto"
+            onClick={() => setIsNewSessionOpen(true)}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Nova Sessão
+          </Button>
         </div>
 
         {/* Session Modal */}
@@ -275,27 +273,32 @@ const Agenda = () => {
           }}
         />
 
-        {/* Navigation and Google Calendar Integration */}
-        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-          <div className="flex items-center gap-2">
+        {/* Navigation - Mobile optimized */}
+        <div className="space-y-3">
+          {/* Date Navigation */}
+          <div className="flex items-center justify-between gap-2">
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className="h-9 w-9 shrink-0"
               onClick={() => navigateDate('prev')}
               disabled={isLoading}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
             
-            <div className="text-lg font-semibold px-4">
-              {currentView === 'month' && format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
-              {currentView === 'week' && `${format(selectedDate, "dd/MM", { locale: ptBR })} - ${format(addDays(selectedDate, 6), "dd/MM/yyyy", { locale: ptBR })}`}
-              {currentView === 'day' && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+            <div className="text-center flex-1 min-w-0">
+              <div className="text-sm md:text-lg font-semibold truncate">
+                {currentView === 'month' && format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                {currentView === 'week' && `${format(selectedDate, "dd/MM", { locale: ptBR })} - ${format(addDays(selectedDate, 6), "dd/MM/yyyy", { locale: ptBR })}`}
+                {currentView === 'day' && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+              </div>
             </div>
             
             <Button
               variant="outline"
-              size="sm"
+              size="icon"
+              className="h-9 w-9 shrink-0"
               onClick={() => navigateDate('next')}
               disabled={isLoading}
             >
@@ -305,6 +308,7 @@ const Agenda = () => {
             <Button
               variant="outline"
               size="sm"
+              className="shrink-0"
               onClick={() => setSelectedDate(new Date())}
               disabled={isLoading}
             >
@@ -312,52 +316,59 @@ const Agenda = () => {
             </Button>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* Controls Row - Scrollable on mobile */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
             {/* Google Calendar Integration */}
             {isGoogleConnected ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1 shrink-0">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-success/10 text-success border-success/20 hover:bg-success/20"
+                  className="bg-success/10 text-success border-success/20 hover:bg-success/20 text-xs px-2"
                 >
-                  <Link className="h-4 w-4 mr-2" />
-                  Google Calendar
+                  <Link className="h-3 w-3 mr-1" />
+                  <span className="hidden sm:inline">Google Calendar</span>
+                  <span className="sm:hidden">Google</span>
                 </Button>
                 <Button
                   variant="outline"
-                  size="sm"
+                  size="icon"
+                  className="h-8 w-8"
                   onClick={loadGoogleEvents}
                   disabled={isLoading}
                 >
-                  <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                  <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
+                  className="text-xs px-2"
                   onClick={disconnectFromGoogle}
                 >
-                  Desconectar
+                  <span className="hidden sm:inline">Desconectar</span>
+                  <span className="sm:hidden">X</span>
                 </Button>
               </div>
             ) : (
               <Button
                 variant="outline"
                 size="sm"
+                className="shrink-0 text-xs"
                 onClick={connectToGoogle}
                 disabled={isLoading}
               >
-                <Link className="h-4 w-4 mr-2" />
-                Conectar Google Calendar
+                <Link className="h-3 w-3 mr-1" />
+                <span className="hidden sm:inline">Conectar Google Calendar</span>
+                <span className="sm:hidden">Google</span>
               </Button>
             )}
 
             {/* View Selector */}
-            <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')}>
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="day">Dia</TabsTrigger>
-                <TabsTrigger value="week">Semana</TabsTrigger>
-                <TabsTrigger value="month">Mês</TabsTrigger>
+            <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')} className="shrink-0 ml-auto">
+              <TabsList className="h-8">
+                <TabsTrigger value="day" className="text-xs px-2 h-7">Dia</TabsTrigger>
+                <TabsTrigger value="week" className="text-xs px-2 h-7">Semana</TabsTrigger>
+                <TabsTrigger value="month" className="text-xs px-2 h-7">Mês</TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
@@ -409,41 +420,43 @@ const Agenda = () => {
           )}
         </div>
 
-        {/* Resumo do Dia */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
-          <Card className="shadow-soft w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Sessões Hoje</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-primary">{todaySessionsStats.todaySessionsCount}</div>
-              <p className="text-sm text-muted-foreground">Total de atendimentos</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-soft w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Receita Prevista</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-success">
-                R$ {todaySessionsStats.todayRevenue.toFixed(2)}
-              </div>
-              <p className="text-sm text-muted-foreground">Valor total do dia</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="shadow-soft w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Taxa de Ocupação</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-warning">
-                {todaySessionsStats.occupationRate}%
-              </div>
-              <p className="text-sm text-muted-foreground">{todaySessionsStats.todaySessionsCount} de {timeSlots.length} horários</p>
-            </CardContent>
-          </Card>
+        {/* Resumo do Dia - Mobile optimized */}
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
+          <div className="flex gap-3 md:grid md:grid-cols-3 md:gap-6 min-w-max md:min-w-0">
+            <Card className="shadow-soft min-w-[140px] md:min-w-0">
+              <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
+                <CardTitle className="text-sm md:text-lg">Sessões Hoje</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-2xl md:text-3xl font-bold text-primary">{todaySessionsStats.todaySessionsCount}</div>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Total de atendimentos</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-soft min-w-[140px] md:min-w-0">
+              <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
+                <CardTitle className="text-sm md:text-lg">Receita Prevista</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-2xl md:text-3xl font-bold text-success">
+                  R$ {todaySessionsStats.todayRevenue.toFixed(2)}
+                </div>
+                <p className="text-[10px] md:text-sm text-muted-foreground">Valor total do dia</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="shadow-soft min-w-[140px] md:min-w-0">
+              <CardHeader className="pb-2 p-3 md:p-6 md:pb-3">
+                <CardTitle className="text-sm md:text-lg">Taxa de Ocupação</CardTitle>
+              </CardHeader>
+              <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
+                <div className="text-2xl md:text-3xl font-bold text-warning">
+                  {todaySessionsStats.occupationRate}%
+                </div>
+                <p className="text-[10px] md:text-sm text-muted-foreground">{todaySessionsStats.todaySessionsCount} de {timeSlots.length} horários</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </Layout>

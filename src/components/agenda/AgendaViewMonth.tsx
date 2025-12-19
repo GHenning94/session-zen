@@ -102,137 +102,173 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   }
 
   return (
-    <Card className="shadow-soft">
+    <Card className="shadow-soft overflow-hidden">
       <CardContent className="p-0">
-        {/* Header with day names */}
+        {/* Header with day names - Mobile optimized */}
         <div className="grid grid-cols-7 border-b border-border">
-          {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((day) => (
-            <div key={day} className="p-4 text-center text-sm font-medium text-muted-foreground bg-muted">
-              {day}
+          {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, idx) => (
+            <div key={`${day}-${idx}`} className="p-2 md:p-4 text-center text-xs md:text-sm font-medium text-muted-foreground bg-muted">
+              <span className="md:hidden">{day}</span>
+              <span className="hidden md:inline">{['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'][idx]}</span>
             </div>
           ))}
         </div>
 
-        {/* Calendar grid */}
-        <div className="grid grid-cols-7">
-          {calendarDays.map((date) => {
-            const daySessionsData = getSessionsForDate(date)
-            const dayGoogleEvents = getGoogleEventsForDate(date)
-            const isCurrentMonth = date.getMonth() === selectedDate.getMonth()
-            const isToday = date.toDateString() === new Date().toDateString()
-            const isSelected = date.toDateString() === selectedDate.toDateString()
+        {/* Calendar grid - Scrollable container */}
+        <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-none">
+          <div className="grid grid-cols-7">
+            {calendarDays.map((date) => {
+              const daySessionsData = getSessionsForDate(date)
+              const dayGoogleEvents = getGoogleEventsForDate(date)
+              const isCurrentMonth = date.getMonth() === selectedDate.getMonth()
+              const isToday = date.toDateString() === new Date().toDateString()
+              const isSelected = date.toDateString() === selectedDate.toDateString()
 
-            return (
-              <div
-                key={date.toISOString()}
-                className={cn(
-                  "min-h-[120px] border border-border p-2 cursor-pointer hover:bg-accent/20 transition-colors",
-                  !isCurrentMonth && "text-muted-foreground bg-muted/50",
-                  isToday && "bg-primary/5",
-                  isSelected && "ring-2 ring-primary",
-                  draggedSession && "border-dashed border-primary"
-                )}
-                onDragOver={handleDragOver}
+              return (
+                <div
+                  key={date.toISOString()}
+                  className={cn(
+                    "min-h-[70px] md:min-h-[120px] border border-border p-1 md:p-2 cursor-pointer hover:bg-accent/20 transition-colors",
+                    !isCurrentMonth && "text-muted-foreground bg-muted/50",
+                    isToday && "bg-primary/5",
+                    isSelected && "ring-2 ring-primary ring-inset",
+                    draggedSession && "border-dashed border-primary"
+                  )}
+                  onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, date)}
                   onClick={() => {
                     onDateSelect(date)
                     onCreateSession(date)
                   }}
-              >
-                <div className="flex justify-between items-start mb-2">
-                  <div className={cn(
-                    "font-medium text-sm",
-                    isToday && "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs"
-                  )}>
-                    {date.getDate()}
+                >
+                  <div className="flex justify-center md:justify-start items-start mb-1">
+                    <div className={cn(
+                      "font-medium text-xs md:text-sm",
+                      isToday && "bg-primary text-primary-foreground rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center text-[10px] md:text-xs"
+                    )}>
+                      {date.getDate()}
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5 md:space-y-1">
+                    {/* Mobile: Show only dots for sessions */}
+                    <div className="md:hidden flex flex-wrap gap-0.5 justify-center">
+                      {daySessionsData.slice(0, 4).map((session) => {
+                        const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
+                        return (
+                          <div
+                            key={session.id}
+                            className={cn(
+                              "w-2 h-2 rounded-full bg-primary",
+                              needsAttention && "bg-warning animate-pulse",
+                              highlightedSessionId === session.id && "ring-1 ring-primary"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEditSession(session)
+                            }}
+                          />
+                        )
+                      })}
+                      {dayGoogleEvents.slice(0, 2).map((event) => (
+                        <div
+                          key={event.id}
+                          className="w-2 h-2 rounded-full bg-blue-400"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ))}
+                      {(daySessionsData.length > 4 || dayGoogleEvents.length > 2) && (
+                        <span className="text-[8px] text-muted-foreground">+</span>
+                      )}
+                    </div>
+
+                    {/* Desktop: Show full session cards */}
+                    <div className="hidden md:block space-y-1">
+                      {daySessionsData.slice(0, 3).map((session) => {
+                        const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
+                        
+                        return (
+                          <div
+                            key={session.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, session.id)}
+                            onDragEnd={handleDragEnd}
+                            className={cn(
+                              "text-xs p-2 rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground hover:bg-primary/30 dark:hover:bg-primary/40 transition-colors group relative cursor-move border border-primary/30 dark:border-primary/50 shadow-sm",
+                              highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
+                              draggedSession === session.id && "opacity-50 scale-95"
+                            )}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEditSession(session)
+                            }}
+                          >
+                            {needsAttention && (
+                              <div className="absolute top-1 left-1 z-10">
+                                <PulsingDot color="warning" size="sm" />
+                              </div>
+                            )}
+                            <div className="flex items-center gap-2 text-xs">
+                              <div className="flex items-center gap-1">
+                                <Clock className="h-3 w-3 flex-shrink-0" />
+                                <span>{formatTimeBR(session.horario)}</span>
+                              </div>
+                              <div className="flex items-center gap-1 min-w-0">
+                                <User className="h-3 w-3 flex-shrink-0" />
+                                <span className="truncate">
+                                  {formatClientName(getClientName(session.client_id))}
+                                </span>
+                              </div>
+                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
+                            </div>
+
+                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onDeleteSession(session.id)
+                                }}
+                                className="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                              >
+                                <Trash className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                        )
+                      })}
+
+                      {dayGoogleEvents.slice(0, 2).map((event) => (
+                        <div
+                          key={event.id}
+                          className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <div className="flex items-center gap-1">
+                            <div className="w-2 h-2 bg-primary rounded-full"></div>
+                            <span className="truncate">{event.summary}</span>
+                          </div>
+                        </div>
+                      ))}
+
+                      {daySessionsData.length > 3 && (
+                        <div className="text-xs text-muted-foreground">
+                          +{daySessionsData.length - 3} mais
+                        </div>
+                      )}
+
+                      {dayGoogleEvents.length > 2 && (
+                        <div className="text-xs text-primary">
+                          +{dayGoogleEvents.length - 2} eventos
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-
-                <div className="space-y-1">
-                  {daySessionsData.slice(0, 3).map((session) => {
-                    // Verificar se a sessão precisa de atenção
-                    const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
-                    
-                    return (
-                    <div
-                      key={session.id}
-                      draggable
-                      onDragStart={(e) => handleDragStart(e, session.id)}
-                      onDragEnd={handleDragEnd}
-                      className={cn(
-                        "text-xs p-2 rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground hover:bg-primary/30 dark:hover:bg-primary/40 transition-colors group relative cursor-move border border-primary/30 dark:border-primary/50 shadow-sm",
-                        highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
-                        draggedSession === session.id && "opacity-50 scale-95"
-                      )}
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        onEditSession(session)
-                      }}
-                    >
-                      {needsAttention && (
-                        <div className="absolute top-1 left-1 z-10">
-                          <PulsingDot color="warning" size="sm" />
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2 text-xs">
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3 flex-shrink-0" />
-                          <span>{formatTimeBR(session.horario)}</span>
-                        </div>
-                        <div className="flex items-center gap-1 min-w-0">
-                          <User className="h-3 w-3 flex-shrink-0" />
-                          <span className="truncate">
-                            {formatClientName(getClientName(session.client_id))}
-                          </span>
-                        </div>
-                        <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
-                      </div>
-
-                      <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            onDeleteSession(session.id)
-                          }}
-                          className="h-5 w-5 p-0 text-destructive hover:text-destructive"
-                        >
-                          <Trash className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    )
-                  })}
-
-                  {dayGoogleEvents.slice(0, 2).map((event) => (
-                    <div
-                      key={event.id}
-                      className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex items-center gap-1">
-                        <div className="w-2 h-2 bg-primary rounded-full"></div>
-                        <span className="truncate">{event.summary}</span>
-                      </div>
-                    </div>
-                  ))}
-
-                  {daySessionsData.length > 3 && (
-                    <div className="text-xs text-muted-foreground">
-                      +{daySessionsData.length - 3} mais
-                    </div>
-                  )}
-
-                  {dayGoogleEvents.length > 2 && (
-                    <div className="text-xs text-primary">
-                      +{dayGoogleEvents.length - 2} eventos
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
       </CardContent>
     </Card>

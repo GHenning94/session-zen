@@ -1,6 +1,7 @@
 {
   "name": "TherapyPro",
   "short_name": "TherapyPro",
+  "description": "Gestão completa para profissionais de saúde mental",
   "icons": [
     {
       "src": "/favicon.png",
@@ -9,6 +10,10 @@
       "purpose": "any maskable"
     }
   ],
-  "start_url": ".",
-  "display": "standalone"
+  "start_url": "/login",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0B1120",
+  "theme_color": "#3B82F6",
+  "orientation": "portrait"
 }

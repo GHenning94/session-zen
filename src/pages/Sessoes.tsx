@@ -664,110 +664,118 @@ export default function Sessoes() {
 
   return (
     <Layout>
-      <div className="p-6">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-4 md:p-6">
+        {/* Header - Mobile optimized */}
+        <div className="flex flex-col gap-3 mb-4 md:mb-6">
           <div className="flex items-center gap-2">
-            <Clock className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold">Histórico de Sessões</h1>
+            <Clock className="h-5 w-5 md:h-6 md:w-6 text-primary shrink-0" />
+            <h1 className="text-xl md:text-2xl font-bold">Histórico de Sessões</h1>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               onClick={() => setNewSessionModalOpen(true)}
-              className="bg-gradient-primary hover:opacity-90"
+              className="bg-gradient-primary hover:opacity-90 flex-1 sm:flex-none"
+              size="sm"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-4 w-4 mr-1" />
               Nova Sessão
             </Button>
             <Button
               variant={activeTab === 'sessions' ? 'default' : 'outline'}
               onClick={() => setActiveTab('sessions')}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
               Sessões
             </Button>
             <Button
               variant={activeTab === 'notes' ? 'default' : 'outline'}
               onClick={() => setActiveTab('notes')}
+              size="sm"
+              className="flex-1 sm:flex-none"
             >
-              <PenLine className="h-4 w-4 mr-2" />
+              <PenLine className="h-4 w-4 mr-1" />
               Anotações
             </Button>
           </div>
         </div>
         
-        {/* Estatísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">Total de Sessões</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-success">{stats.realizadas}</div>
-              <p className="text-xs text-muted-foreground">Realizadas</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-primary">{stats.agendadas}</div>
-              <p className="text-xs text-muted-foreground">Agendadas</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-destructive">{stats.canceladas}</div>
-              <p className="text-xs text-muted-foreground">Canceladas</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-              <div className="text-2xl font-bold text-warning">{stats.faltas}</div>
-              <p className="text-xs text-muted-foreground">Faltas</p>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-4">
-               <div className="text-2xl font-bold text-success">
-                {formatCurrencyBR(stats.totalFaturado)}
-              </div>
-              <p className="text-xs text-muted-foreground">Total Faturado</p>
-            </CardContent>
-          </Card>
+        {/* Estatísticas - Horizontal scroll on mobile */}
+        <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0 mb-4 md:mb-6">
+          <div className="flex gap-3 md:grid md:grid-cols-6 min-w-max md:min-w-0">
+            <Card className="min-w-[120px] md:min-w-0">
+              <CardContent className="p-3 md:p-4">
+                <div className="text-xl md:text-2xl font-bold">{stats.total}</div>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Total</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="min-w-[120px] md:min-w-0">
+              <CardContent className="p-3 md:p-4">
+                <div className="text-xl md:text-2xl font-bold text-success">{stats.realizadas}</div>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Realizadas</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="min-w-[120px] md:min-w-0">
+              <CardContent className="p-3 md:p-4">
+                <div className="text-xl md:text-2xl font-bold text-primary">{stats.agendadas}</div>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Agendadas</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="min-w-[120px] md:min-w-0">
+              <CardContent className="p-3 md:p-4">
+                <div className="text-xl md:text-2xl font-bold text-destructive">{stats.canceladas}</div>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Canceladas</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="min-w-[120px] md:min-w-0">
+              <CardContent className="p-3 md:p-4">
+                <div className="text-xl md:text-2xl font-bold text-warning">{stats.faltas}</div>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Faltas</p>
+              </CardContent>
+            </Card>
+            
+            <Card className="min-w-[140px] md:min-w-0">
+              <CardContent className="p-3 md:p-4">
+                <div className="text-xl md:text-2xl font-bold text-success">
+                  {formatCurrencyBR(stats.totalFaturado)}
+                </div>
+                <p className="text-[10px] md:text-xs text-muted-foreground">Faturado</p>
+              </CardContent>
+            </Card>
+          </div>
         </div>
         
-        {/* Filtros */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        {/* Filtros - Collapsible on mobile */}
+        <Card className="mb-4 md:mb-6">
+          <CardHeader className="py-3 md:py-4">
+            <CardTitle className="flex items-center gap-2 text-sm md:text-base">
               <Filter className="h-4 w-4" />
               Filtros
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-              <div>
-                <Label htmlFor="search">Buscar</Label>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
+              <div className="col-span-2 md:col-span-1">
+                <Label htmlFor="search" className="text-xs">Buscar</Label>
                 <Input
                   id="search"
-                  placeholder="Buscar por cliente ou anotações..."
+                  placeholder="Cliente ou anotações..."
                   value={filters.search}
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                  className="h-9 text-sm"
                 />
               </div>
               
-              
               <div>
-                <Label htmlFor="status-filter">Status</Label>
+                <Label htmlFor="status-filter" className="text-xs">Status</Label>
                 <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os status" />
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
@@ -780,10 +788,10 @@ export default function Sessoes() {
               </div>
 
               <div>
-                <Label htmlFor="type-filter">Tipo</Label>
+                <Label htmlFor="type-filter" className="text-xs">Tipo</Label>
                 <Select value={filters.sessionType} onValueChange={(value) => setFilters(prev => ({ ...prev, sessionType: value }))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Todos os tipos" />
+                  <SelectTrigger className="h-9 text-sm">
+                    <SelectValue placeholder="Todos" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todos</SelectItem>
@@ -794,40 +802,42 @@ export default function Sessoes() {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="google-sync-filter">Sincronização</Label>
+              <div className="hidden md:block">
+                <Label htmlFor="google-sync-filter" className="text-xs">Sincronização</Label>
                 <Select value={filters.googleSync} onValueChange={(value) => setFilters(prev => ({ ...prev, googleSync: value }))}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-9 text-sm">
                     <SelectValue placeholder="Todas" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Todas</SelectItem>
                     <SelectItem value="local">Local</SelectItem>
-                    <SelectItem value="importado">Importado do Google</SelectItem>
+                    <SelectItem value="importado">Importado</SelectItem>
                     <SelectItem value="espelhado">Espelhado</SelectItem>
-                    <SelectItem value="enviado">Enviado ao Google</SelectItem>
-                    <SelectItem value="cancelado">Cancelado no Google</SelectItem>
+                    <SelectItem value="enviado">Enviado</SelectItem>
+                    <SelectItem value="cancelado">Cancelado</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               
               <div>
-                <Label htmlFor="start-date">Data Início</Label>
+                <Label htmlFor="start-date" className="text-xs">Início</Label>
                 <Input
                   id="start-date"
                   type="date"
                   value={filters.startDate}
                   onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                  className="h-9 text-sm"
                 />
               </div>
               
               <div>
-                <Label htmlFor="end-date">Data Fim</Label>
+                <Label htmlFor="end-date" className="text-xs">Fim</Label>
                 <Input
                   id="end-date"
                   type="date"
                   value={filters.endDate}
                   onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                  className="h-9 text-sm"
                 />
               </div>
             </div>
