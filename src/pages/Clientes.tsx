@@ -406,69 +406,74 @@ const Clientes = () => {
 
   return (
     <Layout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-4 md:space-y-6">
+        {/* Header */}
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">{clientTermPlural}</h1>
-            <p className="text-muted-foreground">
-              Gerencie seus {clientTermPlural.toLowerCase()} e acompanhe seu progresso
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{clientTermPlural}</h1>
+            <p className="text-sm text-muted-foreground">
+              Gerencie seus {clientTermPlural.toLowerCase()}
             </p>
           </div>
           <div className="flex gap-2">
             <GenerateRegistrationLinkModal disabled={!canAddMore}>
-              <Button variant="outline" disabled={!canAddMore}>
+              <Button variant="outline" size="sm" disabled={!canAddMore} className="flex-1 md:flex-none">
                 <Link className="w-4 h-4 mr-2" />
-                Gerar Link {!canAddMore && `(Limite)`}
+                <span className="hidden sm:inline">Gerar Link</span>
+                <span className="sm:hidden">Link</span>
               </Button>
             </GenerateRegistrationLinkModal>
             <Button 
-              className="bg-gradient-primary hover:opacity-90"
+              size="sm"
+              className="bg-gradient-primary hover:opacity-90 flex-1 md:flex-none"
               disabled={!canAddMore}
               onClick={() => {
-                setEditingClient(null) // Limpar estado de edição para novo cliente
+                setEditingClient(null)
                 setIsNewClientOpen(true)
               }}
             >
               <Plus className="w-4 h-4 mr-2" />
-              Novo {clientTerm} {!canAddMore && `(${activeClients.length}/${planLimits.maxClients})`}
+              <span className="hidden sm:inline">Novo {clientTerm}</span>
+              <span className="sm:hidden">Novo</span>
             </Button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 w-full">
-          <Card className="shadow-soft w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Total de {clientTermPlural} Ativos</CardTitle>
+        {/* Stats Cards - Grid 2x2 no mobile */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
+          <Card className="shadow-soft">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm md:text-lg">{clientTermPlural} Ativos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-primary">{activeClients.length}</div>
-              <p className="text-sm text-muted-foreground">
-                {canAddMore ? `${clientTermPlural} ativos no sistema` : `Limite do plano ${currentPlan} atingido`}
+              <div className="text-2xl md:text-3xl font-bold text-primary">{activeClients.length}</div>
+              <p className="text-[10px] md:text-sm text-muted-foreground truncate">
+                {canAddMore ? 'Ativos no sistema' : `Limite atingido`}
               </p>
             </CardContent>
           </Card>
           
-          <Card className="shadow-soft w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Plano Atual</CardTitle>
+          <Card className="shadow-soft">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm md:text-lg">Plano</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-primary capitalize">{currentPlan}</div>
-              <p className="text-sm text-muted-foreground">
-                {activeClients.length}/{planLimits.maxClients === Infinity ? '∞' : planLimits.maxClients} {clientTermPlural.toLowerCase()} ativos
+              <div className="text-xl md:text-2xl font-bold text-primary capitalize">{currentPlan}</div>
+              <p className="text-[10px] md:text-sm text-muted-foreground">
+                {activeClients.length}/{planLimits.maxClients === Infinity ? '∞' : planLimits.maxClients}
               </p>
             </CardContent>
           </Card>
           
-          <Card className="shadow-soft w-full">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Total de {clientTermPlural} Inativos</CardTitle>
+          <Card className="shadow-soft col-span-2 md:col-span-1">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm md:text-lg">{clientTermPlural} Inativos</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold" style={{ color: 'hsl(45 93% 47%)' }}>
+              <div className="text-2xl md:text-3xl font-bold" style={{ color: 'hsl(45 93% 47%)' }}>
                 {inactiveClients.length}
               </div>
-              <p className="text-sm text-muted-foreground">{clientTermPlural} desativados</p>
+              <p className="text-[10px] md:text-sm text-muted-foreground">Desativados</p>
             </CardContent>
           </Card>
         </div>
