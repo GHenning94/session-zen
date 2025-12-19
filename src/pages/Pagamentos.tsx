@@ -806,7 +806,7 @@ const pastPayments = filteredPayments.filter(item => {
                            <div 
                              key={payment.id} 
                              className={cn(
-                               "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative"
+                               "flex flex-col md:flex-row md:items-center md:justify-between p-3 md:p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative gap-3"
                              )}
                              onClick={() => {
                                if (isSelectionMode) {
@@ -821,41 +821,41 @@ const pastPayments = filteredPayments.filter(item => {
                              }}
                            >
                              {!isSelectionMode && needsAttention && (
-                               <div className="absolute top-4 left-4">
+                               <div className="absolute top-3 left-3 md:top-4 md:left-4">
                                  <PulsingDot color="destructive" size="md" />
                                </div>
                              )}
-                             <div className="flex items-center gap-4">
+                             <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                                {isSelectionMode && (
                                  <SelectableItemCheckbox
                                    isSelected={selectedPayments.has(payment.id)}
                                    onSelect={() => togglePaymentSelection(payment.id)}
                                  />
                                )}
-                               <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                                 <StatusIcon className="w-5 h-5 text-primary" />
+                               <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-card rounded-full flex items-center justify-center shrink-0">
+                                 <StatusIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                                </div>
-                               <div className="flex-1">
-                                 <div className="flex items-center gap-2 mb-1">
-                                   <h3 className="font-medium">{payment.client}</h3>
-                                   <Badge variant={getStatusColor(payment.status)}>
+                               <div className="flex-1 min-w-0">
+                                 <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
+                                   <h3 className="font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-none">{payment.client}</h3>
+                                   <Badge variant={getStatusColor(payment.status)} className="text-[10px] md:text-xs shrink-0">
                                      {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                    </Badge>
                                     {payment.type === 'package' && (
-                                      <Package className="w-4 h-4 text-primary" />
+                                      <Package className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
                                     )}
                                     {payment.recurring_session_id && (
-                                      <Repeat className="w-4 h-4 text-primary" />
+                                      <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
                                     )}
                                     {payment.google_sync_type && (
                                       <GoogleSyncBadge syncType={payment.google_sync_type} />
                                     )}
                                  </div>
-                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                                 <div className="flex items-center gap-4 text-xs md:text-sm text-muted-foreground">
                                    <div className="flex items-center gap-1">
-                                     <Calendar className="w-3 h-3" />
+                                     <Calendar className="w-3 h-3 shrink-0" />
                                      {payment.type === 'package' ? (
-                                       <span>
+                                       <span className="truncate">
                                          {payment.package_data_inicio && payment.package_data_fim ? (
                                            `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
                                          ) : (
@@ -868,17 +868,17 @@ const pastPayments = filteredPayments.filter(item => {
                                    </div>
                                  </div>
                                  {payment.type === 'package' && (
-                                   <div className="text-xs text-muted-foreground mt-1">
+                                   <div className="text-[10px] md:text-xs text-muted-foreground mt-1 truncate">
                                      {payment.package_name} • {payment.package_sessions} sessões
                                    </div>
                                  )}
                                </div>
                              </div>
                              
-                             <div className="flex items-center gap-4">
+                             <div className="flex items-center justify-end md:justify-start gap-2 md:gap-4 pl-12 md:pl-0">
                                <div className="text-right">
-                                 <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
-                                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                                 <div className="font-semibold text-base md:text-lg">{formatCurrencyBR(payment.value)}</div>
+                                <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1 justify-end">
                                    {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
                                    {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
                                    {(payment.method === 'cartao' || payment.method === 'cartao_credito' || payment.method === 'cartao_debito') && <CreditCard className="w-3 h-3" />}
@@ -915,7 +915,7 @@ const pastPayments = filteredPayments.filter(item => {
                     <div 
                       key={payment.id} 
                       className={cn(
-                        "flex items-center justify-between p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative"
+                        "flex flex-col md:flex-row md:items-center md:justify-between p-3 md:p-4 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer relative gap-3"
                       )}
                       onClick={() => {
                         if (isSelectionMode) {
@@ -930,41 +930,41 @@ const pastPayments = filteredPayments.filter(item => {
                       }}
                     >
                       {!isSelectionMode && needsAttention && (
-                        <div className="absolute top-4 left-4">
+                        <div className="absolute top-3 left-3 md:top-4 md:left-4">
                           <PulsingDot color="destructive" size="md" />
                         </div>
                       )}
-                       <div className="flex items-center gap-4">
+                       <div className="flex items-center gap-3 md:gap-4 flex-1 min-w-0">
                          {isSelectionMode && (
                            <SelectableItemCheckbox
                              isSelected={selectedPayments.has(payment.id)}
                              onSelect={() => togglePaymentSelection(payment.id)}
                            />
                          )}
-                         <div className="w-10 h-10 bg-gradient-card rounded-full flex items-center justify-center">
-                           <StatusIcon className="w-5 h-5 text-primary" />
+                         <div className="w-9 h-9 md:w-10 md:h-10 bg-gradient-card rounded-full flex items-center justify-center shrink-0">
+                           <StatusIcon className="w-4 h-4 md:w-5 md:h-5 text-primary" />
                          </div>
-                         <div className="flex-1">
-                           <div className="flex items-center gap-2 mb-1">
-                             <h3 className="font-medium">{payment.client}</h3>
-                             <Badge variant={getStatusColor(payment.status)}>
+                         <div className="flex-1 min-w-0">
+                           <div className="flex flex-wrap items-center gap-1 md:gap-2 mb-1">
+                             <h3 className="font-medium text-sm md:text-base truncate max-w-[120px] md:max-w-none">{payment.client}</h3>
+                             <Badge variant={getStatusColor(payment.status)} className="text-[10px] md:text-xs shrink-0">
                                {payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                              </Badge>
                               {payment.type === 'package' && (
-                                <Package className="w-4 h-4 text-primary" />
+                                <Package className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
                               )}
                               {payment.recurring_session_id && (
-                                <Repeat className="w-4 h-4 text-primary" />
+                                <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
                               )}
                               {payment.google_sync_type && (
                                 <GoogleSyncBadge syncType={payment.google_sync_type} />
                               )}
                            </div>
-                           <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                           <div className="flex items-center gap-4 text-xs md:text-sm text-muted-foreground">
                              <div className="flex items-center gap-1">
-                               <Calendar className="w-3 h-3" />
+                               <Calendar className="w-3 h-3 shrink-0" />
                                {payment.type === 'package' ? (
-                                 <span>
+                                 <span className="truncate">
                                    {payment.package_data_inicio && payment.package_data_fim ? (
                                      `${formatDateBR(payment.package_data_inicio)} - ${formatDateBR(payment.package_data_fim)}`
                                    ) : (
@@ -977,17 +977,17 @@ const pastPayments = filteredPayments.filter(item => {
                              </div>
                            </div>
                            {payment.type === 'package' && (
-                             <div className="text-xs text-muted-foreground mt-1">
+                             <div className="text-[10px] md:text-xs text-muted-foreground mt-1 truncate">
                                {payment.package_name} • {payment.package_sessions} sessões
                              </div>
                            )}
                          </div>
                        </div>
                        
-                       <div className="flex items-center gap-4">
+                       <div className="flex items-center justify-end md:justify-start gap-2 md:gap-4 pl-12 md:pl-0">
                          <div className="text-right">
-                           <div className="font-semibold text-lg">{formatCurrencyBR(payment.value)}</div>
-                           <div className="text-xs text-muted-foreground flex items-center gap-1">
+                           <div className="font-semibold text-base md:text-lg">{formatCurrencyBR(payment.value)}</div>
+                           <div className="text-[10px] md:text-xs text-muted-foreground flex items-center gap-1 justify-end">
                              {payment.method === 'dinheiro' && <Banknote className="w-3 h-3" />}
                              {payment.method === 'pix' && <Smartphone className="w-3 h-3" />}
                              {(payment.method === 'cartao' || payment.method === 'cartao_credito' || payment.method === 'cartao_debito') && <CreditCard className="w-3 h-3" />}

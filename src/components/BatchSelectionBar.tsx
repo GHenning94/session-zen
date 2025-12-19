@@ -77,74 +77,80 @@ export function BatchSelectionBar({
 
   return (
     <>
-      <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border border-border mb-4">
-        <div className="flex items-center gap-3">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between p-3 bg-muted/50 rounded-lg border border-border mb-4 gap-2 md:gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           {/* Botão de ativar/desativar modo seleção */}
           {onToggleSelectionMode ? (
             <Button
               variant={isSelectionMode ? "secondary" : "ghost"}
               size="sm"
               onClick={onToggleSelectionMode}
+              className="text-xs md:text-sm"
             >
               {isSelectionMode ? (
                 <CheckSquare className="w-4 h-4 mr-1" />
               ) : (
                 <Square className="w-4 h-4 mr-1" />
               )}
-              {selectLabel}
+              <span className="hidden sm:inline">{selectLabel}</span>
+              <span className="sm:hidden">Selecionar</span>
             </Button>
           ) : (
             <Button
               variant="ghost"
               size="sm"
               onClick={selectedCount === totalCount ? onClearSelection : onSelectAll}
+              className="text-xs md:text-sm"
             >
               {selectedCount === totalCount ? (
                 <CheckSquare className="w-4 h-4 mr-1" />
               ) : (
                 <Square className="w-4 h-4 mr-1" />
               )}
-              {selectedCount === totalCount ? 'Desmarcar todos' : 'Selecionar todos'}
+              {selectedCount === totalCount ? 'Desmarcar' : 'Selecionar'}
             </Button>
           )}
 
           {isSelectionMode && selectedCount === 0 && (
-            <span className="text-sm text-muted-foreground">Clique nos itens para selecionar</span>
+            <span className="text-xs md:text-sm text-muted-foreground hidden sm:inline">Clique nos itens para selecionar</span>
           )}
 
           {selectedCount > 0 && (
             <>
-              <Separator orientation="vertical" className="h-5" />
-              <Badge variant="secondary">
-                {selectedCount} selecionado{selectedCount !== 1 ? 's' : ''}
+              <Separator orientation="vertical" className="h-5 hidden md:block" />
+              <Badge variant="secondary" className="text-xs">
+                {selectedCount}
               </Badge>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onSelectAll}
+                className="text-xs md:text-sm hidden sm:flex"
               >
-                Selecionar todos
+                Todos
               </Button>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={onClearSelection}
+                className="text-xs md:text-sm"
               >
-                <X className="w-4 h-4 mr-1" />
-                Limpar
+                <X className="w-4 h-4" />
+                <span className="hidden sm:inline ml-1">Limpar</span>
               </Button>
             </>
           )}
         </div>
 
         {selectedCount > 0 && (
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {showStatusChange && statusOptions.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" className="text-xs md:text-sm">
                     <Edit className="w-4 h-4 mr-1" />
-                    Alterar status
+                    <span className="hidden sm:inline">Alterar status</span>
+                    <span className="sm:hidden">Status</span>
                     <ChevronDown className="w-3 h-3 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
@@ -162,9 +168,10 @@ export function BatchSelectionBar({
             )}
 
             {showEdit && onBatchEdit && (
-              <Button variant="outline" size="sm" onClick={onBatchEdit}>
+              <Button variant="outline" size="sm" onClick={onBatchEdit} className="text-xs md:text-sm">
                 <Edit className="w-4 h-4 mr-1" />
-                {editLabel}
+                <span className="hidden sm:inline">{editLabel}</span>
+                <span className="sm:hidden">Editar</span>
               </Button>
             )}
 
@@ -173,9 +180,11 @@ export function BatchSelectionBar({
                 variant="destructive" 
                 size="sm" 
                 onClick={() => setDeleteDialogOpen(true)}
+                className="text-xs md:text-sm"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
-                {deleteLabel}
+                <span className="hidden sm:inline">{deleteLabel}</span>
+                <span className="sm:hidden">Excluir</span>
               </Button>
             )}
           </div>
