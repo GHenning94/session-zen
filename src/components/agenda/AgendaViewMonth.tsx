@@ -104,7 +104,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   return (
     <Card className="shadow-soft overflow-hidden">
       <CardContent className="p-0">
-        {/* Header with day names - Mobile optimized */}
+        {/* Header with day names */}
         <div className="grid grid-cols-7 border-b border-border">
           {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((day, idx) => (
             <div key={`${day}-${idx}`} className="p-2 md:p-4 text-center text-xs md:text-sm font-medium text-muted-foreground bg-muted">
@@ -114,76 +114,45 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
           ))}
         </div>
 
-        {/* Calendar grid - Scrollable container */}
-        <div className="overflow-y-auto max-h-[calc(100vh-300px)] md:max-h-none">
-          <div className="grid grid-cols-7">
-            {calendarDays.map((date) => {
-              const daySessionsData = getSessionsForDate(date)
-              const dayGoogleEvents = getGoogleEventsForDate(date)
-              const isCurrentMonth = date.getMonth() === selectedDate.getMonth()
-              const isToday = date.toDateString() === new Date().toDateString()
-              const isSelected = date.toDateString() === selectedDate.toDateString()
+        {/* Calendar grid - Horizontal scrollable on mobile for better visualization */}
+        <div className="overflow-x-auto md:overflow-x-visible">
+          <div className="min-w-[700px] md:min-w-0">
+            <div className="grid grid-cols-7">
+              {calendarDays.map((date) => {
+                const daySessionsData = getSessionsForDate(date)
+                const dayGoogleEvents = getGoogleEventsForDate(date)
+                const isCurrentMonth = date.getMonth() === selectedDate.getMonth()
+                const isToday = date.toDateString() === new Date().toDateString()
+                const isSelected = date.toDateString() === selectedDate.toDateString()
 
-              return (
-                <div
-                  key={date.toISOString()}
-                  className={cn(
-                    "min-h-[70px] md:min-h-[120px] border border-border p-1 md:p-2 cursor-pointer hover:bg-accent/20 transition-colors",
-                    !isCurrentMonth && "text-muted-foreground bg-muted/50",
-                    isToday && "bg-primary/5",
-                    isSelected && "ring-2 ring-primary ring-inset",
-                    draggedSession && "border-dashed border-primary"
-                  )}
-                  onDragOver={handleDragOver}
-                  onDrop={(e) => handleDrop(e, date)}
-                  onClick={() => {
-                    onDateSelect(date)
-                    onCreateSession(date)
-                  }}
-                >
-                  <div className="flex justify-center md:justify-start items-start mb-1">
-                    <div className={cn(
-                      "font-medium text-xs md:text-sm",
-                      isToday && "bg-primary text-primary-foreground rounded-full w-5 h-5 md:w-6 md:h-6 flex items-center justify-center text-[10px] md:text-xs"
-                    )}>
-                      {date.getDate()}
-                    </div>
-                  </div>
-
-                  <div className="space-y-0.5 md:space-y-1">
-                    {/* Mobile: Show only dots for sessions */}
-                    <div className="md:hidden flex flex-wrap gap-0.5 justify-center">
-                      {daySessionsData.slice(0, 4).map((session) => {
-                        const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
-                        return (
-                          <div
-                            key={session.id}
-                            className={cn(
-                              "w-2 h-2 rounded-full bg-primary",
-                              needsAttention && "bg-warning animate-pulse",
-                              highlightedSessionId === session.id && "ring-1 ring-primary"
-                            )}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onEditSession(session)
-                            }}
-                          />
-                        )
-                      })}
-                      {dayGoogleEvents.slice(0, 2).map((event) => (
-                        <div
-                          key={event.id}
-                          className="w-2 h-2 rounded-full bg-blue-400"
-                          onClick={(e) => e.stopPropagation()}
-                        />
-                      ))}
-                      {(daySessionsData.length > 4 || dayGoogleEvents.length > 2) && (
-                        <span className="text-[8px] text-muted-foreground">+</span>
-                      )}
+                return (
+                  <div
+                    key={date.toISOString()}
+                    className={cn(
+                      "min-h-[100px] md:min-h-[120px] border border-border p-2 cursor-pointer hover:bg-accent/20 transition-colors",
+                      !isCurrentMonth && "text-muted-foreground bg-muted/50",
+                      isToday && "bg-primary/5",
+                      isSelected && "ring-2 ring-primary ring-inset",
+                      draggedSession && "border-dashed border-primary"
+                    )}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, date)}
+                    onClick={() => {
+                      onDateSelect(date)
+                      onCreateSession(date)
+                    }}
+                  >
+                    <div className="flex justify-start items-start mb-1">
+                      <div className={cn(
+                        "font-medium text-sm",
+                        isToday && "bg-primary text-primary-foreground rounded-full w-6 h-6 flex items-center justify-center text-xs"
+                      )}>
+                        {date.getDate()}
+                      </div>
                     </div>
 
-                    {/* Desktop: Show full session cards */}
-                    <div className="hidden md:block space-y-1">
+                    <div className="space-y-1">
+                      {/* Session cards - visible on all screens */}
                       {daySessionsData.slice(0, 3).map((session) => {
                         const needsAttention = sessionNeedsAttention(session.data, session.horario, session.status)
                         
@@ -194,7 +163,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             onDragStart={(e) => handleDragStart(e, session.id)}
                             onDragEnd={handleDragEnd}
                             className={cn(
-                              "text-xs p-2 rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground hover:bg-primary/30 dark:hover:bg-primary/40 transition-colors group relative cursor-move border border-primary/30 dark:border-primary/50 shadow-sm",
+                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground hover:bg-primary/30 dark:hover:bg-primary/40 transition-colors group relative cursor-move border border-primary/30 dark:border-primary/50 shadow-sm",
                               highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
                               draggedSession === session.id && "opacity-50 scale-95"
                             )}
@@ -204,17 +173,17 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             }}
                           >
                             {needsAttention && (
-                              <div className="absolute top-1 left-1 z-10">
+                              <div className="absolute top-0.5 left-0.5 z-10">
                                 <PulsingDot color="warning" size="sm" />
                               </div>
                             )}
-                            <div className="flex items-center gap-2 text-xs">
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3 flex-shrink-0" />
+                            <div className="flex items-center gap-1 text-[10px] md:text-xs">
+                              <div className="flex items-center gap-0.5">
+                                <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
                                 <span>{formatTimeBR(session.horario)}</span>
                               </div>
-                              <div className="flex items-center gap-1 min-w-0">
-                                <User className="h-3 w-3 flex-shrink-0" />
+                              <div className="flex items-center gap-0.5 min-w-0">
+                                <User className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
                                 <span className="truncate">
                                   {formatClientName(getClientName(session.client_id))}
                                 </span>
@@ -222,7 +191,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                               <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                             </div>
 
-                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -230,9 +199,9 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                                   e.stopPropagation()
                                   onDeleteSession(session.id)
                                 }}
-                                className="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                                className="h-4 w-4 md:h-5 md:w-5 p-0 text-destructive hover:text-destructive"
                               >
-                                <Trash className="h-3 w-3" />
+                                <Trash className="h-2.5 w-2.5 md:h-3 md:w-3" />
                               </Button>
                             </div>
                           </div>
@@ -242,32 +211,32 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       {dayGoogleEvents.slice(0, 2).map((event) => (
                         <div
                           key={event.id}
-                          className="text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20"
+                          className="text-[10px] md:text-xs p-1 rounded bg-primary/10 text-primary border border-primary/20"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <div className="flex items-center gap-1">
-                            <div className="w-2 h-2 bg-primary rounded-full"></div>
+                            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-primary rounded-full"></div>
                             <span className="truncate">{event.summary}</span>
                           </div>
                         </div>
                       ))}
 
                       {daySessionsData.length > 3 && (
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-[10px] md:text-xs text-muted-foreground">
                           +{daySessionsData.length - 3} mais
                         </div>
                       )}
 
                       {dayGoogleEvents.length > 2 && (
-                        <div className="text-xs text-primary">
+                        <div className="text-[10px] md:text-xs text-primary">
                           +{dayGoogleEvents.length - 2} eventos
                         </div>
                       )}
                     </div>
                   </div>
-                </div>
-              )
-            })}
+                )
+              })}
+            </div>
           </div>
         </div>
       </CardContent>

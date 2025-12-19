@@ -915,8 +915,8 @@ export default function Sessoes() {
                                     size="lg"
                                   />
                                    <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 mb-2">
-                                      <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                      <h3 className="text-base md:text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
                                       <Badge variant={getStatusColor(session.status)}>
                                         {getStatusLabel(session.status)}
                                       </Badge>
@@ -935,17 +935,17 @@ export default function Sessoes() {
                                       )}
                                     </div>
                                     <div className="text-sm text-muted-foreground space-y-1">
-                                      <div className="flex items-center gap-4">
-                                        <div className="flex items-center gap-2">
-                                          <Calendar className="w-4 h-4" />
+                                      <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                                        <div className="flex items-center gap-1">
+                                          <Calendar className="w-4 h-4 shrink-0" />
                                           <span>{formatDateBR(session.data)}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                          <Clock className="w-4 h-4" />
+                                        <div className="flex items-center gap-1">
+                                          <Clock className="w-4 h-4 shrink-0" />
                                           <span>{formatTimeBR(session.horario)}</span>
                                         </div>
                                         {(session.valor != null || session.package_id) && (
-                                          <span className="font-medium text-primary">
+                                          <span className="font-medium text-primary whitespace-nowrap">
                                             {formatCurrencyBR(getSessionValue(session))}
                                             {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
                                           </span>
@@ -1011,8 +1011,8 @@ export default function Sessoes() {
                               size="lg"
                             />
                              <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-base md:text-lg font-semibold">{session.clients?.nome || 'Cliente não encontrado'}</h3>
                                 <Badge variant={getStatusColor(session.status)}>
                                   {getStatusLabel(session.status)}
                                 </Badge>
@@ -1031,17 +1031,17 @@ export default function Sessoes() {
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground space-y-1">
-                                <div className="flex items-center gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <Calendar className="w-4 h-4" />
+                                <div className="flex flex-wrap items-center gap-2 md:gap-4">
+                                  <div className="flex items-center gap-1">
+                                    <Calendar className="w-4 h-4 shrink-0" />
                                     <span>{formatDateBR(session.data)}</span>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Clock className="w-4 h-4" />
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="w-4 h-4 shrink-0" />
                                     <span>{formatTimeBR(session.horario)}</span>
                                   </div>
                                   {(session.valor != null || session.package_id) && (
-                                    <span className="font-medium text-primary">
+                                    <span className="font-medium text-primary whitespace-nowrap">
                                       {formatCurrencyBR(getSessionValue(session))}
                                       {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
                                     </span>
