@@ -47,6 +47,8 @@ const Pagamentos = () => {
   const [filterStatus, setFilterStatus] = useState("todos")
   const [filterMethod, setFilterMethod] = useState("todos")
   const [filterName, setFilterName] = useState("")
+  const [filterPaymentType, setFilterPaymentType] = useState("todos")
+  const [filterGoogleSync, setFilterGoogleSync] = useState("todos")
 const [sessions, setSessions] = useState<any[]>([])
 const [clients, setClients] = useState<any[]>([])
 const [profiles, setProfiles] = useState<any[]>([])
@@ -406,7 +408,31 @@ const filterByPeriod = (items: any[]) => {
     const statusMatch = filterStatus === "todos" || payment.status === filterStatus
     const nameMatch = filterName === "" || payment.client.toLowerCase().includes(filterName.toLowerCase())
     const methodMatch = filterMethod === "todos" || payment.method === filterMethod
-    return statusMatch && nameMatch && methodMatch
+    
+    // Filtro por tipo de pagamento (individual/pacote/recorrente)
+    let typeMatch = true
+    if (filterPaymentType !== "todos") {
+      if (filterPaymentType === "individual") {
+        typeMatch = !payment.package_id && !payment.recurring_session_id
+      } else if (filterPaymentType === "package") {
+        typeMatch = !!payment.package_id
+      } else if (filterPaymentType === "recurring") {
+        typeMatch = !!payment.recurring_session_id
+      }
+    }
+
+    // Filtro por sincronização Google
+    let googleSyncMatch = true
+    if (filterGoogleSync !== "todos") {
+      const syncType = payment.google_sync_type
+      if (filterGoogleSync === "local") {
+        googleSyncMatch = !syncType || syncType === 'local'
+      } else {
+        googleSyncMatch = syncType === filterGoogleSync
+      }
+    }
+    
+    return statusMatch && nameMatch && methodMatch && typeMatch && googleSyncMatch
   }).sort((a, b) => {
     const now = new Date()
     const dateTimeA = new Date(`${a.date}T${a.time}`)
@@ -685,6 +711,38 @@ const pastPayments = filteredPayments.filter(item => {
                     <SelectItem value="cartao">Cartão</SelectItem>
                     <SelectItem value="transferencia">Transferência</SelectItem>
                     <SelectItem value="A definir">A definir</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Tipo:</label>
+                <Select value={filterPaymentType} onValueChange={setFilterPaymentType}>
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos</SelectItem>
+                    <SelectItem value="individual">Individual</SelectItem>
+                    <SelectItem value="package">Pacote</SelectItem>
+                    <SelectItem value="recurring">Recorrente</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Sincronização:</label>
+                <Select value={filterGoogleSync} onValueChange={setFilterGoogleSync}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todas</SelectItem>
+                    <SelectItem value="local">Local</SelectItem>
+                    <SelectItem value="importado">Importado do Google</SelectItem>
+                    <SelectItem value="espelhado">Espelhado</SelectItem>
+                    <SelectItem value="enviado">Enviado ao Google</SelectItem>
+                    <SelectItem value="cancelado">Cancelado no Google</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
