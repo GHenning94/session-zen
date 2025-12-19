@@ -333,19 +333,19 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
               variant={isQuickRegistration ? "default" : "outline"}
               size="sm"
               onClick={() => setIsQuickRegistration(true)}
-              className={`flex-1 ${isQuickRegistration ? 'shadow-md' : ''}`}
+              className={`flex-1 text-xs md:text-sm ${isQuickRegistration ? 'shadow-md' : ''}`}
             >
-              <Zap className="w-3 h-3 mr-1" />
-              Cadastro rápido
+              <Zap className="w-3 h-3 mr-1 shrink-0" />
+              <span className="truncate">Cadastro rápido</span>
             </Button>
             <Button
               variant={!isQuickRegistration ? "default" : "outline"}
               size="sm"
               onClick={() => setIsQuickRegistration(false)}
-              className={`flex-1 ${!isQuickRegistration ? 'shadow-md' : ''}`}
+              className={`flex-1 text-xs md:text-sm ${!isQuickRegistration ? 'shadow-md' : ''}`}
             >
-              <ArrowUpRight className="w-3 h-3 mr-1" />
-              Cadastro completo
+              <ArrowUpRight className="w-3 h-3 mr-1 shrink-0" />
+              <span className="truncate">Cadastro completo</span>
             </Button>
           </div>
           
