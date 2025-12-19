@@ -44,6 +44,7 @@ import Estudos from "@/pages/Estudos";
 import RedesSociais from "@/pages/RedesSociais";
 import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import Suporte from "@/pages/Suporte";
+import Documentacao from "@/pages/Documentacao";
 import Metas from "@/pages/Metas";
 import PublicRegistration from "@/pages/PublicRegistration";
 import AuthConfirm from "@/pages/AuthConfirm";
@@ -225,6 +226,11 @@ const App = () => (
                   <Route path="/suporte" element={
                     <ProtectedRoute>
                       <Suporte />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/documentacao" element={
+                    <ProtectedRoute>
+                      <Documentacao />
                     </ProtectedRoute>
                   } />
                   <Route path="/agendar/:userId" element={

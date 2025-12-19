@@ -18,7 +18,8 @@ import {
   Building, 
   Bell,
   Crown,
-  Gift
+  Gift,
+  HelpCircle
 } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
@@ -137,6 +138,9 @@ export const ProfileDropdown = () => {
     ],
     referral: [
       { icon: Gift, label: "Programa de Indicação", action: () => navigate('/programa-indicacao') }
+    ],
+    support: [
+      { icon: HelpCircle, label: "Suporte", action: () => navigate('/suporte') }
     ]
   }
 
@@ -260,6 +264,24 @@ export const ProfileDropdown = () => {
                     Ativo
                   </Badge>
                 )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          <DropdownMenuSeparator />
+
+          {/* Support */}
+          <DropdownMenuGroup>
+            {menuItems.support.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
