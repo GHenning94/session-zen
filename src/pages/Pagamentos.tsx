@@ -653,7 +653,7 @@ const pastPayments = filteredPayments.filter(item => {
         {/* Filters */}
         <Card className="shadow-soft">
           <CardHeader>
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
               <div className="flex items-center gap-2">
                 <label className="text-sm font-medium">Nome:</label>
                 <div className="relative">
