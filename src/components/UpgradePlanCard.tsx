@@ -149,22 +149,24 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
 
       <CardContent className="space-y-4">
         {/* Seletor de Ciclo de Cobrança */}
-        <div className="flex items-center justify-center gap-3 py-2">
-          <span className={`text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+        <div className="flex items-center justify-center gap-2 md:gap-3 py-2 flex-wrap">
+          <span className={`text-xs md:text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
             Mensal
           </span>
           <Button
             variant="outline"
             size="sm"
             onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-            className="relative w-12 h-6 rounded-full p-0"
+            className="relative w-12 h-6 rounded-full p-0 shrink-0"
           >
             <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-primary transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
           </Button>
-          <span className={`text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
-            Anual
-            <Badge variant="secondary" className="ml-2 text-xs">-17%</Badge>
-          </span>
+          <div className="flex items-center gap-1">
+            <span className={`text-xs md:text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
+              Anual
+            </span>
+            <Badge variant="secondary" className="text-[10px] md:text-xs">-17%</Badge>
+          </div>
         </div>
 
         {displayedPlans.map((plan) => {
