@@ -242,10 +242,6 @@ const documentationSections = [
         text: "Sincronize sua agenda com o Google Calendar. Eventos criados em qualquer plataforma aparecem em ambas. Configure sincronização automática ou manual."
       },
       {
-        title: "Google Ads",
-        text: "Configure o pixel do Google Ads para rastrear conversões quando pacientes agendam pela sua página pública. Otimize suas campanhas com dados reais."
-      },
-      {
         title: "WhatsApp",
         text: "Envie lembretes de sessão automaticamente via WhatsApp. Configure quantas horas antes da sessão o lembrete deve ser enviado."
       }
@@ -343,11 +339,15 @@ const documentationSections = [
     content: [
       {
         title: "Plano Básico",
-        text: "Acesso às funcionalidades essenciais: agenda, clientes, pagamentos básicos e relatórios simples. Ideal para quem está começando."
+        text: "Plano gratuito com funcionalidades essenciais: agenda básica, até 5 clientes, pagamentos simples. Ideal para quem está começando ou testando a plataforma."
+      },
+      {
+        title: "Plano Profissional",
+        text: "Até 20 clientes, sessões ilimitadas, histórico básico, pacotes de sessões e suporte por e-mail. Perfeito para profissionais em crescimento."
       },
       {
         title: "Plano Premium",
-        text: "Todas as funcionalidades: pacotes de sessões, sessões recorrentes, integrações, relatórios avançados, prontuários completos e suporte prioritário."
+        text: "Clientes ilimitados, todas as funcionalidades: sessões recorrentes, integrações completas (Google Calendar, WhatsApp), relatórios avançados em PDF, prontuários completos e suporte prioritário."
       },
       {
         title: "Gerenciando Assinatura",
