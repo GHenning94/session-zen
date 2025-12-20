@@ -1767,8 +1767,8 @@ const Dashboard = () => {
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
-                    <CardHeader className="pb-6">
-                      <div className="flex flex-col gap-2">
+                    <CardHeader className="pb-4">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
@@ -1779,7 +1779,7 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end mt-1">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1815,9 +1815,9 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[420px] px-4 pt-0 pb-2">
+                    <CardContent className="h-[420px] px-4 pt-4 pb-2">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-                        {/* Gráfico de Pizza - Moderno estilo donut grosso */}
+                        {/* Gráfico de Pizza - Moderno estilo donut contínuo */}
                         <div className="h-full min-h-[380px] flex items-center justify-center relative">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -1833,12 +1833,12 @@ const Dashboard = () => {
                                 cx="50%"
                                 cy="50%"
                                 outerRadius={145}
-                                innerRadius={85}
-                                paddingAngle={4}
+                                innerRadius={100}
+                                paddingAngle={0}
                                 dataKey="valor"
-                                cornerRadius={20}
-                                stroke="hsl(var(--background))"
-                                strokeWidth={3}
+                                cornerRadius={0}
+                                stroke="none"
+                                strokeWidth={0}
                                 onMouseEnter={(_, index) => setHoveredCanalIndex(index)}
                                 onMouseLeave={() => setHoveredCanalIndex(null)}
                               >
