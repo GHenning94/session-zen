@@ -152,10 +152,16 @@ export const SessionDetailsModal = ({
                   <label className="text-sm text-muted-foreground">Método de Pagamento</label>
                   <p className="font-medium capitalize">
                     {session.package_id 
-                      ? 'A definir (Pacote)' 
-                      : (session.metodo_pagamento && session.metodo_pagamento !== 'A definir')
-                        ? session.metodo_pagamento 
-                        : 'A definir'}
+                      ? (session.packages?.metodo_pagamento && session.packages?.metodo_pagamento !== 'A definir'
+                          ? session.packages.metodo_pagamento
+                          : 'A definir (Pacote)')
+                      : session.recurring_session_id
+                        ? (session.recurring_sessions?.metodo_pagamento && session.recurring_sessions?.metodo_pagamento !== 'A definir'
+                            ? session.recurring_sessions.metodo_pagamento
+                            : 'A definir (Recorrente)')
+                        : (session.metodo_pagamento && session.metodo_pagamento !== 'A definir')
+                          ? session.metodo_pagamento 
+                          : 'A definir'}
                   </p>
                 </div>
               </div>

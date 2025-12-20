@@ -45,9 +45,16 @@ interface Session {
   recurring_session_id?: string
   google_sync_type?: string
   google_event_id?: string
+  metodo_pagamento?: string
   clients?: {
     nome: string
     avatar_url?: string
+  }
+  packages?: {
+    metodo_pagamento?: string
+  }
+  recurring_sessions?: {
+    metodo_pagamento?: string
   }
   avatar_signed_url?: string
 }
@@ -166,7 +173,9 @@ export default function Sessoes() {
         .select(`
           id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
           metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
-          clients (nome, ativo, avatar_url)
+          clients (nome, ativo, avatar_url),
+          packages (metodo_pagamento),
+          recurring_sessions (metodo_pagamento)
         `)
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
