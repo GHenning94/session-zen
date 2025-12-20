@@ -66,13 +66,20 @@ export default function Pacotes() {
     enabled: !!packages && packages.length > 0
   });
 
-  // Check for packages without sessions and send notification
+  // Check for packages without sessions and send notification - only after package creation
   useEffect(() => {
     const checkAndNotifyPackages = async () => {
       if (!packages || !sessionCounts || !user) return;
 
+      // Only check packages that were just created (within last 5 minutes)
+      // This prevents notifications from appearing just by visiting the page
+      const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
+
       for (const pkg of packages) {
         if (pkg.status !== 'ativo') continue;
+        
+        // Only process recently created packages
+        if (pkg.created_at < fiveMinutesAgo) continue;
         
         const createdSessions = sessionCounts[pkg.id] || 0;
         const hasMissingPaymentMethod = !(pkg as any).metodo_pagamento || (pkg as any).metodo_pagamento === 'A definir';
