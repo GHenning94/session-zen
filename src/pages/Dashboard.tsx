@@ -1863,9 +1863,10 @@ const Dashboard = () => {
                               return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
                             }
                             
-                            // Renderizar em ordem normal: cada segmento fica por cima do anterior
-                            // Depois, adicionar uma "capa" no início do primeiro segmento para cobrir o final do último
-                            const capAngle = 15 // graus da capa de sobreposição
+                            // Ordem de renderização: todos exceto o primeiro, depois o primeiro por cima
+                            // Isso cria o efeito de corrente sem precisar de "capa" adicional
+                            const segmentsExceptFirst = segments.slice(1)
+                            const firstSegment = segments[0]
                             
                             return (
                               <svg viewBox="0 0 400 400" className="w-full h-full max-w-[380px] max-h-[380px]">
@@ -1877,8 +1878,8 @@ const Dashboard = () => {
                                   ))}
                                 </defs>
                                 
-                                {/* Renderizar segmentos em ordem */}
-                                {segments.map((segment) => (
+                                {/* Renderizar todos os segmentos exceto o primeiro */}
+                                {segmentsExceptFirst.map((segment) => (
                                   <path
                                     key={`segment-${segment.index}`}
                                     d={describeArc(segment.startAngle, segment.endAngle)}
@@ -1888,6 +1889,7 @@ const Dashboard = () => {
                                     strokeLinecap="round"
                                     style={{
                                       cursor: 'pointer',
+                                      filter: hoveredCanalIndex === segment.index ? `url(#pie-shadow-${segment.index})` : 'none',
                                       transition: 'filter 0.15s ease-out'
                                     }}
                                     onMouseEnter={() => setHoveredCanalIndex(segment.index)}
@@ -1895,38 +1897,22 @@ const Dashboard = () => {
                                   />
                                 ))}
                                 
-                                {/* Capa do primeiro segmento sobre o final do último - cria o efeito de corrente */}
-                                {segments.length > 0 && (
+                                {/* Renderizar o primeiro segmento por último (por cima de todos) */}
+                                {firstSegment && (
                                   <path
-                                    key="segment-first-cap"
-                                    d={describeArc(segments[0].startAngle - 2, segments[0].startAngle + capAngle)}
+                                    key={`segment-${firstSegment.index}`}
+                                    d={describeArc(firstSegment.startAngle, firstSegment.endAngle)}
                                     fill="none"
-                                    stroke={segments[0].color}
-                                    strokeWidth={strokeWidth}
-                                    strokeLinecap="butt"
-                                    style={{
-                                      cursor: 'pointer',
-                                      transition: 'filter 0.15s ease-out'
-                                    }}
-                                    onMouseEnter={() => setHoveredCanalIndex(0)}
-                                    onMouseLeave={() => setHoveredCanalIndex(null)}
-                                  />
-                                )}
-                                
-                                {/* Segmento hovered renderizado por cima com sombra */}
-                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
-                                  <path
-                                    key={`segment-hover-${hoveredCanalIndex}`}
-                                    d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
-                                    fill="none"
-                                    stroke={segments[hoveredCanalIndex].color}
+                                    stroke={firstSegment.color}
                                     strokeWidth={strokeWidth}
                                     strokeLinecap="round"
                                     style={{
                                       cursor: 'pointer',
-                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`,
-                                      pointerEvents: 'none'
+                                      filter: hoveredCanalIndex === firstSegment.index ? `url(#pie-shadow-${firstSegment.index})` : 'none',
+                                      transition: 'filter 0.15s ease-out'
                                     }}
+                                    onMouseEnter={() => setHoveredCanalIndex(firstSegment.index)}
+                                    onMouseLeave={() => setHoveredCanalIndex(null)}
                                   />
                                 )}
                               </svg>
