@@ -366,7 +366,7 @@ export const SessionModal = ({
           {/* Tipo de Sessão (apenas na criação) */}
           {!session && (
             <Tabs value={sessionType} onValueChange={(v: any) => setSessionType(v)}>
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="individual">
                   <User className="h-4 w-4 mr-2" />
                   Individual
@@ -374,10 +374,6 @@ export const SessionModal = ({
                 <TabsTrigger value="pacote">
                   <Package className="h-4 w-4 mr-2" />
                   Pacote
-                </TabsTrigger>
-                <TabsTrigger value="recorrente">
-                  <Repeat className="h-4 w-4 mr-2" />
-                  Recorrente
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -476,70 +472,6 @@ export const SessionModal = ({
                   </div>
                 )}
 
-                {/* Recorrência (se tipo = recorrente) - apenas seleção, sem edição */}
-                {sessionType === 'recorrente' && !session && (
-                  <div className="col-span-2 space-y-4">
-                    <div>
-                      <Label htmlFor="recurring_session_id">Sessão Recorrente *</Label>
-                      {recurringSessionsList.length > 0 ? (
-                        <Select
-                          value={formData.recurring_session_id}
-                          onValueChange={(value) => {
-                            setFormData({ ...formData, recurring_session_id: value })
-                            // Auto-fill values from selected recurring session
-                            const selectedRecurring = recurringSessionsList.find((r: any) => r.id === value)
-                            if (selectedRecurring) {
-                              setFormData(prev => ({
-                                ...prev,
-                                recurring_session_id: value,
-                                horario: selectedRecurring.horario?.slice(0, 5) || prev.horario,
-                                valor: selectedRecurring.valor?.toString() || prev.valor,
-                                metodo_pagamento: selectedRecurring.metodo_pagamento || prev.metodo_pagamento
-                              }))
-                            }
-                          }}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Selecione uma recorrência" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {recurringSessionsList.map((rec: any) => {
-                              const recurrenceLabels: Record<string, string> = {
-                                'diaria': 'Diária',
-                                'semanal': 'Semanal',
-                                'quinzenal': 'Quinzenal',
-                                'mensal': 'Mensal'
-                              }
-                              const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-                              return (
-                                <SelectItem key={rec.id} value={rec.id}>
-                                  {recurrenceLabels[rec.recurrence_type] || rec.recurrence_type} - {rec.horario?.slice(0, 5)}
-                                  {rec.dia_da_semana !== null && ` (${dayLabels[rec.dia_da_semana]})`}
-                                </SelectItem>
-                              )
-                            })}
-                          </SelectContent>
-                        </Select>
-                      ) : (
-                        <div className="p-4 border rounded-md bg-muted/50 text-center">
-                          <p className="text-sm text-muted-foreground">
-                            {formData.client_id 
-                              ? "Nenhuma sessão recorrente ativa para este cliente."
-                              : "Selecione um cliente para ver suas recorrências."}
-                          </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Crie sessões recorrentes na página de Sessões Recorrentes.
-                          </p>
-                        </div>
-                      )}
-                      {formData.recurring_session_id && (
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Para editar configurações de recorrência, acesse a página de Sessões Recorrentes.
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                )}
 
                 {/* Data */}
                 <div>
