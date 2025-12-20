@@ -192,7 +192,7 @@ export default function SessoesRecorrentes() {
             </p>
           </div>
           
-          <Button onClick={handleOpenNewRecurring} size="lg">
+          <Button onClick={handleOpenNewRecurring} size="sm">
             <Plus className="h-4 w-4 mr-2" />
             Nova Recorrência
           </Button>

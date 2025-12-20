@@ -1155,7 +1155,7 @@ const Dashboard = () => {
                        "p-2 md:p-4 hover:shadow-md transition-all cursor-pointer relative",
                        needsAttention && "border-warning/30"
                      )}
-                     onClick={() => navigate('/agenda')}
+                     onClick={() => navigate('/sessoes')}
                    >
                      {needsAttention && (
                        <div className="absolute top-2 left-2 md:top-3 md:left-3">
@@ -2061,7 +2061,7 @@ const Dashboard = () => {
               <CardContent className="h-full">
                 <div className="space-y-4">
                   {topClients.length > 0 ? topClients.map((client, index) => (
-                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative">
+                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer" onClick={() => navigate('/clientes')}>
                       {/* Coroa dourada animada para o primeiro cliente */}
                       {index === 0 && (
                         <div className="absolute -top-2 -right-2 z-10">
@@ -2142,7 +2142,7 @@ const Dashboard = () => {
               <CardContent className="h-full">
                 <div className="space-y-3">
                   {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
-                    <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => navigate('/clientes')}>
                     <ClientAvatar 
                       avatarPath={client.avatar_url}
                       clientName={client.nome}
