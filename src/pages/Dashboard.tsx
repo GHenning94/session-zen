@@ -42,6 +42,9 @@ import { UpgradePlanCard } from "@/components/UpgradePlanCard"
 import { ActionableNotificationsBanner } from "@/components/ActionableNotificationsBanner"
 import { TutorialButton } from "@/components/TutorialButton"
 import { TutorialModal } from "@/components/TutorialModal"
+import { ClientDetailsModal } from "@/components/ClientDetailsModal"
+import { PaymentDetailsModal } from "@/components/PaymentDetailsModal"
+import { SessionDetailsModal } from "@/components/SessionDetailsModal"
 import { formatCurrencyBR, formatTimeBR, formatDateBR, formatPaymentMethod } from "@/utils/formatters"
 import { cn } from "@/lib/utils"
 import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
@@ -100,6 +103,14 @@ const Dashboard = () => {
   const [sessionNotes, setSessionNotes] = useState<any[]>([])
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  
+  // Modal states for clickable cards
+  const [selectedClient, setSelectedClient] = useState<any>(null)
+  const [isClientDetailsOpen, setIsClientDetailsOpen] = useState(false)
+  const [selectedPayment, setSelectedPayment] = useState<any>(null)
+  const [isPaymentDetailsOpen, setIsPaymentDetailsOpen] = useState(false)
+  const [selectedSession, setSelectedSession] = useState<any>(null)
+  const [isSessionDetailsOpen, setIsSessionDetailsOpen] = useState(false)
   
   // Cooperative cancellation refs
   const isActiveRef = useRef(true)
@@ -1155,7 +1166,10 @@ const Dashboard = () => {
                        "p-2 md:p-4 hover:shadow-md transition-all cursor-pointer relative",
                        needsAttention && "border-warning/30"
                      )}
-                     onClick={() => navigate('/agenda')}
+                     onClick={() => {
+                       setSelectedSession(session)
+                       setIsSessionDetailsOpen(true)
+                     }}
                    >
                      {needsAttention && (
                        <div className="absolute top-2 left-2 md:top-3 md:left-3">
@@ -1340,7 +1354,23 @@ const Dashboard = () => {
                     return (
                       <div 
                         key={payment.id || index} 
-                        className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => {
+                          // Prepare payment data for PaymentDetailsModal
+                          setSelectedPayment({
+                            id: payment.id,
+                            client: payment.clients?.nome || 'Cliente',
+                            client_avatar: payment.clients?.avatar_url,
+                            date: paymentDate,
+                            time: paymentTime,
+                            value: payment.valor,
+                            status: displayStatus,
+                            method: payment.metodo_pagamento,
+                            session_id: payment.session_id,
+                            package_id: payment.package_id
+                          })
+                          setIsPaymentDetailsOpen(true)
+                        }}
                       >
                         <div>
                           <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
@@ -2061,7 +2091,22 @@ const Dashboard = () => {
               <CardContent className="h-full">
                 <div className="space-y-4">
                   {topClients.length > 0 ? topClients.map((client, index) => (
-                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative">
+                    <div 
+                      key={client.clientId} 
+                      className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer"
+                      onClick={async () => {
+                        // Fetch full client data for modal
+                        const { data: clientData } = await supabase
+                          .from('clients')
+                          .select('*')
+                          .eq('id', client.clientId)
+                          .single()
+                        if (clientData) {
+                          setSelectedClient(clientData)
+                          setIsClientDetailsOpen(true)
+                        }
+                      }}
+                    >
                       {/* Coroa dourada animada para o primeiro cliente */}
                       {index === 0 && (
                         <div className="absolute -top-2 -right-2 z-10">
@@ -2142,7 +2187,22 @@ const Dashboard = () => {
               <CardContent className="h-full">
                 <div className="space-y-3">
                   {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
-                    <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors">
+                    <div 
+                      key={client.id || index} 
+                      className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                      onClick={async () => {
+                        // Fetch full client data for modal
+                        const { data: clientData } = await supabase
+                          .from('clients')
+                          .select('*')
+                          .eq('id', client.id)
+                          .single()
+                        if (clientData) {
+                          setSelectedClient(clientData)
+                          setIsClientDetailsOpen(true)
+                        }
+                      }}
+                    >
                     <ClientAvatar 
                       avatarPath={client.avatar_url}
                       clientName={client.nome}
@@ -2212,6 +2272,78 @@ const Dashboard = () => {
       <TutorialModal
         open={isTutorialOpen}
         onOpenChange={setIsTutorialOpen}
+      />
+      
+      {/* Client Details Modal */}
+      <ClientDetailsModal
+        open={isClientDetailsOpen}
+        onOpenChange={setIsClientDetailsOpen}
+        client={selectedClient}
+        onEdit={() => {
+          setIsClientDetailsOpen(false)
+          navigate('/clientes')
+        }}
+        onDelete={() => {
+          setIsClientDetailsOpen(false)
+          navigate('/clientes')
+        }}
+        onToggleStatus={() => {
+          setIsClientDetailsOpen(false)
+          navigate('/clientes')
+        }}
+        onOpenProntuario={() => {
+          setIsClientDetailsOpen(false)
+          navigate('/prontuarios')
+        }}
+      />
+      
+      {/* Payment Details Modal */}
+      <PaymentDetailsModal
+        open={isPaymentDetailsOpen}
+        onOpenChange={setIsPaymentDetailsOpen}
+        payment={selectedPayment}
+        onGenerateReceipt={() => {}}
+        onViewSession={(sessionId) => {
+          setIsPaymentDetailsOpen(false)
+          navigate(`/sessoes?session=${sessionId}`)
+        }}
+      />
+      
+      {/* Session Details Modal */}
+      <SessionDetailsModal
+        open={isSessionDetailsOpen}
+        onOpenChange={setIsSessionDetailsOpen}
+        session={selectedSession}
+        onEdit={() => {
+          setIsSessionDetailsOpen(false)
+          navigate('/sessoes')
+        }}
+        onDelete={() => {
+          setIsSessionDetailsOpen(false)
+          loadDashboardData()
+        }}
+        onCancel={() => {
+          setIsSessionDetailsOpen(false)
+          loadDashboardData()
+        }}
+        onMarkNoShow={() => {
+          setIsSessionDetailsOpen(false)
+          loadDashboardData()
+        }}
+        onViewAgenda={() => {
+          setIsSessionDetailsOpen(false)
+          navigate('/agenda')
+        }}
+        onViewPayment={() => {
+          setIsSessionDetailsOpen(false)
+          navigate('/pagamentos')
+        }}
+        onAddNote={() => {
+          setIsSessionDetailsOpen(false)
+          navigate('/sessoes')
+        }}
+        hasNotes={selectedSession ? sessionNotes.some(note => note.session_id === selectedSession.id) : false}
+        hasEvolution={selectedSession ? evolucoes.some(evo => evo.session_id === selectedSession.id) : false}
       />
     </Layout>
   )

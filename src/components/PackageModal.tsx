@@ -22,7 +22,7 @@ interface PackageModalProps {
   onOpenChange: (open: boolean) => void;
   package?: Package | null;
   clientId?: string;
-  onSave: () => void;
+  onSave: (packageId?: string) => void;
 }
 
 export const PackageModal = ({ 
@@ -132,6 +132,8 @@ export const PackageModal = ({
         data_fim: formData.data_fim?.toISOString().split('T')[0]
       };
 
+      let newPackageId: string | undefined;
+      
       if (packageToEdit) {
         await updatePackage(packageToEdit.id, data);
         
@@ -143,10 +145,11 @@ export const PackageModal = ({
             .eq('package_id', packageToEdit.id);
         }
       } else {
-        await createPackage(data);
+        const newPackage = await createPackage(data);
+        newPackageId = newPackage?.id;
       }
 
-      onSave();
+      onSave(newPackageId);
       onOpenChange(false);
       
       // Reset form
