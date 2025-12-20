@@ -1828,20 +1828,19 @@ const Dashboard = () => {
                                   </filter>
                                 ))}
                               </defs>
-                              {/* Renderizar segmentos com sobreposição e hover dinâmico */}
+                              {/* Renderizar segmentos com sobreposição completa */}
                               {(() => {
                                 const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                                 if (total === 0) return null
                                 
                                 let currentAngle = 90 // Começa do topo
-                                const overlapAngle = 18 // Graus de sobreposição para cobrir os cantos arredondados
+                                const overlapAngle = 28 // Graus de sobreposição para cobrir completamente os cantos
                                 const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
                                 
                                 receitaPorCanal.forEach((item, index) => {
                                   const angle = (item.valor / total) * 360
                                   segments.push({
                                     startAngle: currentAngle,
-                                    // Estender todos os segmentos para sobrepor o próximo
                                     endAngle: currentAngle - angle - overlapAngle,
                                     color: item.color,
                                     index
@@ -1849,24 +1848,9 @@ const Dashboard = () => {
                                   currentAngle -= angle
                                 })
                                 
-                                // Definir ordem de renderização baseada no hover
-                                // Quando não há hover: ordem normal (último por baixo, primeiro por cima)
-                                // Quando há hover: o item com hover vai para o topo
-                                let sortedSegments: typeof segments
-                                if (hoveredCanalIndex === null) {
-                                  // Ordem padrão: última barra fica por cima da primeira
-                                  // Renderizar na ordem: primeiro -> ... -> último (último fica no topo)
-                                  sortedSegments = [...segments]
-                                } else {
-                                  // Mover o hovered para o final (renderizado por último = no topo)
-                                  sortedSegments = [...segments].sort((a, b) => {
-                                    if (a.index === hoveredCanalIndex) return 1
-                                    if (b.index === hoveredCanalIndex) return -1
-                                    return a.index - b.index
-                                  })
-                                }
-                                
-                                return sortedSegments.map((segment) => (
+                                // Ordem fixa de renderização (sem mudança no hover para evitar animação)
+                                // Renderiza na ordem normal - o último segmento fica por cima
+                                const baseElements = segments.map((segment) => (
                                   <Pie
                                     key={`segment-${segment.index}`}
                                     data={[{ value: 1 }]}
@@ -1887,16 +1871,43 @@ const Dashboard = () => {
                                     <Cell 
                                       fill={segment.color}
                                       style={{
-                                        filter: hoveredCanalIndex === segment.index ? `url(#shadow-${segment.index})` : 'none',
-                                        transform: hoveredCanalIndex === segment.index ? 'scale(1.08)' : 'scale(1)',
-                                        transformOrigin: 'center',
-                                        transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
                                         opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
                                         cursor: 'pointer'
                                       }}
                                     />
                                   </Pie>
                                 ))
+                                
+                                // Renderizar o segmento hovered novamente por cima (sem animação de reordenação)
+                                const hoveredElement = hoveredCanalIndex !== null && segments[hoveredCanalIndex] ? (
+                                  <Pie
+                                    key={`segment-hover-${hoveredCanalIndex}`}
+                                    data={[{ value: 1 }]}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={145 * 1.06}
+                                    innerRadius={100 * 0.96}
+                                    dataKey="value"
+                                    cornerRadius={24}
+                                    stroke="none"
+                                    strokeWidth={0}
+                                    startAngle={segments[hoveredCanalIndex].startAngle}
+                                    endAngle={segments[hoveredCanalIndex].endAngle}
+                                    onMouseEnter={() => setHoveredCanalIndex(hoveredCanalIndex)}
+                                    onMouseLeave={() => setHoveredCanalIndex(null)}
+                                    style={{ cursor: 'pointer' }}
+                                  >
+                                    <Cell 
+                                      fill={segments[hoveredCanalIndex].color}
+                                      style={{
+                                        filter: `url(#shadow-${hoveredCanalIndex})`,
+                                        cursor: 'pointer'
+                                      }}
+                                    />
+                                  </Pie>
+                                ) : null
+                                
+                                return [...baseElements, hoveredElement]
                               })()}
                             </PieChart>
                           </ResponsiveContainer>
