@@ -174,13 +174,16 @@ export default function Sessoes() {
           id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
           metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
           clients (nome, ativo, avatar_url),
-          packages (metodo_pagamento),
-          recurring_sessions (metodo_pagamento)
+          packages:package_id (metodo_pagamento),
+          recurring_sessions:recurring_session_id (metodo_pagamento)
         `)
         .order('data', { ascending: false })
         .order('horario', { ascending: false })
 
-      if (sessionsError) throw sessionsError
+      if (sessionsError) {
+        console.error('Erro ao carregar sessões:', sessionsError)
+        throw sessionsError
+      }
 
       // Carregar anotações (campos otimizados)
       const { data: notesData, error: notesError } = await supabase
