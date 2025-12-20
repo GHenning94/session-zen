@@ -1895,8 +1895,7 @@ const Dashboard = () => {
                                 ))}
                                 
                                 {/* Capa do primeiro segmento sobre o final do último (efeito corrente) */}
-                                {/* Só renderizar se NÃO estiver com hover no último segmento */}
-                                {segments.length > 1 && hoveredCanalIndex !== segments.length - 1 && (
+                                {segments.length > 1 && (
                                   <path
                                     key="segment-first-cap"
                                     d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
@@ -1911,7 +1910,7 @@ const Dashboard = () => {
                                 )}
                                 
                                 {/* Hover: renderizar segmento por cima de tudo com sombra */}
-                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
+                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && hoveredCanalIndex !== segments.length - 1 && (
                                   <>
                                     <path
                                       key={`segment-hover-${hoveredCanalIndex}`}
@@ -1943,16 +1942,19 @@ const Dashboard = () => {
                                   </>
                                 )}
                                 
-                                {/* Capa do primeiro segmento - renderizar DEPOIS do hover do último para não sobrepor */}
-                                {segments.length > 1 && hoveredCanalIndex === segments.length - 1 && (
+                                {/* Hover do ÚLTIMO segmento: renderizar por cima de tudo incluindo a capa */}
+                                {hoveredCanalIndex === segments.length - 1 && segments[hoveredCanalIndex] && (
                                   <path
-                                    key="segment-first-cap-after"
-                                    d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
+                                    key={`segment-hover-last`}
+                                    d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
                                     fill="none"
-                                    stroke={segments[0].color}
+                                    stroke={segments[hoveredCanalIndex].color}
                                     strokeWidth={strokeWidth}
                                     strokeLinecap="round"
-                                    style={{ cursor: 'pointer', pointerEvents: 'none' }}
+                                    style={{
+                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`,
+                                      pointerEvents: 'none'
+                                    }}
                                   />
                                 )}
                               </svg>
