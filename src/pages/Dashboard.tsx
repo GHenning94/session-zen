@@ -1849,13 +1849,22 @@ const Dashboard = () => {
                                   currentAngle -= angle
                                 })
                                 
-                                // Ordenar: segmentos em ordem reversa, mas o hovered sempre por último (no topo)
-                                const sortedSegments = [...segments].reverse().sort((a, b) => {
-                                  if (hoveredCanalIndex === null) return 0
-                                  if (a.index === hoveredCanalIndex) return 1 // hovered vai para o final (topo)
-                                  if (b.index === hoveredCanalIndex) return -1
-                                  return 0
-                                })
+                                // Definir ordem de renderização baseada no hover
+                                // Quando não há hover: ordem normal (último por baixo, primeiro por cima)
+                                // Quando há hover: o item com hover vai para o topo
+                                let sortedSegments: typeof segments
+                                if (hoveredCanalIndex === null) {
+                                  // Ordem padrão: última barra fica por cima da primeira
+                                  // Renderizar na ordem: primeiro -> ... -> último (último fica no topo)
+                                  sortedSegments = [...segments]
+                                } else {
+                                  // Mover o hovered para o final (renderizado por último = no topo)
+                                  sortedSegments = [...segments].sort((a, b) => {
+                                    if (a.index === hoveredCanalIndex) return 1
+                                    if (b.index === hoveredCanalIndex) return -1
+                                    return a.index - b.index
+                                  })
+                                }
                                 
                                 return sortedSegments.map((segment) => (
                                   <Pie
@@ -1879,9 +1888,6 @@ const Dashboard = () => {
                                       fill={segment.color}
                                       style={{
                                         filter: hoveredCanalIndex === segment.index ? `url(#shadow-${segment.index})` : 'none',
-                                        transform: hoveredCanalIndex === segment.index ? 'scale(1.05)' : 'scale(1)',
-                                        transformOrigin: 'center',
-                                        transition: 'all 0.3s ease-out',
                                         opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
                                         cursor: 'pointer'
                                       }}
