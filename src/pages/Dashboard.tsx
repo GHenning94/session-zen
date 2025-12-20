@@ -1861,6 +1861,9 @@ const Dashboard = () => {
                               return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
                             }
                             
+                            // Inverter ordem para que a primeira barra fique por cima (renderizada por último)
+                            const reversedSegments = [...segments].reverse()
+                            
                             return (
                               <svg viewBox="0 0 400 400" className="w-full h-full max-w-[380px] max-h-[380px]">
                                 <defs>
@@ -1871,8 +1874,8 @@ const Dashboard = () => {
                                   ))}
                                 </defs>
                                 
-                                {/* Renderizar segmentos base - ordem: primeiro renderizado fica por baixo */}
-                                {segments.map((segment) => (
+                                {/* Renderizar segmentos em ordem inversa - último do array fica por baixo */}
+                                {reversedSegments.map((segment) => (
                                   <path
                                     key={`segment-${segment.index}`}
                                     d={describeArc(segment.startAngle, segment.endAngle)}
@@ -1890,7 +1893,7 @@ const Dashboard = () => {
                                   />
                                 ))}
                                 
-                                {/* Segmento hovered renderizado por cima - com scale */}
+                                {/* Segmento hovered renderizado por cima - apenas sombra, sem scale */}
                                 {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
                                   <path
                                     key={`segment-top-${hoveredCanalIndex}`}
@@ -1901,10 +1904,7 @@ const Dashboard = () => {
                                     strokeLinecap="round"
                                     style={{
                                       cursor: 'pointer',
-                                      transformOrigin: `${cx}px ${cy}px`,
-                                      transform: 'scale(1.06)',
-                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`,
-                                      transition: 'transform 0.15s ease-out'
+                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`
                                     }}
                                     onMouseEnter={() => setHoveredCanalIndex(hoveredCanalIndex)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
