@@ -98,7 +98,7 @@ export const SessionModal = ({
       
       const { data, error } = await supabase
         .from('recurring_sessions')
-        .select('id, horario, recurrence_type, recurrence_interval, valor, dia_da_semana, status, recurrence_end_date, recurrence_count')
+        .select('id, horario, recurrence_type, recurrence_interval, valor, dia_da_semana, status, recurrence_end_date, recurrence_count, metodo_pagamento')
         .eq('client_id', formData.client_id)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false })
@@ -109,36 +109,8 @@ export const SessionModal = ({
     enabled: !!formData.client_id && open && sessionType === 'recorrente'
   })
 
-  // Estado para edição de recorrência
-  const [recurringEditData, setRecurringEditData] = useState({
-    recurrence_type: 'semanal' as string,
-    recurrence_interval: 1,
-    dia_da_semana: 1,
-    horario: '',
-    valor: '',
-    end_type: 'never' as 'never' | 'date' | 'count',
-    recurrence_end_date: '',
-    recurrence_count: undefined as number | undefined
-  })
-
-  // Carregar dados da recorrência selecionada
-  useEffect(() => {
-    if (formData.recurring_session_id && recurringSessionsList.length > 0) {
-      const selectedRecurring = recurringSessionsList.find((r: any) => r.id === formData.recurring_session_id)
-      if (selectedRecurring) {
-        setRecurringEditData({
-          recurrence_type: selectedRecurring.recurrence_type,
-          recurrence_interval: selectedRecurring.recurrence_interval || 1,
-          dia_da_semana: selectedRecurring.dia_da_semana ?? 1,
-          horario: selectedRecurring.horario?.slice(0, 5) || '',
-          valor: selectedRecurring.valor?.toString() || '',
-          end_type: selectedRecurring.recurrence_end_date ? 'date' : selectedRecurring.recurrence_count ? 'count' : 'never',
-          recurrence_end_date: selectedRecurring.recurrence_end_date || '',
-          recurrence_count: selectedRecurring.recurrence_count || undefined
-        })
-      }
-    }
-  }, [formData.recurring_session_id, recurringSessionsList])
+  // Determinar se é uma sessão recorrente em modo edição
+  const isEditingRecurringSession = session && session.recurring_session_id
 
   // Inicializar formulário
   useEffect(() => {
@@ -236,39 +208,6 @@ export const SessionModal = ({
     setIsLoading(true)
     
     try {
-      // Se for edição de recorrência, atualizar a recorrência primeiro
-      if (sessionType === 'recorrente' && !session && formData.recurring_session_id) {
-        const recurringUpdateData = {
-          recurrence_type: recurringEditData.recurrence_type,
-          recurrence_interval: recurringEditData.recurrence_interval,
-          dia_da_semana: recurringEditData.dia_da_semana,
-          horario: recurringEditData.horario ? `${recurringEditData.horario}:00` : null,
-          valor: recurringEditData.valor ? parseFloat(recurringEditData.valor) : null,
-          recurrence_end_date: recurringEditData.end_type === 'date' && recurringEditData.recurrence_end_date 
-            ? recurringEditData.recurrence_end_date 
-            : null,
-          recurrence_count: recurringEditData.end_type === 'count' ? recurringEditData.recurrence_count : null
-        }
-
-        const { error: recurringError } = await supabase
-          .from('recurring_sessions')
-          .update(recurringUpdateData)
-          .eq('id', formData.recurring_session_id)
-
-        if (recurringError) throw recurringError
-
-        toast({
-          title: "Recorrência atualizada",
-          description: "As configurações da sessão recorrente foram atualizadas.",
-        })
-
-        // Disparar evento para atualizar página de recorrências
-        window.dispatchEvent(new CustomEvent('recurringSessionUpdated'))
-        
-        onSuccess?.()
-        onOpenChange(false)
-        return
-      }
 
       // Reativar cliente se necessário
       const selectedClient = clients.find((c: any) => c.id === formData.client_id)
@@ -445,330 +384,254 @@ export const SessionModal = ({
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {/* Cliente */}
-            <div className="col-span-2">
-              <Label htmlFor="client_id">Cliente *</Label>
-              <Select
-                value={formData.client_id}
-                onValueChange={(value) => setFormData({ ...formData, client_id: value })}
-                disabled={!!session} // Não permite trocar cliente em edição
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione um cliente" />
-                </SelectTrigger>
-                <SelectContent>
-                  {clients.map((client: any) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.nome} {!client.ativo && '(Inativo)'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {showReactivationMessage && (
-                <p className="text-sm text-yellow-600 mt-1">
-                  ⚠️ Este cliente está inativo e será reativado automaticamente.
-                </p>
-              )}
-            </div>
-
-            {/* Pacote (se tipo = pacote) */}
-            {sessionType === 'pacote' && (
-              <div className="col-span-2">
-                <Label htmlFor="package_id">Pacote *</Label>
-                <Select
-                  value={formData.package_id}
-                  onValueChange={(value) => setFormData({ ...formData, package_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um pacote" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {packages.map((pkg: any) => (
-                      <SelectItem key={pkg.id} value={pkg.id}>
-                        {pkg.nome} ({pkg.sessoes_consumidas}/{pkg.total_sessoes} usadas)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Recorrência (se tipo = recorrente) - edição de recorrência existente */}
-            {sessionType === 'recorrente' && !session && (
-              <div className="col-span-2 space-y-4">
-                <div>
-                  <Label htmlFor="recurring_session_id">Sessão Recorrente *</Label>
-                  {recurringSessionsList.length > 0 ? (
-                    <Select
-                      value={formData.recurring_session_id}
-                      onValueChange={(value) => setFormData({ ...formData, recurring_session_id: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione uma recorrência para editar" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {recurringSessionsList.map((rec: any) => {
-                          const recurrenceLabels: Record<string, string> = {
-                            'diaria': 'Diária',
-                            'semanal': 'Semanal',
-                            'quinzenal': 'Quinzenal',
-                            'mensal': 'Mensal'
-                          }
-                          const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-                          return (
-                            <SelectItem key={rec.id} value={rec.id}>
-                              {recurrenceLabels[rec.recurrence_type] || rec.recurrence_type} - {rec.horario?.slice(0, 5)}
-                              {rec.dia_da_semana !== null && ` (${dayLabels[rec.dia_da_semana]})`}
-                            </SelectItem>
-                          )
-                        })}
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="p-4 border rounded-md bg-muted/50 text-center">
-                      <p className="text-sm text-muted-foreground">
-                        {formData.client_id 
-                          ? "Nenhuma sessão recorrente ativa para este cliente."
-                          : "Selecione um cliente para ver suas recorrências."}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Crie sessões recorrentes na página de Sessões Recorrentes.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Campos de edição da recorrência selecionada */}
-                {formData.recurring_session_id && (
-                  <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
-                    <h4 className="font-medium text-sm">Editar Recorrência</h4>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Tipo de Recorrência</Label>
-                        <Select
-                          value={recurringEditData.recurrence_type}
-                          onValueChange={(value) => setRecurringEditData({ ...recurringEditData, recurrence_type: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="diaria">Diária</SelectItem>
-                            <SelectItem value="semanal">Semanal</SelectItem>
-                            <SelectItem value="quinzenal">Quinzenal</SelectItem>
-                            <SelectItem value="mensal">Mensal</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Repetir a cada</Label>
-                        <div className="flex items-center gap-2">
-                          <Input
-                            type="number"
-                            min="1"
-                            value={recurringEditData.recurrence_interval}
-                            onChange={(e) => setRecurringEditData({ ...recurringEditData, recurrence_interval: parseInt(e.target.value) || 1 })}
-                            className="w-20"
-                          />
-                          <span className="text-sm text-muted-foreground">
-                            {recurringEditData.recurrence_type === 'diaria' && 'dia(s)'}
-                            {recurringEditData.recurrence_type === 'semanal' && 'semana(s)'}
-                            {recurringEditData.recurrence_type === 'quinzenal' && 'quinzena(s)'}
-                            {recurringEditData.recurrence_type === 'mensal' && 'mês(es)'}
-                          </span>
-                        </div>
-                      </div>
-
-                      {recurringEditData.recurrence_type === 'semanal' && (
-                        <div className="col-span-2">
-                          <Label>Dia da Semana</Label>
-                          <Select
-                            value={recurringEditData.dia_da_semana?.toString()}
-                            onValueChange={(value) => setRecurringEditData({ ...recurringEditData, dia_da_semana: parseInt(value) })}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">Domingo</SelectItem>
-                              <SelectItem value="1">Segunda</SelectItem>
-                              <SelectItem value="2">Terça</SelectItem>
-                              <SelectItem value="3">Quarta</SelectItem>
-                              <SelectItem value="4">Quinta</SelectItem>
-                              <SelectItem value="5">Sexta</SelectItem>
-                              <SelectItem value="6">Sábado</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-
-                      <div>
-                        <Label>Horário</Label>
-                        <Input
-                          type="time"
-                          value={recurringEditData.horario}
-                          onChange={(e) => setRecurringEditData({ ...recurringEditData, horario: e.target.value })}
-                        />
-                      </div>
-
-                      <div>
-                        <Label>Valor (R$)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          min="0"
-                          value={recurringEditData.valor}
-                          onChange={(e) => setRecurringEditData({ ...recurringEditData, valor: e.target.value })}
-                        />
-                      </div>
-
-                      <div className="col-span-2 space-y-3">
-                        <Label>Término da Recorrência</Label>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            type="button"
-                            variant={recurringEditData.end_type === 'never' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setRecurringEditData({ ...recurringEditData, end_type: 'never' })}
-                          >
-                            Nunca
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={recurringEditData.end_type === 'date' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setRecurringEditData({ ...recurringEditData, end_type: 'date' })}
-                          >
-                            Em uma data
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={recurringEditData.end_type === 'count' ? 'default' : 'outline'}
-                            size="sm"
-                            onClick={() => setRecurringEditData({ ...recurringEditData, end_type: 'count' })}
-                          >
-                            Após X ocorrências
-                          </Button>
-                        </div>
-
-                        {recurringEditData.end_type === 'date' && (
-                          <Input
-                            type="date"
-                            value={recurringEditData.recurrence_end_date}
-                            onChange={(e) => setRecurringEditData({ ...recurringEditData, recurrence_end_date: e.target.value })}
-                          />
-                        )}
-
-                        {recurringEditData.end_type === 'count' && (
-                          <Input
-                            type="number"
-                            min="1"
-                            placeholder="Número de ocorrências"
-                            value={recurringEditData.recurrence_count || ''}
-                            onChange={(e) => setRecurringEditData({ 
-                              ...recurringEditData, 
-                              recurrence_count: e.target.value ? parseInt(e.target.value) : undefined 
-                            })}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Data */}
-            <div>
-              <Label htmlFor="data">Data *</Label>
-              <Input
-                id="data"
-                type="date"
-                value={formData.data}
-                onChange={(e) => setFormData({ ...formData, data: e.target.value })}
-              />
-            </div>
-
-            {/* Horário */}
-            <div>
-              <Label htmlFor="horario">Horário *</Label>
-              <Input
-                id="horario"
-                type="time"
-                value={formData.horario}
-                onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
-              />
-            </div>
-
-            {/* Valor e Método de Pagamento (apenas se não for de pacote) */}
-            {sessionType !== 'pacote' && (
+            {/* Se é edição de sessão recorrente, mostrar apenas status e observações */}
+            {isEditingRecurringSession ? (
               <>
-                <div>
-                  <Label htmlFor="valor">Valor (R$)</Label>
-                  <Input
-                    id="valor"
-                    type="number"
-                    step="0.01"
-                    placeholder="0,00"
-                    value={formData.valor}
-                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                  />
+                {/* Aviso sobre edição limitada */}
+                <div className="col-span-2 p-4 border rounded-lg bg-muted/50">
+                  <p className="text-sm text-muted-foreground">
+                    <Repeat className="h-4 w-4 inline mr-2" />
+                    Esta é uma sessão recorrente. Para editar as configurações de recorrência, acesse a página de <strong>Sessões Recorrentes</strong>.
+                  </p>
                 </div>
+
+                {/* Status */}
                 <div>
-                  <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                  <Label htmlFor="status">Status</Label>
                   <Select
-                    value={formData.metodo_pagamento}
-                    onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+                    value={formData.status}
+                    onValueChange={(value) => setFormData({ ...formData, status: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um método" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="cartao">Cartão</SelectItem>
-                      <SelectItem value="boleto">Boleto</SelectItem>
-                      <SelectItem value="transferencia">Transferência</SelectItem>
-                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="agendada">Agendada</SelectItem>
+                      <SelectItem value="realizada">Realizada</SelectItem>
+                      <SelectItem value="cancelada">Cancelada</SelectItem>
+                      <SelectItem value="faltou">Falta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
+                {/* Observações */}
+                <div className="col-span-2">
+                  <Label htmlFor="anotacoes">Observações</Label>
+                  <Textarea
+                    id="anotacoes"
+                    placeholder="Observações sobre a sessão..."
+                    value={formData.anotacoes}
+                    onChange={(e) => setFormData({ ...formData, anotacoes: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Cliente */}
+                <div className="col-span-2">
+                  <Label htmlFor="client_id">Cliente *</Label>
+                  <Select
+                    value={formData.client_id}
+                    onValueChange={(value) => setFormData({ ...formData, client_id: value })}
+                    disabled={!!session} // Não permite trocar cliente em edição
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um cliente" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {clients.map((client: any) => (
+                        <SelectItem key={client.id} value={client.id}>
+                          {client.nome} {!client.ativo && '(Inativo)'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {showReactivationMessage && (
+                    <p className="text-sm text-yellow-600 mt-1">
+                      ⚠️ Este cliente está inativo e será reativado automaticamente.
+                    </p>
+                  )}
+                </div>
+
+                {/* Pacote (se tipo = pacote) */}
+                {sessionType === 'pacote' && (
+                  <div className="col-span-2">
+                    <Label htmlFor="package_id">Pacote *</Label>
+                    <Select
+                      value={formData.package_id}
+                      onValueChange={(value) => setFormData({ ...formData, package_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um pacote" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {packages.map((pkg: any) => (
+                          <SelectItem key={pkg.id} value={pkg.id}>
+                            {pkg.nome} ({pkg.sessoes_consumidas}/{pkg.total_sessoes} usadas)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Recorrência (se tipo = recorrente) - apenas seleção, sem edição */}
+                {sessionType === 'recorrente' && !session && (
+                  <div className="col-span-2 space-y-4">
+                    <div>
+                      <Label htmlFor="recurring_session_id">Sessão Recorrente *</Label>
+                      {recurringSessionsList.length > 0 ? (
+                        <Select
+                          value={formData.recurring_session_id}
+                          onValueChange={(value) => {
+                            setFormData({ ...formData, recurring_session_id: value })
+                            // Auto-fill values from selected recurring session
+                            const selectedRecurring = recurringSessionsList.find((r: any) => r.id === value)
+                            if (selectedRecurring) {
+                              setFormData(prev => ({
+                                ...prev,
+                                recurring_session_id: value,
+                                horario: selectedRecurring.horario?.slice(0, 5) || prev.horario,
+                                valor: selectedRecurring.valor?.toString() || prev.valor,
+                                metodo_pagamento: selectedRecurring.metodo_pagamento || prev.metodo_pagamento
+                              }))
+                            }
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione uma recorrência" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {recurringSessionsList.map((rec: any) => {
+                              const recurrenceLabels: Record<string, string> = {
+                                'diaria': 'Diária',
+                                'semanal': 'Semanal',
+                                'quinzenal': 'Quinzenal',
+                                'mensal': 'Mensal'
+                              }
+                              const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+                              return (
+                                <SelectItem key={rec.id} value={rec.id}>
+                                  {recurrenceLabels[rec.recurrence_type] || rec.recurrence_type} - {rec.horario?.slice(0, 5)}
+                                  {rec.dia_da_semana !== null && ` (${dayLabels[rec.dia_da_semana]})`}
+                                </SelectItem>
+                              )
+                            })}
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <div className="p-4 border rounded-md bg-muted/50 text-center">
+                          <p className="text-sm text-muted-foreground">
+                            {formData.client_id 
+                              ? "Nenhuma sessão recorrente ativa para este cliente."
+                              : "Selecione um cliente para ver suas recorrências."}
+                          </p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            Crie sessões recorrentes na página de Sessões Recorrentes.
+                          </p>
+                        </div>
+                      )}
+                      {formData.recurring_session_id && (
+                        <p className="text-xs text-muted-foreground mt-2">
+                          Para editar configurações de recorrência, acesse a página de Sessões Recorrentes.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Data */}
+                <div>
+                  <Label htmlFor="data">Data *</Label>
+                  <Input
+                    id="data"
+                    type="date"
+                    value={formData.data}
+                    onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                  />
+                </div>
+
+                {/* Horário */}
+                <div>
+                  <Label htmlFor="horario">Horário *</Label>
+                  <Input
+                    id="horario"
+                    type="time"
+                    value={formData.horario}
+                    onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
+                  />
+                </div>
+
+                {/* Valor e Método de Pagamento (apenas se não for de pacote) */}
+                {sessionType !== 'pacote' && (
+                  <>
+                    <div>
+                      <Label htmlFor="valor">Valor (R$)</Label>
+                      <Input
+                        id="valor"
+                        type="number"
+                        step="0.01"
+                        placeholder="0,00"
+                        value={formData.valor}
+                        onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                      <Select
+                        value={formData.metodo_pagamento}
+                        onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione um método" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pix">PIX</SelectItem>
+                          <SelectItem value="cartao">Cartão</SelectItem>
+                          <SelectItem value="boleto">Boleto</SelectItem>
+                          <SelectItem value="transferencia">Transferência</SelectItem>
+                          <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </>
+                )}
+
+                {/* Status (apenas em edição de sessão não-recorrente) */}
+                {session && !isEditingRecurringSession && (
+                  <div>
+                    <Label htmlFor="status">Status</Label>
+                    <Select
+                      value={formData.status}
+                      onValueChange={(value) => setFormData({ ...formData, status: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="agendada">Agendada</SelectItem>
+                        <SelectItem value="realizada">Realizada</SelectItem>
+                        <SelectItem value="cancelada">Cancelada</SelectItem>
+                        <SelectItem value="faltou">Falta</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {/* Observações */}
+                <div className="col-span-2">
+                  <Label htmlFor="anotacoes">Observações</Label>
+                  <Textarea
+                    id="anotacoes"
+                    placeholder="Observações sobre a sessão..."
+                    value={formData.anotacoes}
+                    onChange={(e) => setFormData({ ...formData, anotacoes: e.target.value })}
+                    rows={3}
+                  />
+                </div>
               </>
             )}
-
-            {/* Status (apenas em edição) */}
-            {session && (
-              <div>
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={formData.status}
-                  onValueChange={(value) => setFormData({ ...formData, status: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="agendada">Agendada</SelectItem>
-                    <SelectItem value="realizada">Realizada</SelectItem>
-                    <SelectItem value="cancelada">Cancelada</SelectItem>
-                    <SelectItem value="faltou">Falta</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            {/* Observações */}
-            <div className="col-span-2">
-              <Label htmlFor="anotacoes">Observações</Label>
-              <Textarea
-                id="anotacoes"
-                placeholder="Observações sobre a sessão..."
-                value={formData.anotacoes}
-                onChange={(e) => setFormData({ ...formData, anotacoes: e.target.value })}
-                rows={3}
-              />
-            </div>
           </div>
 
           {/* Ações */}
