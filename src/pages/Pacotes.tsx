@@ -66,27 +66,12 @@ export default function Pacotes() {
     enabled: !!packages && packages.length > 0
   });
 
-  // Track newly created packages to send notifications only on exit
-  const [newlyCreatedPackageIds, setNewlyCreatedPackageIds] = useState<Set<string>>(new Set());
-  
-  // Track when a package is created via the modal
-  const handlePackageSave = (packageId?: string) => {
-    if (packageId) {
-      setNewlyCreatedPackageIds(prev => new Set(prev).add(packageId));
-    }
-    refetch();
-    handleCloseModal();
-  };
-
-  // Check for packages without sessions and send notification ONLY when leaving the page
-  // and ONLY for packages that were created during this session
+  // Check for packages without sessions and send notification
   useEffect(() => {
-    const checkAndNotifyOnExit = async () => {
-      if (!packages || !sessionCounts || !user || newlyCreatedPackageIds.size === 0) return;
+    const checkAndNotifyPackages = async () => {
+      if (!packages || !sessionCounts || !user) return;
 
       for (const pkg of packages) {
-        // Only process packages that were newly created during this session
-        if (!newlyCreatedPackageIds.has(pkg.id)) continue;
         if (pkg.status !== 'ativo') continue;
         
         const createdSessions = sessionCounts[pkg.id] || 0;
@@ -142,11 +127,8 @@ export default function Pacotes() {
       }
     };
 
-    // Run notification check when component unmounts (user leaves page)
-    return () => {
-      checkAndNotifyOnExit();
-    };
-  }, [packages, sessionCounts, user, newlyCreatedPackageIds]);
+    checkAndNotifyPackages();
+  }, [packages, sessionCounts, user]);
 
   const statusConfig = {
     ativo: { label: 'Ativo', variant: 'default' as const, color: 'bg-green-500' },
@@ -386,7 +368,10 @@ export default function Pacotes() {
         open={isPackageModalOpen}
         onOpenChange={handleCloseModal}
         package={selectedPackage}
-        onSave={handlePackageSave}
+        onSave={() => {
+          refetch();
+          handleCloseModal();
+        }}
       />
     </Layout>
   );
