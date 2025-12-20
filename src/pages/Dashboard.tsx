@@ -1831,16 +1831,22 @@ const Dashboard = () => {
                               {/* Renderizar segmentos em ordem reversa para criar sobreposição correta */}
                               {(() => {
                                 const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
+                                if (total === 0) return null
+                                
                                 let currentAngle = 90 // Começa do topo
-                                const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
+                                const overlapAngle = 12 // Graus de sobreposição para cobrir os cantos arredondados
+                                const segments: { startAngle: number; endAngle: number; color: string; index: number; isLast: boolean }[] = []
                                 
                                 receitaPorCanal.forEach((item, index) => {
-                                  const angle = total > 0 ? (item.valor / total) * 360 : 0
+                                  const angle = (item.valor / total) * 360
+                                  const isLast = index === receitaPorCanal.length - 1
                                   segments.push({
                                     startAngle: currentAngle,
-                                    endAngle: currentAngle - angle,
+                                    // Estender cada segmento (exceto o último) para sobrepor o próximo
+                                    endAngle: isLast ? currentAngle - angle : currentAngle - angle - overlapAngle,
                                     color: item.color,
-                                    index
+                                    index,
+                                    isLast
                                   })
                                   currentAngle -= angle
                                 })
