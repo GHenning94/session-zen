@@ -1895,7 +1895,8 @@ const Dashboard = () => {
                                 ))}
                                 
                                 {/* Capa do primeiro segmento sobre o final do último (efeito corrente) */}
-                                {segments.length > 1 && (
+                                {/* Só renderizar se NÃO estiver com hover no último segmento */}
+                                {segments.length > 1 && hoveredCanalIndex !== segments.length - 1 && (
                                   <path
                                     key="segment-first-cap"
                                     d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
@@ -1940,6 +1941,19 @@ const Dashboard = () => {
                                       />
                                     )}
                                   </>
+                                )}
+                                
+                                {/* Capa do primeiro segmento - renderizar DEPOIS do hover do último para não sobrepor */}
+                                {segments.length > 1 && hoveredCanalIndex === segments.length - 1 && (
+                                  <path
+                                    key="segment-first-cap-after"
+                                    d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
+                                    fill="none"
+                                    stroke={segments[0].color}
+                                    strokeWidth={strokeWidth}
+                                    strokeLinecap="round"
+                                    style={{ cursor: 'pointer', pointerEvents: 'none' }}
+                                  />
                                 )}
                               </svg>
                             )
