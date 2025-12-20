@@ -239,25 +239,38 @@ export const SessionModal = ({
 
       if (session) {
         // Atualizar sessão existente
-        const { error } = await supabase
-          .from('sessions')
-          .update(sessionData)
-          .eq('id', session.id)
-
-        if (error) throw error
-
-        // Atualizar pagamento associado se o valor mudou
-        if (sessionData.valor) {
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .update({ 
-              valor: sessionData.valor,
-              data_vencimento: sessionData.data,
-              metodo_pagamento: sessionData.metodo_pagamento || 'A definir'
+        // Se for sessão recorrente, apenas atualiza status e anotações
+        if (isEditingRecurringSession) {
+          const { error } = await supabase
+            .from('sessions')
+            .update({
+              status: formData.status,
+              anotacoes: formData.anotacoes || null
             })
-            .eq('session_id', session.id)
-          
-          if (paymentError) console.error('Erro ao atualizar pagamento:', paymentError)
+            .eq('id', session.id)
+
+          if (error) throw error
+        } else {
+          const { error } = await supabase
+            .from('sessions')
+            .update(sessionData)
+            .eq('id', session.id)
+
+          if (error) throw error
+
+          // Atualizar pagamento associado se o valor mudou
+          if (sessionData.valor) {
+            const { error: paymentError } = await supabase
+              .from('payments')
+              .update({ 
+                valor: sessionData.valor,
+                data_vencimento: sessionData.data,
+                metodo_pagamento: sessionData.metodo_pagamento || 'A definir'
+              })
+              .eq('session_id', session.id)
+            
+            if (paymentError) console.error('Erro ao atualizar pagamento:', paymentError)
+          }
         }
 
         toast({
