@@ -1899,11 +1899,11 @@ const Dashboard = () => {
                                 {segments.length > 0 && (
                                   <path
                                     key="segment-first-cap"
-                                    d={describeArc(segments[0].startAngle, segments[0].startAngle + capAngle)}
+                                    d={describeArc(segments[0].startAngle - 2, segments[0].startAngle + capAngle)}
                                     fill="none"
                                     stroke={segments[0].color}
                                     strokeWidth={strokeWidth}
-                                    strokeLinecap="round"
+                                    strokeLinecap="butt"
                                     style={{
                                       cursor: 'pointer',
                                       transition: 'filter 0.15s ease-out'
