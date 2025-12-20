@@ -1398,14 +1398,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card>
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-primary" />
                           <CardTitle>Receita Financeira</CardTitle>
-                          <CardDescription className="hidden sm:block ml-2">
+                          <CardDescription className="hidden sm:block sm:ml-2">
                             | Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
                           </CardDescription>
                         </div>
+                        <CardDescription className="sm:hidden">
+                          Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
+                        </CardDescription>
                         <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
                           <Button 
                             variant={chartPeriod === '1' ? 'default' : 'outline'} 
@@ -1441,9 +1444,6 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
-                      <CardDescription className="sm:hidden">
-                        Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
-                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                        <div className="h-64">
@@ -1592,14 +1592,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-success" />
                           <CardTitle>Ticket Médio</CardTitle>
-                          <CardDescription className="hidden sm:block ml-2">
+                          <CardDescription className="hidden sm:block sm:ml-2">
                             | Ticket médio por sessão ao longo do tempo
                           </CardDescription>
                         </div>
+                        <CardDescription className="sm:hidden">
+                          Ticket médio por sessão ao longo do tempo
+                        </CardDescription>
                         <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
                           <Button 
                             variant={ticketPeriod === '1' ? 'default' : 'outline'} 
@@ -1635,9 +1638,6 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
-                      <CardDescription className="sm:hidden">
-                        Ticket médio por sessão ao longo do tempo
-                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       <div className="h-64">
