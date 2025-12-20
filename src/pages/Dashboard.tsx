@@ -1779,7 +1779,7 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end mt-3">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end mt-5">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
