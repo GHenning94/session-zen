@@ -66,12 +66,27 @@ export default function Pacotes() {
     enabled: !!packages && packages.length > 0
   });
 
-  // Check for packages without sessions and send notification
+  // Track newly created packages to send notifications only on exit
+  const [newlyCreatedPackageIds, setNewlyCreatedPackageIds] = useState<Set<string>>(new Set());
+  
+  // Track when a package is created via the modal
+  const handlePackageSave = (packageId?: string) => {
+    if (packageId) {
+      setNewlyCreatedPackageIds(prev => new Set(prev).add(packageId));
+    }
+    refetch();
+    handleCloseModal();
+  };
+
+  // Check for packages without sessions and send notification ONLY when leaving the page
+  // and ONLY for packages that were created during this session
   useEffect(() => {
-    const checkAndNotifyPackages = async () => {
-      if (!packages || !sessionCounts || !user) return;
+    const checkAndNotifyOnExit = async () => {
+      if (!packages || !sessionCounts || !user || newlyCreatedPackageIds.size === 0) return;
 
       for (const pkg of packages) {
+        // Only process packages that were newly created during this session
+        if (!newlyCreatedPackageIds.has(pkg.id)) continue;
         if (pkg.status !== 'ativo') continue;
         
         const createdSessions = sessionCounts[pkg.id] || 0;
@@ -127,8 +142,11 @@ export default function Pacotes() {
       }
     };
 
-    checkAndNotifyPackages();
-  }, [packages, sessionCounts, user]);
+    // Run notification check when component unmounts (user leaves page)
+    return () => {
+      checkAndNotifyOnExit();
+    };
+  }, [packages, sessionCounts, user, newlyCreatedPackageIds]);
 
   const statusConfig = {
     ativo: { label: 'Ativo', variant: 'default' as const, color: 'bg-green-500' },
@@ -368,10 +386,7 @@ export default function Pacotes() {
         open={isPackageModalOpen}
         onOpenChange={handleCloseModal}
         package={selectedPackage}
-        onSave={() => {
-          refetch();
-          handleCloseModal();
-        }}
+        onSave={handlePackageSave}
       />
     </Layout>
   );
