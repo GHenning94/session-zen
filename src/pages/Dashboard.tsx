@@ -556,7 +556,7 @@ const Dashboard = () => {
 
       const allPaymentMethods = allPaymentMethodsResult.data
 
-      const canalPayments: { [key: string]: number } = {}
+      const canalPayments: { [key: string]: { valor: number; count: number } } = {}
       allPaymentMethods?.forEach(session => {
         let metodo = session.metodo_pagamento || 'A definir'
         // Consolidar cartao_credito e cartao_debito em cartao
@@ -564,9 +564,10 @@ const Dashboard = () => {
           metodo = 'cartao'
         }
         if (!canalPayments[metodo]) {
-          canalPayments[metodo] = 0
+          canalPayments[metodo] = { valor: 0, count: 0 }
         }
-        canalPayments[metodo] += Number(session.valor) || 0
+        canalPayments[metodo].valor += Number(session.valor) || 0
+        canalPayments[metodo].count += 1
       })
 
       const canalColors: Record<string, string> = {
@@ -579,9 +580,10 @@ const Dashboard = () => {
       }
 
       const receitaPorCanalData = Object.entries(canalPayments)
-        .map(([canal, valor]: [string, any]) => ({
+        .map(([canal, data]: [string, { valor: number; count: number }]) => ({
           canal: formatPaymentMethod(canal),
-          valor: valor,
+          valor: data.valor,
+          count: data.count,
           color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
         }))
         .sort((a, b) => b.valor - a.valor)
@@ -869,7 +871,7 @@ const Dashboard = () => {
 
       if (error) throw error
 
-      const canalData: { [key: string]: number } = {}
+      const canalData: { [key: string]: { valor: number; count: number } } = {}
       
       paymentsData?.forEach((p) => {
         let method = p.metodo_pagamento || p.sessions?.metodo_pagamento || 'Outros'
@@ -878,9 +880,10 @@ const Dashboard = () => {
           method = 'cartao'
         }
         if (!canalData[method]) {
-          canalData[method] = 0
+          canalData[method] = { valor: 0, count: 0 }
         }
-        canalData[method] += p.valor || 0
+        canalData[method].valor += p.valor || 0
+        canalData[method].count += 1
       })
 
       const canalColors: Record<string, string> = {
@@ -894,9 +897,10 @@ const Dashboard = () => {
       }
 
       const filteredCanalData = Object.entries(canalData)
-        .map(([canal, valor]) => ({
+        .map(([canal, data]: [string, { valor: number; count: number }]) => ({
           canal: formatPaymentMethod(canal),
-          valor: valor,
+          valor: data.valor,
+          count: data.count,
           color: canalColors[canal as keyof typeof canalColors] || '#6B7280'
         }))
         .sort((a, b) => b.valor - a.valor)
@@ -1763,8 +1767,8 @@ const Dashboard = () => {
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
-                    <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-4">
+                    <CardHeader className="pb-6">
+                      <div className="flex flex-col gap-2">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
@@ -1775,7 +1779,7 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end mt-1">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1811,16 +1815,16 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[420px] px-4 pt-2 pb-2">
+                    <CardContent className="h-[420px] px-4 pt-0 pb-2">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-                        {/* Gráfico de Pizza - Moderno */}
-                        <div className="h-full min-h-[380px] flex items-center justify-center">
+                        {/* Gráfico de Pizza - Moderno estilo donut grosso */}
+                        <div className="h-full min-h-[380px] flex items-center justify-center relative">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                               <defs>
                                 {receitaPorCanal.map((entry, index) => (
                                   <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
-                                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={entry.color} floodOpacity="0.3"/>
+                                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={entry.color} floodOpacity="0.4"/>
                                   </filter>
                                 ))}
                               </defs>
@@ -1828,13 +1832,13 @@ const Dashboard = () => {
                                 data={receitaPorCanal}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={140}
-                                innerRadius={60}
-                                paddingAngle={3}
+                                outerRadius={145}
+                                innerRadius={85}
+                                paddingAngle={4}
                                 dataKey="valor"
-                                cornerRadius={6}
+                                cornerRadius={20}
                                 stroke="hsl(var(--background))"
-                                strokeWidth={2}
+                                strokeWidth={3}
                                 onMouseEnter={(_, index) => setHoveredCanalIndex(index)}
                                 onMouseLeave={() => setHoveredCanalIndex(null)}
                               >
@@ -1852,17 +1856,30 @@ const Dashboard = () => {
                                   />
                                 ))}
                               </Pie>
-                               <RechartsTooltip 
-                                 formatter={(value: any) => [formatCurrencyBR(value), 'Receita']}
-                                contentStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: '8px',
-                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-                                }}
-                              />
                             </PieChart>
                           </ResponsiveContainer>
+                          {/* Centro do gráfico com informações dinâmicas */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <div className="text-center">
+                              {hoveredCanalIndex !== null && receitaPorCanal[hoveredCanalIndex] ? (
+                                <>
+                                  <p className="text-xs text-muted-foreground mb-1">{receitaPorCanal[hoveredCanalIndex].canal}</p>
+                                  <p className="text-3xl font-bold" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
+                                    {receitaPorCanal[hoveredCanalIndex].count || 0}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">pagamentos</p>
+                                </>
+                              ) : (
+                                <>
+                                  <p className="text-xs text-muted-foreground mb-1">Total</p>
+                                  <p className="text-3xl font-bold text-foreground">
+                                    {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">pagamentos</p>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
                         
                         {/* Lista de Canais */}
