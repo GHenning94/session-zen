@@ -827,8 +827,8 @@ const Configuracoes = () => {
                     Personalize a cor principal da plataforma
                   </p>
                   <div>
-                    <Button variant="outline" onClick={() => setShowColorPicker(true)} className="w-full sm:w-auto h-10">
-                      <Palette className="w-4 h-4 mr-2" />
+                    <Button variant="outline" onClick={() => setShowColorPicker(true)} className="w-full sm:w-[200px] h-10 justify-start gap-2">
+                      <Palette className="w-4 h-4" />
                       Personalizar Cores
                     </Button>
                   </div>

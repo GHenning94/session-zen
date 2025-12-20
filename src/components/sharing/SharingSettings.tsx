@@ -177,6 +177,11 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                 <div className="flex items-center justify-between"><div><Label>Mostrar Preço</Label></div><Switch checked={settings.show_price ?? true} onCheckedChange={(checked) => onSettingsChange('show_price', checked)} /></div>
                 <div className="flex items-center justify-between"><div><Label>Mostrar Duração</Label></div><Switch checked={settings.show_duration ?? true} onCheckedChange={(checked) => onSettingsChange('show_duration', checked)} /></div>
               </div>
+              <div className="pt-4">
+                <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+                  {isLoading ? "Salvando..." : "Salvar Configurações"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
@@ -241,15 +246,6 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
           </PlanProtection>
         </TabsContent>
       </Tabs>
-      
-      {/* Botão salvar dentro do último card visível - movido para cada TabsContent */}
-      <Card className="shadow-soft">
-        <CardContent className="pt-4">
-          <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
-            {isLoading ? "Salvando..." : "Salvar Configurações"}
-          </Button>
-        </CardContent>
-      </Card>
 
       <ImageCropper
         isOpen={showImageCropper}
