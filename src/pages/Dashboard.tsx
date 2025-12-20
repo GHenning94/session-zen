@@ -277,6 +277,7 @@ const Dashboard = () => {
     const handleSessionUpdated = () => handleDataChange(['upcomingSessions', 'dashboardStats', 'recentPayments'])
     const handlePaymentAdded = () => handleDataChange(['recentPayments', 'dashboardStats'])
     const handlePaymentUpdated = () => handleDataChange(['recentPayments', 'dashboardStats'])
+    const handlePackageAdded = () => handleDataChange(['dashboardStats'])
 
     window.addEventListener('storage', onStorage)
     window.addEventListener('clientAdded', handleClientAdded)
@@ -284,6 +285,8 @@ const Dashboard = () => {
     window.addEventListener('paymentUpdated', handlePaymentUpdated)
     window.addEventListener('sessionAdded', handleSessionAdded)
     window.addEventListener('sessionUpdated', handleSessionUpdated)
+    window.addEventListener('packageAdded', handlePackageAdded)
+    window.addEventListener('packageUpdated', handlePackageAdded)
     
     return () => {
       clearTimeout(timeoutId)
@@ -293,6 +296,8 @@ const Dashboard = () => {
       window.removeEventListener('paymentUpdated', handlePaymentUpdated)
       window.removeEventListener('sessionAdded', handleSessionAdded)
       window.removeEventListener('sessionUpdated', handleSessionUpdated)
+      window.removeEventListener('packageAdded', handlePackageAdded)
+      window.removeEventListener('packageUpdated', handlePackageAdded)
     }
   }, [user, loadDashboardDataOptimized, invalidateCache])
 

@@ -918,16 +918,28 @@ const pastPayments = filteredPayments.filter(item => {
                                          </div>
                                        )}
                                      </div>
-                                     <div className="flex items-center gap-2">
+                                     <div className="flex flex-wrap items-center gap-2">
                                        <span className="font-medium text-primary">
                                          {formatCurrencyBR(payment.value)}
                                        </span>
+                                       {payment.method && payment.method !== 'A definir' && (
+                                         <span className="text-xs text-muted-foreground hidden md:inline">
+                                           • {formatPaymentMethod(payment.method)}
+                                         </span>
+                                       )}
                                        {payment.type === 'package' && (
                                          <span className="text-xs text-muted-foreground">
-                                           {payment.package_name} • {payment.package_sessions} sessões
+                                           • {payment.package_name} • {payment.package_sessions} sessões
                                          </span>
                                        )}
                                      </div>
+                                     {/* Método de pagamento mobile - layout vertical */}
+                                     {payment.method && payment.method !== 'A definir' && (
+                                       <div className="flex items-center gap-1 md:hidden">
+                                         <CreditCard className="w-4 h-4 shrink-0" />
+                                         <span>{formatPaymentMethod(payment.method)}</span>
+                                       </div>
+                                     )}
                                    </div>
                                  </div>
                                </div>
@@ -1031,16 +1043,28 @@ const pastPayments = filteredPayments.filter(item => {
                                   </div>
                                 )}
                               </div>
-                              <div className="flex items-center gap-2">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="font-medium text-primary">
                                   {formatCurrencyBR(payment.value)}
                                 </span>
+                                {payment.method && payment.method !== 'A definir' && (
+                                  <span className="text-xs text-muted-foreground hidden md:inline">
+                                    • {formatPaymentMethod(payment.method)}
+                                  </span>
+                                )}
                                 {payment.type === 'package' && (
                                   <span className="text-xs text-muted-foreground">
-                                    {payment.package_name} • {payment.package_sessions} sessões
+                                    • {payment.package_name} • {payment.package_sessions} sessões
                                   </span>
                                 )}
                               </div>
+                              {/* Método de pagamento mobile - layout vertical */}
+                              {payment.method && payment.method !== 'A definir' && (
+                                <div className="flex items-center gap-1 md:hidden">
+                                  <CreditCard className="w-4 h-4 shrink-0" />
+                                  <span>{formatPaymentMethod(payment.method)}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>

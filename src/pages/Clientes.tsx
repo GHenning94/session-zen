@@ -117,6 +117,18 @@ const Clientes = () => {
     loadClients()
   }, [user])
 
+  // Escutar evento de cliente adicionado
+  useEffect(() => {
+    const handleClientAdded = () => {
+      loadClients()
+    }
+    
+    window.addEventListener('clientAdded', handleClientAdded)
+    return () => {
+      window.removeEventListener('clientAdded', handleClientAdded)
+    }
+  }, [user])
+
   const handleAvatarChange = async (clientId: string, avatarUrl: string) => {
     try {
       const { error } = await supabase
@@ -284,6 +296,31 @@ const Clientes = () => {
     
     setIsLoading(true)
     try {
+      // Primeiro, deletar pacotes relacionados (que cascateiam as sessões do pacote)
+      await supabase
+        .from('packages')
+        .delete()
+        .eq('client_id', deleteConfirmClient.id)
+      
+      // Deletar sessões recorrentes relacionadas
+      await supabase
+        .from('recurring_sessions')
+        .delete()
+        .eq('client_id', deleteConfirmClient.id)
+      
+      // Deletar sessões relacionadas
+      await supabase
+        .from('sessions')
+        .delete()
+        .eq('client_id', deleteConfirmClient.id)
+      
+      // Deletar pagamentos relacionados
+      await supabase
+        .from('payments')
+        .delete()
+        .eq('client_id', deleteConfirmClient.id)
+      
+      // Por fim, deletar o cliente
       const { error } = await supabase
         .from('clients')
         .delete()
@@ -293,7 +330,7 @@ const Clientes = () => {
       
       toast({
         title: "Cliente removido",
-        description: "O cliente foi excluído do sistema.",
+        description: "O cliente e todos os dados relacionados foram excluídos do sistema.",
       })
       
       setDeleteConfirmClient(null)

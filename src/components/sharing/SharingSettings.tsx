@@ -241,9 +241,15 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
           </PlanProtection>
         </TabsContent>
       </Tabs>
-      <div className="flex justify-end">
-        <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">{isLoading ? "Salvando..." : "Salvar Configurações"}</Button>
-      </div>
+      
+      {/* Botão salvar dentro do último card visível - movido para cada TabsContent */}
+      <Card className="shadow-soft">
+        <CardContent className="pt-4">
+          <Button onClick={onSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+            {isLoading ? "Salvando..." : "Salvar Configurações"}
+          </Button>
+        </CardContent>
+      </Card>
 
       <ImageCropper
         isOpen={showImageCropper}
