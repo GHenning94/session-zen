@@ -1823,12 +1823,13 @@ const Dashboard = () => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             if (total === 0) return null
                             
-                            let currentAngle = 90 // Começa do topo
-                            const overlapAngle = 25 // Graus de sobreposição
-                            const outerR = 145
-                            const innerR = 100
                             const cx = 200
                             const cy = 200
+                            const radius = 122.5 // Raio do meio do stroke
+                            const strokeWidth = 45
+                            
+                            let currentAngle = -90 // Começa do topo (SVG usa -90 para topo)
+                            const overlapDeg = 12 // Sobreposição em graus
                             
                             const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
                             
@@ -1836,40 +1837,28 @@ const Dashboard = () => {
                               const angle = (item.valor / total) * 360
                               segments.push({
                                 startAngle: currentAngle,
-                                endAngle: currentAngle - angle - overlapAngle,
+                                endAngle: currentAngle + angle + overlapDeg,
                                 color: item.color,
                                 index
                               })
-                              currentAngle -= angle
+                              currentAngle += angle
                             })
                             
-                            // Função para criar path do arco com cantos arredondados
-                            const createArcPath = (startAngle: number, endAngle: number, outerRadius: number, innerRadius: number) => {
-                              const startRad = (startAngle * Math.PI) / 180
-                              const endRad = (endAngle * Math.PI) / 180
+                            // Função para criar arco usando stroke
+                            const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
+                              const angleInRadians = (angleInDegrees * Math.PI) / 180
+                              return {
+                                x: centerX + r * Math.cos(angleInRadians),
+                                y: centerY + r * Math.sin(angleInRadians)
+                              }
+                            }
+                            
+                            const describeArc = (startAngle: number, endAngle: number) => {
+                              const start = polarToCartesian(cx, cy, radius, endAngle)
+                              const end = polarToCartesian(cx, cy, radius, startAngle)
+                              const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1
                               
-                              // Pontos externos
-                              const outerStartX = cx + outerRadius * Math.cos(startRad)
-                              const outerStartY = cy - outerRadius * Math.sin(startRad)
-                              const outerEndX = cx + outerRadius * Math.cos(endRad)
-                              const outerEndY = cy - outerRadius * Math.sin(endRad)
-                              
-                              // Pontos internos
-                              const innerStartX = cx + innerRadius * Math.cos(startRad)
-                              const innerStartY = cy - innerRadius * Math.sin(startRad)
-                              const innerEndX = cx + innerRadius * Math.cos(endRad)
-                              const innerEndY = cy - innerRadius * Math.sin(endRad)
-                              
-                              const largeArc = Math.abs(startAngle - endAngle) > 180 ? 1 : 0
-                              
-                              return `
-                                M ${outerStartX} ${outerStartY}
-                                A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEndX} ${outerEndY}
-                                Q ${cx + (innerRadius + 22) * Math.cos(endRad)} ${cy - (innerRadius + 22) * Math.sin(endRad)} ${innerEndX} ${innerEndY}
-                                A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStartX} ${innerStartY}
-                                Q ${cx + (innerRadius + 22) * Math.cos(startRad)} ${cy - (innerRadius + 22) * Math.sin(startRad)} ${outerStartX} ${outerStartY}
-                                Z
-                              `
+                              return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
                             }
                             
                             return (
@@ -1877,7 +1866,7 @@ const Dashboard = () => {
                                 <defs>
                                   {segments.map((segment) => (
                                     <filter key={`shadow-${segment.index}`} id={`pie-shadow-${segment.index}`} x="-50%" y="-50%" width="200%" height="200%">
-                                      <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor={segment.color} floodOpacity="0.5"/>
+                                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={segment.color} floodOpacity="0.5"/>
                                     </filter>
                                   ))}
                                 </defs>
@@ -1886,8 +1875,11 @@ const Dashboard = () => {
                                 {segments.map((segment) => (
                                   <path
                                     key={`segment-${segment.index}`}
-                                    d={createArcPath(segment.startAngle, segment.endAngle, outerR, innerR)}
-                                    fill={segment.color}
+                                    d={describeArc(segment.startAngle, segment.endAngle)}
+                                    fill="none"
+                                    stroke={segment.color}
+                                    strokeWidth={strokeWidth}
+                                    strokeLinecap="round"
                                     style={{
                                       opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
                                       cursor: 'pointer',
@@ -1898,12 +1890,15 @@ const Dashboard = () => {
                                   />
                                 ))}
                                 
-                                {/* Segmento hovered renderizado por cima - aparece instantaneamente com scale */}
+                                {/* Segmento hovered renderizado por cima - com scale */}
                                 {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
                                   <path
                                     key={`segment-top-${hoveredCanalIndex}`}
-                                    d={createArcPath(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle, outerR, innerR)}
-                                    fill={segments[hoveredCanalIndex].color}
+                                    d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
+                                    fill="none"
+                                    stroke={segments[hoveredCanalIndex].color}
+                                    strokeWidth={strokeWidth}
+                                    strokeLinecap="round"
                                     style={{
                                       cursor: 'pointer',
                                       transformOrigin: `${cx}px ${cy}px`,
