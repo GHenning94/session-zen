@@ -567,9 +567,10 @@ const Dashboard = () => {
       const canalColors: Record<string, string> = {
         'pix': '#00D09C',
         'cartao': '#6366F1',
-        'cartao_credito': '#6366F1',
-        'cartao_debito': '#818CF8',
-        'dinheiro': '#F59E0B',
+        'cartao_credito': '#6366F1', // Legado - mapear para mesma cor
+        'cartao_debito': '#6366F1', // Legado - mapear para mesma cor
+        'boleto': '#F59E0B',
+        'dinheiro': '#10B981',
         'transferencia': '#8B5CF6',
         'A definir': '#6B7280'
       }
@@ -878,9 +879,10 @@ const Dashboard = () => {
       const canalColors: Record<string, string> = {
         'pix': '#00D09C',
         'cartao': '#6366F1',
-        'cartao_credito': '#6366F1',
-        'cartao_debito': '#818CF8',
-        'dinheiro': '#F59E0B',
+        'cartao_credito': '#6366F1', // Legado
+        'cartao_debito': '#6366F1', // Legado
+        'boleto': '#F59E0B',
+        'dinheiro': '#10B981',
         'transferencia': '#8B5CF6',
         'A definir': '#6B7280',
         'Outros': '#6B7280'
@@ -1100,13 +1102,13 @@ const Dashboard = () => {
           <Card className="lg:col-span-2 shadow-soft">
             <CardHeader className="p-3 md:p-6">
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1">
+                <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                   <CardTitle className="flex items-center gap-2 text-sm md:text-base">
                     <Clock className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0" />
                     Próximas Sessões
                   </CardTitle>
-                  <CardDescription className="text-xs md:text-sm truncate">
-                    Consultas agendadas para hoje
+                  <CardDescription className="text-xs md:text-sm">
+                    <span className="hidden sm:inline">| </span>Consultas agendadas para hoje
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate("/agenda")} className="shrink-0 text-xs md:text-sm px-2 md:px-4">
@@ -1365,10 +1367,12 @@ const Dashboard = () => {
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
             <CardHeader>
-              <CardTitle>Ações Rápidas</CardTitle>
-              <CardDescription>
-                Acesse rapidamente as funcionalidades mais utilizadas
-              </CardDescription>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                <CardTitle>Ações Rápidas</CardTitle>
+                <CardDescription className="sm:text-right">
+                  Acesse rapidamente as funcionalidades mais utilizadas
+                </CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
@@ -1387,16 +1391,18 @@ const Dashboard = () => {
                   </Button>
                 </div>
 
-                {/* Gráfico Financeiro Expandido */}
                 <div className="col-span-full">
                   <Card>
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-primary" />
                           <CardTitle>Receita Financeira</CardTitle>
+                          <CardDescription className="hidden sm:block ml-2">
+                            | Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
+                          </CardDescription>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:justify-end">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
                           <Button 
                             variant={chartPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1431,7 +1437,7 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
-                      <CardDescription>
+                      <CardDescription className="sm:hidden">
                         Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
                       </CardDescription>
                     </CardHeader>
@@ -1582,12 +1588,15 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-success" />
                           <CardTitle>Ticket Médio</CardTitle>
+                          <CardDescription className="hidden sm:block ml-2">
+                            | Ticket médio por sessão ao longo do tempo
+                          </CardDescription>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:justify-end">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
                           <Button 
                             variant={ticketPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1622,7 +1631,7 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
-                      <CardDescription>
+                      <CardDescription className="sm:hidden">
                         Ticket médio por sessão ao longo do tempo
                       </CardDescription>
                     </CardHeader>
@@ -1686,13 +1695,15 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-2">
-                      <CardTitle className="flex items-center gap-2">
-                        <BarChart3 className="w-5 h-5 text-success" />
-                        Ticket Médio por {clientTerm}
-                      </CardTitle>
-                      <CardDescription>
-                        Valor médio por sessão de cada {clientTerm.toLowerCase()}
-                      </CardDescription>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                        <CardTitle className="flex items-center gap-2">
+                          <BarChart3 className="w-5 h-5 text-success" />
+                          Ticket Médio por {clientTerm}
+                        </CardTitle>
+                        <CardDescription className="sm:ml-2">
+                          <span className="hidden sm:inline">| </span>Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                        </CardDescription>
+                      </div>
                     </CardHeader>
                     <CardContent>
                       <div className="h-auto">
@@ -1740,12 +1751,15 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
+                          <CardDescription className="hidden sm:block ml-2">
+                            | Distribuição da receita por método de pagamento
+                          </CardDescription>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 md:flex md:gap-2 md:justify-end">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1780,7 +1794,7 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
-                      <CardDescription>
+                      <CardDescription className="sm:hidden">
                         Distribuição da receita por método de pagamento
                       </CardDescription>
                     </CardHeader>
@@ -1863,13 +1877,15 @@ const Dashboard = () => {
             {/* Top 5 Clientes que Mais Pagam */}
             <Card className="shadow-soft flex-1">
               <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5 text-primary" />
-                  Top 5 {clientTermPlural}
-                </CardTitle>
-                <CardDescription>
-                  {clientTermPlural} que mais geraram receita
-                </CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="w-5 h-5 text-primary" />
+                    Top 5 {clientTermPlural}
+                  </CardTitle>
+                  <CardDescription className="sm:ml-2">
+                    <span className="hidden sm:inline">| </span>{clientTermPlural} que mais geraram receita
+                  </CardDescription>
+                </div>
               </CardHeader>
               <CardContent className="h-full">
                 <div className="space-y-4">

@@ -219,7 +219,7 @@ const BookingPage = () => {
   console.log("Config:", config);
   console.log("Profile:", profile);
 
-  const paymentMethods = [{ key: 'aceita_pix', label: 'Pix' }, { key: 'aceita_cartao', label: 'Cartão de Crédito' }, { key: 'aceita_transferencia', label: 'Transferência' }, { key: 'aceita_dinheiro', label: 'Dinheiro' }].filter(method => config[method.key])
+  const paymentMethods = [{ key: 'aceita_pix', label: 'PIX' }, { key: 'aceita_cartao', label: 'Cartão' }, { key: 'aceita_transferencia', label: 'Transferência' }, { key: 'aceita_dinheiro', label: 'Dinheiro' }].filter(method => config[method.key])
 
   // Sanitize custom CSS to prevent injection attacks with whitelist approach
   const sanitizeCSS = (css: string): string => {

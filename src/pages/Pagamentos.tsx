@@ -541,10 +541,11 @@ const pastPayments = filteredPayments.filter(item => {
     }
 
     const methodLabels = {
-      'dinheiro': 'Dinheiro',
       'pix': 'PIX',
       'cartao': 'Cartão',
-      'transferencia': 'Transferência Bancária'
+      'boleto': 'Boleto',
+      'transferencia': 'Transferência',
+      'dinheiro': 'Dinheiro'
     };
 
     const receiptData = {
@@ -705,10 +706,11 @@ const pastPayments = filteredPayments.filter(item => {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
                     <SelectItem value="pix">PIX</SelectItem>
                     <SelectItem value="cartao">Cartão</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
                     <SelectItem value="transferencia">Transferência</SelectItem>
+                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

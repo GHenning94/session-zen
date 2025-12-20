@@ -447,11 +447,10 @@ export const SessionModal = ({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pix">PIX</SelectItem>
-                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="cartao_credito">Cartão de Crédito</SelectItem>
-                      <SelectItem value="cartao_debito">Cartão de Débito</SelectItem>
-                      <SelectItem value="transferencia">Transferência</SelectItem>
+                      <SelectItem value="cartao">Cartão</SelectItem>
                       <SelectItem value="boleto">Boleto</SelectItem>
+                      <SelectItem value="transferencia">Transferência</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
