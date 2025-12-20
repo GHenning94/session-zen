@@ -1828,31 +1828,36 @@ const Dashboard = () => {
                                   </filter>
                                 ))}
                               </defs>
-                              {/* Renderizar segmentos em ordem reversa para criar sobreposição correta */}
+                              {/* Renderizar segmentos com sobreposição e hover dinâmico */}
                               {(() => {
                                 const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                                 if (total === 0) return null
                                 
                                 let currentAngle = 90 // Começa do topo
-                                const overlapAngle = 12 // Graus de sobreposição para cobrir os cantos arredondados
-                                const segments: { startAngle: number; endAngle: number; color: string; index: number; isLast: boolean }[] = []
+                                const overlapAngle = 18 // Graus de sobreposição para cobrir os cantos arredondados
+                                const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
                                 
                                 receitaPorCanal.forEach((item, index) => {
                                   const angle = (item.valor / total) * 360
-                                  const isLast = index === receitaPorCanal.length - 1
                                   segments.push({
                                     startAngle: currentAngle,
-                                    // Estender cada segmento (exceto o último) para sobrepor o próximo
-                                    endAngle: isLast ? currentAngle - angle : currentAngle - angle - overlapAngle,
+                                    // Estender todos os segmentos para sobrepor o próximo
+                                    endAngle: currentAngle - angle - overlapAngle,
                                     color: item.color,
-                                    index,
-                                    isLast
+                                    index
                                   })
                                   currentAngle -= angle
                                 })
                                 
-                                // Renderizar em ordem reversa para que o primeiro segmento fique por cima
-                                return [...segments].reverse().map((segment) => (
+                                // Ordenar: segmentos em ordem reversa, mas o hovered sempre por último (no topo)
+                                const sortedSegments = [...segments].reverse().sort((a, b) => {
+                                  if (hoveredCanalIndex === null) return 0
+                                  if (a.index === hoveredCanalIndex) return 1 // hovered vai para o final (topo)
+                                  if (b.index === hoveredCanalIndex) return -1
+                                  return 0
+                                })
+                                
+                                return sortedSegments.map((segment) => (
                                   <Pie
                                     key={`segment-${segment.index}`}
                                     data={[{ value: 1 }]}
