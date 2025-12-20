@@ -1370,7 +1370,7 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
-            <CardHeader className="pb-4">
+            <CardHeader className="pb-6">
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-2">
                   <CardTitle>Ações Rápidas</CardTitle>
