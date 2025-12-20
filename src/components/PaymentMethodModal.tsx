@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CreditCard, Banknote, Smartphone, Building2 } from "lucide-react";
+import { CreditCard, Banknote, Smartphone, Building2, FileText } from "lucide-react";
 
 interface PaymentMethodModalProps {
   open: boolean;
@@ -15,10 +15,11 @@ const PaymentMethodModal = ({ open, onOpenChange, onConfirm, loading = false }: 
   const [selectedMethod, setSelectedMethod] = useState<string>("");
 
   const paymentMethods = [
-    { value: "dinheiro", label: "Dinheiro", icon: Banknote },
     { value: "pix", label: "PIX", icon: Smartphone },
     { value: "cartao", label: "Cartão", icon: CreditCard },
+    { value: "boleto", label: "Boleto", icon: FileText },
     { value: "transferencia", label: "Transferência", icon: Building2 },
+    { value: "dinheiro", label: "Dinheiro", icon: Banknote },
   ];
 
   const handleConfirm = () => {

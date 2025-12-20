@@ -73,10 +73,10 @@ export function BatchEditModal({ open, onClose, onConfirm, selectedCount, type }
 
   const paymentMethodOptions = [
     { value: 'pix', label: 'PIX' },
-    { value: 'dinheiro', label: 'Dinheiro' },
-    { value: 'cartao_credito', label: 'Cartão de Crédito' },
-    { value: 'cartao_debito', label: 'Cartão de Débito' },
+    { value: 'cartao', label: 'Cartão' },
+    { value: 'boleto', label: 'Boleto' },
     { value: 'transferencia', label: 'Transferência' },
+    { value: 'dinheiro', label: 'Dinheiro' },
     { value: 'A definir', label: 'A definir' },
   ]
 

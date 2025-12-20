@@ -166,9 +166,10 @@ export function formatPaymentMethod(method: string | null | undefined): string {
     'dinheiro': 'Dinheiro',
     'pix': 'PIX',
     'cartao': 'Cartão',
-    'cartao_credito': 'Cartão de Crédito',
-    'cartao_debito': 'Cartão de Débito',
+    'cartao_credito': 'Cartão', // Mapear legados para Cartão
+    'cartao_debito': 'Cartão', // Mapear legados para Cartão
     'transferencia': 'Transferência',
+    'boleto': 'Boleto',
     'A definir': 'A definir',
     'a definir': 'A definir'
   }
