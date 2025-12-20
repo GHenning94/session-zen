@@ -1817,7 +1817,7 @@ const Dashboard = () => {
                     </CardHeader>
                     <CardContent className="h-[420px] px-4 pt-4 pb-2">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
-                        {/* Gráfico de Pizza - Moderno estilo donut contínuo */}
+                        {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
                         <div className="h-full min-h-[380px] flex items-center justify-center relative">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
@@ -1828,36 +1828,56 @@ const Dashboard = () => {
                                   </filter>
                                 ))}
                               </defs>
-                              <Pie
-                                data={receitaPorCanal}
-                                cx="50%"
-                                cy="50%"
-                                outerRadius={145}
-                                innerRadius={100}
-                                paddingAngle={0}
-                                dataKey="valor"
-                                cornerRadius={22}
-                                stroke="none"
-                                strokeWidth={0}
-                                startAngle={90}
-                                endAngle={-270}
-                                onMouseEnter={(_, index) => setHoveredCanalIndex(index)}
-                                onMouseLeave={() => setHoveredCanalIndex(null)}
-                              >
-                                {receitaPorCanal.map((entry, index) => (
-                                  <Cell 
-                                    key={`cell-${index}`} 
-                                    fill={entry.color}
-                                    style={{
-                                      filter: hoveredCanalIndex === index ? `url(#shadow-${index})` : 'none',
-                                      transform: hoveredCanalIndex === index ? 'scale(1.05)' : 'scale(1)',
-                                      transformOrigin: 'center',
-                                      transition: 'all 0.3s ease-out',
-                                      opacity: hoveredCanalIndex === null || hoveredCanalIndex === index ? 1 : 0.4
-                                    }}
-                                  />
-                                ))}
-                              </Pie>
+                              {/* Renderizar segmentos em ordem reversa para criar sobreposição correta */}
+                              {(() => {
+                                const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
+                                let currentAngle = 90 // Começa do topo
+                                const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
+                                
+                                receitaPorCanal.forEach((item, index) => {
+                                  const angle = total > 0 ? (item.valor / total) * 360 : 0
+                                  segments.push({
+                                    startAngle: currentAngle,
+                                    endAngle: currentAngle - angle,
+                                    color: item.color,
+                                    index
+                                  })
+                                  currentAngle -= angle
+                                })
+                                
+                                // Renderizar em ordem reversa para que o primeiro segmento fique por cima
+                                return [...segments].reverse().map((segment) => (
+                                  <Pie
+                                    key={`segment-${segment.index}`}
+                                    data={[{ value: 1 }]}
+                                    cx="50%"
+                                    cy="50%"
+                                    outerRadius={145}
+                                    innerRadius={100}
+                                    dataKey="value"
+                                    cornerRadius={22}
+                                    stroke="none"
+                                    strokeWidth={0}
+                                    startAngle={segment.startAngle}
+                                    endAngle={segment.endAngle}
+                                    onMouseEnter={() => setHoveredCanalIndex(segment.index)}
+                                    onMouseLeave={() => setHoveredCanalIndex(null)}
+                                    style={{ cursor: 'pointer' }}
+                                  >
+                                    <Cell 
+                                      fill={segment.color}
+                                      style={{
+                                        filter: hoveredCanalIndex === segment.index ? `url(#shadow-${segment.index})` : 'none',
+                                        transform: hoveredCanalIndex === segment.index ? 'scale(1.05)' : 'scale(1)',
+                                        transformOrigin: 'center',
+                                        transition: 'all 0.3s ease-out',
+                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
+                                        cursor: 'pointer'
+                                      }}
+                                    />
+                                  </Pie>
+                                ))
+                              })()}
                             </PieChart>
                           </ResponsiveContainer>
                           {/* Centro do gráfico com informações dinâmicas */}
