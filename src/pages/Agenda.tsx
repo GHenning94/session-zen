@@ -277,7 +277,7 @@ const Agenda = () => {
         <div className="space-y-3">
           {/* Date Navigation - Desktop layout */}
           <div className="hidden md:flex items-center justify-between gap-2">
-            {/* Left side - Period navigation arrows */}
+            {/* Left side - Period navigation arrows + Hoje */}
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"
@@ -297,6 +297,15 @@ const Agenda = () => {
               >
                 <ChevronRight className="h-5 w-5" />
               </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setSelectedDate(new Date())}
+                disabled={isLoading}
+              >
+                Hoje
+              </Button>
             </div>
             
             {/* Center - Date display */}
@@ -308,7 +317,7 @@ const Agenda = () => {
               </div>
             </div>
             
-            {/* Right side - Today, Google Calendar, View Selector */}
+            {/* Right side - Google Calendar, View Selector */}
             <div className="flex items-center gap-2">
               {/* Google Calendar Integration */}
               {isGoogleConnected ? (
@@ -350,16 +359,6 @@ const Agenda = () => {
                   Conectar Google Calendar
                 </Button>
               )}
-
-              <Button
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-                onClick={() => setSelectedDate(new Date())}
-                disabled={isLoading}
-              >
-                Hoje
-              </Button>
 
               {/* View Selector */}
               <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')} className="shrink-0">

@@ -1835,11 +1835,12 @@ const Dashboard = () => {
                             
                             receitaPorCanal.forEach((item, index) => {
                               const angle = (item.valor / total) * 360
+                              const isFirst = index === 0
                               const isLast = index === receitaPorCanal.length - 1
                               segments.push({
                                 startAngle: currentAngle,
-                                // Last segment should NOT have overlap to avoid double-bar appearance
-                                endAngle: currentAngle + angle + (isLast ? 0 : overlapDeg),
+                                // Only add overlap for middle segments, not first or last
+                                endAngle: currentAngle + angle + (isFirst || isLast ? 0 : overlapDeg),
                                 color: item.color,
                                 index
                               })

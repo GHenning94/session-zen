@@ -680,14 +680,14 @@ export default function Sessoes() {
   return (
     <Layout>
       <div className="md:p-6">
-        {/* Header - Mobile optimized */}
-        <div className="flex flex-col gap-3 mb-4 md:mb-6">
+        {/* Header - Mobile optimized, buttons on same line as title on desktop */}
+        <div className="flex flex-col gap-3 mb-4 md:mb-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 md:h-6 md:w-6 text-primary shrink-0" />
             <h1 className="text-xl md:text-2xl font-bold">Histórico de Sessões</h1>
           </div>
           
-          <div className="flex flex-wrap gap-2 md:justify-end">
+          <div className="flex flex-wrap gap-2 md:flex-nowrap">
             <Button
               onClick={() => setNewSessionModalOpen(true)}
               className="bg-gradient-primary hover:opacity-90 flex-1 sm:flex-none"
@@ -781,9 +781,9 @@ export default function Sessoes() {
                   <ChevronDown className={cn("h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")} />
                 </button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
-                  <div className="md:col-span-2 lg:col-span-1">
+              <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3 md:gap-4">
+                  <div className="col-span-2 md:col-span-1">
                     <Label htmlFor="search" className="text-xs">Buscar</Label>
                     <Input
                       id="search"
@@ -826,7 +826,7 @@ export default function Sessoes() {
                   </div>
 
                   <div>
-                    <Label htmlFor="google-sync-filter" className="text-xs">Sincronização</Label>
+                    <Label htmlFor="google-sync-filter" className="text-xs">Sincronia</Label>
                     <Select value={filters.googleSync} onValueChange={(value) => setFilters(prev => ({ ...prev, googleSync: value }))}>
                       <SelectTrigger className="h-9 text-sm">
                         <SelectValue placeholder="Todas" />
@@ -837,7 +837,6 @@ export default function Sessoes() {
                         <SelectItem value="importado">Importado</SelectItem>
                         <SelectItem value="espelhado">Espelhado</SelectItem>
                         <SelectItem value="enviado">Enviado</SelectItem>
-                        <SelectItem value="cancelado">Cancelado</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -862,6 +861,27 @@ export default function Sessoes() {
                       onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
                       className="h-9 text-sm"
                     />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Limpar</Label>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full h-9"
+                      onClick={() => setFilters({
+                        status: '',
+                        client: '',
+                        startDate: '',
+                        endDate: '',
+                        search: '',
+                        sessionType: '',
+                        googleSync: ''
+                      })}
+                      disabled={activeFiltersCount === 0}
+                    >
+                      Limpar Filtros
+                    </Button>
                   </div>
                 </div>
               </CollapsibleContent>
