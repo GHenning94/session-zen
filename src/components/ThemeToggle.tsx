@@ -54,7 +54,7 @@ export const ThemeToggle = () => {
       size="default"
       onClick={handleThemeToggle}
       disabled={isChanging}
-      className="w-[180px] justify-start gap-2"
+      className="w-full sm:w-[200px] h-10 justify-start gap-2"
     >
       {isChanging ? (
         <Loader2 className="h-4 w-4 animate-spin" />

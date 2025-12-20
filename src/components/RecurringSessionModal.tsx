@@ -289,15 +289,6 @@ export const RecurringSessionModal = ({
                 />
               )}
             </div>
-
-            <div className="col-span-2 flex items-center justify-between">
-              <Label htmlFor="google_sync">Sincronizar com Google Calendar</Label>
-              <Switch
-                id="google_sync"
-                checked={formData.google_calendar_sync}
-                onCheckedChange={(checked) => setFormData({ ...formData, google_calendar_sync: checked })}
-              />
-            </div>
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4">

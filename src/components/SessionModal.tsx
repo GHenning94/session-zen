@@ -98,7 +98,7 @@ export const SessionModal = ({
       
       const { data, error } = await supabase
         .from('recurring_sessions')
-        .select('id, horario, recurrence_type, valor, dia_da_semana, status')
+        .select('id, horario, recurrence_type, recurrence_interval, valor, dia_da_semana, status, recurrence_end_date, recurrence_count')
         .eq('client_id', formData.client_id)
         .eq('status', 'ativa')
         .order('created_at', { ascending: false })
@@ -108,6 +108,37 @@ export const SessionModal = ({
     },
     enabled: !!formData.client_id && open && sessionType === 'recorrente'
   })
+
+  // Estado para edição de recorrência
+  const [recurringEditData, setRecurringEditData] = useState({
+    recurrence_type: 'semanal' as string,
+    recurrence_interval: 1,
+    dia_da_semana: 1,
+    horario: '',
+    valor: '',
+    end_type: 'never' as 'never' | 'date' | 'count',
+    recurrence_end_date: '',
+    recurrence_count: undefined as number | undefined
+  })
+
+  // Carregar dados da recorrência selecionada
+  useEffect(() => {
+    if (formData.recurring_session_id && recurringSessionsList.length > 0) {
+      const selectedRecurring = recurringSessionsList.find((r: any) => r.id === formData.recurring_session_id)
+      if (selectedRecurring) {
+        setRecurringEditData({
+          recurrence_type: selectedRecurring.recurrence_type,
+          recurrence_interval: selectedRecurring.recurrence_interval || 1,
+          dia_da_semana: selectedRecurring.dia_da_semana ?? 1,
+          horario: selectedRecurring.horario?.slice(0, 5) || '',
+          valor: selectedRecurring.valor?.toString() || '',
+          end_type: selectedRecurring.recurrence_end_date ? 'date' : selectedRecurring.recurrence_count ? 'count' : 'never',
+          recurrence_end_date: selectedRecurring.recurrence_end_date || '',
+          recurrence_count: selectedRecurring.recurrence_count || undefined
+        })
+      }
+    }
+  }, [formData.recurring_session_id, recurringSessionsList])
 
   // Inicializar formulário
   useEffect(() => {
@@ -205,6 +236,40 @@ export const SessionModal = ({
     setIsLoading(true)
     
     try {
+      // Se for edição de recorrência, atualizar a recorrência primeiro
+      if (sessionType === 'recorrente' && !session && formData.recurring_session_id) {
+        const recurringUpdateData = {
+          recurrence_type: recurringEditData.recurrence_type,
+          recurrence_interval: recurringEditData.recurrence_interval,
+          dia_da_semana: recurringEditData.dia_da_semana,
+          horario: recurringEditData.horario ? `${recurringEditData.horario}:00` : null,
+          valor: recurringEditData.valor ? parseFloat(recurringEditData.valor) : null,
+          recurrence_end_date: recurringEditData.end_type === 'date' && recurringEditData.recurrence_end_date 
+            ? recurringEditData.recurrence_end_date 
+            : null,
+          recurrence_count: recurringEditData.end_type === 'count' ? recurringEditData.recurrence_count : null
+        }
+
+        const { error: recurringError } = await supabase
+          .from('recurring_sessions')
+          .update(recurringUpdateData)
+          .eq('id', formData.recurring_session_id)
+
+        if (recurringError) throw recurringError
+
+        toast({
+          title: "Recorrência atualizada",
+          description: "As configurações da sessão recorrente foram atualizadas.",
+        })
+
+        // Disparar evento para atualizar página de recorrências
+        window.dispatchEvent(new CustomEvent('recurringSessionUpdated'))
+        
+        onSuccess?.()
+        onOpenChange(false)
+        return
+      }
+
       // Reativar cliente se necessário
       const selectedClient = clients.find((c: any) => c.id === formData.client_id)
       if (selectedClient && !selectedClient.ativo) {
@@ -428,46 +493,188 @@ export const SessionModal = ({
               </div>
             )}
 
-            {/* Recorrência (se tipo = recorrente) - apenas para editar, não criar */}
+            {/* Recorrência (se tipo = recorrente) - edição de recorrência existente */}
             {sessionType === 'recorrente' && !session && (
-              <div className="col-span-2">
-                <Label htmlFor="recurring_session_id">Sessão Recorrente *</Label>
-                {recurringSessionsList.length > 0 ? (
-                  <Select
-                    value={formData.recurring_session_id}
-                    onValueChange={(value) => setFormData({ ...formData, recurring_session_id: value })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione uma recorrência" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {recurringSessionsList.map((rec: any) => {
-                        const recurrenceLabels: Record<string, string> = {
-                          'diaria': 'Diária',
-                          'semanal': 'Semanal',
-                          'quinzenal': 'Quinzenal',
-                          'mensal': 'Mensal'
-                        }
-                        const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
-                        return (
-                          <SelectItem key={rec.id} value={rec.id}>
-                            {recurrenceLabels[rec.recurrence_type] || rec.recurrence_type} - {rec.horario?.slice(0, 5)}
-                            {rec.dia_da_semana !== null && ` (${dayLabels[rec.dia_da_semana]})`}
-                          </SelectItem>
-                        )
-                      })}
-                    </SelectContent>
-                  </Select>
-                ) : (
-                  <div className="p-4 border rounded-md bg-muted/50 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      {formData.client_id 
-                        ? "Nenhuma sessão recorrente ativa para este cliente."
-                        : "Selecione um cliente para ver suas recorrências."}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Crie sessões recorrentes na página de Sessões Recorrentes.
-                    </p>
+              <div className="col-span-2 space-y-4">
+                <div>
+                  <Label htmlFor="recurring_session_id">Sessão Recorrente *</Label>
+                  {recurringSessionsList.length > 0 ? (
+                    <Select
+                      value={formData.recurring_session_id}
+                      onValueChange={(value) => setFormData({ ...formData, recurring_session_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione uma recorrência para editar" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {recurringSessionsList.map((rec: any) => {
+                          const recurrenceLabels: Record<string, string> = {
+                            'diaria': 'Diária',
+                            'semanal': 'Semanal',
+                            'quinzenal': 'Quinzenal',
+                            'mensal': 'Mensal'
+                          }
+                          const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+                          return (
+                            <SelectItem key={rec.id} value={rec.id}>
+                              {recurrenceLabels[rec.recurrence_type] || rec.recurrence_type} - {rec.horario?.slice(0, 5)}
+                              {rec.dia_da_semana !== null && ` (${dayLabels[rec.dia_da_semana]})`}
+                            </SelectItem>
+                          )
+                        })}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="p-4 border rounded-md bg-muted/50 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        {formData.client_id 
+                          ? "Nenhuma sessão recorrente ativa para este cliente."
+                          : "Selecione um cliente para ver suas recorrências."}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Crie sessões recorrentes na página de Sessões Recorrentes.
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Campos de edição da recorrência selecionada */}
+                {formData.recurring_session_id && (
+                  <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
+                    <h4 className="font-medium text-sm">Editar Recorrência</h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Tipo de Recorrência</Label>
+                        <Select
+                          value={recurringEditData.recurrence_type}
+                          onValueChange={(value) => setRecurringEditData({ ...recurringEditData, recurrence_type: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diaria">Diária</SelectItem>
+                            <SelectItem value="semanal">Semanal</SelectItem>
+                            <SelectItem value="quinzenal">Quinzenal</SelectItem>
+                            <SelectItem value="mensal">Mensal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Repetir a cada</Label>
+                        <div className="flex items-center gap-2">
+                          <Input
+                            type="number"
+                            min="1"
+                            value={recurringEditData.recurrence_interval}
+                            onChange={(e) => setRecurringEditData({ ...recurringEditData, recurrence_interval: parseInt(e.target.value) || 1 })}
+                            className="w-20"
+                          />
+                          <span className="text-sm text-muted-foreground">
+                            {recurringEditData.recurrence_type === 'diaria' && 'dia(s)'}
+                            {recurringEditData.recurrence_type === 'semanal' && 'semana(s)'}
+                            {recurringEditData.recurrence_type === 'quinzenal' && 'quinzena(s)'}
+                            {recurringEditData.recurrence_type === 'mensal' && 'mês(es)'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {recurringEditData.recurrence_type === 'semanal' && (
+                        <div className="col-span-2">
+                          <Label>Dia da Semana</Label>
+                          <Select
+                            value={recurringEditData.dia_da_semana?.toString()}
+                            onValueChange={(value) => setRecurringEditData({ ...recurringEditData, dia_da_semana: parseInt(value) })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">Domingo</SelectItem>
+                              <SelectItem value="1">Segunda</SelectItem>
+                              <SelectItem value="2">Terça</SelectItem>
+                              <SelectItem value="3">Quarta</SelectItem>
+                              <SelectItem value="4">Quinta</SelectItem>
+                              <SelectItem value="5">Sexta</SelectItem>
+                              <SelectItem value="6">Sábado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+
+                      <div>
+                        <Label>Horário</Label>
+                        <Input
+                          type="time"
+                          value={recurringEditData.horario}
+                          onChange={(e) => setRecurringEditData({ ...recurringEditData, horario: e.target.value })}
+                        />
+                      </div>
+
+                      <div>
+                        <Label>Valor (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={recurringEditData.valor}
+                          onChange={(e) => setRecurringEditData({ ...recurringEditData, valor: e.target.value })}
+                        />
+                      </div>
+
+                      <div className="col-span-2 space-y-3">
+                        <Label>Término da Recorrência</Label>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            variant={recurringEditData.end_type === 'never' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setRecurringEditData({ ...recurringEditData, end_type: 'never' })}
+                          >
+                            Nunca
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={recurringEditData.end_type === 'date' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setRecurringEditData({ ...recurringEditData, end_type: 'date' })}
+                          >
+                            Em uma data
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={recurringEditData.end_type === 'count' ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => setRecurringEditData({ ...recurringEditData, end_type: 'count' })}
+                          >
+                            Após X ocorrências
+                          </Button>
+                        </div>
+
+                        {recurringEditData.end_type === 'date' && (
+                          <Input
+                            type="date"
+                            value={recurringEditData.recurrence_end_date}
+                            onChange={(e) => setRecurringEditData({ ...recurringEditData, recurrence_end_date: e.target.value })}
+                          />
+                        )}
+
+                        {recurringEditData.end_type === 'count' && (
+                          <Input
+                            type="number"
+                            min="1"
+                            placeholder="Número de ocorrências"
+                            value={recurringEditData.recurrence_count || ''}
+                            onChange={(e) => setRecurringEditData({ 
+                              ...recurringEditData, 
+                              recurrence_count: e.target.value ? parseInt(e.target.value) : undefined 
+                            })}
+                          />
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>

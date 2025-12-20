@@ -39,7 +39,9 @@ export default function Pacotes() {
 
       if (error) throw error;
       return data as (Package & { clients: { id: string; nome: string } })[];
-    }
+    },
+    staleTime: 0,
+    refetchOnMount: 'always'
   });
 
   // Fetch sessions count per package
@@ -63,8 +65,22 @@ export default function Pacotes() {
       });
       return counts;
     },
-    enabled: !!packages && packages.length > 0
+    enabled: !!packages && packages.length > 0,
+    staleTime: 0,
+    refetchOnMount: 'always'
   });
+
+  // Refetch data when page is focused
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refetch();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [refetch]);
 
   // Check for packages without sessions and send notification - only after package creation
   useEffect(() => {
@@ -80,7 +96,6 @@ export default function Pacotes() {
         
         // Only process recently created packages
         if (pkg.created_at < fiveMinutesAgo) continue;
-        
         const createdSessions = sessionCounts[pkg.id] || 0;
         const hasMissingPaymentMethod = !(pkg as any).metodo_pagamento || (pkg as any).metodo_pagamento === 'A definir';
         
