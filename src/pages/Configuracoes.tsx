@@ -826,10 +826,12 @@ const Configuracoes = () => {
                   <p className="text-sm text-muted-foreground mb-2">
                     Personalize a cor principal da plataforma
                   </p>
-                  <Button variant="outline" onClick={() => setShowColorPicker(true)}>
-                    <Palette className="w-4 h-4 mr-2" />
-                    Personalizar Cores
-                  </Button>
+                  <div>
+                    <Button variant="outline" onClick={() => setShowColorPicker(true)} className="w-full sm:w-auto h-10">
+                      <Palette className="w-4 h-4 mr-2" />
+                      Personalizar Cores
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1029,66 +1031,49 @@ const Configuracoes = () => {
                       onCheckedChange={(checked) => handleSettingsChange('relatorio_semanal', checked)}
                     />
                   </div>
+
+                  {/* Google Calendar Sync - dentro do card de notificações */}
+                  <div className="border-t pt-4 mt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="flex items-center gap-2">
+                          <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                          Sincronização Google Calendar
+                        </Label>
+                        <p className="text-sm text-muted-foreground">
+                          Verifica conflitos e eventos cancelados a cada 15 minutos
+                        </p>
+                      </div>
+                      <Switch
+                        checked={isAutoSyncEnabled}
+                        onCheckedChange={toggleAutoSync}
+                        disabled={!localStorage.getItem('google_access_token')}
+                      />
+                    </div>
+
+                    {!localStorage.getItem('google_access_token') && (
+                      <p className="text-sm text-muted-foreground italic mt-2">
+                        Conecte-se ao Google Calendar na página de Integrações para ativar esta funcionalidade.
+                      </p>
+                    )}
+
+                    {lastSyncResult && (
+                      <div className="p-3 bg-muted rounded-lg text-sm mt-3">
+                        <p className="font-medium mb-1">Última sincronização:</p>
+                        <p className="text-muted-foreground">
+                          {lastSyncResult.timestamp.toLocaleString('pt-BR')}
+                        </p>
+                        <p className="text-muted-foreground">
+                          {lastSyncResult.mirroredUpdated} atualizada(s), {lastSyncResult.conflicts} conflito(s), {lastSyncResult.cancelled} cancelada(s)
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </div>
                 
                 <Button onClick={handleSave} disabled={isLoading}>
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Preferências
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Card de sincronização Google Calendar */}
-            <Card className="shadow-soft">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <RefreshCw className={isSyncing ? "animate-spin" : ""} /> Google Calendar - Sincronização Automática
-                </CardTitle>
-                <CardDescription>
-                  Sincronize automaticamente eventos espelhados e detecte cancelamentos
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label>Sincronização automática</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Verifica conflitos e eventos cancelados a cada 15 minutos
-                    </p>
-                  </div>
-                  <Switch
-                    checked={isAutoSyncEnabled}
-                    onCheckedChange={toggleAutoSync}
-                    disabled={!localStorage.getItem('google_access_token')}
-                  />
-                </div>
-
-                {!localStorage.getItem('google_access_token') && (
-                  <p className="text-sm text-muted-foreground italic">
-                    Conecte-se ao Google Calendar na página de Integrações para ativar esta funcionalidade.
-                  </p>
-                )}
-
-                {lastSyncResult && (
-                  <div className="p-3 bg-muted rounded-lg text-sm">
-                    <p className="font-medium mb-1">Última sincronização:</p>
-                    <p className="text-muted-foreground">
-                      {lastSyncResult.timestamp.toLocaleString('pt-BR')}
-                    </p>
-                    <p className="text-muted-foreground">
-                      {lastSyncResult.mirroredUpdated} atualizada(s), {lastSyncResult.conflicts} conflito(s), {lastSyncResult.cancelled} cancelada(s)
-                    </p>
-                  </div>
-                )}
-
-                <Button 
-                  variant="outline" 
-                  onClick={manualSync} 
-                  disabled={isSyncing || !localStorage.getItem('google_access_token')}
-                  className="w-full"
-                >
-                  <RefreshCw className={`w-4 h-4 mr-2 ${isSyncing ? 'animate-spin' : ''}`} />
-                  {isSyncing ? 'Sincronizando...' : 'Sincronizar agora'}
                 </Button>
               </CardContent>
             </Card>

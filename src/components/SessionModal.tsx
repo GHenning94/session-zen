@@ -90,6 +90,25 @@ export const SessionModal = ({
     enabled: !!formData.client_id && open && sessionType === 'pacote'
   })
 
+  // Carregar sessões recorrentes ativas do cliente
+  const { data: recurringSessionsList = [] } = useQuery({
+    queryKey: ['recurring-sessions', formData.client_id],
+    queryFn: async () => {
+      if (!formData.client_id) return []
+      
+      const { data, error } = await supabase
+        .from('recurring_sessions')
+        .select('id, horario, recurrence_type, valor, dia_da_semana, status')
+        .eq('client_id', formData.client_id)
+        .eq('status', 'ativa')
+        .order('created_at', { ascending: false })
+      
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!formData.client_id && open && sessionType === 'recorrente'
+  })
+
   // Inicializar formulário
   useEffect(() => {
     if (open) {
@@ -160,6 +179,15 @@ export const SessionModal = ({
         variant: "destructive",
         title: "Pacote obrigatório",
         description: "Selecione um pacote para esta sessão.",
+      })
+      return
+    }
+
+    if (sessionType === 'recorrente' && !session && !formData.recurring_session_id) {
+      toast({
+        variant: "destructive",
+        title: "Recorrência obrigatória",
+        description: "Selecione uma sessão recorrente existente ou crie uma na página de Sessões Recorrentes.",
       })
       return
     }
@@ -397,6 +425,51 @@ export const SessionModal = ({
                     ))}
                   </SelectContent>
                 </Select>
+              </div>
+            )}
+
+            {/* Recorrência (se tipo = recorrente) - apenas para editar, não criar */}
+            {sessionType === 'recorrente' && !session && (
+              <div className="col-span-2">
+                <Label htmlFor="recurring_session_id">Sessão Recorrente *</Label>
+                {recurringSessionsList.length > 0 ? (
+                  <Select
+                    value={formData.recurring_session_id}
+                    onValueChange={(value) => setFormData({ ...formData, recurring_session_id: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione uma recorrência" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {recurringSessionsList.map((rec: any) => {
+                        const recurrenceLabels: Record<string, string> = {
+                          'diaria': 'Diária',
+                          'semanal': 'Semanal',
+                          'quinzenal': 'Quinzenal',
+                          'mensal': 'Mensal'
+                        }
+                        const dayLabels = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+                        return (
+                          <SelectItem key={rec.id} value={rec.id}>
+                            {recurrenceLabels[rec.recurrence_type] || rec.recurrence_type} - {rec.horario?.slice(0, 5)}
+                            {rec.dia_da_semana !== null && ` (${dayLabels[rec.dia_da_semana]})`}
+                          </SelectItem>
+                        )
+                      })}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <div className="p-4 border rounded-md bg-muted/50 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      {formData.client_id 
+                        ? "Nenhuma sessão recorrente ativa para este cliente."
+                        : "Selecione um cliente para ver suas recorrências."}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Crie sessões recorrentes na página de Sessões Recorrentes.
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 

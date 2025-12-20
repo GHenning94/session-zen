@@ -315,8 +315,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] p-0 flex flex-col min-h-0">
-        {/* Header com gradiente - mais compacto */}
-        <div className="bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-4 border-b">
+        {/* Header - mais compacto */}
+        <div className="bg-muted/30 p-4 border-b">
           <DialogTitle className="flex items-center gap-2 text-xl">
             <Plus className="w-5 h-5 text-primary" />
             {editingClient ? "Editar Paciente" : "Adicionar Paciente"}
