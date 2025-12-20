@@ -682,9 +682,14 @@ export default function Sessoes() {
       <div className="md:p-6">
         {/* Header - Mobile optimized, buttons on same line as title on desktop */}
         <div className="flex flex-col gap-3 mb-4 md:mb-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="h-5 w-5 md:h-6 md:w-6 text-primary shrink-0" />
-            <h1 className="text-xl md:text-2xl font-bold">Histórico de Sessões</h1>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 md:h-6 md:w-6 text-primary shrink-0" />
+              <h1 className="text-xl md:text-2xl font-bold">Histórico de Sessões</h1>
+            </div>
+            <p className="text-sm text-muted-foreground hidden md:block">
+              Gerencie e acompanhe todas as suas sessões, anotações e evoluções
+            </p>
           </div>
           
           <div className="flex flex-wrap gap-2 md:flex-nowrap">
