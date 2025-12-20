@@ -684,9 +684,9 @@ const pastPayments = filteredPayments.filter(item => {
                   <ChevronDown className={cn("h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")} />
                 </button>
               </CollapsibleTrigger>
-              <CollapsibleContent className="pt-4">
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-3 md:gap-4">
-                  <div className="md:col-span-2">
+              <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-2 md:grid-cols-7 gap-3 md:gap-4">
+                  <div className="col-span-2 md:col-span-2">
                     <label className="text-xs md:text-sm font-medium mb-1 block">Buscar</label>
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -762,20 +762,24 @@ const pastPayments = filteredPayments.filter(item => {
                     </Select>
                   </div>
 
-                  <div className="hidden lg:block">
-                    <label className="text-xs md:text-sm font-medium mb-1 block">Sincronização</label>
-                    <Select value={filterGoogleSync} onValueChange={setFilterGoogleSync}>
-                      <SelectTrigger className="w-full h-9 text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="todos">Todas</SelectItem>
-                        <SelectItem value="local">Local</SelectItem>
-                        <SelectItem value="importado">Importado</SelectItem>
-                        <SelectItem value="espelhado">Espelhado</SelectItem>
-                        <SelectItem value="enviado">Enviado</SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div>
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Limpar</label>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full h-9"
+                      onClick={() => {
+                        setFilterPeriod('todos')
+                        setFilterStatus('todos')
+                        setFilterMethod('todos')
+                        setFilterName('')
+                        setFilterPaymentType('todos')
+                        setFilterGoogleSync('todos')
+                      }}
+                      disabled={activeFiltersCount === 0}
+                    >
+                      Limpar Filtros
+                    </Button>
                   </div>
                 </div>
               </CollapsibleContent>
