@@ -7,13 +7,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { formatTimeForDatabase } from "@/lib/utils"
-import { CalendarIcon, Package, Repeat, User, DollarSign, Clock, FileText } from "lucide-react"
+import { CalendarIcon, Package, Repeat, User, DollarSign, Clock, FileText, Info } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 
 interface SessionModalProps {
@@ -371,7 +372,7 @@ export const SessionModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {getSessionTypeIcon()}
-            {session ? 'Editar Sessão' : 'Nova Sessão'}
+            {session ? (isEditingRecurringSession ? 'Editar Sessão Recorrente' : 'Editar Sessão') : 'Nova Sessão'}
           </DialogTitle>
         </DialogHeader>
 
@@ -397,12 +398,12 @@ export const SessionModal = ({
             {isEditingRecurringSession ? (
               <>
                 {/* Aviso sobre edição limitada */}
-                <div className="col-span-2 p-4 border rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">
-                    <Repeat className="h-4 w-4 inline mr-2" />
-                    Esta é uma sessão recorrente. Para editar as configurações de recorrência, acesse a página de <strong>Sessões Recorrentes</strong>.
-                  </p>
-                </div>
+                <Alert className="col-span-2 bg-muted/50">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Esta é uma sessão recorrente. Para editar cliente, data, horário, valor ou método de pagamento, acesse a página de <strong>Sessões Recorrentes</strong>.
+                  </AlertDescription>
+                </Alert>
 
                 {/* Status */}
                 <div>
@@ -417,15 +418,18 @@ export const SessionModal = ({
                     <SelectContent>
                       <SelectItem value="agendada">Agendada</SelectItem>
                       <SelectItem value="realizada">Realizada</SelectItem>
-                      <SelectItem value="cancelada">Cancelada</SelectItem>
                       <SelectItem value="faltou">Falta</SelectItem>
+                      <SelectItem value="cancelada">Cancelada</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {/* Observações */}
+                {/* Espaço vazio para alinhar grid */}
+                <div className="hidden sm:block" />
+
+                {/* Anotações */}
                 <div className="col-span-2">
-                  <Label htmlFor="anotacoes">Observações</Label>
+                  <Label htmlFor="anotacoes">Anotações</Label>
                   <Textarea
                     id="anotacoes"
                     placeholder="Observações sobre a sessão..."
