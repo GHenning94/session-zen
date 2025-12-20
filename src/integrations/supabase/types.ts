@@ -1016,6 +1016,7 @@ export type Database = {
           google_calendar_sync: boolean | null
           horario: string
           id: string
+          metodo_pagamento: string | null
           parent_session_id: string | null
           recurrence_count: number | null
           recurrence_end_date: string | null
@@ -1033,6 +1034,7 @@ export type Database = {
           google_calendar_sync?: boolean | null
           horario: string
           id?: string
+          metodo_pagamento?: string | null
           parent_session_id?: string | null
           recurrence_count?: number | null
           recurrence_end_date?: string | null
@@ -1050,6 +1052,7 @@ export type Database = {
           google_calendar_sync?: boolean | null
           horario?: string
           id?: string
+          metodo_pagamento?: string | null
           parent_session_id?: string | null
           recurrence_count?: number | null
           recurrence_end_date?: string | null

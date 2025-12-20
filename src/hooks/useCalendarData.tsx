@@ -312,6 +312,17 @@ export const useCalendarData = () => {
     }
   }, [user, loadData])
 
+  // Refetch on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        loadData()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [user, loadData])
+
   return {
     // Dados
     sessions,

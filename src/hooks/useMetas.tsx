@@ -140,6 +140,17 @@ export const useMetas = () => {
     };
   }, [user]);
 
+  // Refetch on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        loadMetas();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user]);
+
   const createMeta = async (tipo: MetaTipo, valor_meta: number) => {
     if (!user) return;
 

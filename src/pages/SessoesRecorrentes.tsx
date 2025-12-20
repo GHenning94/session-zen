@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Layout } from "@/components/Layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -63,8 +63,21 @@ export default function SessoesRecorrentes() {
       if (error) throw error
       return data || []
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 0,
+    refetchOnMount: 'always'
   })
+
+  // Refetch on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        refetch()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [user, refetch])
 
   // Carregar clientes
   const { data: clients = [] } = useQuery({
