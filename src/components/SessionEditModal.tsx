@@ -144,6 +144,9 @@ export const SessionEditModal = ({
 
   // Verificar se a sessão é somente leitura (importada do Google)
   const isReadOnly = session?.google_sync_type === 'importado'
+  
+  // Verificar se é uma sessão recorrente (edição limitada a status e anotações)
+  const isRecurringSession = !!session?.recurring_session_id
 
   const handleSave = async () => {
     if (!session) return
@@ -198,6 +201,28 @@ export const SessionEditModal = ({
         toast({
           title: "Sessão atualizada",
           description: "Valor e método de pagamento atualizados com sucesso.",
+        })
+
+        onSessionUpdated()
+        onOpenChange(false)
+        return
+      }
+
+      // Se for sessão recorrente, só atualiza status e anotações
+      if (isRecurringSession) {
+        const { error } = await supabase
+          .from('sessions')
+          .update({
+            status: formData.status,
+            anotacoes: formData.anotacoes || null
+          })
+          .eq('id', session.id)
+
+        if (error) throw error
+
+        toast({
+          title: "Sessão atualizada",
+          description: "Status e anotações atualizados com sucesso.",
         })
 
         onSessionUpdated()
@@ -355,6 +380,73 @@ export const SessionEditModal = ({
                   <SelectItem value="dinheiro">Dinheiro</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
+              <Button
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                disabled={loading}
+              >
+                Cancelar
+              </Button>
+              <Button onClick={handleSave} disabled={loading}>
+                {loading ? 'Salvando...' : 'Salvar'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    )
+  }
+
+  // Modal para sessões recorrentes (edição limitada a status e anotações)
+  if (isRecurringSession) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[450px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Repeat className="h-4 w-4" />
+              Editar Sessão Recorrente
+            </DialogTitle>
+          </DialogHeader>
+          
+          <Alert className="bg-muted/50">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Esta é uma sessão recorrente. Para editar cliente, data, horário, valor ou método de pagamento, acesse a página de <strong>Sessões Recorrentes</strong>.
+            </AlertDescription>
+          </Alert>
+
+          <div className="space-y-4 mt-4">
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <Select
+                value={formData.status}
+                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="agendada">Agendada</SelectItem>
+                  <SelectItem value="realizada">Realizada</SelectItem>
+                  <SelectItem value="faltou">Falta</SelectItem>
+                  <SelectItem value="cancelada">Cancelada</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="anotacoes">Anotações</Label>
+              <Textarea
+                id="anotacoes"
+                value={formData.anotacoes}
+                onChange={(e) => setFormData(prev => ({ ...prev, anotacoes: e.target.value }))}
+                placeholder="Observações sobre a sessão..."
+                rows={3}
+              />
             </div>
 
             <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
