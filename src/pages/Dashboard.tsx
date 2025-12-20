@@ -1889,15 +1889,13 @@ const Dashboard = () => {
             {/* Top 5 Clientes que Mais Pagam */}
             <Card className="shadow-soft flex-1">
               <CardHeader className="pb-2">
-                <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="w-5 h-5 text-primary" />
-                    Top 5 {clientTermPlural}
-                  </CardTitle>
-                  <CardDescription className="sm:ml-2">
-                    <span className="hidden sm:inline">| </span>{clientTermPlural} que mais geraram receita
-                  </CardDescription>
-                </div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  Top 5 {clientTermPlural}
+                </CardTitle>
+                <CardDescription>
+                  {clientTermPlural} que mais geraram receita
+                </CardDescription>
               </CardHeader>
               <CardContent className="h-full">
                 <div className="space-y-4">
