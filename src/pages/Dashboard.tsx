@@ -1398,7 +1398,7 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card>
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-primary" />
                           <CardTitle>Receita Financeira</CardTitle>
@@ -1409,7 +1409,7 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
                           <Button 
                             variant={chartPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1592,7 +1592,7 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-success" />
                           <CardTitle>Ticket Médio</CardTitle>
@@ -1603,7 +1603,7 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Ticket médio por sessão ao longo do tempo
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
                           <Button 
                             variant={ticketPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
@@ -1755,7 +1755,7 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
@@ -1766,7 +1766,7 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
+                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
                             size="sm"
