@@ -1888,6 +1888,9 @@ const Dashboard = () => {
                                       fill={segment.color}
                                       style={{
                                         filter: hoveredCanalIndex === segment.index ? `url(#shadow-${segment.index})` : 'none',
+                                        transform: hoveredCanalIndex === segment.index ? 'scale(1.08)' : 'scale(1)',
+                                        transformOrigin: 'center',
+                                        transition: 'transform 0.2s ease-out, opacity 0.2s ease-out',
                                         opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
                                         cursor: 'pointer'
                                       }}
