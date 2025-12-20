@@ -58,6 +58,7 @@ const [sessions, setSessions] = useState<any[]>([])
 const [clients, setClients] = useState<any[]>([])
 const [profiles, setProfiles] = useState<any[]>([])
 const [payments, setPayments] = useState<any[]>([])
+const [recurringSessions, setRecurringSessions] = useState<any[]>([])
 const [isLoading, setIsLoading] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
@@ -100,11 +101,17 @@ const [isLoading, setIsLoading] = useState(false)
         .select(`
           id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
           observacoes, created_at, package_id, session_id, client_id,
-          packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio),
+          packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio, metodo_pagamento),
           sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type)
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
+      
+      // Carregar sessões recorrentes para obter método de pagamento
+      const { data: recurringSessionsData } = await supabase
+        .from('recurring_sessions')
+        .select('id, metodo_pagamento')
+        .eq('user_id', user.id)
       
       if (paymentsError) {
         console.error('Erro ao carregar pagamentos:', paymentsError)
@@ -141,6 +148,9 @@ const [isLoading, setIsLoading] = useState(false)
       } else {
         setProfiles(profileData || [])
       }
+      
+      // Armazenar sessões recorrentes para referência de método de pagamento
+      setRecurringSessions(recurringSessionsData || [])
     } catch (error) {
       console.error('Erro:', error)
     } finally {
@@ -150,6 +160,17 @@ const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
     loadData()
+  }, [user])
+
+  // Refetch on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        loadData()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [user])
 
   // Check for highlighted payment from URL params
@@ -180,6 +201,24 @@ const getSessionPayments = () => {
     const effective = getPaymentEffectiveDate(p)
     const effDateStr = effective.toISOString().split('T')[0]
     const time = isPackage ? '00:00:00' : (p.sessions?.horario || '00:00:00')
+    
+    // Para sessões recorrentes, buscar o método de pagamento da configuração de recorrência
+    let method = p.metodo_pagamento || 'A definir'
+    if (!isPackage && p.sessions) {
+      // Primeiro tenta pegar da sessão
+      method = p.sessions.metodo_pagamento || 'A definir'
+      
+      // Se a sessão é recorrente e não tem método definido, busca da recorrência
+      if (p.sessions.recurring_session_id && method === 'A definir') {
+        const recurring = recurringSessions.find(r => r.id === p.sessions.recurring_session_id)
+        if (recurring?.metodo_pagamento && recurring.metodo_pagamento !== 'A definir') {
+          method = recurring.metodo_pagamento
+        }
+      }
+    } else if (isPackage && p.packages) {
+      // Para pacotes, usar o método do pacote
+      method = p.packages.metodo_pagamento || p.metodo_pagamento || 'A definir'
+    }
 
     return {
       id: p.id,
@@ -189,7 +228,7 @@ const getSessionPayments = () => {
       time,
       value: p.valor || 0,
       status: p.status || 'pendente',
-      method: p.metodo_pagamento || p.sessions?.metodo_pagamento || 'A definir',
+      method,
       session_id: p.session_id,
       session_status: p.sessions?.status,
       session_valor: p.sessions?.valor,

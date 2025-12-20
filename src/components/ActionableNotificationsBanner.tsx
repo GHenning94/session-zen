@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, AlertCircle, CreditCard, Shield, EyeOff } from 'lucide-react';
+import { X, CreditCard, Shield, EyeOff, Repeat } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { use2FA } from '@/hooks/use2FA';
 import { supabase } from '@/integrations/supabase/client';
@@ -79,23 +79,45 @@ export const ActionableNotificationsBanner = () => {
       });
     }
 
-    // Check for pending payments
-    if (user && !hidden.includes('pending-payments')) {
+    // Check for sessions without payment method
+    if (user && !hidden.includes('sessions-no-payment-method')) {
       const { data: sessions } = await supabase
         .from('sessions')
         .select('id')
         .eq('user_id', user.id)
-        .eq('status', 'pendente')
-        .eq('metodo_pagamento', 'pendente');
+        .eq('status', 'agendada')
+        .or('metodo_pagamento.eq.A definir,metodo_pagamento.is.null')
+        .is('recurring_session_id', null);
 
       if (sessions && sessions.length > 0) {
         actionableNotifications.push({
-          id: 'pending-payments',
+          id: 'sessions-no-payment-method',
           icon: <CreditCard className="h-5 w-5" />,
-          message: `${sessions.length} pagamento${sessions.length > 1 ? 's exigem' : ' exige'} atenção`,
-          action: 'Ver Pagamentos',
-          route: '/pagamentos',
+          message: `${sessions.length} sessão(ões) individual(is) sem método de pagamento definido`,
+          action: 'Ver Sessões',
+          route: `/sessoes?edit=${sessions[0].id}`,
           count: sessions.length,
+        });
+      }
+    }
+
+    // Check for recurring sessions without payment method
+    if (user && !hidden.includes('recurring-no-payment-method')) {
+      const { data: recurringSessions } = await supabase
+        .from('recurring_sessions')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'ativa')
+        .or('metodo_pagamento.eq.A definir,metodo_pagamento.is.null');
+
+      if (recurringSessions && recurringSessions.length > 0) {
+        actionableNotifications.push({
+          id: 'recurring-no-payment-method',
+          icon: <Repeat className="h-5 w-5" />,
+          message: `${recurringSessions.length} sessão(ões) recorrente(s) sem método de pagamento definido`,
+          action: 'Ver Recorrências',
+          route: '/sessoes-recorrentes',
+          count: recurringSessions.length,
         });
       }
     }

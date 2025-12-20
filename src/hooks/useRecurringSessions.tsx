@@ -15,6 +15,7 @@ export interface RecurringSession {
   dia_da_semana?: number | null;
   horario: string;
   valor?: number;
+  metodo_pagamento?: string;
   status: 'ativa' | 'pausada' | 'cancelada';
   google_calendar_sync: boolean;
   created_at: string;
@@ -30,6 +31,7 @@ export interface RecurringData {
   dia_da_semana?: number;
   horario: string;
   valor?: number;
+  metodo_pagamento?: string;
   google_calendar_sync?: boolean;
 }
 

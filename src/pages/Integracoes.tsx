@@ -47,6 +47,17 @@ const Integracoes = () => {
 
   useEffect(() => { loadData() }, [loadData]);
 
+  // Refetch on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        loadData()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [user, loadData])
+
   const handleSettingsChange = (field: string, value: any) => {
     setSettings(prev => ({ ...prev, [field]: value }));
   };

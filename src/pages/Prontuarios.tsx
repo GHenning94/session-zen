@@ -91,6 +91,17 @@ export default function Prontuarios() {
     }
   }, [user])
 
+  // Refetch on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        loadData()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [user])
+
   useEffect(() => {
     // Verificar se há um cliente específico na URL
     const clientId = searchParams.get('cliente')

@@ -3,7 +3,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
 import { useState, useEffect } from 'react';
 import { useRecurringSessions, RecurringSession } from '@/hooks/useRecurringSessions';
 import { Calendar } from '@/components/ui/calendar';
@@ -31,6 +30,15 @@ const WEEKDAYS = [
   { value: 6, label: 'Sábado' }
 ];
 
+const PAYMENT_METHODS = [
+  { value: 'A definir', label: 'A definir' },
+  { value: 'Dinheiro', label: 'Dinheiro' },
+  { value: 'PIX', label: 'PIX' },
+  { value: 'Cartão de Crédito', label: 'Cartão de Crédito' },
+  { value: 'Cartão de Débito', label: 'Cartão de Débito' },
+  { value: 'Transferência', label: 'Transferência' }
+];
+
 export const RecurringSessionModal = ({ 
   open, 
   onOpenChange, 
@@ -46,9 +54,9 @@ export const RecurringSessionModal = ({
     dia_da_semana: 1,
     horario: '10:00',
     valor: 0,
+    metodo_pagamento: 'A definir',
     recurrence_end_date: undefined as Date | undefined,
     recurrence_count: undefined as number | undefined,
-    google_calendar_sync: false,
     end_type: 'never' as 'never' | 'date' | 'count'
   });
 
@@ -60,11 +68,11 @@ export const RecurringSessionModal = ({
         dia_da_semana: recurringSession.dia_da_semana || 1,
         horario: recurringSession.horario,
         valor: recurringSession.valor || 0,
+        metodo_pagamento: recurringSession.metodo_pagamento || 'A definir',
         recurrence_end_date: recurringSession.recurrence_end_date 
           ? new Date(recurringSession.recurrence_end_date) 
           : undefined,
         recurrence_count: recurringSession.recurrence_count || undefined,
-        google_calendar_sync: recurringSession.google_calendar_sync,
         end_type: recurringSession.recurrence_end_date 
           ? 'date' 
           : recurringSession.recurrence_count 
@@ -89,11 +97,12 @@ export const RecurringSessionModal = ({
         dia_da_semana: formData.dia_da_semana,
         horario: formData.horario,
         valor: formData.valor,
+        metodo_pagamento: formData.metodo_pagamento,
         recurrence_end_date: formData.end_type === 'date' && formData.recurrence_end_date
           ? formData.recurrence_end_date.toISOString().split('T')[0]
           : undefined,
         recurrence_count: formData.end_type === 'count' ? formData.recurrence_count : undefined,
-        google_calendar_sync: formData.google_calendar_sync
+        google_calendar_sync: false
       };
 
       if (recurringSession) {
@@ -105,6 +114,9 @@ export const RecurringSessionModal = ({
       onSave();
       onOpenChange(false);
       
+      // Dispatch event to notify other pages
+      window.dispatchEvent(new Event('recurringSessionUpdated'));
+      
       // Reset form
       setFormData({
         recurrence_type: 'semanal',
@@ -112,9 +124,9 @@ export const RecurringSessionModal = ({
         dia_da_semana: 1,
         horario: '10:00',
         valor: 0,
+        metodo_pagamento: 'A definir',
         recurrence_end_date: undefined,
         recurrence_count: undefined,
-        google_calendar_sync: false,
         end_type: 'never'
       });
     } catch (error) {
@@ -214,6 +226,25 @@ export const RecurringSessionModal = ({
                 value={formData.valor}
                 onChange={(e) => setFormData({ ...formData, valor: parseFloat(e.target.value) })}
               />
+            </div>
+
+            <div className="col-span-2">
+              <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+              <Select
+                value={formData.metodo_pagamento}
+                onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PAYMENT_METHODS.map((method) => (
+                    <SelectItem key={method.value} value={method.value}>
+                      {method.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <div className="col-span-2 space-y-3">
