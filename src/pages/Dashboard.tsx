@@ -1863,10 +1863,8 @@ const Dashboard = () => {
                               return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
                             }
                             
-                            // Ordem de renderização: todos exceto o primeiro, depois o primeiro por cima
-                            // Isso cria o efeito de corrente sem precisar de "capa" adicional
-                            const segmentsExceptFirst = segments.slice(1)
-                            const firstSegment = segments[0]
+                            // Índice do último segmento
+                            const lastIndex = segments.length - 1
                             
                             return (
                               <svg viewBox="0 0 400 400" className="w-full h-full max-w-[380px] max-h-[380px]">
@@ -1878,8 +1876,8 @@ const Dashboard = () => {
                                   ))}
                                 </defs>
                                 
-                                {/* Renderizar todos os segmentos exceto o primeiro */}
-                                {segmentsExceptFirst.map((segment) => (
+                                {/* Renderizar segmentos na ordem normal (cada um por cima do anterior) */}
+                                {segments.map((segment) => (
                                   <path
                                     key={`segment-${segment.index}`}
                                     d={describeArc(segment.startAngle, segment.endAngle)}
@@ -1889,7 +1887,6 @@ const Dashboard = () => {
                                     strokeLinecap="round"
                                     style={{
                                       cursor: 'pointer',
-                                      filter: hoveredCanalIndex === segment.index ? `url(#pie-shadow-${segment.index})` : 'none',
                                       transition: 'filter 0.15s ease-out'
                                     }}
                                     onMouseEnter={() => setHoveredCanalIndex(segment.index)}
@@ -1897,23 +1894,52 @@ const Dashboard = () => {
                                   />
                                 ))}
                                 
-                                {/* Renderizar o primeiro segmento por último (por cima de todos) */}
-                                {firstSegment && (
+                                {/* Capa do primeiro segmento sobre o final do último (efeito corrente) */}
+                                {segments.length > 1 && (
                                   <path
-                                    key={`segment-${firstSegment.index}`}
-                                    d={describeArc(firstSegment.startAngle, firstSegment.endAngle)}
+                                    key="segment-first-cap"
+                                    d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
                                     fill="none"
-                                    stroke={firstSegment.color}
+                                    stroke={segments[0].color}
                                     strokeWidth={strokeWidth}
                                     strokeLinecap="round"
-                                    style={{
-                                      cursor: 'pointer',
-                                      filter: hoveredCanalIndex === firstSegment.index ? `url(#pie-shadow-${firstSegment.index})` : 'none',
-                                      transition: 'filter 0.15s ease-out'
-                                    }}
-                                    onMouseEnter={() => setHoveredCanalIndex(firstSegment.index)}
+                                    style={{ cursor: 'pointer' }}
+                                    onMouseEnter={() => setHoveredCanalIndex(0)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
                                   />
+                                )}
+                                
+                                {/* Hover: renderizar segmento por cima de tudo com sombra */}
+                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
+                                  <>
+                                    <path
+                                      key={`segment-hover-${hoveredCanalIndex}`}
+                                      d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
+                                      fill="none"
+                                      stroke={segments[hoveredCanalIndex].color}
+                                      strokeWidth={strokeWidth}
+                                      strokeLinecap="round"
+                                      style={{
+                                        filter: `url(#pie-shadow-${hoveredCanalIndex})`,
+                                        pointerEvents: 'none'
+                                      }}
+                                    />
+                                    {/* Se hover no primeiro, também renderizar a capa com sombra */}
+                                    {hoveredCanalIndex === 0 && segments.length > 1 && (
+                                      <path
+                                        key="segment-first-cap-hover"
+                                        d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
+                                        fill="none"
+                                        stroke={segments[0].color}
+                                        strokeWidth={strokeWidth}
+                                        strokeLinecap="round"
+                                        style={{
+                                          filter: `url(#pie-shadow-0)`,
+                                          pointerEvents: 'none'
+                                        }}
+                                      />
+                                    )}
+                                  </>
                                 )}
                               </svg>
                             )
