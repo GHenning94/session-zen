@@ -1819,98 +1819,105 @@ const Dashboard = () => {
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
                         {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
                         <div className="h-full min-h-[380px] flex items-center justify-center relative">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <defs>
-                                {receitaPorCanal.map((entry, index) => (
-                                  <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
-                                    <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={entry.color} floodOpacity="0.4"/>
-                                  </filter>
-                                ))}
-                              </defs>
-                              {/* Renderizar segmentos com sobreposição completa */}
-                              {(() => {
-                                const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
-                                if (total === 0) return null
+                          {(() => {
+                            const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
+                            if (total === 0) return null
+                            
+                            let currentAngle = 90 // Começa do topo
+                            const overlapAngle = 25 // Graus de sobreposição
+                            const outerR = 145
+                            const innerR = 100
+                            const cx = 200
+                            const cy = 200
+                            
+                            const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
+                            
+                            receitaPorCanal.forEach((item, index) => {
+                              const angle = (item.valor / total) * 360
+                              segments.push({
+                                startAngle: currentAngle,
+                                endAngle: currentAngle - angle - overlapAngle,
+                                color: item.color,
+                                index
+                              })
+                              currentAngle -= angle
+                            })
+                            
+                            // Função para criar path do arco com cantos arredondados
+                            const createArcPath = (startAngle: number, endAngle: number, outerRadius: number, innerRadius: number) => {
+                              const startRad = (startAngle * Math.PI) / 180
+                              const endRad = (endAngle * Math.PI) / 180
+                              
+                              // Pontos externos
+                              const outerStartX = cx + outerRadius * Math.cos(startRad)
+                              const outerStartY = cy - outerRadius * Math.sin(startRad)
+                              const outerEndX = cx + outerRadius * Math.cos(endRad)
+                              const outerEndY = cy - outerRadius * Math.sin(endRad)
+                              
+                              // Pontos internos
+                              const innerStartX = cx + innerRadius * Math.cos(startRad)
+                              const innerStartY = cy - innerRadius * Math.sin(startRad)
+                              const innerEndX = cx + innerRadius * Math.cos(endRad)
+                              const innerEndY = cy - innerRadius * Math.sin(endRad)
+                              
+                              const largeArc = Math.abs(startAngle - endAngle) > 180 ? 1 : 0
+                              
+                              return `
+                                M ${outerStartX} ${outerStartY}
+                                A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${outerEndX} ${outerEndY}
+                                Q ${cx + (innerRadius + 22) * Math.cos(endRad)} ${cy - (innerRadius + 22) * Math.sin(endRad)} ${innerEndX} ${innerEndY}
+                                A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${innerStartX} ${innerStartY}
+                                Q ${cx + (innerRadius + 22) * Math.cos(startRad)} ${cy - (innerRadius + 22) * Math.sin(startRad)} ${outerStartX} ${outerStartY}
+                                Z
+                              `
+                            }
+                            
+                            return (
+                              <svg viewBox="0 0 400 400" className="w-full h-full max-w-[380px] max-h-[380px]">
+                                <defs>
+                                  {segments.map((segment) => (
+                                    <filter key={`shadow-${segment.index}`} id={`pie-shadow-${segment.index}`} x="-50%" y="-50%" width="200%" height="200%">
+                                      <feDropShadow dx="0" dy="4" stdDeviation="8" floodColor={segment.color} floodOpacity="0.5"/>
+                                    </filter>
+                                  ))}
+                                </defs>
                                 
-                                let currentAngle = 90 // Começa do topo
-                                const overlapAngle = 28 // Graus de sobreposição para cobrir completamente os cantos
-                                const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
-                                
-                                receitaPorCanal.forEach((item, index) => {
-                                  const angle = (item.valor / total) * 360
-                                  segments.push({
-                                    startAngle: currentAngle,
-                                    endAngle: currentAngle - angle - overlapAngle,
-                                    color: item.color,
-                                    index
-                                  })
-                                  currentAngle -= angle
-                                })
-                                
-                                // Ordem fixa de renderização (sem mudança no hover para evitar animação)
-                                // Renderiza na ordem normal - o último segmento fica por cima
-                                const baseElements = segments.map((segment) => (
-                                  <Pie
+                                {/* Renderizar segmentos base - ordem: primeiro renderizado fica por baixo */}
+                                {segments.map((segment) => (
+                                  <path
                                     key={`segment-${segment.index}`}
-                                    data={[{ value: 1 }]}
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={145}
-                                    innerRadius={100}
-                                    dataKey="value"
-                                    cornerRadius={22}
-                                    stroke="none"
-                                    strokeWidth={0}
-                                    startAngle={segment.startAngle}
-                                    endAngle={segment.endAngle}
+                                    d={createArcPath(segment.startAngle, segment.endAngle, outerR, innerR)}
+                                    fill={segment.color}
+                                    style={{
+                                      opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
+                                      cursor: 'pointer',
+                                      transition: 'opacity 0.15s ease-out'
+                                    }}
                                     onMouseEnter={() => setHoveredCanalIndex(segment.index)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
-                                    style={{ cursor: 'pointer' }}
-                                  >
-                                    <Cell 
-                                      fill={segment.color}
-                                      style={{
-                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
-                                        cursor: 'pointer'
-                                      }}
-                                    />
-                                  </Pie>
-                                ))
+                                  />
+                                ))}
                                 
-                                // Renderizar o segmento hovered novamente por cima (sem animação de reordenação)
-                                const hoveredElement = hoveredCanalIndex !== null && segments[hoveredCanalIndex] ? (
-                                  <Pie
-                                    key={`segment-hover-${hoveredCanalIndex}`}
-                                    data={[{ value: 1 }]}
-                                    cx="50%"
-                                    cy="50%"
-                                    outerRadius={145 * 1.06}
-                                    innerRadius={100 * 0.96}
-                                    dataKey="value"
-                                    cornerRadius={24}
-                                    stroke="none"
-                                    strokeWidth={0}
-                                    startAngle={segments[hoveredCanalIndex].startAngle}
-                                    endAngle={segments[hoveredCanalIndex].endAngle}
+                                {/* Segmento hovered renderizado por cima - aparece instantaneamente com scale */}
+                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
+                                  <path
+                                    key={`segment-top-${hoveredCanalIndex}`}
+                                    d={createArcPath(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle, outerR, innerR)}
+                                    fill={segments[hoveredCanalIndex].color}
+                                    style={{
+                                      cursor: 'pointer',
+                                      transformOrigin: `${cx}px ${cy}px`,
+                                      transform: 'scale(1.06)',
+                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`,
+                                      transition: 'transform 0.15s ease-out'
+                                    }}
                                     onMouseEnter={() => setHoveredCanalIndex(hoveredCanalIndex)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
-                                    style={{ cursor: 'pointer' }}
-                                  >
-                                    <Cell 
-                                      fill={segments[hoveredCanalIndex].color}
-                                      style={{
-                                        filter: `url(#shadow-${hoveredCanalIndex})`,
-                                        cursor: 'pointer'
-                                      }}
-                                    />
-                                  </Pie>
-                                ) : null
-                                
-                                return [...baseElements, hoveredElement]
-                              })()}
-                            </PieChart>
-                          </ResponsiveContainer>
+                                  />
+                                )}
+                              </svg>
+                            )
+                          })()}
                           {/* Centro do gráfico com informações dinâmicas */}
                           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                             <div className="text-center">
