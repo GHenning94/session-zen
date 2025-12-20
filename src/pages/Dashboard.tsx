@@ -1836,9 +1836,11 @@ const Dashboard = () => {
                                 innerRadius={100}
                                 paddingAngle={0}
                                 dataKey="valor"
-                                cornerRadius={0}
+                                cornerRadius={22}
                                 stroke="none"
                                 strokeWidth={0}
+                                startAngle={90}
+                                endAngle={-270}
                                 onMouseEnter={(_, index) => setHoveredCanalIndex(index)}
                                 onMouseLeave={() => setHoveredCanalIndex(null)}
                               >
