@@ -1877,7 +1877,7 @@ const Dashboard = () => {
                                   ))}
                                 </defs>
                                 
-                                {/* Renderizar segmentos em ordem - cada um fica por cima do anterior */}
+                                {/* Renderizar segmentos em ordem - sombra aplicada diretamente quando hovered */}
                                 {segments.map((segment) => (
                                   <path
                                     key={`segment-${segment.index}`}
@@ -1889,7 +1889,8 @@ const Dashboard = () => {
                                     style={{
                                       opacity: hoveredCanalIndex === null || hoveredCanalIndex === segment.index ? 1 : 0.4,
                                       cursor: 'pointer',
-                                      transition: 'opacity 0.15s ease-out'
+                                      transition: 'opacity 0.15s ease-out, filter 0.15s ease-out',
+                                      filter: hoveredCanalIndex === segment.index ? `url(#pie-shadow-${segment.index})` : 'none'
                                     }}
                                     onMouseEnter={() => setHoveredCanalIndex(segment.index)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
@@ -1908,43 +1909,8 @@ const Dashboard = () => {
                                     style={{
                                       opacity: hoveredCanalIndex === null || hoveredCanalIndex === 0 ? 1 : 0.4,
                                       cursor: 'pointer',
-                                      transition: 'opacity 0.15s ease-out'
-                                    }}
-                                    onMouseEnter={() => setHoveredCanalIndex(0)}
-                                    onMouseLeave={() => setHoveredCanalIndex(null)}
-                                  />
-                                )}
-                                
-                                {/* Segmento hovered renderizado por cima - apenas sombra */}
-                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && (
-                                  <path
-                                    key={`segment-top-${hoveredCanalIndex}`}
-                                    d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
-                                    fill="none"
-                                    stroke={segments[hoveredCanalIndex].color}
-                                    strokeWidth={strokeWidth}
-                                    strokeLinecap="round"
-                                    style={{
-                                      cursor: 'pointer',
-                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`
-                                    }}
-                                    onMouseEnter={() => setHoveredCanalIndex(hoveredCanalIndex)}
-                                    onMouseLeave={() => setHoveredCanalIndex(null)}
-                                  />
-                                )}
-                                
-                                {/* Se o primeiro segmento está hovered, renderizar sua capa também com sombra */}
-                                {hoveredCanalIndex === 0 && segments.length > 0 && (
-                                  <path
-                                    key="segment-first-cap-hover"
-                                    d={describeArc(segments[0].startAngle, segments[0].startAngle + capAngle)}
-                                    fill="none"
-                                    stroke={segments[0].color}
-                                    strokeWidth={strokeWidth}
-                                    strokeLinecap="round"
-                                    style={{
-                                      cursor: 'pointer',
-                                      filter: `url(#pie-shadow-0)`
+                                      transition: 'opacity 0.15s ease-out, filter 0.15s ease-out',
+                                      filter: hoveredCanalIndex === 0 ? `url(#pie-shadow-0)` : 'none'
                                     }}
                                     onMouseEnter={() => setHoveredCanalIndex(0)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
