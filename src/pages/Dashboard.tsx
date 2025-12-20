@@ -79,6 +79,7 @@ const Dashboard = () => {
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
+  const [hoveredCanalIndex, setHoveredCanalIndex] = useState<number | null>(null)
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
   const [packageStats, setPackageStats] = useState({
     totalPackages: 0,
@@ -1810,23 +1811,45 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[400px] px-4 pt-4 pb-2">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                        {/* Gráfico de Pizza */}
-                        <div className="h-full min-h-[360px]">
+                    <CardContent className="h-[420px] px-4 pt-2 pb-2">
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+                        {/* Gráfico de Pizza - Moderno */}
+                        <div className="h-full min-h-[380px] flex items-center justify-center">
                           <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
+                              <defs>
+                                {receitaPorCanal.map((entry, index) => (
+                                  <filter key={`shadow-${index}`} id={`shadow-${index}`} x="-20%" y="-20%" width="140%" height="140%">
+                                    <feDropShadow dx="0" dy="2" stdDeviation="3" floodColor={entry.color} floodOpacity="0.3"/>
+                                  </filter>
+                                ))}
+                              </defs>
                               <Pie
                                 data={receitaPorCanal}
                                 cx="50%"
                                 cy="50%"
-                                outerRadius={90}
-                                innerRadius={30}
-                                paddingAngle={5}
+                                outerRadius={140}
+                                innerRadius={60}
+                                paddingAngle={3}
                                 dataKey="valor"
+                                cornerRadius={6}
+                                stroke="hsl(var(--background))"
+                                strokeWidth={2}
+                                onMouseEnter={(_, index) => setHoveredCanalIndex(index)}
+                                onMouseLeave={() => setHoveredCanalIndex(null)}
                               >
                                 {receitaPorCanal.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                  <Cell 
+                                    key={`cell-${index}`} 
+                                    fill={entry.color}
+                                    style={{
+                                      filter: hoveredCanalIndex === index ? `url(#shadow-${index})` : 'none',
+                                      transform: hoveredCanalIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                      transformOrigin: 'center',
+                                      transition: 'all 0.3s ease-out',
+                                      opacity: hoveredCanalIndex === null || hoveredCanalIndex === index ? 1 : 0.4
+                                    }}
+                                  />
                                 ))}
                               </Pie>
                                <RechartsTooltip 
@@ -1834,7 +1857,8 @@ const Dashboard = () => {
                                 contentStyle={{
                                   backgroundColor: 'hsl(var(--background))',
                                   border: '1px solid hsl(var(--border))',
-                                  borderRadius: '6px'
+                                  borderRadius: '8px',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
                                 }}
                               />
                             </PieChart>
@@ -1846,18 +1870,45 @@ const Dashboard = () => {
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
+                            const isHovered = hoveredCanalIndex === index
                             
                             return (
-                              <div key={canal.canal} className="flex items-center justify-between px-3 py-2 border border-border rounded-lg">
-                                <div className="flex items-center gap-2">
+                              <div 
+                                key={canal.canal} 
+                                className={cn(
+                                  "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer",
+                                  isHovered 
+                                    ? "bg-accent/80 shadow-md scale-[1.02] border-2" 
+                                    : "bg-accent/30 hover:bg-accent/50 border border-border/50",
+                                  hoveredCanalIndex !== null && !isHovered && "opacity-50"
+                                )}
+                                style={{
+                                  borderColor: isHovered ? canal.color : undefined
+                                }}
+                                onMouseEnter={() => setHoveredCanalIndex(index)}
+                                onMouseLeave={() => setHoveredCanalIndex(null)}
+                              >
+                                <div className="flex items-center gap-3">
                                   <div 
-                                    className="w-3 h-3 rounded-full flex-shrink-0"
-                                    style={{ backgroundColor: canal.color }}
+                                    className={cn(
+                                      "w-3.5 h-3.5 rounded-full flex-shrink-0 transition-transform duration-300",
+                                      isHovered && "scale-125"
+                                    )}
+                                    style={{ 
+                                      backgroundColor: canal.color,
+                                      boxShadow: isHovered ? `0 0 8px ${canal.color}` : 'none'
+                                    }}
                                   />
-                                  <span className="font-medium text-sm">{canal.canal}</span>
+                                  <span className={cn(
+                                    "font-medium text-sm transition-all duration-300",
+                                    isHovered && "font-semibold"
+                                  )}>{canal.canal}</span>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-bold text-primary text-sm">{formatCurrencyBR(canal.valor)}</p>
+                                  <p className={cn(
+                                    "font-bold text-sm transition-all duration-300",
+                                    isHovered ? "text-lg" : "text-primary"
+                                  )} style={{ color: isHovered ? canal.color : undefined }}>{formatCurrencyBR(canal.valor)}</p>
                                   <p className="text-xs text-muted-foreground">{percentage}%</p>
                                 </div>
                               </div>
