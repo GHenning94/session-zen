@@ -275,102 +275,198 @@ const Agenda = () => {
 
         {/* Navigation - Mobile optimized */}
         <div className="space-y-3">
-          {/* Date Navigation */}
-          <div className="flex items-center justify-between gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={() => navigateDate('prev')}
-              disabled={isLoading}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+          {/* Date Navigation - Desktop layout */}
+          <div className="hidden md:flex items-center justify-between gap-2">
+            {/* Left side - Period navigation arrows */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => navigateDate('prev')}
+                disabled={isLoading}
+              >
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-10 w-10 shrink-0"
+                onClick={() => navigateDate('next')}
+                disabled={isLoading}
+              >
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
             
+            {/* Center - Date display */}
             <div className="text-center flex-1 min-w-0">
-              <div className="text-sm md:text-lg font-semibold truncate">
+              <div className="text-lg font-semibold truncate">
                 {currentView === 'month' && format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
                 {currentView === 'week' && `${format(selectedDate, "dd/MM", { locale: ptBR })} - ${format(addDays(selectedDate, 6), "dd/MM/yyyy", { locale: ptBR })}`}
                 {currentView === 'day' && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
               </div>
             </div>
             
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9 shrink-0"
-              onClick={() => navigateDate('next')}
-              disabled={isLoading}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="outline"
-              size="sm"
-              className="shrink-0"
-              onClick={() => setSelectedDate(new Date())}
-              disabled={isLoading}
-            >
-              Hoje
-            </Button>
-          </div>
-
-          {/* Controls Row - Scrollable on mobile */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            {/* Google Calendar Integration */}
-            {isGoogleConnected ? (
-              <div className="flex items-center gap-1 shrink-0">
+            {/* Right side - Today, Google Calendar, View Selector */}
+            <div className="flex items-center gap-2">
+              {/* Google Calendar Integration */}
+              {isGoogleConnected ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-success/10 text-success border-success/20 hover:bg-success/20"
+                  >
+                    <Link className="h-4 w-4 mr-1" />
+                    Google Calendar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-9 w-9"
+                    onClick={loadGoogleEvents}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={cn("h-4 w-4", isLoading && "animate-spin")} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={disconnectFromGoogle}
+                  >
+                    Desconectar
+                  </Button>
+                </div>
+              ) : (
                 <Button
                   variant="outline"
                   size="sm"
-                  className="bg-success/10 text-success border-success/20 hover:bg-success/20 text-xs px-2"
-                >
-                  <Link className="h-3 w-3 mr-1" />
-                  <span className="hidden sm:inline">Google Calendar</span>
-                  <span className="sm:hidden">Google</span>
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={loadGoogleEvents}
+                  className="shrink-0"
+                  onClick={connectToGoogle}
                   disabled={isLoading}
                 >
-                  <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+                  <Link className="h-4 w-4 mr-1" />
+                  Conectar Google Calendar
                 </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-xs px-2"
-                  onClick={disconnectFromGoogle}
-                >
-                  <span className="hidden sm:inline">Desconectar</span>
-                  <span className="sm:hidden">X</span>
-                </Button>
-              </div>
-            ) : (
+              )}
+
               <Button
                 variant="outline"
                 size="sm"
-                className="shrink-0 text-xs"
-                onClick={connectToGoogle}
+                className="shrink-0"
+                onClick={() => setSelectedDate(new Date())}
                 disabled={isLoading}
               >
-                <Link className="h-3 w-3 mr-1" />
-                <span className="hidden sm:inline">Conectar Google Calendar</span>
-                <span className="sm:hidden">Google</span>
+                Hoje
               </Button>
-            )}
 
-            {/* View Selector */}
-            <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')} className="shrink-0 ml-auto">
-              <TabsList className="h-8">
-                <TabsTrigger value="day" className="text-xs px-2 h-7">Dia</TabsTrigger>
-                <TabsTrigger value="week" className="text-xs px-2 h-7">Semana</TabsTrigger>
-                <TabsTrigger value="month" className="text-xs px-2 h-7">Mês</TabsTrigger>
-              </TabsList>
-            </Tabs>
+              {/* View Selector */}
+              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')} className="shrink-0">
+                <TabsList className="h-9">
+                  <TabsTrigger value="day" className="text-sm px-3 h-8">Dia</TabsTrigger>
+                  <TabsTrigger value="week" className="text-sm px-3 h-8">Semana</TabsTrigger>
+                  <TabsTrigger value="month" className="text-sm px-3 h-8">Mês</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
+          </div>
+
+          {/* Date Navigation - Mobile layout */}
+          <div className="md:hidden space-y-3">
+            <div className="flex items-center justify-between gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => navigateDate('prev')}
+                disabled={isLoading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <div className="text-center flex-1 min-w-0">
+                <div className="text-sm font-semibold truncate">
+                  {currentView === 'month' && format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
+                  {currentView === 'week' && `${format(selectedDate, "dd/MM", { locale: ptBR })} - ${format(addDays(selectedDate, 6), "dd/MM/yyyy", { locale: ptBR })}`}
+                  {currentView === 'day' && format(selectedDate, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                </div>
+              </div>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9 shrink-0"
+                onClick={() => navigateDate('next')}
+                disabled={isLoading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => setSelectedDate(new Date())}
+                disabled={isLoading}
+              >
+                Hoje
+              </Button>
+            </div>
+
+            {/* Controls Row - Scrollable on mobile */}
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 -mx-1 px-1">
+              {/* Google Calendar Integration */}
+              {isGoogleConnected ? (
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="bg-success/10 text-success border-success/20 hover:bg-success/20 text-xs px-2"
+                  >
+                    <Link className="h-3 w-3 mr-1" />
+                    <span className="sm:hidden">Google</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={loadGoogleEvents}
+                    disabled={isLoading}
+                  >
+                    <RefreshCw className={cn("h-3 w-3", isLoading && "animate-spin")} />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs px-2"
+                    onClick={disconnectFromGoogle}
+                  >
+                    X
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-xs"
+                  onClick={connectToGoogle}
+                  disabled={isLoading}
+                >
+                  <Link className="h-3 w-3 mr-1" />
+                  Google
+                </Button>
+              )}
+
+              {/* View Selector */}
+              <Tabs value={currentView} onValueChange={(value) => setCurrentView(value as 'day' | 'week' | 'month')} className="shrink-0 ml-auto">
+                <TabsList className="h-8">
+                  <TabsTrigger value="day" className="text-xs px-2 h-7">Dia</TabsTrigger>
+                  <TabsTrigger value="week" className="text-xs px-2 h-7">Semana</TabsTrigger>
+                  <TabsTrigger value="month" className="text-xs px-2 h-7">Mês</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </div>
           </div>
         </div>
 

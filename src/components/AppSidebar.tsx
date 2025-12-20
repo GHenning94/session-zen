@@ -116,7 +116,7 @@ export function AppSidebar() {
             const isComingSoon = ['Eventos', 'Estudos', 'Redes Sociais'].includes(item.title)
             return (
               <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton asChild className={`h-8 rounded-xl ${getNavClasses({ isActive: isActive(item.url) })}`}>
+                <SidebarMenuButton asChild className={`h-8 rounded-full ${getNavClasses({ isActive: isActive(item.url) })}`}>
                   <NavLink to={item.url} end className="flex items-center justify-between w-full" onClick={handleNavClick}>
                     <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : 'flex-1 overflow-hidden'}`}>
                       <item.icon className="h-4 w-4 shrink-0" />
@@ -142,7 +142,7 @@ export function AppSidebar() {
         
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild className={`h-8 rounded-xl ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
+            <SidebarMenuButton asChild className={`h-8 rounded-full ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
               <NavLink to={settingsItem.url} end className="flex items-center w-full" onClick={handleNavClick}>
                 <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : ''}`}>
                   <settingsItem.icon className="h-4 w-4 shrink-0" />

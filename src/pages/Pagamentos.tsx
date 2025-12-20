@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
   DollarSign, 
   TrendingUp, 
@@ -19,6 +20,8 @@ import {
   Banknote,
   Package,
   Repeat,
+  Filter,
+  ChevronDown,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
@@ -50,6 +53,7 @@ const Pagamentos = () => {
   const [filterName, setFilterName] = useState("")
   const [filterPaymentType, setFilterPaymentType] = useState("todos")
   const [filterGoogleSync, setFilterGoogleSync] = useState("todos")
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 const [sessions, setSessions] = useState<any[]>([])
 const [clients, setClients] = useState<any[]>([])
 const [profiles, setProfiles] = useState<any[]>([])
@@ -63,6 +67,18 @@ const [isLoading, setIsLoading] = useState(false)
   const [viewedPaymentIds, setViewedPaymentIds] = useState<Set<string>>(new Set())
   const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filterPeriod !== 'todos') count++
+    if (filterStatus !== 'todos') count++
+    if (filterMethod !== 'todos') count++
+    if (filterName !== '') count++
+    if (filterPaymentType !== 'todos') count++
+    if (filterGoogleSync !== 'todos') count++
+    return count
+  }, [filterPeriod, filterStatus, filterMethod, filterName, filterPaymentType, filterGoogleSync])
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -650,102 +666,120 @@ const pastPayments = filteredPayments.filter(item => {
           </Card>
         </div>
 
-        {/* Filters - Mobile optimized */}
+        {/* Filters - Mobile optimized with dropdown */}
         <Card className="shadow-soft">
           <CardHeader className="py-3 md:py-4">
-            <div className="grid grid-cols-2 md:flex md:flex-wrap gap-2 md:gap-4">
-              <div className="col-span-2">
-                <label className="text-xs md:text-sm font-medium mb-1 block">Buscar</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Cliente..."
-                    value={filterName}
-                    onChange={(e) => setFilterName(e.target.value)}
-                    className="w-full pl-9 h-9 text-sm"
-                  />
+            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full text-left">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm md:text-base font-semibold">Filtros</span>
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-3 md:gap-4">
+                  <div className="md:col-span-2">
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Buscar</label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Cliente..."
+                        value={filterName}
+                        onChange={(e) => setFilterName(e.target.value)}
+                        className="w-full pl-9 h-9 text-sm"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Período</label>
+                    <Select value={filterPeriod} onValueChange={setFilterPeriod}>
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="hoje">Hoje</SelectItem>
+                        <SelectItem value="semana">7 dias</SelectItem>
+                        <SelectItem value="mes">Mês</SelectItem>
+                        <SelectItem value="trimestre">Trimestre</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Status</label>
+                    <Select value={filterStatus} onValueChange={setFilterStatus}>
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="pago">Pagos</SelectItem>
+                        <SelectItem value="pendente">Pendentes</SelectItem>
+                        <SelectItem value="cancelado">Cancelados</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Canal</label>
+                    <Select value={filterMethod} onValueChange={setFilterMethod}>
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="cartao">Cartão</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                        <SelectItem value="transferencia">Transferência</SelectItem>
+                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Tipo</label>
+                    <Select value={filterPaymentType} onValueChange={setFilterPaymentType}>
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="package">Pacote</SelectItem>
+                        <SelectItem value="recurring">Recorrente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="hidden lg:block">
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Sincronização</label>
+                    <Select value={filterGoogleSync} onValueChange={setFilterGoogleSync}>
+                      <SelectTrigger className="w-full h-9 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todas</SelectItem>
+                        <SelectItem value="local">Local</SelectItem>
+                        <SelectItem value="importado">Importado</SelectItem>
+                        <SelectItem value="espelhado">Espelhado</SelectItem>
+                        <SelectItem value="enviado">Enviado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
-              </div>
-              
-              <div>
-                <label className="text-xs md:text-sm font-medium mb-1 block">Período</label>
-                <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                  <SelectTrigger className="w-full h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="hoje">Hoje</SelectItem>
-                    <SelectItem value="semana">7 dias</SelectItem>
-                    <SelectItem value="mes">Mês</SelectItem>
-                    <SelectItem value="trimestre">Trimestre</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <label className="text-xs md:text-sm font-medium mb-1 block">Status</label>
-                <Select value={filterStatus} onValueChange={setFilterStatus}>
-                  <SelectTrigger className="w-full h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="pago">Pagos</SelectItem>
-                    <SelectItem value="pendente">Pendentes</SelectItem>
-                    <SelectItem value="cancelado">Cancelados</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="hidden md:block">
-                <label className="text-xs md:text-sm font-medium mb-1 block">Canal</label>
-                <Select value={filterMethod} onValueChange={setFilterMethod}>
-                  <SelectTrigger className="w-full h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="cartao">Cartão</SelectItem>
-                    <SelectItem value="boleto">Boleto</SelectItem>
-                    <SelectItem value="transferencia">Transferência</SelectItem>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="hidden md:block">
-                <label className="text-xs md:text-sm font-medium mb-1 block">Tipo</label>
-                <Select value={filterPaymentType} onValueChange={setFilterPaymentType}>
-                  <SelectTrigger className="w-full h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="individual">Individual</SelectItem>
-                    <SelectItem value="package">Pacote</SelectItem>
-                    <SelectItem value="recurring">Recorrente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="hidden lg:block">
-                <label className="text-xs md:text-sm font-medium mb-1 block">Sincronização</label>
-                <Select value={filterGoogleSync} onValueChange={setFilterGoogleSync}>
-                  <SelectTrigger className="w-full h-9 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todas</SelectItem>
-                    <SelectItem value="local">Local</SelectItem>
-                    <SelectItem value="importado">Importado</SelectItem>
-                    <SelectItem value="espelhado">Espelhado</SelectItem>
-                    <SelectItem value="enviado">Enviado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardHeader>
         </Card>
 

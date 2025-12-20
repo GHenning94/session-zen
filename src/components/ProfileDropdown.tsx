@@ -187,7 +187,7 @@ export const ProfileDropdown = () => {
             <button 
               key={index}
               className={cn(
-                "w-full flex items-center justify-between p-3 rounded-lg",
+                "w-full flex items-center justify-between p-3 rounded-full",
                 item.isPremiumItem && "animated-premium-no-shadow"
               )}
               onClick={() => onAction(item.action)}
@@ -360,7 +360,7 @@ export const ProfileDropdown = () => {
                   <DropdownMenuItem 
                     key={index}
                     className={cn(
-                      "p-2 rounded-lg cursor-pointer justify-between",
+                      "p-2 rounded-full cursor-pointer justify-between",
                       item.isPremiumItem && "animated-premium-no-shadow hover:opacity-90"
                     )}
                     onClick={item.action}

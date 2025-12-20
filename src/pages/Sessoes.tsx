@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -9,7 +9,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare } from 'lucide-react'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -109,6 +110,20 @@ export default function Sessoes() {
     sessionType: '',
     googleSync: ''
   })
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.status && filters.status !== 'all') count++
+    if (filters.client && filters.client !== 'all') count++
+    if (filters.startDate) count++
+    if (filters.endDate) count++
+    if (filters.search) count++
+    if (filters.sessionType && filters.sessionType !== 'all') count++
+    if (filters.googleSync && filters.googleSync !== 'all') count++
+    return count
+  }, [filters])
 
   // Handle URL parameter for editing session
   useEffect(() => {
@@ -672,7 +687,7 @@ export default function Sessoes() {
             <h1 className="text-xl md:text-2xl font-bold">Histórico de Sessões</h1>
           </div>
           
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 md:justify-end">
             <Button
               onClick={() => setNewSessionModalOpen(true)}
               className="bg-gradient-primary hover:opacity-90 flex-1 sm:flex-none"
@@ -748,98 +763,110 @@ export default function Sessoes() {
           </Card>
         </div>
         
-        {/* Filtros - Collapsible on mobile */}
+        {/* Filtros - Collapsible dropdown */}
         <Card className="mb-4 md:mb-6">
           <CardHeader className="py-3 md:py-4">
-            <CardTitle className="flex items-center gap-2 text-sm md:text-base">
-              <Filter className="h-4 w-4" />
-              Filtros
-            </CardTitle>
+            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full text-left">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm md:text-base font-semibold">Filtros</span>
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-3 md:gap-4">
+                  <div className="md:col-span-2 lg:col-span-1">
+                    <Label htmlFor="search" className="text-xs">Buscar</Label>
+                    <Input
+                      id="search"
+                      placeholder="Cliente ou anotações..."
+                      value={filters.search}
+                      onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="status-filter" className="text-xs">Status</Label>
+                    <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="realizada">Realizadas</SelectItem>
+                        <SelectItem value="agendada">Agendadas</SelectItem>
+                        <SelectItem value="cancelada">Canceladas</SelectItem>
+                        <SelectItem value="falta">Faltas</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="type-filter" className="text-xs">Tipo</Label>
+                    <Select value={filters.sessionType} onValueChange={(value) => setFilters(prev => ({ ...prev, sessionType: value }))}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos</SelectItem>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="package">Pacote</SelectItem>
+                        <SelectItem value="recurring">Recorrente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="google-sync-filter" className="text-xs">Sincronização</Label>
+                    <Select value={filters.googleSync} onValueChange={(value) => setFilters(prev => ({ ...prev, googleSync: value }))}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="local">Local</SelectItem>
+                        <SelectItem value="importado">Importado</SelectItem>
+                        <SelectItem value="espelhado">Espelhado</SelectItem>
+                        <SelectItem value="enviado">Enviado</SelectItem>
+                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="start-date" className="text-xs">Início</Label>
+                    <Input
+                      id="start-date"
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="end-date" className="text-xs">Fim</Label>
+                    <Input
+                      id="end-date"
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+                      className="h-9 text-sm"
+                    />
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4">
-              <div className="col-span-2 md:col-span-1">
-                <Label htmlFor="search" className="text-xs">Buscar</Label>
-                <Input
-                  id="search"
-                  placeholder="Cliente ou anotações..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                  className="h-9 text-sm"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="status-filter" className="text-xs">Status</Label>
-                <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="realizada">Realizadas</SelectItem>
-                    <SelectItem value="agendada">Agendadas</SelectItem>
-                    <SelectItem value="cancelada">Canceladas</SelectItem>
-                    <SelectItem value="falta">Faltas</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="type-filter" className="text-xs">Tipo</Label>
-                <Select value={filters.sessionType} onValueChange={(value) => setFilters(prev => ({ ...prev, sessionType: value }))}>
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="individual">Individual</SelectItem>
-                    <SelectItem value="package">Pacote</SelectItem>
-                    <SelectItem value="recurring">Recorrente</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="hidden md:block">
-                <Label htmlFor="google-sync-filter" className="text-xs">Sincronização</Label>
-                <Select value={filters.googleSync} onValueChange={(value) => setFilters(prev => ({ ...prev, googleSync: value }))}>
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Todas" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todas</SelectItem>
-                    <SelectItem value="local">Local</SelectItem>
-                    <SelectItem value="importado">Importado</SelectItem>
-                    <SelectItem value="espelhado">Espelhado</SelectItem>
-                    <SelectItem value="enviado">Enviado</SelectItem>
-                    <SelectItem value="cancelado">Cancelado</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="start-date" className="text-xs">Início</Label>
-                <Input
-                  id="start-date"
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                  className="h-9 text-sm"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="end-date" className="text-xs">Fim</Label>
-                <Input
-                  id="end-date"
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                  className="h-9 text-sm"
-                />
-              </div>
-            </div>
-          </CardContent>
         </Card>
 
         {/* Sessions List */}
