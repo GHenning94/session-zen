@@ -1815,7 +1815,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[420px] px-4 pt-4 pb-2">
+                    <CardContent className="h-[420px] px-4 pt-3 pb-2">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
                         {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
                         <div className="h-full min-h-[380px] flex items-center justify-center relative">
