@@ -555,9 +555,13 @@ const Dashboard = () => {
 
       const allPaymentMethods = allPaymentMethodsResult.data
 
-      const canalPayments = {}
+      const canalPayments: { [key: string]: number } = {}
       allPaymentMethods?.forEach(session => {
-        const metodo = session.metodo_pagamento || 'A definir'
+        let metodo = session.metodo_pagamento || 'A definir'
+        // Consolidar cartao_credito e cartao_debito em cartao
+        if (metodo === 'cartao_credito' || metodo === 'cartao_debito') {
+          metodo = 'cartao'
+        }
         if (!canalPayments[metodo]) {
           canalPayments[metodo] = 0
         }
@@ -567,8 +571,6 @@ const Dashboard = () => {
       const canalColors: Record<string, string> = {
         'pix': '#00D09C',
         'cartao': '#6366F1',
-        'cartao_credito': '#6366F1', // Legado - mapear para mesma cor
-        'cartao_debito': '#6366F1', // Legado - mapear para mesma cor
         'boleto': '#F59E0B',
         'dinheiro': '#10B981',
         'transferencia': '#8B5CF6',
@@ -869,7 +871,11 @@ const Dashboard = () => {
       const canalData: { [key: string]: number } = {}
       
       paymentsData?.forEach((p) => {
-        const method = p.metodo_pagamento || p.sessions?.metodo_pagamento || 'Outros'
+        let method = p.metodo_pagamento || p.sessions?.metodo_pagamento || 'Outros'
+        // Consolidar cartao_credito e cartao_debito em cartao
+        if (method === 'cartao_credito' || method === 'cartao_debito') {
+          method = 'cartao'
+        }
         if (!canalData[method]) {
           canalData[method] = 0
         }
@@ -879,8 +885,6 @@ const Dashboard = () => {
       const canalColors: Record<string, string> = {
         'pix': '#00D09C',
         'cartao': '#6366F1',
-        'cartao_credito': '#6366F1', // Legado
-        'cartao_debito': '#6366F1', // Legado
         'boleto': '#F59E0B',
         'dinheiro': '#10B981',
         'transferencia': '#8B5CF6',
@@ -1751,14 +1755,17 @@ const Dashboard = () => {
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex flex-col gap-3">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
-                          <CardDescription className="hidden sm:block ml-2">
+                          <CardDescription className="hidden sm:block sm:ml-2">
                             | Distribuição da receita por método de pagamento
                           </CardDescription>
                         </div>
+                        <CardDescription className="sm:hidden">
+                          Distribuição da receita por método de pagamento
+                        </CardDescription>
                         <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2">
                           <Button 
                             variant={canalPeriod === '1' ? 'default' : 'outline'} 
@@ -1794,9 +1801,6 @@ const Dashboard = () => {
                           </Button>
                         </div>
                       </div>
-                      <CardDescription className="sm:hidden">
-                        Distribuição da receita por método de pagamento
-                      </CardDescription>
                     </CardHeader>
                     <CardContent className="h-[400px] px-4 pt-4 pb-2">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
