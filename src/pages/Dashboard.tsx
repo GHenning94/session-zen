@@ -1370,10 +1370,15 @@ const Dashboard = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
-            <CardHeader>
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
-                <CardTitle>Ações Rápidas</CardTitle>
-                <CardDescription className="sm:text-right">
+            <CardHeader className="pb-4">
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Ações Rápidas</CardTitle>
+                  <CardDescription className="hidden sm:block sm:ml-2">
+                    | Acesse rapidamente as funcionalidades mais utilizadas
+                  </CardDescription>
+                </div>
+                <CardDescription className="sm:hidden">
                   Acesse rapidamente as funcionalidades mais utilizadas
                 </CardDescription>
               </div>
@@ -1698,14 +1703,17 @@ const Dashboard = () => {
                 {/* Ticket Médio por Cliente - Gráfico de Barras Horizontais */}
                 <div className="col-span-full">
                   <Card className="shadow-soft">
-                    <CardHeader className="pb-2">
-                      <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                        <CardTitle className="flex items-center gap-2">
+                    <CardHeader className="pb-4">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-success" />
-                          Ticket Médio por {clientTerm}
-                        </CardTitle>
-                        <CardDescription className="sm:ml-2">
-                          <span className="hidden sm:inline">| </span>Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                          <CardTitle>Ticket Médio por {clientTerm}</CardTitle>
+                          <CardDescription className="hidden sm:block sm:ml-2">
+                            | Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                          </CardDescription>
+                        </div>
+                        <CardDescription className="sm:hidden">
+                          Valor médio por sessão de cada {clientTerm.toLowerCase()}
                         </CardDescription>
                       </div>
                     </CardHeader>
