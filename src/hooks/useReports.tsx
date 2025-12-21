@@ -2,12 +2,10 @@ import { useState } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from './useAuth'
 import { toast } from '@/hooks/use-toast'
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { addLogoBranding } from '@/utils/logoUtils'
+import { generateModernReport } from '@/utils/modernReportGenerator'
 
 interface ReportFilters {
   startDate?: string
@@ -62,6 +60,16 @@ export const useReports = () => {
 
       const { data: sessions } = await sessionsQuery.order('data', { ascending: false })
       data.sessions = sessions || []
+      
+      // Buscar dados do profissional
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nome, crp')
+        .eq('user_id', user.id)
+        .single()
+      
+      data.professionalName = profile?.nome
+      data.professionalCRP = profile?.crp
 
       return data
     } catch (error) {
@@ -82,136 +90,23 @@ export const useReports = () => {
 
   const generatePDF = async (data: any, type: string, filters: ReportFilters) => {
     try {
-      console.log('📄 Iniciando geração PDF com dados:', data)
+      console.log('📄 Iniciando geração PDF moderno com dados:', data)
       
       // Verificar se os dados estão válidos
       if (!data || (!data.clients && !data.sessions)) {
         throw new Error('Dados insuficientes para gerar relatório')
       }
       
-      const doc = new jsPDF()
-      const pageWidth = doc.internal.pageSize.width
-
-      // Add logo branding
-      addLogoBranding(doc, pageWidth)
+      // Use the new modern report generator
+      await generateModernReport(
+        data,
+        type,
+        filters,
+        data.professionalName,
+        data.professionalCRP
+      )
       
-      // Report title
-      const reportTitle = type === 'complete' ? 'Relatório Completo' :
-                         type === 'sessions' ? 'Relatório de Sessões' :
-                         type === 'financial' ? 'Relatório Financeiro' :
-                         'Relatório de Clientes'
-      
-      doc.setFontSize(16)
-      doc.text(reportTitle, pageWidth / 2, 25, { align: 'center' })
-      
-      // Reset colors and add date
-      doc.setTextColor(0, 0, 0)
-      doc.setFontSize(12)
-      doc.text(`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm', { locale: ptBR })}`, pageWidth / 2, 50, { align: 'center' })
-
-      let yPosition = 70
-
-      // Relatório de Clientes
-      if (type === 'clients' || type === 'complete') {
-        if (data.clients && data.clients.length > 0) {
-          doc.setFontSize(14)
-          doc.text('Clientes', 20, yPosition)
-          yPosition += 10
-
-          const clientsData = data.clients.map((client: any) => [
-            client.nome || 'N/A',
-            client.email || '-',
-            client.telefone || '-',
-            client.created_at ? format(new Date(client.created_at), 'dd/MM/yyyy', { locale: ptBR }) : '-'
-          ])
-
-          autoTable(doc, {
-            startY: yPosition,
-            head: [['Nome', 'Email', 'Telefone', 'Cadastro']],
-            body: clientsData,
-            theme: 'grid',
-            styles: { fontSize: 10 }
-          })
-
-          yPosition = (doc as any).lastAutoTable.finalY + 20
-        } else {
-          doc.setFontSize(12)
-          doc.text('Nenhum cliente encontrado.', 20, yPosition)
-          yPosition += 20
-        }
-      }
-
-      // Relatório de Sessões
-      if (type === 'sessions' || type === 'complete') {
-        if (yPosition > 200) {
-          doc.addPage()
-          yPosition = 20
-        }
-
-        doc.setFontSize(14)
-        doc.text('Sessões', 20, yPosition)
-        yPosition += 10
-
-        const sessionsData = data.sessions.map((session: any) => [
-          getClientName(session.client_id, data.clients),
-          format(new Date(session.data), 'dd/MM/yyyy', { locale: ptBR }),
-          session.horario,
-          session.status === 'realizada' ? 'Realizada' : 
-          session.status === 'cancelada' ? 'Cancelada' : 
-          session.status === 'falta' ? 'Falta' : 'Agendada',
-          session.valor ? `R$ ${Number(session.valor).toFixed(2)}` : '-'
-        ])
-
-        autoTable(doc, {
-          startY: yPosition,
-          head: [['Cliente', 'Data', 'Horário', 'Status', 'Valor']],
-          body: sessionsData,
-          theme: 'grid'
-        })
-
-        yPosition = (doc as any).lastAutoTable.finalY + 20
-      }
-
-    // Relatório Financeiro
-    if (type === 'financial' || type === 'complete') {
-      if (yPosition > 200) {
-        doc.addPage()
-        yPosition = 20
-      }
-
-      const realizadas = data.sessions.filter((s: any) => s.status === 'realizada')
-      const canceladas = data.sessions.filter((s: any) => s.status === 'cancelada')
-      const faltas = data.sessions.filter((s: any) => s.status === 'falta')
-      const totalArrecadado = realizadas.reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
-      const totalPendente = data.sessions
-        .filter((s: any) => s.status === 'agendada')
-        .reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
-      const totalCancelado = canceladas.reduce((sum: number, s: any) => sum + (Number(s.valor) || 0), 0)
-
-      doc.setFontSize(14)
-      doc.text('Resumo Financeiro', 20, yPosition)
-      yPosition += 15
-
-      doc.setFontSize(12)
-      doc.text(`Total Arrecadado: R$ ${totalArrecadado.toFixed(2)}`, 20, yPosition)
-      yPosition += 10
-      doc.text(`Total Pendente: R$ ${totalPendente.toFixed(2)}`, 20, yPosition)
-      yPosition += 10
-      doc.text(`Total Cancelado: R$ ${totalCancelado.toFixed(2)}`, 20, yPosition)
-      yPosition += 10
-      doc.text(`Sessões Realizadas: ${realizadas.length}`, 20, yPosition)
-      yPosition += 10
-      doc.text(`Sessões Canceladas: ${canceladas.length}`, 20, yPosition)
-      yPosition += 10
-      doc.text(`Sessões com Falta: ${faltas.length}`, 20, yPosition)
-      yPosition += 10
-      doc.text(`Total de Clientes: ${data.clients.length}`, 20, yPosition)
-    }
-
-      // Salvar PDF
-      const fileName = `relatorio-${type}-${format(new Date(), 'yyyy-MM-dd-HHmm')}.pdf`
-      doc.save(fileName)
-      console.log('✅ PDF gerado com sucesso:', fileName)
+      console.log('✅ PDF moderno gerado com sucesso')
     } catch (error) {
       console.error('❌ Erro ao gerar PDF:', error)
       throw error
