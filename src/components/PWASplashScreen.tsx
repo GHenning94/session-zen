@@ -139,7 +139,7 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               boxShadow: '0 20px 60px -10px hsl(var(--primary) / 0.5)',
             }}
           >
-            {/* Animated stethoscope SVG */}
+            {/* Animated stethoscope SVG - matching the favicon design */}
             <svg 
               viewBox="0 0 64 64" 
               className="w-20 h-20"
@@ -147,96 +147,70 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }}
             >
-              {/* Left tube from earpiece down and curving to center */}
+              {/* Main U-shaped tube of stethoscope */}
               <path
-                d="M18,6 L18,20 C18,30 24,36 32,42"
+                d="M16,8 L16,28 C16,42 28,50 32,50 C36,50 48,42 48,28 L48,8"
                 fill="none"
                 stroke="white"
-                strokeWidth="2.5"
+                strokeWidth="4"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 60,
-                  strokeDashoffset: 60,
-                  animation: 'drawPath 0.8s ease-out forwards 0.3s',
+                  strokeDasharray: 140,
+                  strokeDashoffset: 140,
+                  animation: 'drawPath 1s ease-out forwards 0.3s',
                 }}
               />
               
-              {/* Right tube from earpiece down and curving to center */}
-              <path
-                d="M46,6 L46,20 C46,30 40,36 32,42"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                style={{
-                  strokeDasharray: 60,
-                  strokeDashoffset: 60,
-                  animation: 'drawPath 0.8s ease-out forwards 0.4s',
-                }}
-              />
-              
-              {/* Left ear piece */}
+              {/* Left earpiece */}
               <circle
-                cx="18"
-                cy="5"
-                r="3"
+                cx="16"
+                cy="6"
+                r="4"
                 fill="white"
                 style={{
                   opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 0.8s',
+                  animation: 'fadeInScale 0.3s ease-out forwards 1s',
                 }}
               />
               
-              {/* Right ear piece */}
-              <circle
-                cx="46"
-                cy="5"
-                r="3"
-                fill="white"
-                style={{
-                  opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 0.9s',
-                }}
-              />
-              
-              {/* Center connector to chest piece */}
+              {/* Connector tube going right from bottom */}
               <path
-                d="M32,42 L32,48"
+                d="M32,50 C38,50 44,48 48,44"
                 fill="none"
                 stroke="white"
-                strokeWidth="2.5"
+                strokeWidth="4"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 10,
-                  strokeDashoffset: 10,
-                  animation: 'drawPath 0.3s ease-out forwards 1s',
+                  strokeDasharray: 30,
+                  strokeDashoffset: 30,
+                  animation: 'drawPath 0.4s ease-out forwards 1.1s',
                 }}
               />
               
-              {/* Chest piece (diaphragm) outer */}
+              {/* Chest piece (diaphragm) outer circle */}
               <circle
-                cx="32"
-                cy="55"
-                r="7"
+                cx="52"
+                cy="40"
+                r="8"
                 fill="none"
                 stroke="white"
-                strokeWidth="2.5"
+                strokeWidth="4"
                 style={{
-                  strokeDasharray: 50,
-                  strokeDashoffset: 50,
-                  animation: 'drawPath 0.5s ease-out forwards 1.2s',
+                  strokeDasharray: 55,
+                  strokeDashoffset: 55,
+                  animation: 'drawPath 0.5s ease-out forwards 1.3s',
                 }}
               />
               
               {/* Chest piece inner circle */}
               <circle
-                cx="32"
-                cy="55"
+                cx="52"
+                cy="40"
                 r="3"
                 fill="white"
                 style={{
                   opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 1.5s',
+                  animation: 'fadeInScale 0.3s ease-out forwards 1.6s',
                 }}
               />
             </svg>
