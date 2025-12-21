@@ -141,15 +141,15 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
           >
             {/* Animated stethoscope SVG - exact match to favicon */}
             <svg 
-              viewBox="0 0 100 110" 
+              viewBox="0 0 100 115" 
               className="w-24 h-24"
               style={{
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }}
             >
-              {/* U-shaped tube - two vertical lines connected by curved bottom */}
+              {/* U-shaped tube - proper U curve at bottom */}
               <path
-                d="M22,10 L22,42 Q22,62 42,62 L48,62 Q68,62 68,42 L68,10"
+                d="M25,8 L25,45 C25,60 45,65 45,65 C45,65 65,60 65,45 L65,8"
                 fill="none"
                 stroke="white"
                 strokeWidth="6"
@@ -164,8 +164,8 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               
               {/* Left earpiece */}
               <circle
-                cx="22"
-                cy="8"
+                cx="25"
+                cy="6"
                 r="5"
                 fill="white"
                 style={{
@@ -176,8 +176,8 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               
               {/* Right earpiece */}
               <circle
-                cx="68"
-                cy="8"
+                cx="65"
+                cy="6"
                 r="5"
                 fill="white"
                 style={{
@@ -186,24 +186,24 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
                 }}
               />
               
-              {/* Tube from bottom center curving down-right to chest piece */}
+              {/* Tube from bottom of U curving down-right to chest piece */}
               <path
-                d="M45,62 Q45,85 65,95 Q75,100 82,95"
+                d="M45,65 C50,80 60,90 75,95"
                 fill="none"
                 stroke="white"
                 strokeWidth="6"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 70,
-                  strokeDashoffset: 70,
+                  strokeDasharray: 55,
+                  strokeDashoffset: 55,
                   animation: 'drawPath 0.5s ease-out forwards 1.1s',
                 }}
               />
               
               {/* Chest piece (diaphragm) outer circle */}
               <circle
-                cx="88"
-                cy="88"
+                cx="82"
+                cy="98"
                 r="10"
                 fill="none"
                 stroke="white"
@@ -217,8 +217,8 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               
               {/* Chest piece inner dot */}
               <circle
-                cx="88"
-                cy="88"
+                cx="82"
+                cy="98"
                 r="4"
                 fill="white"
                 style={{
