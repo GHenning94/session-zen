@@ -139,33 +139,33 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               boxShadow: '0 20px 60px -10px hsl(var(--primary) / 0.5)',
             }}
           >
-            {/* Animated stethoscope SVG - matching the favicon design */}
+            {/* Animated stethoscope SVG - exact match to favicon */}
             <svg 
-              viewBox="0 0 64 64" 
+              viewBox="0 0 100 100" 
               className="w-20 h-20"
               style={{
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }}
             >
-              {/* Main U-shaped tube of stethoscope */}
+              {/* U-shaped tube with earpieces */}
               <path
-                d="M16,8 L16,28 C16,42 28,50 32,50 C36,50 48,42 48,28 L48,8"
+                d="M28,18 L28,45 C28,62 40,72 50,72 C60,72 72,62 72,45 L72,18"
                 fill="none"
                 stroke="white"
-                strokeWidth="4"
+                strokeWidth="6"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 140,
-                  strokeDashoffset: 140,
+                  strokeDasharray: 160,
+                  strokeDashoffset: 160,
                   animation: 'drawPath 1s ease-out forwards 0.3s',
                 }}
               />
               
-              {/* Left earpiece */}
+              {/* Left earpiece (rounded cap) */}
               <circle
-                cx="16"
-                cy="6"
-                r="4"
+                cx="28"
+                cy="15"
+                r="5"
                 fill="white"
                 style={{
                   opacity: 0,
@@ -173,44 +173,56 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
                 }}
               />
               
-              {/* Connector tube going right from bottom */}
+              {/* Right earpiece (rounded cap) */}
+              <circle
+                cx="72"
+                cy="15"
+                r="5"
+                fill="white"
+                style={{
+                  opacity: 0,
+                  animation: 'fadeInScale 0.3s ease-out forwards 1s',
+                }}
+              />
+              
+              {/* Tube curving from bottom center to chest piece */}
               <path
-                d="M32,50 C38,50 44,48 48,44"
+                d="M50,72 Q60,76 70,76 Q82,76 86,66"
                 fill="none"
                 stroke="white"
-                strokeWidth="4"
+                strokeWidth="6"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 30,
-                  strokeDashoffset: 30,
-                  animation: 'drawPath 0.4s ease-out forwards 1.1s',
+                  strokeDasharray: 50,
+                  strokeDashoffset: 50,
+                  animation: 'drawPath 0.5s ease-out forwards 1.1s',
                 }}
               />
               
               {/* Chest piece (diaphragm) outer circle */}
               <circle
-                cx="52"
-                cy="40"
-                r="8"
+                cx="86"
+                cy="56"
+                r="10"
                 fill="none"
                 stroke="white"
-                strokeWidth="4"
+                strokeWidth="5"
                 style={{
-                  strokeDasharray: 55,
-                  strokeDashoffset: 55,
-                  animation: 'drawPath 0.5s ease-out forwards 1.3s',
+                  strokeDasharray: 65,
+                  strokeDashoffset: 65,
+                  animation: 'drawPath 0.4s ease-out forwards 1.4s',
                 }}
               />
               
-              {/* Chest piece inner circle */}
+              {/* Chest piece inner dot */}
               <circle
-                cx="52"
-                cy="40"
-                r="3"
+                cx="86"
+                cy="56"
+                r="4"
                 fill="white"
                 style={{
                   opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 1.6s',
+                  animation: 'fadeInScale 0.3s ease-out forwards 1.7s',
                 }}
               />
             </svg>
