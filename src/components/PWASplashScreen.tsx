@@ -141,31 +141,31 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
           >
             {/* Animated stethoscope SVG - exact match to favicon */}
             <svg 
-              viewBox="0 0 100 100" 
-              className="w-20 h-20"
+              viewBox="0 0 120 120" 
+              className="w-24 h-24"
               style={{
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }}
             >
               {/* U-shaped tube with earpieces */}
               <path
-                d="M28,18 L28,45 C28,62 40,72 50,72 C60,72 72,62 72,45 L72,18"
+                d="M30,15 L30,50 C30,70 45,80 55,80 C65,80 80,70 80,50 L80,15"
                 fill="none"
                 stroke="white"
-                strokeWidth="6"
+                strokeWidth="7"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 160,
-                  strokeDashoffset: 160,
+                  strokeDasharray: 200,
+                  strokeDashoffset: 200,
                   animation: 'drawPath 1s ease-out forwards 0.3s',
                 }}
               />
               
               {/* Left earpiece (rounded cap) */}
               <circle
-                cx="28"
-                cy="15"
-                r="5"
+                cx="30"
+                cy="12"
+                r="6"
                 fill="white"
                 style={{
                   opacity: 0,
@@ -175,9 +175,9 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               
               {/* Right earpiece (rounded cap) */}
               <circle
-                cx="72"
-                cy="15"
-                r="5"
+                cx="80"
+                cy="12"
+                r="6"
                 fill="white"
                 style={{
                   opacity: 0,
@@ -185,40 +185,40 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
                 }}
               />
               
-              {/* Tube curving from bottom center to chest piece */}
+              {/* Tube curving DOWN from bottom center, then to chest piece */}
               <path
-                d="M50,72 Q60,76 70,76 Q82,76 86,66"
+                d="M55,80 C55,95 70,105 90,95"
                 fill="none"
                 stroke="white"
-                strokeWidth="6"
+                strokeWidth="7"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 50,
-                  strokeDashoffset: 50,
+                  strokeDasharray: 60,
+                  strokeDashoffset: 60,
                   animation: 'drawPath 0.5s ease-out forwards 1.1s',
                 }}
               />
               
               {/* Chest piece (diaphragm) outer circle */}
               <circle
-                cx="86"
-                cy="56"
-                r="10"
+                cx="98"
+                cy="88"
+                r="12"
                 fill="none"
                 stroke="white"
-                strokeWidth="5"
+                strokeWidth="6"
                 style={{
-                  strokeDasharray: 65,
-                  strokeDashoffset: 65,
+                  strokeDasharray: 80,
+                  strokeDashoffset: 80,
                   animation: 'drawPath 0.4s ease-out forwards 1.4s',
                 }}
               />
               
               {/* Chest piece inner dot */}
               <circle
-                cx="86"
-                cy="56"
-                r="4"
+                cx="98"
+                cy="88"
+                r="5"
                 fill="white"
                 style={{
                   opacity: 0,
