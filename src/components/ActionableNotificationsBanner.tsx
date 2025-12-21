@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, CreditCard, Shield, EyeOff, Repeat } from 'lucide-react';
+import { X, CreditCard, Shield, EyeOff, Repeat, GripHorizontal } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { use2FA } from '@/hooks/use2FA';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useProfileModal } from '@/contexts/ProfileModalContext';
+import { useSwipeToDismiss } from '@/hooks/useSwipeToDismiss';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,6 +37,16 @@ export const ActionableNotificationsBanner = () => {
   const [notifications, setNotifications] = useState<ActionableNotification[]>([]);
   const [showHideDialog, setShowHideDialog] = useState(false);
   const [notificationToHide, setNotificationToHide] = useState<string | null>(null);
+
+  const handleDismiss = () => {
+    setVisible(false);
+    sessionStorage.setItem('actionableNotificationsDismissed', 'true');
+  };
+
+  const { handlers: swipeHandlers, style: swipeStyle } = useSwipeToDismiss({
+    threshold: 100,
+    onDismiss: handleDismiss,
+  });
 
   useEffect(() => {
     // Check if banner was dismissed in this session
@@ -125,11 +136,6 @@ export const ActionableNotificationsBanner = () => {
     setNotifications(actionableNotifications);
   };
 
-  const handleDismiss = () => {
-    setVisible(false);
-    sessionStorage.setItem('actionableNotificationsDismissed', 'true');
-  };
-
   const handleHideNotification = (notificationId: string) => {
     setNotificationToHide(notificationId);
     setShowHideDialog(true);
@@ -169,56 +175,67 @@ export const ActionableNotificationsBanner = () => {
 
   return (
     <>
-      <Card className="mb-6 border-warning/50 bg-warning/5">
-        <CardContent className="p-4">
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex-1 space-y-3">
-              {notifications.map((notification) => (
-                <div
-                  key={notification.id}
-                  className="flex items-center justify-between gap-4"
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="flex-shrink-0 text-warning">
-                      {notification.icon}
+      <div
+        {...swipeHandlers}
+        style={swipeStyle}
+        className="touch-pan-y"
+      >
+        <Card className="mb-6 border-warning/50 bg-warning/5 overflow-hidden">
+          <CardContent className="p-4">
+            <div className="flex items-start justify-between gap-4">
+              {/* Swipe indicator */}
+              <div className="flex-shrink-0 flex items-center text-muted-foreground/50 cursor-grab active:cursor-grabbing">
+                <GripHorizontal className="h-5 w-5" />
+              </div>
+              
+              <div className="flex-1 space-y-3">
+                {notifications.map((notification) => (
+                  <div
+                    key={notification.id}
+                    className="flex items-center justify-between gap-4"
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <div className="flex-shrink-0 text-warning">
+                        {notification.icon}
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-sm font-medium">
+                          {notification.message}
+                        </p>
+                      </div>
                     </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {notification.message}
-                      </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => handleAction(notification.route)}
+                      >
+                        {notification.action}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleHideNotification(notification.id)}
+                        title="Não mostrar novamente"
+                      >
+                        <EyeOff className="h-4 w-4" />
+                      </Button>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="default"
-                      onClick={() => handleAction(notification.route)}
-                    >
-                      {notification.action}
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleHideNotification(notification.id)}
-                      title="Não mostrar novamente"
-                    >
-                      <EyeOff className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleDismiss}
+                className="flex-shrink-0"
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleDismiss}
-              className="flex-shrink-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
 
       <AlertDialog open={showHideDialog} onOpenChange={setShowHideDialog}>
         <AlertDialogContent>
