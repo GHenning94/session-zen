@@ -139,91 +139,68 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               boxShadow: '0 20px 60px -10px hsl(var(--primary) / 0.5)',
             }}
           >
-            {/* Animated stethoscope SVG - exact match to favicon */}
+            {/* Animated stethoscope SVG - exact Lucide icon */}
             <svg 
-              viewBox="0 0 100 115" 
-              className="w-24 h-24"
+              viewBox="0 0 24 24" 
+              className="w-20 h-20"
+              fill="none"
+              stroke="white"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
               style={{
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }}
             >
-              {/* U-shaped tube - proper U curve at bottom */}
+              {/* Left earpiece vertical line */}
               <path
-                d="M25,8 L25,45 C25,60 45,65 45,65 C45,65 65,60 65,45 L65,8"
-                fill="none"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                d="M5 2v2"
                 style={{
-                  strokeDasharray: 180,
-                  strokeDashoffset: 180,
-                  animation: 'drawPath 1s ease-out forwards 0.3s',
+                  strokeDasharray: 4,
+                  strokeDashoffset: 4,
+                  animation: 'drawPath 0.2s ease-out forwards 0.3s',
                 }}
               />
               
-              {/* Left earpiece */}
-              <circle
-                cx="25"
-                cy="6"
-                r="5"
-                fill="white"
-                style={{
-                  opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 1s',
-                }}
-              />
-              
-              {/* Right earpiece */}
-              <circle
-                cx="65"
-                cy="6"
-                r="5"
-                fill="white"
-                style={{
-                  opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 1s',
-                }}
-              />
-              
-              {/* Tube from bottom of U curving down-right to chest piece */}
+              {/* Right earpiece vertical line */}
               <path
-                d="M45,65 C50,80 60,90 75,95"
-                fill="none"
-                stroke="white"
-                strokeWidth="6"
-                strokeLinecap="round"
+                d="M11 2v2"
                 style={{
-                  strokeDasharray: 55,
-                  strokeDashoffset: 55,
-                  animation: 'drawPath 0.5s ease-out forwards 1.1s',
+                  strokeDasharray: 4,
+                  strokeDashoffset: 4,
+                  animation: 'drawPath 0.2s ease-out forwards 0.4s',
                 }}
               />
               
-              {/* Chest piece (diaphragm) outer circle */}
-              <circle
-                cx="82"
-                cy="98"
-                r="10"
-                fill="none"
-                stroke="white"
-                strokeWidth="5"
+              {/* U-shaped tube with rounded corners */}
+              <path
+                d="M5 3H4a2 2 0 0 0-2 2v4a6 6 0 0 0 12 0V5a2 2 0 0 0-2-2h-1"
                 style={{
-                  strokeDasharray: 65,
-                  strokeDashoffset: 65,
-                  animation: 'drawPath 0.4s ease-out forwards 1.4s',
+                  strokeDasharray: 60,
+                  strokeDashoffset: 60,
+                  animation: 'drawPath 0.8s ease-out forwards 0.5s',
                 }}
               />
               
-              {/* Chest piece inner dot */}
-              <circle
-                cx="82"
-                cy="98"
-                r="4"
-                fill="white"
+              {/* Tube going to diaphragm */}
+              <path
+                d="M8 15a6 6 0 0 0 12 0v-3"
                 style={{
-                  opacity: 0,
-                  animation: 'fadeInScale 0.3s ease-out forwards 1.7s',
+                  strokeDasharray: 40,
+                  strokeDashoffset: 40,
+                  animation: 'drawPath 0.5s ease-out forwards 1.2s',
+                }}
+              />
+              
+              {/* Diaphragm circle */}
+              <circle
+                cx="20"
+                cy="10"
+                r="2"
+                style={{
+                  strokeDasharray: 13,
+                  strokeDashoffset: 13,
+                  animation: 'drawPath 0.3s ease-out forwards 1.6s',
                 }}
               />
             </svg>
