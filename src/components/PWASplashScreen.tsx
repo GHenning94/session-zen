@@ -147,25 +147,39 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
                 filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))',
               }}
             >
-              {/* Stethoscope tubing with draw animation */}
+              {/* Left tube from earpiece down and curving to center */}
               <path
-                d="M20,12 C20,8 24,4 28,4 L28,4 C32,4 36,8 36,12 L36,28 C36,34 32,38 28,38 L28,38 C24,38 20,34 20,28 L20,12"
+                d="M18,6 L18,20 C18,30 24,36 32,42"
                 fill="none"
                 stroke="white"
-                strokeWidth="3"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 120,
-                  strokeDashoffset: 120,
-                  animation: 'drawPath 1.2s ease-out forwards 0.3s',
+                  strokeDasharray: 60,
+                  strokeDashoffset: 60,
+                  animation: 'drawPath 0.8s ease-out forwards 0.3s',
+                }}
+              />
+              
+              {/* Right tube from earpiece down and curving to center */}
+              <path
+                d="M46,6 L46,20 C46,30 40,36 32,42"
+                fill="none"
+                stroke="white"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                style={{
+                  strokeDasharray: 60,
+                  strokeDashoffset: 60,
+                  animation: 'drawPath 0.8s ease-out forwards 0.4s',
                 }}
               />
               
               {/* Left ear piece */}
               <circle
-                cx="20"
-                cy="8"
-                r="4"
+                cx="18"
+                cy="5"
+                r="3"
                 fill="white"
                 style={{
                   opacity: 0,
@@ -175,9 +189,9 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
               
               {/* Right ear piece */}
               <circle
-                cx="36"
-                cy="8"
-                r="4"
+                cx="46"
+                cy="5"
+                r="3"
                 fill="white"
                 style={{
                   opacity: 0,
@@ -185,40 +199,40 @@ export const PWASplashScreen = ({ onFinish, duration = 2500 }: PWASplashScreenPr
                 }}
               />
               
-              {/* Chest piece connector */}
+              {/* Center connector to chest piece */}
               <path
-                d="M28,38 L28,48"
+                d="M32,42 L32,48"
                 fill="none"
                 stroke="white"
-                strokeWidth="3"
+                strokeWidth="2.5"
                 strokeLinecap="round"
                 style={{
-                  strokeDasharray: 20,
-                  strokeDashoffset: 20,
-                  animation: 'drawPath 0.4s ease-out forwards 1s',
+                  strokeDasharray: 10,
+                  strokeDashoffset: 10,
+                  animation: 'drawPath 0.3s ease-out forwards 1s',
                 }}
               />
               
-              {/* Chest piece (diaphragm) */}
+              {/* Chest piece (diaphragm) outer */}
               <circle
-                cx="28"
-                cy="54"
-                r="8"
+                cx="32"
+                cy="55"
+                r="7"
                 fill="none"
                 stroke="white"
-                strokeWidth="3"
+                strokeWidth="2.5"
                 style={{
-                  strokeDasharray: 60,
-                  strokeDashoffset: 60,
+                  strokeDasharray: 50,
+                  strokeDashoffset: 50,
                   animation: 'drawPath 0.5s ease-out forwards 1.2s',
                 }}
               />
               
-              {/* Inner circle of chest piece */}
+              {/* Chest piece inner circle */}
               <circle
-                cx="28"
-                cy="54"
-                r="4"
+                cx="32"
+                cy="55"
+                r="3"
                 fill="white"
                 style={{
                   opacity: 0,
