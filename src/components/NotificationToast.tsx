@@ -53,8 +53,17 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   }, [onAnimationComplete])
   
   useEffect(() => {
+    // Debug: log when notification prop changes
+    console.log('[NotificationToast] notification prop:', notification?.id, notification?.titulo)
+    
     // Only trigger for NEW notifications (different id)
-    if (!notification || notification.id === lastNotificationIdRef.current) {
+    if (!notification) {
+      console.log('[NotificationToast] No notification, returning')
+      return
+    }
+    
+    if (notification.id === lastNotificationIdRef.current) {
+      console.log('[NotificationToast] Same notification id, skipping:', notification.id)
       return
     }
 
@@ -68,9 +77,11 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
     lastNotificationIdRef.current = notification.id
     
     // Play notification sound
+    console.log('[NotificationToast] Playing sound')
     playNotificationSound()
     
     // Show the toast
+    console.log('[NotificationToast] Setting visible = true')
     setDisplayedNotification(notification)
     setIsExiting(false)
     setIsVisible(true)
@@ -83,7 +94,7 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
 
     // Complete animation after exit (3s visible + 0.5s exit)
     completeTimerRef.current = setTimeout(() => {
-      console.log('[NotificationToast] Animation complete')
+      console.log('[NotificationToast] Animation complete, calling handleComplete')
       setIsVisible(false)
       setIsExiting(false)
       setDisplayedNotification(null)
@@ -96,6 +107,8 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
     }
   }, [notification?.id, handleComplete])
 
+  console.log('[NotificationToast] Rendering toast, isVisible:', isVisible, 'displayedNotification:', displayedNotification?.id)
+
   // Don't render if not visible
   if (!isVisible || !displayedNotification) {
     return null
@@ -103,6 +116,8 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
 
   const category = getCategory(displayedNotification.titulo)
   const summary = getShortSummary(displayedNotification.conteudo)
+  
+  console.log('[NotificationToast] ACTUALLY RENDERING visible toast for:', displayedNotification.titulo)
 
   return (
     <div

@@ -39,6 +39,7 @@ import { cleanupInvalidSession } from "@/utils/sessionCleanup"
 import { useNavigate } from "react-router-dom"
 import { useGoogleCalendarBackgroundSync } from "@/hooks/useGoogleCalendarBackgroundSync"
 import { useNotificationSound, playNotificationSound } from "@/hooks/useNotificationSound"
+import { useNotifications } from "@/hooks/useNotifications"
 import { Volume2, VolumeX } from "lucide-react"
 
 type AllSettings = Record<string, any>;
@@ -51,6 +52,7 @@ const Configuracoes = () => {
   const { applyBrandColor, saveBrandColor } = useColorTheme()
   const { isAutoSyncEnabled, toggleAutoSync, isSyncing, lastSyncResult, manualSync } = useGoogleCalendarBackgroundSync()
   const { soundEnabled, setSoundEnabled } = useNotificationSound()
+  const { createNotification } = useNotifications()
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
@@ -1001,7 +1003,23 @@ const Configuracoes = () => {
                         onClick={() => playNotificationSound()}
                         className="text-xs"
                       >
-                        Testar
+                        Testar Som
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          const success = await createNotification(
+                            'Teste de Notificação',
+                            'Esta é uma notificação de teste para verificar a animação.'
+                          )
+                          if (success) {
+                            toast({ title: 'Notificação de teste criada', description: 'Verifique o sininho para ver a animação.' })
+                          }
+                        }}
+                        className="text-xs"
+                      >
+                        Testar Animação
                       </Button>
                       <Switch
                         checked={soundEnabled}
