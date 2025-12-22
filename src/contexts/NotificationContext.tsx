@@ -87,110 +87,124 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     isSubscribedRef.current = true
     isCleaningUpRef.current = false
     
+    let channel: ReturnType<typeof supabase.channel> | null = null
+    
     // CRITICAL: Set the auth token for Realtime BEFORE creating channels
-    // This is required because supabase-js doesn't automatically inherit the auth token for Realtime
-    const setupRealtimeAuth = async () => {
-      const { data: sessionData } = await supabase.auth.getSession()
-      if (sessionData?.session?.access_token) {
-        console.log('[NotificationContext] Setting Realtime auth token')
-        supabase.realtime.setAuth(sessionData.session.access_token)
+    // This MUST complete before we create the channel
+    const initializeRealtimeSubscription = async () => {
+      try {
+        // Step 1: Get session and set auth token FIRST
+        const { data: sessionData } = await supabase.auth.getSession()
+        if (sessionData?.session?.access_token) {
+          console.log('[NotificationContext] Setting Realtime auth token BEFORE creating channel')
+          supabase.realtime.setAuth(sessionData.session.access_token)
+        } else {
+          console.warn('[NotificationContext] No access token available for Realtime')
+        }
+        
+        // Step 2: Load notifications
+        await loadNotifications()
+        
+        // Step 3: NOW create the channel (after auth is set)
+        const channelName = `notifications_user_${user.id}_${Date.now()}`
+        console.log(`[NotificationContext] Creating channel: ${channelName}`)
+        
+        channel = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: 'INSERT',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('[NotificationContext] INSERT event received:', payload)
+              const newNotification = payload.new as Notification
+              console.log('[NotificationContext] New notification:', newNotification.id, newNotification.titulo)
+              
+              // Check if already seen (avoid duplicates)
+              if (seenNotificationIds.current.has(newNotification.id)) {
+                console.log('[NotificationContext] Notification already seen, skipping')
+                return
+              }
+              
+              seenNotificationIds.current.add(newNotification.id)
+              
+              // Play notification sound
+              console.log('[NotificationContext] Playing notification sound')
+              playNotificationSound()
+              
+              // Set incoming notification for custom toast animation
+              console.log('[NotificationContext] CALLING setIncomingNotification with:', newNotification.titulo)
+              setIncomingNotification(newNotification)
+              
+              setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('[NotificationContext] UPDATE event received:', payload)
+              const updatedNotification = payload.new as Notification
+              setNotifications((prev) =>
+                prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
+              )
+              
+              if (updatedNotification.lida) {
+                setUnreadCount((prev) => Math.max(0, prev - 1))
+              }
+            }
+          )
+          .on(
+            'postgres_changes',
+            {
+              event: 'DELETE',
+              schema: 'public',
+              table: 'notifications',
+              filter: `user_id=eq.${user.id}`
+            },
+            (payload) => {
+              console.log('[NotificationContext] DELETE event received:', payload)
+              const deletedId = payload.old.id
+              setNotifications((prev) => prev.filter((n) => n.id !== deletedId))
+              
+              if (!payload.old.lida) {
+                setUnreadCount((prev) => Math.max(0, prev - 1))
+              }
+            }
+          )
+          .subscribe((status) => {
+            console.log(`[NotificationContext] Subscription status: ${status}`)
+            if (status === 'SUBSCRIBED') {
+              console.log('[NotificationContext] Successfully subscribed to realtime notifications!')
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('[NotificationContext] Channel error - realtime may not work')
+            } else if (status === 'TIMED_OUT') {
+              console.error('[NotificationContext] Subscription timed out')
+            }
+          })
+      } catch (error) {
+        console.error('[NotificationContext] Error initializing realtime subscription:', error)
       }
     }
-    setupRealtimeAuth()
     
-    loadNotifications()
-
-    const channelName = `notifications_user_${user.id}_${Date.now()}`
-    console.log(`[NotificationContext] Creating channel: ${channelName}`)
-    
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('[NotificationContext] INSERT event received:', payload)
-          const newNotification = payload.new as Notification
-          console.log('[NotificationContext] New notification:', newNotification.id, newNotification.titulo)
-          
-          // Check if already seen (avoid duplicates)
-          if (seenNotificationIds.current.has(newNotification.id)) {
-            console.log('[NotificationContext] Notification already seen, skipping')
-            return
-          }
-          
-          seenNotificationIds.current.add(newNotification.id)
-          
-          // Play notification sound
-          console.log('[NotificationContext] Playing notification sound')
-          playNotificationSound()
-          
-          // Set incoming notification for custom toast animation
-          console.log('[NotificationContext] CALLING setIncomingNotification with:', newNotification.titulo)
-          setIncomingNotification(newNotification)
-          
-          setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('[NotificationContext] UPDATE event received:', payload)
-          const updatedNotification = payload.new as Notification
-          setNotifications((prev) =>
-            prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
-          )
-          
-          if (updatedNotification.lida) {
-            setUnreadCount((prev) => Math.max(0, prev - 1))
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'DELETE',
-          schema: 'public',
-          table: 'notifications',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          console.log('[NotificationContext] DELETE event received:', payload)
-          const deletedId = payload.old.id
-          setNotifications((prev) => prev.filter((n) => n.id !== deletedId))
-          
-          if (!payload.old.lida) {
-            setUnreadCount((prev) => Math.max(0, prev - 1))
-          }
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[NotificationContext] Subscription status: ${status}`)
-        if (status === 'SUBSCRIBED') {
-          console.log('[NotificationContext] Successfully subscribed to realtime notifications!')
-        } else if (status === 'CHANNEL_ERROR') {
-          console.error('[NotificationContext] Channel error - realtime may not work')
-        } else if (status === 'TIMED_OUT') {
-          console.error('[NotificationContext] Subscription timed out')
-        }
-      })
+    initializeRealtimeSubscription()
 
     return () => {
       console.log(`[NotificationContext] Cleaning up subscription`)
       isCleaningUpRef.current = true
       isSubscribedRef.current = false
-      supabase.removeChannel(channel)
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
     }
   }, [user?.id, loadNotifications])
 
