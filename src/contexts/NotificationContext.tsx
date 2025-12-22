@@ -87,6 +87,17 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     isSubscribedRef.current = true
     isCleaningUpRef.current = false
     
+    // CRITICAL: Set the auth token for Realtime BEFORE creating channels
+    // This is required because supabase-js doesn't automatically inherit the auth token for Realtime
+    const setupRealtimeAuth = async () => {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (sessionData?.session?.access_token) {
+        console.log('[NotificationContext] Setting Realtime auth token')
+        supabase.realtime.setAuth(sessionData.session.access_token)
+      }
+    }
+    setupRealtimeAuth()
+    
     loadNotifications()
 
     const channelName = `notifications_user_${user.id}_${Date.now()}`

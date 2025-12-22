@@ -58,6 +58,17 @@ export const GlobalRealtimeProvider = ({ children }: GlobalRealtimeProviderProps
     console.log('[GlobalRealtime] 🔌 Initializing global realtime channel')
     setConnectionStatus('connecting')
 
+    // CRITICAL: Set the auth token for Realtime BEFORE creating channels
+    // This is required because supabase-js doesn't automatically inherit the auth token
+    const setupRealtimeAuth = async () => {
+      const { data: sessionData } = await supabase.auth.getSession()
+      if (sessionData?.session?.access_token) {
+        console.log('[GlobalRealtime] Setting Realtime auth token')
+        supabase.realtime.setAuth(sessionData.session.access_token)
+      }
+    }
+    setupRealtimeAuth()
+
     // ÚNICO canal para sessions, clients, payments (notifications handled separately by NotificationContext)
     const globalChannel = supabase
       .channel('global-realtime')
