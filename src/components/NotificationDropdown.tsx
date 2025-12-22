@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useNotifications } from "@/hooks/useNotifications"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { NotificationToast } from "@/components/NotificationToast"
 import { 
   Bell, 
   BellOff, 
@@ -47,7 +48,9 @@ const NotificationDropdown = () => {
     markAsRead, 
     markAllAsRead, 
     deleteNotification,
-    markVisibleAsRead
+    markVisibleAsRead,
+    incomingNotification,
+    clearIncomingNotification
   } = useNotifications()
   const [open, setOpen] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
@@ -273,17 +276,25 @@ const NotificationDropdown = () => {
   if (isMobile) {
     return (
       <>
-        <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => setOpen(true)}>
-          <Bell className="w-5 h-5" />
-          {unreadCount > 0 && (
-            <Badge 
-              variant="destructive" 
-              className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
-            >
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </Badge>
-          )}
-        </Button>
+        <div className="relative">
+          <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => setOpen(true)}>
+            <Bell className="w-5 h-5" />
+            {unreadCount > 0 && !incomingNotification && (
+              <Badge 
+                variant="destructive" 
+                className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center text-[10px] animate-in zoom-in-50 duration-300"
+              >
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </Badge>
+            )}
+          </Button>
+          
+          {/* Notification Toast */}
+          <NotificationToast 
+            notification={incomingNotification}
+            onAnimationComplete={clearIncomingNotification}
+          />
+        </div>
         
         <Sheet open={open} onOpenChange={(newOpen) => {
           setOpen(newOpen)
@@ -377,19 +388,27 @@ const NotificationDropdown = () => {
   return (
     <>
       <DropdownMenu open={open} onOpenChange={handleOpenChange}>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-            {unreadCount > 0 && (
-              <Badge 
-                variant="destructive" 
-                className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
-              >
-                {unreadCount > 99 ? '99+' : unreadCount}
-              </Badge>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
+        <div className="relative">
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="relative">
+              <Bell className="w-5 h-5" />
+              {unreadCount > 0 && !incomingNotification && (
+                <Badge 
+                  variant="destructive" 
+                  className="absolute -top-2 -right-2 h-5 w-5 p-0 flex items-center justify-center text-xs animate-in zoom-in-50 duration-300"
+                >
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </Badge>
+              )}
+            </Button>
+          </DropdownMenuTrigger>
+          
+          {/* Notification Toast */}
+          <NotificationToast 
+            notification={incomingNotification}
+            onAnimationComplete={clearIncomingNotification}
+          />
+        </div>
         
         <DropdownMenuContent 
           align="end" 

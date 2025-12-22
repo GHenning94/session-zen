@@ -18,11 +18,13 @@ export const useNotifications = () => {
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
+  const [incomingNotification, setIncomingNotification] = useState<Notification | null>(null)
   const seenNotificationIds = useRef(new Set<string>())
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null)
   const isSubscribedRef = useRef(false)
   const isCleaningUpRef = useRef(false)
   const visibilityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const initialLoadDoneRef = useRef(false)
 
   const loadNotifications = useCallback(async () => {
     if (!user) return
@@ -46,6 +48,7 @@ export const useNotifications = () => {
       setNotifications(data || [])
       setUnreadCount((data || []).filter((n: Notification) => !n.lida).length)
       console.log('[useNotifications] Notifications loaded:', data?.length || 0)
+      initialLoadDoneRef.current = true
     } catch (error) {
       console.error('[useNotifications] Error loading notifications:', error)
     } finally {
@@ -103,8 +106,16 @@ export const useNotifications = () => {
             
             seenNotificationIds.current.add(newNotification.id)
             
+            // Show toast popup for new notifications (only after initial load)
+            if (initialLoadDoneRef.current) {
+              setIncomingNotification(newNotification)
+            }
+            
             setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
-            setUnreadCount((prev) => prev + 1)
+            // Don't increment unreadCount here - will be done after toast animation
+            if (!initialLoadDoneRef.current) {
+              setUnreadCount((prev) => prev + 1)
+            }
           } else if (payload.eventType === 'UPDATE') {
             const updatedNotification = payload.new as Notification
             setNotifications((prev) =>
@@ -306,6 +317,14 @@ export const useNotifications = () => {
     }
   }
 
+  // Clear incoming notification and show badge
+  const clearIncomingNotification = useCallback(() => {
+    if (incomingNotification) {
+      setUnreadCount((prev) => prev + 1)
+      setIncomingNotification(null)
+    }
+  }, [incomingNotification])
+
   return {
     notifications,
     unreadCount,
@@ -314,6 +333,8 @@ export const useNotifications = () => {
     markAllAsRead,
     deleteNotification,
     createNotification,
-    markVisibleAsRead
+    markVisibleAsRead,
+    incomingNotification,
+    clearIncomingNotification
   }
 }
