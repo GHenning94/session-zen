@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
-import { useToast } from '@/hooks/use-toast'
 
 interface Notification {
   id: string
@@ -14,7 +13,6 @@ interface Notification {
 
 export const useNotifications = () => {
   const { user } = useAuth()
-  const { toast } = useToast()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -106,10 +104,12 @@ export const useNotifications = () => {
             
             seenNotificationIds.current.add(newNotification.id)
             
-            // Show toast popup for new notifications (only after initial load)
+            // Set incoming notification for custom toast animation (only after initial load)
             if (initialLoadDoneRef.current) {
-              console.log('[useNotifications] Setting incoming notification for toast:', newNotification.titulo)
+              console.log('[useNotifications] Setting incoming notification for custom toast:', newNotification.titulo)
               setIncomingNotification(newNotification)
+            } else {
+              console.log('[useNotifications] Initial load not done yet, skipping toast')
             }
             
             setNotifications((prev) => [newNotification, ...prev].slice(0, 50))

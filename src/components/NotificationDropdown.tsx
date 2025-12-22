@@ -383,6 +383,9 @@ const NotificationDropdown = () => {
   }
 
   // Desktop: usa DropdownMenu
+  // Debug: log incomingNotification state
+  console.log('[NotificationDropdown] incomingNotification:', incomingNotification?.id, incomingNotification?.titulo)
+  
   return (
     <>
       {/* Notification Toast - rendered OUTSIDE dropdown to prevent clipping */}
