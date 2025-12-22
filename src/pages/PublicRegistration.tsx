@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
+import { useTheme } from "next-themes"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -43,6 +44,7 @@ const PublicRegistration = () => {
   const { token } = useParams()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { setTheme } = useTheme()
   const [isLoading, setIsLoading] = useState(true)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [tokenStatus, setTokenStatus] = useState<'valid' | 'used' | 'expired' | 'not_found' | 'error'>('valid')
@@ -50,6 +52,11 @@ const PublicRegistration = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [isCompleteForm, setIsCompleteForm] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+
+  // Force light theme for public registration page
+  useEffect(() => {
+    setTheme('light')
+  }, [setTheme])
 
   // Função para formatar telefone durante digitação
   const formatPhone = (value: string) => {
