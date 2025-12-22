@@ -181,34 +181,54 @@ export const ActionableNotificationsBanner = () => {
         className="touch-pan-y"
       >
         <Card className="mb-6 border-warning/50 bg-warning/5 overflow-hidden">
-          <CardContent className="p-4">
-            <div className="flex items-start justify-between gap-4">
-              {/* Swipe indicator */}
-              <div className="flex-shrink-0 flex items-center text-muted-foreground/50 cursor-grab active:cursor-grabbing">
+          <CardContent className="p-3 md:p-4">
+            {/* Mobile: vertical layout, Desktop: horizontal */}
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
+              {/* Desktop: Swipe indicator left side */}
+              <div className="hidden md:flex flex-shrink-0 items-center text-muted-foreground/50 cursor-grab active:cursor-grabbing">
                 <GripHorizontal className="h-5 w-5" />
+              </div>
+              
+              {/* Mobile: Header with swipe indicator and close */}
+              <div className="flex md:hidden items-center justify-between">
+                <div className="flex items-center gap-2 text-muted-foreground/50 cursor-grab active:cursor-grabbing">
+                  <GripHorizontal className="h-4 w-4" />
+                  <span className="text-xs">Arraste para fechar</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleDismiss}
+                  className="h-8 w-8"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
               
               <div className="flex-1 space-y-3">
                 {notifications.map((notification) => (
                   <div
                     key={notification.id}
-                    className="flex items-center justify-between gap-4"
+                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
                   >
-                    <div className="flex items-center gap-3 flex-1">
-                      <div className="flex-shrink-0 text-warning">
+                    {/* Message with icon */}
+                    <div className="flex items-start md:items-center gap-3 flex-1">
+                      <div className="flex-shrink-0 text-warning mt-0.5 md:mt-0">
                         {notification.icon}
                       </div>
                       <div className="flex-1">
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium leading-snug">
                           {notification.message}
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
+                    {/* Action buttons - full width on mobile */}
+                    <div className="flex items-center gap-2 ml-8 md:ml-0">
                       <Button
                         size="sm"
                         variant="default"
                         onClick={() => handleAction(notification.route)}
+                        className="flex-1 md:flex-none"
                       >
                         {notification.action}
                       </Button>
@@ -217,6 +237,7 @@ export const ActionableNotificationsBanner = () => {
                         variant="ghost"
                         onClick={() => handleHideNotification(notification.id)}
                         title="Não mostrar novamente"
+                        className="flex-shrink-0"
                       >
                         <EyeOff className="h-4 w-4" />
                       </Button>
@@ -224,11 +245,12 @@ export const ActionableNotificationsBanner = () => {
                   </div>
                 ))}
               </div>
+              {/* Desktop: Close button right side */}
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={handleDismiss}
-                className="flex-shrink-0"
+                className="hidden md:flex flex-shrink-0"
               >
                 <X className="h-4 w-4" />
               </Button>
