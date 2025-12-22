@@ -61,6 +61,7 @@ const Clientes = () => {
   // Estados para seleção em lote
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)
+  const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
 
   // Calculate active filters count
   const activeFiltersCount = useMemo(() => {
@@ -418,7 +419,12 @@ const Clientes = () => {
     setIsSelectionMode(false)
   }
 
-  const handleBatchDeleteClients = async () => {
+  const handleBatchDeleteClients = () => {
+    // Abre o modal de confirmação
+    setBatchDeleteDialogOpen(true)
+  }
+
+  const confirmBatchDeleteClients = async () => {
     try {
       const ids = Array.from(selectedClients)
       
@@ -444,6 +450,7 @@ const Clientes = () => {
       })
       setSelectedClients(new Set())
       setIsSelectionMode(false)
+      setBatchDeleteDialogOpen(false)
       await loadClients()
     } catch (error) {
       console.error('Erro ao excluir clientes:', error)
@@ -708,24 +715,35 @@ const Clientes = () => {
           <CardContent>
             {/* Barra de seleção em lote */}
             {filteredClients.length > 0 && (
-              <BatchSelectionBar
-                selectedCount={selectedClients.size}
-                totalCount={filteredClients.length}
-                onSelectAll={selectAllClients}
-                onClearSelection={clearClientSelection}
-                onBatchDelete={handleBatchDeleteClients}
-                onBatchStatusChange={handleBatchStatusChange}
-                showDelete={true}
-                showStatusChange={true}
-                statusOptions={[
-                  { value: 'ativo', label: 'Ativar' },
-                  { value: 'inativo', label: 'Desativar' }
-                ]}
-                selectLabel={`Selecionar ${clientTermPlural.toLowerCase()}`}
-                deleteLabel={`Excluir ${clientTermPlural.toLowerCase()}`}
-                isSelectionMode={isSelectionMode}
-                onToggleSelectionMode={toggleSelectionMode}
-              />
+              <div className="space-y-2 mb-4">
+                <BatchSelectionBar
+                  selectedCount={selectedClients.size}
+                  totalCount={filteredClients.length}
+                  onSelectAll={selectAllClients}
+                  onClearSelection={clearClientSelection}
+                  onBatchStatusChange={handleBatchStatusChange}
+                  showDelete={false}
+                  showStatusChange={true}
+                  statusOptions={[
+                    { value: 'ativo', label: 'Ativar' },
+                    { value: 'inativo', label: 'Desativar' }
+                  ]}
+                  selectLabel={`Selecionar ${clientTermPlural.toLowerCase()}`}
+                  isSelectionMode={isSelectionMode}
+                  onToggleSelectionMode={toggleSelectionMode}
+                />
+                {selectedClients.size > 0 && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleBatchDeleteClients}
+                    className="text-xs md:text-sm"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-1" />
+                    Excluir {selectedClients.size} {getClientTerm(selectedClients.size).toLowerCase()}(s)
+                  </Button>
+                )}
+              </div>
             )}
 
             {isLoading ? (
@@ -816,6 +834,36 @@ const Clientes = () => {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Excluir {clientTerm}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Batch Delete Confirmation Dialog */}
+        <AlertDialog open={batchDeleteDialogOpen} onOpenChange={setBatchDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-destructive" />
+                Confirmar exclusão em lote
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  Tem certeza que deseja excluir <strong>{selectedClients.size} {getClientTerm(selectedClients.size).toLowerCase()}(s)</strong>?
+                </p>
+                <p className="text-destructive font-medium">
+                  Atenção: Esta ação irá excluir permanentemente todas as sessões, pacotes e pagamentos relacionados a {selectedClients.size > 1 ? 'estes' : 'este'} {getClientTerm(selectedClients.size).toLowerCase()}{selectedClients.size > 1 ? 's' : ''}.
+                </p>
+                <p>Esta ação não pode ser desfeita.</p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={confirmBatchDeleteClients}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Excluir {selectedClients.size} {getClientTerm(selectedClients.size).toLowerCase()}(s)
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
