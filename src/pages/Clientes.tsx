@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Layout } from "@/components/Layout"
 import { 
   Search, 
@@ -21,6 +22,7 @@ import {
   Baby,
   Link,
   AlertTriangle,
+  ChevronDown,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -31,10 +33,13 @@ import { ClientDetailsModal } from "@/components/ClientDetailsModal"
 import { NewClientModal } from "@/components/NewClientModal"
 import { GenerateRegistrationLinkModal } from "@/components/GenerateRegistrationLinkModal"
 import { ClientCard } from "@/components/ClientCard"
+import { BatchSelectionBar, SelectableItemCheckbox } from "@/components/BatchSelectionBar"
 import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useNavigate } from 'react-router-dom'
+import { cn } from "@/lib/utils"
+
 const Clientes = () => {
   console.log("Clientes component is loading - build system test")
   const { toast } = useToast()
@@ -51,6 +56,19 @@ const Clientes = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("todos")
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<any>(null)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  
+  // Estados para seleção em lote
+  const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
+  const [isSelectionMode, setIsSelectionMode] = useState(false)
+
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (statusFilter && statusFilter !== 'todos') count++
+    if (searchTerm) count++
+    return count
+  }, [statusFilter, searchTerm])
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -377,6 +395,102 @@ const Clientes = () => {
     }
   }
 
+  // Funções de seleção em lote
+  const toggleClientSelection = (clientId: string) => {
+    setSelectedClients(prev => {
+      const next = new Set(prev)
+      if (next.has(clientId)) {
+        next.delete(clientId)
+      } else {
+        next.add(clientId)
+      }
+      return next
+    })
+  }
+
+  const selectAllClients = () => {
+    setSelectedClients(new Set(filteredClients.map(c => c.id)))
+    setIsSelectionMode(true)
+  }
+
+  const clearClientSelection = () => {
+    setSelectedClients(new Set())
+    setIsSelectionMode(false)
+  }
+
+  const handleBatchDeleteClients = async () => {
+    try {
+      const ids = Array.from(selectedClients)
+      
+      // Deletar dados relacionados primeiro
+      for (const clientId of ids) {
+        await supabase.from('packages').delete().eq('client_id', clientId)
+        await supabase.from('recurring_sessions').delete().eq('client_id', clientId)
+        await supabase.from('sessions').delete().eq('client_id', clientId)
+        await supabase.from('payments').delete().eq('client_id', clientId)
+      }
+      
+      // Deletar clientes
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .in('id', ids)
+
+      if (error) throw error
+
+      toast({
+        title: `${clientTermPlural} excluídos`,
+        description: `${ids.length} ${getClientTerm(ids.length).toLowerCase()}(s) excluído(s) com sucesso.`,
+      })
+      setSelectedClients(new Set())
+      setIsSelectionMode(false)
+      await loadClients()
+    } catch (error) {
+      console.error('Erro ao excluir clientes:', error)
+      toast({
+        title: "Erro",
+        description: `Não foi possível excluir os ${clientTermPlural.toLowerCase()}.`,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const handleBatchStatusChange = async (status: string) => {
+    try {
+      const ids = Array.from(selectedClients)
+      const isActive = status === 'ativo'
+
+      const { error } = await supabase
+        .from('clients')
+        .update({ ativo: isActive })
+        .in('id', ids)
+
+      if (error) throw error
+
+      toast({
+        title: `${clientTermPlural} ${isActive ? 'ativados' : 'desativados'}`,
+        description: `${ids.length} ${getClientTerm(ids.length).toLowerCase()}(s) ${isActive ? 'ativado' : 'desativado'}(s) com sucesso.`,
+      })
+      setSelectedClients(new Set())
+      setIsSelectionMode(false)
+      await loadClients()
+    } catch (error) {
+      console.error('Erro ao alterar status dos clientes:', error)
+      toast({
+        title: "Erro",
+        description: `Não foi possível alterar o status dos ${clientTermPlural.toLowerCase()}.`,
+        variant: "destructive",
+      })
+    }
+  }
+
+  const toggleSelectionMode = () => {
+    if (isSelectionMode) {
+      setSelectedClients(new Set())
+    }
+    setIsSelectionMode(!isSelectionMode)
+  }
+
   const handleEditClient = (client: any) => {
     setEditingClient(client)
     
@@ -515,32 +629,72 @@ const Clientes = () => {
           </Card>
         </div>
 
+        {/* Filtros - Collapsible dropdown */}
         <Card className="shadow-soft">
-          <CardHeader>
-            <div className="flex items-center gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                <Input
-                  placeholder="Buscar por nome, e-mail ou telefone..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Filter className="w-4 h-4 text-muted-foreground" />
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-32">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    <SelectItem value="ativo">Ativo</SelectItem>
-                    <SelectItem value="inativo">Inativo</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+          <CardHeader className="py-3 md:py-4">
+            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full text-left">
+                  <div className="flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    <span className="text-sm md:text-base font-semibold">Filtros</span>
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+                      </Badge>
+                    )}
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                  <div>
+                    <Label htmlFor="search" className="text-xs">Buscar</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        id="search"
+                        placeholder="Nome, e-mail ou telefone..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="h-9 text-sm pl-9"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="status-filter" className="text-xs">Status</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="ativo">Ativos</SelectItem>
+                        <SelectItem value="inativo">Inativos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Limpar</Label>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full h-9"
+                      onClick={() => {
+                        setSearchTerm('')
+                        setStatusFilter('todos')
+                      }}
+                      disabled={activeFiltersCount === 0}
+                    >
+                      Limpar Filtros
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           </CardHeader>
         </Card>
 
@@ -552,6 +706,28 @@ const Clientes = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* Barra de seleção em lote */}
+            {filteredClients.length > 0 && (
+              <BatchSelectionBar
+                selectedCount={selectedClients.size}
+                totalCount={filteredClients.length}
+                onSelectAll={selectAllClients}
+                onClearSelection={clearClientSelection}
+                onBatchDelete={handleBatchDeleteClients}
+                onBatchStatusChange={handleBatchStatusChange}
+                showDelete={true}
+                showStatusChange={true}
+                statusOptions={[
+                  { value: 'ativo', label: 'Ativar' },
+                  { value: 'inativo', label: 'Desativar' }
+                ]}
+                selectLabel={`Selecionar ${clientTermPlural.toLowerCase()}`}
+                deleteLabel={`Excluir ${clientTermPlural.toLowerCase()}`}
+                isSelectionMode={isSelectionMode}
+                onToggleSelectionMode={toggleSelectionMode}
+              />
+            )}
+
             {isLoading ? (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">Carregando {clientTermPlural.toLowerCase()}...</p>
@@ -563,15 +739,31 @@ const Clientes = () => {
             ) : (
               <div className="space-y-4">
                 {filteredClients.map((client) => (
-                  <ClientCard
+                  <div
                     key={client.id}
-                    client={client}
-                    onClick={() => handleClientClick(client)}
-                    onWhatsAppClick={(phone) => {
-                      const whatsappUrl = `https://wa.me/55${phone}`
-                      window.open(whatsappUrl, '_blank')
-                    }}
-                  />
+                    className={cn(
+                      "flex items-center gap-3",
+                      isSelectionMode && "cursor-pointer"
+                    )}
+                    onClick={() => isSelectionMode && toggleClientSelection(client.id)}
+                  >
+                    {isSelectionMode && (
+                      <SelectableItemCheckbox
+                        isSelected={selectedClients.has(client.id)}
+                        onSelect={() => toggleClientSelection(client.id)}
+                      />
+                    )}
+                    <div className="flex-1">
+                      <ClientCard
+                        client={client}
+                        onClick={() => !isSelectionMode && handleClientClick(client)}
+                        onWhatsAppClick={(phone) => {
+                          const whatsappUrl = `https://wa.me/55${phone}`
+                          window.open(whatsappUrl, '_blank')
+                        }}
+                      />
+                    </div>
+                  </div>
                 ))}
               </div>
             )}
