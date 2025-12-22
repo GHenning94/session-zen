@@ -89,61 +89,91 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     
     loadNotifications()
 
+    const channelName = `notifications_user_${user.id}_${Date.now()}`
+    console.log(`[NotificationContext] Creating channel: ${channelName}`)
+    
     const channel = supabase
-      .channel('notifications_global')
+      .channel(channelName)
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         },
-        async (payload) => {
-          console.log('[NotificationContext] Realtime event received:', payload.eventType, payload)
+        (payload) => {
+          console.log('[NotificationContext] INSERT event received:', payload)
+          const newNotification = payload.new as Notification
+          console.log('[NotificationContext] New notification:', newNotification.id, newNotification.titulo)
           
-          if (payload.eventType === 'INSERT') {
-            const newNotification = payload.new as Notification
-            console.log('[NotificationContext] INSERT - New notification:', newNotification.id, newNotification.titulo)
-            
-            // Check if already seen (avoid duplicates)
-            if (seenNotificationIds.current.has(newNotification.id)) {
-              console.log('[NotificationContext] Notification already seen, skipping')
-              return
-            }
-            
-            seenNotificationIds.current.add(newNotification.id)
-            
-            // Play notification sound
-            console.log('[NotificationContext] Playing notification sound')
-            playNotificationSound()
-            
-            // Set incoming notification for custom toast animation
-            console.log('[NotificationContext] CALLING setIncomingNotification with:', newNotification.titulo)
-            setIncomingNotification(newNotification)
-            
-            setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
-            // Don't increment unreadCount here - will be done after toast animation
-          } else if (payload.eventType === 'UPDATE') {
-            const updatedNotification = payload.new as Notification
-            setNotifications((prev) =>
-              prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
-            )
-            
-            if (updatedNotification.lida) {
-              setUnreadCount((prev) => Math.max(0, prev - 1))
-            }
-          } else if (payload.eventType === 'DELETE') {
-            const deletedId = payload.old.id
-            setNotifications((prev) => prev.filter((n) => n.id !== deletedId))
-            
-            if (!payload.old.lida) {
-              setUnreadCount((prev) => Math.max(0, prev - 1))
-            }
+          // Check if already seen (avoid duplicates)
+          if (seenNotificationIds.current.has(newNotification.id)) {
+            console.log('[NotificationContext] Notification already seen, skipping')
+            return
+          }
+          
+          seenNotificationIds.current.add(newNotification.id)
+          
+          // Play notification sound
+          console.log('[NotificationContext] Playing notification sound')
+          playNotificationSound()
+          
+          // Set incoming notification for custom toast animation
+          console.log('[NotificationContext] CALLING setIncomingNotification with:', newNotification.titulo)
+          setIncomingNotification(newNotification)
+          
+          setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[NotificationContext] UPDATE event received:', payload)
+          const updatedNotification = payload.new as Notification
+          setNotifications((prev) =>
+            prev.map((n) => (n.id === updatedNotification.id ? updatedNotification : n))
+          )
+          
+          if (updatedNotification.lida) {
+            setUnreadCount((prev) => Math.max(0, prev - 1))
           }
         }
       )
-      .subscribe()
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          console.log('[NotificationContext] DELETE event received:', payload)
+          const deletedId = payload.old.id
+          setNotifications((prev) => prev.filter((n) => n.id !== deletedId))
+          
+          if (!payload.old.lida) {
+            setUnreadCount((prev) => Math.max(0, prev - 1))
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log(`[NotificationContext] Subscription status: ${status}`)
+        if (status === 'SUBSCRIBED') {
+          console.log('[NotificationContext] Successfully subscribed to realtime notifications!')
+        } else if (status === 'CHANNEL_ERROR') {
+          console.error('[NotificationContext] Channel error - realtime may not work')
+        } else if (status === 'TIMED_OUT') {
+          console.error('[NotificationContext] Subscription timed out')
+        }
+      })
 
     return () => {
       console.log(`[NotificationContext] Cleaning up subscription`)
