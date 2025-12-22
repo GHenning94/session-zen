@@ -611,6 +611,7 @@ export type Database = {
           data_conclusao: string | null
           data_inicio: string
           id: string
+          periodo: string
           tipo: string
           updated_at: string
           user_id: string
@@ -624,6 +625,7 @@ export type Database = {
           data_conclusao?: string | null
           data_inicio?: string
           id?: string
+          periodo?: string
           tipo: string
           updated_at?: string
           user_id: string
@@ -637,6 +639,7 @@ export type Database = {
           data_conclusao?: string | null
           data_inicio?: string
           id?: string
+          periodo?: string
           tipo?: string
           updated_at?: string
           user_id?: string

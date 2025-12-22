@@ -5,12 +5,14 @@ import { toast } from '@/hooks/use-toast';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 export type MetaTipo = 'sessoes' | 'clientes' | 'receita' | 'pacotes' | 'ticket_medio';
+export type MetaPeriodo = 'diario' | 'semanal' | 'mensal';
 
 export interface Meta {
   id: string;
   user_id: string;
   tipo: MetaTipo;
   valor_meta: number;
+  periodo: MetaPeriodo;
   versao: number;
   data_inicio: string;
   data_conclusao: string | null;
@@ -31,12 +33,12 @@ export const useMetas = () => {
     try {
       const { data, error } = await supabase
         .from('metas')
-        .select('id, tipo, valor_meta, ativa, concluida, data_inicio, data_conclusao, versao, created_at, updated_at')
+        .select('id, tipo, valor_meta, periodo, ativa, concluida, data_inicio, data_conclusao, versao, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMetas((data || []) as Meta[]);
+      setMetas((data || []).map(m => ({ ...m, periodo: m.periodo || 'mensal' })) as Meta[]);
     } catch (error) {
       console.error('Erro ao carregar metas:', error);
       toast({
@@ -151,7 +153,7 @@ export const useMetas = () => {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user]);
 
-  const createMeta = async (tipo: MetaTipo, valor_meta: number) => {
+  const createMeta = async (tipo: MetaTipo, valor_meta: number, periodo: MetaPeriodo = 'mensal') => {
     if (!user) return;
 
     try {
@@ -174,6 +176,7 @@ export const useMetas = () => {
           user_id: user.id,
           tipo,
           valor_meta,
+          periodo,
           versao: novaVersao,
           ativa: true,
           concluida: false
@@ -186,7 +189,7 @@ export const useMetas = () => {
       await loadMetas();
       toast({
         title: "Meta criada!",
-        description: `Meta de ${getTipoLabel(tipo)} criada com sucesso.`
+        description: `Meta de ${getTipoLabel(tipo)} (${getPeriodoLabel(periodo)}) criada com sucesso.`
       });
 
       return data;
@@ -270,11 +273,47 @@ export const useMetas = () => {
     const labels: Record<MetaTipo, string> = {
       sessoes: 'Sessões',
       clientes: clientTermPlural,
-      receita: 'Receita Mensal',
+      receita: 'Receita',
       pacotes: 'Pacotes',
       ticket_medio: 'Performance (Taxa de conclusão de sessões)'
     };
     return labels[tipo];
+  };
+
+  const getPeriodoLabel = (periodo: MetaPeriodo): string => {
+    const labels: Record<MetaPeriodo, string> = {
+      diario: 'Diário',
+      semanal: 'Semanal',
+      mensal: 'Mensal'
+    };
+    return labels[periodo];
+  };
+
+  const updateMetaPeriodo = async (metaId: string, periodo: MetaPeriodo) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('metas')
+        .update({ periodo, updated_at: new Date().toISOString() })
+        .eq('id', metaId)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      await loadMetas();
+      toast({
+        title: "Período atualizado!",
+        description: `Período da meta alterado para ${getPeriodoLabel(periodo)}.`
+      });
+    } catch (error) {
+      console.error('Erro ao atualizar período:', error);
+      toast({
+        title: "Erro ao atualizar período",
+        description: "Não foi possível atualizar o período.",
+        variant: "destructive"
+      });
+    }
   };
 
   return {
@@ -282,11 +321,13 @@ export const useMetas = () => {
     isLoading,
     createMeta,
     updateMeta,
+    updateMetaPeriodo,
     deleteMeta,
     loadMetas,
     marcarMetaConcluida,
     verificarEMarcarMetasConcluidas,
     getMetaAtivaPorTipo,
-    getTipoLabel
+    getTipoLabel,
+    getPeriodoLabel
   };
 };

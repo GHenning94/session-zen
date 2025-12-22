@@ -5,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useMetas, MetaTipo } from '@/hooks/useMetas';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useMetas, MetaTipo, MetaPeriodo } from '@/hooks/useMetas';
 import { useTerminology } from '@/hooks/useTerminology';
-import { CheckCircle2, Target, Pencil, Trash2, History } from 'lucide-react';
+import { CheckCircle2, Target, Pencil, Trash2, History, Calendar } from 'lucide-react';
 import { formatCurrencyBR } from '@/utils/formatters';
 import {
   AlertDialog,
@@ -22,7 +23,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const MetasManager = () => {
-  const { metas, isLoading, createMeta, updateMeta, deleteMeta, getTipoLabel } = useMetas();
+  const { metas, isLoading, createMeta, updateMeta, updateMetaPeriodo, deleteMeta, getTipoLabel, getPeriodoLabel } = useMetas();
   const { clientTermPlural } = useTerminology();
   const [novoValor, setNovoValor] = useState<Record<MetaTipo, string>>({
     sessoes: '',
@@ -31,8 +32,16 @@ export const MetasManager = () => {
     pacotes: '',
     ticket_medio: ''
   });
+  const [novoPeriodo, setNovoPeriodo] = useState<Record<MetaTipo, MetaPeriodo>>({
+    sessoes: 'diario',
+    clientes: 'mensal',
+    receita: 'mensal',
+    pacotes: 'mensal',
+    ticket_medio: 'mensal'
+  });
   const [editingMeta, setEditingMeta] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
+  const [editPeriodo, setEditPeriodo] = useState<MetaPeriodo>('mensal');
 
   const tiposMeta: MetaTipo[] = ['sessoes', 'clientes', 'receita', 'pacotes', 'ticket_medio'];
 
@@ -42,8 +51,12 @@ export const MetasManager = () => {
       return;
     }
 
-    await createMeta(tipo, valor);
+    await createMeta(tipo, valor, novoPeriodo[tipo]);
     setNovoValor(prev => ({ ...prev, [tipo]: '' }));
+  };
+
+  const handleUpdatePeriodo = async (metaId: string, periodo: MetaPeriodo) => {
+    await updateMetaPeriodo(metaId, periodo);
   };
 
   const getMetaAtiva = (tipo: MetaTipo) => {
@@ -82,9 +95,10 @@ export const MetasManager = () => {
     await deleteMeta(metaId);
   };
 
-  const startEdit = (metaId: string, currentValue: number) => {
+  const startEdit = (metaId: string, currentValue: number, currentPeriodo: MetaPeriodo) => {
     setEditingMeta(metaId);
     setEditValue(currentValue.toString());
+    setEditPeriodo(currentPeriodo);
   };
 
   const formatarValor = (tipo: MetaTipo, valor: number) => {
@@ -148,36 +162,52 @@ export const MetasManager = () => {
                   </div>
                   <CardDescription>
                     {metaAtiva
-                      ? `Meta ${metaAtiva.versao} em andamento: ${formatarValor(tipo, metaAtiva.valor_meta)}`
+                      ? `Meta ${metaAtiva.versao} (${getPeriodoLabel(metaAtiva.periodo)}): ${formatarValor(tipo, metaAtiva.valor_meta)}`
                       : 'Nenhuma meta definida'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!metaAtiva ? (
-                    <div className="flex gap-2">
-                      <div className="flex-1">
-                        <Label htmlFor={`meta-${tipo}`} className="sr-only">
-                          Valor da meta
-                        </Label>
-                        <Input
-                          id={`meta-${tipo}`}
-                          type="number"
-                          placeholder={
-                            tipo === 'receita'
-                              ? 'Ex: 10000'
-                              : tipo === 'ticket_medio'
-                              ? 'Ex: 90'
-                              : 'Ex: 100'
-                          }
-                          value={novoValor[tipo]}
-                          onChange={(e) =>
-                            setNovoValor((prev) => ({ ...prev, [tipo]: e.target.value }))
-                          }
-                        />
+                    <div className="space-y-3">
+                      <div className="flex gap-2">
+                        <div className="flex-1">
+                          <Label htmlFor={`meta-${tipo}`} className="sr-only">
+                            Valor da meta
+                          </Label>
+                          <Input
+                            id={`meta-${tipo}`}
+                            type="number"
+                            placeholder={
+                              tipo === 'receita'
+                                ? 'Ex: 10000'
+                                : tipo === 'ticket_medio'
+                                ? 'Ex: 90'
+                                : 'Ex: 100'
+                            }
+                            value={novoValor[tipo]}
+                            onChange={(e) =>
+                              setNovoValor((prev) => ({ ...prev, [tipo]: e.target.value }))
+                            }
+                          />
+                        </div>
+                        <Select 
+                          value={novoPeriodo[tipo]} 
+                          onValueChange={(v) => setNovoPeriodo(prev => ({ ...prev, [tipo]: v as MetaPeriodo }))}
+                        >
+                          <SelectTrigger className="w-[130px]">
+                            <Calendar className="h-4 w-4 mr-2" />
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="diario">Diário</SelectItem>
+                            <SelectItem value="semanal">Semanal</SelectItem>
+                            <SelectItem value="mensal">Mensal</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Button onClick={() => handleCreateMeta(tipo)}>
+                          {metaConcluida ? `Meta ${metaConcluida.versao + 1}` : 'Criar'}
+                        </Button>
                       </div>
-                      <Button onClick={() => handleCreateMeta(tipo)}>
-                        {metaConcluida ? `Definir Meta ${metaConcluida.versao + 1}` : 'Criar Meta'}
-                      </Button>
                     </div>
                   ) : (
                     <div className="space-y-3">
@@ -204,39 +234,61 @@ export const MetasManager = () => {
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            A meta atual está em progresso. Complete-a para definir uma nova.
-                          </span>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="icon"
-                              onClick={() => startEdit(metaAtiva.id, metaAtiva.valor_meta)}
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="outline" size="icon">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Excluir Meta?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    Esta ação não pode ser desfeita. A meta será permanentemente excluída.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDelete(metaAtiva.id)}>
-                                    Excluir
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="outline" className="flex items-center gap-1">
+                                <Calendar className="h-3 w-3" />
+                                {getPeriodoLabel(metaAtiva.periodo)}
+                              </Badge>
+                              <span className="text-sm text-muted-foreground">
+                                Meta em progresso
+                              </span>
+                            </div>
+                            <div className="flex gap-2">
+                              <Select 
+                                value={metaAtiva.periodo} 
+                                onValueChange={(v) => handleUpdatePeriodo(metaAtiva.id, v as MetaPeriodo)}
+                              >
+                                <SelectTrigger className="w-[110px] h-8">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="diario">Diário</SelectItem>
+                                  <SelectItem value="semanal">Semanal</SelectItem>
+                                  <SelectItem value="mensal">Mensal</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => startEdit(metaAtiva.id, metaAtiva.valor_meta, metaAtiva.periodo)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" size="icon" className="h-8 w-8">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Excluir Meta?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Esta ação não pode ser desfeita. A meta será permanentemente excluída.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDelete(metaAtiva.id)}>
+                                      Excluir
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
                           </div>
                         </div>
                       )}

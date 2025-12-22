@@ -1102,6 +1102,14 @@ const Dashboard = () => {
                 dashboardData={dashboardData}
                 packageStats={packageStats}
                 upcomingSessionsCount={upcomingSessions.length}
+                weeklySessionsCount={upcomingSessions.filter(s => {
+                  const sessionDate = new Date(s.data)
+                  const now = new Date()
+                  const weekStart = new Date(now.setDate(now.getDate() - now.getDay()))
+                  return sessionDate >= weekStart
+                }).length}
+                monthlySessionsCount={upcomingSessions.length}
+                weeklyRevenue={dashboardData.monthlyRevenue / 4}
               />
               <SmartNotificationCard 
                 notifications={smartNotifications} 
