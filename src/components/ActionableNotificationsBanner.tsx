@@ -223,7 +223,7 @@ export const ActionableNotificationsBanner = () => {
                         size="sm"
                         variant="default"
                         onClick={() => handleAction(notification.route)}
-                        className="flex-1 md:flex-none"
+                        className="whitespace-nowrap flex-shrink-0"
                       >
                         {notification.action}
                       </Button>
