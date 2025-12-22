@@ -1820,10 +1820,10 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-[420px] px-4 pt-3 pb-2">
-                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 h-full">
+                    <CardContent className="h-auto lg:h-[420px] px-4 pt-3 pb-4">
+                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-full">
                         {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
-                        <div className="h-full min-h-[380px] flex items-center justify-center relative">
+                        <div className="h-[280px] lg:h-full lg:min-h-[380px] flex items-center justify-center relative">
                           {(() => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             if (total === 0) return null
@@ -1990,7 +1990,7 @@ const Dashboard = () => {
                         </div>
                         
                         {/* Lista de Canais */}
-                        <div className="space-y-2 flex flex-col justify-center">
+                        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:space-y-2 lg:gap-0 lg:justify-center">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
@@ -2000,7 +2000,7 @@ const Dashboard = () => {
                               <div 
                                 key={canal.canal} 
                                 className={cn(
-                                  "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer",
+                                  "flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 py-2 lg:px-4 lg:py-3 rounded-xl transition-all duration-300 cursor-pointer",
                                   isHovered 
                                     ? "bg-accent/80 shadow-md scale-[1.02] border-2" 
                                     : "bg-accent/30 hover:bg-accent/50 border border-border/50",
@@ -2012,10 +2012,10 @@ const Dashboard = () => {
                                 onMouseEnter={() => setHoveredCanalIndex(index)}
                                 onMouseLeave={() => setHoveredCanalIndex(null)}
                               >
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-2 lg:gap-3 mb-1 lg:mb-0">
                                   <div 
                                     className={cn(
-                                      "w-3.5 h-3.5 rounded-full flex-shrink-0 transition-transform duration-300",
+                                      "w-3 h-3 lg:w-3.5 lg:h-3.5 rounded-full flex-shrink-0 transition-transform duration-300",
                                       isHovered && "scale-125"
                                     )}
                                     style={{ 
@@ -2024,21 +2024,21 @@ const Dashboard = () => {
                                     }}
                                   />
                                   <span className={cn(
-                                    "font-medium text-sm transition-all duration-300",
+                                    "font-medium text-xs lg:text-sm transition-all duration-300 truncate",
                                     isHovered && "font-semibold"
                                   )}>{canal.canal}</span>
                                 </div>
-                                <div className="text-right">
+                                <div className="text-left lg:text-right pl-5 lg:pl-0">
                                   <p className={cn(
-                                    "font-bold text-sm transition-all duration-300",
-                                    isHovered ? "text-lg" : "text-primary"
+                                    "font-bold text-xs lg:text-sm transition-all duration-300",
+                                    isHovered ? "lg:text-lg" : "text-primary"
                                   )} style={{ color: isHovered ? canal.color : undefined }}>{formatCurrencyBR(canal.valor)}</p>
-                                  <p className="text-xs text-muted-foreground">{percentage}%</p>
+                                  <p className="text-[10px] lg:text-xs text-muted-foreground">{percentage}%</p>
                                 </div>
                               </div>
                             )
                           }) : (
-                            <div className="text-center py-8">
+                            <div className="col-span-2 text-center py-8">
                               <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                               <p className="text-muted-foreground">Nenhum pagamento registrado no período</p>
                             </div>
