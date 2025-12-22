@@ -12,7 +12,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { useNotifications } from "@/hooks/useNotifications"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { NotificationToast } from "@/components/NotificationToast"
 import { 
   Bell, 
   BellOff, 
@@ -49,8 +48,7 @@ const NotificationDropdown = () => {
     markAllAsRead, 
     deleteNotification,
     markVisibleAsRead,
-    incomingNotification,
-    clearIncomingNotification
+    incomingNotification
   } = useNotifications()
   const [open, setOpen] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null)
@@ -276,12 +274,6 @@ const NotificationDropdown = () => {
   if (isMobile) {
     return (
       <>
-        {/* Notification Toast - rendered OUTSIDE container to prevent clipping */}
-        <NotificationToast 
-          notification={incomingNotification}
-          onAnimationComplete={clearIncomingNotification}
-        />
-        
         <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => setOpen(true)}>
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && !incomingNotification && (
@@ -383,17 +375,9 @@ const NotificationDropdown = () => {
   }
 
   // Desktop: usa DropdownMenu
-  // Debug: log incomingNotification state
-  console.log('[NotificationDropdown] incomingNotification:', incomingNotification?.id, incomingNotification?.titulo)
   
   return (
     <>
-      {/* Notification Toast - rendered OUTSIDE dropdown to prevent clipping */}
-      <NotificationToast 
-        notification={incomingNotification}
-        onAnimationComplete={clearIncomingNotification}
-      />
-      
       <DropdownMenu open={open} onOpenChange={handleOpenChange}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">

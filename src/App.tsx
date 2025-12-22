@@ -9,6 +9,8 @@ import { SubscriptionProvider } from '@/hooks/useSubscription'
 import { RealtimeSyncProvider } from '@/hooks/useRealtimeSync'
 import { TerminologyProvider } from '@/hooks/useTerminology'
 import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
+import { NotificationProvider, useNotificationContext } from '@/contexts/NotificationContext'
+import { NotificationToast } from '@/components/NotificationToast'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
 import { Suspense, lazy } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
@@ -103,6 +105,18 @@ const AnalyticsWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>
 }
 
+// Global notification toast component
+const GlobalNotificationToast = () => {
+  const { incomingNotification, clearIncomingNotification } = useNotificationContext()
+  
+  return (
+    <NotificationToast 
+      notification={incomingNotification}
+      onAnimationComplete={clearIncomingNotification}
+    />
+  )
+}
+
 const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
@@ -115,15 +129,17 @@ const App = () => (
         <ThemeTransitionOverlay />
         <TooltipProvider>
           <AuthProvider>
-            <SubscriptionProvider>
-              <TerminologyProvider>
-              <RealtimeSyncProvider>
-                <ProfileModalProvider>
-                  <BrowserRouter>
-                    <AnalyticsWrapper>
-                      <AuthRedirect />
-                      <BackNavigationGuard />
-                      <Routes>
+            <NotificationProvider>
+              <GlobalNotificationToast />
+              <SubscriptionProvider>
+                <TerminologyProvider>
+                <RealtimeSyncProvider>
+                  <ProfileModalProvider>
+                    <BrowserRouter>
+                      <AnalyticsWrapper>
+                        <AuthRedirect />
+                        <BackNavigationGuard />
+                        <Routes>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/signup" element={<Signup />} />
@@ -358,20 +374,21 @@ const App = () => (
                       <NotFound />
                     </Suspense>
                   } />
-                  </Routes>
-                </AnalyticsWrapper>
-              </BrowserRouter>
-              <Toaster />
-              <Sonner />
-            </ProfileModalProvider>
-          </RealtimeSyncProvider>
-              </TerminologyProvider>
-        </SubscriptionProvider>
-      </AuthProvider>
-    </TooltipProvider>
-  </ThemeProvider>
-</QueryClientProvider>
-  </ErrorBoundary>
+                    </Routes>
+                  </AnalyticsWrapper>
+                </BrowserRouter>
+                <Toaster />
+                <Sonner />
+              </ProfileModalProvider>
+            </RealtimeSyncProvider>
+                </TerminologyProvider>
+          </SubscriptionProvider>
+            </NotificationProvider>
+        </AuthProvider>
+      </TooltipProvider>
+    </ThemeProvider>
+  </QueryClientProvider>
+    </ErrorBoundary>
 );
 
 export default App;
