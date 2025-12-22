@@ -9,6 +9,15 @@ declare module '@supabase/supabase-js' {
   }
 }
 
+// Helper function to set Realtime auth token
+// This is CRITICAL for RLS-filtered postgres_changes to work
+const setRealtimeAuthToken = (accessToken: string | undefined) => {
+  if (accessToken) {
+    console.log('[useAuth] Setting Realtime auth token');
+    supabase.realtime.setAuth(accessToken);
+  }
+};
+
 interface AuthContextType {
   user: User | null
   session: Session | null
@@ -90,6 +99,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           hasSession: !!session
         });
 
+        // CRITICAL: Set Realtime auth token when session is available
+        // This ensures postgres_changes with RLS filters work correctly
+        if (session?.access_token) {
+          setRealtimeAuthToken(session.access_token);
+        }
+
         // ✅ CORREÇÃO CRÍTICA: Ignorar SIGNED_OUT durante confirmação de e-mail
         const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH');
         if (event === 'SIGNED_OUT' && isConfirming === 'true') {
@@ -151,6 +166,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setSession(null);
         setLoading(false);
         return;
+      }
+      
+      // CRITICAL: Set Realtime auth token on initial session load
+      if (session?.access_token) {
+        setRealtimeAuthToken(session.access_token);
       }
       
       processSession(session)
