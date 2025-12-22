@@ -715,35 +715,25 @@ const Clientes = () => {
           <CardContent>
             {/* Barra de seleção em lote */}
             {filteredClients.length > 0 && (
-              <div className="space-y-2 mb-4">
-                <BatchSelectionBar
-                  selectedCount={selectedClients.size}
-                  totalCount={filteredClients.length}
-                  onSelectAll={selectAllClients}
-                  onClearSelection={clearClientSelection}
-                  onBatchStatusChange={handleBatchStatusChange}
-                  showDelete={false}
-                  showStatusChange={true}
-                  statusOptions={[
-                    { value: 'ativo', label: 'Ativar' },
-                    { value: 'inativo', label: 'Desativar' }
-                  ]}
-                  selectLabel={`Selecionar ${clientTermPlural.toLowerCase()}`}
-                  isSelectionMode={isSelectionMode}
-                  onToggleSelectionMode={toggleSelectionMode}
-                />
-                {selectedClients.size > 0 && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleBatchDeleteClients}
-                    className="text-xs md:text-sm"
-                  >
-                    <AlertTriangle className="w-4 h-4 mr-1" />
-                    Excluir {selectedClients.size} {getClientTerm(selectedClients.size).toLowerCase()}(s)
-                  </Button>
-                )}
-              </div>
+              <BatchSelectionBar
+                selectedCount={selectedClients.size}
+                totalCount={filteredClients.length}
+                onSelectAll={selectAllClients}
+                onClearSelection={clearClientSelection}
+                onBatchDelete={handleBatchDeleteClients}
+                onBatchStatusChange={handleBatchStatusChange}
+                showDelete={true}
+                showStatusChange={true}
+                statusOptions={[
+                  { value: 'ativo', label: 'Ativar' },
+                  { value: 'inativo', label: 'Desativar' }
+                ]}
+                selectLabel={`Selecionar ${clientTermPlural.toLowerCase()}`}
+                deleteLabel={`Excluir ${clientTermPlural.toLowerCase()}`}
+                isSelectionMode={isSelectionMode}
+                onToggleSelectionMode={toggleSelectionMode}
+                skipDeleteConfirmation={true}
+              />
             )}
 
             {isLoading ? (
