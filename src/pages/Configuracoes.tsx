@@ -38,6 +38,8 @@ import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
 import { cleanupInvalidSession } from "@/utils/sessionCleanup"
 import { useNavigate } from "react-router-dom"
 import { useGoogleCalendarBackgroundSync } from "@/hooks/useGoogleCalendarBackgroundSync"
+import { useNotificationSound, playNotificationSound } from "@/hooks/useNotificationSound"
+import { Volume2, VolumeX } from "lucide-react"
 
 type AllSettings = Record<string, any>;
 
@@ -48,6 +50,7 @@ const Configuracoes = () => {
   const [searchParams] = useSearchParams()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
   const { isAutoSyncEnabled, toggleAutoSync, isSyncing, lastSyncResult, manualSync } = useGoogleCalendarBackgroundSync()
+  const { soundEnabled, setSoundEnabled } = useNotificationSound()
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("profile")
@@ -980,6 +983,33 @@ const Configuracoes = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
+                  {/* Som de Notificação */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label className="flex items-center gap-2">
+                        {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+                        Som de Notificação
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Tocar um som quando novas notificações chegarem
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => playNotificationSound()}
+                        className="text-xs"
+                      >
+                        Testar
+                      </Button>
+                      <Switch
+                        checked={soundEnabled}
+                        onCheckedChange={setSoundEnabled}
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
                       <Label>Notificações por E-mail</Label>
