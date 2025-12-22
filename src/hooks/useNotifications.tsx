@@ -91,10 +91,13 @@ export const useNotifications = () => {
           filter: `user_id=eq.${user.id}`
         },
         async (payload) => {
-          console.log('[useNotifications] Realtime event:', payload.eventType)
+          console.log('[useNotifications] Realtime event received:', payload.eventType, payload)
           
           if (payload.eventType === 'INSERT') {
             const newNotification = payload.new as Notification
+            console.log('[useNotifications] INSERT - New notification:', newNotification.id, newNotification.titulo)
+            console.log('[useNotifications] INSERT - initialLoadDone:', initialLoadDoneRef.current)
+            console.log('[useNotifications] INSERT - seenIds has it:', seenNotificationIds.current.has(newNotification.id))
             
             // Check if already seen (avoid duplicates)
             if (seenNotificationIds.current.has(newNotification.id)) {
@@ -104,19 +107,13 @@ export const useNotifications = () => {
             
             seenNotificationIds.current.add(newNotification.id)
             
-            // Set incoming notification for custom toast animation (only after initial load)
-            if (initialLoadDoneRef.current) {
-              console.log('[useNotifications] Setting incoming notification for custom toast:', newNotification.titulo)
-              setIncomingNotification(newNotification)
-            } else {
-              console.log('[useNotifications] Initial load not done yet, skipping toast')
-            }
+            // Set incoming notification for custom toast animation
+            // Always trigger toast for new notifications (remove initialLoadDoneRef check)
+            console.log('[useNotifications] CALLING setIncomingNotification with:', newNotification.titulo)
+            setIncomingNotification(newNotification)
             
             setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
             // Don't increment unreadCount here - will be done after toast animation
-            if (!initialLoadDoneRef.current) {
-              setUnreadCount((prev) => prev + 1)
-            }
           } else if (payload.eventType === 'UPDATE') {
             const updatedNotification = payload.new as Notification
             setNotifications((prev) =>
