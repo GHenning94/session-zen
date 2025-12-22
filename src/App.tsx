@@ -12,6 +12,7 @@ import { ProfileModalProvider } from '@/contexts/ProfileModalContext'
 import { NotificationProvider, useNotificationContext } from '@/contexts/NotificationContext'
 import { NotificationToast } from '@/components/NotificationToast'
 import { useGoogleAnalytics } from '@/hooks/useGoogleAnalytics'
+import { GlobalRealtimeProvider } from '@/hooks/useGlobalRealtime'
 import { Suspense, lazy } from "react";
 import { Skeleton } from "@/components/ui/skeleton"
 import LandingPage from "@/pages/LandingPage";
@@ -129,12 +130,13 @@ const App = () => (
         <ThemeTransitionOverlay />
         <TooltipProvider>
           <AuthProvider>
-            <NotificationProvider>
-              <GlobalNotificationToast />
-              <SubscriptionProvider>
-                <TerminologyProvider>
-                <RealtimeSyncProvider>
-                  <ProfileModalProvider>
+            <GlobalRealtimeProvider>
+              <NotificationProvider>
+                <GlobalNotificationToast />
+                <SubscriptionProvider>
+                  <TerminologyProvider>
+                    <RealtimeSyncProvider>
+                      <ProfileModalProvider>
                     <BrowserRouter>
                       <AnalyticsWrapper>
                         <AuthRedirect />
@@ -374,21 +376,22 @@ const App = () => (
                       <NotFound />
                     </Suspense>
                   } />
-                    </Routes>
-                  </AnalyticsWrapper>
-                </BrowserRouter>
-                <Toaster />
-                <Sonner />
-              </ProfileModalProvider>
-            </RealtimeSyncProvider>
-                </TerminologyProvider>
-          </SubscriptionProvider>
-            </NotificationProvider>
-        </AuthProvider>
-      </TooltipProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-    </ErrorBoundary>
+                      </Routes>
+                    </AnalyticsWrapper>
+                  </BrowserRouter>
+                  <Toaster />
+                  <Sonner />
+                </ProfileModalProvider>
+              </RealtimeSyncProvider>
+                  </TerminologyProvider>
+            </SubscriptionProvider>
+              </NotificationProvider>
+            </GlobalRealtimeProvider>
+          </AuthProvider>
+        </TooltipProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;

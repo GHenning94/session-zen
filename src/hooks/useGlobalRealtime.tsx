@@ -58,7 +58,7 @@ export const GlobalRealtimeProvider = ({ children }: GlobalRealtimeProviderProps
     console.log('[GlobalRealtime] 🔌 Initializing global realtime channel')
     setConnectionStatus('connecting')
 
-    // ÚNICO canal para sessions, clients, payments e notifications
+    // ÚNICO canal para sessions, clients, payments (notifications handled separately by NotificationContext)
     const globalChannel = supabase
       .channel('global-realtime')
       // Sessions
@@ -87,15 +87,6 @@ export const GlobalRealtimeProvider = ({ children }: GlobalRealtimeProviderProps
         filter: `user_id=eq.${user.id}`
       }, (payload) => {
         notifyCallbacks('payments', payload)
-      })
-      // Notifications
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        notifyCallbacks('notifications', payload)
       })
       // Packages
       .on('postgres_changes', {
