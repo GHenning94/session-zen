@@ -108,6 +108,7 @@ export const useNotifications = () => {
             
             // Show toast popup for new notifications (only after initial load)
             if (initialLoadDoneRef.current) {
+              console.log('[useNotifications] Setting incoming notification for toast:', newNotification.titulo)
               setIncomingNotification(newNotification)
             }
             
