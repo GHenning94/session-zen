@@ -42,80 +42,62 @@ const getShortSummary = (conteudo: string): string => {
 export const NotificationToast = ({ notification, onAnimationComplete }: NotificationToastProps) => {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
-  const [currentNotification, setCurrentNotification] = useState<typeof notification>(null)
-  const onCompleteRef = useRef(onAnimationComplete)
+  const [displayedNotification, setDisplayedNotification] = useState<typeof notification>(null)
+  const lastNotificationIdRef = useRef<string | null>(null)
   const exitTimerRef = useRef<NodeJS.Timeout | null>(null)
   const completeTimerRef = useRef<NodeJS.Timeout | null>(null)
   
-  // Keep the callback ref updated
-  onCompleteRef.current = onAnimationComplete
-
   useEffect(() => {
+    // Only trigger for NEW notifications (different id)
+    if (!notification || notification.id === lastNotificationIdRef.current) {
+      return
+    }
+
+    console.log('[NotificationToast] NEW notification detected:', notification.id, notification.titulo)
+    
     // Clear any existing timers
-    if (exitTimerRef.current) {
-      clearTimeout(exitTimerRef.current)
-      exitTimerRef.current = null
-    }
-    if (completeTimerRef.current) {
-      clearTimeout(completeTimerRef.current)
-      completeTimerRef.current = null
-    }
+    if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
+    if (completeTimerRef.current) clearTimeout(completeTimerRef.current)
+    
+    // Store this notification id as the last one we processed
+    lastNotificationIdRef.current = notification.id
+    
+    // Play notification sound
+    playNotificationSound()
+    
+    // Show the toast
+    setDisplayedNotification(notification)
+    setIsExiting(false)
+    setIsVisible(true)
 
-    // Check if we have a new notification
-    if (notification) {
-      const isNew = !currentNotification || notification.id !== currentNotification.id
-      
-      console.log('[NotificationToast] Notification received:', {
-        notificationId: notification.id,
-        currentId: currentNotification?.id,
-        isNew
-      })
+    // Start exit animation after 3 seconds
+    exitTimerRef.current = setTimeout(() => {
+      console.log('[NotificationToast] Starting exit animation')
+      setIsExiting(true)
+    }, 3000)
 
-      if (isNew) {
-        console.log('[NotificationToast] Showing toast for:', notification.titulo)
-        
-        // Play notification sound
-        playNotificationSound()
-        
-        // Set the new notification and show it
-        setCurrentNotification(notification)
-        setIsExiting(false)
-        setIsVisible(true)
-
-        // Start exit animation after 3 seconds
-        exitTimerRef.current = setTimeout(() => {
-          console.log('[NotificationToast] Starting exit animation')
-          setIsExiting(true)
-        }, 3000)
-
-        // Complete animation after exit (3s visible + 0.5s exit)
-        completeTimerRef.current = setTimeout(() => {
-          console.log('[NotificationToast] Animation complete, hiding toast')
-          setIsVisible(false)
-          setIsExiting(false)
-          setCurrentNotification(null)
-          onCompleteRef.current()
-        }, 3500)
-      }
-    }
+    // Complete animation after exit (3s visible + 0.5s exit)
+    completeTimerRef.current = setTimeout(() => {
+      console.log('[NotificationToast] Animation complete')
+      setIsVisible(false)
+      setIsExiting(false)
+      setDisplayedNotification(null)
+      onAnimationComplete()
+    }, 3500)
 
     return () => {
-      if (exitTimerRef.current) {
-        clearTimeout(exitTimerRef.current)
-      }
-      if (completeTimerRef.current) {
-        clearTimeout(completeTimerRef.current)
-      }
+      if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
+      if (completeTimerRef.current) clearTimeout(completeTimerRef.current)
     }
-  }, [notification]) // Depend on the entire notification object
+  }, [notification?.id, onAnimationComplete])
 
-  // Don't render if not visible or no notification to show
-  if (!isVisible || !currentNotification) {
+  // Don't render if not visible
+  if (!isVisible || !displayedNotification) {
     return null
   }
 
-  const category = getCategory(currentNotification.titulo)
-  const summary = getShortSummary(currentNotification.conteudo)
+  const category = getCategory(displayedNotification.titulo)
+  const summary = getShortSummary(displayedNotification.conteudo)
 
   return (
     <div
