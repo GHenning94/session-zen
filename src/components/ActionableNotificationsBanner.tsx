@@ -184,10 +184,6 @@ export const ActionableNotificationsBanner = () => {
           <CardContent className="p-3 md:p-4">
             {/* Mobile: vertical layout with X on same line as first notification */}
             <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4">
-              {/* Desktop: Swipe indicator left side */}
-              <div className="hidden md:flex flex-shrink-0 items-center text-muted-foreground/50 cursor-grab active:cursor-grabbing">
-                <GripHorizontal className="h-5 w-5" />
-              </div>
               
               <div className="flex-1 space-y-3">
                 {notifications.map((notification, index) => (
