@@ -5,7 +5,6 @@ import './index.css'
 import './styles/premium.css'
 import './hooks/useThemeFlashPrevention'
 import { AvatarCacheProvider } from './contexts/AvatarCacheContext'
-import { GlobalRealtimeProvider } from './hooks/useGlobalRealtime'
 import { PWASplashScreen, useIsPWA } from './components/PWASplashScreen'
 
 // Register Service Worker for Web Push Notifications
@@ -56,11 +55,9 @@ const RootApp = () => {
     <>
       {showSplash && <PWASplashScreen onFinish={handleSplashFinish} />}
       {splashFinished && (
-        <GlobalRealtimeProvider>
-          <AvatarCacheProvider>
-            <App />
-          </AvatarCacheProvider>
-        </GlobalRealtimeProvider>
+        <AvatarCacheProvider>
+          <App />
+        </AvatarCacheProvider>
       )}
     </>
   );
