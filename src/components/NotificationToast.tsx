@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { playNotificationSound } from "@/hooks/useNotificationSound"
@@ -47,6 +47,11 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   const exitTimerRef = useRef<NodeJS.Timeout | null>(null)
   const completeTimerRef = useRef<NodeJS.Timeout | null>(null)
   
+  // Memoize the callback to prevent useEffect re-runs
+  const handleComplete = useCallback(() => {
+    onAnimationComplete()
+  }, [onAnimationComplete])
+  
   useEffect(() => {
     // Only trigger for NEW notifications (different id)
     if (!notification || notification.id === lastNotificationIdRef.current) {
@@ -82,14 +87,14 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
       setIsVisible(false)
       setIsExiting(false)
       setDisplayedNotification(null)
-      onAnimationComplete()
+      handleComplete()
     }, 3500)
 
     return () => {
       if (exitTimerRef.current) clearTimeout(exitTimerRef.current)
       if (completeTimerRef.current) clearTimeout(completeTimerRef.current)
     }
-  }, [notification?.id, onAnimationComplete])
+  }, [notification?.id, handleComplete])
 
   // Don't render if not visible
   if (!isVisible || !displayedNotification) {
@@ -102,7 +107,8 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   return (
     <div
       className={cn(
-        "absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50",
+        // Fixed position at top right, near the bell icon area
+        "fixed top-4 right-16 z-[100]",
         "whitespace-nowrap pointer-events-none",
         "transition-all duration-500 ease-out",
         // Entry animation
@@ -110,9 +116,6 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
         // Exit animation - slides right into the bell icon
         isExiting && "animate-out fade-out slide-out-to-right-8 duration-500"
       )}
-      style={{
-        transformOrigin: 'right center'
-      }}
     >
       <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 rounded-full py-1.5 px-3 shadow-lg">
         {/* Category badge */}

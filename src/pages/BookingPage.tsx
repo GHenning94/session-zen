@@ -33,19 +33,55 @@ const BookingPage = () => {
 
   // Store and restore user's theme - only change for this page visit
   useEffect(() => {
-    // Store the current theme before changing
-    const storedTheme = localStorage.getItem('theme')
-    const previousTheme = storedTheme || 'system'
+    // Get user's real theme from their cache, not the global 'theme' key which may be corrupted
+    const authToken = localStorage.getItem('sb-supabase-auth-token')
+    let userTheme = 'light'
     
-    // Set light theme for public page and reset colors
+    try {
+      if (authToken) {
+        const authData = JSON.parse(authToken)
+        const userId = authData?.user?.id
+        if (userId) {
+          const cachedTheme = localStorage.getItem(`user-theme-cache_${userId}`)
+          if (cachedTheme === 'dark' || cachedTheme === 'light') {
+            userTheme = cachedTheme
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading user theme cache:', e)
+    }
+    
+    // Save user's real theme to restore later
+    localStorage.setItem('previous-page-theme', userTheme)
+    
+    // Apply light theme directly to DOM for public page
+    const root = document.documentElement
+    root.style.transition = 'none'
+    root.classList.remove('dark')
+    root.classList.add('light')
+    root.setAttribute('data-theme', 'light')
     setTheme('light')
     resetToDefaultColors()
+    requestAnimationFrame(() => {
+      root.style.transition = ''
+    })
     
     // Restore the previous theme when leaving the page
     return () => {
+      const previousTheme = localStorage.getItem('previous-page-theme')
       if (previousTheme && previousTheme !== 'light') {
-        setTheme(previousTheme)
+        const root = document.documentElement
+        root.style.transition = 'none'
+        root.classList.remove('light')
+        root.classList.add(previousTheme)
+        root.setAttribute('data-theme', previousTheme)
+        setTheme(previousTheme as 'light' | 'dark')
+        requestAnimationFrame(() => {
+          root.style.transition = ''
+        })
       }
+      localStorage.removeItem('previous-page-theme')
     }
   }, [setTheme, resetToDefaultColors])
 
