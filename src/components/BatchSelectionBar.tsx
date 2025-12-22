@@ -38,6 +38,7 @@ interface BatchSelectionBarProps {
   selectLabel?: string
   isSelectionMode?: boolean
   onToggleSelectionMode?: () => void
+  skipDeleteConfirmation?: boolean
 }
 
 export function BatchSelectionBar({
@@ -56,7 +57,8 @@ export function BatchSelectionBar({
   deleteLabel = "Excluir selecionados",
   selectLabel = "Selecionar",
   isSelectionMode = false,
-  onToggleSelectionMode
+  onToggleSelectionMode,
+  skipDeleteConfirmation = false
 }: BatchSelectionBarProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
@@ -179,7 +181,7 @@ export function BatchSelectionBar({
               <Button 
                 variant="destructive" 
                 size="sm" 
-                onClick={() => setDeleteDialogOpen(true)}
+                onClick={() => skipDeleteConfirmation ? onBatchDelete() : setDeleteDialogOpen(true)}
                 className="text-xs md:text-sm"
               >
                 <Trash2 className="w-4 h-4 mr-1" />
