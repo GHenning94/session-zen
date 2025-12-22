@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { ArrowUpRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -41,16 +41,18 @@ const getShortSummary = (conteudo: string): string => {
 export const NotificationToast = ({ notification, onAnimationComplete }: NotificationToastProps) => {
   const [isVisible, setIsVisible] = useState(false)
   const [isExiting, setIsExiting] = useState(false)
+  const [currentNotification, setCurrentNotification] = useState<typeof notification>(null)
+  const onCompleteRef = useRef(onAnimationComplete)
+  
+  // Keep the callback ref updated
+  onCompleteRef.current = onAnimationComplete
 
   useEffect(() => {
-    if (notification) {
-      // Reset states
+    if (notification && notification.id !== currentNotification?.id) {
+      // New notification arrived
+      setCurrentNotification(notification)
       setIsExiting(false)
-      
-      // Small delay before showing (for smooth entrance)
-      const showTimer = setTimeout(() => {
-        setIsVisible(true)
-      }, 50)
+      setIsVisible(true)
 
       // Start exit animation after 3 seconds
       const exitTimer = setTimeout(() => {
@@ -61,30 +63,27 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
       const completeTimer = setTimeout(() => {
         setIsVisible(false)
         setIsExiting(false)
-        onAnimationComplete()
+        setCurrentNotification(null)
+        onCompleteRef.current()
       }, 3500) // 3s visible + 0.5s exit animation
 
       return () => {
-        clearTimeout(showTimer)
         clearTimeout(exitTimer)
         clearTimeout(completeTimer)
       }
-    } else {
-      setIsVisible(false)
-      setIsExiting(false)
     }
-  }, [notification, onAnimationComplete])
+  }, [notification?.id]) // Only depend on notification id
 
-  if (!notification || !isVisible) return null
+  if (!currentNotification || !isVisible) return null
 
-  const category = getCategory(notification.titulo)
-  const summary = getShortSummary(notification.conteudo)
+  const category = getCategory(currentNotification.titulo)
+  const summary = getShortSummary(currentNotification.conteudo)
 
   return (
     <div
       className={cn(
         "absolute right-full mr-2 top-1/2 -translate-y-1/2 z-50",
-        "whitespace-nowrap",
+        "whitespace-nowrap pointer-events-none",
         "transition-all duration-500 ease-out",
         // Entry animation
         !isExiting && "animate-in fade-in slide-in-from-right-4",

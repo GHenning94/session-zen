@@ -319,11 +319,13 @@ export const useNotifications = () => {
 
   // Clear incoming notification and show badge
   const clearIncomingNotification = useCallback(() => {
-    if (incomingNotification) {
-      setUnreadCount((prev) => prev + 1)
-      setIncomingNotification(null)
-    }
-  }, [incomingNotification])
+    setIncomingNotification((current) => {
+      if (current) {
+        setUnreadCount((prev) => prev + 1)
+      }
+      return null
+    })
+  }, [])
 
   return {
     notifications,
