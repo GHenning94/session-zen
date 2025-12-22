@@ -31,10 +31,22 @@ const BookingPage = () => {
   const [clientData, setClientData] = useState({ nome: "", email: "", telefone: "", observacoes: "" })
   const { avatarUrl } = useAvatarUrl(profile?.public_avatar_url)
 
-  // Force light theme and default colors for public booking page
+  // Store and restore user's theme - only change for this page visit
   useEffect(() => {
+    // Store the current theme before changing
+    const storedTheme = localStorage.getItem('theme')
+    const previousTheme = storedTheme || 'system'
+    
+    // Set light theme for public page and reset colors
     setTheme('light')
     resetToDefaultColors()
+    
+    // Restore the previous theme when leaving the page
+    return () => {
+      if (previousTheme && previousTheme !== 'light') {
+        setTheme(previousTheme)
+      }
+    }
   }, [setTheme, resetToDefaultColors])
 
   const loadTherapistData = useCallback(async () => {

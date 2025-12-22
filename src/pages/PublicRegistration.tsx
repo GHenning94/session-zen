@@ -53,9 +53,21 @@ const PublicRegistration = () => {
   const [isCompleteForm, setIsCompleteForm] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
 
-  // Force light theme for public registration page
+  // Store and restore user's theme - only change for this page visit
   useEffect(() => {
+    // Store the current theme before changing
+    const storedTheme = localStorage.getItem('theme')
+    const previousTheme = storedTheme || 'system'
+    
+    // Set light theme for public page
     setTheme('light')
+    
+    // Restore the previous theme when leaving the page
+    return () => {
+      if (previousTheme && previousTheme !== 'light') {
+        setTheme(previousTheme)
+      }
+    }
   }, [setTheme])
 
   // Função para formatar telefone durante digitação
