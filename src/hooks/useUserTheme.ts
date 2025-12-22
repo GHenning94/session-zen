@@ -103,16 +103,16 @@ export const useUserTheme = () => {
     loadUserTheme()
   }, [loadUserTheme])
 
-  // Force light theme on public pages
+  // Force light theme on public pages - DO NOT corrupt localStorage 'theme' key
   useLayoutEffect(() => {
     if (isPublicPage()) {
-      // Apply light theme immediately on public pages
+      // Apply light theme immediately on public pages WITHOUT modifying localStorage
       const root = document.documentElement
       root.style.transition = 'none'
       root.classList.remove('dark')
       root.classList.add('light')
       root.setAttribute('data-theme', 'light')
-      localStorage.setItem('theme', 'light')
+      // DO NOT call localStorage.setItem('theme', 'light') here - it corrupts user preference!
       setTheme('light')
       // Re-enable transitions after a frame
       requestAnimationFrame(() => {

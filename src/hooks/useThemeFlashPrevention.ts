@@ -63,8 +63,13 @@ export const applyThemeInstantly = () => {
 
   try {
     if (isPublicPage()) {
+      // For public pages, apply light theme but DO NOT save to localStorage
       themeToApply = 'light'
       colorToApply = DEFAULT_COLOR
+      // Apply theme and return early - don't modify localStorage
+      setDocumentTheme(themeToApply)
+      applyColorToDocument(colorToApply)
+      return themeToApply
     } else if (currentUser) {
       const authData = JSON.parse(currentUser)
       const userId = authData?.user?.id
