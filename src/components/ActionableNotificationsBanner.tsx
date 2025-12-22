@@ -182,32 +182,20 @@ export const ActionableNotificationsBanner = () => {
       >
         <Card className="mb-6 border-warning/50 bg-warning/5 overflow-hidden">
           <CardContent className="p-3 md:p-4">
-            {/* Mobile: vertical layout, Desktop: horizontal */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3 md:gap-4">
+            {/* Mobile: vertical layout with X on same line as first notification */}
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4">
               {/* Desktop: Swipe indicator left side */}
               <div className="hidden md:flex flex-shrink-0 items-center text-muted-foreground/50 cursor-grab active:cursor-grabbing">
                 <GripHorizontal className="h-5 w-5" />
               </div>
               
-              {/* Mobile: Close button only (no swipe indicator) */}
-              <div className="flex md:hidden items-center justify-end">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleDismiss}
-                  className="h-8 w-8"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              
               <div className="flex-1 space-y-3">
-                {notifications.map((notification) => (
+                {notifications.map((notification, index) => (
                   <div
                     key={notification.id}
                     className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
                   >
-                    {/* Message with icon */}
+                    {/* Message with icon - on mobile, first item has X button inline */}
                     <div className="flex items-start md:items-center gap-3 flex-1">
                       <div className="flex-shrink-0 text-warning mt-0.5 md:mt-0">
                         {notification.icon}
@@ -217,8 +205,19 @@ export const ActionableNotificationsBanner = () => {
                           {notification.message}
                         </p>
                       </div>
+                      {/* Mobile: X button on same line as first notification text */}
+                      {index === 0 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={handleDismiss}
+                          className="md:hidden flex-shrink-0 h-7 w-7 -mr-1"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    {/* Action buttons - full width on mobile */}
+                    {/* Action buttons */}
                     <div className="flex items-center gap-2 ml-8 md:ml-0">
                       <Button
                         size="sm"
