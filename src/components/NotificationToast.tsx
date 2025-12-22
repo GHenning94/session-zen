@@ -43,38 +43,72 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   const [isExiting, setIsExiting] = useState(false)
   const [currentNotification, setCurrentNotification] = useState<typeof notification>(null)
   const onCompleteRef = useRef(onAnimationComplete)
+  const exitTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const completeTimerRef = useRef<NodeJS.Timeout | null>(null)
   
   // Keep the callback ref updated
   onCompleteRef.current = onAnimationComplete
 
   useEffect(() => {
-    if (notification && notification.id !== currentNotification?.id) {
-      // New notification arrived
-      setCurrentNotification(notification)
-      setIsExiting(false)
-      setIsVisible(true)
+    // Clear any existing timers
+    if (exitTimerRef.current) {
+      clearTimeout(exitTimerRef.current)
+      exitTimerRef.current = null
+    }
+    if (completeTimerRef.current) {
+      clearTimeout(completeTimerRef.current)
+      completeTimerRef.current = null
+    }
 
-      // Start exit animation after 3 seconds
-      const exitTimer = setTimeout(() => {
-        setIsExiting(true)
-      }, 3000)
+    // Check if we have a new notification
+    if (notification) {
+      const isNew = !currentNotification || notification.id !== currentNotification.id
+      
+      console.log('[NotificationToast] Notification received:', {
+        notificationId: notification.id,
+        currentId: currentNotification?.id,
+        isNew
+      })
 
-      // Complete animation after exit
-      const completeTimer = setTimeout(() => {
-        setIsVisible(false)
+      if (isNew) {
+        console.log('[NotificationToast] Showing toast for:', notification.titulo)
+        
+        // Set the new notification and show it
+        setCurrentNotification(notification)
         setIsExiting(false)
-        setCurrentNotification(null)
-        onCompleteRef.current()
-      }, 3500) // 3s visible + 0.5s exit animation
+        setIsVisible(true)
 
-      return () => {
-        clearTimeout(exitTimer)
-        clearTimeout(completeTimer)
+        // Start exit animation after 3 seconds
+        exitTimerRef.current = setTimeout(() => {
+          console.log('[NotificationToast] Starting exit animation')
+          setIsExiting(true)
+        }, 3000)
+
+        // Complete animation after exit (3s visible + 0.5s exit)
+        completeTimerRef.current = setTimeout(() => {
+          console.log('[NotificationToast] Animation complete, hiding toast')
+          setIsVisible(false)
+          setIsExiting(false)
+          setCurrentNotification(null)
+          onCompleteRef.current()
+        }, 3500)
       }
     }
-  }, [notification?.id]) // Only depend on notification id
 
-  if (!currentNotification || !isVisible) return null
+    return () => {
+      if (exitTimerRef.current) {
+        clearTimeout(exitTimerRef.current)
+      }
+      if (completeTimerRef.current) {
+        clearTimeout(completeTimerRef.current)
+      }
+    }
+  }, [notification]) // Depend on the entire notification object
+
+  // Don't render if not visible or no notification to show
+  if (!isVisible || !currentNotification) {
+    return null
+  }
 
   const category = getCategory(currentNotification.titulo)
   const summary = getShortSummary(currentNotification.conteudo)
