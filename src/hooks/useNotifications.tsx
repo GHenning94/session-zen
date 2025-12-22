@@ -294,7 +294,7 @@ export const useNotifications = () => {
     if (!user) return false
 
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('notifications')
         .insert([{
           user_id: user.id,
@@ -302,10 +302,20 @@ export const useNotifications = () => {
           conteudo,
           lida: false
         }])
+        .select()
+        .single()
 
       if (error) {
         console.error('Erro ao criar notificação:', error)
         return false
+      }
+
+      // Trigger toast directly since realtime may be unreliable
+      if (data) {
+        console.log('[useNotifications] createNotification - triggering toast directly for:', data.titulo)
+        setIncomingNotification(data as Notification)
+        setNotifications((prev) => [data as Notification, ...prev].slice(0, 50))
+        seenNotificationIds.current.add(data.id)
       }
 
       return true
@@ -313,6 +323,12 @@ export const useNotifications = () => {
       console.error('Erro:', error)
       return false
     }
+  }
+
+  // Trigger toast manually (for testing or direct triggering)
+  const triggerToast = (notification: { id: string; titulo: string; conteudo: string }) => {
+    console.log('[useNotifications] triggerToast called with:', notification.titulo)
+    setIncomingNotification(notification as Notification)
   }
 
   // Clear incoming notification and show badge
@@ -335,6 +351,7 @@ export const useNotifications = () => {
     createNotification,
     markVisibleAsRead,
     incomingNotification,
-    clearIncomingNotification
+    clearIncomingNotification,
+    triggerToast
   }
 }
