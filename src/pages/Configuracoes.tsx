@@ -1009,13 +1009,10 @@ const Configuracoes = () => {
                         variant="outline"
                         size="sm"
                         onClick={async () => {
-                          const success = await createNotification(
+                          await createNotification(
                             'Teste de Notificação',
                             'Esta é uma notificação de teste para verificar a animação.'
                           )
-                          if (success) {
-                            toast({ title: 'Notificação de teste criada', description: 'Verifique o sininho para ver a animação.' })
-                          }
                         }}
                         className="text-xs"
                       >
