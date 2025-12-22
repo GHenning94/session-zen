@@ -122,8 +122,8 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   return (
     <div
       className={cn(
-        // Fixed position at top right, to the LEFT of the bell icon area
-        "fixed top-4 right-20 z-[100]",
+        // Fixed position at top right, completely to the LEFT of the bell icon
+        "fixed top-4 right-32 z-[100]",
         "whitespace-nowrap pointer-events-none",
         "transition-all duration-500 ease-out",
         // Entry animation - slides in from the right
