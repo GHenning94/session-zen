@@ -2,9 +2,10 @@ import { Calendar, Users, DollarSign, Package, BadgeDollarSign } from "lucide-re
 import RadialOrbitalTimeline from "@/components/ui/radial-orbital-timeline"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { Card } from "@/components/ui/card"
-import { useMetas, MetaTipo } from "@/hooks/useMetas"
+import { useMetas, MetaTipo, MetaPeriodo } from "@/hooks/useMetas"
 import { useTerminology } from "@/hooks/useTerminology"
 import { useEffect } from "react"
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns"
 
 interface BusinessOrbitalViewProps {
   dashboardData: {
@@ -19,14 +20,21 @@ interface BusinessOrbitalViewProps {
     totalRevenue: number
   }
   upcomingSessionsCount: number
+  // Dados adicionais para cálculos por período
+  weeklySessionsCount?: number
+  monthlySessionsCount?: number
+  weeklyRevenue?: number
 }
 
 export const BusinessOrbitalView = ({ 
   dashboardData, 
   packageStats,
-  upcomingSessionsCount 
+  upcomingSessionsCount,
+  weeklySessionsCount = 0,
+  monthlySessionsCount = 0,
+  weeklyRevenue = 0
 }: BusinessOrbitalViewProps) => {
-  const { metas, getMetaAtivaPorTipo, verificarEMarcarMetasConcluidas } = useMetas()
+  const { metas, getMetaAtivaPorTipo, verificarEMarcarMetasConcluidas, getPeriodoLabel } = useMetas()
   const { clientTermPlural } = useTerminology()
   
   const now = new Date()
@@ -74,30 +82,57 @@ export const BusinessOrbitalView = ({
     ticket_medio: getMetaConcluidaMaisRecente('ticket_medio')
   }
   
-  // Calcular progresso baseado nas metas definidas pelo usuário
-  const sessionsProgress = metaSessoes 
-    ? Math.min(100, (dashboardData.sessionsToday / metaSessoes.valor_meta) * 100)
-    : 0
-  const clientsProgress = metaClientes
-    ? Math.min(100, (dashboardData.activeClients / metaClientes.valor_meta) * 100)
-    : 0
-  const revenueProgress = metaReceita
-    ? Math.min(100, (dashboardData.monthlyRevenue / metaReceita.valor_meta) * 100)
-    : 0
-  const packagesProgress = metaPacotes
-    ? Math.min(100, (packageStats.activePackages / metaPacotes.valor_meta) * 100)
-    : 0
-  const completionProgress = metaTicket
-    ? Math.min(100, (dashboardData.completionRate / metaTicket.valor_meta) * 100)
-    : 0
+  // Helper para obter valor atual baseado no período
+  const getValorAtualPorPeriodo = (tipo: MetaTipo, periodo: MetaPeriodo): number => {
+    switch (tipo) {
+      case 'sessoes':
+        if (periodo === 'diario') return dashboardData.sessionsToday
+        if (periodo === 'semanal') return weeklySessionsCount
+        return monthlySessionsCount
+      case 'clientes':
+        return dashboardData.activeClients // Clientes ativos não depende de período
+      case 'receita':
+        if (periodo === 'diario') return 0 // Não faz sentido receita diária
+        if (periodo === 'semanal') return weeklyRevenue
+        return dashboardData.monthlyRevenue
+      case 'pacotes':
+        return packageStats.activePackages // Pacotes ativos não depende de período
+      case 'ticket_medio':
+        return dashboardData.completionRate // Performance não depende de período
+      default:
+        return 0
+    }
+  }
+
+  // Helper para obter label do período
+  const getPeriodoLabelCurto = (periodo: MetaPeriodo): string => {
+    switch (periodo) {
+      case 'diario': return 'Hoje'
+      case 'semanal': return 'Semana'
+      case 'mensal': return 'Mês'
+    }
+  }
+  
+  // Calcular progresso baseado nas metas definidas pelo usuário e seu período
+  const calcularProgresso = (meta: typeof metaSessoes) => {
+    if (!meta) return 0
+    const valorAtual = getValorAtualPorPeriodo(meta.tipo as MetaTipo, meta.periodo)
+    return Math.min(100, (valorAtual / meta.valor_meta) * 100)
+  }
+
+  const sessionsProgress = metaSessoes ? calcularProgresso(metaSessoes) : 0
+  const clientsProgress = metaClientes ? calcularProgresso(metaClientes) : 0
+  const revenueProgress = metaReceita ? calcularProgresso(metaReceita) : 0
+  const packagesProgress = metaPacotes ? calcularProgresso(metaPacotes) : 0
+  const completionProgress = metaTicket ? calcularProgresso(metaTicket) : 0
   
   const timelineData = [
     {
       id: 1,
       title: "Sessões",
-      date: `${currentDay} ${currentMonth}`,
+      date: metaSessoes ? getPeriodoLabelCurto(metaSessoes.periodo) : `${currentDay} ${currentMonth}`,
       content: metaSessoes 
-        ? `Meta: ${metaSessoes.valor_meta} sessões\nAtual: ${dashboardData.sessionsToday} sessões\n${upcomingSessionsCount} agendada${upcomingSessionsCount !== 1 ? 's' : ''} nos próximos dias.`
+        ? `Meta (${getPeriodoLabel(metaSessoes.periodo)}): ${metaSessoes.valor_meta} sessões\nAtual: ${getValorAtualPorPeriodo('sessoes', metaSessoes.periodo)} sessões\n${upcomingSessionsCount} agendada${upcomingSessionsCount !== 1 ? 's' : ''} nos próximos dias.`
         : metaConcluidas.sessoes
         ? `Meta ${metaConcluidas.sessoes.versao} concluída! Defina uma nova meta para continuar.`
         : 'Defina uma meta em Metas para começar.',
@@ -110,7 +145,7 @@ export const BusinessOrbitalView = ({
     {
       id: 2,
       title: clientTermPlural,
-      date: currentMonth,
+      date: metaClientes ? getPeriodoLabelCurto(metaClientes.periodo) : currentMonth,
       content: metaClientes
         ? `Meta: ${metaClientes.valor_meta} ${clientTermPlural.toLowerCase()}\nAtual: ${dashboardData.activeClients} ${clientTermPlural.toLowerCase()}\nBase sólida para crescimento sustentável.`
         : metaConcluidas.clientes
@@ -124,10 +159,10 @@ export const BusinessOrbitalView = ({
     },
     {
       id: 3,
-      title: "Receita Mensal",
-      date: currentMonth,
+      title: "Receita",
+      date: metaReceita ? getPeriodoLabelCurto(metaReceita.periodo) : currentMonth,
       content: metaReceita
-        ? `Meta: ${formatCurrencyBR(metaReceita.valor_meta)}\nAtual: ${formatCurrencyBR(dashboardData.monthlyRevenue)}\nPendente: ${formatCurrencyBR(dashboardData.pendingRevenue)}`
+        ? `Meta (${getPeriodoLabel(metaReceita.periodo)}): ${formatCurrencyBR(metaReceita.valor_meta)}\nAtual: ${formatCurrencyBR(getValorAtualPorPeriodo('receita', metaReceita.periodo))}\nPendente: ${formatCurrencyBR(dashboardData.pendingRevenue)}`
         : metaConcluidas.receita
         ? `Meta ${metaConcluidas.receita.versao} concluída! Defina uma nova meta para continuar.`
         : 'Defina uma meta em Metas para começar.',
@@ -140,7 +175,7 @@ export const BusinessOrbitalView = ({
     {
       id: 4,
       title: "Pacotes",
-      date: currentMonth,
+      date: metaPacotes ? getPeriodoLabelCurto(metaPacotes.periodo) : currentMonth,
       content: metaPacotes
         ? `Meta: ${metaPacotes.valor_meta} pacotes\nAtual: ${packageStats.activePackages} pacotes\nReceita total: ${formatCurrencyBR(packageStats.totalRevenue)}`
         : metaConcluidas.pacotes
@@ -155,7 +190,7 @@ export const BusinessOrbitalView = ({
     {
       id: 5,
       title: "Performance",
-      date: currentMonth,
+      date: metaTicket ? getPeriodoLabelCurto(metaTicket.periodo) : currentMonth,
       content: metaTicket
         ? `Meta: ${metaTicket.valor_meta}%\nAtual: ${dashboardData.completionRate}%\nContinue mantendo a consistência nos atendimentos.`
         : metaConcluidas.ticket_medio
