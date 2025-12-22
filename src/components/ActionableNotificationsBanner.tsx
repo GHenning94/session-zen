@@ -189,12 +189,8 @@ export const ActionableNotificationsBanner = () => {
                 <GripHorizontal className="h-5 w-5" />
               </div>
               
-              {/* Mobile: Header with swipe indicator and close */}
-              <div className="flex md:hidden items-center justify-between">
-                <div className="flex items-center gap-2 text-muted-foreground/50 cursor-grab active:cursor-grabbing">
-                  <GripHorizontal className="h-4 w-4" />
-                  <span className="text-xs">Arraste para fechar</span>
-                </div>
+              {/* Mobile: Close button only (no swipe indicator) */}
+              <div className="flex md:hidden items-center justify-end">
                 <Button
                   variant="ghost"
                   size="icon"
