@@ -254,7 +254,15 @@ export const BusinessOrbitalView = ({
       category: "Objetivos",
       icon: BadgeDollarSign,
       relatedIds: [],
-      status: metaConcluidas.ticket_medio ? "completed" as const : !metaTicket ? "pending" as const : completionProgress >= 100 ? "completed" as const : "in-progress" as const,
+      // Para Performance, verificar se o valor ATUAL (completionRate) >= meta definida
+      // Só marca como completed se meta ativa existir E progresso >= 100, OU se meta foi concluída anteriormente sem meta ativa
+      status: metaConcluidas.ticket_medio && !metaTicket 
+        ? "completed" as const 
+        : !metaTicket 
+        ? "pending" as const 
+        : dashboardData.completionRate >= metaTicket.valor_meta 
+        ? "completed" as const 
+        : "in-progress" as const,
       energy: Math.round(completionProgress),
     },
   ]

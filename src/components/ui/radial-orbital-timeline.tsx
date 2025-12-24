@@ -281,7 +281,7 @@ export default function RadialOrbitalTimeline({
                   </div>
                 </div>
 
-                {/* Título do nó com porcentagem */}
+                {/* Título do nó - sem porcentagem nos círculos orbitais */}
                 <div
                   className={`
                   absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-center
@@ -291,11 +291,6 @@ export default function RadialOrbitalTimeline({
                   <span className={`text-xs font-semibold tracking-wider ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}>
                     {item.title}
                   </span>
-                  {item.energy > 0 && item.energy < 100 && item.status === "in-progress" && (
-                    <span className="block text-[10px] font-mono text-muted-foreground">
-                      {item.energy}%
-                    </span>
-                  )}
                 </div>
 
                 {/* Card de detalhes expandido */}
