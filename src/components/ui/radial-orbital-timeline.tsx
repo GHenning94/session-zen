@@ -336,7 +336,11 @@ export default function RadialOrbitalTimeline({
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="text-xs text-muted-foreground">
-                      <p>{item.content}</p>
+                      <div className="space-y-1">
+                        {item.content.split('\n').map((line, idx) => (
+                          <p key={idx}>{line}</p>
+                        ))}
+                      </div>
 
                       <div className="mt-4 pt-3 border-t border-border">
                         <div className="flex justify-between items-center text-xs mb-1">
