@@ -60,6 +60,10 @@ export const MetasManager = () => {
   const [editPeriodo, setEditPeriodo] = useState<MetaPeriodo>('mensal');
   const [isLegendOpen, setIsLegendOpen] = useState(false);
   
+  // Estado para confirmação de exclusão (controlado separadamente para evitar erro removeChild)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [metaToDelete, setMetaToDelete] = useState<string | null>(null);
+  
   // Estado para modal de meta já cumprida
   const [warningModalOpen, setWarningModalOpen] = useState(false);
   const [warningData, setWarningData] = useState<{
@@ -183,8 +187,16 @@ export const MetasManager = () => {
     setEditValue('');
   };
 
-  const handleDelete = async (metaId: string) => {
-    await deleteMeta(metaId);
+  const handleDelete = async () => {
+    if (!metaToDelete) return;
+    await deleteMeta(metaToDelete);
+    setDeleteConfirmOpen(false);
+    setMetaToDelete(null);
+  };
+
+  const openDeleteConfirm = (metaId: string) => {
+    setMetaToDelete(metaId);
+    setDeleteConfirmOpen(true);
   };
 
   const startEdit = (metaId: string, currentValue: number, currentPeriodo: MetaPeriodo) => {
@@ -223,6 +235,24 @@ export const MetasManager = () => {
 
   return (
     <>
+      {/* Modal de confirmação de exclusão (controlado para evitar erro removeChild) */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Meta?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação não pode ser desfeita. A meta será permanentemente excluída.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setMetaToDelete(null)}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Modal de aviso meta já cumprida */}
       <Dialog open={warningModalOpen} onOpenChange={setWarningModalOpen}>
         <DialogContent>
@@ -434,27 +464,14 @@ export const MetasManager = () => {
                               >
                                 <Pencil className="h-4 w-4" />
                               </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="outline" size="icon" className="h-8 w-8">
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Excluir Meta?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Esta ação não pode ser desfeita. A meta será permanentemente excluída.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDelete(metaAtiva.id)}>
-                                      Excluir
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <Button 
+                                variant="outline" 
+                                size="icon" 
+                                className="h-8 w-8"
+                                onClick={() => openDeleteConfirm(metaAtiva.id)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
                             </div>
                           </div>
                         </div>

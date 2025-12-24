@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
-import { FileText, User, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen } from 'lucide-react'
+import { FileText, User, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen, Filter, Info } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -19,6 +19,12 @@ import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { TextPreview } from '@/components/TextPreview'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 interface Client {
   id: string
@@ -82,7 +88,8 @@ export default function Prontuarios() {
   // Estados para filtros
   const [filters, setFilters] = useState({
     search: '',
-    client: ''
+    client: '',
+    anamnese: 'all' as 'all' | 'realizada' | 'pendente'
   })
 
   useEffect(() => {
@@ -251,7 +258,13 @@ export default function Prontuarios() {
       client.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
       client.telefone?.includes(filters.search)
     
-    return matchesSearch
+    // Filtro de anamnese
+    const clientAnamnese = getClientAnamnese(client.id)
+    const matchesAnamnese = filters.anamnese === 'all' ||
+      (filters.anamnese === 'realizada' && clientAnamnese) ||
+      (filters.anamnese === 'pendente' && !clientAnamnese)
+    
+    return matchesSearch && matchesAnamnese
   })
 
   if (loading) {
@@ -548,7 +561,7 @@ export default function Prontuarios() {
         {/* Filtros */}
         <Card className="mb-6">
           <CardContent className="pt-6">
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <div className="flex-1">
                 <Input
                   placeholder="Buscar cliente por nome, e-mail ou telefone..."
@@ -556,6 +569,37 @@ export default function Prontuarios() {
                   onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
                 />
               </div>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filtrar
+                    {filters.anamnese !== 'all' && (
+                      <Badge variant="secondary" className="ml-1">1</Badge>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuCheckboxItem
+                    checked={filters.anamnese === 'all'}
+                    onCheckedChange={() => setFilters(prev => ({ ...prev, anamnese: 'all' }))}
+                  >
+                    Todos
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filters.anamnese === 'realizada'}
+                    onCheckedChange={() => setFilters(prev => ({ ...prev, anamnese: 'realizada' }))}
+                  >
+                    Anamnese realizada
+                  </DropdownMenuCheckboxItem>
+                  <DropdownMenuCheckboxItem
+                    checked={filters.anamnese === 'pendente'}
+                    onCheckedChange={() => setFilters(prev => ({ ...prev, anamnese: 'pendente' }))}
+                  >
+                    Anamnese pendente
+                  </DropdownMenuCheckboxItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardContent>
         </Card>
