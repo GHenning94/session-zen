@@ -228,34 +228,74 @@ export default function RadialOrbitalTimeline({
                   toggleItem(item.id);
                 }}
               >
-                {/* Nó orbital */}
-                <div
-                  className={`
-                  w-10 h-10 rounded-full flex items-center justify-center
-                  ${
-                    isExpanded
-                      ? "bg-primary text-primary-foreground shadow-lg shadow-primary/50"
-                      : isRelated
-                      ? "bg-primary/60 text-primary-foreground shadow-md shadow-primary/30"
-                      : `${getStatusStyles(item.status)} shadow-sm transition-all duration-300`
-                  }
-                  transform
-                  ${isExpanded ? "scale-150" : ""}
-                `}
-                >
-                  <Icon size={16} />
+                {/* Nó orbital com barra de progresso circular */}
+                <div className="relative">
+                  {/* Barra de progresso circular ao redor do nó */}
+                  {item.energy > 0 && item.status !== "pending" && (
+                    <svg
+                      className="absolute -inset-1 w-12 h-12"
+                      viewBox="0 0 48 48"
+                    >
+                      {/* Background circle */}
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r="22"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        className="text-muted/30"
+                      />
+                      {/* Progress circle */}
+                      <circle
+                        cx="24"
+                        cy="24"
+                        r="22"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="3"
+                        strokeLinecap="round"
+                        className={item.status === "completed" ? "text-primary" : "text-primary/80"}
+                        strokeDasharray={`${(item.energy / 100) * 138.2} 138.2`}
+                        transform="rotate(-90 24 24)"
+                        style={{ transition: 'stroke-dasharray 0.5s ease' }}
+                      />
+                    </svg>
+                  )}
+                  
+                  <div
+                    className={`
+                    w-10 h-10 rounded-full flex items-center justify-center relative z-10
+                    ${
+                      isExpanded
+                        ? "bg-primary text-primary-foreground shadow-lg shadow-primary/50"
+                        : isRelated
+                        ? "bg-primary/60 text-primary-foreground shadow-md shadow-primary/30"
+                        : `${getStatusStyles(item.status)} shadow-sm transition-all duration-300`
+                    }
+                    transform
+                    ${isExpanded ? "scale-150" : ""}
+                  `}
+                  >
+                    <Icon size={16} />
+                  </div>
                 </div>
 
-                {/* Título do nó */}
+                {/* Título do nó com porcentagem */}
                 <div
                   className={`
-                  absolute top-12 left-1/2 -translate-x-1/2 whitespace-nowrap
-                  text-xs font-semibold tracking-wider
+                  absolute top-14 left-1/2 -translate-x-1/2 whitespace-nowrap text-center
                   transition-all duration-300
-                  ${isExpanded ? "text-foreground scale-125" : "text-muted-foreground"}
                 `}
                 >
-                  {item.title}
+                  <span className={`text-xs font-semibold tracking-wider ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}>
+                    {item.title}
+                  </span>
+                  {item.energy > 0 && item.status !== "pending" && (
+                    <span className="block text-[10px] font-mono text-muted-foreground">
+                      {item.energy}%
+                    </span>
+                  )}
                 </div>
 
                 {/* Card de detalhes expandido */}

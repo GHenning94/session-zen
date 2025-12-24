@@ -34,12 +34,12 @@ export const useMetas = () => {
     try {
       const { data, error } = await supabase
         .from('metas')
-        .select('id, tipo, valor_meta, periodo, ativa, concluida, data_inicio, data_conclusao, versao, created_at, updated_at')
+        .select('id, tipo, valor_meta, periodo, ativa, concluida, data_inicio, data_conclusao, versao, notificado_50, created_at, updated_at')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setMetas((data || []).map(m => ({ ...m, periodo: m.periodo || 'mensal' })) as Meta[]);
+      setMetas((data || []).map(m => ({ ...m, periodo: m.periodo || 'mensal', notificado_50: m.notificado_50 ?? false })) as Meta[]);
     } catch (error) {
       console.error('Erro ao carregar metas:', error);
       toast({
@@ -242,25 +242,55 @@ export const useMetas = () => {
     }
   };
 
+  const notificar50Porcento = async (metaId: string) => {
+    if (!user) return;
+
+    try {
+      const { error: updateError } = await supabase
+        .from('metas')
+        .update({ notificado_50: true, updated_at: new Date().toISOString() })
+        .eq('id', metaId)
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      const meta = metas.find(m => m.id === metaId);
+      if (meta) {
+        const { error: notifError } = await supabase.from('notifications').insert({
+          user_id: user.id,
+          titulo: 'Você está na metade do caminho! 🎯',
+          conteudo: `Parabéns! Você já atingiu 50% da sua meta de ${getTipoLabel(meta.tipo)}. Continue assim!`,
+          lida: false,
+          data: new Date().toISOString()
+        });
+        
+        if (notifError) {
+          console.error('Erro ao criar notificação 50%:', notifError);
+        }
+      }
+    } catch (error) {
+      console.error('Erro ao notificar 50%:', error);
+    }
+  };
+
   const verificarEMarcarMetasConcluidas = async (
-    sessionsToday: number,
-    activeClients: number,
-    monthlyRevenue: number,
-    activePackages: number,
-    completionRate: number
+    valoresAtuais: Record<MetaTipo, number>
   ) => {
     if (!user || metas.length === 0) return;
 
-    const valores: Record<MetaTipo, number> = {
-      sessoes: sessionsToday,
-      clientes: activeClients,
-      receita: monthlyRevenue,
-      pacotes: activePackages,
-      ticket_medio: completionRate
-    };
-
     for (const meta of metas) {
-      if (meta.ativa && !meta.concluida && valores[meta.tipo] >= meta.valor_meta) {
+      if (!meta.ativa || meta.concluida) continue;
+      
+      const valorAtual = valoresAtuais[meta.tipo];
+      const progresso = (valorAtual / meta.valor_meta) * 100;
+      
+      // Verificar 50%
+      if (progresso >= 50 && !meta.notificado_50) {
+        await notificar50Porcento(meta.id);
+      }
+      
+      // Verificar conclusão
+      if (valorAtual >= meta.valor_meta) {
         await marcarMetaConcluida(meta.id);
       }
     }
