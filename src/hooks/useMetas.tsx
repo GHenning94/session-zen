@@ -18,6 +18,7 @@ export interface Meta {
   data_conclusao: string | null;
   concluida: boolean;
   ativa: boolean;
+  notificado_50: boolean;
   created_at: string;
   updated_at: string;
 }
