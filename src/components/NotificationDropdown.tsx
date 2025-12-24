@@ -113,9 +113,8 @@ const NotificationDropdown = () => {
 
   const handleOpenChange = (newOpen: boolean) => {
     setOpen(newOpen)
-    if (newOpen && unreadCount > 0) {
-      markVisibleAsRead()
-    }
+    // Não marca mais como lidas automaticamente ao abrir
+    // O destaque só some quando o usuário clica na notificação
   }
 
   const handleViewAllNotifications = () => {
@@ -158,11 +157,20 @@ const NotificationDropdown = () => {
     showDeleteButton?: boolean
   }) => (
     <div 
-      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-        isSelected ? 'bg-accent' : !notification.lida ? 'bg-accent/50 hover:bg-accent/70' : 'hover:bg-accent/30'
+      className={`flex items-start gap-3 p-3 rounded-lg cursor-pointer transition-colors relative ${
+        isSelected 
+          ? 'bg-primary/20 ring-1 ring-primary/50' 
+          : !notification.lida 
+            ? 'bg-primary/10 hover:bg-primary/20 ring-1 ring-primary/30' 
+            : 'hover:bg-accent/30'
       }`}
       onClick={onClick}
     >
+      {/* Indicador de não lida */}
+      {!notification.lida && (
+        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary animate-pulse" />
+      )}
+      
       <div className={`p-2 rounded-full shrink-0 ${
         !notification.lida ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
       }`}>
@@ -170,13 +178,15 @@ const NotificationDropdown = () => {
       </div>
       
       <div className="flex-1 min-w-0">
-        <h4 className={`text-sm font-medium ${showFullContent ? '' : 'truncate'} ${
-          !notification.lida ? 'text-foreground' : 'text-muted-foreground'
+        <h4 className={`text-sm ${showFullContent ? '' : 'truncate'} ${
+          !notification.lida ? 'font-semibold text-foreground' : 'font-medium text-muted-foreground'
         }`}>
           {notification.titulo}
         </h4>
         
-        <p className={`text-xs text-muted-foreground mt-1 ${showFullContent ? '' : 'line-clamp-2'}`}>
+        <p className={`text-xs mt-1 ${showFullContent ? '' : 'line-clamp-2'} ${
+          !notification.lida ? 'text-muted-foreground' : 'text-muted-foreground/70'
+        }`}>
           {getDisplayContent(notification.conteudo)}
         </p>
         
@@ -192,7 +202,7 @@ const NotificationDropdown = () => {
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive mt-3"
           onClick={(e) => handleDelete(notification.id, e)}
         >
           <Trash2 className="h-4 w-4" />
@@ -288,9 +298,7 @@ const NotificationDropdown = () => {
         
         <Sheet open={open} onOpenChange={(newOpen) => {
           setOpen(newOpen)
-          if (newOpen && unreadCount > 0) {
-            markVisibleAsRead()
-          }
+          // Não marca mais como lidas automaticamente ao abrir
         }}>
           <SheetContent side="bottom" className="h-[80vh] rounded-t-3xl p-0">
             <SheetHeader className="p-4 border-b">
@@ -464,7 +472,7 @@ const NotificationDropdown = () => {
 
       {/* Full Screen Modal for All Notifications */}
       <Dialog open={allNotificationsOpen} onOpenChange={setAllNotificationsOpen}>
-        <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col">
+        <DialogContent className="max-w-4xl h-[80vh] p-0 flex flex-col [&>button]:hidden">
           <DialogHeader className="p-6 border-b shrink-0">
             <div className="flex items-center justify-between">
               <DialogTitle className="flex items-center gap-2">
@@ -476,17 +484,27 @@ const NotificationDropdown = () => {
                   </Badge>
                 )}
               </DialogTitle>
-              {unreadCount > 0 && (
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleMarkAllAsRead}
-                  className="text-muted-foreground hover:text-foreground"
+              <div className="flex items-center gap-2">
+                {unreadCount > 0 && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleMarkAllAsRead}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <CheckCheck className="w-4 h-4 mr-2" />
+                    Marcar todas como lidas
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  onClick={() => setAllNotificationsOpen(false)}
                 >
-                  <CheckCheck className="w-4 h-4 mr-2" />
-                  Marcar todas como lidas
+                  <X className="h-5 w-5" />
                 </Button>
-              )}
+              </div>
             </div>
           </DialogHeader>
           
