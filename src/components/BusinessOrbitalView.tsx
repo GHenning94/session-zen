@@ -96,25 +96,40 @@ export const BusinessOrbitalView = ({
   }, [user, metas])
   
   // Verificar e marcar metas concluídas automaticamente
-  // Usamos uma ref para evitar chamadas múltiplas com os mesmos valores
+  // Usamos refs para evitar chamadas múltiplas com os mesmos valores e debounce
   const lastCheckedValuesRef = useRef<string>('')
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
   
   useEffect(() => {
-    const valoresAtuais = {
-      sessoes: sessionsFromMeta.monthly,
-      clientes: dashboardData.activeClients,
-      receita: dashboardData.monthlyRevenue,
-      pacotes: packageStats.activePackages,
-      ticket_medio: dashboardData.completionRate
-    };
+    // Limpar timer anterior
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current)
+    }
     
-    // Criar uma chave única para os valores atuais
-    const valuesKey = JSON.stringify(valoresAtuais);
+    // Debounce de 500ms para evitar múltiplas chamadas rápidas
+    debounceTimerRef.current = setTimeout(() => {
+      const valoresAtuais = {
+        sessoes: sessionsFromMeta.monthly,
+        clientes: dashboardData.activeClients,
+        receita: dashboardData.monthlyRevenue,
+        pacotes: packageStats.activePackages,
+        ticket_medio: dashboardData.completionRate
+      };
+      
+      // Criar uma chave única para os valores atuais
+      const valuesKey = JSON.stringify(valoresAtuais);
+      
+      // Só verificar se os valores mudaram
+      if (valuesKey !== lastCheckedValuesRef.current) {
+        lastCheckedValuesRef.current = valuesKey;
+        verificarEMarcarMetasConcluidas(valoresAtuais);
+      }
+    }, 500)
     
-    // Só verificar se os valores mudaram
-    if (valuesKey !== lastCheckedValuesRef.current) {
-      lastCheckedValuesRef.current = valuesKey;
-      verificarEMarcarMetasConcluidas(valoresAtuais);
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
     }
   }, [dashboardData, packageStats, sessionsFromMeta])
   

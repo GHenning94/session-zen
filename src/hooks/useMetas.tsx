@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -27,6 +27,9 @@ export const useMetas = () => {
   const { user } = useAuth();
   const [metas, setMetas] = useState<Meta[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Mutex para evitar chamadas paralelas a verificarEMarcarMetasConcluidas
+  const isCheckingMetasRef = useRef(false);
 
   const loadMetas = async () => {
     if (!user) return;
@@ -208,8 +211,21 @@ export const useMetas = () => {
     if (!user) return;
 
     try {
-      // Usar update condicional atômico: só atualiza se ativa = true e concluida = false
-      // Isso evita race conditions e duplicatas
+      // PASSO 1: Verificar estado atual da meta antes de tentar atualizar
+      const { data: metaAtual, error: checkError } = await supabase
+        .from('metas')
+        .select('id, tipo, ativa, concluida')
+        .eq('id', metaId)
+        .eq('user_id', user.id)
+        .single();
+      
+      // Se a meta não existe ou já foi processada, sair imediatamente
+      if (checkError || !metaAtual || !metaAtual.ativa || metaAtual.concluida) {
+        console.log('[useMetas] Meta não encontrada ou já processada, ignorando:', metaId);
+        return;
+      }
+
+      // PASSO 2: Usar update condicional atômico: só atualiza se ativa = true e concluida = false
       const { data: updatedMeta, error: updateError } = await supabase
         .from('metas')
         .update({
@@ -219,20 +235,21 @@ export const useMetas = () => {
         })
         .eq('id', metaId)
         .eq('user_id', user.id)
-        .eq('ativa', true) // Condição atômica: só atualiza se ainda está ativa
-        .eq('concluida', false) // Condição atômica: só atualiza se não está concluída
+        .eq('ativa', true)
+        .eq('concluida', false)
         .select('id, tipo')
         .maybeSingle();
 
-      // Se não retornou dados, significa que já estava concluída ou não existe
+      // Se não retornou dados, significa que já estava concluída (race condition evitada)
       if (!updatedMeta) {
-        console.log('[useMetas] Meta já foi concluída ou não encontrada, ignorando duplicata');
+        console.log('[useMetas] Meta já foi concluída por outra chamada, ignorando duplicata');
         return;
       }
 
       if (updateError) throw updateError;
 
-      // Criar notificação apenas se a atualização foi bem-sucedida
+      // PASSO 3: Criar notificação apenas se a atualização foi bem-sucedida
+      console.log('[useMetas] Criando notificação para meta concluída:', updatedMeta.id);
       const { error: notifError } = await supabase.from('notifications').insert({
         user_id: user.id,
         titulo: 'Meta Concluída! 🎉',
@@ -244,8 +261,6 @@ export const useMetas = () => {
       if (notifError) {
         console.error('Erro ao criar notificação:', notifError);
       }
-
-      // Não precisa chamar loadMetas aqui, o realtime fará isso
     } catch (error) {
       console.error('Erro ao marcar meta como concluída:', error);
     }
@@ -294,23 +309,37 @@ export const useMetas = () => {
   const verificarEMarcarMetasConcluidas = async (
     valoresAtuais: Record<MetaTipo, number>
   ) => {
+    // Mutex: evitar chamadas paralelas
+    if (isCheckingMetasRef.current) {
+      console.log('[useMetas] Já está verificando metas, ignorando chamada paralela');
+      return;
+    }
+    
     if (!user || metas.length === 0) return;
+    
+    isCheckingMetasRef.current = true;
+    console.log('[useMetas] Iniciando verificação de metas...');
 
-    for (const meta of metas) {
-      if (!meta.ativa || meta.concluida) continue;
-      
-      const valorAtual = valoresAtuais[meta.tipo];
-      const progresso = (valorAtual / meta.valor_meta) * 100;
-      
-      // Verificar 50%
-      if (progresso >= 50 && !meta.notificado_50) {
-        await notificar50Porcento(meta.id);
+    try {
+      for (const meta of metas) {
+        if (!meta.ativa || meta.concluida) continue;
+        
+        const valorAtual = valoresAtuais[meta.tipo];
+        const progresso = (valorAtual / meta.valor_meta) * 100;
+        
+        // Verificar 50%
+        if (progresso >= 50 && !meta.notificado_50) {
+          await notificar50Porcento(meta.id);
+        }
+        
+        // Verificar conclusão
+        if (valorAtual >= meta.valor_meta) {
+          await marcarMetaConcluida(meta.id);
+        }
       }
-      
-      // Verificar conclusão
-      if (valorAtual >= meta.valor_meta) {
-        await marcarMetaConcluida(meta.id);
-      }
+    } finally {
+      isCheckingMetasRef.current = false;
+      console.log('[useMetas] Verificação de metas concluída');
     }
   };
 
