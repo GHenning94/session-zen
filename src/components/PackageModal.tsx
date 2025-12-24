@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePackages, Package } from '@/hooks/usePackages';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -25,9 +25,6 @@ interface PackageModalProps {
   onSave: () => void;
 }
 
-// State machine para controlar modais: garante que só um modal está aberto por vez
-type ModalState = 'closed' | 'editing' | 'confirming-delete';
-
 export const PackageModal = ({ 
   open, 
   onOpenChange, 
@@ -38,8 +35,9 @@ export const PackageModal = ({
   const { createPackage, updatePackage, deletePackage, loading } = usePackages();
   const { user } = useAuth();
   
-  // Usar estado interno para controlar transições de modal
-  const [internalModalState, setInternalModalState] = useState<ModalState>('closed');
+  // Estado separado para o AlertDialog - completamente independente
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const deletePackageRef = useRef<Package | null>(null);
   
   const [formData, setFormData] = useState({
     client_id: clientId || '',
@@ -69,7 +67,7 @@ export const PackageModal = ({
     enabled: !!user && open
   });
 
-  // Buscar nome do cliente selecionado (para quando está editando e clientes ainda não carregaram)
+  // Buscar nome do cliente selecionado
   const selectedClientName = clients.find(c => c.id === formData.client_id)?.nome;
 
   // Preencher formulário quando packageToEdit mudar OU quando modal abrir com packageToEdit
@@ -106,6 +104,13 @@ export const PackageModal = ({
     }
   }, [open, packageToEdit, clientId]);
 
+  // Resetar estado do AlertDialog quando o componente é desmontado ou modal fecha
+  useEffect(() => {
+    if (!open) {
+      setShowDeleteConfirm(false);
+    }
+  }, [open]);
+
   useEffect(() => {
     // Calcular valor por sessão automaticamente
     if (formData.total_sessoes > 0) {
@@ -119,12 +124,7 @@ export const PackageModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validação de campos obrigatórios
-    if (!formData.client_id) {
-      return;
-    }
-    
-    if (!formData.nome || formData.total_sessoes <= 0 || formData.valor_total <= 0) {
+    if (!formData.client_id || !formData.nome || formData.total_sessoes <= 0 || formData.valor_total <= 0) {
       return;
     }
 
@@ -140,7 +140,6 @@ export const PackageModal = ({
       if (packageToEdit) {
         await updatePackage(packageToEdit.id, data);
         
-        // Update payment method in associated payment
         if (formData.metodo_pagamento) {
           await supabase
             .from('payments')
@@ -154,7 +153,6 @@ export const PackageModal = ({
       onSave();
       onOpenChange(false);
       
-      // Reset form
       setFormData({
         client_id: '',
         nome: '',
@@ -171,57 +169,49 @@ export const PackageModal = ({
     }
   };
 
-  const handleDeleteClick = () => {
-    // Usar state machine: fechar Dialog e ir para estado de confirmação
-    setInternalModalState('confirming-delete');
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // Guardar referência do pacote antes de fechar
+    deletePackageRef.current = packageToEdit || null;
+    
+    // Fechar Dialog primeiro
     onOpenChange(false);
+    
+    // Aguardar cleanup do portal e então mostrar AlertDialog
+    setTimeout(() => {
+      setShowDeleteConfirm(true);
+    }, 200);
   };
 
-  // Sincronizar estado interno com prop 'open'
-  useEffect(() => {
-    if (open && internalModalState === 'closed') {
-      setInternalModalState('editing');
-    } else if (!open && internalModalState === 'editing') {
-      // Se Dialog foi fechado externamente, resetar estado
-      setInternalModalState('closed');
-    }
-  }, [open, internalModalState]);
-
-  // Effect para mostrar AlertDialog após Dialog fechar completamente
-  useEffect(() => {
-    if (internalModalState === 'confirming-delete' && !open) {
-      // O AlertDialog será mostrado pelo estado internalModalState
-      // Não precisamos fazer nada aqui, a lógica está no render
-    }
-  }, [internalModalState, open]);
-
   const handleDelete = async () => {
-    if (!packageToEdit) return;
+    const pkgToDelete = deletePackageRef.current;
+    if (!pkgToDelete) return;
     
     try {
-      await deletePackage(packageToEdit.id);
-      setInternalModalState('closed');
+      await deletePackage(pkgToDelete.id);
+      setShowDeleteConfirm(false);
+      deletePackageRef.current = null;
       onSave();
     } catch (error) {
       console.error('Error deleting package:', error);
-      setInternalModalState('closed');
+      setShowDeleteConfirm(false);
+      deletePackageRef.current = null;
     }
   };
 
   const handleCancelDelete = () => {
-    // Voltar para o estado de edição após um delay para o DOM limpar
-    setInternalModalState('closed');
-    // Usar requestAnimationFrame + setTimeout para garantir que o portal foi limpo
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        setInternalModalState('editing');
+    setShowDeleteConfirm(false);
+    
+    // Reabrir Dialog após AlertDialog fechar completamente
+    setTimeout(() => {
+      if (deletePackageRef.current) {
         onOpenChange(true);
-      }, 100);
-    });
+      }
+      deletePackageRef.current = null;
+    }, 200);
   };
-
-  // Determinar se o AlertDialog deve estar aberto
-  const showDeleteConfirm = internalModalState === 'confirming-delete' && !open;
 
   return (
     <>
@@ -430,12 +420,8 @@ export const PackageModal = ({
         </DialogContent>
       </Dialog>
 
-      {/* AlertDialog COMPLETAMENTE fora do Dialog para evitar conflitos de portal */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={(open) => {
-        if (!open) {
-          handleCancelDelete();
-        }
-      }}>
+      {/* AlertDialog completamente independente */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Pacote</AlertDialogTitle>
