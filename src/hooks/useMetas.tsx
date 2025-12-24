@@ -246,6 +246,22 @@ export const useMetas = () => {
     if (!user) return;
 
     try {
+      // Primeiro verificar se já foi notificado no banco (garantir consistência)
+      const { data: metaAtual, error: fetchError } = await supabase
+        .from('metas')
+        .select('notificado_50')
+        .eq('id', metaId)
+        .eq('user_id', user.id)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      // Se já foi notificado, não criar notificação duplicada
+      if (metaAtual?.notificado_50) {
+        console.log('[useMetas] Meta já foi notificada 50%, ignorando');
+        return;
+      }
+      
       const { error: updateError } = await supabase
         .from('metas')
         .update({ notificado_50: true, updated_at: new Date().toISOString() })
