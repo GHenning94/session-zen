@@ -4,8 +4,10 @@ import { formatCurrencyBR } from "@/utils/formatters"
 import { Card } from "@/components/ui/card"
 import { useMetas, MetaTipo, MetaPeriodo } from "@/hooks/useMetas"
 import { useTerminology } from "@/hooks/useTerminology"
-import { useEffect } from "react"
-import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, isWithinInterval } from "date-fns"
+import { useEffect, useState } from "react"
+import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, isWithinInterval } from "date-fns"
+import { supabase } from "@/integrations/supabase/client"
+import { useAuth } from "@/hooks/useAuth"
 
 interface BusinessOrbitalViewProps {
   dashboardData: {
@@ -20,37 +22,112 @@ interface BusinessOrbitalViewProps {
     totalRevenue: number
   }
   upcomingSessionsCount: number
-  // Dados adicionais para cálculos por período
-  weeklySessionsCount?: number
-  monthlySessionsCount?: number
-  weeklyRevenue?: number
 }
 
 export const BusinessOrbitalView = ({ 
   dashboardData, 
   packageStats,
-  upcomingSessionsCount,
-  weeklySessionsCount = 0,
-  monthlySessionsCount = 0,
-  weeklyRevenue = 0
+  upcomingSessionsCount
 }: BusinessOrbitalViewProps) => {
+  const { user } = useAuth()
   const { metas, getMetaAtivaPorTipo, verificarEMarcarMetasConcluidas, getPeriodoLabel } = useMetas()
   const { clientTermPlural } = useTerminology()
+  
+  // Estado para contagem real de sessões baseada na meta
+  const [sessionsFromMeta, setSessionsFromMeta] = useState({
+    daily: 0,
+    weekly: 0,
+    monthly: 0
+  })
+  const [weeklyRevenue, setWeeklyRevenue] = useState(0)
   
   const now = new Date()
   const currentMonth = now.toLocaleDateString('pt-BR', { month: 'short' })
   const currentDay = now.getDate()
   
+  // Buscar contagem real de sessões a partir da data_inicio da meta
+  useEffect(() => {
+    const loadSessionsCount = async () => {
+      if (!user) return
+      
+      const metaSessoes = getMetaAtivaPorTipo('sessoes')
+      const metaReceita = getMetaAtivaPorTipo('receita')
+      
+      try {
+        // Para sessões - buscar todas sessões criadas a partir da data_inicio da meta
+        if (metaSessoes) {
+          const dataInicio = metaSessoes.data_inicio
+          const { data: sessions, error } = await supabase
+            .from('sessions')
+            .select('id, created_at')
+            .eq('user_id', user.id)
+            .gte('created_at', dataInicio)
+          
+          if (!error && sessions) {
+            const now = new Date()
+            const todayStart = startOfDay(now).toISOString()
+            const weekStart = startOfWeek(now, { weekStartsOn: 0 }).toISOString()
+            const monthStart = startOfMonth(now).toISOString()
+            
+            setSessionsFromMeta({
+              daily: sessions.filter(s => s.created_at >= todayStart).length,
+              weekly: sessions.filter(s => s.created_at >= weekStart).length,
+              monthly: sessions.filter(s => s.created_at >= monthStart).length
+            })
+          }
+        } else {
+          // Sem meta ativa, buscar do mês atual
+          const monthStart = startOfMonth(now).toISOString()
+          const weekStart = startOfWeek(now, { weekStartsOn: 0 }).toISOString()
+          const todayStart = startOfDay(now).toISOString()
+          
+          const { data: sessions } = await supabase
+            .from('sessions')
+            .select('id, created_at')
+            .eq('user_id', user.id)
+            .gte('created_at', monthStart)
+          
+          if (sessions) {
+            setSessionsFromMeta({
+              daily: sessions.filter(s => s.created_at >= todayStart).length,
+              weekly: sessions.filter(s => s.created_at >= weekStart).length,
+              monthly: sessions.length
+            })
+          }
+        }
+        
+        // Para receita semanal
+        if (metaReceita && metaReceita.periodo === 'semanal') {
+          const weekStart = startOfWeek(now, { weekStartsOn: 0 }).toISOString().split('T')[0]
+          const { data: payments } = await supabase
+            .from('payments')
+            .select('valor')
+            .eq('user_id', user.id)
+            .eq('status', 'pago')
+            .gte('created_at', weekStart)
+          
+          if (payments) {
+            setWeeklyRevenue(payments.reduce((sum, p) => sum + (p.valor || 0), 0))
+          }
+        }
+      } catch (error) {
+        console.error('Erro ao carregar sessões para metas:', error)
+      }
+    }
+    
+    loadSessionsCount()
+  }, [user, metas])
+  
   // Verificar e marcar metas concluídas automaticamente
   useEffect(() => {
     verificarEMarcarMetasConcluidas(
-      dashboardData.sessionsToday,
+      sessionsFromMeta.monthly,
       dashboardData.activeClients,
       dashboardData.monthlyRevenue,
       packageStats.activePackages,
       dashboardData.completionRate
     )
-  }, [dashboardData, packageStats])
+  }, [dashboardData, packageStats, sessionsFromMeta])
   
   // Pegar metas ativas
   const metaSessoes = getMetaAtivaPorTipo('sessoes')
@@ -86,9 +163,9 @@ export const BusinessOrbitalView = ({
   const getValorAtualPorPeriodo = (tipo: MetaTipo, periodo: MetaPeriodo): number => {
     switch (tipo) {
       case 'sessoes':
-        if (periodo === 'diario') return dashboardData.sessionsToday
-        if (periodo === 'semanal') return weeklySessionsCount
-        return monthlySessionsCount
+        if (periodo === 'diario') return sessionsFromMeta.daily
+        if (periodo === 'semanal') return sessionsFromMeta.weekly
+        return sessionsFromMeta.monthly
       case 'clientes':
         return dashboardData.activeClients // Clientes ativos não depende de período
       case 'receita':

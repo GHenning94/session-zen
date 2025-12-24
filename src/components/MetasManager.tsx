@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -8,8 +8,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMetas, MetaTipo, MetaPeriodo } from '@/hooks/useMetas';
 import { useTerminology } from '@/hooks/useTerminology';
-import { CheckCircle2, Target, Pencil, Trash2, History, Calendar } from 'lucide-react';
+import { CheckCircle2, Target, Pencil, Trash2, History, Calendar, Info, AlertTriangle } from 'lucide-react';
 import { formatCurrencyBR } from '@/utils/formatters';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,8 +23,22 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 export const MetasManager = () => {
+  const { user } = useAuth();
   const { metas, isLoading, createMeta, updateMeta, updateMetaPeriodo, deleteMeta, getTipoLabel, getPeriodoLabel } = useMetas();
   const { clientTermPlural } = useTerminology();
   const [novoValor, setNovoValor] = useState<Record<MetaTipo, string>>({
@@ -42,17 +58,93 @@ export const MetasManager = () => {
   const [editingMeta, setEditingMeta] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [editPeriodo, setEditPeriodo] = useState<MetaPeriodo>('mensal');
+  const [isLegendOpen, setIsLegendOpen] = useState(false);
+  
+  // Estado para modal de meta já cumprida
+  const [warningModalOpen, setWarningModalOpen] = useState(false);
+  const [warningData, setWarningData] = useState<{
+    tipo: MetaTipo;
+    valorAtual: number;
+    valorDefinido: number;
+  } | null>(null);
+  
+  // Valores atuais para comparação
+  const [valoresAtuais, setValoresAtuais] = useState<Record<MetaTipo, number>>({
+    sessoes: 0,
+    clientes: 0,
+    receita: 0,
+    pacotes: 0,
+    ticket_medio: 0
+  });
 
   const tiposMeta: MetaTipo[] = ['sessoes', 'clientes', 'receita', 'pacotes', 'ticket_medio'];
+  
+  // Carregar valores atuais para comparação
+  useEffect(() => {
+    const loadValoresAtuais = async () => {
+      if (!user) return;
+      
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+      
+      try {
+        const [sessionsRes, clientsRes, paymentsRes, packagesRes, allSessionsRes] = await Promise.all([
+          // Sessões do mês atual
+          supabase.from('sessions').select('id').eq('user_id', user.id).gte('created_at', startOfMonth),
+          // Clientes ativos
+          supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('ativo', true),
+          // Receita do mês (pagamentos pagos)
+          supabase.from('payments').select('valor').eq('user_id', user.id).eq('status', 'pago').gte('created_at', startOfMonth),
+          // Pacotes ativos
+          supabase.from('packages').select('id', { count: 'exact', head: true }).eq('user_id', user.id).eq('status', 'ativo'),
+          // Todas sessões para taxa de conclusão
+          supabase.from('sessions').select('status').eq('user_id', user.id)
+        ]);
+        
+        const totalSessions = allSessionsRes.data?.length || 0;
+        const completedSessions = allSessionsRes.data?.filter(s => s.status === 'realizada').length || 0;
+        const completionRate = totalSessions > 0 ? Math.round((completedSessions / totalSessions) * 100) : 0;
+        
+        setValoresAtuais({
+          sessoes: sessionsRes.data?.length || 0,
+          clientes: clientsRes.count || 0,
+          receita: paymentsRes.data?.reduce((sum, p) => sum + (p.valor || 0), 0) || 0,
+          pacotes: packagesRes.count || 0,
+          ticket_medio: completionRate
+        });
+      } catch (error) {
+        console.error('Erro ao carregar valores atuais:', error);
+      }
+    };
+    
+    loadValoresAtuais();
+  }, [user]);
 
-  const handleCreateMeta = async (tipo: MetaTipo) => {
+  const handleCreateMeta = async (tipo: MetaTipo, forceCreate = false) => {
     const valor = parseFloat(novoValor[tipo]);
     if (isNaN(valor) || valor <= 0) {
+      return;
+    }
+    
+    // Verificar se a meta é menor ou igual ao valor atual
+    const valorAtual = valoresAtuais[tipo];
+    if (!forceCreate && valor <= valorAtual) {
+      setWarningData({ tipo, valorAtual, valorDefinido: valor });
+      setWarningModalOpen(true);
       return;
     }
 
     await createMeta(tipo, valor, novoPeriodo[tipo]);
     setNovoValor(prev => ({ ...prev, [tipo]: '' }));
+  };
+  
+  const handleConfirmCreateMeta = async () => {
+    if (!warningData) return;
+    
+    await createMeta(warningData.tipo, warningData.valorDefinido, novoPeriodo[warningData.tipo]);
+    setNovoValor(prev => ({ ...prev, [warningData.tipo]: '' }));
+    setWarningModalOpen(false);
+    setWarningData(null);
   };
 
   const handleUpdatePeriodo = async (metaId: string, periodo: MetaPeriodo) => {
@@ -130,19 +222,94 @@ export const MetasManager = () => {
   }
 
   return (
-    <Tabs defaultValue="gerenciar" className="space-y-4">
-      <TabsList className="grid w-full grid-cols-2">
-        <TabsTrigger value="gerenciar">
-          <Target className="h-4 w-4 mr-2" />
-          Gerenciar Metas
-        </TabsTrigger>
-        <TabsTrigger value="historico">
-          <History className="h-4 w-4 mr-2" />
-          Histórico
-        </TabsTrigger>
-      </TabsList>
+    <>
+      {/* Modal de aviso meta já cumprida */}
+      <Dialog open={warningModalOpen} onOpenChange={setWarningModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-amber-600">
+              <AlertTriangle className="h-5 w-5" />
+              Meta Já Cumprida
+            </DialogTitle>
+            <DialogDescription className="pt-4 space-y-3">
+              <p>
+                O valor definido (<strong>{warningData ? formatarValor(warningData.tipo, warningData.valorDefinido) : ''}</strong>) 
+                é menor ou igual ao seu valor atual.
+              </p>
+              <p className="text-foreground font-medium">
+                Valor atual: <span className="text-primary">{warningData ? formatarValor(warningData.tipo, warningData.valorAtual) : ''}</span>
+              </p>
+              <p>
+                Para definir uma meta desafiadora, utilize um valor acima de{' '}
+                <strong className="text-primary">{warningData ? formatarValor(warningData.tipo, warningData.valorAtual) : ''}</strong>.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setWarningModalOpen(false)}>
+              Alterar Valor
+            </Button>
+            <Button variant="secondary" onClick={handleConfirmCreateMeta}>
+              Criar Mesmo Assim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      <Tabs defaultValue="gerenciar" className="space-y-4">
+        {/* Legenda explicativa */}
+        <Collapsible open={isLegendOpen} onOpenChange={setIsLegendOpen}>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground">
+              <Info className="h-4 w-4" />
+              <span>Como funciona o sistema de metas?</span>
+            </Button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <Card className="mt-2 bg-muted/50">
+              <CardContent className="pt-4 space-y-3 text-sm">
+                <div className="flex gap-2">
+                  <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p><strong>Sessões:</strong> Conta todas as sessões criadas a partir da data de definição da meta, independente do status.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p><strong>Clientes:</strong> Considera o total de clientes ativos na sua base.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p><strong>Receita:</strong> Soma os pagamentos com status "pago" no período selecionado (diário, semanal ou mensal).</p>
+                </div>
+                <div className="flex gap-2">
+                  <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p><strong>Pacotes:</strong> Conta pacotes ativos no momento.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                  <p><strong>Performance:</strong> Calcula a taxa de sessões realizadas sobre o total de sessões.</p>
+                </div>
+                <div className="border-t pt-3 mt-3">
+                  <p className="text-muted-foreground">
+                    <strong>Período:</strong> Define se a meta é diária, semanal ou mensal. A contagem é zerada ao início de cada período.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </CollapsibleContent>
+        </Collapsible>
+        
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="gerenciar">
+            <Target className="h-4 w-4 mr-2" />
+            Gerenciar Metas
+          </TabsTrigger>
+          <TabsTrigger value="historico">
+            <History className="h-4 w-4 mr-2" />
+            Histórico
+          </TabsTrigger>
+        </TabsList>
 
-      <TabsContent value="gerenciar" className="space-y-4">
+        <TabsContent value="gerenciar" className="space-y-4">
         <div className="grid gap-4">
           {tiposMeta.map((tipo) => {
             const metaAtiva = getMetaAtiva(tipo);
@@ -349,5 +516,6 @@ export const MetasManager = () => {
         )}
       </TabsContent>
     </Tabs>
+    </>
   );
 };
