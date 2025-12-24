@@ -4,7 +4,7 @@ import { formatCurrencyBR } from "@/utils/formatters"
 import { Card } from "@/components/ui/card"
 import { useMetas, MetaTipo, MetaPeriodo } from "@/hooks/useMetas"
 import { useTerminology } from "@/hooks/useTerminology"
-import { useEffect, useState } from "react"
+import React, { useEffect, useState, useRef } from "react"
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, isWithinInterval } from "date-fns"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
@@ -96,6 +96,9 @@ export const BusinessOrbitalView = ({
   }, [user, metas])
   
   // Verificar e marcar metas concluídas automaticamente
+  // Usamos uma ref para evitar chamadas múltiplas com os mesmos valores
+  const lastCheckedValuesRef = useRef<string>('')
+  
   useEffect(() => {
     const valoresAtuais = {
       sessoes: sessionsFromMeta.monthly,
@@ -104,7 +107,15 @@ export const BusinessOrbitalView = ({
       pacotes: packageStats.activePackages,
       ticket_medio: dashboardData.completionRate
     };
-    verificarEMarcarMetasConcluidas(valoresAtuais);
+    
+    // Criar uma chave única para os valores atuais
+    const valuesKey = JSON.stringify(valoresAtuais);
+    
+    // Só verificar se os valores mudaram
+    if (valuesKey !== lastCheckedValuesRef.current) {
+      lastCheckedValuesRef.current = valuesKey;
+      verificarEMarcarMetasConcluidas(valoresAtuais);
+    }
   }, [dashboardData, packageStats, sessionsFromMeta])
   
   // Pegar metas ativas
