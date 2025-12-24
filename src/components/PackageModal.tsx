@@ -115,7 +115,7 @@ export const PackageModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.client_id || !formData.nome || formData.total_sessoes <= 0 || formData.valor_total <= 0) {
+    if (!formData.client_id || !formData.nome || formData.total_sessoes <= 0 || formData.valor_total <= 0 || !formData.data_inicio || !formData.data_fim) {
       return;
     }
 
@@ -241,7 +241,7 @@ export const PackageModal = ({
               </div>
 
               <div className="col-span-2">
-                <Label htmlFor="nome">Nome do Pacote</Label>
+                <Label htmlFor="nome">Nome do Pacote *</Label>
                 <Input
                   id="nome"
                   value={formData.nome}
@@ -252,7 +252,7 @@ export const PackageModal = ({
               </div>
 
               <div>
-                <Label htmlFor="total_sessoes">Total de Sessões</Label>
+                <Label htmlFor="total_sessoes">Total de Sessões *</Label>
                 <Input
                   id="total_sessoes"
                   type="number"
@@ -264,7 +264,7 @@ export const PackageModal = ({
               </div>
 
               <div>
-                <Label htmlFor="valor_total">Valor Total (R$)</Label>
+                <Label htmlFor="valor_total">Valor Total (R$) *</Label>
                 <Input
                   id="valor_total"
                   type="number"
@@ -305,7 +305,7 @@ export const PackageModal = ({
               </div>
 
               <div>
-                <Label>Data de Início</Label>
+                <Label>Data de Início *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -330,13 +330,14 @@ export const PackageModal = ({
                       onSelect={(date) => setFormData({ ...formData, data_inicio: date })}
                       initialFocus
                       locale={ptBR}
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
               </div>
 
               <div>
-                <Label>Data de Término</Label>
+                <Label>Data de Término *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -361,6 +362,7 @@ export const PackageModal = ({
                       onSelect={(date) => setFormData({ ...formData, data_fim: date })}
                       initialFocus
                       locale={ptBR}
+                      className="pointer-events-auto"
                     />
                   </PopoverContent>
                 </Popover>
