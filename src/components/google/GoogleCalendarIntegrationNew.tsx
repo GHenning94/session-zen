@@ -5,13 +5,17 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Alert, AlertDescription } from "@/components/ui/alert"
 import { 
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion"
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useGoogleCalendarSync } from "@/hooks/useGoogleCalendarSync"
 import { useConflictDetection } from "@/hooks/useConflictDetection"
@@ -23,6 +27,7 @@ import { ConflictDetectionPanel } from "./ConflictDetectionPanel"
 import { SeriesSelectionModal } from "./SeriesSelectionModal"
 import { ActionHistoryPanel } from "./ActionHistoryPanel"
 import { getRecurringMasterId, GoogleEvent, isRecurringEvent } from "@/types/googleCalendar"
+import { useSwipeToDismiss } from "@/hooks/useSwipeToDismiss"
 import { 
   Calendar, Crown, RefreshCw, Link, Download, Upload, 
   CheckCircle2, HelpCircle, Unlink, CheckSquare, Square,
@@ -93,11 +98,18 @@ const GoogleCalendarIntegrationNew = () => {
   // State para o modal de seleção de série
   const [seriesModalOpen, setSeriesModalOpen] = useState(false)
   const [showWarning, setShowWarning] = useState(true)
+  const [isLegendOpen, setIsLegendOpen] = useState(false)
   const [isGoogleSelectionMode, setIsGoogleSelectionMode] = useState(false)
   const [isPlatformSelectionMode, setIsPlatformSelectionMode] = useState(false)
   const [seriesModalEvents, setSeriesModalEvents] = useState<GoogleEvent[]>([])
   const [seriesModalAction, setSeriesModalAction] = useState<SeriesActionType>('import')
   const [seriesModalLoading, setSeriesModalLoading] = useState(false)
+
+  // Swipe to dismiss para o banner de aviso
+  const swipeHandlers = useSwipeToDismiss({
+    threshold: 100,
+    onDismiss: () => setShowWarning(false)
+  })
 
   // Função helper para formatar data do evento
   const formatEventDate = (event: GoogleEvent) => {
@@ -338,21 +350,161 @@ const GoogleCalendarIntegrationNew = () => {
         <div className="space-y-6">
           {/* Aviso no topo - acima de tudo */}
           {showWarning && (
-            <Alert className="bg-warning/10 border-warning/30 mt-4">
+            <div 
+              {...swipeHandlers.handlers}
+              style={swipeHandlers.style}
+              className="bg-warning/10 border border-warning/30 rounded-lg p-3 mt-4"
+            >
               <div className="flex items-center justify-between w-full">
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-4 w-4 text-warning" />
-                  <AlertDescription className="text-sm">
+                  <BookOpen className="h-4 w-4 text-warning shrink-0" />
+                  <p className="text-sm">
                     <strong>Recomendação:</strong> Leia a <strong>legenda</strong> abaixo para entender o funcionamento completo da integração. 
                     Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
-                  </AlertDescription>
+                  </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setShowWarning(false)} className="h-6 w-6 p-0">
+                <Button variant="ghost" size="sm" onClick={() => setShowWarning(false)} className="h-6 w-6 p-0 shrink-0">
                   <X className="h-4 w-4" />
                 </Button>
               </div>
-            </Alert>
+            </div>
           )}
+
+          {/* Legenda explicativa em dropdown */}
+          <Collapsible open={isLegendOpen} onOpenChange={setIsLegendOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground hover:text-foreground">
+                <Info className="h-4 w-4" />
+                <span>Como funciona a integração do Google?</span>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <Card className="mt-2 bg-muted/50">
+                <CardContent className="pt-4 space-y-3 text-sm">
+                  <Accordion type="single" collapsible className="w-full">
+                    <AccordionItem value="import" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <Download className="w-4 h-4 text-primary" />
+                          <span>Importar do Google (somente leitura)</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Traz o evento do Google Agenda para a plataforma em <strong>modo de visualização</strong>. 
+                          A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada.
+                          O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Importado</Badge>.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="copy" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <Copy className="w-4 h-4 text-primary" />
+                          <span>Criar cópia editável (independente)</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Cria uma <strong>sessão totalmente independente</strong> baseada no evento do Google. 
+                          Você pode editar todos os dados livremente na plataforma.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="mirror" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <ArrowLeftRight className="w-4 h-4 text-primary" />
+                          <span>Espelhar com Google (bidirecional)</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Sincronização em duas vias. Alterações feitas na plataforma atualizam o Google 
+                          e vice-versa. O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Espelhado</Badge>.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="send" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <Upload className="w-4 h-4 text-primary" />
+                          <span>Enviar para Google</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Publica o evento da plataforma no Google Agenda (sentido único). 
+                          O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Enviado</Badge>.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="ignore" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <EyeOff className="w-4 h-4 text-primary" />
+                          <span>Ignorar evento</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Remove o evento da lista de pendentes sem afetar o Google. 
+                          Útil para eventos pessoais que não são sessões.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="recurring" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <Repeat className="w-4 h-4 text-primary" />
+                          <span>Eventos recorrentes</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Eventos recorrentes são identificados com a tag <Badge variant="outline" className="mx-1">G: Recorrente</Badge>.
+                          Você pode importar uma única ocorrência ou toda a série de uma vez.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="history" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <History className="w-4 h-4 text-primary" />
+                          <span>Histórico de Ações</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Todas as ações são registradas no Histórico de Ações. Você pode reverter qualquer ação clicando em "Desfazer".
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                    
+                    <AccordionItem value="conflicts" className="border-none">
+                      <AccordionTrigger className="hover:no-underline py-2">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-destructive" />
+                          <span>Detecção de conflitos</span>
+                        </div>
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <p className="text-muted-foreground">
+                          Sessões espelhadas são monitoradas para detectar conflitos quando há alterações em ambos os lados.
+                        </p>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </Accordion>
+                </CardContent>
+              </Card>
+            </CollapsibleContent>
+          </Collapsible>
 
           {/* Status da Conexão */}
           <Card className="shadow-soft">
@@ -810,187 +962,6 @@ const GoogleCalendarIntegrationNew = () => {
               onClearHistory={clearHistory}
             />
           )}
-          <Card className="shadow-soft border-border">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Info className="w-5 h-5 text-primary" />
-                Como funciona a integração
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <Accordion type="single" collapsible className="w-full">
-                <AccordionItem value="import">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <Download className="w-4 h-4 text-primary" />
-                      <span>Importar do Google (somente leitura)</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-3">
-                      <p className="text-sm text-muted-foreground">
-                        Traz o evento do Google Agenda para a plataforma em <strong>modo de visualização</strong>. 
-                        A sessão <strong>não pode ser editada</strong> na plataforma - apenas visualizada 
-                        (exceto valor e método de pagamento, para fins de métricas).
-                        Ideal para manter eventos sincronizados sem risco de alterações acidentais.
-                        O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Importado</Badge>.
-                      </p>
-                      <div className="p-3 rounded-md bg-warning/10 border border-warning/20">
-                        <p className="text-sm text-muted-foreground">
-                          <strong className="text-warning">⚠️ Atenção:</strong> Ao <strong>importar</strong> eventos, eles serão removidos da lista de eventos do Google nesta página.
-                          Se você deseja manter os eventos visíveis no Google Calendar e ter controle total na plataforma, considere usar <strong>Copiar</strong> ou <strong>Espelhar</strong>.
-                        </p>
-                      </div>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="copy">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <Copy className="w-4 h-4 text-primary" />
-                      <span>Criar cópia editável (independente)</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Cria uma <strong>sessão totalmente independente</strong> baseada no evento do Google. 
-                      Você pode editar todos os dados livremente na plataforma.
-                      <strong>Não mantém vínculo</strong> com o Google Calendar - é como criar uma nova sessão manualmente.
-                      Não exibe tag de sincronização pois é uma sessão nativa da plataforma.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="mirror">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <ArrowLeftRight className="w-4 h-4 text-primary" />
-                      <span>Espelhar com Google (bidirecional)</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Sincronização em duas vias. Alterações feitas na plataforma atualizam o Google 
-                      e vice-versa. Funciona com eventos únicos e recorrentes.
-                      O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Espelhado</Badge>.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="send">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <Upload className="w-4 h-4 text-primary" />
-                      <span>Enviar para Google</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Publica o evento da plataforma no Google Agenda (sentido único). 
-                      Alterações futuras no Google <strong>não afetam</strong> a plataforma.
-                      O evento ficará marcado com a tag <Badge variant="outline" className="mx-1">G: Enviado</Badge>.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="ignore">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <EyeOff className="w-4 h-4 text-primary" />
-                      <span>Ignorar evento</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <p className="text-sm text-muted-foreground">
-                      Remove o evento da lista de pendentes sem afetar o Google. 
-                      O evento não aparecerá na página de Sessões e não será importado automaticamente.
-                      Útil para eventos pessoais que não são sessões de atendimento.
-                    </p>
-                    <p className="text-xs mt-2 text-muted-foreground/80 border-t pt-2">
-                      <strong>Nota:</strong> Sessões importadas requerem definição manual de valor e método de pagamento para contabilização correta nas métricas.
-                    </p>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="recurring">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <Repeat className="w-4 h-4 text-primary" />
-                      <span>Eventos recorrentes (séries)</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>
-                        Eventos recorrentes são identificados com a tag <Badge variant="outline" className="mx-1">G: Recorrente</Badge> 
-                        e mostram a quantidade de instâncias na série.
-                      </p>
-                      <p>
-                        <strong>Importar única:</strong> Importa apenas a ocorrência selecionada, ideal para casos onde você quer controle individual.
-                      </p>
-                      <p>
-                        <strong>Importar série:</strong> Importa todas as instâncias da série de uma vez, criando um único cliente vinculado a todas as sessões.
-                      </p>
-                      <p className="text-xs pt-2 border-t mt-2">
-                        Cada ocorrência importada mantém referência à série original para rastreamento.
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="history">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <History className="w-4 h-4 text-primary" />
-                      <span>Histórico de Ações</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>
-                        Todas as ações realizadas (importar, copiar, espelhar, ignorar) são registradas no <strong>Histórico de Ações</strong> acima.
-                      </p>
-                      <p>
-                        <strong>Desfazer ações:</strong> Você pode reverter qualquer ação clicando em "Desfazer" no histórico. 
-                        Isso é útil quando você importa ou ignora um evento por engano.
-                      </p>
-                      <p className="text-xs pt-2 border-t mt-2">
-                        O histórico é mantido apenas durante a sessão atual. Ao recarregar a página, o histórico será limpo.
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-                
-                <AccordionItem value="conflicts">
-                  <AccordionTrigger className="hover:no-underline">
-                    <div className="flex items-center gap-2">
-                      <AlertTriangle className="w-4 h-4 text-destructive" />
-                      <span>Detecção de conflitos</span>
-                    </div>
-                  </AccordionTrigger>
-                  <AccordionContent>
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p>
-                        Sessões <Badge variant="outline" className="mx-1">G: Espelhadas</Badge> são monitoradas automaticamente para detectar conflitos 
-                        quando há alterações em ambos os lados (plataforma e Google).
-                      </p>
-                      <p>
-                        <strong>Prioridade Alta:</strong> Conflitos de data/horário que podem causar problemas de agendamento.
-                      </p>
-                      <p>
-                        <strong>Prioridade Média/Baixa:</strong> Diferenças em descrição, localização ou outros detalhes.
-                      </p>
-                      <p>
-                        Você pode resolver conflitos mantendo os dados da plataforma, do Google, 
-                        ou fazendo um merge manual escolhendo campo a campo.
-                      </p>
-                    </div>
-                  </AccordionContent>
-                </AccordionItem>
-              </Accordion>
-            </CardContent>
-          </Card>
 
           {/* Modal de seleção de série */}
           <SeriesSelectionModal
