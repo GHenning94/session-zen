@@ -246,43 +246,36 @@ export const useMetas = () => {
     if (!user) return;
 
     try {
-      // Primeiro verificar se já foi notificado no banco (garantir consistência)
-      const { data: metaAtual, error: fetchError } = await supabase
-        .from('metas')
-        .select('notificado_50')
-        .eq('id', metaId)
-        .eq('user_id', user.id)
-        .single();
-      
-      if (fetchError) throw fetchError;
-      
-      // Se já foi notificado, não criar notificação duplicada
-      if (metaAtual?.notificado_50) {
-        console.log('[useMetas] Meta já foi notificada 50%, ignorando');
-        return;
-      }
-      
-      const { error: updateError } = await supabase
+      // Usar update condicional atômico: só atualiza se notificado_50 = false
+      // Isso evita race conditions e duplicatas
+      const { data: updatedMeta, error: updateError } = await supabase
         .from('metas')
         .update({ notificado_50: true, updated_at: new Date().toISOString() })
         .eq('id', metaId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('notificado_50', false) // Condição atômica: só atualiza se ainda não foi notificado
+        .select('id, tipo')
+        .maybeSingle();
+
+      // Se não retornou dados, significa que já estava notificado ou não existe
+      if (!updatedMeta) {
+        console.log('[useMetas] Meta já foi notificada 50% ou não encontrada, ignorando');
+        return;
+      }
 
       if (updateError) throw updateError;
 
-      const meta = metas.find(m => m.id === metaId);
-      if (meta) {
-        const { error: notifError } = await supabase.from('notifications').insert({
-          user_id: user.id,
-          titulo: 'Você está na metade do caminho! 🎯',
-          conteudo: `Parabéns! Você já atingiu 50% da sua meta de ${getTipoLabel(meta.tipo)}. Continue assim!`,
-          lida: false,
-          data: new Date().toISOString()
-        });
-        
-        if (notifError) {
-          console.error('Erro ao criar notificação 50%:', notifError);
-        }
+      // Criar notificação apenas se a atualização foi bem-sucedida
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: user.id,
+        titulo: 'Você está na metade do caminho! 🎯',
+        conteudo: `Parabéns! Você já atingiu 50% da sua meta de ${getTipoLabel(updatedMeta.tipo as MetaTipo)}. Continue assim!`,
+        lida: false,
+        data: new Date().toISOString()
+      });
+      
+      if (notifError) {
+        console.error('Erro ao criar notificação 50%:', notifError);
       }
     } catch (error) {
       console.error('Erro ao notificar 50%:', error);

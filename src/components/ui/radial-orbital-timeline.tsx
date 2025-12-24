@@ -291,7 +291,7 @@ export default function RadialOrbitalTimeline({
                   <span className={`text-xs font-semibold tracking-wider ${isExpanded ? "text-foreground" : "text-muted-foreground"}`}>
                     {item.title}
                   </span>
-                  {item.energy > 0 && item.energy < 100 && item.status !== "pending" && item.status !== "completed" && (
+                  {item.energy > 0 && item.energy < 100 && item.status === "in-progress" && (
                     <span className="block text-[10px] font-mono text-muted-foreground">
                       {item.energy}%
                     </span>

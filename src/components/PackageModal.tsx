@@ -35,6 +35,7 @@ export const PackageModal = ({
   const { createPackage, updatePackage, deletePackage, loading } = usePackages();
   const { user } = useAuth();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(false);
   
   const [formData, setFormData] = useState({
     client_id: clientId || '',
@@ -166,17 +167,40 @@ export const PackageModal = ({
     }
   };
 
+  const handleDeleteClick = () => {
+    // First close the dialog, then show delete confirmation
+    onOpenChange(false);
+    setPendingDelete(true);
+  };
+
+  // Effect to show delete confirmation after dialog closes
+  useEffect(() => {
+    if (pendingDelete && !open) {
+      // Wait for dialog to fully close before showing AlertDialog
+      const timer = setTimeout(() => {
+        setShowDeleteConfirm(true);
+        setPendingDelete(false);
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [pendingDelete, open]);
+
   const handleDelete = async () => {
     if (!packageToEdit) return;
     
     try {
       await deletePackage(packageToEdit.id);
       setShowDeleteConfirm(false);
-      onOpenChange(false);
       onSave();
     } catch (error) {
       console.error('Error deleting package:', error);
     }
+  };
+
+  const handleCancelDelete = () => {
+    setShowDeleteConfirm(false);
+    // Reopen the edit dialog
+    onOpenChange(true);
   };
 
   return (
@@ -359,7 +383,7 @@ export const PackageModal = ({
                 variant="destructive"
                 disabled={loading}
                 className="w-full sm:w-auto"
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={handleDeleteClick}
               >
                 <Trash2 className="h-4 w-4 mr-2" />
                 Excluir
@@ -384,8 +408,12 @@ export const PackageModal = ({
         </form>
       </DialogContent>
 
-      {/* AlertDialog fora do Dialog para evitar erros de DOM */}
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      {/* AlertDialog COMPLETAMENTE fora do Dialog para evitar conflitos de portal */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={(open) => {
+        if (!open) {
+          handleCancelDelete();
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Pacote</AlertDialogTitle>
@@ -396,7 +424,7 @@ export const PackageModal = ({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelDelete}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
