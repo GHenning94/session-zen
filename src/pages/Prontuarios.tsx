@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -6,7 +6,9 @@ import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
-import { FileText, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen, Filter } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { FileText, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen, Filter, Search, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -19,12 +21,7 @@ import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { TextPreview } from '@/components/TextPreview'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuCheckboxItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { cn } from '@/lib/utils'
 
 interface Client {
   id: string
@@ -91,6 +88,15 @@ export default function Prontuarios() {
     client: '',
     anamnese: 'all' as 'all' | 'realizada' | 'pendente'
   })
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  
+  // Calculate active filters count
+  const activeFiltersCount = useMemo(() => {
+    let count = 0
+    if (filters.anamnese !== 'all') count++
+    if (filters.search) count++
+    return count
+  }, [filters.anamnese, filters.search])
 
   useEffect(() => {
     if (user) {
@@ -558,50 +564,75 @@ export default function Prontuarios() {
           </div>
         </div>
         
-        {/* Filtros */}
+        {/* Filtros - Collapsible dropdown */}
         <Card className="mb-6">
-          <CardContent className="pt-6">
-            <div className="flex flex-col sm:flex-row gap-4">
-              <div className="flex-1">
-                <Input
-                  placeholder="Buscar cliente por nome, e-mail ou telefone..."
-                  value={filters.search}
-                  onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                />
-              </div>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2">
+          <CardHeader className="py-3 md:py-4">
+            <Collapsible open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
+              <CollapsibleTrigger asChild>
+                <button className="flex items-center justify-between w-full text-left">
+                  <div className="flex items-center gap-2">
                     <Filter className="h-4 w-4" />
-                    Filtrar
-                    {filters.anamnese !== 'all' && (
-                      <Badge variant="secondary" className="ml-1">1</Badge>
+                    <span className="text-sm md:text-base font-semibold">Filtros</span>
+                    {activeFiltersCount > 0 && (
+                      <Badge variant="secondary" className="text-xs">
+                        {activeFiltersCount} ativo{activeFiltersCount > 1 ? 's' : ''}
+                      </Badge>
                     )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuCheckboxItem
-                    checked={filters.anamnese === 'all'}
-                    onCheckedChange={() => setFilters(prev => ({ ...prev, anamnese: 'all' }))}
-                  >
-                    Todos
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={filters.anamnese === 'realizada'}
-                    onCheckedChange={() => setFilters(prev => ({ ...prev, anamnese: 'realizada' }))}
-                  >
-                    Anamnese realizada
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={filters.anamnese === 'pendente'}
-                    onCheckedChange={() => setFilters(prev => ({ ...prev, anamnese: 'pendente' }))}
-                  >
-                    Anamnese pendente
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </CardContent>
+                  </div>
+                  <ChevronDown className={cn("h-4 w-4 transition-transform", isFiltersOpen && "rotate-180")} />
+                </button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                  <div>
+                    <Label htmlFor="search" className="text-xs">Buscar</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                      <Input
+                        id="search"
+                        placeholder="Nome, e-mail ou telefone..."
+                        value={filters.search}
+                        onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                        className="h-9 text-sm pl-9"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="anamnese-filter" className="text-xs">Anamnese</Label>
+                    <Select 
+                      value={filters.anamnese} 
+                      onValueChange={(value: 'all' | 'realizada' | 'pendente') => setFilters(prev => ({ ...prev, anamnese: value }))}
+                    >
+                      <SelectTrigger className="h-9 text-sm">
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="realizada">Realizada</SelectItem>
+                        <SelectItem value="pendente">Pendente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Limpar</Label>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full h-9"
+                      onClick={() => {
+                        setFilters({ search: '', client: '', anamnese: 'all' })
+                      }}
+                      disabled={activeFiltersCount === 0}
+                    >
+                      Limpar Filtros
+                    </Button>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </CardHeader>
         </Card>
         
         {/* Lista de Clientes */}
