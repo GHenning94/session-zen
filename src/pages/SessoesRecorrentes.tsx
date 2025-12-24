@@ -8,7 +8,8 @@ import { useRecurringSessions } from "@/hooks/useRecurringSessions"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
-import { Repeat, Plus, Edit, Trash2, Calendar, Clock, DollarSign, User } from "lucide-react"
+import { Repeat, Plus, Edit, Trash2, Calendar, Clock, DollarSign } from "lucide-react"
+import { ClientAvatar } from "@/components/ClientAvatar"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { useToast } from "@/hooks/use-toast"
 import {
@@ -233,7 +234,11 @@ export default function SessoesRecorrentes() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 space-y-3">
                       <div className="flex items-center gap-3">
-                        <User className="h-5 w-5 text-muted-foreground" />
+                        <ClientAvatar 
+                          avatarPath={recurring.clients?.avatar_url}
+                          clientName={recurring.clients?.nome || 'Cliente'}
+                          size="sm"
+                        />
                         <span className="font-semibold text-lg">
                           {recurring.clients?.nome || 'Cliente não encontrado'}
                         </span>
@@ -302,10 +307,14 @@ export default function SessoesRecorrentes() {
                 <Button
                   key={client.id}
                   variant="outline"
-                  className="w-full justify-start"
+                  className="w-full justify-start gap-2"
                   onClick={() => handleSelectClient(client.id)}
                 >
-                  <User className="h-4 w-4 mr-2" />
+                  <ClientAvatar 
+                    avatarPath={undefined}
+                    clientName={client.nome}
+                    size="sm"
+                  />
                   {client.nome}
                 </Button>
               ))}
