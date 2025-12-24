@@ -52,7 +52,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
 
   // Process the notification queue one at a time
-  const processNextNotification = useCallback(() => {
+  const processNextNotification = useCallback((playSound = true) => {
     console.log('[NotificationContext] processNextNotification called, queue length:', notificationQueueRef.current.length, 'isProcessing:', isProcessingQueueRef.current)
     
     if (isProcessingQueueRef.current) {
@@ -69,23 +69,26 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     const nextNotification = notificationQueueRef.current.shift()!
     
     console.log('[NotificationContext] Processing notification from queue:', nextNotification.id, nextNotification.titulo)
+    
+    // Play sound when notification is actually displayed (synced with animation)
+    if (playSound) {
+      playNotificationSound()
+    }
+    
     setIncomingNotification(nextNotification)
   }, [])
 
   // Add notification to queue and start processing if not already
-  const enqueueNotification = useCallback((notification: Notification, playSoundNow = true) => {
+  const enqueueNotification = useCallback((notification: Notification, playSoundWithDisplay = true) => {
     console.log('[NotificationContext] Enqueueing notification:', notification.id, notification.titulo)
-    notificationQueueRef.current.push(notification)
     
-    // Play sound immediately when notification arrives
-    // Note: May not play if tab is in background due to browser restrictions
-    if (playSoundNow) {
-      playNotificationSound()
-    }
+    // Store whether this notification should play sound when displayed
+    const notificationWithSound = { ...notification, _playSound: playSoundWithDisplay }
+    notificationQueueRef.current.push(notificationWithSound as Notification)
     
-    // If not currently processing, start processing
+    // If not currently processing, start processing (sound plays when notification is shown)
     if (!isProcessingQueueRef.current) {
-      processNextNotification()
+      processNextNotification(playSoundWithDisplay)
     }
   }, [processNextNotification])
 
@@ -103,8 +106,9 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     isProcessingQueueRef.current = false
     
     // Small delay to allow UI to update before showing next
+    // Sound will play when the next notification is processed (synced with animation)
     setTimeout(() => {
-      processNextNotification()
+      processNextNotification(true)
     }, 300)
   }, [processNextNotification])
 
