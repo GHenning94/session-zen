@@ -39,17 +39,35 @@ export const PackageModal = ({
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const deletePackageRef = useRef<Package | null>(null);
   
-  const [formData, setFormData] = useState({
-    client_id: clientId || '',
-    nome: '',
-    total_sessoes: 10,
-    valor_total: 0,
-    valor_por_sessao: 0,
-    metodo_pagamento: '',
-    data_inicio: undefined as Date | undefined,
-    data_fim: undefined as Date | undefined,
-    observacoes: ''
-  });
+  // Inicializar formData baseado em packageToEdit (se existir)
+  const getInitialFormData = () => {
+    if (packageToEdit) {
+      return {
+        client_id: packageToEdit.client_id,
+        nome: packageToEdit.nome,
+        total_sessoes: packageToEdit.total_sessoes,
+        valor_total: packageToEdit.valor_total,
+        valor_por_sessao: packageToEdit.valor_por_sessao || (packageToEdit.valor_total / packageToEdit.total_sessoes),
+        metodo_pagamento: packageToEdit.metodo_pagamento || '',
+        data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
+        data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
+        observacoes: packageToEdit.observacoes || ''
+      };
+    }
+    return {
+      client_id: clientId || '',
+      nome: '',
+      total_sessoes: 10,
+      valor_total: 0,
+      valor_por_sessao: 0,
+      metodo_pagamento: '',
+      data_inicio: undefined as Date | undefined,
+      data_fim: undefined as Date | undefined,
+      observacoes: ''
+    };
+  };
+  
+  const [formData, setFormData] = useState(getInitialFormData);
 
   // Carregar clientes
   const { data: clients = [], isLoading: clientsLoading } = useQuery({
@@ -70,40 +88,6 @@ export const PackageModal = ({
   // Buscar nome do cliente selecionado
   const selectedClientName = clients.find(c => c.id === formData.client_id)?.nome;
 
-  // Preencher formulário quando packageToEdit mudar OU quando modal abrir com packageToEdit
-  useEffect(() => {
-    if (packageToEdit && open) {
-      setFormData({
-        client_id: packageToEdit.client_id,
-        nome: packageToEdit.nome,
-        total_sessoes: packageToEdit.total_sessoes,
-        valor_total: packageToEdit.valor_total,
-        valor_por_sessao: packageToEdit.valor_por_sessao || 0,
-        metodo_pagamento: packageToEdit.metodo_pagamento || '',
-        data_inicio: packageToEdit.data_inicio ? new Date(packageToEdit.data_inicio) : undefined,
-        data_fim: packageToEdit.data_fim ? new Date(packageToEdit.data_fim) : undefined,
-        observacoes: packageToEdit.observacoes || ''
-      });
-    }
-  }, [packageToEdit, open]);
-
-  // Reset formulário quando abrir para criar novo pacote
-  useEffect(() => {
-    if (open && !packageToEdit) {
-      setFormData({
-        client_id: clientId || '',
-        nome: '',
-        total_sessoes: 10,
-        valor_total: 0,
-        valor_por_sessao: 0,
-        metodo_pagamento: '',
-        data_inicio: undefined,
-        data_fim: undefined,
-        observacoes: ''
-      });
-    }
-  }, [open, packageToEdit, clientId]);
-
   // Resetar estado do AlertDialog quando o componente é desmontado ou modal fecha
   useEffect(() => {
     if (!open) {
@@ -111,15 +95,22 @@ export const PackageModal = ({
     }
   }, [open]);
 
-  useEffect(() => {
-    // Calcular valor por sessão automaticamente
-    if (formData.total_sessoes > 0) {
-      setFormData(prev => ({
-        ...prev,
-        valor_por_sessao: prev.valor_total / prev.total_sessoes
-      }));
-    }
-  }, [formData.valor_total, formData.total_sessoes]);
+  // Calcular valor por sessão automaticamente quando valor_total ou total_sessoes mudam
+  const handleValorTotalChange = (newValor: number) => {
+    setFormData(prev => ({
+      ...prev,
+      valor_total: newValor,
+      valor_por_sessao: prev.total_sessoes > 0 ? newValor / prev.total_sessoes : 0
+    }));
+  };
+
+  const handleTotalSessoesChange = (newTotal: number) => {
+    setFormData(prev => ({
+      ...prev,
+      total_sessoes: newTotal,
+      valor_por_sessao: newTotal > 0 ? prev.valor_total / newTotal : 0
+    }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -267,7 +258,7 @@ export const PackageModal = ({
                   type="number"
                   min="1"
                   value={formData.total_sessoes}
-                  onChange={(e) => setFormData({ ...formData, total_sessoes: parseInt(e.target.value) })}
+                  onChange={(e) => handleTotalSessoesChange(parseInt(e.target.value) || 1)}
                   required
                 />
               </div>
@@ -280,7 +271,7 @@ export const PackageModal = ({
                   step="0.01"
                   min="0"
                   value={formData.valor_total}
-                  onChange={(e) => setFormData({ ...formData, valor_total: parseFloat(e.target.value) })}
+                  onChange={(e) => handleValorTotalChange(parseFloat(e.target.value) || 0)}
                   required
                 />
               </div>

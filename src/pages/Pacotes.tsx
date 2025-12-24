@@ -18,6 +18,7 @@ import { formatPaymentMethod } from '@/utils/formatters';
 export default function Pacotes() {
   const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
   const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [modalKey, setModalKey] = useState(0);
   const { getPackageProgress } = usePackages();
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -158,25 +159,30 @@ export default function Pacotes() {
     cancelado: { label: 'Cancelado', variant: 'destructive' as const, color: 'bg-red-500' }
   };
 
-  const handleEditPackage = async (pkg: Package) => {
-    // Se já está aberto com outro pacote, fechar primeiro e aguardar cleanup do DOM
+  const handleEditPackage = (pkg: Package) => {
+    // Fechar modal se já estiver aberto
     if (isPackageModalOpen) {
       setIsPackageModalOpen(false);
-      setSelectedPackage(null);
-      // Aguardar o portal do Radix ser completamente removido
-      await new Promise(resolve => setTimeout(resolve, 150));
     }
     
-    setSelectedPackage(pkg);
-    setIsPackageModalOpen(true);
+    // Sempre incrementar key para forçar remontagem limpa
+    setModalKey(prev => prev + 1);
+    
+    // Definir pacote e abrir modal no próximo ciclo
+    setTimeout(() => {
+      setSelectedPackage(pkg);
+      setIsPackageModalOpen(true);
+    }, 50);
   };
 
   const handleCloseModal = () => {
     setIsPackageModalOpen(false);
-    // Delay para limpar selectedPackage após o modal fechar completamente
-    setTimeout(() => {
-      setSelectedPackage(null);
-    }, 150);
+  };
+
+  const handleNewPackage = () => {
+    setModalKey(prev => prev + 1);
+    setSelectedPackage(null);
+    setIsPackageModalOpen(true);
   };
 
   // Check URL for package edit redirect
@@ -207,7 +213,7 @@ export default function Pacotes() {
               Gerencie pacotes de sessões
             </p>
           </div>
-          <Button onClick={() => setIsPackageModalOpen(true)} size="sm" className="w-full md:w-auto">
+          <Button onClick={handleNewPackage} size="sm" className="w-full md:w-auto">
             <Plus className="h-4 w-4 mr-2" />
             Novo Pacote
           </Button>
@@ -388,7 +394,7 @@ export default function Pacotes() {
               <p className="text-muted-foreground mb-4">
                 Crie seu primeiro pacote de sessões para começar
               </p>
-              <Button onClick={() => setIsPackageModalOpen(true)}>
+              <Button onClick={handleNewPackage}>
                 <Plus className="h-4 w-4 mr-2" />
                 Criar Pacote
               </Button>
@@ -397,9 +403,8 @@ export default function Pacotes() {
         </div>
       </div>
 
-      {/* Key única força remontagem completa quando pacote muda */}
       <PackageModal
-        key={`package-modal-${selectedPackage?.id || 'new'}-${isPackageModalOpen}`}
+        key={modalKey}
         open={isPackageModalOpen}
         onOpenChange={handleCloseModal}
         package={selectedPackage}
