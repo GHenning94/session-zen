@@ -160,19 +160,24 @@ export default function Pacotes() {
   };
 
   const handleEditPackage = (pkg: Package) => {
-    // Fechar modal se já estiver aberto
+    // Se modal já está aberto, fechar primeiro e reabrir
     if (isPackageModalOpen) {
       setIsPackageModalOpen(false);
-    }
-    
-    // Sempre incrementar key para forçar remontagem limpa
-    setModalKey(prev => prev + 1);
-    
-    // Definir pacote e abrir modal no próximo ciclo
-    setTimeout(() => {
+      setModalKey(prev => prev + 1);
+      
+      setTimeout(() => {
+        setSelectedPackage(pkg);
+        setIsPackageModalOpen(true);
+      }, 50);
+    } else {
+      // Modal não está aberto - definir pacote primeiro, depois abrir
       setSelectedPackage(pkg);
-      setIsPackageModalOpen(true);
-    }, 50);
+      setModalKey(prev => prev + 1);
+      // Usar requestAnimationFrame para garantir que o state foi aplicado
+      requestAnimationFrame(() => {
+        setIsPackageModalOpen(true);
+      });
+    }
   };
 
   const handleCloseModal = () => {
