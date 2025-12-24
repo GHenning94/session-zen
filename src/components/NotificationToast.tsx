@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react"
-import { ArrowUpRight } from "lucide-react"
+import { ArrowUpRight, Bell } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { playNotificationSound } from "@/hooks/useNotificationSound"
 
@@ -132,19 +132,22 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
         isExiting && "animate-out fade-out slide-out-to-right-8 duration-500"
       )}
     >
-      <div className="flex items-center gap-2 bg-amber-50 dark:bg-amber-950/80 border border-amber-200 dark:border-amber-800 rounded-full py-1.5 px-3 shadow-lg">
+      <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full py-1.5 px-3 shadow-lg backdrop-blur-sm">
+        {/* Bell icon */}
+        <Bell className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+        
         {/* Category badge */}
-        <span className="text-xs font-medium text-amber-700 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-medium text-primary bg-primary/20 px-2 py-0.5 rounded-full">
           {category}
         </span>
         
         {/* Summary text */}
-        <span className="text-sm text-amber-800 dark:text-amber-200 font-medium max-w-[200px] truncate">
+        <span className="text-sm text-foreground font-medium max-w-[200px] truncate">
           {summary}
         </span>
         
         {/* Arrow icon */}
-        <ArrowUpRight className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+        <ArrowUpRight className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
       </div>
     </div>
   )
