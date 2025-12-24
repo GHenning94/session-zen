@@ -64,12 +64,14 @@ export const MetasManager = () => {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [metaToDelete, setMetaToDelete] = useState<string | null>(null);
   
-  // Estado para modal de meta já cumprida
+  // Estado para modal de meta já cumprida (criação e edição)
   const [warningModalOpen, setWarningModalOpen] = useState(false);
   const [warningData, setWarningData] = useState<{
     tipo: MetaTipo;
     valorAtual: number;
     valorDefinido: number;
+    isEdit?: boolean;
+    metaId?: string;
   } | null>(null);
   
   // Valores atuais para comparação
@@ -176,15 +178,42 @@ export const MetasManager = () => {
     );
   };
 
-  const handleEdit = async (metaId: string) => {
+  const handleEdit = async (metaId: string, forceEdit = false) => {
     const valor = parseFloat(editValue);
     if (isNaN(valor) || valor <= 0) {
+      return;
+    }
+    
+    // Encontrar meta e verificar se o novo valor é menor que o atual
+    const meta = metas.find(m => m.id === metaId);
+    if (!meta) return;
+    
+    const valorAtual = valoresAtuais[meta.tipo as MetaTipo];
+    if (!forceEdit && valor <= valorAtual) {
+      setWarningData({ 
+        tipo: meta.tipo as MetaTipo, 
+        valorAtual, 
+        valorDefinido: valor, 
+        isEdit: true, 
+        metaId 
+      });
+      setWarningModalOpen(true);
       return;
     }
 
     await updateMeta(metaId, valor);
     setEditingMeta(null);
     setEditValue('');
+  };
+  
+  const handleConfirmEditMeta = async () => {
+    if (!warningData || !warningData.isEdit || !warningData.metaId) return;
+    
+    await updateMeta(warningData.metaId, warningData.valorDefinido);
+    setEditingMeta(null);
+    setEditValue('');
+    setWarningModalOpen(false);
+    setWarningData(null);
   };
 
   const handleDelete = async () => {
@@ -253,7 +282,7 @@ export const MetasManager = () => {
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal de aviso meta já cumprida */}
+      {/* Modal de aviso meta já cumprida (criação e edição) */}
       <Dialog open={warningModalOpen} onOpenChange={setWarningModalOpen}>
         <DialogContent>
           <DialogHeader>
@@ -279,8 +308,8 @@ export const MetasManager = () => {
             <Button variant="outline" onClick={() => setWarningModalOpen(false)}>
               Alterar Valor
             </Button>
-            <Button variant="secondary" onClick={handleConfirmCreateMeta}>
-              Criar Mesmo Assim
+            <Button variant="secondary" onClick={warningData?.isEdit ? handleConfirmEditMeta : handleConfirmCreateMeta}>
+              {warningData?.isEdit ? 'Editar Mesmo Assim' : 'Criar Mesmo Assim'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
+import { playNotificationSound } from '@/hooks/useNotificationSound'
 
 interface Notification {
   id: string
@@ -74,6 +75,9 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const enqueueNotification = useCallback((notification: Notification) => {
     console.log('[NotificationContext] Enqueueing notification:', notification.id, notification.titulo)
     notificationQueueRef.current.push(notification)
+    
+    // Play sound immediately when notification arrives (works in background too)
+    playNotificationSound()
     
     // If not currently processing, start processing
     if (!isProcessingQueueRef.current) {

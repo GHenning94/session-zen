@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { ArrowUpRight, Bell } from "lucide-react"
 import { cn } from "@/lib/utils"
-import { playNotificationSound } from "@/hooks/useNotificationSound"
 
 interface NotificationToastProps {
   notification: {
@@ -76,9 +75,8 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
     // Store this notification id as the last one we processed
     lastNotificationIdRef.current = notification.id
     
-    // Play notification sound
-    console.log('[NotificationToast] Playing sound')
-    playNotificationSound()
+    // Sound is now played in NotificationContext when notification is enqueued
+    // This ensures sound plays even in background tabs
     
     // Show the toast
     console.log('[NotificationToast] Setting visible = true')
