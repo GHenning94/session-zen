@@ -54,46 +54,23 @@ export const BusinessOrbitalView = ({
       const metaReceita = getMetaAtivaPorTipo('receita')
       
       try {
-        // Para sessões - buscar todas sessões criadas a partir da data_inicio da meta
-        if (metaSessoes) {
-          const dataInicio = metaSessoes.data_inicio
-          const { data: sessions, error } = await supabase
-            .from('sessions')
-            .select('id, created_at')
-            .eq('user_id', user.id)
-            .gte('created_at', dataInicio)
-          
-          if (!error && sessions) {
-            const now = new Date()
-            const todayStart = startOfDay(now).toISOString()
-            const weekStart = startOfWeek(now, { weekStartsOn: 0 }).toISOString()
-            const monthStart = startOfMonth(now).toISOString()
-            
-            setSessionsFromMeta({
-              daily: sessions.filter(s => s.created_at >= todayStart).length,
-              weekly: sessions.filter(s => s.created_at >= weekStart).length,
-              monthly: sessions.filter(s => s.created_at >= monthStart).length
-            })
-          }
-        } else {
-          // Sem meta ativa, buscar do mês atual
-          const monthStart = startOfMonth(now).toISOString()
-          const weekStart = startOfWeek(now, { weekStartsOn: 0 }).toISOString()
-          const todayStart = startOfDay(now).toISOString()
-          
-          const { data: sessions } = await supabase
-            .from('sessions')
-            .select('id, created_at')
-            .eq('user_id', user.id)
-            .gte('created_at', monthStart)
-          
-          if (sessions) {
-            setSessionsFromMeta({
-              daily: sessions.filter(s => s.created_at >= todayStart).length,
-              weekly: sessions.filter(s => s.created_at >= weekStart).length,
-              monthly: sessions.length
-            })
-          }
+        const now = new Date()
+        const todayStr = startOfDay(now).toISOString().split('T')[0]
+        const weekStartStr = startOfWeek(now, { weekStartsOn: 0 }).toISOString().split('T')[0]
+        const monthStartStr = startOfMonth(now).toISOString().split('T')[0]
+        
+        // Buscar todas as sessões do usuário usando o campo 'data' (data da sessão, não created_at)
+        const { data: sessions, error } = await supabase
+          .from('sessions')
+          .select('id, data')
+          .eq('user_id', user.id)
+        
+        if (!error && sessions) {
+          setSessionsFromMeta({
+            daily: sessions.filter(s => s.data === todayStr).length,
+            weekly: sessions.filter(s => s.data >= weekStartStr).length,
+            monthly: sessions.filter(s => s.data >= monthStartStr).length
+          })
         }
         
         // Para receita semanal
