@@ -120,13 +120,14 @@ export const BusinessOrbitalView = ({
   
   // Verificar e marcar metas concluídas automaticamente
   useEffect(() => {
-    verificarEMarcarMetasConcluidas(
-      sessionsFromMeta.monthly,
-      dashboardData.activeClients,
-      dashboardData.monthlyRevenue,
-      packageStats.activePackages,
-      dashboardData.completionRate
-    )
+    const valoresAtuais = {
+      sessoes: sessionsFromMeta.monthly,
+      clientes: dashboardData.activeClients,
+      receita: dashboardData.monthlyRevenue,
+      pacotes: packageStats.activePackages,
+      ticket_medio: dashboardData.completionRate
+    };
+    verificarEMarcarMetasConcluidas(valoresAtuais);
   }, [dashboardData, packageStats, sessionsFromMeta])
   
   // Pegar metas ativas

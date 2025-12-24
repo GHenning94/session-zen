@@ -611,6 +611,7 @@ export type Database = {
           data_conclusao: string | null
           data_inicio: string
           id: string
+          notificado_50: boolean
           periodo: string
           tipo: string
           updated_at: string
@@ -625,6 +626,7 @@ export type Database = {
           data_conclusao?: string | null
           data_inicio?: string
           id?: string
+          notificado_50?: boolean
           periodo?: string
           tipo: string
           updated_at?: string
@@ -639,6 +641,7 @@ export type Database = {
           data_conclusao?: string | null
           data_inicio?: string
           id?: string
+          notificado_50?: boolean
           periodo?: string
           tipo?: string
           updated_at?: string
