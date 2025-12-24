@@ -25,6 +25,9 @@ interface PackageModalProps {
   onSave: () => void;
 }
 
+// State machine para controlar modais: garante que só um modal está aberto por vez
+type ModalState = 'closed' | 'editing' | 'confirming-delete';
+
 export const PackageModal = ({ 
   open, 
   onOpenChange, 
@@ -34,8 +37,9 @@ export const PackageModal = ({
 }: PackageModalProps) => {
   const { createPackage, updatePackage, deletePackage, loading } = usePackages();
   const { user } = useAuth();
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [pendingDelete, setPendingDelete] = useState(false);
+  
+  // Usar estado interno para controlar transições de modal
+  const [internalModalState, setInternalModalState] = useState<ModalState>('closed');
   
   const [formData, setFormData] = useState({
     client_id: clientId || '',
@@ -168,40 +172,56 @@ export const PackageModal = ({
   };
 
   const handleDeleteClick = () => {
-    // First close the dialog, then show delete confirmation
+    // Usar state machine: fechar Dialog e ir para estado de confirmação
+    setInternalModalState('confirming-delete');
     onOpenChange(false);
-    setPendingDelete(true);
   };
 
-  // Effect to show delete confirmation after dialog closes
+  // Sincronizar estado interno com prop 'open'
   useEffect(() => {
-    if (pendingDelete && !open) {
-      // Wait for dialog to fully close before showing AlertDialog
-      const timer = setTimeout(() => {
-        setShowDeleteConfirm(true);
-        setPendingDelete(false);
-      }, 150);
-      return () => clearTimeout(timer);
+    if (open && internalModalState === 'closed') {
+      setInternalModalState('editing');
+    } else if (!open && internalModalState === 'editing') {
+      // Se Dialog foi fechado externamente, resetar estado
+      setInternalModalState('closed');
     }
-  }, [pendingDelete, open]);
+  }, [open, internalModalState]);
+
+  // Effect para mostrar AlertDialog após Dialog fechar completamente
+  useEffect(() => {
+    if (internalModalState === 'confirming-delete' && !open) {
+      // O AlertDialog será mostrado pelo estado internalModalState
+      // Não precisamos fazer nada aqui, a lógica está no render
+    }
+  }, [internalModalState, open]);
 
   const handleDelete = async () => {
     if (!packageToEdit) return;
     
     try {
       await deletePackage(packageToEdit.id);
-      setShowDeleteConfirm(false);
+      setInternalModalState('closed');
       onSave();
     } catch (error) {
       console.error('Error deleting package:', error);
+      setInternalModalState('closed');
     }
   };
 
   const handleCancelDelete = () => {
-    setShowDeleteConfirm(false);
-    // Reopen the edit dialog
-    onOpenChange(true);
+    // Voltar para o estado de edição após um delay para o DOM limpar
+    setInternalModalState('closed');
+    // Usar requestAnimationFrame + setTimeout para garantir que o portal foi limpo
+    requestAnimationFrame(() => {
+      setTimeout(() => {
+        setInternalModalState('editing');
+        onOpenChange(true);
+      }, 100);
+    });
   };
+
+  // Determinar se o AlertDialog deve estar aberto
+  const showDeleteConfirm = internalModalState === 'confirming-delete' && !open;
 
   return (
     <>
