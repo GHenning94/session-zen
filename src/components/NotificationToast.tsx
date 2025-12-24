@@ -130,22 +130,22 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
         isExiting && "animate-out fade-out slide-out-to-right-8 duration-500"
       )}
     >
-      <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-full py-1.5 px-3 shadow-lg backdrop-blur-sm">
+      <div className="flex items-center gap-2 bg-primary text-primary-foreground rounded-full py-2 px-4 shadow-xl shadow-primary/30 backdrop-blur-sm border border-primary-foreground/20">
         {/* Bell icon */}
-        <Bell className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+        <Bell className="h-4 w-4 text-primary-foreground flex-shrink-0" />
         
         {/* Category badge */}
-        <span className="text-xs font-medium text-primary bg-primary/20 px-2 py-0.5 rounded-full">
+        <span className="text-xs font-semibold text-primary bg-primary-foreground/20 px-2.5 py-0.5 rounded-full">
           {category}
         </span>
         
         {/* Summary text */}
-        <span className="text-sm text-foreground font-medium max-w-[200px] truncate">
+        <span className="text-sm text-primary-foreground font-medium max-w-[220px] truncate">
           {summary}
         </span>
         
         {/* Arrow icon */}
-        <ArrowUpRight className="h-3.5 w-3.5 text-primary/70 flex-shrink-0" />
+        <ArrowUpRight className="h-4 w-4 text-primary-foreground/80 flex-shrink-0" />
       </div>
     </div>
   )

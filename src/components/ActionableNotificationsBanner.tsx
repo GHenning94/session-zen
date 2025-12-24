@@ -90,27 +90,8 @@ export const ActionableNotificationsBanner = () => {
       });
     }
 
-    // Check for sessions without payment method
-    if (user && !hidden.includes('sessions-no-payment-method')) {
-      const { data: sessions } = await supabase
-        .from('sessions')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('status', 'agendada')
-        .or('metodo_pagamento.eq.A definir,metodo_pagamento.is.null')
-        .is('recurring_session_id', null);
-
-      if (sessions && sessions.length > 0) {
-        actionableNotifications.push({
-          id: 'sessions-no-payment-method',
-          icon: <CreditCard className="h-5 w-5" />,
-          message: `${sessions.length} sessão(ões) individual(is) sem método de pagamento definido`,
-          action: 'Ver Sessões',
-          route: `/sessoes?edit=${sessions[0].id}`,
-          count: sessions.length,
-        });
-      }
-    }
+    // Sessões individuais sem método de pagamento agora aparecem como notificação regular
+    // no sistema de notificações (não mais no banner acionável)
 
     // Check for recurring sessions without payment method
     if (user && !hidden.includes('recurring-no-payment-method')) {
