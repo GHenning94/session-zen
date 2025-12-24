@@ -34,6 +34,16 @@ import {
   ArrowLeftRight, EyeOff, Copy, Info, Repeat, AlertTriangle, XCircle,
   History, BookOpen, X
 } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { TooltipProvider} from "@/components/ui/tooltip"
 import { useToast } from "@/hooks/use-toast"
 import { format } from "date-fns"
@@ -97,7 +107,11 @@ const GoogleCalendarIntegrationNew = () => {
   
   // State para o modal de seleção de série
   const [seriesModalOpen, setSeriesModalOpen] = useState(false)
-  const [showWarning, setShowWarning] = useState(true)
+  const [showWarning, setShowWarning] = useState(() => {
+    const dismissed = localStorage.getItem('google-integration-warning-dismissed')
+    return dismissed !== 'true'
+  })
+  const [showDismissConfirm, setShowDismissConfirm] = useState(false)
   const [isLegendOpen, setIsLegendOpen] = useState(false)
   const [isGoogleSelectionMode, setIsGoogleSelectionMode] = useState(false)
   const [isPlatformSelectionMode, setIsPlatformSelectionMode] = useState(false)
@@ -363,12 +377,46 @@ const GoogleCalendarIntegrationNew = () => {
                     Utilize o <strong>Histórico de Ações</strong> para reverter ações indesejadas.
                   </p>
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => setShowWarning(false)} className="h-6 w-6 p-0 shrink-0">
-                  <X className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => setShowDismissConfirm(true)} 
+                    className="h-6 w-6 p-0"
+                    title="Nunca mais mostrar"
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowWarning(false)} className="h-6 w-6 p-0">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </div>
           )}
+          
+          {/* Confirmação de dispensar permanentemente */}
+          <AlertDialog open={showDismissConfirm} onOpenChange={setShowDismissConfirm}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Ocultar recomendação permanentemente?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Essa mensagem não será exibida novamente. Você ainda poderá acessar a legenda 
+                  clicando em "Como funciona a integração do Google?" abaixo.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={() => {
+                  localStorage.setItem('google-integration-warning-dismissed', 'true')
+                  setShowWarning(false)
+                  setShowDismissConfirm(false)
+                }}>
+                  Não mostrar novamente
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* Legenda explicativa em dropdown */}
           <Collapsible open={isLegendOpen} onOpenChange={setIsLegendOpen}>
