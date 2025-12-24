@@ -49,6 +49,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const visibilityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const initialLoadDoneRef = useRef(false)
   const pendingNotificationsShownRef = useRef(false)
+  const lastKnownNotificationTimestampRef = useRef<string | null>(null)
 
   // Process the notification queue one at a time
   const processNextNotification = useCallback(() => {
@@ -308,33 +309,46 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         clearTimeout(visibilityTimeoutRef.current)
       }
       
-      if (document.visibilityState === 'visible' && user) {
+      if (document.visibilityState === 'hidden') {
+        // Save the timestamp of the last known notification when leaving
+        if (notifications.length > 0) {
+          lastKnownNotificationTimestampRef.current = notifications[0].data
+        }
+      } else if (document.visibilityState === 'visible' && user) {
         visibilityTimeoutRef.current = setTimeout(async () => {
           if (!user) return
           
           try {
-            const { data, error } = await supabase
+            // Build query - fetch notifications newer than last known timestamp
+            let query = supabase
               .from('notifications')
               .select('*')
               .eq('user_id', user.id)
               .order('data', { ascending: false })
               .limit(50)
+            
+            // If we have a last known timestamp, also fetch newer ones
+            const { data, error } = await query
 
             if (error) {
               console.error('[NotificationContext] Error loading notifications:', error)
               return
             }
 
-            // Check for new unread notifications that haven't been seen
-            const newUnreadNotifications = (data || []).filter((n: Notification) => 
-              !n.lida && !seenNotificationIds.current.has(n.id)
-            )
+            // Find notifications that arrived while tab was hidden
+            const newNotifications = (data || []).filter((n: Notification) => {
+              const isNew = !seenNotificationIds.current.has(n.id)
+              const isNewer = lastKnownNotificationTimestampRef.current 
+                ? new Date(n.data).getTime() > new Date(lastKnownNotificationTimestampRef.current).getTime()
+                : false
+              return isNew && !n.lida && isNewer
+            })
             
-            if (newUnreadNotifications.length > 0) {
-              console.log('[NotificationContext] Found new unread notifications on visibility change:', newUnreadNotifications.length)
+            if (newNotifications.length > 0) {
+              console.log('[NotificationContext] Found new notifications while tab was hidden:', newNotifications.length)
               
               // Sort by date ascending (oldest first) and add to queue
-              newUnreadNotifications
+              newNotifications
                 .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
                 .forEach((notification: Notification) => {
                   seenNotificationIds.current.add(notification.id)
@@ -342,13 +356,19 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
                 })
             }
 
+            // Update seen IDs and state
             (data || []).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
             setNotifications(data || [])
             setUnreadCount((data || []).filter((n: Notification) => !n.lida).length)
+            
+            // Update last known timestamp
+            if (data && data.length > 0) {
+              lastKnownNotificationTimestampRef.current = data[0].data
+            }
           } catch (error) {
             console.error('[NotificationContext] Error loading notifications:', error)
           }
-        }, 500)
+        }, 300)
       }
     }
 
@@ -360,7 +380,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [user, enqueueNotification])
+  }, [user, notifications, enqueueNotification])
 
   // Auto-marcar notificações como lidas quando o dropdown abrir
   const markVisibleAsRead = async () => {
