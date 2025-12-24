@@ -158,14 +158,25 @@ export default function Pacotes() {
     cancelado: { label: 'Cancelado', variant: 'destructive' as const, color: 'bg-red-500' }
   };
 
-  const handleEditPackage = (pkg: Package) => {
+  const handleEditPackage = async (pkg: Package) => {
+    // Se já está aberto com outro pacote, fechar primeiro e aguardar cleanup do DOM
+    if (isPackageModalOpen) {
+      setIsPackageModalOpen(false);
+      setSelectedPackage(null);
+      // Aguardar o portal do Radix ser completamente removido
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+    
     setSelectedPackage(pkg);
     setIsPackageModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setSelectedPackage(null);
     setIsPackageModalOpen(false);
+    // Delay para limpar selectedPackage após o modal fechar completamente
+    setTimeout(() => {
+      setSelectedPackage(null);
+    }, 150);
   };
 
   // Check URL for package edit redirect
@@ -386,7 +397,9 @@ export default function Pacotes() {
         </div>
       </div>
 
+      {/* Key única força remontagem completa quando pacote muda */}
       <PackageModal
+        key={`package-modal-${selectedPackage?.id || 'new'}-${isPackageModalOpen}`}
         open={isPackageModalOpen}
         onOpenChange={handleCloseModal}
         package={selectedPackage}
