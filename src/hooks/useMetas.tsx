@@ -208,7 +208,9 @@ export const useMetas = () => {
     if (!user) return;
 
     try {
-      const { error } = await supabase
+      // Usar update condicional atômico: só atualiza se ativa = true e concluida = false
+      // Isso evita race conditions e duplicatas
+      const { data: updatedMeta, error: updateError } = await supabase
         .from('metas')
         .update({
           concluida: true,
@@ -216,24 +218,31 @@ export const useMetas = () => {
           data_conclusao: new Date().toISOString()
         })
         .eq('id', metaId)
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('ativa', true) // Condição atômica: só atualiza se ainda está ativa
+        .eq('concluida', false) // Condição atômica: só atualiza se não está concluída
+        .select('id, tipo')
+        .maybeSingle();
 
-      if (error) throw error;
+      // Se não retornou dados, significa que já estava concluída ou não existe
+      if (!updatedMeta) {
+        console.log('[useMetas] Meta já foi concluída ou não encontrada, ignorando duplicata');
+        return;
+      }
 
-      // Criar notificação INSTANTÂNEA
-      const meta = metas.find(m => m.id === metaId);
-      if (meta) {
-        const { error: notifError } = await supabase.from('notifications').insert({
-          user_id: user.id,
-          titulo: 'Meta Concluída! 🎉',
-          conteudo: `Parabéns! Você concluiu sua meta de ${getTipoLabel(meta.tipo)}!`,
-          lida: false,
-          data: new Date().toISOString()
-        });
-        
-        if (notifError) {
-          console.error('Erro ao criar notificação:', notifError);
-        }
+      if (updateError) throw updateError;
+
+      // Criar notificação apenas se a atualização foi bem-sucedida
+      const { error: notifError } = await supabase.from('notifications').insert({
+        user_id: user.id,
+        titulo: 'Meta Concluída! 🎉',
+        conteudo: `Parabéns! Você concluiu sua meta de ${getTipoLabel(updatedMeta.tipo as MetaTipo)}!`,
+        lida: false,
+        data: new Date().toISOString()
+      });
+      
+      if (notifError) {
+        console.error('Erro ao criar notificação:', notifError);
       }
 
       // Não precisa chamar loadMetas aqui, o realtime fará isso
