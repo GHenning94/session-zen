@@ -270,7 +270,7 @@ export const MetasManager = () => {
               <CardContent className="pt-4 space-y-3 text-sm">
                 <div className="flex gap-2">
                   <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                  <p><strong>Sessões:</strong> Conta todas as sessões criadas a partir da data de definição da meta, independente do status.</p>
+                  <p><strong>Sessões:</strong> Conta sessões do período atual (dia, semana ou mês corrente), independente do status.</p>
                 </div>
                 <div className="flex gap-2">
                   <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
