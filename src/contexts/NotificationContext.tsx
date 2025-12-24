@@ -73,12 +73,15 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   }, [])
 
   // Add notification to queue and start processing if not already
-  const enqueueNotification = useCallback((notification: Notification) => {
+  const enqueueNotification = useCallback((notification: Notification, playSoundNow = true) => {
     console.log('[NotificationContext] Enqueueing notification:', notification.id, notification.titulo)
     notificationQueueRef.current.push(notification)
     
-    // Play sound immediately when notification arrives (works in background too)
-    playNotificationSound()
+    // Play sound immediately when notification arrives
+    // Note: May not play if tab is in background due to browser restrictions
+    if (playSoundNow) {
+      playNotificationSound()
+    }
     
     // If not currently processing, start processing
     if (!isProcessingQueueRef.current) {
@@ -319,16 +322,13 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
           if (!user) return
           
           try {
-            // Build query - fetch notifications newer than last known timestamp
-            let query = supabase
+            // Build query - fetch notifications
+            const { data, error } = await supabase
               .from('notifications')
               .select('*')
               .eq('user_id', user.id)
               .order('data', { ascending: false })
               .limit(50)
-            
-            // If we have a last known timestamp, also fetch newer ones
-            const { data, error } = await query
 
             if (error) {
               console.error('[NotificationContext] Error loading notifications:', error)
@@ -336,6 +336,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
             }
 
             // Find notifications that arrived while tab was hidden
+            // These are notifications we haven't seen AND haven't shown yet
             const newNotifications = (data || []).filter((n: Notification) => {
               const isNew = !seenNotificationIds.current.has(n.id)
               const isNewer = lastKnownNotificationTimestampRef.current 
@@ -347,12 +348,15 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
             if (newNotifications.length > 0) {
               console.log('[NotificationContext] Found new notifications while tab was hidden:', newNotifications.length)
               
-              // Sort by date ascending (oldest first) and add to queue
+              // Play sound once for all new notifications (user is now active)
+              playNotificationSound()
+              
+              // Sort by date ascending (oldest first) and add to queue WITHOUT playing sound again
               newNotifications
                 .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
                 .forEach((notification: Notification) => {
                   seenNotificationIds.current.add(notification.id)
-                  enqueueNotification(notification)
+                  enqueueNotification(notification, false) // Don't play sound again
                 })
             }
 
