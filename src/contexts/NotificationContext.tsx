@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
-import { playNotificationSound } from '@/hooks/useNotificationSound'
 
 interface Notification {
   id: string
@@ -38,11 +37,68 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
   const [incomingNotification, setIncomingNotification] = useState<Notification | null>(null)
+  
+  // Queue for processing notifications one at a time
+  const notificationQueueRef = useRef<Notification[]>([])
+  const isProcessingQueueRef = useRef(false)
+  
   const seenNotificationIds = useRef(new Set<string>())
   const isSubscribedRef = useRef(false)
   const isCleaningUpRef = useRef(false)
   const visibilityTimeoutRef = useRef<NodeJS.Timeout | null>(null)
   const initialLoadDoneRef = useRef(false)
+  const pendingNotificationsShownRef = useRef(false)
+
+  // Process the notification queue one at a time
+  const processNextNotification = useCallback(() => {
+    console.log('[NotificationContext] processNextNotification called, queue length:', notificationQueueRef.current.length, 'isProcessing:', isProcessingQueueRef.current)
+    
+    if (isProcessingQueueRef.current) {
+      console.log('[NotificationContext] Already processing, skipping')
+      return
+    }
+    
+    if (notificationQueueRef.current.length === 0) {
+      console.log('[NotificationContext] Queue is empty')
+      return
+    }
+    
+    isProcessingQueueRef.current = true
+    const nextNotification = notificationQueueRef.current.shift()!
+    
+    console.log('[NotificationContext] Processing notification from queue:', nextNotification.id, nextNotification.titulo)
+    setIncomingNotification(nextNotification)
+  }, [])
+
+  // Add notification to queue and start processing if not already
+  const enqueueNotification = useCallback((notification: Notification) => {
+    console.log('[NotificationContext] Enqueueing notification:', notification.id, notification.titulo)
+    notificationQueueRef.current.push(notification)
+    
+    // If not currently processing, start processing
+    if (!isProcessingQueueRef.current) {
+      processNextNotification()
+    }
+  }, [processNextNotification])
+
+  // Clear incoming notification and process next in queue
+  const clearIncomingNotification = useCallback(() => {
+    setIncomingNotification((current) => {
+      if (current) {
+        console.log('[NotificationContext] Clearing notification:', current.id)
+        setUnreadCount((prev) => prev + 1)
+      }
+      return null
+    })
+    
+    // Mark as not processing and process next
+    isProcessingQueueRef.current = false
+    
+    // Small delay to allow UI to update before showing next
+    setTimeout(() => {
+      processNextNotification()
+    }, 300)
+  }, [processNextNotification])
 
   const loadNotifications = useCallback(async () => {
     if (!user) return
@@ -73,6 +129,41 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
       setLoading(false)
     }
   }, [user])
+
+  // Show pending unread notifications when user comes online (only once per session)
+  const showPendingNotifications = useCallback(async () => {
+    if (!user || pendingNotificationsShownRef.current) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('id, titulo, conteudo, lida, data, user_id')
+        .eq('user_id', user.id)
+        .eq('lida', false)
+        .order('data', { ascending: true }) // Show oldest first
+        .limit(10) // Limit to avoid overwhelming the user
+
+      if (error) {
+        console.error('[NotificationContext] Error loading pending notifications:', error)
+        return
+      }
+
+      if (data && data.length > 0) {
+        console.log('[NotificationContext] Found pending unread notifications:', data.length)
+        pendingNotificationsShownRef.current = true
+        
+        // Add all pending notifications to the queue (they will be processed one at a time)
+        data.forEach((notification: Notification) => {
+          if (!seenNotificationIds.current.has(notification.id)) {
+            seenNotificationIds.current.add(notification.id)
+            enqueueNotification(notification)
+          }
+        })
+      }
+    } catch (error) {
+      console.error('[NotificationContext] Error loading pending notifications:', error)
+    }
+  }, [user, enqueueNotification])
 
   // Set up realtime subscription - ONLY depends on user.id
   useEffect(() => {
@@ -105,7 +196,10 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         // Step 2: Load notifications
         await loadNotifications()
         
-        // Step 3: NOW create the channel (after auth is set)
+        // Step 3: Show pending notifications for users who just came online
+        await showPendingNotifications()
+        
+        // Step 4: NOW create the channel (after auth is set)
         const channelName = `notifications_user_${user.id}_${Date.now()}`
         console.log(`[NotificationContext] Creating channel: ${channelName}`)
         
@@ -132,13 +226,8 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
               
               seenNotificationIds.current.add(newNotification.id)
               
-              // Play notification sound
-              console.log('[NotificationContext] Playing notification sound')
-              playNotificationSound()
-              
-              // Set incoming notification for custom toast animation
-              console.log('[NotificationContext] CALLING setIncomingNotification with:', newNotification.titulo)
-              setIncomingNotification(newNotification)
+              // Add to queue instead of showing directly
+              enqueueNotification(newNotification)
               
               setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
             }
@@ -206,9 +295,9 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         supabase.removeChannel(channel)
       }
     }
-  }, [user?.id, loadNotifications])
+  }, [user?.id, loadNotifications, showPendingNotifications, enqueueNotification])
 
-  // Handle visibility changes for reconciliation only
+  // Handle visibility changes for reconciliation and showing pending notifications
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (visibilityTimeoutRef.current) {
@@ -232,6 +321,23 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
               return
             }
 
+            // Check for new unread notifications that haven't been seen
+            const newUnreadNotifications = (data || []).filter((n: Notification) => 
+              !n.lida && !seenNotificationIds.current.has(n.id)
+            )
+            
+            if (newUnreadNotifications.length > 0) {
+              console.log('[NotificationContext] Found new unread notifications on visibility change:', newUnreadNotifications.length)
+              
+              // Sort by date ascending (oldest first) and add to queue
+              newUnreadNotifications
+                .sort((a, b) => new Date(a.data).getTime() - new Date(b.data).getTime())
+                .forEach((notification: Notification) => {
+                  seenNotificationIds.current.add(notification.id)
+                  enqueueNotification(notification)
+                })
+            }
+
             (data || []).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
             setNotifications(data || [])
             setUnreadCount((data || []).filter((n: Notification) => !n.lida).length)
@@ -250,7 +356,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
       }
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
-  }, [user])
+  }, [user, enqueueNotification])
 
   // Auto-marcar notificações como lidas quando o dropdown abrir
   const markVisibleAsRead = async () => {
@@ -369,16 +475,12 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
         return false
       }
 
-      // Trigger toast directly since realtime may be unreliable
+      // Add to queue instead of showing directly
       if (data) {
-        console.log('[NotificationContext] createNotification - triggering toast directly for:', data.titulo)
-        
-        // Play notification sound
-        playNotificationSound()
-        
-        setIncomingNotification(data as Notification)
-        setNotifications((prev) => [data as Notification, ...prev].slice(0, 50))
+        console.log('[NotificationContext] createNotification - enqueueing notification:', data.titulo)
         seenNotificationIds.current.add(data.id)
+        enqueueNotification(data as Notification)
+        setNotifications((prev) => [data as Notification, ...prev].slice(0, 50))
       }
 
       return true
@@ -391,22 +493,8 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   // Trigger toast manually (for testing or direct triggering)
   const triggerToast = (notification: { id: string; titulo: string; conteudo: string }) => {
     console.log('[NotificationContext] triggerToast called with:', notification.titulo)
-    
-    // Play notification sound
-    playNotificationSound()
-    
-    setIncomingNotification(notification as Notification)
+    enqueueNotification(notification as Notification)
   }
-
-  // Clear incoming notification and show badge
-  const clearIncomingNotification = useCallback(() => {
-    setIncomingNotification((current) => {
-      if (current) {
-        setUnreadCount((prev) => prev + 1)
-      }
-      return null
-    })
-  }, [])
 
   const value: NotificationContextType = {
     notifications,
