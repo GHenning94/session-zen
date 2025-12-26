@@ -1830,8 +1830,8 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-auto lg:h-[560px] px-4 pt-3 pb-4">
-                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-full">
+                    <CardContent className="h-auto lg:h-[560px] px-4 pt-3 pb-4 overflow-visible">
+                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-full overflow-visible">
                         {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
                         <div className="h-[280px] lg:h-full lg:min-h-[400px] flex items-center justify-center relative">
                           {(() => {
@@ -2000,7 +2000,7 @@ const Dashboard = () => {
                         </div>
                         
                         {/* Lista de Canais */}
-                        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:space-y-2 lg:gap-0 lg:justify-center">
+                        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:space-y-2 lg:gap-0 lg:justify-center overflow-visible p-1">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
