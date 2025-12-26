@@ -55,7 +55,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="app-layout-container flex w-full h-screen bg-background overflow-hidden">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden py-3">
           {/* Header transparente */}
           <header className="h-16 bg-transparent flex items-center justify-between px-4 md:px-8 flex-shrink-0">
             <div className="flex items-center gap-4">
@@ -69,7 +69,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content - sem padding inferior para alinhar com sidebar */}
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 py-3">
+          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-0 pb-3">
             {children}
           </main>
         </div>
