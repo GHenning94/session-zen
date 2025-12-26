@@ -1056,7 +1056,11 @@ const Dashboard = () => {
           ))
         ) : (
           stats.map((stat, index) => (
-            <Card key={index} className="shadow-soft hover:shadow-medium transition-shadow">
+            <Card 
+              key={index} 
+              className="shadow-soft hover:shadow-medium transition-shadow opacity-0 animate-fade-in-up"
+              style={{ animationDelay: `${index * 75}ms` }}
+            >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
                 <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">
                   {stat.title}
@@ -1097,23 +1101,29 @@ const Dashboard = () => {
             </>
           ) : (
             <>
-              <PackageStatusCard stats={packageStats} />
-              <BusinessOrbitalView 
-                dashboardData={dashboardData}
-                packageStats={packageStats}
-                upcomingSessionsCount={upcomingSessions.length}
-              />
-              <SmartNotificationCard 
-                notifications={smartNotifications} 
-                reminders={dynamicReminders}
-              />
+              <div className="opacity-0 animate-scale-fade-in" style={{ animationDelay: '150ms' }}>
+                <PackageStatusCard stats={packageStats} />
+              </div>
+              <div className="opacity-0 animate-scale-fade-in" style={{ animationDelay: '225ms' }}>
+                <BusinessOrbitalView 
+                  dashboardData={dashboardData}
+                  packageStats={packageStats}
+                  upcomingSessionsCount={upcomingSessions.length}
+                />
+              </div>
+              <div className="opacity-0 animate-scale-fade-in" style={{ animationDelay: '300ms' }}>
+                <SmartNotificationCard 
+                  notifications={smartNotifications} 
+                  reminders={dynamicReminders}
+                />
+              </div>
             </>
           )}
         </div>
 
         <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
           {/* Próximas Sessões */}
-          <Card className="lg:col-span-2 shadow-soft">
+          <Card className="lg:col-span-2 shadow-soft opacity-0 animate-fade-in-up" style={{ animationDelay: '350ms' }}>
             <CardHeader className="p-3 md:p-6">
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
@@ -1287,7 +1297,7 @@ const Dashboard = () => {
           </Card>
 
           {/* Pagamentos Recentes */}
-          <Card className="shadow-soft">
+          <Card className="shadow-soft opacity-0 animate-fade-in-up" style={{ animationDelay: '425ms' }}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <DollarSign className="w-5 h-5 text-success" />
@@ -1410,7 +1420,7 @@ const Dashboard = () => {
                   </Button>
                 </div>
 
-                <div className="col-span-full">
+                <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
                   <Card>
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -1604,7 +1614,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Gráfico de Ticket Médio */}
-                <div className="col-span-full">
+                <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '575ms' }}>
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -1711,7 +1721,7 @@ const Dashboard = () => {
                 </div>
 
                 {/* Ticket Médio por Cliente - Gráfico de Barras Horizontais */}
-                <div className="col-span-full">
+                <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '650ms' }}>
                   <Card className="shadow-soft">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -2055,14 +2065,14 @@ const Dashboard = () => {
           {/* Coluna da Direita */}
           <div className="space-y-6 flex flex-col h-full">
             {/* Upgrade de Plano */}
-            <Card className="shadow-soft">
+            <Card className="shadow-soft opacity-0 animate-scale-fade-in" style={{ animationDelay: '400ms' }}>
               <CardContent className="p-6">
                 <UpgradePlanCard currentPlan={currentPlan} />
               </CardContent>
             </Card>
 
             {/* Top 5 Clientes que Mais Pagam */}
-            <Card className="shadow-soft flex-1">
+            <Card className="shadow-soft flex-1 opacity-0 animate-scale-fade-in" style={{ animationDelay: '475ms' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
@@ -2143,7 +2153,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft flex-1">
+            <Card className="shadow-soft flex-1 opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
