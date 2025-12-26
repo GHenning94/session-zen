@@ -69,7 +69,7 @@ export function Layout({ children }: LayoutProps) {
           </header>
 
           {/* Main Content - sem padding inferior para alinhar com sidebar */}
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-4 md:pt-8 pb-0">
+          <main className="flex-1 overflow-y-auto px-4 md:px-8 py-3">
             {children}
           </main>
         </div>
