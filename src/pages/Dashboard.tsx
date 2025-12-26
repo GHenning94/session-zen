@@ -1024,7 +1024,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
+      <div className="space-y-4 md:space-y-8">
         {/* Header - Mobile optimized */}
         <div className="flex items-center justify-between">
           <div>
@@ -1111,12 +1111,12 @@ const Dashboard = () => {
                   upcomingSessionsCount={upcomingSessions.length}
                 />
               </div>
-              <div className="opacity-0 animate-scale-fade-in" style={{ animationDelay: '300ms' }}>
-                <SmartNotificationCard 
-                  notifications={smartNotifications} 
-                  reminders={dynamicReminders}
-                />
-              </div>
+                <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '300ms' }}>
+                  <SmartNotificationCard 
+                    notifications={smartNotifications} 
+                    reminders={dynamicReminders}
+                  />
+                </div>
             </>
           )}
         </div>

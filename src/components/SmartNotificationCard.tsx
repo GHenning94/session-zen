@@ -175,8 +175,8 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
 
   if (validNotifications.length === 0 && validReminders.length === 0) {
     return (
-      <Card>
-        <CardContent className="py-8 text-center">
+      <Card className="h-full flex flex-col">
+        <CardContent className="py-8 text-center flex-1 flex flex-col items-center justify-center">
           <AlertCircle className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
           <p className="text-sm text-muted-foreground">
             Nenhuma notificação importante no momento
@@ -187,8 +187,8 @@ export const SmartNotificationCard = ({ notifications, reminders = [] }: SmartNo
   }
 
   return (
-    <Card>
-      <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3">
+    <Card className="h-full flex flex-col">
+      <CardContent className="p-3 md:p-4 space-y-2 md:space-y-3 flex-1">
         {validNotifications.map((notification) => (
           <FixedNotificationItem
             key={notification.id}
