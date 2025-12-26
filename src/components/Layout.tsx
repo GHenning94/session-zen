@@ -68,8 +68,8 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </header>
 
-          {/* Main Content */}
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-4 md:pt-8">
+          {/* Main Content - scroll termina exatamente no final do conteúdo */}
+          <main className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-8 [&>*:last-child]:mb-0">
             {children}
           </main>
         </div>
