@@ -55,7 +55,7 @@ export function Layout({ children }: LayoutProps) {
       <div className="app-layout-container flex w-full bg-background">
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           {/* Header transparente */}
           <header className="h-16 bg-transparent flex items-center justify-between px-4 md:px-8 flex-shrink-0">
             <div className="flex items-center gap-4">
@@ -68,8 +68,8 @@ export function Layout({ children }: LayoutProps) {
             </div>
           </header>
 
-          {/* Main Content - scroll termina exatamente no final do conteúdo */}
-          <main className="flex-1 overflow-y-auto px-4 md:px-8 py-4 md:py-8 [&>*:last-child]:mb-0">
+          {/* Main Content - sem padding inferior para alinhar com sidebar */}
+          <main className="flex-1 overflow-y-auto px-4 md:px-8 pt-4 md:pt-8 pb-0">
             {children}
           </main>
         </div>

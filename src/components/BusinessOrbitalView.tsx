@@ -99,6 +99,14 @@ export const BusinessOrbitalView = ({
   // Usamos refs para evitar chamadas múltiplas com os mesmos valores e debounce
   const lastCheckedValuesRef = useRef<string>('')
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const hasLoadedSessionsRef = useRef(false)
+  
+  // Marcar quando sessões foram carregadas
+  useEffect(() => {
+    if (sessionsFromMeta.daily > 0 || sessionsFromMeta.weekly > 0 || sessionsFromMeta.monthly > 0) {
+      hasLoadedSessionsRef.current = true
+    }
+  }, [sessionsFromMeta])
   
   useEffect(() => {
     // Limpar timer anterior
@@ -106,7 +114,16 @@ export const BusinessOrbitalView = ({
       clearTimeout(debounceTimerRef.current)
     }
     
-    // Debounce de 500ms para evitar múltiplas chamadas rápidas
+    // NÃO verificar metas até que os dados reais tenham sido carregados
+    // Isso evita notificações falsas baseadas em dados iniciais (zeros ou valores padrão)
+    const dadosCarregados = hasLoadedSessionsRef.current && dashboardData.activeClients >= 0 && dashboardData.monthlyRevenue >= 0
+    
+    if (!dadosCarregados) {
+      console.log('[BusinessOrbitalView] Aguardando dados carregarem antes de verificar metas...')
+      return
+    }
+    
+    // Debounce de 1500ms (aumentado) para garantir que todos os dados estejam sincronizados
     debounceTimerRef.current = setTimeout(() => {
       const valoresAtuais = {
         sessoes: sessionsFromMeta.monthly,
@@ -119,19 +136,26 @@ export const BusinessOrbitalView = ({
       // Criar uma chave única para os valores atuais
       const valuesKey = JSON.stringify(valoresAtuais);
       
-      // Só verificar se os valores mudaram
+      // Só verificar se os valores mudaram E se não são todos zeros
+      const todosZeros = Object.values(valoresAtuais).every(v => v === 0 || v === 94) // 94 é o default do completionRate
+      if (todosZeros) {
+        console.log('[BusinessOrbitalView] Ignorando verificação - valores ainda são default')
+        return
+      }
+      
       if (valuesKey !== lastCheckedValuesRef.current) {
         lastCheckedValuesRef.current = valuesKey;
+        console.log('[BusinessOrbitalView] Verificando metas com valores:', valoresAtuais)
         verificarEMarcarMetasConcluidas(valoresAtuais);
       }
-    }, 500)
+    }, 1500)
     
     return () => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current)
       }
     }
-  }, [dashboardData, packageStats, sessionsFromMeta])
+  }, [dashboardData, packageStats, sessionsFromMeta, verificarEMarcarMetasConcluidas])
   
   // Pegar metas ativas
   const metaSessoes = getMetaAtivaPorTipo('sessoes')

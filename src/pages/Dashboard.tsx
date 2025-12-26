@@ -1024,7 +1024,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-4 md:space-y-8">
+      <div className="space-y-4 md:space-y-8 pb-4 md:pb-8">
         {/* Header - Mobile optimized */}
         <div className="flex items-center justify-between">
           <div>
