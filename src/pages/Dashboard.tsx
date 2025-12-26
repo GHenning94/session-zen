@@ -1024,7 +1024,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-4 md:space-y-8">
+      <div className="space-y-4 md:space-y-8 pb-8">
         {/* Header - Mobile optimized */}
         <div className="flex items-center justify-between">
           <div>
@@ -1377,7 +1377,7 @@ const Dashboard = () => {
         </div>
 
         {/* Ações Rápidas e Upgrade */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
             <CardHeader className="pb-6">
@@ -1820,10 +1820,10 @@ const Dashboard = () => {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-auto lg:h-[520px] px-4 pt-3 pb-4">
+                    <CardContent className="h-auto lg:h-[560px] px-4 pt-3 pb-4">
                       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-full">
                         {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
-                        <div className="h-[280px] lg:h-full lg:min-h-[380px] flex items-center justify-center relative">
+                        <div className="h-[280px] lg:h-full lg:min-h-[400px] flex items-center justify-center relative">
                           {(() => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             if (total === 0) return null
@@ -1990,7 +1990,7 @@ const Dashboard = () => {
                         </div>
                         
                         {/* Lista de Canais */}
-                        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:space-y-2 lg:gap-0 lg:justify-center lg:overflow-y-auto lg:max-h-[480px] lg:pr-1">
+                        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:space-y-2 lg:gap-0 lg:justify-center">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
