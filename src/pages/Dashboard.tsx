@@ -1822,7 +1822,7 @@ const Dashboard = () => {
                               dataKey="maxPagamento" 
                               fill="url(#maxBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={40}
+                              maxBarSize={50}
                               animationBegin={0}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -1831,7 +1831,7 @@ const Dashboard = () => {
                               dataKey="ticketMedio" 
                               fill="url(#ticketBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={40}
+                              maxBarSize={50}
                               animationBegin={200}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -1840,7 +1840,7 @@ const Dashboard = () => {
                               dataKey="minPagamento" 
                               fill="url(#minBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={40}
+                              maxBarSize={50}
                               animationBegin={400}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -2075,6 +2075,7 @@ const Dashboard = () => {
                             <>
                               <ResponsiveContainer width="100%" height="100%">
                                 <RadialBarChart 
+                                  key={`canal-radial-${canalPeriod}`}
                                   cx="50%" 
                                   cy="50%" 
                                   innerRadius="30%" 
@@ -2082,19 +2083,27 @@ const Dashboard = () => {
                                   barSize={18}
                                   data={(() => {
                                     // Reverter para que as barras menores fiquem no centro
-                                    // Mas manter índices originais para sincronizar hover
                                     const reversedData = [...receitaPorCanal].reverse();
                                     const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
                                     // Contar quantos canais têm valor > 0
                                     const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
-                                    // Se só tem 1 canal ativo, permitir 100%. Senão, limitar a 85%
-                                    const maxBarPercentage = activeChannels === 1 ? 100 : 85;
                                     
                                     return reversedData.map((item, reversedIndex) => {
-                                      // Encontrar o índice original (não revertido) para sincronizar hover
                                       const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
-                                      // Normalizar baseado no valor máximo e no limite definido
-                                      const normalizedValue = maxValue > 0 ? Math.min((item.valor / maxValue) * maxBarPercentage, maxBarPercentage) : 0;
+                                      // Calcular porcentagem proporcional ao valor máximo
+                                      // Se só tem 1 canal, permitir 360 graus (100%)
+                                      // Se tem múltiplos canais, a maior barra fica em 85% (306 graus) para não fechar
+                                      let normalizedValue = 0;
+                                      if (maxValue > 0) {
+                                        const proportion = item.valor / maxValue;
+                                        if (activeChannels === 1) {
+                                          // Apenas 1 canal: pode fechar o círculo completo
+                                          normalizedValue = 100;
+                                        } else {
+                                          // Múltiplos canais: máximo 85% para a maior barra
+                                          normalizedValue = proportion * 85;
+                                        }
+                                      }
                                       return {
                                         ...item,
                                         displayValue: normalizedValue,
@@ -2112,7 +2121,7 @@ const Dashboard = () => {
                                     background={{ fill: 'hsl(var(--muted))' }}
                                     dataKey="displayValue"
                                     cornerRadius={10}
-                                    animationBegin={chartsAnimated ? 0 : 9999}
+                                    animationBegin={0}
                                     animationDuration={1200}
                                     animationEasing="ease-out"
                                     onMouseEnter={(data: any) => setHoveredCanalIndex(data.originalIndex)}
