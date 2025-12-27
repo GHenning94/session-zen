@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Navigate } from "react-router-dom"
 import { Loader2 } from "lucide-react"
+import { getAdminSessionToken, clearAdminSession } from "@/utils/adminApi"
 
 interface AdminProtectedRouteProps {
   children: React.ReactNode
@@ -12,24 +13,17 @@ export const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
 
   useEffect(() => {
     const verifySession = async () => {
-      // Check if we have session metadata (non-sensitive data)
-      const sessionExpires = sessionStorage.getItem('admin_session_expires')
+      // Get session token from sessionStorage
+      const sessionToken = getAdminSessionToken()
 
-      // Quick client-side check for expiration
-      if (sessionExpires) {
-        const expiresAt = new Date(sessionExpires)
-        if (new Date() >= expiresAt) {
-          // Session expired, clear metadata
-          sessionStorage.removeItem('admin_user_id')
-          sessionStorage.removeItem('admin_session_expires')
-          setIsValid(false)
-          setIsLoading(false)
-          return
-        }
+      if (!sessionToken) {
+        setIsValid(false)
+        setIsLoading(false)
+        return
       }
 
       try {
-        // Verify session via edge function - the httpOnly cookie is automatically sent
+        // Verify session via edge function with token in header
         const response = await fetch(
           `https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/admin-verify-session`,
           {
@@ -37,24 +31,23 @@ export const AdminProtectedRoute = ({ children }: AdminProtectedRouteProps) => {
             headers: {
               'Content-Type': 'application/json',
               'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4',
+              'X-Admin-Session': sessionToken,
             },
-            credentials: 'include', // Important: include cookies
-            body: JSON.stringify({}), // Empty body, cookie has the token
+            body: JSON.stringify({}),
           }
         )
 
         const data = await response.json()
 
         if (!response.ok || !data.valid) {
-          // Clear session metadata
-          sessionStorage.removeItem('admin_user_id')
-          sessionStorage.removeItem('admin_session_expires')
+          clearAdminSession()
           setIsValid(false)
         } else {
           setIsValid(true)
         }
       } catch (error) {
         console.error('[Admin Protected] Verification error:', error)
+        clearAdminSession()
         setIsValid(false)
       } finally {
         setIsLoading(false)
