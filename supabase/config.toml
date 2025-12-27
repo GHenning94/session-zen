@@ -140,5 +140,20 @@ verify_jwt = false
 [functions.get-subscription-status]
 verify_jwt = true
 
+[functions.check-admin-email]
+verify_jwt = false
+
+[functions.create-public-booking]
+verify_jwt = false
+
+[functions.google-calendar-api]
+verify_jwt = true
+
+[functions.send-confirmation-email]
+verify_jwt = false
+
+[functions.send-password-reset-email]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
