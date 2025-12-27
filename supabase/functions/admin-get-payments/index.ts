@@ -51,35 +51,52 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Get payments data with user and client info
+    // Get payments data with client info (no FK to profiles, so we'll get user info separately)
     const { data: payments, error: paymentsError } = await supabaseClient
       .from('payments')
       .select(`
         *,
-        client:clients(nome, email),
-        user:profiles!payments_user_id_fkey(nome, email)
+        client:clients(nome, email)
       `)
       .order('created_at', { ascending: false })
       .limit(1000)
 
     if (paymentsError) throw paymentsError
 
+    // Get user info for payments if needed
+    const userIds = [...new Set(payments?.map(p => p.user_id) || [])]
+    const { data: profiles } = await supabaseClient
+      .from('profiles')
+      .select('user_id, nome')
+      .in('user_id', userIds)
+
+    const profilesMap = (profiles || []).reduce((acc: any, p: any) => {
+      acc[p.user_id] = p
+      return acc
+    }, {})
+
+    // Enrich payments with user info
+    const enrichedPayments = payments?.map(p => ({
+      ...p,
+      user: profilesMap[p.user_id] || null
+    })) || []
+
     // Calculate statistics
     const stats = {
-      total_revenue: payments?.reduce((sum, p) => sum + (p.valor || 0), 0) || 0,
-      paid_count: payments?.filter(p => p.status === 'pago').length || 0,
-      pending_count: payments?.filter(p => p.status === 'pendente').length || 0,
-      overdue_count: payments?.filter(p => 
+      total_revenue: enrichedPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
+      paid_count: enrichedPayments.filter(p => p.status === 'pago').length,
+      pending_count: enrichedPayments.filter(p => p.status === 'pendente').length,
+      overdue_count: enrichedPayments.filter(p => 
         p.status === 'pendente' && 
         p.data_vencimento && 
         new Date(p.data_vencimento) < new Date()
-      ).length || 0,
-      average_value: payments?.length ? 
-        (payments.reduce((sum, p) => sum + (p.valor || 0), 0) / payments.length) : 0,
+      ).length,
+      average_value: enrichedPayments.length ? 
+        (enrichedPayments.reduce((sum, p) => sum + (p.valor || 0), 0) / enrichedPayments.length) : 0,
     }
 
     // Group by payment method
-    const by_method = payments?.reduce((acc: any, p) => {
+    const by_method = enrichedPayments.reduce((acc: any, p) => {
       const method = p.metodo_pagamento || 'Não definido'
       if (!acc[method]) {
         acc[method] = { count: 0, total: 0 }
@@ -94,7 +111,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: true, 
-        payments,
+        payments: enrichedPayments,
         stats,
         by_method 
       }),

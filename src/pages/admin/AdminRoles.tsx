@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { supabase } from "@/integrations/supabase/client"
+import { adminApiCall } from "@/utils/adminApi"
 import { toast } from "sonner"
 import { Shield, Users, Crown, UserCog, AlertCircle, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -67,18 +67,14 @@ const AdminRoles = () => {
 
   const loadUsersWithRoles = async () => {
     try {
-      const sessionToken = localStorage.getItem('admin_session_token')
-      
-      const { data, error } = await supabase.functions.invoke('admin-get-users', {
-        body: { sessionToken, includeRoles: true },
-      })
+      const response = await adminApiCall('admin-get-users', { includeRoles: true })
 
-      if (error || !data.success) {
-        throw new Error(data?.error || 'Erro ao carregar usuários')
+      if (response.error || !response.data?.success) {
+        throw new Error(response.error || response.data?.error || 'Erro ao carregar usuários')
       }
 
       // Mapear users para incluir role
-      const usersWithRoles = data.users.map((user: any) => ({
+      const usersWithRoles = response.data.users.map((user: any) => ({
         user_id: user.id,
         user_email: user.email,
         user_name: user.nome || 'Sem nome',
@@ -101,18 +97,13 @@ const AdminRoles = () => {
 
     setUpdatingRole(true)
     try {
-      const sessionToken = localStorage.getItem('admin_session_token')
-      
-      const { data, error } = await supabase.functions.invoke('admin-update-user', {
-        body: {
-          sessionToken,
-          userId: selectedUser.user_id,
-          role: newRole
-        },
+      const response = await adminApiCall('admin-update-user', {
+        userId: selectedUser.user_id,
+        role: newRole
       })
 
-      if (error || !data.success) {
-        throw new Error(data?.error || 'Erro ao atualizar role')
+      if (response.error || !response.data?.success) {
+        throw new Error(response.error || response.data?.error || 'Erro ao atualizar role')
       }
 
       toast.success('Role atualizada com sucesso!')

@@ -17,7 +17,7 @@ import {
   Download,
   Play
 } from 'lucide-react'
-import { supabase } from '@/integrations/supabase/client'
+import { adminApiCall } from '@/utils/adminApi'
 import { toast } from 'sonner'
 import { SENSITIVE_FIELDS } from '@/utils/encryptionMiddleware'
 
@@ -69,23 +69,21 @@ export function EncryptionAuditReport() {
         tratamento: 'Test treatment data'
       }
 
-      const { data, error } = await supabase.functions.invoke('encrypt-data', {
-        body: {
-          table: 'clients',
-          data: testData,
-          operation: 'encrypt'
-        }
+      const response = await adminApiCall('admin-encryption-audit', {
+        operation: 'encrypt',
+        table: 'clients',
+        data: testData
       })
 
-      if (error) {
+      if (response.error || !response.data?.success) {
         setKeyConfigured(false)
         setEncryptionTest({
           success: false,
-          message: 'Falha ao criptografar: ' + error.message
+          message: 'Falha ao criptografar: ' + (response.error || response.data?.error || 'Erro desconhecido')
         })
       } else {
         setKeyConfigured(true)
-        const encrypted = data.data
+        const encrypted = response.data.data
         const allFieldsEncrypted = 
           encrypted.historico !== testData.historico &&
           encrypted.dados_clinicos !== testData.dados_clinicos &&
@@ -115,15 +113,13 @@ export function EncryptionAuditReport() {
         historico: 'Test decryption data'
       }
 
-      const { data: encryptedResponse, error: encryptError } = await supabase.functions.invoke('encrypt-data', {
-        body: {
-          table: 'clients',
-          data: testData,
-          operation: 'encrypt'
-        }
+      const encryptResponse = await adminApiCall('admin-encryption-audit', {
+        operation: 'encrypt',
+        table: 'clients',
+        data: testData
       })
 
-      if (encryptError) {
+      if (encryptResponse.error || !encryptResponse.data?.success) {
         setDecryptionTest({
           success: false,
           message: 'Não foi possível criptografar dados para teste de descriptografia'
@@ -132,21 +128,19 @@ export function EncryptionAuditReport() {
       }
 
       // Now decrypt it
-      const { data: decryptedResponse, error: decryptError } = await supabase.functions.invoke('encrypt-data', {
-        body: {
-          table: 'clients',
-          data: encryptedResponse.data,
-          operation: 'decrypt'
-        }
+      const decryptResponse = await adminApiCall('admin-encryption-audit', {
+        operation: 'decrypt',
+        table: 'clients',
+        data: encryptResponse.data.data
       })
 
-      if (decryptError) {
+      if (decryptResponse.error || !decryptResponse.data?.success) {
         setDecryptionTest({
           success: false,
-          message: 'Falha ao descriptografar: ' + decryptError.message
+          message: 'Falha ao descriptografar: ' + (decryptResponse.error || decryptResponse.data?.error)
         })
       } else {
-        const decrypted = decryptedResponse.data
+        const decrypted = decryptResponse.data.data
         const correctlyDecrypted = decrypted.historico === testData.historico
 
         setDecryptionTest({
@@ -168,16 +162,14 @@ export function EncryptionAuditReport() {
   const runMigrationDryRun = async () => {
     setMigrating(true)
     try {
-      const { data, error } = await supabase.functions.invoke('migrate-to-encrypted', {
-        body: {
-          dryRun: true
-        }
+      const response = await adminApiCall('migrate-to-encrypted', {
+        dryRun: true
       })
 
-      if (error) {
-        toast.error('Erro ao executar simulação de migração: ' + error.message)
+      if (response.error || !response.data?.success) {
+        toast.error('Erro ao executar simulação de migração: ' + (response.error || response.data?.error))
       } else {
-        setMigrationResults(data.results)
+        setMigrationResults(response.data.results)
         toast.success('Simulação de migração concluída')
       }
     } catch (error: any) {
@@ -194,16 +186,14 @@ export function EncryptionAuditReport() {
 
     setMigrating(true)
     try {
-      const { data, error } = await supabase.functions.invoke('migrate-to-encrypted', {
-        body: {
-          dryRun: false
-        }
+      const response = await adminApiCall('migrate-to-encrypted', {
+        dryRun: false
       })
 
-      if (error) {
-        toast.error('Erro ao executar migração: ' + error.message)
+      if (response.error || !response.data?.success) {
+        toast.error('Erro ao executar migração: ' + (response.error || response.data?.error))
       } else {
-        setMigrationResults(data.results)
+        setMigrationResults(response.data.results)
         toast.success('Migração concluída com sucesso!')
         // Refresh tests
         await runInitialChecks()
