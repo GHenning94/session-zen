@@ -155,5 +155,8 @@ verify_jwt = false
 [functions.send-password-reset-email]
 verify_jwt = false
 
+[functions.admin-encryption-audit]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true

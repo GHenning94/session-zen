@@ -5,7 +5,7 @@ import { getTablesWithSensitiveFields, getSensitiveFields } from '../_shared/sen
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
 };
 
 serve(async (req) => {
@@ -20,22 +20,53 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     );
 
-    // Verify admin authentication
-    const {
-      data: { user },
-      error: authError,
-    } = await supabaseClient.auth.getUser(
-      req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
-    );
-
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: 'Unauthorized - Admin access required' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    // Get session token from header or body
+    let sessionToken = req.headers.get('X-Admin-Session')
+    let body: any = {}
+    
+    try {
+      body = await req.json()
+      if (!sessionToken) {
+        sessionToken = body.sessionToken
+      }
+    } catch {
+      // Body parsing failed
     }
 
-    const { table, dryRun = true } = await req.json();
+    // Verify admin session (if sessionToken provided) or user auth
+    if (sessionToken) {
+      const { data: session, error: sessionError } = await supabaseClient
+        .from('admin_sessions')
+        .select('user_id')
+        .eq('session_token', sessionToken)
+        .eq('revoked', false)
+        .gt('expires_at', new Date().toISOString())
+        .single()
+
+      if (sessionError || !session) {
+        return new Response(
+          JSON.stringify({ error: 'Invalid or expired admin session' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+    } else {
+      // Fallback to regular user auth
+      const {
+        data: { user },
+        error: authError,
+      } = await supabaseClient.auth.getUser(
+        req.headers.get('Authorization')?.replace('Bearer ', '') ?? ''
+      );
+
+      if (authError || !user) {
+        return new Response(
+          JSON.stringify({ error: 'Unauthorized - Admin access required' }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    const { table, dryRun = true } = body;
 
     const tablesToMigrate = table 
       ? [table] 

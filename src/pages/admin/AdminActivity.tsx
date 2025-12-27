@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/admin/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { supabase } from "@/integrations/supabase/client"
+import { adminApiCall } from "@/utils/adminApi"
 import { toast } from "sonner"
 import { Activity, Users, UserCheck, Clock, TrendingUp, AlertCircle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
@@ -39,17 +39,13 @@ const AdminActivity = () => {
 
   const loadActivityData = async () => {
     try {
-      const sessionToken = localStorage.getItem('admin_session_token')
-      
-      const { data, error } = await supabase.functions.invoke('admin-get-logs', {
-        body: { sessionToken },
-      })
+      const response = await adminApiCall('admin-get-logs')
 
-      if (error || !data.success) {
-        throw new Error(data?.error || 'Erro ao carregar atividades')
+      if (response.error || !response.data?.success) {
+        throw new Error(response.error || response.data?.error || 'Erro ao carregar atividades')
       }
 
-      const logs = data.logs || []
+      const logs = response.data.logs || []
       setActivityLogs(logs.slice(0, 50)) // Últimas 50 atividades
 
       // Calcular estatísticas
