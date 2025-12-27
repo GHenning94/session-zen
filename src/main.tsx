@@ -8,25 +8,21 @@ import { AvatarCacheProvider } from './contexts/AvatarCacheContext'
 import { PWASplashScreen, useIsPWA } from './components/PWASplashScreen'
 
 // Register Service Worker for Web Push Notifications
-if ('serviceWorker' in navigator && 'PushManager' in window) {
-  console.log('[Main] Service Worker and Push API supported')
-  
+// Simplificado para evitar conflitos entre perfis do navegador
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
     try {
+      // Registrar novo SW (o cleanup foi feito no index.html)
       const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
+        scope: '/',
+        updateViaCache: 'none' // Forçar sempre buscar novo SW
       })
-      console.log('[Main] Service Worker registered successfully:', registration.scope)
-      
-      // Wait for service worker to be ready
-      await navigator.serviceWorker.ready
-      console.log('[Main] Service Worker is ready')
+      console.log('[Main] SW registered:', registration.scope)
     } catch (error) {
-      console.error('[Main] Service Worker registration failed:', error)
+      // Silenciar erro - SW é opcional para funcionalidade básica
+      console.log('[Main] SW registration skipped:', error.message)
     }
   })
-} else {
-  console.log('[Main] Service Worker or Push API not supported in this browser')
 }
 
 // Root component with PWA splash screen

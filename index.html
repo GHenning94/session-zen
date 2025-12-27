@@ -3,6 +3,33 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Limpeza de Service Workers e Caches antigos para consistência entre perfis -->
+    <script>
+      (function() {
+        try {
+          // Desregistrar todos os Service Workers antigos
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              for (var i = 0; i < registrations.length; i++) {
+                registrations[i].unregister().then(function() {
+                  console.log('[Init] Old SW unregistered');
+                });
+              }
+            });
+          }
+          // Limpar todos os caches
+          if ('caches' in window) {
+            caches.keys().then(function(names) {
+              for (var i = 0; i < names.length; i++) {
+                caches.delete(names[i]);
+              }
+            });
+          }
+        } catch (e) {
+          console.warn('[Init] Cache cleanup error:', e);
+        }
+      })();
+    </script>
     <script>
       (function() {
         try {

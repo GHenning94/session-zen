@@ -137,9 +137,11 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
-  const [displayText, setDisplayText] = useState(words[0].charAt(0));
+  // Inicializar com palavra completa para garantir que nunca fique vazio
+  const [displayText, setDisplayText] = useState(words[0]);
   const wordIndexRef = useRef(0);
-  const phaseRef = useRef<'typing' | 'waiting' | 'deleting'>('typing');
+  const phaseRef = useRef<'typing' | 'waiting' | 'deleting'>('waiting');
+  const isAnimationInitializedRef = useRef(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -285,16 +287,25 @@ const LandingPage = () => {
   }, [resetToDefaultColors]);
 
   useEffect(() => {
+    // Prevenir execução dupla em StrictMode
+    if (isAnimationInitializedRef.current) return;
+    isAnimationInitializedRef.current = true;
+    
     let timeoutId: ReturnType<typeof setTimeout>;
+    let isActive = true;
     
     const runAnimation = () => {
-      const word = words[wordIndexRef.current];
+      if (!isActive) return;
+      
+      const currentWordIndex = wordIndexRef.current;
+      const word = words[currentWordIndex];
       const phase = phaseRef.current;
 
       if (phase === 'typing') {
         setDisplayText(prev => {
-          if (prev.length < word.length) {
-            return word.slice(0, prev.length + 1);
+          const targetWord = words[wordIndexRef.current];
+          if (prev.length < targetWord.length) {
+            return targetWord.slice(0, prev.length + 1);
           } else {
             phaseRef.current = 'waiting';
             return prev;
@@ -311,6 +322,7 @@ const LandingPage = () => {
           } else {
             wordIndexRef.current = (wordIndexRef.current + 1) % words.length;
             phaseRef.current = 'typing';
+            // Iniciar próxima palavra com primeiro caractere
             return words[wordIndexRef.current].charAt(0);
           }
         });
@@ -318,9 +330,13 @@ const LandingPage = () => {
       }
     };
 
-    timeoutId = setTimeout(runAnimation, 150);
+    // Começar após 2 segundos (palavra já está completa na tela)
+    timeoutId = setTimeout(runAnimation, 2000);
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      isActive = false;
+      clearTimeout(timeoutId);
+    };
   }, []);
   
   // --- ANIMAÇÃO HORIZONTAL (Otimizada para Fluidez) ---

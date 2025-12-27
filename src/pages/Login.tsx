@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react"
+import { useState, useEffect, useRef, useCallback } from "react"
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom"
 import { toast } from "sonner"
 import { supabase } from "@/integrations/supabase/client"
@@ -43,6 +43,16 @@ const Login = () => {
   const is2FASuccess = useRef(false)
   const loginFormRef = useRef<HTMLFormElement>(null)
   const registerFormRef = useRef<HTMLFormElement>(null)
+  
+  // Ref para verificar se componente ainda está montado (previne erro removeChild)
+  const isMountedRef = useRef(true)
+  
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
 
   const [searchParams] = useSearchParams()
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
@@ -140,6 +150,9 @@ const Login = () => {
         body: { email: formData.email }
       })
 
+      // Verificar se componente ainda está montado
+      if (!isMountedRef.current) return
+
       if (adminCheckData?.isAdmin) {
         toast.error('E-mail ou senha incorretos')
         setIsLoading(false)
@@ -151,6 +164,9 @@ const Login = () => {
         password: formData.password,
         options: { captchaToken }
       })
+      
+      // Verificar se componente ainda está montado após operação assíncrona
+      if (!isMountedRef.current) return
       
       if (signInError) {
         let errorMessage = 'Erro ao fazer login. Tente novamente.'
@@ -168,21 +184,29 @@ const Login = () => {
         
         console.error('Erro de Login:', signInError)
         toast.error(errorMessage)
-        setIsLoading(false)
+        if (isMountedRef.current) setIsLoading(false)
         return
       }
 
       if (signInData?.user) {
+        // Verificar montagem antes de continuar
+        if (!isMountedRef.current) return
+        
         const { data: profile } = await supabase
           .from('profiles')
           .select('email_confirmed_strict')
           .eq('user_id', signInData.user.id)
           .single()
+        
+        // Verificar montagem novamente
+        if (!isMountedRef.current) return
 
         if (!profile?.email_confirmed_strict) {
           console.log('🔒 Login: Email não confirmado (strict), bloqueando acesso')
           
           await supabase.auth.signOut()
+          
+          if (!isMountedRef.current) return
           
           setAwaitingEmailConfirmation(true)
           setConfirmationEmail(formData.email)
@@ -193,6 +217,7 @@ const Login = () => {
             const { error: autoResendError } = await supabase.functions.invoke('resend-confirmation-email', {
               body: { email: formData.email }
             })
+            if (!isMountedRef.current) return
             if (autoResendError) {
               console.warn('Falha no reenvio automático:', autoResendError)
             } else {
@@ -202,7 +227,7 @@ const Login = () => {
             console.warn('Falha no reenvio automático:', autoErr)
           }
           
-          setIsLoading(false)
+          if (isMountedRef.current) setIsLoading(false)
           return
         }
 
@@ -213,6 +238,9 @@ const Login = () => {
           .select('email_2fa_enabled, authenticator_2fa_enabled')
           .eq('user_id', signInData.user.id)
           .limit(1)
+        
+        if (!isMountedRef.current) return
+        
         const settings = settingsArray && settingsArray.length > 0 ? settingsArray[0] : null
 
         if (settingsError) {
@@ -253,11 +281,11 @@ const Login = () => {
       toast.error(error.message || "Algo deu errado.")
     } finally {
       // Sempre resetar o CAPTCHA após tentativa (sucesso ou erro)
-      if (loginTurnstileRef.current) {
+      if (isMountedRef.current && loginTurnstileRef.current) {
         loginTurnstileRef.current.reset()
       }
       
-      if (!shouldShow2FAModal) {
+      if (!shouldShow2FAModal && isMountedRef.current) {
         setIsLoading(false)
       }
     }
@@ -355,10 +383,10 @@ const Login = () => {
       toast.error(errorMessage)
     } finally {
       // Sempre resetar o CAPTCHA após tentativa
-      if (registerTurnstileRef.current) {
+      if (isMountedRef.current && registerTurnstileRef.current) {
         registerTurnstileRef.current.reset()
       }
-      setIsLoading(false)
+      if (isMountedRef.current) setIsLoading(false)
     }
   }
 
@@ -371,14 +399,15 @@ const Login = () => {
         body: { email: confirmationEmail }
       })
 
+      if (!isMountedRef.current) return
       if (error) throw error
 
       setResendCooldown(60)
       toast.success('Email reenviado! Verifique sua caixa de entrada.')
     } catch (error: any) {
-      toast.error(error.message || 'Tente novamente.')
+      if (isMountedRef.current) toast.error(error.message || 'Tente novamente.')
     } finally {
-      setIsLoading(false)
+      if (isMountedRef.current) setIsLoading(false)
     }
   }
 
@@ -396,6 +425,8 @@ const Login = () => {
         body: { email: formData.email }
       })
 
+      if (!isMountedRef.current) return
+
       if (existsError) {
         console.error('Erro ao verificar e-mail:', existsError)
         toast.error('Erro ao verificar e-mail. Tente novamente.')
@@ -412,14 +443,15 @@ const Login = () => {
         body: { email: formData.email }
       })
 
+      if (!isMountedRef.current) return
       if (error) throw error
 
       toast.success('Email enviado! Verifique sua caixa de entrada para redefinir sua senha.')
     } catch (error: any) {
       console.error('Erro ao enviar recuperação:', error)
-      toast.error(error.message || 'Erro ao enviar email de recuperação.')
+      if (isMountedRef.current) toast.error(error.message || 'Erro ao enviar email de recuperação.')
     } finally {
-      setIsResettingPassword(false)
+      if (isMountedRef.current) setIsResettingPassword(false)
     }
   }
 
