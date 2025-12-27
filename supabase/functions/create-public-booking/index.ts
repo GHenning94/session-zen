@@ -1,16 +1,48 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// Input validation schemas
+const clientDataSchema = z.object({
+  nome: z.string().min(1).max(100).trim(),
+  email: z.string().email().max(255).trim().toLowerCase(),
+  telefone: z.string().max(20).regex(/^[\d\s\+\-\(\)]*$/).optional().nullable(),
+  observacoes: z.string().max(500).optional().nullable(),
+})
+
+const sessionDataSchema = z.object({
+  data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // YYYY-MM-DD format
+  horario: z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/), // HH:MM or HH:MM:SS format
+})
+
+const bookingSchema = z.object({
+  slug: z.string().min(1).max(100),
+  clientData: clientDataSchema,
+  sessionData: sessionDataSchema,
+})
+
 // Helper function to format time as HH:MM:SS for PostgreSQL
 function formatTimeForDatabase(time: string): string {
   if (!time) return time
   const colonCount = (time.match(/:/g) || []).length
   return colonCount === 1 ? `${time}:00` : time
+}
+
+// Sanitize and validate IP address
+function sanitizeIP(rawIp: string): string {
+  const clientIp = (rawIp.split(',')[0] || '').trim()
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  const ipv6Regex = /^(::1|[a-fA-F0-9:]+)$/
+  
+  if (ipv4Regex.test(clientIp) || ipv6Regex.test(clientIp)) {
+    return clientIp
+  }
+  return '0.0.0.0'
 }
 
 serve(async (req) => {
@@ -25,36 +57,39 @@ serve(async (req) => {
     )
 
     // Rate limiting check with safe IP parsing
-    const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '';
-    const clientIp = (rawIp.split(',')[0] || '').trim();
-    const safeIp = clientIp && /^(\d{1,3}\.){3}\d{1,3}$|^::1$|^[a-fA-F0-9:]+$/.test(clientIp) ? clientIp : '0.0.0.0';
+    const rawIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || ''
+    const safeIp = sanitizeIP(rawIp)
     
     const { data: rateLimitCheck, error: rateLimitError } = await supabase.rpc('check_rate_limit', {
       p_ip: safeIp,
       p_endpoint: 'create-public-booking',
       p_max_requests: 3,
       p_window_minutes: 1
-    });
+    })
 
     if (rateLimitError) {
-      console.log('[CREATE-BOOKING] Rate limit check error, allowing request:', rateLimitError);
+      console.log('[CREATE-BOOKING] Rate limit check error, allowing request')
     } else if (!rateLimitCheck) {
-      console.log('[CREATE-BOOKING] Rate limit exceeded for IP:', safeIp);
+      console.log('[CREATE-BOOKING] Rate limit exceeded')
       return new Response(
         JSON.stringify({ error: 'Muitas requisições. Aguarde um momento antes de tentar novamente.' }),
         { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      )
     }
 
-    const { slug, clientData, sessionData } = await req.json()
+    // Parse and validate input
+    const rawBody = await req.json()
+    const parseResult = bookingSchema.safeParse(rawBody)
 
-    // Validar entrada
-    if (!slug || !clientData?.nome || !clientData?.email || !sessionData?.data || !sessionData?.horario) {
+    if (!parseResult.success) {
+      console.log('[CREATE-BOOKING] Validation failed:', parseResult.error.issues.map(i => i.path.join('.')))
       return new Response(
-        JSON.stringify({ error: 'Dados obrigatórios faltando' }),
+        JSON.stringify({ error: 'Dados obrigatórios faltando ou inválidos' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
+
+    const { slug, clientData, sessionData } = parseResult.data
 
     // Buscar configurações do terapeuta através do slug
     const { data: config, error: configError } = await supabase
@@ -77,7 +112,7 @@ serve(async (req) => {
       .select('id')
       .eq('user_id', config.user_id)
       .eq('data', sessionData.data)
-      .eq('horario', sessionData.horario)
+      .eq('horario', formatTimeForDatabase(sessionData.horario))
       .single()
 
     if (existingSession) {
@@ -87,35 +122,26 @@ serve(async (req) => {
       )
     }
 
-    // Sanitizar dados do cliente (remover caracteres perigosos)
+    // Data is already validated and sanitized by Zod
     const sanitizedClientData = {
-      nome: clientData.nome.trim().substring(0, 100),
-      email: clientData.email.trim().toLowerCase().substring(0, 100),
-      telefone: clientData.telefone?.trim().substring(0, 20) || null,
-      dados_clinicos: clientData.observacoes?.trim().substring(0, 500) || null
-    }
-
-    // Validar email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailRegex.test(sanitizedClientData.email)) {
-      return new Response(
-        JSON.stringify({ error: 'Email inválido' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
+      nome: clientData.nome,
+      email: clientData.email,
+      telefone: clientData.telefone || null,
+      dados_clinicos: clientData.observacoes || null
     }
 
     // Criar cliente com user_id seguro (do terapeuta encontrado via slug)
     const { data: newClient, error: clientError } = await supabase
       .from('clients')
       .insert([{
-        user_id: config.user_id, // Sempre usar o user_id do terapeuta autenticado
+        user_id: config.user_id,
         ...sanitizedClientData
       }])
       .select('id')
       .single()
 
     if (clientError || !newClient) {
-      console.error('Erro ao criar cliente:', clientError)
+      console.error('[CREATE-BOOKING] Client creation failed')
       return new Response(
         JSON.stringify({ error: 'Erro ao criar cliente' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -137,7 +163,7 @@ serve(async (req) => {
       .single()
 
     if (sessionError) {
-      console.error('Erro ao criar sessão:', sessionError)
+      console.error('[CREATE-BOOKING] Session creation failed')
       // Reverter criação do cliente se a sessão falhar
       await supabase.from('clients').delete().eq('id', newClient.id)
       
@@ -159,10 +185,8 @@ serve(async (req) => {
       })
 
     if (notifError) {
-      console.error('Erro ao criar notificação:', notifError)
+      console.log('[CREATE-BOOKING] Notification creation failed (non-critical)')
     } else {
-      console.log('Notificação criada para profissional sobre novo agendamento')
-      
       // Send Web Push notification
       try {
         const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
@@ -182,10 +206,8 @@ serve(async (req) => {
             tag: 'new-session',
           }),
         })
-        console.log('[create-booking] Web Push sent')
       } catch (pushError) {
-        console.error('[create-booking] Error sending Web Push:', pushError)
-        // Non-critical, continue
+        console.log('[CREATE-BOOKING] Push notification failed (non-critical)')
       }
     }
 
@@ -198,7 +220,7 @@ serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('Erro geral:', error)
+    console.error('[CREATE-BOOKING] Unexpected error')
     return new Response(
       JSON.stringify({ error: 'Erro interno do servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

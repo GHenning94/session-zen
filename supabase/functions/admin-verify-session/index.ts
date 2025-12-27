@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 // Allowed origins for admin panel
 const ALLOWED_ORIGINS = [
@@ -8,6 +9,9 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
 ]
+
+// Session token validation schema
+const sessionTokenSchema = z.string().uuid()
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') || ''
@@ -67,9 +71,11 @@ Deno.serve(async (req) => {
       }
     }
 
-    if (!sessionToken) {
+    // Validate session token format
+    const tokenValidation = sessionTokenSchema.safeParse(sessionToken)
+    if (!tokenValidation.success) {
       return new Response(
-        JSON.stringify({ error: 'Token de sessão não fornecido', valid: false }),
+        JSON.stringify({ error: 'Token de sessão inválido', valid: false }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -77,13 +83,13 @@ Deno.serve(async (req) => {
     // Buscar sessão
     const { data: session, error: sessionError } = await supabase
       .from('admin_sessions')
-      .select('*')
-      .eq('session_token', sessionToken)
+      .select('id, user_id, expires_at, revoked')
+      .eq('session_token', tokenValidation.data)
       .eq('revoked', false)
       .single()
 
     if (sessionError || !session) {
-      console.error('[Admin Verify] Session not found')
+      console.log('[Admin Verify] Session not found')
       return new Response(
         JSON.stringify({ error: 'Sessão inválida', valid: false }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -95,7 +101,7 @@ Deno.serve(async (req) => {
     const expiresAt = new Date(session.expires_at)
 
     if (now >= expiresAt) {
-      console.error('[Admin Verify] Session expired')
+      console.log('[Admin Verify] Session expired')
       
       // Revogar sessão expirada
       await supabase
@@ -117,21 +123,17 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Sessão válida - não precisa verificar role pois sessões admin são criadas apenas no login
-
-    console.log('[Admin Verify] Session valid for user:', session.user_id)
-
+    // Return minimal info - don't expose userId
     return new Response(
       JSON.stringify({
         valid: true,
-        userId: session.user_id,
         expiresAt: session.expires_at,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
 
   } catch (error) {
-    console.error('[Admin Verify] Error:', error)
+    console.error('[Admin Verify] Unexpected error')
     return new Response(
       JSON.stringify({ error: 'Erro interno do servidor', valid: false }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

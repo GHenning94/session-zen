@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 // Allowed origins for admin panel
 const ALLOWED_ORIGINS = [
@@ -8,6 +9,13 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://localhost:3000',
 ]
+
+// Input validation schema
+const loginSchema = z.object({
+  email: z.string().email().max(255).trim().toLowerCase(),
+  password: z.string().min(1).max(128),
+  captchaToken: z.string().max(2048).optional(),
+})
 
 function getCorsHeaders(req: Request) {
   const origin = req.headers.get('origin') || ''
@@ -19,6 +27,31 @@ function getCorsHeaders(req: Request) {
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
+}
+
+// Hash IP address for logging (privacy-preserving)
+async function hashIP(ip: string): Promise<string> {
+  if (!ip) return 'unknown'
+  const encoder = new TextEncoder()
+  const data = encoder.encode(ip + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.slice(0, 16))
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Validate and sanitize IP address
+function sanitizeIP(forwardedFor: string | null, realIp: string | null): string | null {
+  const rawIP = forwardedFor?.split(',')[0]?.trim() || realIp?.trim()
+  if (!rawIP) return null
+  
+  // Validate IPv4 or IPv6 format
+  const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/
+  const ipv6Regex = /^([a-fA-F0-9]{0,4}:){2,7}[a-fA-F0-9]{0,4}$/
+  
+  if (ipv4Regex.test(rawIP) || ipv6Regex.test(rawIP)) {
+    return rawIP
+  }
+  return null
 }
 
 Deno.serve(async (req) => {
@@ -34,9 +67,21 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { email, password, captchaToken } = await req.json()
+    // Parse and validate input
+    const rawBody = await req.json()
+    const parseResult = loginSchema.safeParse(rawBody)
+    
+    if (!parseResult.success) {
+      console.log('[Admin Login] Validation failed:', parseResult.error.issues)
+      return new Response(
+        JSON.stringify({ error: 'Dados de entrada inválidos' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
-    console.log('[Admin Login] Attempt for:', email)
+    const { email, password, captchaToken } = parseResult.data
+
+    console.log('[Admin Login] Attempt received')
 
     // Validar CAPTCHA do Turnstile (modo tolerante - não bloqueia login se falhar)
     const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY')
@@ -55,13 +100,11 @@ Deno.serve(async (req) => {
         const turnstileData = await turnstileResponse.json()
 
         if (!turnstileData.success) {
-          console.error('[Admin Login] Turnstile validation failed, prosseguindo apenas com validação de credenciais.')
+          console.log('[Admin Login] Turnstile validation failed, continuing with credential check')
         }
       } catch (captchaError) {
-        console.error('[Admin Login] Erro ao validar Turnstile, prosseguindo sem CAPTCHA:', captchaError)
+        console.log('[Admin Login] Turnstile error, continuing without CAPTCHA')
       }
-    } else {
-      console.warn('[Admin Login] Turnstile desativado ou token ausente, prosseguindo sem validação de CAPTCHA.')
     }
 
     // Validar credenciais de admin
@@ -71,7 +114,7 @@ Deno.serve(async (req) => {
     if (!adminEmail || !adminPassword) {
       console.error('[Admin Login] Admin credentials not configured')
       return new Response(
-        JSON.stringify({ error: 'Credenciais de administrador não configuradas' }),
+        JSON.stringify({ error: 'Configuração de servidor incompleta' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
@@ -99,7 +142,7 @@ Deno.serve(async (req) => {
       // Add artificial delay to prevent timing analysis
       await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 200));
       
-      console.error('[Admin Login] Invalid credentials')
+      console.log('[Admin Login] Invalid credentials attempt')
       return new Response(
         JSON.stringify({ error: 'Credenciais inválidas' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -113,15 +156,14 @@ Deno.serve(async (req) => {
     const sessionToken = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000) // 12 horas
 
-    // Extrair apenas o primeiro IP da lista (o IP do cliente real)
-    const forwardedFor = req.headers.get('x-forwarded-for')
-    const firstIP = forwardedFor 
-      ? forwardedFor.split(',')[0].trim()
-      : req.headers.get('x-real-ip')
+    // Sanitize and validate IP
+    const clientIP = sanitizeIP(
+      req.headers.get('x-forwarded-for'),
+      req.headers.get('x-real-ip')
+    )
     
-    // Validar se é um IP válido, caso contrário usar null
-    const clientIP = firstIP && /^[\d.:a-fA-F]+$/.test(firstIP) ? firstIP : null
-    const userAgent = req.headers.get('user-agent')
+    // Truncate user agent for storage
+    const userAgent = req.headers.get('user-agent')?.substring(0, 500) || null
 
     const { error: sessionError } = await supabase
       .from('admin_sessions')
@@ -134,28 +176,29 @@ Deno.serve(async (req) => {
       })
 
     if (sessionError) {
-      console.error('[Admin Login] Error creating session:', sessionError)
+      console.error('[Admin Login] Session creation error')
       return new Response(
         JSON.stringify({ error: 'Erro ao criar sessão' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Log da ação
+    // Log with hashed IP for privacy
+    const hashedIP = await hashIP(clientIP || '')
     await supabase.from('audit_log').insert({
       user_id: adminUserId,
       action: 'ADMIN_LOGIN',
       table_name: 'admin_sessions',
-      new_values: { email, ip_address: clientIP },
+      new_values: { ip_hash: hashedIP },
     })
 
-    console.log('[Admin Login] Success for:', email)
+    console.log('[Admin Login] Session created successfully')
 
+    // Return minimal session info
     return new Response(
       JSON.stringify({
         success: true,
-        sessionToken: sessionToken, // Return token to be stored client-side
-        userId: adminUserId,
+        sessionToken: sessionToken,
         expiresAt: expiresAt.toISOString(),
       }),
       { 
@@ -167,7 +210,7 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('[Admin Login] Error:', error)
+    console.error('[Admin Login] Unexpected error')
     return new Response(
       JSON.stringify({ error: 'Erro interno do servidor' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
