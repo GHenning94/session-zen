@@ -7,6 +7,12 @@
   z-index: 1; 
 }
 
+/* Typewriter text - garante renderização correta */
+.typewriter-text {
+  display: inline;
+  white-space: pre;
+}
+
 /* ======================================================= */
 /* SOLUÇÃO FINAL DO BLOB (AGORA INVADINDO AS SEÇÕES)     */
 /* ======================================================= */

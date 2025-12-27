@@ -31,35 +31,45 @@
     <!-- Limpeza agressiva de caches para garantir versão mais recente -->
     <script>
       (function() {
-        var APP_VERSION = 'v2.0.3';
+        var APP_VERSION = 'v2.0.4';
         var VERSION_KEY = 'therapypro_app_version';
         
         try {
           var storedVersion = localStorage.getItem(VERSION_KEY);
-          var needsCleanup = storedVersion !== APP_VERSION;
           
-          // Sempre limpar SW e caches de API
-          if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.getRegistrations().then(function(registrations) {
-              for (var i = 0; i < registrations.length; i++) {
-                registrations[i].unregister();
+          // Se versão mudou, limpar TUDO
+          if (storedVersion !== APP_VERSION) {
+            console.log('[TherapyPro] Nova versão ' + APP_VERSION + ' detectada, limpando TODOS os caches...');
+            
+            // Limpar localStorage (exceto chave de versão)
+            var keysToKeep = [VERSION_KEY];
+            for (var i = localStorage.length - 1; i >= 0; i--) {
+              var key = localStorage.key(i);
+              if (key && keysToKeep.indexOf(key) === -1 && key.indexOf('supabase') === -1) {
+                localStorage.removeItem(key);
               }
-            });
-          }
-          if ('caches' in window) {
-            caches.keys().then(function(names) {
-              for (var i = 0; i < names.length; i++) {
-                caches.delete(names[i]);
-              }
-            });
-          }
-          
-          // Se versão mudou, limpar TUDO e recarregar
-          if (needsCleanup) {
-            console.log('[TherapyPro] Nova versão detectada, limpando TODOS os caches...');
+            }
             
             // Limpar sessionStorage
             try { sessionStorage.clear(); } catch(e) {}
+            
+            // Desregistrar Service Workers
+            if ('serviceWorker' in navigator) {
+              navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                for (var j = 0; j < registrations.length; j++) {
+                  registrations[j].unregister();
+                }
+              });
+            }
+            
+            // Apagar todos os caches
+            if ('caches' in window) {
+              caches.keys().then(function(names) {
+                for (var k = 0; k < names.length; k++) {
+                  caches.delete(names[k]);
+                }
+              });
+            }
             
             // Limpar IndexedDB (exceto supabase)
             if (window.indexedDB && indexedDB.databases) {
@@ -72,7 +82,7 @@
               }).catch(function() {});
             }
             
-            // Salvar nova versão ANTES de qualquer reload
+            // Salvar nova versão
             localStorage.setItem(VERSION_KEY, APP_VERSION);
             
             // Force reload se não for primeira vez
