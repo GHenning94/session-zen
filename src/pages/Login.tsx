@@ -157,36 +157,31 @@ const Login = () => {
         
         if (signInError.message.includes('captcha') || signInError.message.includes('timeout-or-duplicate')) {
           errorMessage = 'Erro de verificação. Por favor, resolva o CAPTCHA novamente.'
-        } else {
+        } else if (signInError.message.includes('Email not confirmed')) {
+          errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+        } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+          // Verificar se conta existe de forma segura
           try {
-            const { data: existsData } = await supabase.functions.invoke('check-email-exists', {
+            const { data: existsData, error: existsError } = await supabase.functions.invoke('check-email-exists', {
               body: { email: formData.email }
             })
-            const accountExists = !!existsData?.exists
-
-            if (!accountExists) {
+            
+            if (!existsError && existsData && existsData.exists === false) {
               errorMessage = 'Esta conta não existe.'
-              localStorage.clear()
-              sessionStorage.clear()
-            } else if (signInError.message.includes('Email not confirmed')) {
-              errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
-            } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
+            } else {
               errorMessage = 'E-mail ou senha incorretos'
-            } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
-              errorMessage = 'Erro de conexão. Verifique sua internet.'
             }
           } catch (checkErr) {
-            console.warn('Falha ao verificar existência de e-mail, usando mensagem genérica.')
-            if (signInError.message.includes('Email not confirmed')) {
-              errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
-            } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-              errorMessage = 'E-mail ou senha incorretos'
-            }
+            console.warn('Falha ao verificar existência de e-mail:', checkErr)
+            errorMessage = 'E-mail ou senha incorretos'
           }
+        } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
+          errorMessage = 'Erro de conexão. Verifique sua internet.'
         }
         
         console.error('Erro de Login:', signInError)
         toast.error(errorMessage)
+        setIsLoading(false)
         return
       }
 
