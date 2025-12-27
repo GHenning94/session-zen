@@ -149,15 +149,126 @@ Deno.serve(async (req) => {
       testError = `Key length mismatch: expected 32 bytes, got ${keyBytes?.length || 'unknown'} (format: ${keyFormat})`
     }
 
-    // Buscar estatísticas
+    // Buscar estatísticas de TODOS os campos sensíveis em todas as tabelas
+    // Tabela: clients (historico, dados_clinicos, tratamento)
     const { data: clientsData } = await supabase
       .from('clients')
-      .select('id, dados_clinicos, historico')
+      .select('id, dados_clinicos, historico, tratamento')
 
+    // Tabela: anamneses (todos os campos sensíveis)
+    const { data: anamnesesData } = await supabase
+      .from('anamneses')
+      .select('id, motivo_consulta, queixa_principal, historico_familiar, historico_medico, antecedentes_relevantes, diagnostico_inicial, observacoes_adicionais')
+
+    // Tabela: sessions (anotacoes)
+    const { data: sessionsData } = await supabase
+      .from('sessions')
+      .select('id, anotacoes')
+
+    // Tabela: session_notes (notes)
+    const { data: sessionNotesData } = await supabase
+      .from('session_notes')
+      .select('id, notes')
+
+    // Tabela: evolucoes (evolucao)
+    const { data: evolucoesData } = await supabase
+      .from('evolucoes')
+      .select('id, evolucao')
+
+    // Tabela: profiles (bio, banco, agencia, conta, cpf_cnpj)
+    const { data: profilesData } = await supabase
+      .from('profiles')
+      .select('id, bio, banco, agencia, conta, cpf_cnpj')
+
+    // Tabela: configuracoes (chave_pix, dados_bancarios)
+    const { data: configData } = await supabase
+      .from('configuracoes')
+      .select('id, chave_pix, dados_bancarios')
+
+    // Tabela: packages (observacoes)
+    const { data: packagesData } = await supabase
+      .from('packages')
+      .select('id, observacoes')
+
+    // Tabela: payments (observacoes)
+    const { data: paymentsData } = await supabase
+      .from('payments')
+      .select('id, observacoes')
+
+    // Função auxiliar para verificar se campo tem dados
+    const hasData = (val: any) => val !== null && val !== undefined && val !== ''
+
+    // Contagem detalhada por tabela
     const sensitiveFieldsCount = {
+      // Totais gerais
       total_clients: clientsData?.length || 0,
-      with_dados_clinicos: clientsData?.filter(c => c.dados_clinicos).length || 0,
-      with_historico: clientsData?.filter(c => c.historico).length || 0,
+      with_dados_clinicos: clientsData?.filter(c => hasData(c.dados_clinicos)).length || 0,
+      with_historico: clientsData?.filter(c => hasData(c.historico)).length || 0,
+      
+      // Detalhamento por tabela
+      tables: {
+        clients: {
+          total: clientsData?.length || 0,
+          dados_clinicos: clientsData?.filter(c => hasData(c.dados_clinicos)).length || 0,
+          historico: clientsData?.filter(c => hasData(c.historico)).length || 0,
+          tratamento: clientsData?.filter(c => hasData(c.tratamento)).length || 0,
+        },
+        anamneses: {
+          total: anamnesesData?.length || 0,
+          motivo_consulta: anamnesesData?.filter(a => hasData(a.motivo_consulta)).length || 0,
+          queixa_principal: anamnesesData?.filter(a => hasData(a.queixa_principal)).length || 0,
+          historico_familiar: anamnesesData?.filter(a => hasData(a.historico_familiar)).length || 0,
+          historico_medico: anamnesesData?.filter(a => hasData(a.historico_medico)).length || 0,
+          antecedentes_relevantes: anamnesesData?.filter(a => hasData(a.antecedentes_relevantes)).length || 0,
+          diagnostico_inicial: anamnesesData?.filter(a => hasData(a.diagnostico_inicial)).length || 0,
+          observacoes_adicionais: anamnesesData?.filter(a => hasData(a.observacoes_adicionais)).length || 0,
+        },
+        sessions: {
+          total: sessionsData?.length || 0,
+          anotacoes: sessionsData?.filter(s => hasData(s.anotacoes)).length || 0,
+        },
+        session_notes: {
+          total: sessionNotesData?.length || 0,
+          notes: sessionNotesData?.filter(s => hasData(s.notes)).length || 0,
+        },
+        evolucoes: {
+          total: evolucoesData?.length || 0,
+          evolucao: evolucoesData?.filter(e => hasData(e.evolucao)).length || 0,
+        },
+        profiles: {
+          total: profilesData?.length || 0,
+          bio: profilesData?.filter(p => hasData(p.bio)).length || 0,
+          banco: profilesData?.filter(p => hasData(p.banco)).length || 0,
+          agencia: profilesData?.filter(p => hasData(p.agencia)).length || 0,
+          conta: profilesData?.filter(p => hasData(p.conta)).length || 0,
+          cpf_cnpj: profilesData?.filter(p => hasData(p.cpf_cnpj)).length || 0,
+        },
+        configuracoes: {
+          total: configData?.length || 0,
+          chave_pix: configData?.filter(c => hasData(c.chave_pix)).length || 0,
+          dados_bancarios: configData?.filter(c => hasData(c.dados_bancarios)).length || 0,
+        },
+        packages: {
+          total: packagesData?.length || 0,
+          observacoes: packagesData?.filter(p => hasData(p.observacoes)).length || 0,
+        },
+        payments: {
+          total: paymentsData?.length || 0,
+          observacoes: paymentsData?.filter(p => hasData(p.observacoes)).length || 0,
+        },
+      },
+      
+      // Total de registros com campos sensíveis preenchidos
+      total_sensitive_records: 
+        (clientsData?.filter(c => hasData(c.dados_clinicos) || hasData(c.historico) || hasData(c.tratamento)).length || 0) +
+        (anamnesesData?.filter(a => hasData(a.motivo_consulta) || hasData(a.queixa_principal) || hasData(a.historico_familiar) || hasData(a.historico_medico) || hasData(a.antecedentes_relevantes) || hasData(a.diagnostico_inicial) || hasData(a.observacoes_adicionais)).length || 0) +
+        (sessionsData?.filter(s => hasData(s.anotacoes)).length || 0) +
+        (sessionNotesData?.filter(s => hasData(s.notes)).length || 0) +
+        (evolucoesData?.filter(e => hasData(e.evolucao)).length || 0) +
+        (profilesData?.filter(p => hasData(p.bio) || hasData(p.banco) || hasData(p.agencia) || hasData(p.conta) || hasData(p.cpf_cnpj)).length || 0) +
+        (configData?.filter(c => hasData(c.chave_pix) || hasData(c.dados_bancarios)).length || 0) +
+        (packagesData?.filter(p => hasData(p.observacoes)).length || 0) +
+        (paymentsData?.filter(p => hasData(p.observacoes)).length || 0),
     }
 
     // Buscar logs de auditoria recentes
@@ -224,7 +335,7 @@ Deno.serve(async (req) => {
       })
     }
 
-    if (sensitiveFieldsCount.with_dados_clinicos === 0 && sensitiveFieldsCount.with_historico === 0) {
+    if (sensitiveFieldsCount.total_sensitive_records === 0) {
       report.recommendations.push({
         severity: 'info',
         message: 'Nenhum dado sensível armazenado ainda',
