@@ -2081,19 +2081,25 @@ const Dashboard = () => {
                                   outerRadius="85%" 
                                   barSize={18}
                                   data={(() => {
-                                    const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0);
+                                    // Reverter para que as barras menores fiquem no centro
+                                    // Mas manter índices originais para sincronizar hover
+                                    const reversedData = [...receitaPorCanal].reverse();
                                     const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
-                                    return receitaPorCanal.map((item, index) => {
-                                      // Limitar cada barra a no máximo 95% do círculo para nunca fechar
-                                      const normalizedValue = maxValue > 0 ? (item.valor / maxValue) * 95 : 0;
+                                    return reversedData.map((item, reversedIndex) => {
+                                      // Encontrar o índice original (não revertido) para sincronizar hover
+                                      const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
+                                      // Limitar cada barra a no máximo 85% do círculo para nunca fechar
+                                      // Usar uma escala mais conservadora
+                                      const normalizedValue = maxValue > 0 ? Math.min((item.valor / maxValue) * 85, 85) : 0;
                                       return {
                                         ...item,
                                         displayValue: normalizedValue,
                                         fill: item.color,
                                         name: item.canal,
-                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === (receitaPorCanal.length - 1 - index) ? 1 : 0.3
+                                        originalIndex,
+                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === originalIndex ? 1 : 0.3
                                       };
-                                    }).reverse();
+                                    });
                                   })()}
                                   startAngle={90}
                                   endAngle={-270}
@@ -2105,7 +2111,7 @@ const Dashboard = () => {
                                     animationBegin={chartsAnimated ? 0 : 9999}
                                     animationDuration={1200}
                                     animationEasing="ease-out"
-                                    onMouseEnter={(data, index) => setHoveredCanalIndex(receitaPorCanal.length - 1 - index)}
+                                    onMouseEnter={(data: any) => setHoveredCanalIndex(data.originalIndex)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
                                   />
                                   <RechartsTooltip
