@@ -29,7 +29,7 @@ import {
   PenLine,
   FileText
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -81,6 +81,9 @@ const Dashboard = () => {
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [hoveredCanalIndex, setHoveredCanalIndex] = useState<number | null>(null)
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
+  const [showReceitaAverage, setShowReceitaAverage] = useState(true)
+  const [showTicketAverage, setShowTicketAverage] = useState(true)
+  const [chartsAnimated, setChartsAnimated] = useState(false)
   const [packageStats, setPackageStats] = useState({
     totalPackages: 0,
     activePackages: 0,
@@ -146,8 +149,11 @@ const Dashboard = () => {
   // Component lifecycle management
   useEffect(() => {
     isActiveRef.current = true
+    // Ativar animações após mount
+    const timer = setTimeout(() => setChartsAnimated(true), 100)
     return () => {
       isActiveRef.current = false
+      clearTimeout(timer)
     }
   }, [])
 
@@ -1556,59 +1562,79 @@ const Dashboard = () => {
                                 return null;
                               }}
                             />
-                            {/* Linha de referência para média */}
-                            {filteredMonthlyChart.length > 0 && (
+                            {/* Linha de referência para média - controlada por legenda interativa */}
+                            {showReceitaAverage && filteredMonthlyChart.length > 0 && (
                               <ReferenceLine 
                                 y={filteredMonthlyChart.reduce((sum, item) => sum + item.receita, 0) / filteredMonthlyChart.length} 
                                 stroke="hsl(var(--primary))" 
                                 strokeDasharray="5 5"
                                 strokeOpacity={0.7}
-                                label={{ 
-                                  value: 'Média', 
-                                  position: 'right',
-                                  fontSize: 10,
-                                  fill: 'hsl(var(--primary))'
-                                }}
                               />
                             )}
                             <Bar 
                               dataKey="receita" 
                               fill="url(#receitaBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={60}
+                              maxBarSize={chartPeriod === '12' ? 60 : chartPeriod === '6' ? 80 : 100}
+                              animationBegin={0}
+                              animationDuration={800}
+                              animationEasing="ease-out"
                             />
                             <Bar 
                               dataKey="aReceber" 
                               fill="url(#aReceberBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={60}
+                              maxBarSize={chartPeriod === '12' ? 60 : chartPeriod === '6' ? 80 : 100}
+                              animationBegin={200}
+                              animationDuration={800}
+                              animationEasing="ease-out"
                             />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
                       
-                      {/* Variação do período */}
-                      {filteredMonthlyChart.length >= 2 && (() => {
-                        const first = filteredMonthlyChart.find(i => i.receita > 0)?.receita || 0;
-                        const last = filteredMonthlyChart[filteredMonthlyChart.length - 1]?.receita || 0;
-                        const variation = first > 0 ? ((last - first) / first) * 100 : 0;
-                        const isPositive = variation >= 0;
+                      {/* Legenda interativa + Variação do período */}
+                      <div className="mt-4 pt-4 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
+                        {/* Legenda clicável para média */}
+                        <button
+                          onClick={() => setShowReceitaAverage(!showReceitaAverage)}
+                          className={cn(
+                            "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
+                            showReceitaAverage 
+                              ? "bg-primary/10 text-primary border border-primary/30" 
+                              : "bg-muted/50 text-muted-foreground border border-border/50 opacity-60"
+                          )}
+                        >
+                          <div className={cn(
+                            "w-4 h-0.5 border-t-2 border-dashed transition-colors",
+                            showReceitaAverage ? "border-primary" : "border-muted-foreground"
+                          )} />
+                          Média: {formatCurrencyBR(filteredMonthlyChart.length > 0 ? filteredMonthlyChart.reduce((sum, item) => sum + item.receita, 0) / filteredMonthlyChart.length : 0)}
+                        </button>
                         
-                        return (
-                          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-center gap-3">
-                            <span className="text-sm text-muted-foreground">Variação no período:</span>
-                            <Badge 
-                              variant={isPositive ? "default" : "destructive"}
-                              className={cn(
-                                "font-semibold",
-                                isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
-                              )}
-                            >
-                              {isPositive ? '+' : ''}{variation.toFixed(1)}%
-                            </Badge>
-                          </div>
-                        );
-                      })()}
+                        {/* Variação do período */}
+                        {filteredMonthlyChart.length >= 2 && (() => {
+                          const first = filteredMonthlyChart.find(i => i.receita > 0)?.receita || 0;
+                          const last = filteredMonthlyChart[filteredMonthlyChart.length - 1]?.receita || 0;
+                          const variation = first > 0 ? ((last - first) / first) * 100 : 0;
+                          const isPositive = variation >= 0;
+                          
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Variação:</span>
+                              <Badge 
+                                variant={isPositive ? "default" : "destructive"}
+                                className={cn(
+                                  "font-semibold",
+                                  isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
+                                )}
+                              >
+                                {isPositive ? '+' : ''}{variation.toFixed(1)}%
+                              </Badge>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1675,18 +1701,27 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      {/* Gráfico de Barras - melhor para 1 mês */}
+                      {/* Gráfico de Barras com 3 barras: Maior, Ticket Médio, Menor */}
                       <div className="h-72 -mx-2">
                         <ResponsiveContainer width="100%" height="100%">
                           <BarChart
                             key={`ticket-bar-${ticketPeriod}-independent`}
                             data={filteredTicketChart}
                             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                            barCategoryGap={ticketPeriod === '12' ? '20%' : ticketPeriod === '6' ? '15%' : '10%'}
                           >
                             <defs>
                               <linearGradient id="ticketBarGradient" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={1}/>
                                 <stop offset="100%" stopColor="hsl(142 76% 36%)" stopOpacity={0.6}/>
+                              </linearGradient>
+                              <linearGradient id="maxBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9}/>
+                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
+                              </linearGradient>
+                              <linearGradient id="minBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.7}/>
+                                <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.3}/>
                               </linearGradient>
                             </defs>
                             <CartesianGrid 
@@ -1709,34 +1744,13 @@ const Dashboard = () => {
                               tickFormatter={(value) => `R$${(value/1).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
                               width={60}
                             />
-                            {/* Linha de referência para máximo */}
-                            {filteredTicketChart.length > 0 && (
+                            {/* Linha de referência para média - controlada por legenda */}
+                            {showTicketAverage && filteredTicketChart.length > 0 && (
                               <ReferenceLine 
-                                y={Math.max(...filteredTicketChart.map(i => i.maxPagamento || 0))} 
-                                stroke="hsl(var(--muted-foreground))" 
+                                y={ticketMedioAverage} 
+                                stroke="hsl(142 76% 36%)" 
                                 strokeDasharray="5 5"
-                                strokeOpacity={0.5}
-                                label={{ 
-                                  value: 'Máx', 
-                                  position: 'right',
-                                  fontSize: 10,
-                                  fill: 'hsl(var(--muted-foreground))'
-                                }}
-                              />
-                            )}
-                            {/* Linha de referência para mínimo */}
-                            {filteredTicketChart.length > 0 && (
-                              <ReferenceLine 
-                                y={Math.min(...filteredTicketChart.filter(i => (i.minPagamento || 0) > 0).map(i => i.minPagamento)) || 0} 
-                                stroke="hsl(var(--muted-foreground))" 
-                                strokeDasharray="5 5"
-                                strokeOpacity={0.5}
-                                label={{ 
-                                  value: 'Mín', 
-                                  position: 'right',
-                                  fontSize: 10,
-                                  fill: 'hsl(var(--muted-foreground))'
-                                }}
+                                strokeOpacity={0.7}
                               />
                             )}
                             <RechartsTooltip 
@@ -1749,16 +1763,25 @@ const Dashboard = () => {
                                       <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
                                       <div className="space-y-1.5">
                                         <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">Ticket Médio</span>
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-sm bg-primary" />
+                                            Maior Pgto
+                                          </span>
+                                          <span className="text-sm font-medium text-primary">{formatCurrencyBR(data.maxPagamento || 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-sm bg-success" />
+                                            Ticket Médio
+                                          </span>
                                           <span className="text-sm font-bold text-success">{formatCurrencyBR(data.ticketMedio)}</span>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">Maior Pgto</span>
-                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.maxPagamento || 0)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">Menor Pgto</span>
-                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.minPagamento || 0)}</span>
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-sm bg-muted-foreground" />
+                                            Menor Pgto
+                                          </span>
+                                          <span className="text-sm font-medium text-muted-foreground">{formatCurrencyBR(data.minPagamento || 0)}</span>
                                         </div>
                                         <div className="flex justify-between items-center">
                                           <span className="text-xs text-muted-foreground">Sessões</span>
@@ -1776,37 +1799,93 @@ const Dashboard = () => {
                               }}
                             />
                             <Bar 
+                              dataKey="maxPagamento" 
+                              fill="url(#maxBarGradient)"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={ticketPeriod === '12' ? 28 : ticketPeriod === '6' ? 36 : 48}
+                              animationBegin={0}
+                              animationDuration={800}
+                              animationEasing="ease-out"
+                            />
+                            <Bar 
                               dataKey="ticketMedio" 
                               fill="url(#ticketBarGradient)"
-                              radius={[6, 6, 0, 0]}
-                              maxBarSize={60}
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={ticketPeriod === '12' ? 28 : ticketPeriod === '6' ? 36 : 48}
+                              animationBegin={200}
+                              animationDuration={800}
+                              animationEasing="ease-out"
+                            />
+                            <Bar 
+                              dataKey="minPagamento" 
+                              fill="url(#minBarGradient)"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={ticketPeriod === '12' ? 28 : ticketPeriod === '6' ? 36 : 48}
+                              animationBegin={400}
+                              animationDuration={800}
+                              animationEasing="ease-out"
                             />
                           </BarChart>
                         </ResponsiveContainer>
                       </div>
                       
-                      {/* Variação do período */}
-                      {filteredTicketChart.length >= 2 && (() => {
-                        const first = filteredTicketChart.find(i => i.ticketMedio > 0)?.ticketMedio || 0;
-                        const last = filteredTicketChart[filteredTicketChart.length - 1]?.ticketMedio || 0;
-                        const variation = first > 0 ? ((last - first) / first) * 100 : 0;
-                        const isPositive = variation >= 0;
-                        
-                        return (
-                          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-center gap-3">
-                            <span className="text-sm text-muted-foreground">Variação no período:</span>
-                            <Badge 
-                              variant={isPositive ? "default" : "destructive"}
-                              className={cn(
-                                "font-semibold",
-                                isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
-                              )}
-                            >
-                              {isPositive ? '+' : ''}{variation.toFixed(1)}%
-                            </Badge>
+                      {/* Legenda interativa + Variação do período */}
+                      <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
+                        {/* Legendas das barras */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
+                            Maior Pgto
                           </div>
-                        );
-                      })()}
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-success" />
+                            Ticket Médio
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-muted-foreground" />
+                            Menor Pgto
+                          </div>
+                          {/* Toggle para média */}
+                          <button
+                            onClick={() => setShowTicketAverage(!showTicketAverage)}
+                            className={cn(
+                              "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border",
+                              showTicketAverage 
+                                ? "bg-success/10 text-success border-success/30" 
+                                : "bg-muted/50 text-muted-foreground border-border/50 opacity-60"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-3 h-0.5 border-t-2 border-dashed transition-colors",
+                              showTicketAverage ? "border-success" : "border-muted-foreground"
+                            )} />
+                            Média
+                          </button>
+                        </div>
+                        
+                        {/* Variação do período */}
+                        {filteredTicketChart.length >= 2 && (() => {
+                          const first = filteredTicketChart.find(i => i.ticketMedio > 0)?.ticketMedio || 0;
+                          const last = filteredTicketChart[filteredTicketChart.length - 1]?.ticketMedio || 0;
+                          const variation = first > 0 ? ((last - first) / first) * 100 : 0;
+                          const isPositive = variation >= 0;
+                          
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm text-muted-foreground">Variação:</span>
+                              <Badge 
+                                variant={isPositive ? "default" : "destructive"}
+                                className={cn(
+                                  "font-semibold",
+                                  isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
+                                )}
+                              >
+                                {isPositive ? '+' : ''}{variation.toFixed(1)}%
+                              </Badge>
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1969,176 +2048,104 @@ const Dashboard = () => {
                         </div>
                       )}
                       
-                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:h-[460px] overflow-visible">
-                        {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
-                        <div className="h-[280px] lg:h-full lg:min-h-[400px] flex items-center justify-center relative">
-                          {(() => {
-                            const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
-                            if (total === 0) return null
-                            
-                            const cx = 200
-                            const cy = 200
-                            const radius = 122.5 // Raio do meio do stroke
-                            const strokeWidth = 45
-                            
-                            let currentAngle = -90 // Começa do topo (SVG usa -90 para topo)
-                            const overlapDeg = 12 // Sobreposição em graus
-                            
-                            const segments: { startAngle: number; endAngle: number; color: string; index: number }[] = []
-                            
-                            receitaPorCanal.forEach((item, index) => {
-                              const angle = (item.valor / total) * 360
-                              const isLast = index === receitaPorCanal.length - 1
-                              segments.push({
-                                startAngle: currentAngle,
-                                // Last segment should NOT have overlap to avoid duplication
-                                endAngle: currentAngle + angle + (isLast ? 0 : overlapDeg),
-                                color: item.color,
-                                index
-                              })
-                              currentAngle += angle
-                            })
-                            
-                            // Função para criar arco usando stroke
-                            const polarToCartesian = (centerX: number, centerY: number, r: number, angleInDegrees: number) => {
-                              const angleInRadians = (angleInDegrees * Math.PI) / 180
-                              return {
-                                x: centerX + r * Math.cos(angleInRadians),
-                                y: centerY + r * Math.sin(angleInRadians)
-                              }
-                            }
-                            
-                            const describeArc = (startAngle: number, endAngle: number) => {
-                              const start = polarToCartesian(cx, cy, radius, endAngle)
-                              const end = polarToCartesian(cx, cy, radius, startAngle)
-                              const largeArcFlag = endAngle - startAngle <= 180 ? 0 : 1
-                              
-                              return `M ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
-                            }
-                            
-                            // Índice do último segmento
-                            const lastIndex = segments.length - 1
-                            
-                            return (
-                              <svg viewBox="0 0 400 400" className="w-full h-full max-w-[380px] max-h-[380px]">
-                                <defs>
-                                  {segments.map((segment) => (
-                                    <filter key={`shadow-${segment.index}`} id={`pie-shadow-${segment.index}`} x="-50%" y="-50%" width="200%" height="200%">
-                                      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor={segment.color} floodOpacity="0.5"/>
-                                    </filter>
-                                  ))}
-                                </defs>
-                                
-                                {/* Renderizar segmentos na ordem normal (cada um por cima do anterior) */}
-                                {segments.map((segment) => (
-                                  <path
-                                    key={`segment-${segment.index}`}
-                                    d={describeArc(segment.startAngle, segment.endAngle)}
-                                    fill="none"
-                                    stroke={segment.color}
-                                    strokeWidth={strokeWidth}
-                                    strokeLinecap="round"
-                                    style={{
-                                      cursor: 'pointer',
-                                      transition: 'filter 0.15s ease-out'
-                                    }}
-                                    onMouseEnter={() => setHoveredCanalIndex(segment.index)}
+                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:h-[400px] overflow-visible">
+                        {/* Gráfico RadialBar moderno */}
+                        <div className="h-[280px] lg:h-full flex items-center justify-center relative">
+                          {receitaPorCanal.length > 0 ? (
+                            <>
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RadialBarChart 
+                                  cx="50%" 
+                                  cy="50%" 
+                                  innerRadius="25%" 
+                                  outerRadius="90%" 
+                                  barSize={20}
+                                  data={receitaPorCanal.map((item, index) => ({
+                                    ...item,
+                                    fill: item.color,
+                                    name: item.canal
+                                  })).reverse()}
+                                  startAngle={180}
+                                  endAngle={-180}
+                                >
+                                  <RadialBar
+                                    background={{ fill: 'hsl(var(--muted))' }}
+                                    dataKey="valor"
+                                    cornerRadius={10}
+                                    animationBegin={0}
+                                    animationDuration={1000}
+                                    animationEasing="ease-out"
+                                    onMouseEnter={(data, index) => setHoveredCanalIndex(receitaPorCanal.length - 1 - index)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
                                   />
-                                ))}
-                                
-                                {/* Capa do primeiro segmento sobre o final do último (efeito corrente) */}
-                                {segments.length > 1 && (
-                                  <path
-                                    key="segment-first-cap"
-                                    d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
-                                    fill="none"
-                                    stroke={segments[0].color}
-                                    strokeWidth={strokeWidth}
-                                    strokeLinecap="round"
-                                    style={{ cursor: 'pointer' }}
-                                    onMouseEnter={() => setHoveredCanalIndex(0)}
-                                    onMouseLeave={() => setHoveredCanalIndex(null)}
-                                  />
-                                )}
-                                
-                                {/* Hover: renderizar segmento por cima de tudo com sombra */}
-                                {hoveredCanalIndex !== null && segments[hoveredCanalIndex] && hoveredCanalIndex !== segments.length - 1 && (
-                                  <>
-                                    <path
-                                      key={`segment-hover-${hoveredCanalIndex}`}
-                                      d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
-                                      fill="none"
-                                      stroke={segments[hoveredCanalIndex].color}
-                                      strokeWidth={strokeWidth}
-                                      strokeLinecap="round"
-                                      style={{
-                                        filter: `url(#pie-shadow-${hoveredCanalIndex})`,
-                                        pointerEvents: 'none'
-                                      }}
-                                    />
-                                    {/* Se hover no primeiro, também renderizar a capa com sombra */}
-                                    {hoveredCanalIndex === 0 && segments.length > 1 && (
-                                      <path
-                                        key="segment-first-cap-hover"
-                                        d={describeArc(segments[0].startAngle, segments[0].startAngle + 15)}
-                                        fill="none"
-                                        stroke={segments[0].color}
-                                        strokeWidth={strokeWidth}
-                                        strokeLinecap="round"
-                                        style={{
-                                          filter: `url(#pie-shadow-0)`,
-                                          pointerEvents: 'none'
-                                        }}
-                                      />
-                                    )}
-                                  </>
-                                )}
-                                
-                                {/* Hover do ÚLTIMO segmento: renderizar por cima de tudo incluindo a capa */}
-                                {hoveredCanalIndex === segments.length - 1 && segments[hoveredCanalIndex] && (
-                                  <path
-                                    key={`segment-hover-last`}
-                                    d={describeArc(segments[hoveredCanalIndex].startAngle, segments[hoveredCanalIndex].endAngle)}
-                                    fill="none"
-                                    stroke={segments[hoveredCanalIndex].color}
-                                    strokeWidth={strokeWidth}
-                                    strokeLinecap="round"
-                                    style={{
-                                      filter: `url(#pie-shadow-${hoveredCanalIndex})`,
-                                      pointerEvents: 'none'
+                                  <RechartsTooltip
+                                    cursor={false}
+                                    content={({ active, payload }) => {
+                                      if (active && payload && payload.length) {
+                                        const data = payload[0].payload;
+                                        const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0);
+                                        const percentage = total > 0 ? ((data.valor / total) * 100).toFixed(1) : '0';
+                                        return (
+                                          <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[160px]">
+                                            <div className="flex items-center gap-2 mb-2">
+                                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.fill }} />
+                                              <p className="text-sm font-semibold text-foreground">{data.canal}</p>
+                                            </div>
+                                            <div className="space-y-1">
+                                              <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Valor</span>
+                                                <span className="text-sm font-bold" style={{ color: data.fill }}>{formatCurrencyBR(data.valor)}</span>
+                                              </div>
+                                              <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Participação</span>
+                                                <span className="text-sm font-medium text-foreground">{percentage}%</span>
+                                              </div>
+                                              <div className="flex justify-between items-center">
+                                                <span className="text-xs text-muted-foreground">Pagamentos</span>
+                                                <span className="text-sm font-medium text-foreground">{data.count || 0}</span>
+                                              </div>
+                                            </div>
+                                          </div>
+                                        );
+                                      }
+                                      return null;
                                     }}
                                   />
-                                )}
-                              </svg>
-                            )
-                          })()}
-                          {/* Centro do gráfico com informações dinâmicas */}
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <div className="text-center">
-                              {hoveredCanalIndex !== null && receitaPorCanal[hoveredCanalIndex] ? (
-                                <>
-                                  <p className="text-xs text-muted-foreground mb-1">{receitaPorCanal[hoveredCanalIndex].canal}</p>
-                                  <p className="text-3xl font-bold" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
-                                    {receitaPorCanal[hoveredCanalIndex].count || 0}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">pagamentos</p>
-                                </>
-                              ) : (
-                                <>
-                                  <p className="text-xs text-muted-foreground mb-1">Total</p>
-                                  <p className="text-3xl font-bold text-foreground">
-                                    {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">pagamentos</p>
-                                </>
-                              )}
+                                </RadialBarChart>
+                              </ResponsiveContainer>
+                              {/* Centro do gráfico com total */}
+                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                <div className="text-center transition-all duration-300">
+                                  {hoveredCanalIndex !== null && receitaPorCanal[hoveredCanalIndex] ? (
+                                    <>
+                                      <p className="text-xs text-muted-foreground mb-1">{receitaPorCanal[hoveredCanalIndex].canal}</p>
+                                      <p className="text-2xl font-bold transition-all duration-300" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
+                                        {formatCurrencyBR(receitaPorCanal[hoveredCanalIndex].valor)}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">{receitaPorCanal[hoveredCanalIndex].count || 0} pgtos</p>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <p className="text-xs text-muted-foreground mb-1">Total</p>
+                                      <p className="text-2xl font-bold text-foreground">
+                                        {formatCurrencyBR(receitaPorCanal.reduce((sum, item) => sum + item.valor, 0))}
+                                      </p>
+                                      <p className="text-xs text-muted-foreground">{receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)} pgtos</p>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            </>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center text-center py-8">
+                              <DollarSign className="w-12 h-12 text-muted-foreground mb-4" />
+                              <p className="text-muted-foreground">Nenhum dado no período</p>
                             </div>
-                          </div>
+                          )}
                         </div>
                         
-                        {/* Lista de Canais */}
-                        <div className="grid grid-cols-2 gap-2 lg:flex lg:flex-col lg:space-y-2 lg:gap-0 lg:justify-center overflow-visible p-2">
+                        {/* Lista de Canais com animação */}
+                        <div className="flex flex-col gap-2 lg:justify-center overflow-visible p-2">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
                             const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
@@ -2148,45 +2155,51 @@ const Dashboard = () => {
                               <div 
                                 key={canal.canal} 
                                 className={cn(
-                                  "flex flex-col lg:flex-row lg:items-center lg:justify-between px-3 py-2 lg:px-4 lg:py-3 rounded-xl transition-all duration-300 cursor-pointer",
+                                  "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer",
+                                  "opacity-0 animate-fade-in-up",
                                   isHovered 
-                                    ? "bg-accent/80 shadow-md scale-[1.02] border-2" 
+                                    ? "bg-accent/80 shadow-lg scale-[1.02] border-2" 
                                     : "bg-accent/30 hover:bg-accent/50 border border-border/50",
                                   hoveredCanalIndex !== null && !isHovered && "opacity-50"
                                 )}
                                 style={{
+                                  animationDelay: `${index * 100}ms`,
+                                  animationFillMode: 'forwards',
                                   borderColor: isHovered ? canal.color : undefined
                                 }}
                                 onMouseEnter={() => setHoveredCanalIndex(index)}
                                 onMouseLeave={() => setHoveredCanalIndex(null)}
                               >
-                                <div className="flex items-center gap-2 lg:gap-3 mb-1 lg:mb-0">
+                                <div className="flex items-center gap-3">
                                   <div 
                                     className={cn(
-                                      "w-3 h-3 lg:w-3.5 lg:h-3.5 rounded-full flex-shrink-0 transition-transform duration-300",
+                                      "w-4 h-4 rounded-full flex-shrink-0 transition-all duration-300",
                                       isHovered && "scale-125"
                                     )}
                                     style={{ 
                                       backgroundColor: canal.color,
-                                      boxShadow: isHovered ? `0 0 8px ${canal.color}` : 'none'
+                                      boxShadow: isHovered ? `0 0 12px ${canal.color}` : 'none'
                                     }}
                                   />
-                                  <span className={cn(
-                                    "font-medium text-xs lg:text-sm transition-all duration-300 truncate",
-                                    isHovered && "font-semibold"
-                                  )}>{canal.canal}</span>
+                                  <div>
+                                    <span className={cn(
+                                      "font-medium text-sm transition-all duration-300",
+                                      isHovered && "font-semibold"
+                                    )}>{canal.canal}</span>
+                                    <p className="text-xs text-muted-foreground">{canal.count || 0} pagamentos</p>
+                                  </div>
                                 </div>
-                                <div className="text-left lg:text-right pl-5 lg:pl-0">
+                                <div className="text-right">
                                   <p className={cn(
-                                    "font-bold text-xs lg:text-sm transition-all duration-300",
-                                    isHovered ? "lg:text-lg" : "text-primary"
+                                    "font-bold text-sm transition-all duration-300",
+                                    isHovered ? "text-lg" : "text-primary"
                                   )} style={{ color: isHovered ? canal.color : undefined }}>{formatCurrencyBR(canal.valor)}</p>
-                                  <p className="text-[10px] lg:text-xs text-muted-foreground">{percentage}%</p>
+                                  <p className="text-xs text-muted-foreground">{percentage}%</p>
                                 </div>
                               </div>
                             )
                           }) : (
-                            <div className="col-span-2 text-center py-8">
+                            <div className="text-center py-8">
                               <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                               <p className="text-muted-foreground">Nenhum pagamento registrado no período</p>
                             </div>
