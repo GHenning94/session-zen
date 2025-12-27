@@ -12,74 +12,94 @@ enabled = true
 site_url = "https://ykwszazxigjivjkagjmf.lovable.app"
 additional_redirect_urls = ["http://localhost:5173/**", "https://ykwszazxigjivjkagjmf.lovable.app/**"]
 jwt_expiry = 3600
-# enable_confirmations = true  <-- Linha removida
 
 [db]
 port = 54322
 
 [functions.create-checkout]
 verify_jwt = true
+
 [functions.check-subscription]
 verify_jwt = true
+
 [functions.get-payment-methods]
 verify_jwt = true
+
 [functions.create-setup-intent]
 verify_jwt = true
+
 [functions.update-default-payment-method]
 verify_jwt = true
+
 [functions.delete-payment-method]
 verify_jwt = true
+
 [functions.test-upgrade]
 verify_jwt = true
+
 [functions.stripe-webhook]
 verify_jwt = false
+
 [functions.generate-registration-token]
 verify_jwt = true
+
 [functions.register-client-via-token]
 verify_jwt = false
+
 [functions.validate-registration-token]
 verify_jwt = false
 
 [functions.2fa-setup-email]
 verify_jwt = true
+
 [functions.2fa-setup-authenticator]
 verify_jwt = true
+
 [functions.2fa-generate-backup-codes]
 verify_jwt = true
+
 [functions.2fa-send-email-code]
-verify_jwt = true 
+verify_jwt = true
+
 [functions.2fa-verify-code]
-verify_jwt = true 
+verify_jwt = true
+
 [functions.2fa-request-reset]
 verify_jwt = false
 
 [functions.get-subscription-invoices]
 verify_jwt = true
+
 [functions.get-subscription-details]
 verify_jwt = true
+
 [functions.check-email-exists]
 verify_jwt = false
+
 [functions.request-password-reset]
 verify_jwt = false
 
 [functions.request-email-confirmation]
 verify_jwt = false
 
-# --- CORREÇÃO FINAL APLICADA AQUI ---
 [functions.confirm-email-strict]
 verify_jwt = false
 
 [functions.resend-confirmation-email]
 verify_jwt = false
+
 [functions.send-security-notification]
 verify_jwt = false
+
 [functions.delete-user-account]
 verify_jwt = true
 
 [functions.request-email-change]
 verify_jwt = true
+
 [functions.resend-email-change]
 verify_jwt = false
+
 [functions.confirm-email-change]
 verify_jwt = false
 
@@ -87,7 +107,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.migrate-to-encrypted]
-verify_jwt = true
+verify_jwt = false
 
 [functions.admin-login]
 verify_jwt = false
