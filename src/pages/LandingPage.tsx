@@ -143,8 +143,9 @@ const LandingPage = () => {
   const animationStateRef = useRef({
     wordIndex: 0,
     charIndex: words[0].length,
-    isDeleting: false,
-    timeoutId: null as ReturnType<typeof setTimeout> | null
+    isDeleting: true, // Iniciar deletando para que a animação comece corretamente
+    timeoutId: null as ReturnType<typeof setTimeout> | null,
+    hasStarted: false
   });
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
@@ -294,16 +295,33 @@ const LandingPage = () => {
     let isMounted = true;
     const state = animationStateRef.current;
     
+    // Prevenir múltiplas inicializações (StrictMode)
+    if (state.hasStarted) return;
+    state.hasStarted = true;
+    
     const tick = () => {
       if (!isMounted) return;
       
       const currentWord = words[state.wordIndex];
       
-      if (!state.isDeleting) {
+      if (state.isDeleting) {
+        // Deletando
+        if (state.charIndex > 0) {
+          state.charIndex--;
+          if (isMounted) setDisplayText(currentWord.substring(0, state.charIndex));
+          state.timeoutId = setTimeout(tick, 75);
+        } else {
+          // Próxima palavra
+          state.isDeleting = false;
+          state.wordIndex = (state.wordIndex + 1) % words.length;
+          state.charIndex = 0;
+          state.timeoutId = setTimeout(tick, 300);
+        }
+      } else {
         // Digitando
         if (state.charIndex < currentWord.length) {
           state.charIndex++;
-          setDisplayText(currentWord.substring(0, state.charIndex));
+          if (isMounted) setDisplayText(currentWord.substring(0, state.charIndex));
           state.timeoutId = setTimeout(tick, 150);
         } else {
           // Palavra completa, aguardar antes de deletar
@@ -313,28 +331,14 @@ const LandingPage = () => {
             tick();
           }, 2000);
         }
-      } else {
-        // Deletando
-        if (state.charIndex > 0) {
-          state.charIndex--;
-          setDisplayText(currentWord.substring(0, state.charIndex));
-          state.timeoutId = setTimeout(tick, 75);
-        } else {
-          // Próxima palavra
-          state.isDeleting = false;
-          state.wordIndex = (state.wordIndex + 1) % words.length;
-          state.charIndex = 0;
-          state.timeoutId = setTimeout(tick, 300);
-        }
       }
     };
     
     // Iniciar após 2 segundos (palavra já está completa na tela)
-    const initialTimeout = setTimeout(tick, 2000);
+    state.timeoutId = setTimeout(tick, 2000);
     
     return () => {
       isMounted = false;
-      clearTimeout(initialTimeout);
       if (state.timeoutId) {
         clearTimeout(state.timeoutId);
       }

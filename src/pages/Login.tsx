@@ -176,8 +176,18 @@ const Login = () => {
         } else if (signInError.message.includes('Email not confirmed')) {
           errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
         } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-          // Mensagem genérica para evitar enumeration attacks e race conditions
-          errorMessage = 'E-mail ou senha incorretos'
+          // Verificar se o email existe para dar mensagem mais específica
+          const { data: emailCheck } = await supabase.functions.invoke('check-email-exists', {
+            body: { email: formData.email }
+          })
+          
+          if (!isMountedRef.current) return
+          
+          if (emailCheck?.exists === false) {
+            errorMessage = 'Esta conta não existe. Verifique o e-mail ou crie uma nova conta.'
+          } else {
+            errorMessage = 'Senha incorreta. Tente novamente ou redefina sua senha.'
+          }
         } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
           errorMessage = 'Erro de conexão. Verifique sua internet.'
         }
