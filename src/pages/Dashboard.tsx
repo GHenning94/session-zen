@@ -1429,176 +1429,171 @@ const Dashboard = () => {
                 </div>
 
                 <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
-                  <Card>
+                  <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-primary" />
-                          <CardTitle>Receita Financeira</CardTitle>
-                          <CardDescription className="hidden sm:block sm:ml-2">
-                            | Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
-                          </CardDescription>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="w-5 h-5 text-primary" />
+                            <CardTitle>Receita Financeira</CardTitle>
+                            <CardDescription className="hidden sm:block sm:ml-2">
+                              | Acompanhe sua evolução financeira
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-1">
+                            {(['1', '3', '6', '12'] as const).map((period) => (
+                              <button
+                                key={period}
+                                onClick={() => handlePeriodChange(period)}
+                                className={cn(
+                                  "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
+                                  chartPeriod === period
+                                    ? "bg-primary text-primary-foreground shadow-sm"
+                                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                              >
+                                {period === '12' ? '1A' : `${period}M`}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <CardDescription className="sm:hidden">
-                          Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
+                          Acompanhe sua evolução financeira
                         </CardDescription>
-                        <div className="flex gap-1 sm:justify-end">
-                          {(['1', '3', '6', '12'] as const).map((period) => (
-                            <button
-                              key={period}
-                              onClick={() => handlePeriodChange(period)}
-                              className={cn(
-                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
-                                chartPeriod === period
-                                  ? "bg-primary text-primary-foreground shadow-sm"
-                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              )}
-                            >
-                              {period === '12' ? '1A' : `${period}M`}
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                       <div className="h-64">
-                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart 
-                               data={filteredMonthlyChart}
-                              margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                            >
-                             <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                             <XAxis 
-                               dataKey="mes" 
-                               tick={{ fontSize: 12 }} 
-                               tickLine={false}
-                               axisLine={false}
-                             />
-                             <YAxis 
-                               tick={{ fontSize: 12 }}
-                               tickLine={false}
-                               axisLine={false}
-                               tickFormatter={(value) => formatCurrencyBR(value)}
-                              />
-                               <RechartsTooltip 
-                                 formatter={(value: any, name: string) => {
-                                  if (name === 'receita') return [formatCurrencyBR(value), 'Receita']
-                                  if (name === 'aReceber') return [formatCurrencyBR(value), 'A Receber']
-                                  return [formatCurrencyBR(value), name]
-                                }}
-                                labelFormatter={(label) => {
-                                  const month = monthlyChart.find(item => item.mes === label);
-                                  return month ? month.fullMonth : label;
-                                }}
-                                contentStyle={{
-                                  backgroundColor: 'hsl(var(--background))',
-                                  border: '1px solid hsl(var(--border))',
-                                  borderRadius: '6px'
-                                }}
-                              />
-                              <Bar 
-                                dataKey="receita" 
-                                fill="hsl(var(--primary))" 
-                                radius={[4, 4, 0, 0]}
-                                className="hover:opacity-80 transition-opacity"
-                              />
-                              <Bar 
-                                dataKey="aReceber" 
-                                fill="hsl(var(--destructive))" 
-                                radius={[4, 4, 0, 0]}
-                                className="hover:opacity-80 transition-opacity"
-                              />
-                           </BarChart>
-                         </ResponsiveContainer>
-                       </div>
-                      
-                        {/* Estatísticas do período */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-6 border-t">
-                           <div className="text-center">
-                             <p className="text-2xl font-bold text-primary">
-                               {(() => {
-                                 const totalMonths = monthlyChart.length;
-                                 let startIndex = 0;
-                                 
-                                 switch(chartPeriod) {
-                                   case '1':
-                                     startIndex = totalMonths - 1;
-                                     break;
-                                   case '3':
-                                     startIndex = Math.max(0, totalMonths - 3);
-                                     break;
-                                   case '6':
-                                     startIndex = Math.max(0, totalMonths - 6);
-                                     break;
-                                   case '12':
-                                   default:
-                                     startIndex = 0;
-                                     break;
-                                 }
-                                 
-                                 const filteredData = monthlyChart.slice(startIndex);
-                                 return formatCurrencyBR(filteredData.reduce((sum, item) => sum + item.receita, 0));
-                               })()}
-                             </p>
-                             <p className="text-sm text-muted-foreground">Total Recebido</p>
-                           </div>
-                           <div className="text-center">
-                             <p className="text-2xl font-bold text-destructive">
-                               {(() => {
-                                 const totalMonths = monthlyChart.length;
-                                 let startIndex = 0;
-                                 
-                                 switch(chartPeriod) {
-                                   case '1':
-                                     startIndex = totalMonths - 1;
-                                     break;
-                                   case '3':
-                                     startIndex = Math.max(0, totalMonths - 3);
-                                     break;
-                                   case '6':
-                                     startIndex = Math.max(0, totalMonths - 6);
-                                     break;
-                                   case '12':
-                                   default:
-                                     startIndex = 0;
-                                     break;
-                                 }
-                                 
-                                 const filteredData = monthlyChart.slice(startIndex);
-                                 return formatCurrencyBR(filteredData.reduce((sum, item) => sum + (item.aReceber || 0), 0));
-                               })()}
-                             </p>
-                             <p className="text-sm text-muted-foreground">A Receber</p>
-                           </div>
-                           <div className="text-center">
-                             <p className="text-2xl font-bold text-success">
-                               {(() => {
-                                 const totalMonths = monthlyChart.length;
-                                 let startIndex = 0;
-                                 
-                                 switch(chartPeriod) {
-                                   case '1':
-                                     startIndex = totalMonths - 1;
-                                     break;
-                                   case '3':
-                                     startIndex = Math.max(0, totalMonths - 3);
-                                     break;
-                                   case '6':
-                                     startIndex = Math.max(0, totalMonths - 6);
-                                     break;
-                                   case '12':
-                                   default:
-                                     startIndex = 0;
-                                     break;
-                                 }
-                                 
-                                 const filteredData = monthlyChart.slice(startIndex);
-                                 return formatCurrencyBR(filteredData.length > 0 ? (filteredData.reduce((sum, item) => sum + item.receita, 0) / filteredData.length) : 0);
-                               })()}
-                             </p>
-                             <p className="text-sm text-muted-foreground">Média Mensal</p>
-                           </div>
+                    <CardContent className="pt-0">
+                      {/* Métricas resumidas */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
+                          <p className="text-xs text-muted-foreground mb-1">Total Recebido</p>
+                          <p className="text-lg font-bold text-primary">
+                            {formatCurrencyBR(filteredMonthlyChart.reduce((sum, item) => sum + item.receita, 0))}
+                          </p>
                         </div>
+                        <div className="bg-gradient-to-br from-destructive/10 to-destructive/5 rounded-xl p-3 border border-destructive/20">
+                          <p className="text-xs text-muted-foreground mb-1">A Receber</p>
+                          <p className="text-lg font-bold text-destructive">
+                            {formatCurrencyBR(filteredMonthlyChart.reduce((sum, item) => sum + (item.aReceber || 0), 0))}
+                          </p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                          <p className="text-xs text-muted-foreground mb-1">Média Mensal</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {formatCurrencyBR(filteredMonthlyChart.length > 0 ? (filteredMonthlyChart.reduce((sum, item) => sum + item.receita, 0) / filteredMonthlyChart.length) : 0)}
+                          </p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                          <p className="text-xs text-muted-foreground mb-1">Meses</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {filteredMonthlyChart.length}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Gráfico de Barras */}
+                      <div className="h-72 -mx-2">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <BarChart 
+                            data={filteredMonthlyChart}
+                            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                          >
+                            <defs>
+                              <linearGradient id="receitaBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1}/>
+                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.6}/>
+                              </linearGradient>
+                              <linearGradient id="aReceberBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(var(--destructive))" stopOpacity={1}/>
+                                <stop offset="100%" stopColor="hsl(var(--destructive))" stopOpacity={0.6}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid 
+                              strokeDasharray="3 3" 
+                              vertical={false}
+                              stroke="hsl(var(--border))"
+                              strokeOpacity={0.5}
+                            />
+                            <XAxis 
+                              dataKey="mes" 
+                              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                              tickLine={false}
+                              axisLine={false}
+                              dy={8}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(value) => `R$${(value/1).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+                              width={60}
+                            />
+                            <RechartsTooltip 
+                              cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[180px]">
+                                      <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
+                                      <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground">Recebido</span>
+                                          <span className="text-sm font-bold text-primary">{formatCurrencyBR(data.receita)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground">A Receber</span>
+                                          <span className="text-sm font-medium text-destructive">{formatCurrencyBR(data.aReceber || 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
+                                          <span className="text-xs text-muted-foreground">Total</span>
+                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR((data.receita || 0) + (data.aReceber || 0))}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            <Bar 
+                              dataKey="receita" 
+                              fill="url(#receitaBarGradient)"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={60}
+                            />
+                            <Bar 
+                              dataKey="aReceber" 
+                              fill="url(#aReceberBarGradient)"
+                              radius={[4, 4, 0, 0]}
+                              maxBarSize={60}
+                            />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </div>
+                      
+                      {/* Variação do período */}
+                      {filteredMonthlyChart.length >= 2 && (() => {
+                        const first = filteredMonthlyChart.find(i => i.receita > 0)?.receita || 0;
+                        const last = filteredMonthlyChart[filteredMonthlyChart.length - 1]?.receita || 0;
+                        const variation = first > 0 ? ((last - first) / first) * 100 : 0;
+                        const isPositive = variation >= 0;
+                        
+                        return (
+                          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-center gap-3">
+                            <span className="text-sm text-muted-foreground">Variação no período:</span>
+                            <Badge 
+                              variant={isPositive ? "default" : "destructive"}
+                              className={cn(
+                                "font-semibold",
+                                isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
+                              )}
+                            >
+                              {isPositive ? '+' : ''}{variation.toFixed(1)}%
+                            </Badge>
+                          </div>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </div>
@@ -1616,22 +1611,20 @@ const Dashboard = () => {
                               | Evolução do valor médio por sessão
                             </CardDescription>
                           </div>
-                          <div className="flex gap-1.5 bg-muted/50 p-1 rounded-lg">
+                          <div className="flex gap-1">
                             {(['1', '3', '6', '12'] as const).map((period) => (
-                              <Button 
+                              <button
                                 key={period}
-                                variant={ticketPeriod === period ? 'default' : 'ghost'} 
-                                size="sm"
                                 onClick={() => handleTicketPeriodChange(period)}
                                 className={cn(
-                                  "text-xs h-7 px-2.5 rounded-md transition-all",
-                                  ticketPeriod === period 
-                                    ? "bg-success text-success-foreground shadow-sm" 
-                                    : "hover:bg-background/80"
+                                  "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
+                                  ticketPeriod === period
+                                    ? "bg-success text-success-foreground shadow-sm"
+                                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
                               >
-                                {period === '12' ? '1 ano' : `${period}m`}
-                              </Button>
+                                {period === '12' ? '1A' : `${period}M`}
+                              </button>
                             ))}
                           </div>
                         </div>
