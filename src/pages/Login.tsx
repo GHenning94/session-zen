@@ -135,18 +135,14 @@ const Login = () => {
     let shouldShow2FAModal = false
 
     try {
-      // ✅ VERIFICAR SE É EMAIL DO ADMIN ANTES DE TENTAR LOGIN
+      // ✅ VERIFICAR SE É EMAIL DO ADMIN - NÃO PERMITIR LOGIN NA PLATAFORMA PÚBLICA
       const { data: adminCheckData } = await supabase.functions.invoke('check-admin-email', {
         body: { email: formData.email }
       })
 
       if (adminCheckData?.isAdmin) {
-        toast.error('Credenciais de administrador devem ser usadas em /admin/login', {
-          description: 'Você será redirecionado para a área administrativa.'
-        })
-        setTimeout(() => {
-          navigate('/admin/login')
-        }, 2000)
+        // Não revelar que é email de admin - mostrar mensagem genérica
+        toast.error('Esta conta não existe.')
         return
       }
 
