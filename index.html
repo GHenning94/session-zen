@@ -31,7 +31,7 @@
     <!-- Limpeza agressiva de caches para garantir versão mais recente -->
     <script>
       (function() {
-        var APP_VERSION = 'v2.0.1';
+        var APP_VERSION = 'v2.0.3';
         var VERSION_KEY = 'therapypro_app_version';
         
         try {
@@ -54,13 +54,15 @@
             });
           }
           
-          // Se versão mudou, limpar tudo e recarregar
+          // Se versão mudou, limpar TUDO e recarregar
           if (needsCleanup) {
-            console.log('[TherapyPro] Nova versão detectada, limpando caches...');
-            localStorage.setItem(VERSION_KEY, APP_VERSION);
+            console.log('[TherapyPro] Nova versão detectada, limpando TODOS os caches...');
             
-            // Limpar IndexedDB se existir
-            if (window.indexedDB) {
+            // Limpar sessionStorage
+            try { sessionStorage.clear(); } catch(e) {}
+            
+            // Limpar IndexedDB (exceto supabase)
+            if (window.indexedDB && indexedDB.databases) {
               indexedDB.databases().then(function(dbs) {
                 dbs.forEach(function(db) {
                   if (db.name && db.name.indexOf('supabase') === -1) {
@@ -69,6 +71,9 @@
                 });
               }).catch(function() {});
             }
+            
+            // Salvar nova versão ANTES de qualquer reload
+            localStorage.setItem(VERSION_KEY, APP_VERSION);
             
             // Force reload se não for primeira vez
             if (storedVersion) {
