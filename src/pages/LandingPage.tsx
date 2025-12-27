@@ -137,11 +137,15 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
-  // Inicializar com palavra completa para garantir que nunca fique vazio
   const [displayText, setDisplayText] = useState(words[0]);
-  const wordIndexRef = useRef(0);
-  const phaseRef = useRef<'typing' | 'waiting' | 'deleting'>('waiting');
-  const isAnimationInitializedRef = useRef(false);
+  
+  // Usar um único ref para todo o estado mutável da animação
+  const animationStateRef = useRef({
+    wordIndex: 0,
+    charIndex: words[0].length,
+    isDeleting: false,
+    timeoutId: null as ReturnType<typeof setTimeout> | null
+  });
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -287,55 +291,53 @@ const LandingPage = () => {
   }, [resetToDefaultColors]);
 
   useEffect(() => {
-    // Prevenir execução dupla em StrictMode
-    if (isAnimationInitializedRef.current) return;
-    isAnimationInitializedRef.current = true;
+    let isMounted = true;
+    const state = animationStateRef.current;
     
-    let timeoutId: ReturnType<typeof setTimeout>;
-    let isActive = true;
-    
-    const runAnimation = () => {
-      if (!isActive) return;
+    const tick = () => {
+      if (!isMounted) return;
       
-      const currentWordIndex = wordIndexRef.current;
-      const word = words[currentWordIndex];
-      const phase = phaseRef.current;
-
-      if (phase === 'typing') {
-        setDisplayText(prev => {
-          const targetWord = words[wordIndexRef.current];
-          if (prev.length < targetWord.length) {
-            return targetWord.slice(0, prev.length + 1);
-          } else {
-            phaseRef.current = 'waiting';
-            return prev;
-          }
-        });
-        timeoutId = setTimeout(runAnimation, 150);
-      } else if (phase === 'waiting') {
-        phaseRef.current = 'deleting';
-        timeoutId = setTimeout(runAnimation, 2000);
-      } else if (phase === 'deleting') {
-        setDisplayText(prev => {
-          if (prev.length > 0) {
-            return prev.slice(0, -1);
-          } else {
-            wordIndexRef.current = (wordIndexRef.current + 1) % words.length;
-            phaseRef.current = 'typing';
-            // Iniciar próxima palavra com primeiro caractere
-            return words[wordIndexRef.current].charAt(0);
-          }
-        });
-        timeoutId = setTimeout(runAnimation, 75);
+      const currentWord = words[state.wordIndex];
+      
+      if (!state.isDeleting) {
+        // Digitando
+        if (state.charIndex < currentWord.length) {
+          state.charIndex++;
+          setDisplayText(currentWord.substring(0, state.charIndex));
+          state.timeoutId = setTimeout(tick, 150);
+        } else {
+          // Palavra completa, aguardar antes de deletar
+          state.timeoutId = setTimeout(() => {
+            if (!isMounted) return;
+            state.isDeleting = true;
+            tick();
+          }, 2000);
+        }
+      } else {
+        // Deletando
+        if (state.charIndex > 0) {
+          state.charIndex--;
+          setDisplayText(currentWord.substring(0, state.charIndex));
+          state.timeoutId = setTimeout(tick, 75);
+        } else {
+          // Próxima palavra
+          state.isDeleting = false;
+          state.wordIndex = (state.wordIndex + 1) % words.length;
+          state.charIndex = 0;
+          state.timeoutId = setTimeout(tick, 300);
+        }
       }
     };
-
-    // Começar após 2 segundos (palavra já está completa na tela)
-    timeoutId = setTimeout(runAnimation, 2000);
-
+    
+    // Iniciar após 2 segundos (palavra já está completa na tela)
+    const initialTimeout = setTimeout(tick, 2000);
+    
     return () => {
-      isActive = false;
-      clearTimeout(timeoutId);
+      isMounted = false;
+      clearTimeout(initialTimeout);
+      if (state.timeoutId) {
+        clearTimeout(state.timeoutId);
+      }
     };
   }, []);
   
