@@ -2085,12 +2085,16 @@ const Dashboard = () => {
                                     // Mas manter índices originais para sincronizar hover
                                     const reversedData = [...receitaPorCanal].reverse();
                                     const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
+                                    // Contar quantos canais têm valor > 0
+                                    const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
+                                    // Se só tem 1 canal ativo, permitir 100%. Senão, limitar a 85%
+                                    const maxBarPercentage = activeChannels === 1 ? 100 : 85;
+                                    
                                     return reversedData.map((item, reversedIndex) => {
                                       // Encontrar o índice original (não revertido) para sincronizar hover
                                       const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
-                                      // Limitar cada barra a no máximo 85% do círculo para nunca fechar
-                                      // Usar uma escala mais conservadora
-                                      const normalizedValue = maxValue > 0 ? Math.min((item.valor / maxValue) * 85, 85) : 0;
+                                      // Normalizar baseado no valor máximo e no limite definido
+                                      const normalizedValue = maxValue > 0 ? Math.min((item.valor / maxValue) * maxBarPercentage, maxBarPercentage) : 0;
                                       return {
                                         ...item,
                                         displayValue: normalizedValue,
