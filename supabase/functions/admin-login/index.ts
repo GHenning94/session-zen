@@ -15,7 +15,7 @@ function getCorsHeaders(req: Request) {
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
   }
@@ -151,12 +151,10 @@ Deno.serve(async (req) => {
 
     console.log('[Admin Login] Success for:', email)
 
-    // Set httpOnly cookie for session token (more secure than localStorage)
-    const cookieValue = `admin_session=${sessionToken}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${12 * 60 * 60}`
-
     return new Response(
       JSON.stringify({
         success: true,
+        sessionToken: sessionToken, // Return token to be stored client-side
         userId: adminUserId,
         expiresAt: expiresAt.toISOString(),
       }),
@@ -164,7 +162,6 @@ Deno.serve(async (req) => {
         headers: { 
           ...corsHeaders, 
           'Content-Type': 'application/json',
-          'Set-Cookie': cookieValue,
         } 
       }
     )
