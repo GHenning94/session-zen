@@ -30,6 +30,20 @@ class ErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Error caught by boundary:', error, errorInfo)
+    
+    // Auto-recuperação para erros de DOM causados por extensões
+    const errorMessage = error?.message || '';
+    const errorName = error?.name || '';
+    if (
+      errorMessage.includes('removeChild') ||
+      errorMessage.includes('insertBefore') ||
+      errorMessage.includes('NotFoundError') ||
+      errorName === 'NotFoundError'
+    ) {
+      console.warn('[ErrorBoundary] DOM manipulation error detected - reloading...');
+      window.location.reload();
+      return;
+    }
   }
 
   handleReset = () => {

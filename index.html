@@ -3,21 +3,42 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- DOM Patch: Protege contra erros de extensões do navegador -->
+    <script>
+      (function() {
+        // Patch para Node.prototype.removeChild - previne erros de extensões
+        if (typeof Node === 'function' && Node.prototype) {
+          var originalRemoveChild = Node.prototype.removeChild;
+          Node.prototype.removeChild = function(child) {
+            if (child && child.parentNode !== this) {
+              console.warn('[DOM Patch] removeChild: parent mismatch ignored');
+              return child;
+            }
+            return originalRemoveChild.apply(this, arguments);
+          };
+
+          var originalInsertBefore = Node.prototype.insertBefore;
+          Node.prototype.insertBefore = function(newNode, referenceNode) {
+            if (referenceNode && referenceNode.parentNode !== this) {
+              console.warn('[DOM Patch] insertBefore: reference parent mismatch ignored');
+              return newNode;
+            }
+            return originalInsertBefore.apply(this, arguments);
+          };
+        }
+      })();
+    </script>
     <!-- Limpeza de Service Workers e Caches antigos para consistência entre perfis -->
     <script>
       (function() {
         try {
-          // Desregistrar todos os Service Workers antigos
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
               for (var i = 0; i < registrations.length; i++) {
-                registrations[i].unregister().then(function() {
-                  console.log('[Init] Old SW unregistered');
-                });
+                registrations[i].unregister();
               }
             });
           }
-          // Limpar todos os caches
           if ('caches' in window) {
             caches.keys().then(function(names) {
               for (var i = 0; i < names.length; i++) {
@@ -25,9 +46,7 @@
               }
             });
           }
-        } catch (e) {
-          console.warn('[Init] Cache cleanup error:', e);
-        }
+        } catch (e) {}
       })();
     </script>
     <script>
