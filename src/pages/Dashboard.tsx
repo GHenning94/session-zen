@@ -1499,7 +1499,7 @@ const Dashboard = () => {
                       
                       {/* Gráfico de Barras */}
                       <div className="h-72 -mx-2">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer key={`revenue-chart-${chartPeriod}`} width="100%" height="100%">
                           <BarChart 
                             data={filteredMonthlyChart}
                             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
@@ -1722,9 +1722,8 @@ const Dashboard = () => {
                       
                       {/* Gráfico de Barras com 3 barras: Maior, Ticket Médio, Menor */}
                       <div className="h-72 -mx-2">
-                        <ResponsiveContainer width="100%" height="100%">
+                        <ResponsiveContainer key={`ticket-chart-${ticketPeriod}`} width="100%" height="100%">
                           <BarChart
-                            key={`ticket-bar-${ticketPeriod}-independent`}
                             data={filteredTicketChart}
                             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                             barGap={2}
@@ -2073,50 +2072,45 @@ const Dashboard = () => {
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
-                              <ResponsiveContainer width="100%" height="100%">
-                                <RadialBarChart 
-                                  key={`canal-radial-${canalPeriod}`}
-                                  cx="50%" 
-                                  cy="50%" 
-                                  innerRadius="30%" 
-                                  outerRadius="85%" 
-                                  barSize={18}
-                                  data={(() => {
-                                    // Reverter para que as barras menores fiquem no centro
-                                    const reversedData = [...receitaPorCanal].reverse();
-                                    const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
-                                    // Contar quantos canais têm valor > 0
-                                    const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
-                                    
-                                    return reversedData.map((item, reversedIndex) => {
-                                      const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
-                                      // Calcular porcentagem proporcional ao valor máximo
-                                      // Se só tem 1 canal, permitir 360 graus (100%)
-                                      // Se tem múltiplos canais, a maior barra fica em 85% (306 graus) para não fechar
-                                      let normalizedValue = 0;
-                                      if (maxValue > 0) {
-                                        const proportion = item.valor / maxValue;
-                                        if (activeChannels === 1) {
-                                          // Apenas 1 canal: pode fechar o círculo completo
-                                          normalizedValue = 100;
-                                        } else {
-                                          // Múltiplos canais: máximo 85% para a maior barra
-                                          normalizedValue = proportion * 85;
-                                        }
-                                      }
-                                      return {
-                                        ...item,
-                                        displayValue: normalizedValue,
-                                        fill: item.color,
-                                        name: item.canal,
-                                        originalIndex,
-                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === originalIndex ? 1 : 0.3
-                                      };
-                                    });
-                                  })()}
-                                  startAngle={90}
-                                  endAngle={-270}
-                                >
+                              <ResponsiveContainer key={`canal-chart-${canalPeriod}`} width="100%" height="100%">
+                                {(() => {
+                                  // Contar quantos canais têm valor > 0
+                                  const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
+                                  // Se só tem 1 canal, endAngle fecha o círculo; múltiplos canais deixam abertura
+                                  const dynamicEndAngle = activeChannels === 1 ? -270 : -220;
+                                  
+                                  return (
+                                    <RadialBarChart 
+                                      cx="50%" 
+                                      cy="50%" 
+                                      innerRadius="30%" 
+                                      outerRadius="85%" 
+                                      barSize={18}
+                                      data={(() => {
+                                        // Reverter para que as barras menores fiquem no centro
+                                        const reversedData = [...receitaPorCanal].reverse();
+                                        const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
+                                        
+                                        return reversedData.map((item, reversedIndex) => {
+                                          const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
+                                          // Calcular porcentagem proporcional ao valor máximo (0-100)
+                                          let normalizedValue = 0;
+                                          if (maxValue > 0) {
+                                            normalizedValue = (item.valor / maxValue) * 100;
+                                          }
+                                          return {
+                                            ...item,
+                                            displayValue: normalizedValue,
+                                            fill: item.color,
+                                            name: item.canal,
+                                            originalIndex,
+                                            opacity: hoveredCanalIndex === null || hoveredCanalIndex === originalIndex ? 1 : 0.3
+                                          };
+                                        });
+                                      })()}
+                                      startAngle={90}
+                                      endAngle={dynamicEndAngle}
+                                    >
                                   <RadialBar
                                     background={{ fill: 'hsl(var(--muted))' }}
                                     dataKey="displayValue"
@@ -2161,6 +2155,8 @@ const Dashboard = () => {
                                     }}
                                   />
                                 </RadialBarChart>
+                                  );
+                                })()}
                               </ResponsiveContainer>
                               {/* Centro do gráfico - mostrar quantidade de sessões */}
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
