@@ -1,7 +1,7 @@
 import { useState, useRef } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
-import { supabase } from "@/integrations/supabase/client"
+import { setAdminSession } from "@/utils/adminApi"
 import { Turnstile } from '@marsidev/react-turnstile'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -48,7 +48,6 @@ const AdminLogin = () => {
             'Content-Type': 'application/json',
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4',
           },
-          credentials: 'include', // Important: include cookies
           body: JSON.stringify({
             email,
             password,
@@ -63,10 +62,8 @@ const AdminLogin = () => {
         throw new Error(data?.error || 'Falha no login')
       }
 
-      // Store only non-sensitive data in sessionStorage (cleared when browser closes)
-      // The actual session token is stored in an httpOnly cookie by the edge function
-      sessionStorage.setItem('admin_user_id', data.userId)
-      sessionStorage.setItem('admin_session_expires', data.expiresAt)
+      // Store session data including the token
+      setAdminSession(data.sessionToken, data.userId, data.expiresAt)
 
       toast.success('Login realizado com sucesso!')
       navigate('/admin/dashboard')

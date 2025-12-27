@@ -15,7 +15,7 @@ function getCorsHeaders(req: Request) {
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   }
@@ -48,11 +48,16 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Try to get session token from cookie first, then from body (for backward compatibility)
-    const cookies = parseCookies(req.headers.get('cookie'))
-    let sessionToken = cookies['admin_session']
+    // Get session token from X-Admin-Session header first, then cookie, then body
+    let sessionToken = req.headers.get('X-Admin-Session')
     
-    // Fallback to body for backward compatibility during transition
+    // Fallback to cookie
+    if (!sessionToken) {
+      const cookies = parseCookies(req.headers.get('cookie'))
+      sessionToken = cookies['admin_session']
+    }
+    
+    // Fallback to body for backward compatibility
     if (!sessionToken) {
       try {
         const body = await req.json()

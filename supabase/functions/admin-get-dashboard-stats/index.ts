@@ -15,7 +15,7 @@ function getCorsHeaders(req: Request) {
   
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
-    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
     'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   }
@@ -49,12 +49,17 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get session token from cookie
-    const cookies = parseCookies(req.headers.get('cookie'))
-    const sessionToken = cookies['admin_session']
+    // Get session token from X-Admin-Session header first, then cookie
+    let sessionToken = req.headers.get('X-Admin-Session')
+    
+    // Fallback to cookie
+    if (!sessionToken) {
+      const cookies = parseCookies(req.headers.get('cookie'))
+      sessionToken = cookies['admin_session']
+    }
 
     if (!sessionToken) {
-      console.error('[Admin Dashboard Stats] No session token in cookies')
+      console.error('[Admin Dashboard Stats] No session token')
       return new Response(
         JSON.stringify({ error: 'Sessão não encontrada' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
