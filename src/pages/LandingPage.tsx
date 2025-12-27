@@ -137,6 +137,7 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
   const [displayText, setDisplayText] = useState("atendimentos");
+  const animationRef = useRef<{ timeout: number | null; isRunning: boolean }>({ timeout: null, isRunning: false });
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -281,45 +282,56 @@ const LandingPage = () => {
     return () => { document.body.style.colorScheme = '' };
   }, [resetToDefaultColors]);
 
-  // Typewriter animation - versão definitiva com words interno
+  // Typewriter animation - usando ref para evitar múltiplas instâncias (StrictMode safe)
   useEffect(() => {
+    // Se já está rodando, não iniciar outra vez
+    if (animationRef.current.isRunning) return;
+    animationRef.current.isRunning = true;
+    
     const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
-    let timeout: number;
     let wordIndex = 0;
     let charIndex = words[0].length;
     let isDeleting = true;
     
     const animate = () => {
-      const word = words[wordIndex];
+      // Verificar se ainda deve rodar
+      if (!animationRef.current.isRunning) return;
       
       if (isDeleting) {
-        charIndex--;
-        setDisplayText(word.substring(0, charIndex));
+        charIndex = Math.max(0, charIndex - 1);
+        const newText = words[wordIndex].substring(0, charIndex);
+        setDisplayText(newText);
         
         if (charIndex === 0) {
           isDeleting = false;
           wordIndex = (wordIndex + 1) % words.length;
-          timeout = window.setTimeout(animate, 300);
+          animationRef.current.timeout = window.setTimeout(animate, 300);
         } else {
-          timeout = window.setTimeout(animate, 75);
+          animationRef.current.timeout = window.setTimeout(animate, 75);
         }
       } else {
-        const targetWord = words[wordIndex];
-        charIndex++;
-        setDisplayText(targetWord.substring(0, charIndex));
+        charIndex = Math.min(words[wordIndex].length, charIndex + 1);
+        const newText = words[wordIndex].substring(0, charIndex);
+        setDisplayText(newText);
         
-        if (charIndex === targetWord.length) {
+        if (charIndex === words[wordIndex].length) {
           isDeleting = true;
-          timeout = window.setTimeout(animate, 2000);
+          animationRef.current.timeout = window.setTimeout(animate, 2000);
         } else {
-          timeout = window.setTimeout(animate, 150);
+          animationRef.current.timeout = window.setTimeout(animate, 150);
         }
       }
     };
     
-    timeout = window.setTimeout(animate, 2000);
+    animationRef.current.timeout = window.setTimeout(animate, 2000);
     
-    return () => window.clearTimeout(timeout);
+    return () => {
+      animationRef.current.isRunning = false;
+      if (animationRef.current.timeout) {
+        window.clearTimeout(animationRef.current.timeout);
+        animationRef.current.timeout = null;
+      }
+    };
   }, []);
   
   // --- ANIMAÇÃO HORIZONTAL (Otimizada para Fluidez) ---
