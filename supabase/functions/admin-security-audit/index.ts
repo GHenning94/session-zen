@@ -55,28 +55,69 @@ Deno.serve(async (req) => {
 
     console.log('[Security Audit] Valid admin session for user:', session.user_id)
 
-    // Verificar ENCRYPTION_KEY
+    // Verificar ENCRYPTION_KEY - aceita hex (64 chars) ou base64 (44 chars)
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY')
-    const hasValidKey = encryptionKey && encryptionKey.length === 64
+    
+    // Helper para converter hex para bytes
+    function hexToBytes(hex: string): Uint8Array {
+      const bytes = new Uint8Array(hex.length / 2);
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+      }
+      return bytes;
+    }
+    
+    // Detectar formato e validar
+    let keyBytes: Uint8Array | null = null
+    let keyFormat = 'unknown'
+    
+    if (encryptionKey) {
+      try {
+        // Tentar hex primeiro (64 caracteres = 32 bytes)
+        if (encryptionKey.length === 64 && /^[0-9a-fA-F]+$/.test(encryptionKey)) {
+          keyBytes = hexToBytes(encryptionKey)
+          keyFormat = 'hex'
+        }
+        // Tentar base64 (44 caracteres = 32 bytes)
+        else if (encryptionKey.length === 44 || encryptionKey.length === 43) {
+          keyBytes = Uint8Array.from(atob(encryptionKey), c => c.charCodeAt(0))
+          keyFormat = 'base64'
+        }
+        // Tentar base64 genérico
+        else {
+          try {
+            keyBytes = Uint8Array.from(atob(encryptionKey), c => c.charCodeAt(0))
+            if (keyBytes.length === 32) {
+              keyFormat = 'base64'
+            } else {
+              keyBytes = null
+            }
+          } catch {
+            keyBytes = null
+          }
+        }
+      } catch (e) {
+        console.error('[Security Audit] Error parsing key:', e)
+        keyBytes = null
+      }
+    }
+    
+    const hasValidKey = keyBytes !== null && keyBytes.length === 32
+    console.log('[Security Audit] Key configured:', !!encryptionKey, 'Format:', keyFormat, 'Valid:', hasValidKey, 'Length:', keyBytes?.length || 0)
 
     // Teste de criptografia
     let encryptionWorking = false
     let testError = null
 
-    if (hasValidKey) {
+    if (hasValidKey && keyBytes) {
       try {
         const testData = 'test-data-123'
         const encoder = new TextEncoder()
         const data = encoder.encode(testData)
-        
-        const keyData = new Uint8Array(32)
-        for (let i = 0; i < 32; i++) {
-          keyData[i] = parseInt(encryptionKey!.substr(i * 2, 2), 16)
-        }
 
         const cryptoKey = await crypto.subtle.importKey(
           'raw',
-          keyData,
+          keyBytes,
           { name: 'AES-GCM' },
           false,
           ['encrypt', 'decrypt']
@@ -99,10 +140,13 @@ Deno.serve(async (req) => {
         const decryptedText = decoder.decode(decrypted)
         
         encryptionWorking = decryptedText === testData
-      } catch (error) {
+        console.log('[Security Audit] Encryption test result:', encryptionWorking)
+      } catch (error: any) {
         testError = error.message
         console.error('[Security Audit] Encryption test failed:', error)
       }
+    } else if (encryptionKey) {
+      testError = `Key length mismatch: expected 32 bytes, got ${keyBytes?.length || 'unknown'} (format: ${keyFormat})`
     }
 
     // Buscar estatísticas
@@ -139,29 +183,36 @@ Deno.serve(async (req) => {
       encryption: {
         key_configured: !!encryptionKey,
         key_valid: hasValidKey,
+        key_format: keyFormat,
         algorithm: 'AES-256-GCM',
         test_passed: encryptionWorking,
         test_error: testError,
       },
       sensitive_data: sensitiveFieldsCount,
       audit: auditStats,
-      recommendations: [],
+      recommendations: [] as any[],
     }
 
     // Gerar recomendações
-    if (!hasValidKey) {
+    if (!encryptionKey) {
       report.recommendations.push({
         severity: 'critical',
-        message: 'ENCRYPTION_KEY não configurada ou inválida',
-        action: 'Configure uma chave de 64 caracteres hexadecimais',
+        message: 'ENCRYPTION_KEY não configurada',
+        action: 'Configure uma chave de 64 caracteres hexadecimais ou 44 caracteres base64 (32 bytes)',
+      })
+    } else if (!hasValidKey) {
+      report.recommendations.push({
+        severity: 'critical',
+        message: 'ENCRYPTION_KEY inválida',
+        action: `Formato detectado: ${keyFormat}. A chave deve ter 32 bytes (64 hex ou 44 base64)`,
       })
     }
 
-    if (!encryptionWorking) {
+    if (hasValidKey && !encryptionWorking) {
       report.recommendations.push({
         severity: 'critical',
         message: 'Teste de criptografia falhou',
-        action: 'Verifique a ENCRYPTION_KEY e reinstale se necessário',
+        action: testError || 'Verifique a ENCRYPTION_KEY e reinstale se necessário',
       })
     }
 
