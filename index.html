@@ -28,10 +28,17 @@
         }
       })();
     </script>
-    <!-- Limpeza de Service Workers e Caches antigos para consistência entre perfis -->
+    <!-- Limpeza agressiva de caches para garantir versão mais recente -->
     <script>
       (function() {
+        var APP_VERSION = 'v2.0.1';
+        var VERSION_KEY = 'therapypro_app_version';
+        
         try {
+          var storedVersion = localStorage.getItem(VERSION_KEY);
+          var needsCleanup = storedVersion !== APP_VERSION;
+          
+          // Sempre limpar SW e caches de API
           if ('serviceWorker' in navigator) {
             navigator.serviceWorker.getRegistrations().then(function(registrations) {
               for (var i = 0; i < registrations.length; i++) {
@@ -46,7 +53,31 @@
               }
             });
           }
-        } catch (e) {}
+          
+          // Se versão mudou, limpar tudo e recarregar
+          if (needsCleanup) {
+            console.log('[TherapyPro] Nova versão detectada, limpando caches...');
+            localStorage.setItem(VERSION_KEY, APP_VERSION);
+            
+            // Limpar IndexedDB se existir
+            if (window.indexedDB) {
+              indexedDB.databases().then(function(dbs) {
+                dbs.forEach(function(db) {
+                  if (db.name && db.name.indexOf('supabase') === -1) {
+                    indexedDB.deleteDatabase(db.name);
+                  }
+                });
+              }).catch(function() {});
+            }
+            
+            // Force reload se não for primeira vez
+            if (storedVersion) {
+              window.location.reload(true);
+            }
+          }
+        } catch (e) {
+          console.warn('[TherapyPro] Cache cleanup error:', e);
+        }
       })();
     </script>
     <script>

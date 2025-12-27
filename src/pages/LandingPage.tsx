@@ -138,15 +138,6 @@ const LandingPage = () => {
   const { resetToDefaultColors } = useColorTheme();
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
   const [displayText, setDisplayText] = useState(words[0]);
-  
-  // Usar um único ref para todo o estado mutável da animação
-  const animationStateRef = useRef({
-    wordIndex: 0,
-    charIndex: words[0].length,
-    isDeleting: true, // Iniciar deletando para que a animação comece corretamente
-    timeoutId: null as ReturnType<typeof setTimeout> | null,
-    hasStarted: false
-  });
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -291,56 +282,61 @@ const LandingPage = () => {
     return () => { document.body.style.colorScheme = '' };
   }, [resetToDefaultColors]);
 
+  // Typewriter animation - usando requestAnimationFrame para maior robustez
   useEffect(() => {
-    let isMounted = true;
-    const state = animationStateRef.current;
+    let animationFrameId: number;
+    let wordIndex = 0;
+    let charIndex = words[0].length;
+    let isDeleting = true;
+    let waitingUntil = performance.now() + 2000;
+    let isActive = true;
     
-    // Prevenir múltiplas inicializações (StrictMode)
-    if (state.hasStarted) return;
-    state.hasStarted = true;
+    const TYPING_SPEED = 150;
+    const DELETING_SPEED = 75;
+    const PAUSE_AFTER_WORD = 2000;
+    const PAUSE_BEFORE_TYPING = 300;
     
-    const tick = () => {
-      if (!isMounted) return;
+    const animate = (currentTime: number) => {
+      if (!isActive) return;
       
-      const currentWord = words[state.wordIndex];
+      if (currentTime < waitingUntil) {
+        animationFrameId = requestAnimationFrame(animate);
+        return;
+      }
       
-      if (state.isDeleting) {
-        // Deletando
-        if (state.charIndex > 0) {
-          state.charIndex--;
-          if (isMounted) setDisplayText(currentWord.substring(0, state.charIndex));
-          state.timeoutId = setTimeout(tick, 75);
+      const currentWord = words[wordIndex];
+      
+      if (isDeleting) {
+        if (charIndex > 0) {
+          charIndex--;
+          setDisplayText(currentWord.substring(0, charIndex));
+          waitingUntil = currentTime + DELETING_SPEED;
         } else {
-          // Próxima palavra
-          state.isDeleting = false;
-          state.wordIndex = (state.wordIndex + 1) % words.length;
-          state.charIndex = 0;
-          state.timeoutId = setTimeout(tick, 300);
+          isDeleting = false;
+          wordIndex = (wordIndex + 1) % words.length;
+          waitingUntil = currentTime + PAUSE_BEFORE_TYPING;
         }
       } else {
-        // Digitando
-        if (state.charIndex < currentWord.length) {
-          state.charIndex++;
-          if (isMounted) setDisplayText(currentWord.substring(0, state.charIndex));
-          state.timeoutId = setTimeout(tick, 150);
+        const targetWord = words[wordIndex];
+        if (charIndex < targetWord.length) {
+          charIndex++;
+          setDisplayText(targetWord.substring(0, charIndex));
+          waitingUntil = currentTime + TYPING_SPEED;
         } else {
-          // Palavra completa, aguardar antes de deletar
-          state.timeoutId = setTimeout(() => {
-            if (!isMounted) return;
-            state.isDeleting = true;
-            tick();
-          }, 2000);
+          isDeleting = true;
+          waitingUntil = currentTime + PAUSE_AFTER_WORD;
         }
       }
+      
+      animationFrameId = requestAnimationFrame(animate);
     };
     
-    // Iniciar após 2 segundos (palavra já está completa na tela)
-    state.timeoutId = setTimeout(tick, 2000);
+    animationFrameId = requestAnimationFrame(animate);
     
     return () => {
-      isMounted = false;
-      if (state.timeoutId) {
-        clearTimeout(state.timeoutId);
+      isActive = false;
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
       }
     };
   }, []);
