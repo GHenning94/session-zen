@@ -1503,6 +1503,8 @@ const Dashboard = () => {
                           <BarChart 
                             data={filteredMonthlyChart}
                             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                            barGap={2}
+                            barCategoryGap="15%"
                           >
                             <defs>
                               <linearGradient id="receitaBarGradient" x1="0" y1="0" x2="0" y2="1">
@@ -1544,11 +1546,17 @@ const Dashboard = () => {
                                       <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
                                       <div className="space-y-1.5">
                                         <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">Recebido</span>
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-sm bg-primary" />
+                                            Recebido
+                                          </span>
                                           <span className="text-sm font-bold text-primary">{formatCurrencyBR(data.receita)}</span>
                                         </div>
                                         <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">A Receber</span>
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            <div className="w-2 h-2 rounded-sm bg-destructive" />
+                                            A Receber
+                                          </span>
                                           <span className="text-sm font-medium text-destructive">{formatCurrencyBR(data.aReceber || 0)}</span>
                                         </div>
                                         <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
@@ -1575,7 +1583,7 @@ const Dashboard = () => {
                               dataKey="receita" 
                               fill="url(#receitaBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={chartPeriod === '12' ? 60 : chartPeriod === '6' ? 80 : 100}
+                              maxBarSize={50}
                               animationBegin={0}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -1584,7 +1592,7 @@ const Dashboard = () => {
                               dataKey="aReceber" 
                               fill="url(#aReceberBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={chartPeriod === '12' ? 60 : chartPeriod === '6' ? 80 : 100}
+                              maxBarSize={50}
                               animationBegin={200}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -1594,23 +1602,34 @@ const Dashboard = () => {
                       </div>
                       
                       {/* Legenda interativa + Variação do período */}
-                      <div className="mt-4 pt-4 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-3">
-                        {/* Legenda clicável para média */}
-                        <button
-                          onClick={() => setShowReceitaAverage(!showReceitaAverage)}
-                          className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200",
-                            showReceitaAverage 
-                              ? "bg-primary/10 text-primary border border-primary/30" 
-                              : "bg-muted/50 text-muted-foreground border border-border/50 opacity-60"
-                          )}
-                        >
-                          <div className={cn(
-                            "w-4 h-0.5 border-t-2 border-dashed transition-colors",
-                            showReceitaAverage ? "border-primary" : "border-muted-foreground"
-                          )} />
-                          Média: {formatCurrencyBR(filteredMonthlyChart.length > 0 ? filteredMonthlyChart.reduce((sum, item) => sum + item.receita, 0) / filteredMonthlyChart.length : 0)}
-                        </button>
+                      <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
+                        {/* Legendas das barras */}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
+                            Recebido
+                          </div>
+                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-destructive/10 text-destructive text-xs font-medium">
+                            <div className="w-2.5 h-2.5 rounded-sm bg-destructive" />
+                            A Receber
+                          </div>
+                          {/* Toggle para média */}
+                          <button
+                            onClick={() => setShowReceitaAverage(!showReceitaAverage)}
+                            className={cn(
+                              "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border",
+                              showReceitaAverage 
+                                ? "bg-primary/10 text-primary border-primary/30" 
+                                : "bg-muted/50 text-muted-foreground border-border/50 opacity-60"
+                            )}
+                          >
+                            <div className={cn(
+                              "w-3 h-0.5 border-t-2 border-dashed transition-colors",
+                              showReceitaAverage ? "border-primary" : "border-muted-foreground"
+                            )} />
+                            Média
+                          </button>
+                        </div>
                         
                         {/* Variação do período */}
                         {filteredMonthlyChart.length >= 2 && (() => {
@@ -1708,7 +1727,8 @@ const Dashboard = () => {
                             key={`ticket-bar-${ticketPeriod}-independent`}
                             data={filteredTicketChart}
                             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                            barCategoryGap={ticketPeriod === '12' ? '20%' : ticketPeriod === '6' ? '15%' : '10%'}
+                            barGap={2}
+                            barCategoryGap="15%"
                           >
                             <defs>
                               <linearGradient id="ticketBarGradient" x1="0" y1="0" x2="0" y2="1">
@@ -1802,7 +1822,7 @@ const Dashboard = () => {
                               dataKey="maxPagamento" 
                               fill="url(#maxBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={ticketPeriod === '12' ? 28 : ticketPeriod === '6' ? 36 : 48}
+                              maxBarSize={40}
                               animationBegin={0}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -1811,7 +1831,7 @@ const Dashboard = () => {
                               dataKey="ticketMedio" 
                               fill="url(#ticketBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={ticketPeriod === '12' ? 28 : ticketPeriod === '6' ? 36 : 48}
+                              maxBarSize={40}
                               animationBegin={200}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -1820,7 +1840,7 @@ const Dashboard = () => {
                               dataKey="minPagamento" 
                               fill="url(#minBarGradient)"
                               radius={[4, 4, 0, 0]}
-                              maxBarSize={ticketPeriod === '12' ? 28 : ticketPeriod === '6' ? 36 : 48}
+                              maxBarSize={40}
                               animationBegin={400}
                               animationDuration={800}
                               animationEasing="ease-out"
@@ -2048,7 +2068,7 @@ const Dashboard = () => {
                         </div>
                       )}
                       
-                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:h-[400px] overflow-visible">
+                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:min-h-[450px] overflow-visible">
                         {/* Gráfico RadialBar moderno */}
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
@@ -2057,23 +2077,33 @@ const Dashboard = () => {
                                 <RadialBarChart 
                                   cx="50%" 
                                   cy="50%" 
-                                  innerRadius="25%" 
-                                  outerRadius="90%" 
-                                  barSize={20}
-                                  data={receitaPorCanal.map((item, index) => ({
-                                    ...item,
-                                    fill: item.color,
-                                    name: item.canal
-                                  })).reverse()}
-                                  startAngle={180}
-                                  endAngle={-180}
+                                  innerRadius="30%" 
+                                  outerRadius="85%" 
+                                  barSize={18}
+                                  data={(() => {
+                                    const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0);
+                                    const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
+                                    return receitaPorCanal.map((item, index) => {
+                                      // Limitar cada barra a no máximo 95% do círculo para nunca fechar
+                                      const normalizedValue = maxValue > 0 ? (item.valor / maxValue) * 95 : 0;
+                                      return {
+                                        ...item,
+                                        displayValue: normalizedValue,
+                                        fill: item.color,
+                                        name: item.canal,
+                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === (receitaPorCanal.length - 1 - index) ? 1 : 0.3
+                                      };
+                                    }).reverse();
+                                  })()}
+                                  startAngle={90}
+                                  endAngle={-270}
                                 >
                                   <RadialBar
                                     background={{ fill: 'hsl(var(--muted))' }}
-                                    dataKey="valor"
+                                    dataKey="displayValue"
                                     cornerRadius={10}
-                                    animationBegin={0}
-                                    animationDuration={1000}
+                                    animationBegin={chartsAnimated ? 0 : 9999}
+                                    animationDuration={1200}
                                     animationEasing="ease-out"
                                     onMouseEnter={(data, index) => setHoveredCanalIndex(receitaPorCanal.length - 1 - index)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
@@ -2113,24 +2143,22 @@ const Dashboard = () => {
                                   />
                                 </RadialBarChart>
                               </ResponsiveContainer>
-                              {/* Centro do gráfico com total */}
+                              {/* Centro do gráfico - mostrar quantidade de sessões */}
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="text-center transition-all duration-300">
+                                <div className="text-center transition-all duration-300 w-20 h-20 flex flex-col items-center justify-center">
                                   {hoveredCanalIndex !== null && receitaPorCanal[hoveredCanalIndex] ? (
                                     <>
-                                      <p className="text-xs text-muted-foreground mb-1">{receitaPorCanal[hoveredCanalIndex].canal}</p>
-                                      <p className="text-2xl font-bold transition-all duration-300" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
-                                        {formatCurrencyBR(receitaPorCanal[hoveredCanalIndex].valor)}
+                                      <p className="text-3xl font-bold transition-all duration-300" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
+                                        {receitaPorCanal[hoveredCanalIndex].count || 0}
                                       </p>
-                                      <p className="text-xs text-muted-foreground">{receitaPorCanal[hoveredCanalIndex].count || 0} pgtos</p>
+                                      <p className="text-[10px] text-muted-foreground leading-tight">pagamentos</p>
                                     </>
                                   ) : (
                                     <>
-                                      <p className="text-xs text-muted-foreground mb-1">Total</p>
-                                      <p className="text-2xl font-bold text-foreground">
-                                        {formatCurrencyBR(receitaPorCanal.reduce((sum, item) => sum + item.valor, 0))}
+                                      <p className="text-3xl font-bold text-foreground">
+                                        {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
                                       </p>
-                                      <p className="text-xs text-muted-foreground">{receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)} pgtos</p>
+                                      <p className="text-[10px] text-muted-foreground leading-tight">pagamentos</p>
                                     </>
                                   )}
                                 </div>
@@ -2144,7 +2172,7 @@ const Dashboard = () => {
                           )}
                         </div>
                         
-                        {/* Lista de Canais com animação */}
+                        {/* Lista de Canais com animação e hover sincronizado */}
                         <div className="flex flex-col gap-2 lg:justify-center overflow-visible p-2">
                           {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
                             const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
@@ -2156,15 +2184,12 @@ const Dashboard = () => {
                                 key={canal.canal} 
                                 className={cn(
                                   "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer",
-                                  "opacity-0 animate-fade-in-up",
                                   isHovered 
                                     ? "bg-accent/80 shadow-lg scale-[1.02] border-2" 
                                     : "bg-accent/30 hover:bg-accent/50 border border-border/50",
                                   hoveredCanalIndex !== null && !isHovered && "opacity-50"
                                 )}
                                 style={{
-                                  animationDelay: `${index * 100}ms`,
-                                  animationFillMode: 'forwards',
                                   borderColor: isHovered ? canal.color : undefined
                                 }}
                                 onMouseEnter={() => setHoveredCanalIndex(index)}
