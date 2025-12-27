@@ -137,10 +137,8 @@ const LandingPage = () => {
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
   const [displayText, setDisplayText] = useState("");
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [currentCharIndex, setCurrentCharIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [waitingToDelete, setWaitingToDelete] = useState(false);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [phase, setPhase] = useState<'typing' | 'waiting' | 'deleting'>('typing');
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
@@ -287,25 +285,32 @@ const LandingPage = () => {
   }, [resetToDefaultColors]);
 
   useEffect(() => {
-    const word = words[currentWordIndex];
-    let timeout: NodeJS.Timeout;
-    if (waitingToDelete) {
-      timeout = setTimeout(() => { setWaitingToDelete(false); setIsDeleting(true); }, 2000);
-    } else if (isDeleting) {
-      if (currentCharIndex > 0) {
-        timeout = setTimeout(() => { setCurrentCharIndex(prev => prev - 1); setDisplayText(word.substring(0, currentCharIndex - 1)); }, 75);
+    const word = words[wordIndex];
+    let timeout: ReturnType<typeof setTimeout>;
+
+    if (phase === 'typing') {
+      if (displayText.length < word.length) {
+        timeout = setTimeout(() => {
+          setDisplayText(word.slice(0, displayText.length + 1));
+        }, 150);
       } else {
-        setIsDeleting(false); setCurrentWordIndex(prev => (prev + 1) % words.length);
+        timeout = setTimeout(() => setPhase('waiting'), 50);
       }
-    } else {
-      if (currentCharIndex < word.length) {
-        timeout = setTimeout(() => { setCurrentCharIndex(prev => prev + 1); setDisplayText(word.substring(0, currentCharIndex + 1)); }, 150);
-      } else if (!waitingToDelete) {
-        setWaitingToDelete(true);
+    } else if (phase === 'waiting') {
+      timeout = setTimeout(() => setPhase('deleting'), 2000);
+    } else if (phase === 'deleting') {
+      if (displayText.length > 0) {
+        timeout = setTimeout(() => {
+          setDisplayText(displayText.slice(0, -1));
+        }, 75);
+      } else {
+        setWordIndex((prev) => (prev + 1) % words.length);
+        setPhase('typing');
       }
     }
+
     return () => clearTimeout(timeout);
-  }, [currentCharIndex, currentWordIndex, isDeleting, waitingToDelete]);
+  }, [displayText, wordIndex, phase, words]);
   
   // --- ANIMAÇÃO HORIZONTAL (Otimizada para Fluidez) ---
   useLayoutEffect(() => {
