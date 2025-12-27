@@ -138,7 +138,6 @@ const LandingPage = () => {
   const { resetToDefaultColors } = useColorTheme();
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
   const [displayText, setDisplayText] = useState(words[0]);
-  const animationStartedRef = useRef(false);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -283,66 +282,50 @@ const LandingPage = () => {
     return () => { document.body.style.colorScheme = '' };
   }, [resetToDefaultColors]);
 
-  // Typewriter animation - usando requestAnimationFrame com proteção contra StrictMode
+  // Typewriter animation - usando setTimeout encadeado para máxima robustez
   useEffect(() => {
-    // Prevenir múltiplas animações em StrictMode
-    if (animationStartedRef.current) return;
-    animationStartedRef.current = true;
-    
-    let animationFrameId: number;
+    let timeoutId: ReturnType<typeof setTimeout>;
     let wordIndex = 0;
     let charIndex = words[0].length;
     let isDeleting = true;
-    let waitingUntil = performance.now() + 2000;
-    let isActive = true;
+    let isMounted = true;
     
-    const TYPING_SPEED = 150;
-    const DELETING_SPEED = 75;
-    const PAUSE_AFTER_WORD = 2000;
-    const PAUSE_BEFORE_TYPING = 300;
-    
-    const animate = (currentTime: number) => {
-      if (!isActive) return;
+    const tick = () => {
+      if (!isMounted) return;
       
-      if (currentTime < waitingUntil) {
-        animationFrameId = requestAnimationFrame(animate);
-        return;
-      }
+      const currentWord = words[wordIndex];
       
       if (isDeleting) {
-        const currentWord = words[wordIndex];
-        if (charIndex > 0) {
-          charIndex--;
-          setDisplayText(currentWord.substring(0, charIndex));
-          waitingUntil = currentTime + DELETING_SPEED;
-        } else {
+        charIndex = Math.max(0, charIndex - 1);
+        setDisplayText(currentWord.substring(0, charIndex));
+        
+        if (charIndex === 0) {
           isDeleting = false;
           wordIndex = (wordIndex + 1) % words.length;
-          charIndex = 0;
-          waitingUntil = currentTime + PAUSE_BEFORE_TYPING;
+          timeoutId = setTimeout(tick, 300);
+        } else {
+          timeoutId = setTimeout(tick, 75);
         }
       } else {
         const targetWord = words[wordIndex];
-        if (charIndex < targetWord.length) {
-          charIndex++;
-          setDisplayText(targetWord.substring(0, charIndex));
-          waitingUntil = currentTime + TYPING_SPEED;
-        } else {
+        charIndex = Math.min(targetWord.length, charIndex + 1);
+        setDisplayText(targetWord.substring(0, charIndex));
+        
+        if (charIndex === targetWord.length) {
           isDeleting = true;
-          waitingUntil = currentTime + PAUSE_AFTER_WORD;
+          timeoutId = setTimeout(tick, 2000);
+        } else {
+          timeoutId = setTimeout(tick, 150);
         }
       }
-      
-      animationFrameId = requestAnimationFrame(animate);
     };
     
-    animationFrameId = requestAnimationFrame(animate);
+    // Pausa inicial antes de começar a apagar
+    timeoutId = setTimeout(tick, 2000);
     
     return () => {
-      isActive = false;
-      if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-      }
+      isMounted = false;
+      clearTimeout(timeoutId);
     };
   }, []);
   
@@ -571,8 +554,12 @@ const LandingPage = () => {
             <section className="min-h-screen flex flex-col justify-center pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
               <AnimateOnScroll className="max-w-3xl mx-auto text-center">
                 <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4">
-                  <span className="block text-center">Organize seus</span>
-                  <span className="block text-center bg-gradient-primary bg-clip-text text-transparent">{displayText}</span>
+                  <span className="block text-center">
+                    Organize seus{" "}
+                    <span className="bg-gradient-primary bg-clip-text text-transparent inline-block min-w-[200px] sm:min-w-[280px]" style={{ willChange: 'contents' }}>
+                      {displayText}
+                    </span>
+                  </span>
                   <span className="block text-center">com facilidade</span>
                 </h1>
                 <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
