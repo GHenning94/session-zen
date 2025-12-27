@@ -136,8 +136,7 @@ const LandingPage = () => {
 
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
-  const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
-  const [displayText, setDisplayText] = useState(words[0]);
+  const [displayText, setDisplayText] = useState("atendimentos");
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -282,51 +281,45 @@ const LandingPage = () => {
     return () => { document.body.style.colorScheme = '' };
   }, [resetToDefaultColors]);
 
-  // Typewriter animation - usando setTimeout encadeado para máxima robustez
+  // Typewriter animation - versão definitiva com words interno
   useEffect(() => {
-    let timeoutId: ReturnType<typeof setTimeout>;
+    const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
+    let timeout: number;
     let wordIndex = 0;
     let charIndex = words[0].length;
     let isDeleting = true;
-    let isMounted = true;
     
-    const tick = () => {
-      if (!isMounted) return;
-      
-      const currentWord = words[wordIndex];
+    const animate = () => {
+      const word = words[wordIndex];
       
       if (isDeleting) {
-        charIndex = Math.max(0, charIndex - 1);
-        setDisplayText(currentWord.substring(0, charIndex));
+        charIndex--;
+        setDisplayText(word.substring(0, charIndex));
         
         if (charIndex === 0) {
           isDeleting = false;
           wordIndex = (wordIndex + 1) % words.length;
-          timeoutId = setTimeout(tick, 300);
+          timeout = window.setTimeout(animate, 300);
         } else {
-          timeoutId = setTimeout(tick, 75);
+          timeout = window.setTimeout(animate, 75);
         }
       } else {
         const targetWord = words[wordIndex];
-        charIndex = Math.min(targetWord.length, charIndex + 1);
+        charIndex++;
         setDisplayText(targetWord.substring(0, charIndex));
         
         if (charIndex === targetWord.length) {
           isDeleting = true;
-          timeoutId = setTimeout(tick, 2000);
+          timeout = window.setTimeout(animate, 2000);
         } else {
-          timeoutId = setTimeout(tick, 150);
+          timeout = window.setTimeout(animate, 150);
         }
       }
     };
     
-    // Pausa inicial antes de começar a apagar
-    timeoutId = setTimeout(tick, 2000);
+    timeout = window.setTimeout(animate, 2000);
     
-    return () => {
-      isMounted = false;
-      clearTimeout(timeoutId);
-    };
+    return () => window.clearTimeout(timeout);
   }, []);
   
   // --- ANIMAÇÃO HORIZONTAL (Otimizada para Fluidez) ---
@@ -553,14 +546,15 @@ const LandingPage = () => {
           <div id="inicio" className="hero-features-wrapper">
             <section className="min-h-screen flex flex-col justify-center pb-24 px-4 sm:px-6 lg:px-8 relative z-10 bg-transparent">
               <AnimateOnScroll className="max-w-3xl mx-auto text-center">
-                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4">
-                  <span className="block text-center">
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground mb-6 leading-relaxed pb-4 text-center">
+                  <span className="whitespace-nowrap">
                     Organize seus{" "}
-                    <span className="bg-gradient-primary bg-clip-text text-transparent inline-block min-w-[200px] sm:min-w-[280px]" style={{ willChange: 'contents' }}>
-                      {displayText}
+                    <span className="typewriter-text bg-gradient-primary bg-clip-text text-transparent">
+                      {displayText}<span className="opacity-0">|</span>
                     </span>
                   </span>
-                  <span className="block text-center">com facilidade</span>
+                  <br />
+                  <span>com facilidade</span>
                 </h1>
                 <p className="text-xl text-muted-foreground mb-10 leading-relaxed">A plataforma completa para psicólogos, psicanalistas e terapeutas gerenciarem agenda, clientes e pagamentos em um só lugar.</p>
                 <div className="flex flex-col gap-2 items-center">
