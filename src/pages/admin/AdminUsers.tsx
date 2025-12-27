@@ -4,9 +4,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
-import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { Users, Search, Loader2, CheckCircle2, XCircle, Calendar } from "lucide-react"
+import { adminApiCall } from "@/utils/adminApi"
 import {
   Table,
   TableBody,
@@ -37,14 +37,10 @@ const AdminUsers = () => {
   const fetchUsers = async () => {
     setIsLoading(true)
     try {
-      const sessionToken = localStorage.getItem('admin_session_token')
-      
-      const { data, error } = await supabase.functions.invoke('admin-get-users', {
-        body: { sessionToken },
-      })
+      const { data, error } = await adminApiCall('admin-get-users')
 
-      if (error || !data.success) {
-        throw new Error(data?.error || 'Erro ao buscar usuários')
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || 'Erro ao buscar usuários')
       }
 
       setUsers(data.users)

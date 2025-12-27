@@ -19,6 +19,7 @@ import {
   UserPlus
 } from "lucide-react"
 import { toast } from "sonner"
+import { adminApiCall } from "@/utils/adminApi"
 
 interface DashboardStats {
   totalUsers: number
@@ -59,23 +60,10 @@ const AdminDashboard = () => {
     try {
       setIsLoading(true)
       
-      const response = await fetch(
-        `https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/admin-get-dashboard-stats`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4',
-          },
-          credentials: 'include', // Include httpOnly cookie
-          body: JSON.stringify({}),
-        }
-      )
+      const { data, error } = await adminApiCall('admin-get-dashboard-stats')
 
-      const data = await response.json()
-
-      if (!response.ok || data.error) {
-        throw new Error(data.error || 'Erro ao carregar dados')
+      if (error || !data) {
+        throw new Error(error?.message || 'Erro ao carregar dados')
       }
 
       setStats({
