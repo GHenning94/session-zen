@@ -1613,109 +1613,178 @@ const Dashboard = () => {
                   </Card>
                 </div>
 
-                {/* Gráfico de Ticket Médio */}
+                {/* Gráfico de Ticket Médio - Moderno */}
                 <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '575ms' }}>
-                  <Card className="shadow-soft">
-                    <CardHeader className="pb-4">
+                  <Card className="shadow-soft overflow-hidden">
+                    <CardHeader className="pb-2">
                       <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-success" />
-                          <CardTitle>Ticket Médio</CardTitle>
-                          <CardDescription className="hidden sm:block sm:ml-2">
-                            | Ticket médio por sessão ao longo do tempo
-                          </CardDescription>
-                        </div>
-                        <CardDescription className="sm:hidden">
-                          Ticket médio por sessão ao longo do tempo
-                        </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
-                          <Button 
-                            variant={ticketPeriod === '1' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleTicketPeriodChange('1')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            1 mês
-                          </Button>
-                          <Button 
-                            variant={ticketPeriod === '3' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleTicketPeriodChange('3')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            3 meses
-                          </Button>
-                          <Button 
-                            variant={ticketPeriod === '6' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleTicketPeriodChange('6')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            6 meses
-                          </Button>
-                          <Button 
-                            variant={ticketPeriod === '12' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleTicketPeriodChange('12')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            1 ano
-                          </Button>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-gradient-success">
+                              <TrendingUp className="w-5 h-5 text-white" />
+                            </div>
+                            <div>
+                              <CardTitle className="text-lg">Ticket Médio</CardTitle>
+                              <CardDescription className="text-xs mt-0.5">
+                                Evolução do valor médio por sessão
+                              </CardDescription>
+                            </div>
+                          </div>
+                          <div className="flex gap-1.5 bg-muted/50 p-1 rounded-lg">
+                            {(['1', '3', '6', '12'] as const).map((period) => (
+                              <Button 
+                                key={period}
+                                variant={ticketPeriod === period ? 'default' : 'ghost'} 
+                                size="sm"
+                                onClick={() => handleTicketPeriodChange(period)}
+                                className={cn(
+                                  "text-xs h-7 px-2.5 rounded-md transition-all",
+                                  ticketPeriod === period 
+                                    ? "bg-success text-success-foreground shadow-sm" 
+                                    : "hover:bg-background/80"
+                                )}
+                              >
+                                {period === '12' ? '1 ano' : `${period}m`}
+                              </Button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="h-64">
+                    <CardContent className="pt-0">
+                      {/* Métricas resumidas */}
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                        <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
+                          <p className="text-xs text-muted-foreground mb-1">Média</p>
+                          <p className="text-lg font-bold text-success">{formatCurrencyBR(ticketMedioAverage)}</p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                          <p className="text-xs text-muted-foreground mb-1">Maior</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.max(...filteredTicketChart.map(i => i.ticketMedio)) : 0)}
+                          </p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                          <p className="text-xs text-muted-foreground mb-1">Menor</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.min(...filteredTicketChart.filter(i => i.ticketMedio > 0).map(i => i.ticketMedio)) || 0 : 0)}
+                          </p>
+                        </div>
+                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                          <p className="text-xs text-muted-foreground mb-1">Sessões</p>
+                          <p className="text-lg font-bold text-foreground">
+                            {filteredTicketChart.reduce((sum, item) => sum + item.sessoes, 0)}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Gráfico com área */}
+                      <div className="h-72 -mx-2">
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart
-                              key={`ticket-${ticketPeriod}-independent`}
-                              data={filteredTicketChart}
-                              margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                            >
-                              <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                             <XAxis 
-                               dataKey="mes" 
-                               tick={{ fontSize: 12 }} 
-                               tickLine={false}
-                               axisLine={false}
-                             />
-                             <YAxis 
-                               tick={{ fontSize: 12 }}
-                               tickLine={false}
-                               axisLine={false}
-                               tickFormatter={(value) => formatCurrencyBR(value)}
-                              />
-                              <RechartsTooltip 
-                                formatter={(value: any) => [formatCurrencyBR(value), 'Ticket Médio']}
-                               labelFormatter={(label) => {
-                                 const month = ticketMedioChart.find(item => item.mes === label);
-                                 return month ? month.fullMonth : label;
-                               }}
-                               contentStyle={{
-                                 backgroundColor: 'hsl(var(--background))',
-                                 border: '1px solid hsl(var(--border))',
-                                 borderRadius: '6px'
-                               }}
-                             />
-                              <Line 
-                                type="monotone" 
-                                dataKey="ticketMedio" 
-                                stroke="hsl(var(--success))"
-                                strokeWidth={3}
-                                dot={{ fill: 'hsl(var(--success))', strokeWidth: 2, r: 4 }}
-                                activeDot={{ r: 6, stroke: 'hsl(var(--success))', strokeWidth: 2 }}
-                              />
-                           </LineChart>
+                          <LineChart
+                            key={`ticket-${ticketPeriod}-independent`}
+                            data={filteredTicketChart}
+                            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                          >
+                            <defs>
+                              <linearGradient id="ticketGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid 
+                              strokeDasharray="3 3" 
+                              vertical={false}
+                              stroke="hsl(var(--border))"
+                              strokeOpacity={0.5}
+                            />
+                            <XAxis 
+                              dataKey="mes" 
+                              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                              tickLine={false}
+                              axisLine={false}
+                              dy={8}
+                            />
+                            <YAxis 
+                              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                              tickLine={false}
+                              axisLine={false}
+                              tickFormatter={(value) => `R$${(value/1).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+                              width={60}
+                            />
+                            <RechartsTooltip 
+                              content={({ active, payload, label }) => {
+                                if (active && payload && payload.length) {
+                                  const data = payload[0].payload;
+                                  return (
+                                    <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[160px]">
+                                      <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
+                                      <div className="space-y-1.5">
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground">Ticket Médio</span>
+                                          <span className="text-sm font-bold text-success">{formatCurrencyBR(data.ticketMedio)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground">Sessões</span>
+                                          <span className="text-sm font-medium text-foreground">{data.sessoes}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
+                                          <span className="text-xs text-muted-foreground">Total</span>
+                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.ticketMedio * data.sessoes)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+                                return null;
+                              }}
+                            />
+                            {/* Área preenchida */}
+                            <defs>
+                              <linearGradient id="ticketAreaGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={0.2}/>
+                                <stop offset="100%" stopColor="hsl(142 76% 36%)" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <Line 
+                              type="monotone" 
+                              dataKey="ticketMedio" 
+                              stroke="hsl(142 76% 36%)"
+                              strokeWidth={2.5}
+                              dot={false}
+                              activeDot={{ 
+                                r: 6, 
+                                fill: 'hsl(142 76% 36%)',
+                                stroke: 'hsl(var(--background))',
+                                strokeWidth: 3
+                              }}
+                            />
+                          </LineChart>
                         </ResponsiveContainer>
                       </div>
                       
-                      {/* Estatística do ticket médio atual */}
-                      <div className="mt-6 pt-6 border-t text-center">
-                        <p className="text-3xl font-bold text-success">
-                          {formatCurrencyBR(ticketMedioAverage)}
-                        </p>
-                        <p className="text-sm text-muted-foreground">Ticket Médio do Período</p>
-                      </div>
+                      {/* Variação do período */}
+                      {filteredTicketChart.length >= 2 && (() => {
+                        const first = filteredTicketChart.find(i => i.ticketMedio > 0)?.ticketMedio || 0;
+                        const last = filteredTicketChart[filteredTicketChart.length - 1]?.ticketMedio || 0;
+                        const variation = first > 0 ? ((last - first) / first) * 100 : 0;
+                        const isPositive = variation >= 0;
+                        
+                        return (
+                          <div className="mt-4 pt-4 border-t border-border/50 flex items-center justify-center gap-3">
+                            <span className="text-sm text-muted-foreground">Variação no período:</span>
+                            <Badge 
+                              variant={isPositive ? "default" : "destructive"}
+                              className={cn(
+                                "font-semibold",
+                                isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
+                              )}
+                            >
+                              {isPositive ? '+' : ''}{variation.toFixed(1)}%
+                            </Badge>
+                          </div>
+                        );
+                      })()}
                     </CardContent>
                   </Card>
                 </div>
