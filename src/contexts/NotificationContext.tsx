@@ -97,7 +97,8 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     setIncomingNotification((current) => {
       if (current) {
         console.log('[NotificationContext] Clearing notification:', current.id)
-        setUnreadCount((prev) => prev + 1)
+        // Don't increment unreadCount here - it's already counted by loadNotifications
+        // and Realtime INSERT handler updates the notifications array directly
       }
       return null
     })
@@ -245,7 +246,11 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
               // Add to queue instead of showing directly
               enqueueNotification(newNotification)
               
+              // Update notifications array and unread count
               setNotifications((prev) => [newNotification, ...prev].slice(0, 50))
+              if (!newNotification.lida) {
+                setUnreadCount((prev) => prev + 1)
+              }
             }
           )
           .on(
