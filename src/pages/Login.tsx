@@ -131,18 +131,18 @@ const Login = () => {
     }
 
     setIsLoading(true)
-    setLoginCaptchaReady(false) // Invalidar token imediatamente
+    setLoginCaptchaReady(false)
     let shouldShow2FAModal = false
 
     try {
-      // ✅ VERIFICAR SE É EMAIL DO ADMIN - NÃO PERMITIR LOGIN NA PLATAFORMA PÚBLICA
+      // Verificar se é email de admin
       const { data: adminCheckData } = await supabase.functions.invoke('check-admin-email', {
         body: { email: formData.email }
       })
 
       if (adminCheckData?.isAdmin) {
-        // Não revelar que é email de admin - mostrar mensagem genérica
-        toast.error('Esta conta não existe.')
+        toast.error('E-mail ou senha incorretos')
+        setIsLoading(false)
         return
       }
 
@@ -160,21 +160,8 @@ const Login = () => {
         } else if (signInError.message.includes('Email not confirmed')) {
           errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
         } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-          // Verificar se conta existe de forma segura
-          try {
-            const { data: existsData, error: existsError } = await supabase.functions.invoke('check-email-exists', {
-              body: { email: formData.email }
-            })
-            
-            if (!existsError && existsData && existsData.exists === false) {
-              errorMessage = 'Esta conta não existe.'
-            } else {
-              errorMessage = 'E-mail ou senha incorretos'
-            }
-          } catch (checkErr) {
-            console.warn('Falha ao verificar existência de e-mail:', checkErr)
-            errorMessage = 'E-mail ou senha incorretos'
-          }
+          // Mensagem genérica para evitar enumeration attacks e race conditions
+          errorMessage = 'E-mail ou senha incorretos'
         } else if (signInError.message.includes('Network request failed') || signInError.message.includes('network')) {
           errorMessage = 'Erro de conexão. Verifique sua internet.'
         }
