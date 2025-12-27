@@ -1452,7 +1452,7 @@ const Dashboard = () => {
                                     : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
                               >
-                                {period === '12' ? '1A' : `${period}M`}
+                                {period === '12' ? '1 ano' : `${period}m`}
                               </button>
                             ))}
                           </div>
@@ -1556,6 +1556,21 @@ const Dashboard = () => {
                                 return null;
                               }}
                             />
+                            {/* Linha de referência para média */}
+                            {filteredMonthlyChart.length > 0 && (
+                              <ReferenceLine 
+                                y={filteredMonthlyChart.reduce((sum, item) => sum + item.receita, 0) / filteredMonthlyChart.length} 
+                                stroke="hsl(var(--primary))" 
+                                strokeDasharray="5 5"
+                                strokeOpacity={0.7}
+                                label={{ 
+                                  value: 'Média', 
+                                  position: 'right',
+                                  fontSize: 10,
+                                  fill: 'hsl(var(--primary))'
+                                }}
+                              />
+                            )}
                             <Bar 
                               dataKey="receita" 
                               fill="url(#receitaBarGradient)"
@@ -1623,7 +1638,7 @@ const Dashboard = () => {
                                     : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
                               >
-                                {period === '12' ? '1A' : `${period}M`}
+                                {period === '12' ? '1 ano' : `${period}m`}
                               </button>
                             ))}
                           </div>
@@ -1796,9 +1811,9 @@ const Dashboard = () => {
                   </Card>
                 </div>
 
-                {/* Ticket Médio por Cliente - Gráfico de Barras Horizontais */}
+                {/* Ticket Médio por Cliente - Modernizado */}
                 <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '650ms' }}>
-                  <Card className="shadow-soft">
+                  <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center gap-2">
@@ -1813,7 +1828,37 @@ const Dashboard = () => {
                         </CardDescription>
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-0">
+                      {/* Métricas resumidas */}
+                      {clientTicketMedio.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
+                            <p className="text-xs text-muted-foreground mb-1">Maior Ticket</p>
+                            <p className="text-lg font-bold text-success">
+                              {formatCurrencyBR(Math.max(...clientTicketMedio.map(c => c.ticketMedio)))}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Menor Ticket</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {formatCurrencyBR(Math.min(...clientTicketMedio.map(c => c.ticketMedio)))}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Média Geral</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {formatCurrencyBR(clientTicketMedio.reduce((sum, c) => sum + c.ticketMedio, 0) / clientTicketMedio.length)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">{clientTermPlural}</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {clientTicketMedio.length}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
                       <div className="h-auto">
                         <div className="space-y-3 pr-2">
                           {clientTicketMedio.length > 0 ? clientTicketMedio.map((client, index) => {
@@ -1821,19 +1866,22 @@ const Dashboard = () => {
                             const widthPercent = maxTicket > 0 ? (client.ticketMedio / maxTicket) * 100 : 0
                             
                             return (
-                              <div key={client.clientId} className="space-y-2">
+                              <div key={client.clientId} className="space-y-2 p-2 rounded-lg hover:bg-muted/30 transition-colors">
                                 <div className="flex justify-between items-center">
-                                  <p className="text-sm font-medium truncate flex-1 mr-2">
-                                    {client.nome}
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-medium text-muted-foreground w-5">#{index + 1}</span>
+                                    <p className="text-sm font-medium truncate flex-1">
+                                      {client.nome}
+                                    </p>
+                                  </div>
+                                  <p className="text-sm font-bold text-success whitespace-nowrap">
+                                    {formatCurrencyBR(client.ticketMedio)}
                                   </p>
-                  <p className="text-sm font-bold text-success whitespace-nowrap">
-                    {formatCurrencyBR(client.ticketMedio)}
-                  </p>
                                 </div>
-                                <div className="relative">
-                                  <div className="w-full bg-muted rounded-full h-2">
+                                <div className="relative ml-7">
+                                  <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
                                     <div 
-                                      className="bg-gradient-success h-2 rounded-full transition-all duration-500" 
+                                      className="bg-gradient-to-r from-success to-success/70 h-2.5 rounded-full transition-all duration-500" 
                                       style={{ width: `${widthPercent}%` }}
                                     />
                                   </div>
@@ -1855,41 +1903,73 @@ const Dashboard = () => {
                   </Card>
                 </div>
 
-                {/* Gráfico de Pizza - Receita por Canal de Pagamento */}
+                {/* Gráfico de Pizza - Receita por Canal de Pagamento - Modernizado */}
                 <div className="col-span-full">
                   <Card className="shadow-soft h-full overflow-visible">
-                    <CardHeader className="pb-2">
-                      <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                          <DollarSign className="w-5 h-5 text-primary" />
-                          <CardTitle>Receita por Canal</CardTitle>
-                          <CardDescription className="hidden sm:block sm:ml-2">
-                            | Distribuição da receita por método de pagamento
-                          </CardDescription>
+                    <CardHeader className="pb-4">
+                      <div className="flex flex-col gap-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-5 h-5 text-primary" />
+                            <CardTitle>Receita por Canal</CardTitle>
+                            <CardDescription className="hidden sm:block sm:ml-2">
+                              | Distribuição da receita por método de pagamento
+                            </CardDescription>
+                          </div>
+                          <div className="flex gap-1">
+                            {(['1', '3', '6', '12'] as const).map((period) => (
+                              <button
+                                key={period}
+                                onClick={() => handleCanalPeriodChange(period)}
+                                className={cn(
+                                  "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
+                                  canalPeriod === period
+                                    ? "bg-primary text-primary-foreground shadow-sm"
+                                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                )}
+                              >
+                                {period === '12' ? '1 ano' : `${period}m`}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                         <CardDescription className="sm:hidden">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        <div className="flex gap-1 sm:justify-end mt-3">
-                          {(['1', '3', '6', '12'] as const).map((period) => (
-                            <button
-                              key={period}
-                              onClick={() => handleCanalPeriodChange(period)}
-                              className={cn(
-                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
-                                canalPeriod === period
-                                  ? "bg-primary text-primary-foreground shadow-sm"
-                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              )}
-                            >
-                              {period === '12' ? '1A' : `${period}M`}
-                            </button>
-                          ))}
-                        </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="h-auto lg:h-[560px] px-4 pt-3 pb-4 overflow-visible">
-                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-full overflow-visible">
+                    <CardContent className="pt-0">
+                      {/* Métricas resumidas */}
+                      {receitaPorCanal.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
+                            <p className="text-xs text-muted-foreground mb-1">Total Receita</p>
+                            <p className="text-lg font-bold text-primary">
+                              {formatCurrencyBR(receitaPorCanal.reduce((sum, item) => sum + item.valor, 0))}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Maior Canal</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {receitaPorCanal.length > 0 ? receitaPorCanal.reduce((max, item) => item.valor > max.valor ? item : max, receitaPorCanal[0]).canal : '-'}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Total Pagamentos</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Canais Ativos</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {receitaPorCanal.length}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:h-[460px] overflow-visible">
                         {/* Gráfico de Pizza - Moderno estilo donut contínuo com sobreposição */}
                         <div className="h-[280px] lg:h-full lg:min-h-[400px] flex items-center justify-center relative">
                           {(() => {
