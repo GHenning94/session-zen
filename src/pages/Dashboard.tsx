@@ -29,7 +29,7 @@ import {
   PenLine,
   FileText
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -498,11 +498,19 @@ const Dashboard = () => {
           fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
         })
         
+        // Calcular min/max dos pagamentos individuais do mês
+        const valoresPagamentos = paidThisMonth.map((p: any) => p.valor || 0).filter((v: number) => v > 0)
+        const minPagamento = valoresPagamentos.length > 0 ? Math.min(...valoresPagamentos) : 0
+        const maxPagamento = valoresPagamentos.length > 0 ? Math.max(...valoresPagamentos) : 0
+        
         ticketMedioData.push({
           mes: monthNames[date.getMonth()],
           ticketMedio: ticketMedio,
           sessoes: totalPaidCount,
-          fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`
+          fullMonth: `${monthNamesLong[date.getMonth()]} ${date.getFullYear()}`,
+          minPagamento,
+          maxPagamento,
+          totalValor: totalPaidValue
         })
       }
       
@@ -1616,19 +1624,15 @@ const Dashboard = () => {
                 {/* Gráfico de Ticket Médio - Moderno */}
                 <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '575ms' }}>
                   <Card className="shadow-soft overflow-hidden">
-                    <CardHeader className="pb-2">
+                    <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-gradient-success">
-                              <TrendingUp className="w-5 h-5 text-white" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-lg">Ticket Médio</CardTitle>
-                              <CardDescription className="text-xs mt-0.5">
-                                Evolução do valor médio por sessão
-                              </CardDescription>
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-success" />
+                            <CardTitle>Ticket Médio</CardTitle>
+                            <CardDescription className="hidden sm:block sm:ml-2">
+                              | Evolução do valor médio por sessão
+                            </CardDescription>
                           </div>
                           <div className="flex gap-1.5 bg-muted/50 p-1 rounded-lg">
                             {(['1', '3', '6', '12'] as const).map((period) => (
@@ -1649,25 +1653,28 @@ const Dashboard = () => {
                             ))}
                           </div>
                         </div>
+                        <CardDescription className="sm:hidden">
+                          Evolução do valor médio por sessão
+                        </CardDescription>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      {/* Métricas resumidas */}
+                      {/* Métricas resumidas com min/max reais */}
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
                         <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
                           <p className="text-xs text-muted-foreground mb-1">Média</p>
                           <p className="text-lg font-bold text-success">{formatCurrencyBR(ticketMedioAverage)}</p>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Maior</p>
+                          <p className="text-xs text-muted-foreground mb-1">Maior Pgto</p>
                           <p className="text-lg font-bold text-foreground">
-                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.max(...filteredTicketChart.map(i => i.ticketMedio)) : 0)}
+                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.max(...filteredTicketChart.map(i => i.maxPagamento || 0)) : 0)}
                           </p>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Menor</p>
+                          <p className="text-xs text-muted-foreground mb-1">Menor Pgto</p>
                           <p className="text-lg font-bold text-foreground">
-                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.min(...filteredTicketChart.filter(i => i.ticketMedio > 0).map(i => i.ticketMedio)) || 0 : 0)}
+                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.min(...filteredTicketChart.filter(i => (i.minPagamento || 0) > 0).map(i => i.minPagamento)) || 0 : 0)}
                           </p>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
@@ -1678,18 +1685,18 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      {/* Gráfico com área */}
+                      {/* Gráfico de Barras - melhor para 1 mês */}
                       <div className="h-72 -mx-2">
                         <ResponsiveContainer width="100%" height="100%">
-                          <LineChart
-                            key={`ticket-${ticketPeriod}-independent`}
+                          <BarChart
+                            key={`ticket-bar-${ticketPeriod}-independent`}
                             data={filteredTicketChart}
                             margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
                           >
                             <defs>
-                              <linearGradient id="ticketGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="hsl(142 76% 36%)" stopOpacity={0}/>
+                              <linearGradient id="ticketBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={1}/>
+                                <stop offset="100%" stopColor="hsl(142 76% 36%)" stopOpacity={0.6}/>
                               </linearGradient>
                             </defs>
                             <CartesianGrid 
@@ -1712,12 +1719,43 @@ const Dashboard = () => {
                               tickFormatter={(value) => `R$${(value/1).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
                               width={60}
                             />
+                            {/* Linha de referência para máximo */}
+                            {filteredTicketChart.length > 0 && (
+                              <ReferenceLine 
+                                y={Math.max(...filteredTicketChart.map(i => i.maxPagamento || 0))} 
+                                stroke="hsl(var(--muted-foreground))" 
+                                strokeDasharray="5 5"
+                                strokeOpacity={0.5}
+                                label={{ 
+                                  value: 'Máx', 
+                                  position: 'right',
+                                  fontSize: 10,
+                                  fill: 'hsl(var(--muted-foreground))'
+                                }}
+                              />
+                            )}
+                            {/* Linha de referência para mínimo */}
+                            {filteredTicketChart.length > 0 && (
+                              <ReferenceLine 
+                                y={Math.min(...filteredTicketChart.filter(i => (i.minPagamento || 0) > 0).map(i => i.minPagamento)) || 0} 
+                                stroke="hsl(var(--muted-foreground))" 
+                                strokeDasharray="5 5"
+                                strokeOpacity={0.5}
+                                label={{ 
+                                  value: 'Mín', 
+                                  position: 'right',
+                                  fontSize: 10,
+                                  fill: 'hsl(var(--muted-foreground))'
+                                }}
+                              />
+                            )}
                             <RechartsTooltip 
+                              cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
                               content={({ active, payload, label }) => {
                                 if (active && payload && payload.length) {
                                   const data = payload[0].payload;
                                   return (
-                                    <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[160px]">
+                                    <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[180px]">
                                       <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
                                       <div className="space-y-1.5">
                                         <div className="flex justify-between items-center">
@@ -1725,12 +1763,20 @@ const Dashboard = () => {
                                           <span className="text-sm font-bold text-success">{formatCurrencyBR(data.ticketMedio)}</span>
                                         </div>
                                         <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground">Maior Pgto</span>
+                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.maxPagamento || 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
+                                          <span className="text-xs text-muted-foreground">Menor Pgto</span>
+                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.minPagamento || 0)}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center">
                                           <span className="text-xs text-muted-foreground">Sessões</span>
                                           <span className="text-sm font-medium text-foreground">{data.sessoes}</span>
                                         </div>
                                         <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
                                           <span className="text-xs text-muted-foreground">Total</span>
-                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.ticketMedio * data.sessoes)}</span>
+                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.totalValor || 0)}</span>
                                         </div>
                                       </div>
                                     </div>
@@ -1739,27 +1785,13 @@ const Dashboard = () => {
                                 return null;
                               }}
                             />
-                            {/* Área preenchida */}
-                            <defs>
-                              <linearGradient id="ticketAreaGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={0.2}/>
-                                <stop offset="100%" stopColor="hsl(142 76% 36%)" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <Line 
-                              type="monotone" 
+                            <Bar 
                               dataKey="ticketMedio" 
-                              stroke="hsl(142 76% 36%)"
-                              strokeWidth={2.5}
-                              dot={false}
-                              activeDot={{ 
-                                r: 6, 
-                                fill: 'hsl(142 76% 36%)',
-                                stroke: 'hsl(var(--background))',
-                                strokeWidth: 3
-                              }}
+                              fill="url(#ticketBarGradient)"
+                              radius={[6, 6, 0, 0]}
+                              maxBarSize={60}
                             />
-                          </LineChart>
+                          </BarChart>
                         </ResponsiveContainer>
                       </div>
                       
