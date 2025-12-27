@@ -52,7 +52,7 @@ export const TwoFactorVerification = ({
   const sendEmailCode = async () => {
     try {
       setLoading(true);
-      const { data, error } = await invokeAuthenticatedFunction('2fa-send-email-code', { email });
+      const { data, error } = await invokeAuthenticatedFunction('twofa-send-email-code', { email });
       if (error) throw error;
       setEmailCodeSent(true);
       setResendCooldown(60); // 60 segundos de cooldown
@@ -77,7 +77,7 @@ export const TwoFactorVerification = ({
   const handleVerify = async () => {
      try {
       setLoading(true);
-      const { data, error } = await invokeAuthenticatedFunction('2fa-verify-code', {
+      const { data, error } = await invokeAuthenticatedFunction('twofa-verify-code', {
         email,
         emailCode: requiresEmail && !useBackupCode ? emailCode : undefined,
         authenticatorCode: requiresAuthenticator && !useBackupCode ? authenticatorCode : undefined,
