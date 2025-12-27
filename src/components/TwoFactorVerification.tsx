@@ -100,7 +100,7 @@ export const TwoFactorVerification = ({
   const handleRequestReset = async () => {
     setLoadingReset(true);
     try {
-      const { data, error } = await invokePublicFunction('2fa-request-reset', {
+      const { data, error } = await invokePublicFunction('twofa-request-reset', {
         email: email,
       });
 
