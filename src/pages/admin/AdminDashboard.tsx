@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { AdminLayout } from "@/components/admin/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useNavigate } from "react-router-dom"
@@ -13,19 +13,91 @@ import {
   Activity,
   DollarSign,
   UserCheck,
-  TrendingUp
+  TrendingUp,
+  Loader2,
+  Calendar,
+  UserPlus
 } from "lucide-react"
+import { toast } from "sonner"
+
+interface DashboardStats {
+  totalUsers: number
+  activeUsers: number
+  totalRevenue: number
+  pendingPayments: number
+  criticalAlerts: number
+  systemHealth: string
+  totalSessions: number
+  totalClients: number
+  newUsers30d: number
+  sessionsCompleted30d: number
+  revenue30d: number
+}
 
 const AdminDashboard = () => {
   const navigate = useNavigate()
-  const [stats] = useState({
-    totalUsers: 127,
-    activeUsers: 98,
-    totalRevenue: 45780.50,
-    pendingPayments: 12,
-    criticalAlerts: 2,
-    systemHealth: "Excelente"
+  const [isLoading, setIsLoading] = useState(true)
+  const [stats, setStats] = useState<DashboardStats>({
+    totalUsers: 0,
+    activeUsers: 0,
+    totalRevenue: 0,
+    pendingPayments: 0,
+    criticalAlerts: 0,
+    systemHealth: "Carregando...",
+    totalSessions: 0,
+    totalClients: 0,
+    newUsers30d: 0,
+    sessionsCompleted30d: 0,
+    revenue30d: 0
   })
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      setIsLoading(true)
+      
+      const response = await fetch(
+        `https://ykwszazxigjivjkagjmf.supabase.co/functions/v1/admin-get-dashboard-stats`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlrd3N6YXp4aWdqaXZqa2Fnam1mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMzODE2MTUsImV4cCI6MjA2ODk1NzYxNX0.utJMKfG-4rJH0jfzG3WLAsCwx5tGE4DgxwJN2Z8XeT4',
+          },
+          credentials: 'include', // Include httpOnly cookie
+          body: JSON.stringify({}),
+        }
+      )
+
+      const data = await response.json()
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Erro ao carregar dados')
+      }
+
+      setStats({
+        totalUsers: data.totalUsers || 0,
+        activeUsers: data.activeUsers || 0,
+        totalRevenue: data.totalRevenue || 0,
+        pendingPayments: data.pendingPayments || 0,
+        criticalAlerts: data.criticalAlerts || 0,
+        systemHealth: data.systemHealth || "Excelente",
+        totalSessions: data.totalSessions || 0,
+        totalClients: data.totalClients || 0,
+        newUsers30d: data.newUsers30d || 0,
+        sessionsCompleted30d: data.sessionsCompleted30d || 0,
+        revenue30d: data.revenue30d || 0
+      })
+    } catch (error: any) {
+      console.error('[AdminDashboard] Error fetching data:', error)
+      toast.error('Erro ao carregar dados do dashboard')
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   const quickActions = [
     { title: "Criptografia e Segurança", icon: Shield, path: "/admin/security", color: "text-red-600" },
@@ -36,10 +108,23 @@ const AdminDashboard = () => {
     { title: "Configurações", icon: Settings, path: "/admin/settings", color: "text-gray-600" },
   ]
 
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />
+            <p className="text-muted-foreground">Carregando dados do dashboard...</p>
+          </div>
+        </div>
+      </AdminLayout>
+    )
+  }
+
   return (
     <AdminLayout>
       <div className="p-6 space-y-6 max-w-7xl mx-auto">
-        {/* Status Cards */}
+        {/* Status Cards - Row 1 */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="border-l-4 border-l-blue-500">
             <CardHeader className="pb-3">
@@ -47,12 +132,43 @@ const AdminDashboard = () => {
                 <Users className="h-4 w-4" />
                 Total de Usuários
               </CardDescription>
-              <CardTitle className="text-3xl">{stats.totalUsers}</CardTitle>
+              <CardTitle className="text-3xl">{stats.totalUsers.toLocaleString('pt-BR')}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                <UserCheck className="inline h-3 w-3 mr-1" />
-                {stats.activeUsers} ativos
+                <UserPlus className="inline h-3 w-3 mr-1" />
+                +{stats.newUsers30d} nos últimos 30 dias
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-cyan-500">
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-2">
+                <UserCheck className="h-4 w-4" />
+                Total de Clientes
+              </CardDescription>
+              <CardTitle className="text-3xl">{stats.totalClients.toLocaleString('pt-BR')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                Pacientes cadastrados
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-l-4 border-l-purple-500">
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Total de Sessões
+              </CardDescription>
+              <CardTitle className="text-3xl">{stats.totalSessions.toLocaleString('pt-BR')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-muted-foreground">
+                <Activity className="inline h-3 w-3 mr-1" />
+                {stats.sessionsCompleted30d} realizadas (30d)
               </p>
             </CardContent>
           </Card>
@@ -61,18 +177,21 @@ const AdminDashboard = () => {
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
                 <DollarSign className="h-4 w-4" />
-                Receita Total
+                Receita (30 dias)
               </CardDescription>
-              <CardTitle className="text-3xl">R$ {stats.totalRevenue.toLocaleString('pt-BR')}</CardTitle>
+              <CardTitle className="text-3xl">R$ {stats.revenue30d.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm text-green-600 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
-                +18% este mês
+                Últimos 30 dias
               </p>
             </CardContent>
           </Card>
+        </div>
 
+        {/* Status Cards - Row 2 */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-l-4 border-l-orange-500">
             <CardHeader className="pb-3">
               <CardDescription className="flex items-center gap-2">
@@ -83,7 +202,7 @@ const AdminDashboard = () => {
             </CardHeader>
             <CardContent>
               <p className="text-sm text-muted-foreground">
-                Requer atenção
+                Aguardando pagamento
               </p>
             </CardContent>
           </Card>
@@ -97,33 +216,28 @@ const AdminDashboard = () => {
               <CardTitle className="text-3xl">{stats.criticalAlerts}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-red-600">
-                Ação imediata necessária
+              <p className={`text-sm ${stats.criticalAlerts > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                {stats.criticalAlerts > 0 ? 'Ação necessária' : 'Nenhum alerta'}
               </p>
             </CardContent>
           </Card>
-        </div>
 
-        {/* System Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5" />
-              Status do Sistema
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-sm text-muted-foreground">Saúde Geral</p>
-                <p className="text-2xl font-bold text-green-600">{stats.systemHealth}</p>
+          {/* System Status */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardDescription className="flex items-center gap-2">
+                <Activity className="h-4 w-4" />
+                Status do Sistema
+              </CardDescription>
+              <CardTitle className="text-2xl text-green-600">{stats.systemHealth}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div className="h-full bg-green-500 w-full"></div>
               </div>
-              <div className="h-20 w-20 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
-                <Activity className="h-10 w-10 text-green-600" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
         <div>
