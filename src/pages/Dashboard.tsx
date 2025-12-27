@@ -1442,39 +1442,21 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Acompanhe sua evolução financeira nos últimos {chartPeriod} meses
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end">
-                          <Button 
-                            variant={chartPeriod === '1' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handlePeriodChange('1')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            1 mês
-                          </Button>
-                          <Button 
-                            variant={chartPeriod === '3' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handlePeriodChange('3')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            3 meses
-                          </Button>
-                          <Button 
-                            variant={chartPeriod === '6' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handlePeriodChange('6')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            6 meses
-                          </Button>
-                          <Button 
-                            variant={chartPeriod === '12' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handlePeriodChange('12')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            1 ano
-                          </Button>
+                        <div className="flex gap-1 sm:justify-end">
+                          {(['1', '3', '6', '12'] as const).map((period) => (
+                            <button
+                              key={period}
+                              onClick={() => handlePeriodChange(period)}
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
+                                chartPeriod === period
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              {period === '12' ? '1A' : `${period}M`}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </CardHeader>
@@ -1895,39 +1877,21 @@ const Dashboard = () => {
                         <CardDescription className="sm:hidden">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        <div className="grid grid-cols-4 gap-2 sm:flex sm:gap-2 sm:justify-end mt-5">
-                          <Button 
-                            variant={canalPeriod === '1' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleCanalPeriodChange('1')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            1 mês
-                          </Button>
-                          <Button 
-                            variant={canalPeriod === '3' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleCanalPeriodChange('3')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            3 meses
-                          </Button>
-                          <Button 
-                            variant={canalPeriod === '6' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleCanalPeriodChange('6')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            6 meses
-                          </Button>
-                          <Button 
-                            variant={canalPeriod === '12' ? 'default' : 'outline'} 
-                            size="sm"
-                            onClick={() => handleCanalPeriodChange('12')}
-                            className="text-xs md:text-sm px-2 md:px-3"
-                          >
-                            1 ano
-                          </Button>
+                        <div className="flex gap-1 sm:justify-end mt-3">
+                          {(['1', '3', '6', '12'] as const).map((period) => (
+                            <button
+                              key={period}
+                              onClick={() => handleCanalPeriodChange(period)}
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
+                                canalPeriod === period
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              {period === '12' ? '1A' : `${period}M`}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </CardHeader>
