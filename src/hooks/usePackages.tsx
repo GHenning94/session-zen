@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatTimeForDatabase } from '@/lib/utils';
+import { useQueryClient } from '@tanstack/react-query';
 
 export interface Package {
   id: string;
@@ -36,6 +37,13 @@ export interface PackageData {
 export const usePackages = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  const invalidatePackageQueries = () => {
+    queryClient.invalidateQueries({ queryKey: ['active-packages-with-sessions'] });
+    queryClient.invalidateQueries({ queryKey: ['packages'] });
+    queryClient.invalidateQueries({ queryKey: ['active-packages'] });
+  };
 
   const createPackage = async (data: PackageData) => {
     setLoading(true);
@@ -79,6 +87,7 @@ export const usePackages = () => {
         description: `Pacote de ${data.total_sessoes} sessões criado com sucesso.`,
       });
 
+      invalidatePackageQueries();
       return packageData;
     } catch (error: any) {
       toast({
@@ -124,6 +133,8 @@ export const usePackages = () => {
         title: 'Sessões criadas',
         description: `${dates.length} sessões do pacote foram agendadas.`,
       });
+
+      invalidatePackageQueries();
     } catch (error: any) {
       toast({
         variant: 'destructive',
@@ -153,6 +164,7 @@ export const usePackages = () => {
         description: 'Pacote atualizado com sucesso.',
       });
 
+      invalidatePackageQueries();
       return packageData;
     } catch (error: any) {
       toast({
@@ -201,6 +213,8 @@ export const usePackages = () => {
         title: 'Pacote excluído',
         description: 'Pacote e todos os dados associados foram excluídos.',
       });
+
+      invalidatePackageQueries();
     } catch (error: any) {
       toast({
         variant: 'destructive',

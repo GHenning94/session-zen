@@ -95,7 +95,10 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
       return packagesWithSessions as PackageWithSessions[]
     },
-    enabled: !!user?.id
+    enabled: !!user?.id,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true
   })
 
   const activePackages = packages.filter(p => p.status === 'ativo')
