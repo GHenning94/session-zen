@@ -166,31 +166,185 @@ const AdminSecurity = () => {
           </CardContent>
         </Card>
 
-        {/* Dados Sensíveis */}
+        {/* Resumo de Dados Sensíveis */}
         <Card>
           <CardHeader>
             <CardTitle>Dados Sensíveis Protegidos</CardTitle>
-            <CardDescription>Campos médicos criptografados no sistema</CardDescription>
+            <CardDescription>Total de registros com campos sensíveis criptografados no sistema</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
               <div className="text-center space-y-2">
                 <p className="text-3xl font-bold text-primary">
-                  {report?.sensitive_data.total_clients}
+                  {report?.sensitive_data.total_sensitive_records || 0}
+                </p>
+                <p className="text-sm text-muted-foreground">Registros Sensíveis</p>
+              </div>
+              <div className="text-center space-y-2">
+                <p className="text-3xl font-bold text-blue-600">
+                  {report?.sensitive_data.total_clients || 0}
                 </p>
                 <p className="text-sm text-muted-foreground">Total de Clientes</p>
               </div>
               <div className="text-center space-y-2">
-                <p className="text-3xl font-bold text-blue-600">
-                  {report?.sensitive_data.with_dados_clinicos}
+                <p className="text-3xl font-bold text-purple-600">
+                  {report?.sensitive_data.tables?.anamneses?.total || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Com Dados Clínicos</p>
+                <p className="text-sm text-muted-foreground">Anamneses</p>
               </div>
               <div className="text-center space-y-2">
-                <p className="text-3xl font-bold text-purple-600">
-                  {report?.sensitive_data.with_historico}
+                <p className="text-3xl font-bold text-green-600">
+                  {report?.sensitive_data.tables?.evolucoes?.total || 0}
                 </p>
-                <p className="text-sm text-muted-foreground">Com Histórico</p>
+                <p className="text-sm text-muted-foreground">Evoluções</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Detalhamento por Tabela */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Detalhamento por Tabela</CardTitle>
+            <CardDescription>Campos sensíveis preenchidos em cada tabela</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Clients */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">clients</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">dados_clinicos:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.clients?.dados_clinicos || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">historico:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.clients?.historico || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">tratamento:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.clients?.tratamento || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Anamneses */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">anamneses</Badge>
+                  <span className="text-xs text-muted-foreground">({report?.sensitive_data.tables?.anamneses?.total || 0} total)</span>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">motivo_consulta:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.anamneses?.motivo_consulta || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">queixa_principal:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.anamneses?.queixa_principal || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">diagnostico_inicial:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.anamneses?.diagnostico_inicial || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sessions */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">sessions</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">anotacoes:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.sessions?.anotacoes || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Session Notes */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">session_notes</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">notes:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.session_notes?.notes || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Evolucoes */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">evolucoes</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">evolucao:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.evolucoes?.evolucao || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Profiles */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">profiles</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">bio:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.bio || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">cpf_cnpj:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.cpf_cnpj || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">dados bancários:</span>
+                    <span className="font-medium">{(report?.sensitive_data.tables?.profiles?.banco || 0) + (report?.sensitive_data.tables?.profiles?.agencia || 0) + (report?.sensitive_data.tables?.profiles?.conta || 0)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Configuracoes */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">configuracoes</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">chave_pix:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.configuracoes?.chave_pix || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">dados_bancarios:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.configuracoes?.dados_bancarios || 0}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Packages & Payments */}
+              <div className="p-4 rounded-lg border bg-card">
+                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                  <Badge variant="outline">packages & payments</Badge>
+                </h4>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">pacotes (obs):</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.packages?.observacoes || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">pagamentos (obs):</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.payments?.observacoes || 0}</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
