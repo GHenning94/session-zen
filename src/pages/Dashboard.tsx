@@ -2072,24 +2072,21 @@ const Dashboard = () => {
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
-                              <ResponsiveContainer width="100%" height="100%">
+                              <ResponsiveContainer key={`canal-container-${canalPeriod}`} width="100%" height="100%">
                                 <RadialBarChart 
-                                  key={`canal-radial-${canalPeriod}`}
                                   cx="50%" 
                                   cy="50%" 
                                   innerRadius="30%" 
                                   outerRadius="85%" 
                                   barSize={18}
                                   data={(() => {
-                                    // Reverter para que as barras menores fiquem no centro
-                                    const reversedData = [...receitaPorCanal].reverse();
+                                    // NÃO reverter - barra maior fica mais próxima do centro
                                     const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
                                     const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
                                     // Limitar a 85% quando há múltiplos canais para a barra não fechar
                                     const maxPercentage = activeChannels === 1 ? 100 : 85;
                                     
-                                    return reversedData.map((item, reversedIndex) => {
-                                      const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
+                                    return receitaPorCanal.map((item, index) => {
                                       // Calcular porcentagem proporcional ao valor máximo (0-maxPercentage)
                                       let normalizedValue = 0;
                                       if (maxValue > 0) {
@@ -2100,13 +2097,13 @@ const Dashboard = () => {
                                         displayValue: normalizedValue,
                                         fill: item.color,
                                         name: item.canal,
-                                        originalIndex,
-                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === originalIndex ? 1 : 0.3
+                                        originalIndex: index,
+                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === index ? 1 : 0.3
                                       };
                                     });
                                   })()}
-                                  startAngle={90}
-                                  endAngle={-270}
+                                  startAngle={0}
+                                  endAngle={360}
                                 >
                                   <PolarAngleAxis
                                     type="number"
@@ -2119,8 +2116,9 @@ const Dashboard = () => {
                                     dataKey="displayValue"
                                     cornerRadius={10}
                                     angleAxisId={0}
+                                    isAnimationActive={true}
                                     animationBegin={0}
-                                    animationDuration={1200}
+                                    animationDuration={800}
                                     animationEasing="ease-out"
                                     onMouseEnter={(data: any) => setHoveredCanalIndex(data.originalIndex)}
                                     onMouseLeave={() => setHoveredCanalIndex(null)}
