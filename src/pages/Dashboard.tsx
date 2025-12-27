@@ -29,7 +29,7 @@ import {
   PenLine,
   FileText
 } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend, PolarAngleAxis } from 'recharts'
 import { Layout } from "@/components/Layout"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
@@ -2072,49 +2072,53 @@ const Dashboard = () => {
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
-                              <ResponsiveContainer key={`canal-chart-${canalPeriod}`} width="100%" height="100%">
-                                {(() => {
-                                  // Contar quantos canais têm valor > 0
-                                  const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
-                                  // Se só tem 1 canal, endAngle fecha o círculo; múltiplos canais deixam abertura
-                                  const dynamicEndAngle = activeChannels === 1 ? -270 : -220;
-                                  
-                                  return (
-                                    <RadialBarChart 
-                                      cx="50%" 
-                                      cy="50%" 
-                                      innerRadius="30%" 
-                                      outerRadius="85%" 
-                                      barSize={18}
-                                      data={(() => {
-                                        // Reverter para que as barras menores fiquem no centro
-                                        const reversedData = [...receitaPorCanal].reverse();
-                                        const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
-                                        
-                                        return reversedData.map((item, reversedIndex) => {
-                                          const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
-                                          // Calcular porcentagem proporcional ao valor máximo (0-100)
-                                          let normalizedValue = 0;
-                                          if (maxValue > 0) {
-                                            normalizedValue = (item.valor / maxValue) * 100;
-                                          }
-                                          return {
-                                            ...item,
-                                            displayValue: normalizedValue,
-                                            fill: item.color,
-                                            name: item.canal,
-                                            originalIndex,
-                                            opacity: hoveredCanalIndex === null || hoveredCanalIndex === originalIndex ? 1 : 0.3
-                                          };
-                                        });
-                                      })()}
-                                      startAngle={90}
-                                      endAngle={dynamicEndAngle}
-                                    >
+                              <ResponsiveContainer width="100%" height="100%">
+                                <RadialBarChart 
+                                  key={`canal-radial-${canalPeriod}`}
+                                  cx="50%" 
+                                  cy="50%" 
+                                  innerRadius="30%" 
+                                  outerRadius="85%" 
+                                  barSize={18}
+                                  data={(() => {
+                                    // Reverter para que as barras menores fiquem no centro
+                                    const reversedData = [...receitaPorCanal].reverse();
+                                    const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
+                                    const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
+                                    // Limitar a 85% quando há múltiplos canais para a barra não fechar
+                                    const maxPercentage = activeChannels === 1 ? 100 : 85;
+                                    
+                                    return reversedData.map((item, reversedIndex) => {
+                                      const originalIndex = receitaPorCanal.length - 1 - reversedIndex;
+                                      // Calcular porcentagem proporcional ao valor máximo (0-maxPercentage)
+                                      let normalizedValue = 0;
+                                      if (maxValue > 0) {
+                                        normalizedValue = (item.valor / maxValue) * maxPercentage;
+                                      }
+                                      return {
+                                        ...item,
+                                        displayValue: normalizedValue,
+                                        fill: item.color,
+                                        name: item.canal,
+                                        originalIndex,
+                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === originalIndex ? 1 : 0.3
+                                      };
+                                    });
+                                  })()}
+                                  startAngle={90}
+                                  endAngle={-270}
+                                >
+                                  <PolarAngleAxis
+                                    type="number"
+                                    domain={[0, 100]}
+                                    angleAxisId={0}
+                                    tick={false}
+                                  />
                                   <RadialBar
                                     background={{ fill: 'hsl(var(--muted))' }}
                                     dataKey="displayValue"
                                     cornerRadius={10}
+                                    angleAxisId={0}
                                     animationBegin={0}
                                     animationDuration={1200}
                                     animationEasing="ease-out"
@@ -2155,8 +2159,6 @@ const Dashboard = () => {
                                     }}
                                   />
                                 </RadialBarChart>
-                                  );
-                                })()}
                               </ResponsiveContainer>
                               {/* Centro do gráfico - mostrar quantidade de sessões */}
                               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
