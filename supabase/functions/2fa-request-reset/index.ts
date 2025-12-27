@@ -1,24 +1,10 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-// Input validation schemas
-const requestResetSchema = z.object({
-  email: z.string().email().max(255).trim().toLowerCase(),
-  resetToken: z.undefined(),
-})
-
-const completeResetSchema = z.object({
-  resetToken: z.string().min(32).max(128).regex(/^[a-fA-F0-9]+$/),
-  email: z.undefined().optional(),
-})
-
-const inputSchema = z.union([requestResetSchema, completeResetSchema])
 
 function generateResetToken(): string {
   const array = new Uint8Array(32);
@@ -36,6 +22,18 @@ function sanitizeIP(rawIp: string): string {
     return clientIp
   }
   return '0.0.0.0'
+}
+
+// Validate email format
+function isValidEmail(email: string): boolean {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  return emailRegex.test(email) && email.length <= 255
+}
+
+// Validate reset token format (hex string, 64 chars)
+function isValidResetToken(token: string): boolean {
+  const tokenRegex = /^[a-fA-F0-9]{64}$/
+  return tokenRegex.test(token)
 }
 
 serve(async (req) => {
@@ -70,26 +68,25 @@ serve(async (req) => {
       );
     }
 
-    // Parse and validate input
-    const rawBody = await req.json();
-    const parseResult = inputSchema.safeParse(rawBody);
+    // Parse input
+    const body = await req.json();
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : null;
+    const resetToken = typeof body.resetToken === 'string' ? body.resetToken.trim() : null;
 
-    if (!parseResult.success) {
-      console.log('[2FA-RESET] Validation failed');
-      return new Response(
-        JSON.stringify({ error: 'Dados de entrada inválidos' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Validate inputs
+    if (email && !resetToken) {
+      // Request reset flow - validate email format
+      if (!isValidEmail(email)) {
+        return new Response(
+          JSON.stringify({ error: 'Email inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
 
-    const data = parseResult.data;
-
-    if ('email' in data && data.email && !('resetToken' in data && data.resetToken)) {
-      // Request reset
       const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
       if (usersError) throw usersError;
 
-      const user = users.find(u => u.email === data.email);
+      const user = users.find(u => u.email === email);
       
       // Always return success to prevent email enumeration
       if (!user) {
@@ -114,7 +111,6 @@ serve(async (req) => {
         completed: false,
       });
 
-      // TODO: Send email with reset link
       console.log('[2FA-RESET] Reset token generated');
 
       return new Response(
@@ -126,12 +122,19 @@ serve(async (req) => {
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
-    } else if ('resetToken' in data && data.resetToken) {
-      // Complete reset
+    } else if (resetToken) {
+      // Complete reset flow - validate token format
+      if (!isValidResetToken(resetToken)) {
+        return new Response(
+          JSON.stringify({ error: 'Token inválido' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const { data: resetRequests } = await supabase
         .from('user_2fa_reset_requests')
         .select('*')
-        .eq('reset_token', data.resetToken)
+        .eq('reset_token', resetToken)
         .eq('completed', false)
         .gt('expires_at', new Date().toISOString())
         .limit(1);
