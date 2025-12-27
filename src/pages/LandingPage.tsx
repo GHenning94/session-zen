@@ -136,10 +136,10 @@ const LandingPage = () => {
 
   const navigate = useNavigate();
   const { resetToDefaultColors } = useColorTheme();
-  const [displayText, setDisplayText] = useState("");
-  const [wordIndex, setWordIndex] = useState(0);
-  const [phase, setPhase] = useState<'typing' | 'waiting' | 'deleting'>('typing');
   const words = ["atendimentos", "agendamentos", "ganhos", "clientes"];
+  const [displayText, setDisplayText] = useState(words[0].charAt(0));
+  const wordIndexRef = useRef(0);
+  const phaseRef = useRef<'typing' | 'waiting' | 'deleting'>('typing');
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annually'>('monthly');
 
   const [sliderPosition, setSliderPosition] = useState(50);
@@ -285,32 +285,43 @@ const LandingPage = () => {
   }, [resetToDefaultColors]);
 
   useEffect(() => {
-    const word = words[wordIndex];
-    let timeout: ReturnType<typeof setTimeout>;
+    let timeoutId: ReturnType<typeof setTimeout>;
+    
+    const runAnimation = () => {
+      const word = words[wordIndexRef.current];
+      const phase = phaseRef.current;
 
-    if (phase === 'typing') {
-      if (displayText.length < word.length) {
-        timeout = setTimeout(() => {
-          setDisplayText(word.slice(0, displayText.length + 1));
-        }, 150);
-      } else {
-        timeout = setTimeout(() => setPhase('waiting'), 50);
+      if (phase === 'typing') {
+        setDisplayText(prev => {
+          if (prev.length < word.length) {
+            return word.slice(0, prev.length + 1);
+          } else {
+            phaseRef.current = 'waiting';
+            return prev;
+          }
+        });
+        timeoutId = setTimeout(runAnimation, 150);
+      } else if (phase === 'waiting') {
+        phaseRef.current = 'deleting';
+        timeoutId = setTimeout(runAnimation, 2000);
+      } else if (phase === 'deleting') {
+        setDisplayText(prev => {
+          if (prev.length > 0) {
+            return prev.slice(0, -1);
+          } else {
+            wordIndexRef.current = (wordIndexRef.current + 1) % words.length;
+            phaseRef.current = 'typing';
+            return words[wordIndexRef.current].charAt(0);
+          }
+        });
+        timeoutId = setTimeout(runAnimation, 75);
       }
-    } else if (phase === 'waiting') {
-      timeout = setTimeout(() => setPhase('deleting'), 2000);
-    } else if (phase === 'deleting') {
-      if (displayText.length > 0) {
-        timeout = setTimeout(() => {
-          setDisplayText(displayText.slice(0, -1));
-        }, 75);
-      } else {
-        setWordIndex((prev) => (prev + 1) % words.length);
-        setPhase('typing');
-      }
-    }
+    };
 
-    return () => clearTimeout(timeout);
-  }, [displayText, wordIndex, phase, words]);
+    timeoutId = setTimeout(runAnimation, 150);
+
+    return () => clearTimeout(timeoutId);
+  }, []);
   
   // --- ANIMAÇÃO HORIZONTAL (Otimizada para Fluidez) ---
   useLayoutEffect(() => {
