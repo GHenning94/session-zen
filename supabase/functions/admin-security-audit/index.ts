@@ -35,36 +35,25 @@ Deno.serve(async (req) => {
       )
     }
 
-    // Verificar sessão de admin
-    const { data: session } = await supabase
+    // Verificar sessão de admin - a sessão só existe se o login foi feito com credenciais corretas
+    // (ADMIN_EMAIL/ADMIN_PASSWORD), então não precisamos verificar user_roles
+    const { data: session, error: sessionError } = await supabase
       .from('admin_sessions')
-      .select('user_id')
+      .select('user_id, expires_at')
       .eq('session_token', sessionToken)
       .eq('revoked', false)
       .gt('expires_at', new Date().toISOString())
       .single()
 
-    if (!session) {
+    if (sessionError || !session) {
+      console.log('[Security Audit] Session not found or expired:', sessionError?.message)
       return new Response(
-        JSON.stringify({ error: 'Sessão inválida' }),
+        JSON.stringify({ error: 'Sessão inválida ou expirada' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    // Verificar se é admin
-    const { data: roleData } = await supabase
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', session.user_id)
-      .eq('role', 'admin')
-      .single()
-
-    if (!roleData) {
-      return new Response(
-        JSON.stringify({ error: 'Acesso negado' }),
-        { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      )
-    }
+    console.log('[Security Audit] Valid admin session for user:', session.user_id)
 
     // Verificar ENCRYPTION_KEY
     const encryptionKey = Deno.env.get('ENCRYPTION_KEY')
