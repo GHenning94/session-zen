@@ -64,7 +64,7 @@ verify_jwt = true
 [functions.2fa-verify-code]
 verify_jwt = true
 
-[functions.2fa-request-reset]
+[functions.twofa-request-reset]
 verify_jwt = false
 
 [functions.get-subscription-invoices]
