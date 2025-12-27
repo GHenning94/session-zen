@@ -112,8 +112,8 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     }, 300)
   }, [processNextNotification])
 
-  const loadNotifications = useCallback(async () => {
-    if (!user) return
+  const loadNotifications = useCallback(async (markAsSeen = true) => {
+    if (!user) return []
 
     try {
       const { data, error } = await supabase
@@ -125,18 +125,22 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
 
       if (error) {
         console.error('[NotificationContext] Error loading notifications:', error)
-        return
+        return []
       }
 
-      // Update seen IDs
-      (data || []).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
+      // Only mark READ notifications as seen (so unread ones can still trigger toast)
+      if (markAsSeen) {
+        (data || []).filter((n: Notification) => n.lida).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
+      }
 
       setNotifications(data || [])
       setUnreadCount((data || []).filter((n: Notification) => !n.lida).length)
       console.log('[NotificationContext] Notifications loaded:', data?.length || 0)
       initialLoadDoneRef.current = true
+      return data || []
     } catch (error) {
       console.error('[NotificationContext] Error loading notifications:', error)
+      return []
     } finally {
       setLoading(false)
     }
@@ -364,8 +368,8 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
                 })
             }
 
-            // Update seen IDs and state
-            (data || []).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
+            // Update seen IDs only for READ notifications (unread ones can still trigger toast via Realtime)
+            (data || []).filter((n: Notification) => n.lida).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
             setNotifications(data || [])
             setUnreadCount((data || []).filter((n: Notification) => !n.lida).length)
             
