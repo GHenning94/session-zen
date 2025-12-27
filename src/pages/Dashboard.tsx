@@ -79,6 +79,7 @@ const Dashboard = () => {
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
+  const [canalAnimationKey, setCanalAnimationKey] = useState(0)
   const [hoveredCanalIndex, setHoveredCanalIndex] = useState<number | null>(null)
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
   const [showReceitaAverage, setShowReceitaAverage] = useState(true)
@@ -861,6 +862,7 @@ const Dashboard = () => {
   const handleCanalPeriodChange = useCallback(async (period: '1' | '3' | '6' | '12') => {
     console.log('💳 Mudando período dos canais para:', period)
     setCanalPeriod(period)
+    setCanalAnimationKey(prev => prev + 1) // Força remount e animação
     
     // Carregar dados diretamente sem cache para garantir dados corretos
     await loadCanalData(period)
@@ -2069,7 +2071,7 @@ const Dashboard = () => {
                       
                       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:min-h-[450px] overflow-visible">
                         {/* Gráfico RadialBar moderno */}
-                        <div className="h-[280px] lg:h-full flex items-center justify-center relative">
+                        <div key={`canal-chart-${canalAnimationKey}`} className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
                               <ResponsiveContainer key={`canal-container-${canalPeriod}`} width="100%" height="100%">
@@ -2125,6 +2127,7 @@ const Dashboard = () => {
                                   />
                                   <RechartsTooltip
                                     cursor={false}
+                                    wrapperStyle={{ zIndex: 9999 }}
                                     content={({ active, payload }) => {
                                       if (active && payload && payload.length) {
                                         const data = payload[0].payload;
