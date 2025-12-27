@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApiCall } from "@/utils/adminApi";
 import { toast } from "sonner";
 import { Users, Activity, DollarSign, TrendingUp, FileDown, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,12 +21,7 @@ export default function AdminAnalytics() {
 
   const loadAnalytics = async () => {
     try {
-      const sessionToken = localStorage.getItem('admin_session_token');
-      if (!sessionToken) throw new Error('No admin session');
-
-      const { data, error } = await supabase.functions.invoke('admin-get-analytics', {
-        body: { sessionToken }
-      });
+      const { data, error } = await adminApiCall('admin-get-analytics');
 
       if (error) throw error;
       setAnalytics(data);

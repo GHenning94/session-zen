@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
 }
 
 Deno.serve(async (req) => {
@@ -16,25 +16,46 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Verify admin session from token
-    const authHeader = req.headers.get('x-admin-token')
-    if (!authHeader) {
-      throw new Error('No admin token provided')
-    }
-
-    const { data: sessionData, error: sessionError } = await supabaseClient.functions.invoke('admin-verify-session', {
-      body: { sessionToken: authHeader }
-    })
+    // Get session token from header or body
+    let sessionToken = req.headers.get('X-Admin-Session')
+    let bodyData: any = {}
     
-    if (sessionError || !sessionData.valid) {
-      throw new Error('Invalid admin session')
+    try {
+      bodyData = await req.json()
+      if (!sessionToken) {
+        sessionToken = bodyData.sessionToken
+      }
+    } catch {
+      // Body parsing failed
     }
 
-    const url = new URL(req.url)
-    const unreadOnly = url.searchParams.get('unread_only') === 'true'
-    const severity = url.searchParams.get('severity')
-    const type = url.searchParams.get('type')
-    const limit = parseInt(url.searchParams.get('limit') || '50')
+    if (!sessionToken) {
+      return new Response(
+        JSON.stringify({ error: 'No session token provided' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Verify admin session
+    const { data: session, error: sessionError } = await supabaseClient
+      .from('admin_sessions')
+      .select('user_id')
+      .eq('session_token', sessionToken)
+      .eq('revoked', false)
+      .gt('expires_at', new Date().toISOString())
+      .single()
+
+    if (sessionError || !session) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired admin session' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    const unreadOnly = bodyData.unread_only === true
+    const severity = bodyData.severity
+    const type = bodyData.type
+    const limit = parseInt(bodyData.limit || '50')
 
     // Build query
     let query = supabaseClient

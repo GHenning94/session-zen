@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { supabase } from "@/integrations/supabase/client"
+import { adminApiCall } from "@/utils/adminApi"
 import { toast } from "sonner"
 import { Shield, CheckCircle2, XCircle, AlertTriangle, Download, RefreshCw, Loader2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -16,14 +16,10 @@ const AdminSecurity = () => {
   const fetchSecurityReport = async () => {
     setIsRunningAudit(true)
     try {
-      const sessionToken = localStorage.getItem('admin_session_token')
-      
-      const { data, error } = await supabase.functions.invoke('admin-security-audit', {
-        body: { sessionToken },
-      })
+      const { data, error } = await adminApiCall('admin-security-audit')
 
       if (error || !data.success) {
-        throw new Error(data?.error || 'Erro ao buscar relatório')
+        throw new Error(data?.error || error?.message || 'Erro ao buscar relatório')
       }
 
       setReport(data.report)
