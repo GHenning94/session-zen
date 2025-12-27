@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApiCall } from "@/utils/adminApi";
 import { toast } from "sonner";
 import { Shield, AlertTriangle, Activity, Clock, FileDown, Filter } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -29,12 +29,7 @@ export default function AdminLogs() {
 
   const loadLogs = async () => {
     try {
-      const sessionToken = localStorage.getItem('admin_session_token');
-      if (!sessionToken) throw new Error('No admin session');
-
-      const { data, error } = await supabase.functions.invoke('admin-get-logs', {
-        body: { sessionToken }
-      });
+      const { data, error } = await adminApiCall('admin-get-logs');
 
       if (error) throw error;
 

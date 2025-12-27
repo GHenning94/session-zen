@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { supabase } from "@/integrations/supabase/client";
+import { adminApiCall } from "@/utils/adminApi";
 import { toast } from "sonner";
 import { Settings, Key, CheckCircle, XCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -17,12 +17,7 @@ export default function AdminSystemConfig() {
 
   const loadConfig = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      const { data, error } = await supabase.functions.invoke('admin-system-config', {
-        headers: { Authorization: `Bearer ${session.access_token}` }
-      });
+      const { data, error } = await adminApiCall('admin-system-config');
 
       if (error) throw error;
       setConfig(data.config || {});
@@ -36,13 +31,8 @@ export default function AdminSystemConfig() {
 
   const handleRegenerateKey = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('No session');
-
-      const { data, error } = await supabase.functions.invoke('admin-system-config', {
-        method: 'POST',
-        body: { action: 'regenerate_encryption_key' },
-        headers: { Authorization: `Bearer ${session.access_token}` }
+      const { data, error } = await adminApiCall('admin-system-config', { 
+        action: 'regenerate_encryption_key' 
       });
 
       if (error) throw error;

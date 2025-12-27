@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
 }
 
 Deno.serve(async (req) => {
@@ -16,11 +16,23 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Get session token from body
-    const { sessionToken } = await req.json()
+    // Get session token from header or body
+    let sessionToken = req.headers.get('X-Admin-Session')
     
     if (!sessionToken) {
-      throw new Error('No session token provided')
+      try {
+        const body = await req.json()
+        sessionToken = body.sessionToken
+      } catch {
+        // Body parsing failed, continue without
+      }
+    }
+    
+    if (!sessionToken) {
+      return new Response(
+        JSON.stringify({ error: 'No session token provided' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Verify admin session
@@ -33,7 +45,10 @@ Deno.serve(async (req) => {
       .single()
 
     if (sessionError || !session) {
-      throw new Error('Invalid or expired admin session')
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired admin session' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
     // Get payments data with user and client info

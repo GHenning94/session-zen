@@ -2,7 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
 }
 
 Deno.serve(async (req) => {
@@ -16,75 +16,79 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Verify admin session
-    const authHeader = req.headers.get('Authorization')
-    if (!authHeader) {
-      throw new Error('No authorization header')
-    }
-
-    const token = authHeader.replace('Bearer ', '')
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser(token)
+    // Get session token from header or body
+    let sessionToken = req.headers.get('X-Admin-Session')
+    let bodyData: any = {}
     
-    if (userError || !user) {
-      throw new Error('Invalid session')
+    try {
+      bodyData = await req.json()
+      if (!sessionToken) {
+        sessionToken = bodyData.sessionToken
+      }
+    } catch {
+      // Body parsing failed
     }
 
-    // Check admin role
-    const { data: roles } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .eq('role', 'admin')
+    if (!sessionToken) {
+      return new Response(
+        JSON.stringify({ error: 'No session token provided' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
+
+    // Verify admin session
+    const { data: session, error: sessionError } = await supabaseClient
+      .from('admin_sessions')
+      .select('user_id')
+      .eq('session_token', sessionToken)
+      .eq('revoked', false)
+      .gt('expires_at', new Date().toISOString())
       .single()
 
-    if (!roles) {
-      throw new Error('Unauthorized: Admin access required')
+    if (sessionError || !session) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid or expired admin session' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
     }
 
-    if (req.method === 'GET') {
-      // Return system configuration
-      const config = {
-        environment: Deno.env.get('ENVIRONMENT') || 'production',
-        supabase_url: Deno.env.get('SUPABASE_URL'),
-        has_stripe_key: !!Deno.env.get('STRIPE_SECRET_KEY'),
-        has_encryption_key: !!Deno.env.get('ENCRYPTION_KEY'),
-        has_vapid_keys: !!(Deno.env.get('VAPID_PUBLIC_KEY') && Deno.env.get('VAPID_PRIVATE_KEY')),
-        has_gemini_key: !!Deno.env.get('GEMINI_API_KEY'),
-        has_sendpulse_keys: !!(Deno.env.get('SENDPULSE_API_ID') && Deno.env.get('SENDPULSE_API_SECRET')),
-        ga_tracking_id: 'G-KB3SCVSH9B',
-      }
+    const userId = session.user_id
+
+    // Return system configuration (always return config for POST as well)
+    const config = {
+      environment: Deno.env.get('ENVIRONMENT') || 'production',
+      supabase_url: Deno.env.get('SUPABASE_URL'),
+      has_stripe_key: !!Deno.env.get('STRIPE_SECRET_KEY'),
+      has_encryption_key: !!Deno.env.get('ENCRYPTION_KEY'),
+      has_vapid_keys: !!(Deno.env.get('VAPID_PUBLIC_KEY') && Deno.env.get('VAPID_PRIVATE_KEY')),
+      has_gemini_key: !!Deno.env.get('GEMINI_API_KEY'),
+      has_sendpulse_keys: !!(Deno.env.get('SENDPULSE_API_ID') && Deno.env.get('SENDPULSE_API_SECRET')),
+      ga_tracking_id: 'G-KB3SCVSH9B',
+    }
+
+    // Handle action if provided in body
+    if (bodyData.action === 'regenerate_encryption_key') {
+      await supabaseClient.from('audit_log').insert({
+        user_id: userId,
+        action: 'ENCRYPTION_KEY_REGENERATION_REQUESTED',
+        table_name: 'system_config',
+        record_id: 'encryption',
+      })
 
       return new Response(
-        JSON.stringify({ success: true, config }),
+        JSON.stringify({ 
+          success: true, 
+          config,
+          message: 'Encryption key regeneration logged. Please update keys in Supabase dashboard.' 
+        }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
     }
 
-    if (req.method === 'POST') {
-      const { action } = await req.json()
-
-      if (action === 'regenerate_encryption_key') {
-        // Note: Actual key regeneration should be done through Supabase dashboard
-        await supabaseClient.from('audit_log').insert({
-          user_id: user.id,
-          action: 'ENCRYPTION_KEY_REGENERATION_REQUESTED',
-          table_name: 'system_config',
-          record_id: 'encryption',
-        })
-
-        return new Response(
-          JSON.stringify({ 
-            success: true, 
-            message: 'Encryption key regeneration logged. Please update keys in Supabase dashboard.' 
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        )
-      }
-
-      throw new Error('Invalid action')
-    }
-
-    throw new Error('Invalid method')
+    return new Response(
+      JSON.stringify({ success: true, config }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
   } catch (error) {
     console.error('Error:', error)
     return new Response(

@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { adminApiCall } from "@/utils/adminApi";
 import { toast } from "sonner";
 import { Bell, AlertTriangle, DollarSign, Activity, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -54,18 +55,12 @@ export const AdminNotificationPanel = () => {
 
   const loadNotifications = async () => {
     try {
-      const adminToken = localStorage.getItem('admin_session_token');
-      if (!adminToken) return;
-
-      const params = new URLSearchParams();
+      const params: Record<string, string> = {};
       if (filterType !== "all") {
-        params.append("type", filterType);
+        params.type = filterType;
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-get-notifications', {
-        headers: { 'x-admin-token': adminToken },
-        body: { params: params.toString() }
-      });
+      const { data, error } = await adminApiCall('admin-get-notifications', params);
 
       if (error) throw error;
 
@@ -80,12 +75,8 @@ export const AdminNotificationPanel = () => {
 
   const markAsRead = async (notificationId: string) => {
     try {
-      const adminToken = localStorage.getItem('admin_session_token');
-      if (!adminToken) return;
-
-      const { error } = await supabase.functions.invoke('admin-mark-notification-read', {
-        headers: { 'x-admin-token': adminToken },
-        body: { notification_id: notificationId }
+      const { error } = await adminApiCall('admin-mark-notification-read', {
+        notification_id: notificationId
       });
 
       if (error) throw error;
@@ -101,12 +92,8 @@ export const AdminNotificationPanel = () => {
 
   const markAllAsRead = async () => {
     try {
-      const adminToken = localStorage.getItem('admin_session_token');
-      if (!adminToken) return;
-
-      const { error } = await supabase.functions.invoke('admin-mark-notification-read', {
-        headers: { 'x-admin-token': adminToken },
-        body: { mark_all: true }
+      const { error } = await adminApiCall('admin-mark-notification-read', {
+        mark_all: true
       });
 
       if (error) throw error;
