@@ -14,9 +14,10 @@ interface NotificationToastProps {
 // Helper to get category from notification title
 const getCategory = (titulo: string): string => {
   const lowerTitle = titulo.toLowerCase()
+  if (lowerTitle.includes('meta')) return 'Meta'
   if (lowerTitle.includes('pagamento')) return 'Pagamento'
   if (lowerTitle.includes('sessão') || lowerTitle.includes('agendamento')) return 'Sessão'
-  if (lowerTitle.includes('cliente')) return 'Cliente'
+  if (lowerTitle.includes('cliente') || lowerTitle.includes('paciente')) return 'Cliente'
   if (lowerTitle.includes('pacote')) return 'Pacote'
   if (lowerTitle.includes('lembrete')) return 'Lembrete'
   return 'Aviso'
