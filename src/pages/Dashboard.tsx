@@ -1038,7 +1038,7 @@ const Dashboard = () => {
 
   return (
     <Layout>
-      <div className="space-y-4 md:space-y-8">
+      <div className="space-y-4 md:space-y-8 pb-0">
         {/* Header - Mobile optimized */}
         <div className="flex items-center justify-between">
           <div>
@@ -1401,7 +1401,7 @@ const Dashboard = () => {
         </div>
 
         {/* Ações Rápidas e Upgrade */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-stretch">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:items-start">
           {/* Ações Rápidas */}
           <Card className="lg:col-span-2 shadow-soft">
             <CardHeader className="pb-6">
@@ -2067,7 +2067,7 @@ const Dashboard = () => {
                         </div>
                       )}
                       
-                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:min-h-[450px] overflow-visible">
+                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto overflow-visible">
                         {/* Gráfico RadialBar moderno */}
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
