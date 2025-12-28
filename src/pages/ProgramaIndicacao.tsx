@@ -1,44 +1,133 @@
 import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, Users, Crown, Briefcase, Circle, LogOut } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, 
+  Users, Crown, Briefcase, Circle, LogOut, ExternalLink, 
+  CheckCircle2, AlertCircle, Loader2, DollarSign, TrendingUp,
+  Calendar, CreditCard, Building2, ArrowRight
+} from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import referralGift from "@/assets/referral-gift.jpg";
 
+interface ReferralStats {
+  total_referrals: number;
+  active_referrals: number;
+  pending_referrals: number;
+  premium_referrals: number;
+  pro_referrals: number;
+  total_earned: number;
+  pending_earnings: number;
+}
+
+interface MonthlyHistory {
+  month: string;
+  amount: number;
+  count: number;
+}
+
+interface RecentPayout {
+  id: string;
+  amount: number;
+  status: string;
+  referred_user_name: string;
+  referred_plan: string;
+  paid_at: string | null;
+  created_at: string;
+}
+
+interface ConnectStatus {
+  has_account: boolean;
+  account_status: string | null;
+  payouts_enabled: boolean;
+  details_submitted: boolean;
+}
+
 const ProgramaIndicacao = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [isEnrolled, setIsEnrolled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState<ReferralStats | null>(null);
+  const [monthlyHistory, setMonthlyHistory] = useState<MonthlyHistory[]>([]);
+  const [recentPayouts, setRecentPayouts] = useState<RecentPayout[]>([]);
+  const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null);
+  const [hasBankDetails, setHasBankDetails] = useState(false);
+  const [isSettingUpConnect, setIsSettingUpConnect] = useState(false);
+  
   const inviteLink = `https://therapypro.app/convite/${user?.id || 'default'}`;
 
-  // Carregar status de parceiro do banco de dados
+  // Carregar todos os dados
   useEffect(() => {
-    const loadPartnerStatus = async () => {
+    const loadData = async () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // Carregar status de parceiro e dados bancários
+        const { data: profile, error } = await supabase
           .from('profiles')
-          .select('is_referral_partner')
+          .select('is_referral_partner, banco, agencia, conta')
           .eq('user_id', user.id)
           .single();
         
         if (error) throw error;
-        setIsEnrolled(data?.is_referral_partner || false);
+        setIsEnrolled(profile?.is_referral_partner || false);
+        setHasBankDetails(!!(profile?.banco && profile?.agencia && profile?.conta));
+
+        if (profile?.is_referral_partner) {
+          // Carregar estatísticas
+          await loadStats();
+          // Verificar status do Stripe Connect
+          await loadConnectStatus();
+        }
       } catch (error) {
-        console.error('Erro ao carregar status de parceiro:', error);
+        console.error('Erro ao carregar dados:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadPartnerStatus();
-  }, [user]);
+    loadData();
+
+    // Verificar se voltou do onboarding do Stripe
+    if (searchParams.get('refresh') === 'true') {
+      loadConnectStatus();
+    }
+  }, [user, searchParams]);
+
+  const loadStats = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('referral-stats');
+      if (error) throw error;
+      
+      if (data?.success) {
+        setStats(data.stats);
+        setMonthlyHistory(data.monthly_history || []);
+        setRecentPayouts(data.recent_payouts || []);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar estatísticas:', error);
+    }
+  };
+
+  const loadConnectStatus = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('referral-connect-status');
+      if (error) throw error;
+      setConnectStatus(data);
+    } catch (error) {
+      console.error('Erro ao verificar status do Connect:', error);
+    }
+  };
 
   const handleEnrollment = async () => {
     if (!user) return;
@@ -52,10 +141,41 @@ const ProgramaIndicacao = () => {
       if (error) throw error;
       
       setIsEnrolled(true);
-      toast({
-        title: "Parabéns!",
-        description: "Você foi inscrito no programa de indicação com sucesso.",
-      });
+
+      // Verificar dados bancários
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('banco, agencia, conta')
+        .eq('user_id', user.id)
+        .single();
+
+      const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta);
+      setHasBankDetails(hasBankData);
+
+      if (!hasBankData) {
+        // Criar notificação para preencher dados bancários
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: user.id,
+            titulo: 'Complete seus dados bancários',
+            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações.',
+          });
+
+        toast({
+          title: "Parabéns!",
+          description: "Você foi inscrito no programa. Complete seus dados bancários para receber comissões.",
+        });
+      } else {
+        toast({
+          title: "Parabéns!",
+          description: "Você foi inscrito no programa de indicação com sucesso.",
+        });
+      }
+
+      // Carregar dados
+      await loadStats();
+      await loadConnectStatus();
     } catch (error) {
       console.error('Erro ao ingressar no programa:', error);
       toast({
@@ -92,6 +212,33 @@ const ProgramaIndicacao = () => {
     }
   };
 
+  const handleSetupConnect = async () => {
+    setIsSettingUpConnect(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('referral-connect-onboard', {
+        body: {
+          return_url: `${window.location.origin}/programa-indicacao`,
+          refresh_url: `${window.location.origin}/programa-indicacao?refresh=true`,
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.onboarding_url) {
+        window.location.href = data.onboarding_url;
+      }
+    } catch (error) {
+      console.error('Erro ao configurar Stripe Connect:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível iniciar a configuração. Tente novamente.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSettingUpConnect(false);
+    }
+  };
+
   const copyLink = () => {
     navigator.clipboard.writeText(inviteLink);
     toast({
@@ -116,7 +263,6 @@ const ProgramaIndicacao = () => {
         shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`;
         break;
       case 'instagram':
-        // Instagram não permite compartilhamento direto via URL, então apenas copiamos o link
         copyLink();
         return;
     }
@@ -124,19 +270,36 @@ const ProgramaIndicacao = () => {
     window.open(shareUrl, '_blank', 'width=600,height=400');
   };
 
-  const stats = {
-    activeUsers: 156,
-    premiumUsers: 45,
-    professionalUsers: 23,
-    basicUsers: 88,
-    totalEarned: "R$ 2.340,00"
+  const formatCurrency = (cents: number) => {
+    return `R$ ${(cents / 100).toFixed(2).replace('.', ',')}`;
+  };
+
+  const formatMonth = (monthStr: string) => {
+    const [year, month] = monthStr.split('-');
+    const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    return `${months[parseInt(month) - 1]} ${year}`;
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'paid':
+        return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Pago</Badge>;
+      case 'pending':
+        return <Badge variant="secondary">Pendente</Badge>;
+      case 'processing':
+        return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Processando</Badge>;
+      case 'failed':
+        return <Badge variant="destructive">Falhou</Badge>;
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
   };
 
   if (isLoading) {
     return (
       <Layout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
       </Layout>
     );
@@ -162,9 +325,9 @@ const ProgramaIndicacao = () => {
                 <div className="flex flex-col lg:flex-row items-center gap-8">
                   <div className="flex-1 space-y-6">
                     <div className="space-y-4">
-                      <h2 className="text-3xl font-bold">Ganhe com Indicações</h2>
+                      <h2 className="text-3xl font-bold">Ganhe 30% de Comissão</h2>
                       <p className="text-lg text-muted-foreground">
-                        Convide seus colegas profissionais e ganhe recompensas por cada assinatura realizada através do seu link.
+                        Convide seus colegas profissionais e ganhe 30% do valor de cada assinatura realizada através do seu link. Pagamentos automáticos via Stripe!
                       </p>
                     </div>
                     
@@ -237,7 +400,7 @@ const ProgramaIndicacao = () => {
                   <div>
                     <h3 className="font-semibold">Ganhe Recompensas</h3>
                     <p className="text-sm text-muted-foreground">
-                      Receba comissões por cada assinatura realizada
+                      Receba 30% de comissão por cada assinatura
                     </p>
                   </div>
                 </div>
@@ -258,15 +421,15 @@ const ProgramaIndicacao = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
-                  <span>Pagamentos mensais automáticos</span>
+                  <span>Pagamentos automáticos via Stripe</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
-                  <span>Material promocional gratuito</span>
+                  <span>Comissão recorrente em renovações</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
-                  <span>Suporte dedicado para parceiros</span>
+                  <span>Dashboard completo de acompanhamento</span>
                 </div>
               </div>
             </CardContent>
@@ -278,7 +441,7 @@ const ProgramaIndicacao = () => {
 
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Gift className="w-8 h-8 text-primary" />
@@ -298,12 +461,83 @@ const ProgramaIndicacao = () => {
           </Button>
         </div>
 
+        {/* Alertas de configuração */}
+        {!hasBankDetails && (
+          <Alert className="border-yellow-500/50 bg-yellow-500/10">
+            <AlertCircle className="h-4 w-4 text-yellow-500" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Complete seus dados bancários para receber comissões.</span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate('/configuracoes?tab=bank-details')}
+              >
+                <Building2 className="w-4 h-4 mr-2" />
+                Configurar
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {connectStatus && !connectStatus.has_account && hasBankDetails && (
+          <Alert className="border-blue-500/50 bg-blue-500/10">
+            <CreditCard className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Configure sua conta de pagamento para receber comissões automaticamente.</span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleSetupConnect}
+                disabled={isSettingUpConnect}
+              >
+                {isSettingUpConnect ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                )}
+                Configurar Stripe
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {connectStatus?.has_account && !connectStatus.payouts_enabled && (
+          <Alert className="border-orange-500/50 bg-orange-500/10">
+            <AlertCircle className="h-4 w-4 text-orange-500" />
+            <AlertDescription className="flex items-center justify-between">
+              <span>Sua conta Stripe precisa de informações adicionais para habilitar pagamentos.</span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleSetupConnect}
+                disabled={isSettingUpConnect}
+              >
+                {isSettingUpConnect ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <ArrowRight className="w-4 h-4 mr-2" />
+                )}
+                Completar cadastro
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {connectStatus?.payouts_enabled && (
+          <Alert className="border-green-500/50 bg-green-500/10">
+            <CheckCircle2 className="h-4 w-4 text-green-500" />
+            <AlertDescription>
+              Sua conta está configurada! Pagamentos serão processados automaticamente.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Link de Indicação */}
         <Card>
           <CardHeader>
             <CardTitle>Seu Link de Indicação</CardTitle>
             <CardDescription>
-              Compartilhe este link para ganhar comissões por cada nova assinatura
+              Compartilhe este link para ganhar 30% de comissão por cada nova assinatura
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -369,10 +603,10 @@ const ProgramaIndicacao = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Usuários Ativos</p>
-                  <p className="text-2xl font-bold">{stats.activeUsers}</p>
+                  <p className="text-sm text-muted-foreground">Total Indicados</p>
+                  <p className="text-2xl font-bold">{stats?.total_referrals || 0}</p>
                 </div>
-                <Users className="w-8 h-8" style={{ color: 'hsl(142 71% 45%)' }} />
+                <Users className="w-8 h-8 text-primary" />
               </div>
             </CardContent>
           </Card>
@@ -381,8 +615,20 @@ const ProgramaIndicacao = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Usuários Premium</p>
-                  <p className="text-2xl font-bold">{stats.premiumUsers}</p>
+                  <p className="text-sm text-muted-foreground">Ativos</p>
+                  <p className="text-2xl font-bold">{stats?.active_referrals || 0}</p>
+                </div>
+                <CheckCircle2 className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Premium</p>
+                  <p className="text-2xl font-bold">{stats?.premium_referrals || 0}</p>
                 </div>
                 <Crown className="w-8 h-8 text-yellow-500" />
               </div>
@@ -393,64 +639,113 @@ const ProgramaIndicacao = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Usuários Profissionais</p>
-                  <p className="text-2xl font-bold">{stats.professionalUsers}</p>
+                  <p className="text-sm text-muted-foreground">Profissional</p>
+                  <p className="text-2xl font-bold">{stats?.pro_referrals || 0}</p>
                 </div>
                 <Briefcase className="w-8 h-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
-          
+        </div>
+
+        {/* Resumo de Ganhos */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <DollarSign className="w-5 h-5" />
+              Resumo de Ganhos
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <p className="text-sm text-muted-foreground">Total Recebido</p>
+                <p className="text-3xl font-bold text-green-500">
+                  {formatCurrency(stats?.total_earned || 0)}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                <p className="text-sm text-muted-foreground">Pendente</p>
+                <p className="text-3xl font-bold text-yellow-500">
+                  {formatCurrency(stats?.pending_earnings || 0)}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Histórico Mensal */}
+        {monthlyHistory.length > 0 && (
           <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Usuários Básicos</p>
-                  <p className="text-2xl font-bold">{stats.basicUsers}</p>
-                </div>
-                <Circle className="w-8 h-8 text-gray-500" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="w-5 h-5" />
+                Histórico Mensal
+              </CardTitle>
+              <CardDescription>Ganhos dos últimos meses</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {monthlyHistory.map((item) => (
+                  <div key={item.month} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <TrendingUp className="w-4 h-4 text-green-500" />
+                      <span className="font-medium">{formatMonth(item.month)}</span>
+                      <Badge variant="secondary">{item.count} pagamento(s)</Badge>
+                    </div>
+                    <span className="font-bold text-green-500">{formatCurrency(item.amount)}</span>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
+        )}
 
-        {/* Histórico de Ganhos */}
+        {/* Histórico de Pagamentos Detalhado */}
         <Card>
           <CardHeader>
-            <CardTitle>Histórico de Valores Recebidos</CardTitle>
-            <CardDescription>Acompanhe seus ganhos com o programa de indicação</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <CreditCard className="w-5 h-5" />
+              Histórico de Comissões
+            </CardTitle>
+            <CardDescription>Detalhes de cada comissão recebida ou pendente</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 rounded-lg" style={{ backgroundColor: 'hsl(142 71% 45% / 0.1)' }}>
-                <div>
-                  <p className="font-semibold text-lg">Total Recebido</p>
-                  <p className="text-2xl font-bold" style={{ color: 'hsl(142 71% 45%)' }}>{stats.totalEarned}</p>
-                </div>
-                <Badge variant="secondary" style={{ backgroundColor: 'hsl(142 71% 45% / 0.1)', color: 'hsl(142 71% 45%)' }}>
-                  ↗ +15% este mês
-                </Badge>
+            {recentPayouts.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Gift className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                <p>Nenhuma comissão registrada ainda.</p>
+                <p className="text-sm">Compartilhe seu link e comece a ganhar!</p>
               </div>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm">Janeiro 2024</span>
-                  <span className="font-semibold">R$ 450,00</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm">Dezembro 2023</span>
-                  <span className="font-semibold">R$ 780,00</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm">Novembro 2023</span>
-                  <span className="font-semibold">R$ 320,00</span>
-                </div>
-                <div className="flex items-center justify-between py-2 border-b">
-                  <span className="text-sm">Outubro 2023</span>
-                  <span className="font-semibold">R$ 790,00</span>
-                </div>
+            ) : (
+              <div className="space-y-3">
+                {recentPayouts.map((payout) => (
+                  <div 
+                    key={payout.id} 
+                    className="flex items-center justify-between p-4 rounded-lg border"
+                  >
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{payout.referred_user_name}</span>
+                        <Badge variant="outline" className="text-xs">
+                          {payout.referred_plan === 'premium' ? 'Premium' : 'Profissional'}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {payout.paid_at 
+                          ? `Pago em ${new Date(payout.paid_at).toLocaleDateString('pt-BR')}`
+                          : `Criado em ${new Date(payout.created_at).toLocaleDateString('pt-BR')}`
+                        }
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="font-bold">{formatCurrency(payout.amount)}</span>
+                      {getStatusBadge(payout.status)}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>

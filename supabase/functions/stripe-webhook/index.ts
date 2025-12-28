@@ -11,6 +11,9 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
+// Taxa de comissão do programa de indicação (30%)
+const REFERRAL_COMMISSION_RATE = 0.30;
+
 serve(async (req) => {
   if (req.method !== 'POST') {
     return new Response('Method not allowed', { status: 405 });
@@ -73,6 +76,7 @@ serve(async (req) => {
         let userId = session.metadata?.user_id;
         let planName = session.metadata?.plan_name || 'pro';
         let billingInterval = session.metadata?.billing_interval || 'monthly';
+        const referralCode = session.metadata?.referral_code; // Código de indicação
 
         // Se não encontrar userId nos metadados da sessão, buscar do customer
         if (!userId) {
@@ -99,7 +103,8 @@ serve(async (req) => {
           plan: planName,
           interval: billingInterval,
           customer: customerId,
-          subscription: subscriptionId
+          subscription: subscriptionId,
+          referralCode,
         });
         
         // Calcular data de próxima renovação
@@ -129,6 +134,11 @@ serve(async (req) => {
           console.error('[webhook] ❌ Error updating profile:', updateError);
         } else {
           console.log('[webhook] ✅ Profile updated successfully to plan:', planName);
+          
+          // ✅ PROCESSAR INDICAÇÃO se houver código
+          if (referralCode) {
+            await processReferral(userId, referralCode, planName, session.amount_total || 0);
+          }
           
           // Criar notificação de boas-vindas
           await supabase
@@ -270,6 +280,9 @@ serve(async (req) => {
 
           console.log('[webhook] ✅ Next billing date updated:', nextBillingDate.toISOString());
 
+          // ✅ PROCESSAR COMISSÃO DE INDICAÇÃO para pagamentos recorrentes
+          await processReferralCommission(profile.user_id, invoice.amount_paid || 0, profile.subscription_plan);
+
           // Notificar usuário
           await supabase
             .from('notifications')
@@ -392,6 +405,12 @@ serve(async (req) => {
           .single();
 
         if (profile) {
+          // ✅ Atualizar status do referral se houver
+          await supabase
+            .from('referrals')
+            .update({ status: 'cancelled' })
+            .eq('referred_user_id', profile.user_id);
+
           // ✅ Reverter para plano gratuito
           const { error: updateError } = await supabase
             .from('profiles')
@@ -440,3 +459,227 @@ serve(async (req) => {
     );
   }
 });
+
+// Função para processar indicação inicial
+async function processReferral(
+  referredUserId: string, 
+  referralCode: string, 
+  planName: string, 
+  amountPaid: number
+) {
+  console.log('[webhook] 🎯 Processing referral:', { referredUserId, referralCode, planName, amountPaid });
+
+  try {
+    // Verificar se o código é um user_id válido (referrer)
+    const { data: referrer } = await supabase
+      .from('profiles')
+      .select('user_id, nome, is_referral_partner')
+      .eq('user_id', referralCode)
+      .single();
+
+    if (!referrer || !referrer.is_referral_partner) {
+      console.log('[webhook] ⚠️ Referral code invalid or user not a partner');
+      return;
+    }
+
+    // Verificar se já existe referral para este usuário
+    const { data: existingReferral } = await supabase
+      .from('referrals')
+      .select('id')
+      .eq('referred_user_id', referredUserId)
+      .single();
+
+    if (existingReferral) {
+      console.log('[webhook] ⚠️ Referral already exists for this user');
+      return;
+    }
+
+    // Calcular comissão
+    const commissionAmount = Math.round(amountPaid * REFERRAL_COMMISSION_RATE);
+
+    // Criar registro de referral
+    const { data: referral, error: referralError } = await supabase
+      .from('referrals')
+      .insert({
+        referrer_user_id: referralCode,
+        referred_user_id: referredUserId,
+        referral_code: referralCode,
+        status: 'converted',
+        subscription_plan: planName,
+        subscription_amount: amountPaid,
+        commission_rate: REFERRAL_COMMISSION_RATE * 100,
+        commission_amount: commissionAmount,
+        first_payment_date: new Date().toISOString(),
+      })
+      .select()
+      .single();
+
+    if (referralError) {
+      console.error('[webhook] ❌ Error creating referral:', referralError);
+      return;
+    }
+
+    console.log('[webhook] ✅ Referral created:', referral.id);
+
+    // Buscar nome do indicado
+    const { data: referredProfile } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', referredUserId)
+      .single();
+
+    // Criar registro de payout pendente
+    await supabase
+      .from('referral_payouts')
+      .insert({
+        referrer_user_id: referralCode,
+        referral_id: referral.id,
+        amount: commissionAmount,
+        currency: 'brl',
+        status: 'pending',
+        period_start: new Date().toISOString().split('T')[0],
+        period_end: new Date().toISOString().split('T')[0],
+        referred_user_name: referredProfile?.nome || 'Novo usuário',
+        referred_plan: planName,
+      });
+
+    console.log('[webhook] ✅ Payout record created');
+
+    // Notificar o referrer
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: referralCode,
+        titulo: 'Nova Indicação Convertida! 🎉',
+        conteudo: `${referredProfile?.nome || 'Um novo usuário'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você receberá R$ ${(commissionAmount / 100).toFixed(2)} de comissão.`,
+      });
+
+    // Tentar processar payout automaticamente
+    await tryProcessPayout(referralCode);
+
+  } catch (err) {
+    console.error('[webhook] ❌ Error processing referral:', err);
+  }
+}
+
+// Função para processar comissão de pagamentos recorrentes
+async function processReferralCommission(
+  referredUserId: string, 
+  amountPaid: number, 
+  planName: string
+) {
+  console.log('[webhook] 🔄 Processing recurring commission:', { referredUserId, amountPaid });
+
+  try {
+    // Buscar referral ativo para este usuário
+    const { data: referral } = await supabase
+      .from('referrals')
+      .select('*, profiles!referrals_referrer_user_id_fkey(nome)')
+      .eq('referred_user_id', referredUserId)
+      .eq('status', 'converted')
+      .single();
+
+    if (!referral) {
+      console.log('[webhook] ℹ️ No active referral for this user');
+      return;
+    }
+
+    // Calcular comissão
+    const commissionAmount = Math.round(amountPaid * REFERRAL_COMMISSION_RATE);
+
+    // Buscar nome do indicado
+    const { data: referredProfile } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', referredUserId)
+      .single();
+
+    // Criar registro de payout
+    await supabase
+      .from('referral_payouts')
+      .insert({
+        referrer_user_id: referral.referrer_user_id,
+        referral_id: referral.id,
+        amount: commissionAmount,
+        currency: 'brl',
+        status: 'pending',
+        period_start: new Date().toISOString().split('T')[0],
+        period_end: new Date().toISOString().split('T')[0],
+        referred_user_name: referredProfile?.nome || 'Usuário',
+        referred_plan: planName,
+      });
+
+    console.log('[webhook] ✅ Recurring commission payout created:', commissionAmount);
+
+    // Notificar o referrer
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: referral.referrer_user_id,
+        titulo: 'Comissão Recorrente! 💰',
+        conteudo: `${referredProfile?.nome || 'Seu indicado'} renovou a assinatura. Você receberá R$ ${(commissionAmount / 100).toFixed(2)} de comissão.`,
+      });
+
+    // Tentar processar payout automaticamente
+    await tryProcessPayout(referral.referrer_user_id);
+
+  } catch (err) {
+    console.error('[webhook] ❌ Error processing recurring commission:', err);
+  }
+}
+
+// Função para tentar processar payout automaticamente
+async function tryProcessPayout(referrerUserId: string) {
+  try {
+    // Verificar se o referrer tem conta Connect ativa
+    const { data: connectAccount } = await supabase
+      .from('stripe_connect_accounts')
+      .select('*')
+      .eq('user_id', referrerUserId)
+      .single();
+
+    if (!connectAccount || !connectAccount.payouts_enabled) {
+      console.log('[webhook] ⚠️ Referrer does not have active Connect account');
+      
+      // Verificar se tem dados bancários
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('banco, agencia, conta')
+        .eq('user_id', referrerUserId)
+        .single();
+
+      if (!profile?.banco || !profile?.agencia || !profile?.conta) {
+        // Enviar notificação para preencher dados bancários
+        await supabase
+          .from('notifications')
+          .insert({
+            user_id: referrerUserId,
+            titulo: 'Complete seus dados bancários',
+            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações.',
+          });
+      }
+      return;
+    }
+
+    // Chamar edge function para processar payouts
+    const response = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/referral-process-payout`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+        },
+        body: JSON.stringify({})
+      }
+    );
+
+    if (response.ok) {
+      console.log('[webhook] ✅ Payout processing triggered');
+    } else {
+      console.error('[webhook] ⚠️ Failed to trigger payout processing');
+    }
+  } catch (err) {
+    console.error('[webhook] ❌ Error triggering payout:', err);
+  }
+}
