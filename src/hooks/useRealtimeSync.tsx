@@ -97,8 +97,8 @@ export const RealtimeSyncProvider = ({ children }: RealtimeSyncProviderProps) =>
           )
           newCache.lastUpdate[dataType] = currentTime
           
-          // Salvar no localStorage para persistência
-          localStorage.setItem(`therapy-${dataType}`, JSON.stringify(newCache[dataType as keyof typeof cache.clients]))
+          // SECURITY: Não salvar dados sensíveis no localStorage
+          // O cache em memória (React state) é suficiente para performance
         }
       })
 
