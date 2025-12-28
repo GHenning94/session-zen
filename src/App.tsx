@@ -49,6 +49,7 @@ import ProgramaIndicacao from "@/pages/ProgramaIndicacao";
 import Suporte from "@/pages/Suporte";
 import Documentacao from "@/pages/Documentacao";
 import Metas from "@/pages/Metas";
+import TermosIndicacao from "@/pages/TermosIndicacao";
 import PublicRegistration from "@/pages/PublicRegistration";
 import ConviteIndicacao from "@/pages/ConviteIndicacao";
 import AuthConfirm from "@/pages/AuthConfirm";
@@ -264,6 +265,7 @@ const App = () => (
                   } />
                   <Route path="/register/:token" element={<PublicRegistration />} />
                   <Route path="/convite/:code" element={<ConviteIndicacao />} />
+                  <Route path="/termos-indicacao" element={<TermosIndicacao />} />
                   
                   {/* Admin Routes */}
                   <Route path="/admin/login" element={<AdminLogin />} />

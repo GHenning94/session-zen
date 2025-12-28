@@ -28,10 +28,20 @@ const Signup = () => {
 
   // Verificar referral ao montar o componente
   useEffect(() => {
+    // Check URL param first
     const refId = searchParams.get('ref')
     if (refId) {
       setReferralId(refId)
       loadReferralUser(refId)
+      return
+    }
+    
+    // Check localStorage for referral code from /convite/:code page
+    const storedCode = localStorage.getItem('referral_code')
+    if (storedCode) {
+      // Extract user ID from code format REF-{userId.slice(0,8).toUpperCase()}
+      const userIdPart = storedCode.replace('REF-', '').toLowerCase()
+      loadReferralFromCode(userIdPart)
     }
   }, [searchParams])
 
@@ -39,15 +49,47 @@ const Signup = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('nome, profissao')
+        .select('nome, profissao, user_id')
         .eq('user_id', refId)
         .single()
 
       if (!error && data) {
+        setReferralId(data.user_id)
         setReferralUser(data)
         toast({
           title: "Convite especial! 🎉",
           description: `Você foi convidado por ${data.nome}. Ganhe 20% de desconto no primeiro mês!`,
+        })
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do convite:', error)
+    }
+  }
+
+  const loadReferralFromCode = async (userIdPart: string) => {
+    try {
+      // Find the user by matching the beginning of their user_id
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('nome, profissao, user_id')
+        .eq('is_referral_partner', true)
+
+      if (error) {
+        console.error('Error fetching referrer:', error)
+        return
+      }
+
+      // Find the profile that matches the referral code
+      const referrer = profiles?.find(profile => 
+        profile.user_id.slice(0, 8).toLowerCase() === userIdPart
+      )
+
+      if (referrer) {
+        setReferralId(referrer.user_id)
+        setReferralUser({ nome: referrer.nome, profissao: referrer.profissao })
+        toast({
+          title: "Convite especial! 🎉",
+          description: `Você foi convidado por ${referrer.nome}. Ganhe 20% de desconto no primeiro mês!`,
         })
       }
     } catch (error) {

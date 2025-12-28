@@ -75,10 +75,12 @@ export const CheckoutRedirect = () => {
         console.log('[CheckoutRedirect] Criando checkout para:', { plan: pendingPlan, billing: pendingBilling, priceId })
 
         // Criar sessão de checkout
+        const referralCode = localStorage.getItem('referral_code') || sessionStorage.getItem('pending_referral')
         const { data, error } = await supabase.functions.invoke('create-checkout', {
           body: {
             priceId,
-            returnUrl: window.location.origin
+            returnUrl: window.location.origin,
+            referralCode: referralCode || undefined
           }
         })
 
@@ -96,8 +98,10 @@ export const CheckoutRedirect = () => {
         // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')
         localStorage.removeItem('pending_billing')
+        localStorage.removeItem('referral_code')
         sessionStorage.removeItem('pending_plan_backup')
         sessionStorage.removeItem('pending_billing_backup')
+        sessionStorage.removeItem('pending_referral')
         
         // Redirecionar para Stripe
         window.location.href = data.url

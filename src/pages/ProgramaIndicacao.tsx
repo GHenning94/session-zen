@@ -767,6 +767,17 @@ const ProgramaIndicacao = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Link para termos */}
+        <div className="text-center pt-4">
+          <Button 
+            variant="link" 
+            className="text-muted-foreground"
+            onClick={() => navigate('/termos-indicacao')}
+          >
+            Ver Termos e Condições do Programa de Indicação
+          </Button>
+        </div>
       </div>
     </Layout>
   );

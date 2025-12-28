@@ -38,14 +38,14 @@ serve(async (req) => {
       throw new Error("Email não confirmado. Por favor, confirme seu email antes de assinar.");
     }
 
-    const { priceId, returnUrl } = await req.json();
+    const { priceId, returnUrl, referralCode } = await req.json();
 
     if (!priceId) {
       console.error("[create-checkout] ❌ Missing priceId");
       throw new Error("priceId é obrigatório.");
     }
 
-    console.log("[create-checkout] 💳 Creating checkout for priceId:", priceId);
+    console.log("[create-checkout] 💳 Creating checkout for priceId:", priceId, "referralCode:", referralCode);
     
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -83,6 +83,18 @@ serve(async (req) => {
 
     const origin = (typeof returnUrl === 'string' && returnUrl.length > 0) ? returnUrl : SITE_URL;
 
+    // Build metadata including referral code if present
+    const sessionMetadata: Record<string, string> = { 
+      user_id: user.id,
+      plan_name: priceInfo.plan,
+      billing_interval: priceInfo.interval
+    };
+    
+    if (referralCode) {
+      sessionMetadata.referral_code = referralCode;
+      console.log("[create-checkout] 🎯 Including referral code in metadata:", referralCode);
+    }
+
     // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -90,11 +102,7 @@ serve(async (req) => {
       mode: "subscription",
       success_url: `${origin}/dashboard?payment=success`,
       cancel_url: `${origin}/welcome?payment=cancelled`,
-      metadata: { 
-        user_id: user.id,
-        plan_name: priceInfo.plan,
-        billing_interval: priceInfo.interval
-      },
+      metadata: sessionMetadata,
       locale: 'pt-BR',
       custom_text: {
         submit: {
@@ -102,11 +110,7 @@ serve(async (req) => {
         }
       },
       subscription_data: {
-        metadata: {
-          user_id: user.id,
-          plan_name: priceInfo.plan,
-          billing_interval: priceInfo.interval
-        }
+        metadata: sessionMetadata
       },
       // Permitir códigos promocionais
       allow_promotion_codes: true,
