@@ -50,6 +50,7 @@ import Suporte from "@/pages/Suporte";
 import Documentacao from "@/pages/Documentacao";
 import Metas from "@/pages/Metas";
 import PublicRegistration from "@/pages/PublicRegistration";
+import ConviteIndicacao from "@/pages/ConviteIndicacao";
 import AuthConfirm from "@/pages/AuthConfirm";
 import AuthCallback from "@/pages/AuthCallback";
 import ResetPassword from "@/pages/ResetPassword";
@@ -262,6 +263,7 @@ const App = () => (
                     </Suspense>
                   } />
                   <Route path="/register/:token" element={<PublicRegistration />} />
+                  <Route path="/convite/:code" element={<ConviteIndicacao />} />
                   
                   {/* Admin Routes */}
                   <Route path="/admin/login" element={<AdminLogin />} />
