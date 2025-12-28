@@ -110,6 +110,28 @@ export const useColorTheme = () => {
   const { user } = useAuth()
   const location = useLocation()
 
+  // Check if we're on a public/external page that should always use default colors
+  const isPublicPage = useCallback(() => {
+    const publicRoutes = [
+      '/',           // Landing Page
+      '/login',      // Login do usuário
+      '/signup',     // Cadastro
+      '/admin/login' // Login do admin - sempre padrão
+    ]
+    
+    // Páginas externas que devem sempre usar cor padrão
+    const isBookingPage = location.pathname.startsWith('/agendar/')        // Agendamento público
+    const isReferralPage = location.pathname.startsWith('/convite/')       // Convite de indicação
+    const isRegistrationPage = location.pathname.startsWith('/register/')  // Registro via link
+    const isPublicTerms = location.pathname === '/termos-indicacao'        // Termos de indicação
+    
+    return publicRoutes.includes(location.pathname) || 
+           isBookingPage || 
+           isReferralPage || 
+           isRegistrationPage || 
+           isPublicTerms
+  }, [location.pathname])
+
   // Direct color application without guards (for internal use)
   const directApplyColor = useCallback((colorValue: string) => {
     // Normalize to HSL triplet format
@@ -135,12 +157,12 @@ export const useColorTheme = () => {
   }, [])
 
   const applyBrandColor = useCallback((colorValue: string) => {
-    // Don't apply custom colors on landing page
-    if (location.pathname === '/') {
+    // Don't apply custom colors on public pages
+    if (isPublicPage()) {
       return
     }
     directApplyColor(colorValue)
-  }, [location.pathname, directApplyColor])
+  }, [isPublicPage, directApplyColor])
 
   const resetToDefaultColors = useCallback(() => {
     // Reset to default blue for landing page
@@ -181,14 +203,14 @@ export const useColorTheme = () => {
 
   useLayoutEffect(() => {
     const loadUserColor = async () => {
-      // If on landing page, always reset to default and don't apply any custom color
-      if (location.pathname === '/') {
+      // If on public/external page, always reset to default and don't apply any custom color
+      if (isPublicPage()) {
         resetToDefaultColors()
         return
       }
 
       if (!user) {
-        // For non-logged users not on landing page, apply default
+        // For non-logged users not on public pages, apply default
         directApplyColor(DEFAULT_COLOR)
         return
       }
@@ -234,7 +256,7 @@ export const useColorTheme = () => {
     }
 
     loadUserColor()
-  }, [user, applyBrandColor, resetToDefaultColors, location.pathname, directApplyColor])
+  }, [user, applyBrandColor, resetToDefaultColors, isPublicPage, directApplyColor])
 
   return { applyBrandColor, saveBrandColor, resetToDefaultColors }
 }
