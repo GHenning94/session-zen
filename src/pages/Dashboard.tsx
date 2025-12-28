@@ -79,6 +79,7 @@ const Dashboard = () => {
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
+  const [renderedCanalPeriod, setRenderedCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [hoveredCanalIndex, setHoveredCanalIndex] = useState<number | null>(null)
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
   const [showReceitaAverage, setShowReceitaAverage] = useState(true)
@@ -918,6 +919,7 @@ const Dashboard = () => {
 
       console.log('💳 Dados filtrados processados:', filteredCanalData)
       setReceitaPorCanal(filteredCanalData)
+      setRenderedCanalPeriod(period) // Atualiza DEPOIS dos dados para garantir animação
 
     } catch (error) {
       console.error('Erro ao carregar dados do canal:', error)
@@ -1113,10 +1115,10 @@ const Dashboard = () => {
             </>
           ) : (
             <>
-              <div className="opacity-0 animate-scale-fade-in" style={{ animationDelay: '150ms' }}>
+              <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '150ms' }}>
                 <PackageStatusCard stats={packageStats} />
               </div>
-              <div className="opacity-0 animate-scale-fade-in" style={{ animationDelay: '225ms' }}>
+              <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '225ms' }}>
                 <BusinessOrbitalView 
                   dashboardData={dashboardData}
                   packageStats={packageStats}
@@ -2070,7 +2072,7 @@ const Dashboard = () => {
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
-                              <ResponsiveContainer key={`canal-${canalPeriod}-${receitaPorCanal.map(r => r.valor).join('-')}`} width="100%" height="100%">
+                              <ResponsiveContainer key={`canal-${renderedCanalPeriod}`} width="100%" height="100%">
                                 <RadialBarChart 
                                   cx="50%" 
                                   cy="50%" 

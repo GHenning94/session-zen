@@ -202,7 +202,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
     return (
       <Card 
-        className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary"
+        className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary h-full"
         onClick={() => navigate('/pacotes')}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -282,7 +282,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
 
   return (
     <Card 
-      className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary select-none"
+      className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary select-none h-full"
       onClick={() => navigate('/pacotes')}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
