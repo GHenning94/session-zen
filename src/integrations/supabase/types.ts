@@ -1086,6 +1086,113 @@ export type Database = {
           },
         ]
       }
+      referral_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string | null
+          failure_reason: string | null
+          id: string
+          paid_at: string | null
+          period_end: string | null
+          period_start: string | null
+          referral_id: string | null
+          referred_plan: string | null
+          referred_user_name: string | null
+          referrer_user_id: string
+          status: string
+          stripe_transfer_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string | null
+          failure_reason?: string | null
+          id?: string
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          referral_id?: string | null
+          referred_plan?: string | null
+          referred_user_name?: string | null
+          referrer_user_id: string
+          status?: string
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string | null
+          failure_reason?: string | null
+          id?: string
+          paid_at?: string | null
+          period_end?: string | null
+          period_start?: string | null
+          referral_id?: string | null
+          referred_plan?: string | null
+          referred_user_name?: string | null
+          referrer_user_id?: string
+          status?: string
+          stripe_transfer_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_payouts_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          commission_amount: number | null
+          commission_rate: number | null
+          created_at: string
+          first_payment_date: string | null
+          id: string
+          referral_code: string
+          referred_user_id: string
+          referrer_user_id: string
+          status: string
+          subscription_amount: number | null
+          subscription_plan: string | null
+          updated_at: string
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          first_payment_date?: string | null
+          id?: string
+          referral_code: string
+          referred_user_id: string
+          referrer_user_id: string
+          status?: string
+          subscription_amount?: number | null
+          subscription_plan?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          first_payment_date?: string | null
+          id?: string
+          referral_code?: string
+          referred_user_id?: string
+          referrer_user_id?: string
+          status?: string
+          subscription_amount?: number | null
+          subscription_plan?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       registration_tokens: {
         Row: {
           created_at: string
@@ -1266,6 +1373,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      stripe_connect_accounts: {
+        Row: {
+          account_status: string
+          charges_enabled: boolean | null
+          country: string | null
+          created_at: string
+          details_submitted: boolean | null
+          id: string
+          payouts_enabled: boolean | null
+          stripe_account_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_status?: string
+          charges_enabled?: boolean | null
+          country?: string | null
+          created_at?: string
+          details_submitted?: boolean | null
+          id?: string
+          payouts_enabled?: boolean | null
+          stripe_account_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_status?: string
+          charges_enabled?: boolean | null
+          country?: string | null
+          created_at?: string
+          details_submitted?: boolean | null
+          id?: string
+          payouts_enabled?: boolean | null
+          stripe_account_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_2fa_backup_codes: {
         Row: {

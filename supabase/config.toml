@@ -178,5 +178,17 @@ verify_jwt = false
 [functions.admin-encryption-audit]
 verify_jwt = false
 
+[functions.referral-connect-onboard]
+verify_jwt = true
+
+[functions.referral-connect-status]
+verify_jwt = true
+
+[functions.referral-stats]
+verify_jwt = true
+
+[functions.referral-process-payout]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
