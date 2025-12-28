@@ -3,8 +3,29 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles } from 'lucide-react';
+import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+
+const PREDEFINED_PROFESSIONS = [
+  "Psicólogo",
+  "Psicanalista", 
+  "Terapeuta",
+  "Neurologista",
+  "Psicoterapeuta",
+  "Terapeuta Familiar",
+  "Terapeuta de Casal",
+  "Coach",
+  "Outros"
+];
 
 interface ReferrerInfo {
   nome: string;

@@ -4,16 +4,37 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { ArrowLeft, UserPlus, Gift } from "lucide-react"
+
+const PREDEFINED_PROFESSIONS = [
+  "Psicólogo",
+  "Psicanalista", 
+  "Terapeuta",
+  "Neurologista",
+  "Psicoterapeuta",
+  "Terapeuta Familiar",
+  "Terapeuta de Casal",
+  "Coach",
+  "Outros"
+]
 
 const Signup = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [nome, setNome] = useState('')
   const [profissao, setProfissao] = useState('Psicólogo')
+  const [customProfissao, setCustomProfissao] = useState('')
+  const [showCustomProfissao, setShowCustomProfissao] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
   const [resendCooldown, setResendCooldown] = useState(0)
@@ -348,14 +369,44 @@ const Signup = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="profissao">Profissão</Label>
-                <Input
-                  id="profissao"
-                  type="text"
-                  value={profissao}
-                  onChange={(e) => setProfissao(e.target.value)}
-                  required
-                  placeholder="Ex: Psicólogo, Terapeuta, etc."
-                />
+                <Select
+                  value={showCustomProfissao ? "Outros" : profissao}
+                  onValueChange={(value) => {
+                    if (value === "Outros") {
+                      setShowCustomProfissao(true)
+                      setProfissao('')
+                    } else {
+                      setShowCustomProfissao(false)
+                      setProfissao(value)
+                      setCustomProfissao('')
+                    }
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Selecione sua profissão" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-background">
+                    {PREDEFINED_PROFESSIONS.map((prof) => (
+                      <SelectItem key={prof} value={prof}>
+                        {prof}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {showCustomProfissao && (
+                  <Input
+                    id="customProfissao"
+                    type="text"
+                    value={customProfissao}
+                    onChange={(e) => {
+                      setCustomProfissao(e.target.value)
+                      setProfissao(e.target.value)
+                    }}
+                    required
+                    placeholder="Digite sua profissão"
+                    className="mt-2"
+                  />
+                )}
               </div>
 
               <div className="space-y-2">

@@ -194,7 +194,7 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     touchEndX.current = null
   }
 
-  // If no active packages, show summary card
+  // If no active packages, show summary card with consistent height
   if (activePackages.length === 0) {
     const summaryCompletionRate = stats.totalSessions > 0 
       ? Math.round((stats.consumedSessions / stats.totalSessions) * 100) 
@@ -209,19 +209,36 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
           <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
           <Package className="h-4 w-4 text-primary" />
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <span className="text-2xl font-bold">{stats.activePackages}</span>
-            <p className="text-xs text-muted-foreground">Pacotes ativos</p>
-          </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Progresso Geral</span>
-              <span className="font-medium">{summaryCompletionRate}%</span>
+        <CardContent className="flex flex-col min-h-[340px]">
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <span className="text-2xl font-bold">{stats.activePackages}</span>
+              <p className="text-xs text-muted-foreground">Pacotes ativos</p>
             </div>
-            <Progress value={summaryCompletionRate} className="h-2" />
+
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Progresso Geral</span>
+                <span className="font-medium">{summaryCompletionRate}%</span>
+              </div>
+              <Progress value={summaryCompletionRate} className="h-2" />
+            </div>
+
+            <div className="space-y-2">
+              <p className="text-sm text-muted-foreground">Sessões disponíveis</p>
+              <span className="text-xl font-semibold">{stats.remainingSessions}</span>
+            </div>
+
+            <div className="pt-4 border-t">
+              <Button variant="outline" className="w-full" onClick={(e) => { e.stopPropagation(); navigate('/pacotes'); }}>
+                <Package className="h-4 w-4 mr-2" />
+                {stats.activePackages > 0 ? 'Ver pacotes' : 'Criar primeiro pacote'}
+              </Button>
+            </div>
           </div>
+          
+          {/* Spacer to maintain consistent height */}
+          <div className="flex-grow" />
         </CardContent>
       </Card>
     )
