@@ -110,6 +110,11 @@ export const useColorTheme = () => {
   const { user } = useAuth()
   const location = useLocation()
 
+  // Check if we're on an admin page (should use default colors, isolated from user preferences)
+  const isAdminPage = useCallback(() => {
+    return location.pathname.startsWith('/admin')
+  }, [location.pathname])
+
   // Check if we're on a public/external page that should always use default colors
   const isPublicPage = useCallback(() => {
     const publicRoutes = [
@@ -157,15 +162,15 @@ export const useColorTheme = () => {
   }, [])
 
   const applyBrandColor = useCallback((colorValue: string) => {
-    // Don't apply custom colors on public pages
-    if (isPublicPage()) {
+    // Don't apply custom colors on public pages or admin pages
+    if (isPublicPage() || isAdminPage()) {
       return
     }
     directApplyColor(colorValue)
-  }, [isPublicPage, directApplyColor])
+  }, [isPublicPage, isAdminPage, directApplyColor])
 
   const resetToDefaultColors = useCallback(() => {
-    // Reset to default blue for landing page
+    // Reset to default blue for landing page and admin
     directApplyColor(DEFAULT_COLOR)
   }, [directApplyColor])
 
@@ -203,6 +208,12 @@ export const useColorTheme = () => {
 
   // Apply color from cache IMMEDIATELY (synchronous, before render)
   useLayoutEffect(() => {
+    // If on admin page, always reset to default (admin has no custom colors)
+    if (isAdminPage()) {
+      resetToDefaultColors()
+      return
+    }
+
     // If on public/external page, always reset to default
     if (isPublicPage()) {
       resetToDefaultColors()
@@ -225,12 +236,13 @@ export const useColorTheme = () => {
       // No user, apply default
       directApplyColor(DEFAULT_COLOR)
     }
-  }, [user, isPublicPage, directApplyColor, resetToDefaultColors])
+  }, [user, isPublicPage, isAdminPage, directApplyColor, resetToDefaultColors])
 
   // Load color from database (async, after layout is done)
   useEffect(() => {
     const loadColorFromDB = async () => {
-      if (!user || isPublicPage()) return
+      // Don't load user colors for admin or public pages
+      if (!user || isPublicPage() || isAdminPage()) return
 
       try {
         const { data } = await supabase
@@ -258,7 +270,7 @@ export const useColorTheme = () => {
     }
 
     loadColorFromDB()
-  }, [user, isPublicPage, applyBrandColor])
+  }, [user, isPublicPage, isAdminPage, applyBrandColor])
 
   return { applyBrandColor, saveBrandColor, resetToDefaultColors }
 }
