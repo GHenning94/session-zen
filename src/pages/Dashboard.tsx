@@ -10,6 +10,8 @@ import { PackageStatusCard } from "@/components/PackageStatusCard"
 import { BusinessOrbitalView } from "@/components/BusinessOrbitalView"
 import { SmartNotificationCard } from "@/components/SmartNotificationCard"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
+import { DashboardFooter } from "@/components/DashboardFooter"
+import { ScrollAnimation } from "@/hooks/useScrollAnimation"
 import { 
   Calendar, 
   Users, 
@@ -1434,7 +1436,7 @@ const Dashboard = () => {
                   </Button>
                 </div>
 
-                <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '500ms' }}>
+                <ScrollAnimation animation="fade-up" delay={100} className="col-span-full">
                   <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -1656,10 +1658,10 @@ const Dashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </ScrollAnimation>
 
                 {/* Gráfico de Ticket Médio - Moderno */}
-                <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '575ms' }}>
+                <ScrollAnimation animation="fade-up" delay={150} className="col-span-full">
                   <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -1907,10 +1909,10 @@ const Dashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </ScrollAnimation>
 
                 {/* Ticket Médio por Cliente - Modernizado */}
-                <div className="col-span-full opacity-0 animate-fade-in-up" style={{ animationDelay: '650ms' }}>
+                <ScrollAnimation animation="fade-up" delay={200} className="col-span-full">
                   <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -1999,10 +2001,10 @@ const Dashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </ScrollAnimation>
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento - Modernizado */}
-                <div className="col-span-full">
+                <ScrollAnimation animation="fade-up" delay={250} className="col-span-full">
                   <Card className="shadow-soft h-full overflow-visible">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
@@ -2249,13 +2251,13 @@ const Dashboard = () => {
                       </div>
                     </CardContent>
                   </Card>
-                </div>
+                </ScrollAnimation>
               </div>
             </CardContent>
           </Card>
 
           {/* Coluna da Direita */}
-          <div className="space-y-6 flex flex-col h-full">
+          <div className="space-y-6 flex flex-col">
             {/* Upgrade de Plano */}
             <Card className="shadow-soft opacity-0 animate-scale-fade-in" style={{ animationDelay: '400ms' }}>
               <CardContent className="p-6">
@@ -2264,7 +2266,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Top 5 Clientes que Mais Pagam */}
-            <Card className="shadow-soft flex-1 opacity-0 animate-scale-fade-in" style={{ animationDelay: '475ms' }}>
+            <Card className="shadow-soft opacity-0 animate-scale-fade-in" style={{ animationDelay: '475ms' }}>
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
@@ -2412,6 +2414,11 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
+
+        {/* Footer */}
+        <ScrollAnimation animation="fade-up" delay={500}>
+          <DashboardFooter />
+        </ScrollAnimation>
       </div>
 
       {/* Modals */}
