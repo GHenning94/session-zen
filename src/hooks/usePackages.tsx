@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { formatTimeForDatabase } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
+import { encryptSensitiveData } from '@/utils/encryptionMiddleware';
 
 export interface Package {
   id: string;
@@ -53,11 +54,17 @@ export const usePackages = () => {
 
       const valorPorSessao = data.valor_por_sessao || (data.valor_total / data.total_sessoes);
 
+      // Encrypt sensitive package data (observacoes)
+      const encryptedData = await encryptSensitiveData('packages', {
+        observacoes: data.observacoes
+      });
+
       const { data: packageData, error: packageError } = await supabase
         .from('packages')
         .insert({
           user_id: user.id,
           ...data,
+          observacoes: encryptedData.observacoes || null,
           valor_por_sessao: valorPorSessao,
           sessoes_consumidas: 0,
           status: 'ativo'
@@ -150,9 +157,16 @@ export const usePackages = () => {
   const updatePackage = async (id: string, data: Partial<Package>) => {
     setLoading(true);
     try {
+      // Encrypt sensitive package data if observacoes is present
+      let updateData = { ...data };
+      if (data.observacoes !== undefined) {
+        const encryptedData = await encryptSensitiveData('packages', { observacoes: data.observacoes });
+        updateData.observacoes = encryptedData.observacoes as string | undefined;
+      }
+
       const { data: packageData, error } = await supabase
         .from('packages')
-        .update(data)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();

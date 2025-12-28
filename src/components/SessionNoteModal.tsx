@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import RichTextEditor from "./RichTextEditor"
+import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface SessionNoteModalProps {
   session: any
@@ -47,13 +48,18 @@ export const SessionNoteModal = ({
 
     setLoading(true)
     try {
+      const noteData = {
+        notes: notes.trim()
+      };
+
+      // Encrypt sensitive note data before saving
+      const encryptedNoteData = await encryptSensitiveData('session_notes', noteData);
+
       if (editingNote) {
         // Editando anotação existente
         const { error } = await supabase
           .from('session_notes')
-          .update({
-            notes: notes.trim()
-          })
+          .update(encryptedNoteData)
           .eq('id', editingNote.id)
 
         if (error) throw error
@@ -73,14 +79,16 @@ export const SessionNoteModal = ({
           return
         }
 
+        const insertData = {
+          user_id: user.id,
+          client_id: session.client_id,
+          session_id: session.id,
+          notes: encryptedNoteData.notes as string
+        };
+        
         const { error } = await supabase
           .from('session_notes')
-          .insert({
-            user_id: user.id,
-            client_id: session.client_id,
-            session_id: session.id,
-            notes: notes.trim()
-          })
+          .insert(insertData)
 
         if (error) throw error
 

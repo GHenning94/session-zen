@@ -16,6 +16,7 @@ import { formatCurrencyBR } from "@/utils/formatters"
 import { formatTimeForDatabase } from "@/lib/utils"
 import { CalendarIcon, Package, Repeat, User, DollarSign, Clock, FileText, Info } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface SessionModalProps {
   open: boolean
@@ -238,35 +239,39 @@ export const SessionModal = ({
         recurring_session_id: sessionType === 'recorrente' ? formData.recurring_session_id : null
       }
 
+      // Encrypt sensitive session data
+      const encryptedSessionData = await encryptSensitiveData('sessions', sessionData) as typeof sessionData;
+
       if (session) {
         // Atualizar sessão existente
         // Se for sessão recorrente, apenas atualiza status e anotações
         if (isEditingRecurringSession) {
+          const updateData = {
+            status: formData.status,
+            anotacoes: encryptedSessionData.anotacoes
+          };
           const { error } = await supabase
             .from('sessions')
-            .update({
-              status: formData.status,
-              anotacoes: formData.anotacoes || null
-            })
+            .update(updateData)
             .eq('id', session.id)
 
           if (error) throw error
         } else {
           const { error } = await supabase
             .from('sessions')
-            .update(sessionData)
+            .update(encryptedSessionData)
             .eq('id', session.id)
 
           if (error) throw error
 
           // Atualizar pagamento associado se o valor mudou
-          if (sessionData.valor) {
+          if (encryptedSessionData.valor) {
             const { error: paymentError } = await supabase
               .from('payments')
               .update({ 
-                valor: sessionData.valor,
-                data_vencimento: sessionData.data,
-                metodo_pagamento: sessionData.metodo_pagamento || 'A definir'
+                valor: encryptedSessionData.valor,
+                data_vencimento: encryptedSessionData.data,
+                metodo_pagamento: encryptedSessionData.metodo_pagamento || 'A definir'
               })
               .eq('session_id', session.id)
             
@@ -282,7 +287,7 @@ export const SessionModal = ({
         // Criar nova sessão
         const { data: newSession, error } = await supabase
           .from('sessions')
-          .insert([sessionData])
+          .insert([encryptedSessionData])
           .select('id')
           .single()
 
