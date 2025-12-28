@@ -12,11 +12,26 @@ export const useUserTheme = () => {
   const { user } = useAuth()
   const location = useLocation()
 
-  // Check if we're on a public page that should always be light
+  // Check if we're on a public/external page that should always be light theme
   const isPublicPage = useCallback(() => {
-    const publicRoutes = ['/', '/login', '/signup']
-    const isBookingPage = location.pathname.startsWith('/agendar/')
-    return publicRoutes.includes(location.pathname) || isBookingPage
+    const publicRoutes = [
+      '/',           // Landing Page
+      '/login',      // Login do usuário
+      '/signup',     // Cadastro
+      '/admin/login' // Login do admin - sempre light
+    ]
+    
+    // Páginas externas que devem sempre usar tema claro
+    const isBookingPage = location.pathname.startsWith('/agendar/')        // Agendamento público
+    const isReferralPage = location.pathname.startsWith('/convite/')       // Convite de indicação
+    const isRegistrationPage = location.pathname.startsWith('/register/')  // Registro via link
+    const isPublicTerms = location.pathname === '/termos-indicacao'        // Termos de indicação
+    
+    return publicRoutes.includes(location.pathname) || 
+           isBookingPage || 
+           isReferralPage || 
+           isRegistrationPage || 
+           isPublicTerms
   }, [location.pathname])
 
   // Load user's theme preference with instant cache
