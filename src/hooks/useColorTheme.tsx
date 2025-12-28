@@ -1,4 +1,4 @@
-import { useLayoutEffect, useCallback } from 'react'
+import { useLayoutEffect, useEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 import { toast } from 'sonner'
@@ -201,33 +201,38 @@ export const useColorTheme = () => {
     }
   }
 
+  // Apply color from cache IMMEDIATELY (synchronous, before render)
   useLayoutEffect(() => {
-    const loadUserColor = async () => {
-      // If on public/external page, always reset to default and don't apply any custom color
-      if (isPublicPage()) {
-        resetToDefaultColors()
-        return
-      }
+    // If on public/external page, always reset to default
+    if (isPublicPage()) {
+      resetToDefaultColors()
+      return
+    }
 
-      if (!user) {
-        // For non-logged users not on public pages, apply default
-        directApplyColor(DEFAULT_COLOR)
-        return
-      }
-
-      // First, try to get cached color and apply it immediately
+    // If user is logged in, apply cached color immediately
+    if (user) {
       const cacheKey = `${COLOR_CACHE_KEY}_${user.id}`
       const cachedColor = localStorage.getItem(cacheKey)
       
       if (cachedColor) {
         directApplyColor(cachedColor)
+        console.log(`[useColorTheme] ✅ Cor aplicada do cache: ${cachedColor}`)
       } else {
-        // Apply default while loading
+        // No cache, apply default
         directApplyColor(DEFAULT_COLOR)
       }
+    } else {
+      // No user, apply default
+      directApplyColor(DEFAULT_COLOR)
+    }
+  }, [user, isPublicPage, directApplyColor, resetToDefaultColors])
+
+  // Load color from database (async, after layout is done)
+  useEffect(() => {
+    const loadColorFromDB = async () => {
+      if (!user || isPublicPage()) return
 
       try {
-        // Then load from database and update if different
         const { data } = await supabase
           .from('configuracoes')
           .select('brand_color')
@@ -235,8 +240,9 @@ export const useColorTheme = () => {
           .maybeSingle()
 
         if (data?.brand_color) {
-          // Normalize before applying to ensure consistent format
           const normalized = normalizeToHslTriplet(data.brand_color)
+          const cacheKey = `${COLOR_CACHE_KEY}_${user.id}`
+          const cachedColor = localStorage.getItem(cacheKey)
           
           // Update cache
           localStorage.setItem(cacheKey, normalized)
@@ -245,18 +251,14 @@ export const useColorTheme = () => {
           if (normalized !== cachedColor) {
             applyBrandColor(normalized)
           }
-        } else if (!cachedColor) {
-          // No custom color in DB and no cache, keep default
-          // (default already applied above)
         }
       } catch (error) {
         console.error('Error loading user color:', error)
-        // Cache or default is already applied, so no need to do anything
       }
     }
 
-    loadUserColor()
-  }, [user, applyBrandColor, resetToDefaultColors, isPublicPage, directApplyColor])
+    loadColorFromDB()
+  }, [user, isPublicPage, applyBrandColor])
 
   return { applyBrandColor, saveBrandColor, resetToDefaultColors }
 }
