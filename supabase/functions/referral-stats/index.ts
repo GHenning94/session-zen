@@ -49,6 +49,7 @@ serve(async (req) => {
     const activeReferrals = referrals?.filter(r => r.status === 'active' || r.status === 'converted').length || 0;
     const premiumReferrals = referrals?.filter(r => r.subscription_plan === 'premium').length || 0;
     const proReferrals = referrals?.filter(r => r.subscription_plan === 'pro').length || 0;
+    const basicReferrals = referrals?.filter(r => r.subscription_plan === 'basico' || !r.subscription_plan).length || 0;
     const pendingReferrals = referrals?.filter(r => r.status === 'pending').length || 0;
 
     // Calcular ganhos
@@ -100,6 +101,7 @@ serve(async (req) => {
         pending_referrals: pendingReferrals,
         premium_referrals: premiumReferrals,
         pro_referrals: proReferrals,
+        basic_referrals: basicReferrals,
         total_earned: totalEarned, // em centavos
         pending_earnings: pendingEarnings, // em centavos
       },

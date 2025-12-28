@@ -25,6 +25,7 @@ interface ReferralStats {
   pending_referrals: number;
   premium_referrals: number;
   pro_referrals: number;
+  basic_referrals: number;
   total_earned: number;
   pending_earnings: number;
 }
@@ -538,11 +539,11 @@ const ProgramaIndicacao = () => {
         {/* Link de Indicação */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between flex-wrap gap-2">
               <div>
                 <CardTitle>Seu Link de Indicação</CardTitle>
                 <CardDescription>
-                  Compartilhe este link para ganhar 30% de comissão por cada nova assinatura
+                  Ganhe <span className="text-primary font-semibold">30% no 1º mês</span> (mensal) ou <span className="text-primary font-semibold">20%</span> (anual)
                 </CardDescription>
               </div>
               <Button onClick={() => setShareModalOpen(true)} className="shrink-0">
@@ -617,7 +618,7 @@ const ProgramaIndicacao = () => {
         />
 
         {/* Estatísticas */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -638,6 +639,18 @@ const ProgramaIndicacao = () => {
                   <p className="text-2xl font-bold">{stats?.active_referrals || 0}</p>
                 </div>
                 <CheckCircle2 className="w-8 h-8 text-green-500" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">Básico</p>
+                  <p className="text-2xl font-bold">{stats?.basic_referrals || 0}</p>
+                </div>
+                <Circle className="w-8 h-8 text-muted-foreground" />
               </div>
             </CardContent>
           </Card>

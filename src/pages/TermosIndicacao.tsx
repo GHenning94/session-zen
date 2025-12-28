@@ -9,11 +9,10 @@ const TermosIndicacao = () => {
 
   return (
     <Layout>
-      <div className="container mx-auto p-6 max-w-4xl">
+      <div className="space-y-6">
         <Button 
           variant="ghost" 
           onClick={() => navigate(-1)}
-          className="mb-6"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Voltar
@@ -43,6 +42,7 @@ const TermosIndicacao = () => {
                 <li>Para participar do Programa de Indicação, você deve ser um usuário ativo do TherapyPro com uma conta válida.</li>
                 <li>Usuários de qualquer plano (Básico, Profissional ou Premium) podem participar do programa.</li>
                 <li>É necessário aceitar estes termos e condições para se tornar um parceiro de indicação.</li>
+                <li><strong>Auto-indicação é proibida.</strong> Você não pode indicar a si mesmo ou usar seu próprio link de indicação.</li>
               </ul>
             </section>
 
@@ -55,16 +55,39 @@ const TermosIndicacao = () => {
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Cada parceiro recebe um link de indicação único para compartilhar.</li>
                 <li>Quando alguém se cadastra através do seu link e assina um plano pago (Profissional ou Premium), você recebe uma comissão.</li>
-                <li>A comissão é de <strong>30% do valor da assinatura</strong> do indicado.</li>
+                <li>O indicado deve completar a assinatura de um plano pago para que a indicação seja validada.</li>
                 <li>As comissões são recorrentes enquanto o indicado mantiver a assinatura ativa.</li>
               </ul>
             </section>
 
-            {/* Seção 3 */}
+            {/* Seção 3 - NOVA ESTRUTURA DE COMISSÕES */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                3. Comissões e Pagamentos
+                3. Estrutura de Comissões
+              </h3>
+              <div className="space-y-4 text-muted-foreground">
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Planos Mensais</h4>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li><strong className="text-primary">30% de comissão no primeiro mês</strong> - Promoção especial para novos indicados!</li>
+                    <li><strong>15% de comissão nos meses seguintes</strong> - Comissão recorrente enquanto o indicado mantiver a assinatura.</li>
+                  </ul>
+                </div>
+                <div className="p-4 rounded-lg bg-secondary/5 border border-secondary/20">
+                  <h4 className="font-semibold text-foreground mb-2">Planos Anuais</h4>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li><strong>20% de comissão</strong> - Pago mensalmente (1/12 do valor anual por mês) enquanto o indicado mantiver a assinatura.</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+
+            {/* Seção 4 */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                4. Pagamentos
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>As comissões são calculadas sobre o valor líquido da assinatura.</li>
@@ -75,25 +98,25 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 4 */}
-            <section>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-primary" />
-                4. Regras de Uso
-              </h3>
-              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li>É proibido criar múltiplas contas para obter comissões fraudulentamente.</li>
-                <li>Não é permitido usar spam, anúncios enganosos ou práticas antiéticas para promover o serviço.</li>
-                <li>Auto-indicação (indicar a si mesmo) não é permitida e resultará em desqualificação.</li>
-                <li>O link de indicação deve ser compartilhado de forma transparente, informando que você receberá comissão.</li>
-              </ul>
-            </section>
-
             {/* Seção 5 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                5. Cancelamento e Reembolsos
+                5. Regras de Uso
+              </h3>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>É proibido criar múltiplas contas para obter comissões fraudulentamente.</li>
+                <li>Não é permitido usar spam, anúncios enganosos ou práticas antiéticas para promover o serviço.</li>
+                <li><strong>Auto-indicação (indicar a si mesmo) não é permitida e resultará em desqualificação.</strong></li>
+                <li>O link de indicação deve ser compartilhado de forma transparente, informando que você receberá comissão.</li>
+              </ul>
+            </section>
+
+            {/* Seção 6 */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                6. Cancelamento e Reembolsos
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Se o indicado cancelar a assinatura dentro do período de reembolso, a comissão correspondente será estornada.</li>
@@ -102,11 +125,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 6 */}
+            {/* Seção 7 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                6. Responsabilidades
+                7. Responsabilidades
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro não se responsabiliza por perdas decorrentes de informações bancárias incorretas fornecidas pelo parceiro.</li>
@@ -115,11 +138,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 7 */}
+            {/* Seção 8 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                7. Modificações
+                8. Modificações
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro reserva-se o direito de modificar estes termos a qualquer momento.</li>
@@ -128,11 +151,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 8 */}
+            {/* Seção 9 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                8. Contato
+                9. Contato
               </h3>
               <p className="text-muted-foreground">
                 Para dúvidas sobre o Programa de Indicação, entre em contato através do e-mail{' '}
