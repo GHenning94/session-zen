@@ -79,7 +79,6 @@ const Dashboard = () => {
   const [chartPeriod, setChartPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [ticketPeriod, setTicketPeriod] = useState<'1' | '3' | '6' | '12'>('12')
   const [canalPeriod, setCanalPeriod] = useState<'1' | '3' | '6' | '12'>('12')
-  const [canalAnimationKey, setCanalAnimationKey] = useState(0)
   const [hoveredCanalIndex, setHoveredCanalIndex] = useState<number | null>(null)
   const [canalDataCache, setCanalDataCache] = useState<any[]>([])
   const [showReceitaAverage, setShowReceitaAverage] = useState(true)
@@ -859,15 +858,6 @@ const Dashboard = () => {
     // Only affects ticket chart - no reloading needed
   }
 
-  const handleCanalPeriodChange = useCallback(async (period: '1' | '3' | '6' | '12') => {
-    console.log('💳 Mudando período dos canais para:', period)
-    setCanalPeriod(period)
-    setCanalAnimationKey(prev => prev + 1) // Força remount e animação
-    
-    // Carregar dados diretamente sem cache para garantir dados corretos
-    await loadCanalData(period)
-  }, [user])
-
   // Load canal data with period filter (usando payments)
   const loadCanalData = useCallback(async (period: '1' | '3' | '6' | '12') => {
     try {
@@ -933,6 +923,12 @@ const Dashboard = () => {
       console.error('Erro ao carregar dados do canal:', error)
     }
   }, [user])
+
+  const handleCanalPeriodChange = useCallback(async (period: '1' | '3' | '6' | '12') => {
+    console.log('💳 Mudando período dos canais para:', period)
+    setCanalPeriod(period)
+    await loadCanalData(period)
+  }, [loadCanalData])
 
   const handleNewSession = () => {
     navigate('/sessoes')
@@ -2074,7 +2070,7 @@ const Dashboard = () => {
                         <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
-                              <ResponsiveContainer key={`canal-container-${canalAnimationKey}`} width="100%" height="100%">
+                              <ResponsiveContainer key={`canal-${canalPeriod}-${receitaPorCanal.map(r => r.valor).join('-')}`} width="100%" height="100%">
                                 <RadialBarChart 
                                   cx="50%" 
                                   cy="50%" 
