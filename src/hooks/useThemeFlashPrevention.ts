@@ -46,9 +46,26 @@ const isPublicPage = () => {
   return path === '/' || path === '/login' || path === '/signup' || path.startsWith('/agendar/')
 }
 
+// Utilitário: detecta se é página admin (tem seu próprio sistema de tema isolado)
+const isAdminPage = () => {
+  if (typeof window === 'undefined') return false
+  const path = window.location.pathname || '/'
+  return path.startsWith('/admin')
+}
+
 // Função para aplicar tema e cor instantaneamente no DOM
 export const applyThemeInstantly = () => {
   if (typeof window === 'undefined') return
+
+  // Admin pages have their own completely isolated theme system - DO NOT TOUCH
+  if (isAdminPage()) {
+    const ADMIN_THEME_KEY = 'admin-theme-isolated'
+    const adminTheme = localStorage.getItem(ADMIN_THEME_KEY) as 'light' | 'dark' | null
+    const themeToApply = adminTheme === 'dark' ? 'dark' : 'light'
+    setDocumentTheme(themeToApply)
+    applyColorToDocument(DEFAULT_COLOR) // Admin always uses default color
+    return themeToApply
+  }
 
   // Se o index.html já aplicou um tema válido, não altere (evita corrida)
   const currentAttr = document.documentElement.getAttribute('data-theme')

@@ -207,8 +207,9 @@ export const useColorTheme = () => {
   }
 
   // Apply color from cache IMMEDIATELY (synchronous, before render)
+  // IMPORTANT: Admin pages are completely ignored - they always use default colors via their own system
   useLayoutEffect(() => {
-    // If on admin page, always reset to default (admin has no custom colors)
+    // Admin pages always use default colors - completely isolated
     if (isAdminPage()) {
       resetToDefaultColors()
       return

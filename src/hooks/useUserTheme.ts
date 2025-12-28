@@ -6,14 +6,13 @@ import { useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
 const USER_THEME_CACHE_KEY = 'user-theme-cache'
-const ADMIN_THEME_KEY = 'admin-theme'
 
 export const useUserTheme = () => {
-  const { setTheme, resolvedTheme } = useTheme()
+  const { setTheme } = useTheme()
   const { user } = useAuth()
   const location = useLocation()
 
-  // Check if we're on an admin page
+  // Check if we're on an admin page - admin has its own isolated theme system
   const isAdminPage = useCallback(() => {
     return location.pathname.startsWith('/admin')
   }, [location.pathname])
@@ -24,7 +23,6 @@ export const useUserTheme = () => {
       '/',           // Landing Page
       '/login',      // Login do usuário
       '/signup',     // Cadastro
-      '/admin/login' // Login do admin - sempre light
     ]
     
     // Páginas externas que devem sempre usar tema claro
@@ -42,10 +40,8 @@ export const useUserTheme = () => {
 
   // Load user's theme preference with instant cache
   const loadUserTheme = useCallback(async () => {
-    // Admin pages have their own fixed theme (always light for now)
+    // Admin pages have their own completely isolated theme system - DO NOT TOUCH
     if (isAdminPage()) {
-      const adminTheme = localStorage.getItem(ADMIN_THEME_KEY) || 'light'
-      setTheme(adminTheme)
       return
     }
 
@@ -88,11 +84,9 @@ export const useUserTheme = () => {
 
   // Save user's theme preference to database and cache
   const saveThemePreference = useCallback(async (theme: 'light' | 'dark') => {
-    // Admin pages use separate storage - don't affect user preferences
+    // Admin pages have their own isolated theme system - DO NOT interfere
     if (isAdminPage()) {
-      localStorage.setItem(ADMIN_THEME_KEY, theme)
-      setTheme(theme)
-      return true
+      return false
     }
 
     if (!user || isPublicPage()) return false
@@ -131,38 +125,17 @@ export const useUserTheme = () => {
       toast.error('Erro ao salvar preferência de tema')
       return false
     }
-  }, [user, isPublicPage, isAdminPage, setTheme])
+  }, [user, isPublicPage, isAdminPage])
 
   // Apply theme from cache IMMEDIATELY on route/user change (before useEffect runs)
+  // IMPORTANT: Admin pages are completely ignored here - they have their own AdminThemeProvider
   useLayoutEffect(() => {
-    const root = document.documentElement
-    
-    // Admin pages: use admin-specific theme storage (completely isolated)
+    // Admin pages have their own isolated theme system via AdminThemeProvider - DO NOT TOUCH
     if (isAdminPage()) {
-      // Skip admin/login which should always be light
-      if (location.pathname === '/admin/login') {
-        root.style.transition = 'none'
-        root.classList.remove('dark')
-        root.classList.add('light')
-        root.setAttribute('data-theme', 'light')
-        setTheme('light')
-        requestAnimationFrame(() => {
-          root.style.transition = ''
-        })
-        return
-      }
-      
-      const adminTheme = localStorage.getItem(ADMIN_THEME_KEY) || 'light'
-      root.style.transition = 'none'
-      root.classList.remove(adminTheme === 'dark' ? 'light' : 'dark')
-      root.classList.add(adminTheme)
-      root.setAttribute('data-theme', adminTheme)
-      setTheme(adminTheme)
-      requestAnimationFrame(() => {
-        root.style.transition = ''
-      })
       return
     }
+
+    const root = document.documentElement
 
     // If on public page, force light theme
     if (isPublicPage()) {
