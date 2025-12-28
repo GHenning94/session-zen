@@ -182,8 +182,77 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [])
 
+  // Função para limpar cache residual mantendo notificações pendentes
+  const cleanupResidualCache = () => {
+    console.log('[useAuth] 🧹 Limpando cache residual do localStorage...');
+    
+    // Lista de chaves de cache sensível que devem ser removidas
+    const sensitiveKeys = [
+      'therapy-clients',
+      'therapy-sessions', 
+      'therapy-payments',
+    ];
+    
+    // Preservar notificações pendentes antes da limpeza
+    const pendingNotifications: string[] = [];
+    
+    // Procurar por qualquer cache de notificações pendentes
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('notification') || key.includes('pending_notification'))) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          pendingNotifications.push(JSON.stringify({ key, value }));
+        }
+      }
+    }
+    
+    // Remover apenas dados sensíveis de cache
+    sensitiveKeys.forEach(key => {
+      if (localStorage.getItem(key)) {
+        console.log(`[useAuth] 🗑️ Removendo cache sensível: ${key}`);
+        localStorage.removeItem(key);
+      }
+    });
+    
+    // Remover caches de usuário antigo (de sessões anteriores)
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (
+        key.startsWith('user-theme-cache_') ||
+        key.startsWith('user-color-cache_') ||
+        key.startsWith('canal_') ||
+        key.startsWith('avatar-cache_')
+      )) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    keysToRemove.forEach(key => {
+      console.log(`[useAuth] 🗑️ Removendo cache de usuário antigo: ${key}`);
+      localStorage.removeItem(key);
+    });
+    
+    // Restaurar notificações pendentes
+    pendingNotifications.forEach(item => {
+      try {
+        const { key, value } = JSON.parse(item);
+        localStorage.setItem(key, value);
+        console.log(`[useAuth] 🔔 Notificação pendente preservada: ${key}`);
+      } catch (e) {
+        // Ignorar erros de parse
+      }
+    });
+    
+    console.log('[useAuth] ✅ Limpeza de cache residual concluída');
+  };
+
   const signIn = async (email: string, password: string, captchaToken?: string) => {
     console.log('[useAuth] Tentativa de login para:', email);
+    
+    // Limpar cache residual antes do login para garantir ambiente limpo
+    cleanupResidualCache();
     
     const { error } = await supabase.auth.signInWithPassword({
       email,
