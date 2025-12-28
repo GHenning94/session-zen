@@ -11,12 +11,13 @@ import {
   Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, 
   Users, Crown, Briefcase, Circle, LogOut, ExternalLink, 
   CheckCircle2, AlertCircle, Loader2, DollarSign, TrendingUp,
-  Calendar, CreditCard, Building2, ArrowRight
+  Calendar, CreditCard, Building2, ArrowRight, Share2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import referralGift from "@/assets/referral-gift.jpg";
+import ShareReferralModal from "@/components/ShareReferralModal";
 
 interface ReferralStats {
   total_referrals: number;
@@ -63,8 +64,10 @@ const ProgramaIndicacao = () => {
   const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null);
   const [hasBankDetails, setHasBankDetails] = useState(false);
   const [isSettingUpConnect, setIsSettingUpConnect] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
   
-  const inviteLink = `https://therapypro.app/convite/${user?.id || 'default'}`;
+  const referralCode = `REF-${user?.id?.slice(0, 8).toUpperCase() || 'DEFAULT'}`;
+  const inviteLink = `${window.location.origin}/convite/${referralCode}`;
 
   // Carregar todos os dados
   useEffect(() => {
@@ -535,10 +538,18 @@ const ProgramaIndicacao = () => {
         {/* Link de Indicação */}
         <Card>
           <CardHeader>
-            <CardTitle>Seu Link de Indicação</CardTitle>
-            <CardDescription>
-              Compartilhe este link para ganhar 30% de comissão por cada nova assinatura
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Seu Link de Indicação</CardTitle>
+                <CardDescription>
+                  Compartilhe este link para ganhar 30% de comissão por cada nova assinatura
+                </CardDescription>
+              </div>
+              <Button onClick={() => setShareModalOpen(true)} className="shrink-0">
+                <Share2 className="w-4 h-4 mr-2" />
+                Compartilhar
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="flex gap-2">
@@ -596,6 +607,14 @@ const ProgramaIndicacao = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Share Modal */}
+        <ShareReferralModal
+          open={shareModalOpen}
+          onOpenChange={setShareModalOpen}
+          referralLink={inviteLink}
+          referralCode={referralCode}
+        />
 
         {/* Estatísticas */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
