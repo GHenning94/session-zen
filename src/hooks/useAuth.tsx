@@ -182,11 +182,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   }, [])
 
-  // Função para limpar cache residual mantendo notificações pendentes
+  // Função para limpar cache residual mantendo notificações pendentes e preferências de tema/cor
   const cleanupResidualCache = () => {
     console.log('[useAuth] 🧹 Limpando cache residual do localStorage...');
     
-    // Lista de chaves de cache sensível que devem ser removidas
+    // Lista de chaves de cache sensível que devem ser removidas (apenas dados de clientes/sessões/pagamentos)
     const sensitiveKeys = [
       'therapy-clients',
       'therapy-sessions', 
@@ -207,7 +207,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     }
     
-    // Remover apenas dados sensíveis de cache
+    // Remover apenas dados sensíveis de cache (NÃO remover tema/cores - são preferências do usuário)
     sensitiveKeys.forEach(key => {
       if (localStorage.getItem(key)) {
         console.log(`[useAuth] 🗑️ Removendo cache sensível: ${key}`);
@@ -215,22 +215,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     });
     
-    // Remover caches de usuário antigo (de sessões anteriores)
+    // IMPORTANTE: NÃO remover user-theme-cache e user-color-cache
+    // Essas são preferências persistentes do usuário que devem ser mantidas
+    // Apenas remover canais antigos de realtime que podem causar conflitos
     const keysToRemove: string[] = [];
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (
-        key.startsWith('user-theme-cache_') ||
-        key.startsWith('user-color-cache_') ||
-        key.startsWith('canal_') ||
-        key.startsWith('avatar-cache_')
-      )) {
+      if (key && key.startsWith('canal_')) {
         keysToRemove.push(key);
       }
     }
     
     keysToRemove.forEach(key => {
-      console.log(`[useAuth] 🗑️ Removendo cache de usuário antigo: ${key}`);
+      console.log(`[useAuth] 🗑️ Removendo cache de canal antigo: ${key}`);
       localStorage.removeItem(key);
     });
     
@@ -245,7 +242,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       }
     });
     
-    console.log('[useAuth] ✅ Limpeza de cache residual concluída');
+    console.log('[useAuth] ✅ Limpeza de cache residual concluída (tema e cores preservados)');
   };
 
   const signIn = async (email: string, password: string, captchaToken?: string) => {
