@@ -2071,10 +2071,10 @@ const Dashboard = () => {
                       
                       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 h-auto lg:min-h-[450px] overflow-visible">
                         {/* Gráfico RadialBar moderno */}
-                        <div key={`canal-chart-${canalAnimationKey}`} className="h-[280px] lg:h-full flex items-center justify-center relative">
+                        <div className="h-[280px] lg:h-full flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
-                              <ResponsiveContainer key={`canal-container-${canalPeriod}`} width="100%" height="100%">
+                              <ResponsiveContainer key={`canal-container-${canalAnimationKey}`} width="100%" height="100%">
                                 <RadialBarChart 
                                   cx="50%" 
                                   cy="50%" 
