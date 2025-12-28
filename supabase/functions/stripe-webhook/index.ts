@@ -11,8 +11,10 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
-// Taxa de comissão do programa de indicação (30%)
-const REFERRAL_COMMISSION_RATE = 0.30;
+// Taxas de comissão do programa de indicação
+const FIRST_MONTH_COMMISSION_RATE = 0.30; // 30% primeiro mês mensal
+const RECURRING_MONTHLY_COMMISSION_RATE = 0.15; // 15% meses seguintes mensal
+const ANNUAL_COMMISSION_RATE = 0.20; // 20% anual
 
 serve(async (req) => {
   if (req.method !== 'POST') {
@@ -137,7 +139,7 @@ serve(async (req) => {
           
           // ✅ PROCESSAR INDICAÇÃO se houver código
           if (referralCode) {
-            await processReferral(userId, referralCode, planName, session.amount_total || 0);
+            await processReferral(userId, referralCode, planName, session.amount_total || 0, billingInterval);
           }
           
           // Criar notificação de boas-vindas
@@ -460,21 +462,59 @@ serve(async (req) => {
   }
 });
 
+// Função para extrair user_id do código de indicação
+async function extractReferrerFromCode(referralCode: string): Promise<string | null> {
+  // Se já é um UUID completo, retornar como está
+  if (referralCode.length === 36 && referralCode.includes('-')) {
+    return referralCode;
+  }
+  
+  // Formato REF-XXXXXXXX - extrair a parte do user_id
+  const userIdPart = referralCode.replace('REF-', '').toLowerCase();
+  
+  // Buscar usuário que corresponde ao início do user_id
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('is_referral_partner', true);
+  
+  const referrer = profiles?.find(profile => 
+    profile.user_id.slice(0, 8).toLowerCase() === userIdPart
+  );
+  
+  return referrer?.user_id || null;
+}
+
 // Função para processar indicação inicial
 async function processReferral(
   referredUserId: string, 
   referralCode: string, 
   planName: string, 
-  amountPaid: number
+  amountPaid: number,
+  billingInterval: string
 ) {
-  console.log('[webhook] 🎯 Processing referral:', { referredUserId, referralCode, planName, amountPaid });
+  console.log('[webhook] 🎯 Processing referral:', { referredUserId, referralCode, planName, amountPaid, billingInterval });
 
   try {
-    // Verificar se o código é um user_id válido (referrer)
+    // Extrair o user_id real do código de indicação
+    const referrerUserId = await extractReferrerFromCode(referralCode);
+    
+    if (!referrerUserId) {
+      console.log('[webhook] ⚠️ Could not find referrer from code:', referralCode);
+      return;
+    }
+
+    // Bloquear auto-indicação
+    if (referrerUserId === referredUserId) {
+      console.log('[webhook] ⚠️ Self-referral blocked');
+      return;
+    }
+
+    // Verificar se o referrer é parceiro de indicação
     const { data: referrer } = await supabase
       .from('profiles')
       .select('user_id, nome, is_referral_partner')
-      .eq('user_id', referralCode)
+      .eq('user_id', referrerUserId)
       .single();
 
     if (!referrer || !referrer.is_referral_partner) {
@@ -494,20 +534,24 @@ async function processReferral(
       return;
     }
 
-    // Calcular comissão
-    const commissionAmount = Math.round(amountPaid * REFERRAL_COMMISSION_RATE);
+    // Calcular comissão baseada no intervalo de cobrança
+    // Mensal: 30% no primeiro mês
+    // Anual: 20%
+    const isAnnual = billingInterval === 'yearly' || billingInterval === 'year';
+    const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : FIRST_MONTH_COMMISSION_RATE;
+    const commissionAmount = Math.round(amountPaid * commissionRate);
 
     // Criar registro de referral
     const { data: referral, error: referralError } = await supabase
       .from('referrals')
       .insert({
-        referrer_user_id: referralCode,
+        referrer_user_id: referrerUserId,
         referred_user_id: referredUserId,
         referral_code: referralCode,
         status: 'converted',
         subscription_plan: planName,
         subscription_amount: amountPaid,
-        commission_rate: REFERRAL_COMMISSION_RATE * 100,
+        commission_rate: commissionRate * 100,
         commission_amount: commissionAmount,
         first_payment_date: new Date().toISOString(),
       })
@@ -532,7 +576,7 @@ async function processReferral(
     await supabase
       .from('referral_payouts')
       .insert({
-        referrer_user_id: referralCode,
+        referrer_user_id: referrerUserId,
         referral_id: referral.id,
         amount: commissionAmount,
         currency: 'brl',
@@ -546,16 +590,17 @@ async function processReferral(
     console.log('[webhook] ✅ Payout record created');
 
     // Notificar o referrer
+    const commissionDisplay = isAnnual ? '20%' : '30%';
     await supabase
       .from('notifications')
       .insert({
-        user_id: referralCode,
+        user_id: referrerUserId,
         titulo: 'Nova Indicação Convertida! 🎉',
-        conteudo: `${referredProfile?.nome || 'Um novo usuário'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você receberá R$ ${(commissionAmount / 100).toFixed(2)} de comissão.`,
+        conteudo: `${referredProfile?.nome || 'Um novo usuário'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você receberá R$ ${(commissionAmount / 100).toFixed(2)} (${commissionDisplay}) de comissão.`,
       });
 
     // Tentar processar payout automaticamente
-    await tryProcessPayout(referralCode);
+    await tryProcessPayout(referrerUserId);
 
   } catch (err) {
     console.error('[webhook] ❌ Error processing referral:', err);
@@ -566,15 +611,16 @@ async function processReferral(
 async function processReferralCommission(
   referredUserId: string, 
   amountPaid: number, 
-  planName: string
+  planName: string,
+  billingInterval?: string
 ) {
-  console.log('[webhook] 🔄 Processing recurring commission:', { referredUserId, amountPaid });
+  console.log('[webhook] 🔄 Processing recurring commission:', { referredUserId, amountPaid, billingInterval });
 
   try {
     // Buscar referral ativo para este usuário
     const { data: referral } = await supabase
       .from('referrals')
-      .select('*, profiles!referrals_referrer_user_id_fkey(nome)')
+      .select('*')
       .eq('referred_user_id', referredUserId)
       .eq('status', 'converted')
       .single();
@@ -584,8 +630,23 @@ async function processReferralCommission(
       return;
     }
 
-    // Calcular comissão
-    const commissionAmount = Math.round(amountPaid * REFERRAL_COMMISSION_RATE);
+    // Buscar o billing_interval do referred user se não fornecido
+    let interval = billingInterval;
+    if (!interval) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('billing_interval')
+        .eq('user_id', referredUserId)
+        .single();
+      interval = profile?.billing_interval || 'monthly';
+    }
+
+    // Calcular comissão baseada no intervalo
+    // Mensal: 15% (meses seguintes)
+    // Anual: 20%
+    const isAnnual = interval === 'yearly' || interval === 'year';
+    const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
+    const commissionAmount = Math.round(amountPaid * commissionRate);
 
     // Buscar nome do indicado
     const { data: referredProfile } = await supabase
@@ -609,7 +670,8 @@ async function processReferralCommission(
         referred_plan: planName,
       });
 
-    console.log('[webhook] ✅ Recurring commission payout created:', commissionAmount);
+    const rateDisplay = isAnnual ? '20%' : '15%';
+    console.log('[webhook] ✅ Recurring commission payout created:', commissionAmount, `(${rateDisplay})`);
 
     // Notificar o referrer
     await supabase
@@ -617,7 +679,7 @@ async function processReferralCommission(
       .insert({
         user_id: referral.referrer_user_id,
         titulo: 'Comissão Recorrente! 💰',
-        conteudo: `${referredProfile?.nome || 'Seu indicado'} renovou a assinatura. Você receberá R$ ${(commissionAmount / 100).toFixed(2)} de comissão.`,
+        conteudo: `${referredProfile?.nome || 'Seu indicado'} renovou a assinatura. Você receberá R$ ${(commissionAmount / 100).toFixed(2)} (${rateDisplay}) de comissão.`,
       });
 
     // Tentar processar payout automaticamente
