@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useCallback } from 'react'
+import { useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 import { useTheme } from 'next-themes'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/integrations/supabase/client'
@@ -113,28 +113,46 @@ export const useUserTheme = () => {
     }
   }, [user, isPublicPage])
 
-  // Load theme on component mount and when user changes
-  useEffect(() => {
-    loadUserTheme()
-  }, [loadUserTheme])
-
-  // Force light theme on public pages - DO NOT corrupt localStorage 'theme' key
+  // Apply theme from cache IMMEDIATELY on user change (before useEffect runs)
   useLayoutEffect(() => {
+    // If on public page, force light theme
     if (isPublicPage()) {
-      // Apply light theme immediately on public pages WITHOUT modifying localStorage
       const root = document.documentElement
       root.style.transition = 'none'
       root.classList.remove('dark')
       root.classList.add('light')
       root.setAttribute('data-theme', 'light')
-      // DO NOT call localStorage.setItem('theme', 'light') here - it corrupts user preference!
       setTheme('light')
-      // Re-enable transitions after a frame
       requestAnimationFrame(() => {
         root.style.transition = ''
       })
+      return
     }
-  }, [isPublicPage, setTheme])
+
+    // If user is logged in and NOT on public page, apply cached theme immediately
+    if (user) {
+      const cacheKey = `${THEME_CACHE_KEY}_${user.id}`
+      const cachedTheme = localStorage.getItem(cacheKey)
+      
+      if (cachedTheme && (cachedTheme === 'light' || cachedTheme === 'dark')) {
+        const root = document.documentElement
+        root.style.transition = 'none'
+        root.classList.remove(cachedTheme === 'dark' ? 'light' : 'dark')
+        root.classList.add(cachedTheme)
+        root.setAttribute('data-theme', cachedTheme)
+        setTheme(cachedTheme)
+        console.log(`[useUserTheme] ✅ Tema aplicado do cache: ${cachedTheme}`)
+        requestAnimationFrame(() => {
+          root.style.transition = ''
+        })
+      }
+    }
+  }, [isPublicPage, user, setTheme])
+
+  // Load theme from database (async, after layout is done)
+  useEffect(() => {
+    loadUserTheme()
+  }, [loadUserTheme])
 
   return {
     saveThemePreference,

@@ -1,9 +1,12 @@
 import { useLayoutEffect } from 'react'
+import { useTheme } from 'next-themes'
 
 const THEME_CACHE_KEY = 'user-theme-cache'
 
 // Hook to apply cached theme instantly before React hydration
 export const useInstantTheme = (userId?: string) => {
+  const { setTheme } = useTheme()
+
   useLayoutEffect(() => {
     if (!userId) return
 
@@ -18,8 +21,10 @@ export const useInstantTheme = (userId?: string) => {
       root.classList.remove(cachedTheme === 'dark' ? 'light' : 'dark')
       root.setAttribute('data-theme', cachedTheme)
       
-      // Force a reflow to ensure the theme is applied immediately
-      document.documentElement.offsetHeight
+      // Also update next-themes state to keep it in sync
+      setTheme(cachedTheme)
+      
+      console.log(`[useInstantTheme] ✅ Tema aplicado do cache: ${cachedTheme}`)
     }
-  }, [userId])
+  }, [userId, setTheme])
 }
