@@ -14,6 +14,7 @@ import { useTerminology } from "@/hooks/useTerminology"
 import { supabase } from "@/integrations/supabase/client"
 import { Plus, Zap, ArrowUpRight, Trash2 } from "lucide-react"
 import { ClientAvatarUpload } from "@/components/ClientAvatarUpload"
+import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface NewClientModalProps {
   open: boolean
@@ -266,17 +267,20 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         dados_clinicos: newClient.notes ? `Observações: ${newClient.notes}` : null
       }
 
+      // Encrypt sensitive fields before saving
+      const encryptedClientData = await encryptSensitiveData('clients', clientData) as typeof clientData;
+
       let error
       if (editingClient) {
         const result = await supabase
           .from('clients')
-          .update(clientData)
+          .update(encryptedClientData)
           .eq('id', editingClient.id)
         error = result.error
       } else {
         const result = await supabase
           .from('clients')
-          .insert([clientData])
+          .insert([encryptedClientData])
         error = result.error
       }
 

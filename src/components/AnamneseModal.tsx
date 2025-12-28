@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { sanitizeMedicalTextClientSide, validateMedicalDataInput } from "@/utils/secureClientData"
 import { Shield, AlertTriangle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
+import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface AnamneseModalProps {
   open: boolean
@@ -107,11 +108,14 @@ export const AnamneseModal = ({
 
     setLoading(true)
     try {
+      // Encrypt sensitive anamnese data before saving
+      const encryptedAnamnese = await encryptSensitiveData('anamneses', sanitizedAnamnese);
+
       if (existingAnamnese) {
         // Atualizar anamnese existente - com auditoria automática via trigger
         const { error } = await supabase
           .from('anamneses')
-          .update(sanitizedAnamnese)
+          .update(encryptedAnamnese)
           .eq('id', existingAnamnese.id)
           .eq('user_id', user.id) // Additional security check
 
@@ -128,7 +132,7 @@ export const AnamneseModal = ({
           .insert({
             user_id: user.id,
             client_id: clientId,
-            ...sanitizedAnamnese
+            ...encryptedAnamnese
           })
 
         if (error) throw error

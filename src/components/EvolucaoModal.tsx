@@ -13,6 +13,7 @@ import { ptBR } from "date-fns/locale"
 import { getSessionStatusColor, getSessionStatusLabel, calculateSessionStatus } from "@/utils/sessionStatusUtils"
 import { formatDateBR } from "@/utils/formatters"
 import { Badge } from "@/components/ui/badge"
+import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface EvolucaoModalProps {
   open: boolean
@@ -147,14 +148,19 @@ export const EvolucaoModal = ({
 
     setLoading(true)
     try {
+      const evolucaoData = {
+        data_sessao: evolucao.data_sessao,
+        evolucao: evolucao.evolucao.trim()
+      };
+
+      // Encrypt sensitive evolucao data before saving
+      const encryptedEvolucao = await encryptSensitiveData('evolucoes', evolucaoData);
+
       if (existingEvolucao) {
         // Atualizar evolução existente
         const { error } = await supabase
           .from('evolucoes')
-          .update({
-            data_sessao: evolucao.data_sessao,
-            evolucao: evolucao.evolucao.trim()
-          })
+          .update(encryptedEvolucao)
           .eq('id', existingEvolucao.id)
 
         if (error) throw error
@@ -165,15 +171,17 @@ export const EvolucaoModal = ({
         })
       } else {
         // Criar nova evolução
+        const insertData = {
+          user_id: user.id,
+          client_id: clientId,
+          session_id: evolucao.session_id || null,
+          data_sessao: encryptedEvolucao.data_sessao as string,
+          evolucao: encryptedEvolucao.evolucao as string
+        };
+        
         const { error } = await supabase
           .from('evolucoes')
-          .insert({
-            user_id: user.id,
-            client_id: clientId,
-            session_id: evolucao.session_id || null,
-            data_sessao: evolucao.data_sessao,
-            evolucao: evolucao.evolucao.trim()
-          })
+          .insert(insertData)
 
         if (error) throw error
 
