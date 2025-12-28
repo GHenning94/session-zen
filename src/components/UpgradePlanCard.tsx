@@ -108,11 +108,13 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
     setLoading(true)
     try {
       const stripePrice = billingCycle === 'monthly' ? plan.monthlyStripePrice : plan.annualStripePrice
+      const referralCode = localStorage.getItem('referral_code') || sessionStorage.getItem('pending_referral')
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: {
           priceId: stripePrice,
           planName: plan.name,
           returnUrl: window.location.origin,
+          referralCode: referralCode || undefined
         }
       })
 

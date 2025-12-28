@@ -35,6 +35,7 @@ import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
 import { formatPhone, formatCRP, formatCRM, validatePassword } from "@/utils/inputMasks"
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
+import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 import { cleanupInvalidSession } from "@/utils/sessionCleanup"
 import { useNavigate } from "react-router-dom"
 import { useGoogleCalendarBackgroundSync } from "@/hooks/useGoogleCalendarBackgroundSync"
@@ -405,11 +406,16 @@ const Configuracoes = () => {
         if (configFields.includes(key)) configData[key] = settings[key];
       }
       
-      const { error: profileError } = await supabase.from('profiles').update(profileData).eq('user_id', user.id);
+      // Encrypt sensitive profile fields before saving
+      const encryptedProfileData = await encryptSensitiveData('profiles', profileData);
+      
+      const { error: profileError } = await supabase.from('profiles').update(encryptedProfileData).eq('user_id', user.id);
       if (profileError) throw profileError;
       
       if (Object.keys(configData).length > 0) {
-        const { error: configError } = await supabase.from('configuracoes').upsert({ user_id: user.id, ...configData });
+        // Encrypt sensitive config fields before saving
+        const encryptedConfigData = await encryptSensitiveData('configuracoes', configData);
+        const { error: configError } = await supabase.from('configuracoes').upsert({ user_id: user.id, ...encryptedConfigData });
         if (configError) throw configError;
       }
       

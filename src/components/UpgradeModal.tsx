@@ -54,8 +54,13 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
     
     setLoading(true);
     try {
+      const referralCode = localStorage.getItem('referral_code') || sessionStorage.getItem('pending_referral')
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { priceId: plan.stripePrice, returnUrl: window.location.origin }
+        body: { 
+          priceId: plan.stripePrice, 
+          returnUrl: window.location.origin,
+          referralCode: referralCode || undefined
+        }
       });
 
       if (error) throw error;
