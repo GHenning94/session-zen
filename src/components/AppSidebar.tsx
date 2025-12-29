@@ -38,25 +38,26 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { useTerminology } from "@/hooks/useTerminology"
 import { Badge } from "@/components/ui/badge"
 
-// Menu items will be generated dynamically based on terminology
-const getMenuItems = (clientTermPlural: string) => [
-    { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-    { title: "Agenda", url: "/agenda", icon: Calendar },
+// Menu items - TODOS os títulos são strings literais fixas para evitar textos incorretos
+// Apenas clientTermPlural pode ser dinâmico, mas é validado para ser apenas "Pacientes" ou "Clientes"
+const getMenuItems = (clientTermPlural: 'Pacientes' | 'Clientes') => [
+    { title: "Dashboard" as const, url: "/dashboard", icon: LayoutDashboard },
+    { title: "Agenda" as const, url: "/agenda", icon: Calendar },
     { title: clientTermPlural, url: "/clientes", icon: Users },
-    { title: "Sessões", url: "/sessoes", icon: NotebookPen },
-    { title: "Sessões Recorrentes", url: "/sessoes-recorrentes", icon: Repeat },
-    { title: "Pacotes", url: "/pacotes", icon: Package },
-    { title: "Pagamentos", url: "/pagamentos", icon: CreditCard },
-    { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
-    { title: "Prontuários", url: "/prontuarios", icon: FileText },
-    { title: "Metas", url: "/metas", icon: Target },
-    { title: "Eventos", url: "/eventos", icon: CalendarCheck },
-    { title: "Estudos", url: "/estudos", icon: BookOpen },
-    { title: "Redes Sociais", url: "/redes-sociais", icon: Share2 },
-    { title: "Programa de Indicação", url: "/programa-indicacao", icon: Star },
-    { title: "Página Pública", url: "/pagina-publica", icon: Globe },
-    { title: "Integrações", url: "/integracoes", icon: Plug },
-    { title: "Suporte", url: "/suporte", icon: HelpCircle },
+    { title: "Sessões" as const, url: "/sessoes", icon: NotebookPen },
+    { title: "Sessões Recorrentes" as const, url: "/sessoes-recorrentes", icon: Repeat },
+    { title: "Pacotes" as const, url: "/pacotes", icon: Package },
+    { title: "Pagamentos" as const, url: "/pagamentos", icon: CreditCard },
+    { title: "Relatórios" as const, url: "/relatorios", icon: FileBarChart },
+    { title: "Prontuários" as const, url: "/prontuarios", icon: FileText },
+    { title: "Metas" as const, url: "/metas", icon: Target },
+    { title: "Eventos" as const, url: "/eventos", icon: CalendarCheck },
+    { title: "Estudos" as const, url: "/estudos", icon: BookOpen },
+    { title: "Redes Sociais" as const, url: "/redes-sociais", icon: Share2 },
+    { title: "Programa de Indicação" as const, url: "/programa-indicacao", icon: Star },
+    { title: "Página Pública" as const, url: "/pagina-publica", icon: Globe },
+    { title: "Integrações" as const, url: "/integracoes", icon: Plug },
+    { title: "Suporte" as const, url: "/suporte", icon: HelpCircle },
 ]
 
 export function AppSidebar() {
@@ -65,7 +66,10 @@ export function AppSidebar() {
   const { currentPlan, isLoading } = useSubscription()
   const { clientTermPlural } = useTerminology()
   const currentPath = location.pathname
-  const menuItems = getMenuItems(clientTermPlural)
+  // PROTEÇÃO: Garantir que clientTermPlural é um valor válido
+  const safeClientTermPlural: 'Pacientes' | 'Clientes' = 
+    clientTermPlural === 'Pacientes' ? 'Pacientes' : 'Clientes'
+  const menuItems = getMenuItems(safeClientTermPlural)
 
   const showBanner = !isLoading && currentPlan !== 'premium'
   const isCollapsed = state === "collapsed"
