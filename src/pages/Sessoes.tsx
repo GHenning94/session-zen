@@ -406,6 +406,7 @@ export default function Sessoes() {
       // Build update object based on provided changes
       const sessionUpdate: any = {}
       if (changes.client_id) sessionUpdate.client_id = changes.client_id
+      if (changes.package_id) sessionUpdate.package_id = changes.package_id
       if (changes.data) sessionUpdate.data = changes.data
       if (changes.valor !== undefined) sessionUpdate.valor = changes.valor
       if (changes.metodo_pagamento) sessionUpdate.metodo_pagamento = changes.metodo_pagamento
