@@ -141,11 +141,14 @@ export const TwoFactorSettings = () => {
               />
             </div>
             {settings?.email_2fa_enabled && (
-              <Alert>
-                <AlertDescription>
-                  Ativo: Você receberá um código por e-mail a cada login
-                </AlertDescription>
-              </Alert>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Mail className="h-4 w-4 text-primary shrink-0" />
+                  <p className="text-sm">
+                    <strong>Ativo:</strong> Você receberá um código por e-mail a cada login
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 
@@ -177,18 +180,19 @@ export const TwoFactorSettings = () => {
                   size="sm"
                   onClick={handleAuthenticatorSetup}
                 >
-                  Configurar
+                  Configurar 2FA
                 </Button>
               )}
             </div>
             {settings?.authenticator_2fa_enabled && (
-              <Alert>
-                {/* --- INÍCIO DA CORREÇÃO --- */}
-                <AlertDescription>
-                  Ativo: Use o aplicativo de autenticação para gerar os códigos
-                </AlertDescription>
-                {/* --- FIM DA CORREÇÃO --- */}
-              </Alert>
+              <div className="bg-primary/10 border border-primary/30 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Smartphone className="h-4 w-4 text-primary shrink-0" />
+                  <p className="text-sm">
+                    <strong>Ativo:</strong> Use o aplicativo de autenticação para gerar os códigos
+                  </p>
+                </div>
+              </div>
             )}
           </div>
 
