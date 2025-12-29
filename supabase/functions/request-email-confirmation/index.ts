@@ -188,6 +188,7 @@ serve(async (req: Request) => {
 
           if (!existingReferral) {
             // Criar registro de referral como pendente
+            // A notificação será enviada ao referrer apenas após a confirmação do e-mail
             await supabaseAdmin
               .from('referrals')
               .insert({
@@ -201,18 +202,7 @@ serve(async (req: Request) => {
                 commission_amount: 0,
               });
 
-            console.log('[Email Confirmation] Referral pendente criada com sucesso');
-
-            // Notificar o referrer sobre o cadastro
-            await supabaseAdmin
-              .from('notifications')
-              .insert({
-                user_id: referrerUserId,
-                titulo: 'Novo cadastro via indicação! 🎉',
-                conteudo: `${user_metadata?.nome || 'Um novo usuário'} se cadastrou usando seu link de indicação! Quando ele assinar um plano pago, você receberá sua comissão.`,
-              });
-
-            console.log('[Email Confirmation] Notificação enviada ao referrer');
+            console.log('[Email Confirmation] Referral pendente criada com sucesso (notificação será enviada após confirmação de e-mail)');
           }
         }
       } catch (referralError) {
