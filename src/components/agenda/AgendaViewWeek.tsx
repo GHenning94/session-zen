@@ -102,26 +102,17 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
   const getSessionsForTimeSlot = (date: Date, timeSlot: { hour: number; minute: number }) => {
     return sessions.filter(session => {
       const [sessionHour, sessionMinute] = session.horario.split(':').map(Number)
-      return session.data === format(date, 'yyyy-MM-dd') && 
-             sessionHour === timeSlot.hour && 
-             (sessionMinute === timeSlot.minute || (sessionMinute >= timeSlot.minute && sessionMinute < timeSlot.minute + 30))
+      const dateMatch = session.data === format(date, 'yyyy-MM-dd')
+      const hourMatch = sessionHour === timeSlot.hour
+      // Verifica se está no slot de 30 minutos correto (0-29 ou 30-59)
+      const minuteMatch = timeSlot.minute === 0 
+        ? (sessionMinute >= 0 && sessionMinute < 30)
+        : (sessionMinute >= 30 && sessionMinute < 60)
+      return dateMatch && hourMatch && minuteMatch
     })
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'agendada':
-        return 'bg-primary/10 text-primary border-primary/20'
-      case 'realizada':
-        return { backgroundColor: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', borderColor: 'hsl(var(--success) / 0.2)' }
-      case 'cancelada':
-        return 'bg-destructive/10 text-destructive border-destructive/20'
-      case 'falta':
-        return 'bg-warning/10 text-warning border-warning/20'
-      default:
-        return 'bg-muted text-muted-foreground border-border'
-    }
-  }
+  // Not used anymore - cards are always blue with white text
 
   const getGoogleEventsForTimeSlot = (date: Date, timeSlot: { hour: number; minute: number }) => {
     return googleEvents.filter(event => {
@@ -247,8 +238,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             <Card 
                               key={session.id} 
                               className={cn(
-                                "cursor-move group relative transition-all hover:shadow-sm",
-                                getStatusColor(session.status),
+                                "cursor-move group relative transition-all hover:shadow-sm bg-primary text-primary-foreground border-primary/50",
                                 highlightedSessionId === session.id && "animate-pulse-highlight"
                               )}
                               draggable
@@ -280,12 +270,17 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                   </span>
                                   <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                                 </div>
+                                {session.valor && (
+                                  <div className="text-[10px] font-medium text-success mt-0.5">
+                                    R$ {Number(session.valor).toFixed(2)}
+                                  </div>
+                                )}
                                 
                                 <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="h-4 w-4 p-0 text-destructive"
+                                    className="h-4 w-4 p-0 text-primary-foreground hover:text-destructive"
                                     onClick={(e) => {
                                       e.stopPropagation()
                                       onDeleteSession(session.id)

@@ -116,20 +116,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
     }
   }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'agendada':
-        return 'bg-primary/10 text-primary border-primary/20'
-      case 'realizada':
-        return { backgroundColor: 'hsl(var(--success) / 0.1)', color: 'hsl(var(--success))', borderColor: 'hsl(var(--success) / 0.2)' }
-      case 'cancelada':
-        return 'bg-destructive/10 text-destructive border-destructive/20'
-      case 'falta':
-        return 'bg-warning/10 text-warning border-warning/20'
-      default:
-        return 'bg-muted text-muted-foreground border-border'
-    }
-  }
+  // Not used anymore - cards are always blue with white text
   
 
   return (
@@ -193,8 +180,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                     <Card 
                       key={session.id} 
                       className={cn(
-                        "relative group cursor-move transition-all hover:shadow-md", 
-                        getStatusColor(session.status),
+                        "relative group cursor-move transition-all hover:shadow-md bg-primary text-primary-foreground border-primary/50", 
                         highlightedSessionId === session.id && "animate-pulse-highlight"
                       )}
                       draggable
@@ -224,7 +210,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                 </span>
                               </div>
                               {session.package_id && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4">
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary-foreground/20 text-primary-foreground border-0">
                                   <Package className="h-2 w-2 mr-0.5" />
                                   Pacote
                                 </Badge>
@@ -239,7 +225,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                               )}
                             </div>
                             {session.anotacoes && (
-                              <div className="mt-1 text-xs text-muted-foreground truncate">
+                              <div className="mt-1 text-xs text-primary-foreground/70 truncate">
                                 {session.anotacoes}
                               </div>
                             )}
@@ -249,7 +235,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-5 w-5 p-0 text-destructive hover:text-destructive"
+                              className="h-5 w-5 p-0 text-primary-foreground hover:text-destructive"
                               onClick={(e) => {
                                 e.stopPropagation()
                                 onDeleteSession(session.id)

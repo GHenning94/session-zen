@@ -253,10 +253,11 @@ const Agenda = () => {
             </p>
           </div>
           <Button 
-            className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto"
+            className="bg-gradient-primary hover:opacity-90 flex-1 sm:flex-none"
+            size="sm"
             onClick={() => setIsNewSessionOpen(true)}
           >
-            <Plus className="w-4 h-4 mr-2" />
+            <Plus className="h-4 w-4 mr-1" />
             Nova Sessão
           </Button>
         </div>
@@ -510,6 +511,10 @@ const Agenda = () => {
               onCreateSession={handleCreateSession}
               onDragSession={handleDragSession}
               onDateSelect={setSelectedDate}
+              onSwitchToWeekView={(date) => {
+                setSelectedDate(date)
+                setCurrentView('week')
+              }}
               highlightedSessionId={highlightedSessionId}
             />
           )}
