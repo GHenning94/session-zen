@@ -127,6 +127,15 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
       return
     }
 
+    if (!newSession.valor) {
+      toast({
+        title: "Campo obrigatório",
+        description: "Preencha o valor da sessão.",
+        variant: "destructive"
+      })
+      return
+    }
+
     // Validação de limite de sessões por cliente
     const clientSessions = sessions.filter(s => s.client_id === newSession.client_id).length
     if (!canAddSession(clientSessions)) {
@@ -222,7 +231,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
         </DialogHeader>
         <div className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="client">Cliente</Label>
+            <Label htmlFor="client">Cliente *</Label>
             <Select value={newSession.client_id} onValueChange={handleClientChange}>
               <SelectTrigger>
                 <SelectValue placeholder="Selecione o cliente" />
@@ -250,7 +259,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="date">Data</Label>
+              <Label htmlFor="date">Data *</Label>
               <Input 
                 type="date" 
                 id="date" 
@@ -259,7 +268,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="time">Horário</Label>
+              <Label htmlFor="time">Horário *</Label>
               <Select value={newSession.horario} onValueChange={(value) => setNewSession({...newSession, horario: value})}>
                 <SelectTrigger>
                   <SelectValue placeholder="Horário" />
@@ -273,7 +282,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
             </div>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="value">Valor (opcional)</Label>
+            <Label htmlFor="value">Valor *</Label>
             <Input 
               type="number" 
               id="value" 

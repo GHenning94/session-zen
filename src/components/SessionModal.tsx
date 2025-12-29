@@ -179,6 +179,16 @@ export const SessionModal = ({
       return
     }
 
+    // Validar valor obrigatório na criação (apenas para sessões não-pacote)
+    if (!session && sessionType !== 'pacote' && !formData.valor) {
+      toast({
+        variant: "destructive",
+        title: "Campo obrigatório",
+        description: "Preencha o valor da sessão.",
+      })
+      return
+    }
+
     if (sessionType === 'pacote' && !formData.package_id) {
       toast({
         variant: "destructive",
@@ -456,7 +466,7 @@ export const SessionModal = ({
               <>
                 {/* Cliente */}
                 <div className="col-span-2">
-                  <Label htmlFor="client_id">Cliente *</Label>
+                  <Label htmlFor="client_id">Cliente{!session && ' *'}</Label>
                   <Select
                     value={formData.client_id}
                     onValueChange={(value) => setFormData({ ...formData, client_id: value })}
@@ -483,7 +493,7 @@ export const SessionModal = ({
                 {/* Pacote (se tipo = pacote) */}
                 {sessionType === 'pacote' && (
                   <div className="col-span-2">
-                    <Label htmlFor="package_id">Pacote *</Label>
+                    <Label htmlFor="package_id">Pacote{!session && ' *'}</Label>
                     <Select
                       value={formData.package_id}
                       onValueChange={(value) => setFormData({ ...formData, package_id: value })}
@@ -505,7 +515,7 @@ export const SessionModal = ({
 
                 {/* Data */}
                 <div>
-                  <Label htmlFor="data">Data *</Label>
+                  <Label htmlFor="data">Data{!session && ' *'}</Label>
                   <Input
                     id="data"
                     type="date"
@@ -516,7 +526,7 @@ export const SessionModal = ({
 
                 {/* Horário */}
                 <div>
-                  <Label htmlFor="horario">Horário *</Label>
+                  <Label htmlFor="horario">Horário{!session && ' *'}</Label>
                   <Input
                     id="horario"
                     type="time"
@@ -529,7 +539,7 @@ export const SessionModal = ({
                 {sessionType !== 'pacote' && (
                   <>
                     <div>
-                      <Label htmlFor="valor">Valor (R$)</Label>
+                      <Label htmlFor="valor">Valor (R$){!session && ' *'}</Label>
                       <Input
                         id="valor"
                         type="number"
