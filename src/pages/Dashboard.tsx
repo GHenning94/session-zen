@@ -2266,8 +2266,8 @@ const Dashboard = () => {
             </Card>
 
             {/* Top 5 Clientes que Mais Pagam */}
-            <Card className="shadow-soft opacity-0 animate-scale-fade-in" style={{ animationDelay: '475ms' }}>
-              <CardHeader className="pb-2">
+            <Card className="shadow-soft opacity-0 animate-scale-fade-in h-[420px] flex flex-col" style={{ animationDelay: '475ms' }}>
+              <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
                   Top 5 {clientTermPlural}
@@ -2276,7 +2276,7 @@ const Dashboard = () => {
                   {clientTermPlural} que mais geraram receita
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-full">
+              <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-4">
                   {topClients.length > 0 ? topClients.map((client, index) => (
                     <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer" onClick={() => navigate('/clientes')}>
@@ -2347,8 +2347,8 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft flex-1 opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
-              <CardHeader className="pb-2">
+            <Card className="shadow-soft flex-1 min-h-[420px] flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
+              <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
                   {clientTermPlural} Recentes
@@ -2357,9 +2357,9 @@ const Dashboard = () => {
                   Últimos {clientTermPlural.toLowerCase()} adicionados
                 </CardDescription>
               </CardHeader>
-              <CardContent className="h-full">
+              <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-3">
-                  {recentClients.length > 0 ? recentClients.slice(0, 5).map((client, index) => (
+                  {recentClients.length > 0 ? recentClients.slice(0, 10).map((client, index) => (
                     <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => navigate('/clientes')}>
                     <ClientAvatar 
                       avatarPath={client.avatar_url}
@@ -2416,9 +2416,7 @@ const Dashboard = () => {
         </div>
 
         {/* Footer */}
-        <ScrollAnimation animation="fade-up" delay={500}>
-          <DashboardFooter />
-        </ScrollAnimation>
+        <DashboardFooter />
       </div>
 
       {/* Modals */}
