@@ -31,18 +31,19 @@ const mainTabs = [
   { title: "Pagamentos", url: "/pagamentos", icon: CreditCard },
 ]
 
-// Additional menu items for the "More" sheet
-const getMoreItems = (clientTermPlural: string) => [
+// Additional menu items - TODOS os títulos são strings literais fixas
+// Apenas clientTermPlural pode ser dinâmico, mas é validado para ser apenas "Pacientes" ou "Clientes"
+const getMoreItems = (clientTermPlural: 'Pacientes' | 'Clientes') => [
   { title: clientTermPlural, url: "/clientes", icon: Users },
-  { title: "Pacotes", url: "/pacotes", icon: Package },
-  { title: "Sessões Recorrentes", url: "/sessoes-recorrentes", icon: Repeat },
-  { title: "Prontuários", url: "/prontuarios", icon: FileText },
-  { title: "Relatórios", url: "/relatorios", icon: FileBarChart },
-  { title: "Metas", url: "/metas", icon: Target },
-  { title: "Página Pública", url: "/pagina-publica", icon: Globe },
-  { title: "Integrações", url: "/integracoes", icon: Plug },
-  { title: "Configurações", url: "/configuracoes", icon: Settings },
-  { title: "Suporte", url: "/suporte", icon: HelpCircle },
+  { title: "Pacotes" as const, url: "/pacotes", icon: Package },
+  { title: "Sessões Recorrentes" as const, url: "/sessoes-recorrentes", icon: Repeat },
+  { title: "Prontuários" as const, url: "/prontuarios", icon: FileText },
+  { title: "Relatórios" as const, url: "/relatorios", icon: FileBarChart },
+  { title: "Metas" as const, url: "/metas", icon: Target },
+  { title: "Página Pública" as const, url: "/pagina-publica", icon: Globe },
+  { title: "Integrações" as const, url: "/integracoes", icon: Plug },
+  { title: "Configurações" as const, url: "/configuracoes", icon: Settings },
+  { title: "Suporte" as const, url: "/suporte", icon: HelpCircle },
 ]
 
 export function MobileBottomNav() {
@@ -51,7 +52,10 @@ export function MobileBottomNav() {
   const { clientTermPlural } = useTerminology()
   const [isMoreOpen, setIsMoreOpen] = useState(false)
   
-  const moreItems = getMoreItems(clientTermPlural)
+  // PROTEÇÃO: Garantir que clientTermPlural é um valor válido
+  const safeClientTermPlural: 'Pacientes' | 'Clientes' = 
+    clientTermPlural === 'Pacientes' ? 'Pacientes' : 'Clientes'
+  const moreItems = getMoreItems(safeClientTermPlural)
   
   const isActive = (path: string) => currentPath === path
   const isMoreActive = moreItems.some(item => isActive(item.url))
