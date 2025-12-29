@@ -408,8 +408,8 @@ const Dashboard = () => {
         // Buscar pagamentos recentes da tabela PAYMENTS (não sessions)
         supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
-        // Buscar sessões realizadas para cálculo de ticket médio (contar todas as sessões com status realizada)
-        supabase.from('sessions').select('client_id, valor, status, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'realizada').not('client_id', 'is', null),
+        // Buscar pagamentos pagos para cálculo de ticket médio por cliente
+        supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
         supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
@@ -528,19 +528,19 @@ const Dashboard = () => {
       const allClientsWithPayments = allClientsWithPaymentsResult.data
 
       const clientPayments = {}
-      allClientsWithPayments?.forEach(session => {
-        // Contar TODAS as sessões realizadas, independente de valor
-        if (session.client_id && session.clients?.nome) {
-          if (!clientPayments[session.client_id]) {
-            clientPayments[session.client_id] = {
-              nome: session.clients.nome,
-              avatar_url: session.clients.avatar_url,
+      allClientsWithPayments?.forEach(payment => {
+        // Contar TODOS os pagamentos pagos por cliente
+        if (payment.client_id && payment.clients?.nome) {
+          if (!clientPayments[payment.client_id]) {
+            clientPayments[payment.client_id] = {
+              nome: payment.clients.nome,
+              avatar_url: payment.clients.avatar_url,
               total: 0,
-              sessoes: 0
+              pagamentos: 0
             }
           }
-          clientPayments[session.client_id].total += Number(session.valor) || 0
-          clientPayments[session.client_id].sessoes += 1
+          clientPayments[payment.client_id].total += Number(payment.valor) || 0
+          clientPayments[payment.client_id].pagamentos += 1
         }
       })
 
@@ -553,8 +553,8 @@ const Dashboard = () => {
           nome: data.nome,
           avatar_url: data.avatar_url,
           total: data.total,
-          sessoes: data.sessoes,
-          ticketMedio: data.sessoes > 0 ? data.total / data.sessoes : 0
+          pagamentos: data.pagamentos,
+          ticketMedio: data.pagamentos > 0 ? data.total / data.pagamentos : 0
         }))
         .sort((a, b) => b.total - a.total)
         .slice(0, 5)
@@ -562,15 +562,15 @@ const Dashboard = () => {
       if (checkStale()) return
       if (!checkStale()) console.log('👥 Top 5 clientes calculados:', topClientsData)
 
-      // Calcular ticket médio por cliente (todos os clientes com sessões)
+      // Calcular ticket médio por cliente (todos os clientes com pagamentos)
       const clientTicketMedioData = Object.entries(clientPayments)
         .map(([clientId, data]: [string, any]) => ({
           clientId,
           nome: data.nome,
-          ticketMedio: data.sessoes > 0 ? data.total / data.sessoes : 0,
-          sessoes: data.sessoes
+          ticketMedio: data.pagamentos > 0 ? data.total / data.pagamentos : 0,
+          pagamentos: data.pagamentos
         }))
-        .filter(client => client.sessoes > 0)
+        .filter(client => client.pagamentos > 0)
         .sort((a, b) => b.ticketMedio - a.ticketMedio)
 
       if (checkStale()) return
@@ -1986,7 +1986,7 @@ const Dashboard = () => {
                                     />
                                   </div>
                                   <p className="text-xs text-muted-foreground mt-1">
-                                    {client.sessoes} sessões
+                                    {client.pagamentos} pagamentos
                                   </p>
                                 </div>
                               </div>
@@ -2326,7 +2326,7 @@ const Dashboard = () => {
                           </TooltipProvider>
                         </div>
                         <p className="text-sm text-muted-foreground">
-                          {client.sessoes} sessões
+                          {client.pagamentos} pagamentos
                         </p>
                       </div>
                       <div className="text-right">
