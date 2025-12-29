@@ -1,4 +1,4 @@
-import { useState, useRef } from "react"
+import { useState, useRef, useLayoutEffect } from "react"
 import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { setAdminSession } from "@/utils/adminApi"
@@ -11,6 +11,18 @@ import { Shield, Loader2 } from "lucide-react"
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
+// CRITICAL: Força tema claro na página de login do admin
+const forceAdminLoginLightTheme = () => {
+  const root = document.documentElement
+  root.style.transition = 'none'
+  root.classList.remove('dark')
+  root.classList.add('light')
+  root.setAttribute('data-theme', 'light')
+  requestAnimationFrame(() => {
+    root.style.transition = ''
+  })
+}
+
 const AdminLogin = () => {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
@@ -19,6 +31,12 @@ const AdminLogin = () => {
   const [password, setPassword] = useState('')
   const turnstileRef = useRef<any>(null)
   const formRef = useRef<HTMLFormElement>(null)
+
+  // ✅ CRITICAL: Forçar tema claro IMEDIATAMENTE ao montar
+  // A página de login do admin NUNCA deve usar tema escuro
+  useLayoutEffect(() => {
+    forceAdminLoginLightTheme()
+  }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
