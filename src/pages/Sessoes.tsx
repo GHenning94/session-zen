@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth'
 import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 import { SessionNoteModal } from '@/components/SessionNoteModal'
+import { SessionNoteViewModal } from '@/components/SessionNoteViewModal'
 import { SessionModal } from '@/components/SessionModal'
 import { SessionEditModal } from '@/components/SessionEditModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
@@ -101,6 +102,8 @@ export default function Sessoes() {
   const [evolucaoModalOpen, setEvolucaoModalOpen] = useState(false)
   const [selectedSession, setSelectedSession] = useState<Session | null>(null)
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
+  const [viewingNote, setViewingNote] = useState<SessionNote | null>(null)
+  const [noteViewModalOpen, setNoteViewModalOpen] = useState(false)
   const [selectedNoteForEvolucao, setSelectedNoteForEvolucao] = useState<SessionNote | null>(null)
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
   
@@ -579,17 +582,39 @@ export default function Sessoes() {
 
   const handleAddNote = (session: Session) => {
     try {
-      setSelectedSession(session)
-      setEditingNote(null)
-      setNoteModalOpen(true)
+      // Check if session already has a note
+      const existingNote = sessionNotes.find(note => note.session_id === session.id)
+      if (existingNote) {
+        // Open view modal for existing note
+        setViewingNote(existingNote)
+        setNoteViewModalOpen(true)
+      } else {
+        // Open create modal for new note
+        setSelectedSession(session)
+        setEditingNote(null)
+        setNoteModalOpen(true)
+      }
     } catch (error) {
       console.error('Error opening note modal:', error)
       toast({
         title: "Erro",
-        description: "Não foi possível abrir o modal de lembrete.",
+        description: "Não foi possível abrir o modal de anotação.",
         variant: "destructive",
       })
     }
+  }
+
+  const handleViewNoteEdit = (note: SessionNote) => {
+    setEditingNote(note)
+    setSelectedSession(null)
+    setNoteViewModalOpen(false)
+    setNoteModalOpen(true)
+  }
+
+  const handleViewNoteDelete = async (noteId: string) => {
+    await handleDeleteNote(noteId)
+    setNoteViewModalOpen(false)
+    setViewingNote(null)
   }
 
   const handleEditNote = (note: SessionNote) => {
@@ -1358,6 +1383,14 @@ export default function Sessoes() {
           onOpenChange={setNoteModalOpen}
           onNoteCreated={loadData}
           editingNote={editingNote}
+        />
+
+        <SessionNoteViewModal
+          note={viewingNote}
+          open={noteViewModalOpen}
+          onOpenChange={setNoteViewModalOpen}
+          onEdit={handleViewNoteEdit}
+          onDelete={handleViewNoteDelete}
         />
         
         <SessionEditModal
