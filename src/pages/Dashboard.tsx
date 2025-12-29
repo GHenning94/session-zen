@@ -2266,7 +2266,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Top 5 Clientes que Mais Pagam */}
-            <Card className="shadow-soft opacity-0 animate-scale-fade-in h-[420px] flex flex-col" style={{ animationDelay: '475ms' }}>
+            <Card className="shadow-soft opacity-0 animate-scale-fade-in flex flex-col overflow-visible" style={{ animationDelay: '475ms' }}>
               <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
@@ -2276,15 +2276,15 @@ const Dashboard = () => {
                   {clientTermPlural} que mais geraram receita
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto">
+              <CardContent className="flex-1 overflow-visible pt-2">
                 <div className="space-y-4">
                   {topClients.length > 0 ? topClients.map((client, index) => (
-                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer" onClick={() => navigate('/clientes')}>
+                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer overflow-visible" onClick={() => navigate('/clientes')}>
                       {/* Coroa dourada animada para o primeiro cliente */}
                       {index === 0 && (
-                        <div className="absolute -top-2 -right-2 z-10">
+                        <div className="absolute -top-3 -right-3 z-10">
                           <Crown 
-                            className="w-6 h-6 text-yellow-500 animate-crown-glow"
+                            className="w-7 h-7 text-yellow-500 animate-crown-glow"
                             fill="currentColor"
                             style={{
                               filter: 'drop-shadow(0 0 8px gold)'
@@ -2347,7 +2347,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft flex-1 min-h-[420px] flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
+            <Card className="shadow-soft flex-1 flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
               <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
