@@ -173,20 +173,34 @@ const [isLoading, setIsLoading] = useState(false)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [user])
 
-  // Check for highlighted payment from URL params
+  // Check for highlighted payment from URL params and open modal
   useEffect(() => {
     const highlightParam = searchParams.get('highlight')
     
-    if (highlightParam) {
-      setHighlightedPaymentId(highlightParam)
+    if (highlightParam && payments && payments.length > 0) {
+      // Find the payment by session_id
+      const payment = payments.find((p: any) => p.session_id === highlightParam)
       
-      // Clear the URL parameters after a delay
-      setTimeout(() => {
-        setSearchParams({})
-        setHighlightedPaymentId(null)
-      }, 3000)
+      if (payment) {
+        setHighlightedPaymentId(payment.id)
+        setSelectedPayment(payment)
+        setDetailsModalOpen(true)
+        
+        // Clear the URL parameters after opening the modal
+        setTimeout(() => {
+          setSearchParams({})
+          setHighlightedPaymentId(null)
+        }, 3000)
+      } else {
+        // If no payment found, just highlight and clear
+        setHighlightedPaymentId(highlightParam)
+        setTimeout(() => {
+          setSearchParams({})
+          setHighlightedPaymentId(null)
+        }, 3000)
+      }
     }
-  }, [searchParams, setSearchParams])
+  }, [searchParams, setSearchParams, payments])
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)
