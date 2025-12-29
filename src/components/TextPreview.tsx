@@ -56,17 +56,6 @@ export function TextPreview({ content, isHtml = false, title = "Visualização C
           </div>
         )}
         
-        {shouldShowPreview && (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2 h-7 text-xs"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Eye className="h-3 w-3 mr-1" />
-            Ver completo
-          </Button>
-        )}
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

@@ -481,12 +481,6 @@ export default function Prontuarios() {
                                    </>
                                  )}
                                </div>
-                               <div className="flex items-center gap-1 ml-4">
-                                 <span className="text-xs text-muted-foreground">Criada em:</span>
-                                 <Badge variant="outline" className="text-xs">
-                                   {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
-                                 </Badge>
-                               </div>
                              </div>
                             <div className="flex gap-1">
                               <TooltipProvider>
@@ -526,6 +520,9 @@ export default function Prontuarios() {
                             title={`Evolução - ${format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}`}
                             className="prose prose-sm max-w-none"
                           />
+                          <div className="text-xs text-muted-foreground mt-3 pt-3 border-t">
+                            Criado em {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                          </div>
                         </div>
                       ))}
                     </div>
