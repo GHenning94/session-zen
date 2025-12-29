@@ -3,13 +3,21 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { useUserTheme } from "@/hooks/useUserTheme"
 import { useEffect, useState } from "react"
+import { useLocation } from "react-router-dom"
 
 export const ThemeToggle = () => {
   const { theme, setTheme } = useTheme()
   const { saveThemePreference } = useUserTheme()
   const [isChanging, setIsChanging] = useState(false)
+  const location = useLocation()
+
+  // CRITICAL: Block this component entirely on admin pages
+  const isAdminPage = location.pathname.startsWith('/admin')
 
   const handleThemeToggle = async () => {
+    // Double-check: never allow this to run on admin pages
+    if (isAdminPage) return
+
     const newTheme = theme === "dark" ? "light" : "dark"
     const root = document.documentElement
     
@@ -42,11 +50,17 @@ export const ThemeToggle = () => {
   }
 
   // Garante que o atributo data-theme acompanha o tema atual
+  // CRITICAL: Only on non-admin pages
   useEffect(() => {
-    if (theme) {
+    if (theme && !isAdminPage) {
       document.documentElement.setAttribute('data-theme', theme)
     }
-  }, [theme])
+  }, [theme, isAdminPage])
+
+  // Don't render anything on admin pages - admin has its own toggle
+  if (isAdminPage) {
+    return null
+  }
 
   return (
     <Button
