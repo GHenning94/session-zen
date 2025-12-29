@@ -374,108 +374,108 @@ const ProgramaIndicacao = () => {
                     </linearGradient>
                   </defs>
                   
-                  {/* Line 1 - starts lower left, sweeps to top right */}
+                  {/* Line 1 - exits at TOP of card (y = -10) */}
                   <path 
-                    d="M-10,120 C20,115 30,85 55,75 C80,65 90,55 120,25" 
+                    d="M-10,120 C20,110 40,60 65,40 C90,20 105,5 130,-10" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-1"
                   />
                   
-                  {/* Line 2 - mid height wave */}
+                  {/* Line 2 - exits at BOTTOM of card (y = 110) */}
                   <path 
-                    d="M-8,105 C15,100 25,80 50,72 C75,64 88,75 115,45" 
+                    d="M-8,85 C15,82 30,75 55,78 C80,81 95,90 125,105" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.4"
                     className="aurora-wave aurora-2"
                   />
                   
-                  {/* Line 3 - high sweep from bottom-left */}
+                  {/* Line 3 - exits very TOP (y = -20) */}
                   <path 
-                    d="M-5,130 C25,120 35,70 60,55 C85,40 95,50 125,15" 
+                    d="M-5,130 C30,115 45,50 72,30 C99,10 115,-5 145,-20" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.28"
                     className="aurora-wave aurora-3"
                   />
                   
-                  {/* Line 4 - gentle mid curve */}
+                  {/* Line 4 - exits at BOTTOM (y = 115) */}
                   <path 
-                    d="M-12,115 C18,110 28,88 55,82 C82,76 95,65 125,35" 
+                    d="M-12,95 C18,92 35,85 58,88 C81,91 98,100 130,115" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.38"
                     className="aurora-wave aurora-4"
                   />
                   
-                  {/* Line 5 - dramatic upward sweep */}
+                  {/* Line 5 - exits TOP (y = 5) */}
                   <path 
-                    d="M-6,125 C22,118 32,75 58,62 C84,49 96,58 128,20" 
+                    d="M-6,115 C22,105 42,55 68,38 C94,21 112,12 140,5" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.3"
                     className="aurora-wave aurora-5"
                   />
                   
-                  {/* Line 6 - low to mid curve */}
+                  {/* Line 6 - exits BOTTOM (y = 120) */}
                   <path 
-                    d="M-15,110 C12,105 22,90 48,85 C74,80 88,70 118,50" 
+                    d="M-15,75 C12,73 28,68 52,72 C76,76 92,88 122,108" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-6"
                   />
                   
-                  {/* Line 7 - elegant high arc */}
+                  {/* Line 7 - exits TOP (y = -15) */}
                   <path 
-                    d="M-4,135 C28,125 38,65 65,52 C92,39 102,55 135,10" 
+                    d="M-4,135 C32,120 50,45 78,22 C106,-1 120,-8 150,-15" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.25"
                     className="aurora-wave aurora-7"
                   />
                   
-                  {/* Line 8 - lower flowing wave */}
+                  {/* Line 8 - exits MID-BOTTOM (y = 95) */}
                   <path 
-                    d="M-18,100 C8,95 18,78 45,72 C72,66 85,58 115,40" 
+                    d="M-18,70 C8,68 25,62 50,68 C75,74 90,82 120,95" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.32"
                     className="aurora-wave aurora-8"
                   />
                   
-                  {/* Line 9 - highest arc from bottom */}
+                  {/* Line 9 - exits TOP CORNER (y = -25) */}
                   <path 
-                    d="M-2,140 C30,130 42,60 70,45 C98,30 108,42 140,0" 
+                    d="M-2,140 C35,125 55,40 85,15 C115,-10 130,-18 160,-25" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.22"
                     className="aurora-wave aurora-9"
                   />
                   
-                  {/* Line 10 - extra sweep bottom-left to top-right */}
+                  {/* Line 10 - exits BOTTOM EDGE (y = 125) */}
                   <path 
-                    d="M-20,145 C15,138 30,95 58,80 C86,65 100,50 135,12" 
+                    d="M-20,80 C15,78 32,72 55,78 C78,84 95,98 128,118" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.26"
                     className="aurora-wave aurora-10"
                   />
                   
-                  {/* Line 11 - deep bottom start */}
+                  {/* Line 11 - exits TOP (y = 0) */}
                   <path 
-                    d="M-8,150 C25,142 40,88 68,70 C96,52 110,60 145,18" 
+                    d="M-8,125 C28,112 48,52 75,32 C102,12 118,5 148,0" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
                     strokeWidth="0.24"
                     className="aurora-wave aurora-11"
                   />
                   
-                  {/* Line 12 - gentle sweep from far bottom */}
+                  {/* Line 12 - exits BOTTOM (y = 112) */}
                   <path 
-                    d="M-15,138 C20,130 35,100 62,88 C89,76 102,68 132,38" 
+                    d="M-15,90 C20,88 38,80 62,85 C86,90 102,102 135,112"
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.28"
