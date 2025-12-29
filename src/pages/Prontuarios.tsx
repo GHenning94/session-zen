@@ -19,6 +19,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
+import { EvolucaoReadOnlyModal } from '@/components/EvolucaoReadOnlyModal'
 import { TextPreview } from '@/components/TextPreview'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
 import { cn } from '@/lib/utils'
@@ -82,6 +83,8 @@ export default function Prontuarios() {
   const [evolucaoModalOpen, setEvolucaoModalOpen] = useState(false)
   const [editingAnamnese, setEditingAnamnese] = useState<Anamnese | null>(null)
   const [editingEvolucao, setEditingEvolucao] = useState<Evolucao | null>(null)
+  const [viewingEvolucao, setViewingEvolucao] = useState<Evolucao | null>(null)
+  const [evolucaoReadOnlyModalOpen, setEvolucaoReadOnlyModalOpen] = useState(false)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -463,9 +466,21 @@ export default function Prontuarios() {
                   {clientEvolucoes.length > 0 ? (
                     <div className="space-y-4">
                       {clientEvolucoes.map((evolucao) => (
-                        <div key={evolucao.id} className="border border-border rounded-lg p-4">
+                        <div 
+                          key={evolucao.id} 
+                          className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+                          onClick={() => {
+                            setViewingEvolucao(evolucao)
+                            setEvolucaoReadOnlyModalOpen(true)
+                          }}
+                        >
                           <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-4 flex-1">
+                              <ClientAvatar 
+                                avatarPath={selectedClient?.avatar_url}
+                                clientName={selectedClient?.nome || 'Cliente'}
+                                size="lg"
+                              />
                               <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-2">
                                   <h3 className="text-lg font-semibold">{selectedClient?.nome || 'Cliente'}</h3>
@@ -499,7 +514,10 @@ export default function Prontuarios() {
                                     <Button 
                                       variant="outline" 
                                       size="icon"
-                                      onClick={() => handleEditEvolucao(evolucao)}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleEditEvolucao(evolucao)
+                                      }}
                                     >
                                       <Edit2 className="h-4 w-4" />
                                     </Button>
@@ -513,7 +531,10 @@ export default function Prontuarios() {
                                     <Button 
                                       variant="outline" 
                                       size="icon"
-                                      onClick={() => handleDeleteEvolucao(evolucao.id)}
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        handleDeleteEvolucao(evolucao.id)
+                                      }}
                                       className="text-destructive hover:text-destructive"
                                     >
                                       <Trash2 className="h-4 w-4" />
@@ -562,6 +583,14 @@ export default function Prontuarios() {
           clientName={selectedClient.nome}
           onEvolucaoCreated={loadData}
           existingEvolucao={editingEvolucao}
+        />
+
+        <EvolucaoReadOnlyModal
+          evolucao={viewingEvolucao}
+          clientName={selectedClient.nome}
+          clientAvatar={selectedClient.avatar_url}
+          open={evolucaoReadOnlyModalOpen}
+          onOpenChange={setEvolucaoReadOnlyModalOpen}
         />
       </Layout>
     )

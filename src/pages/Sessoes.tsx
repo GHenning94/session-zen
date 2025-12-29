@@ -683,7 +683,19 @@ export default function Sessoes() {
     }
   }
 
-  const handleIncluirNoProntuario = (note: SessionNote) => {
+  const handleIncluirNoProntuario = async (note: SessionNote) => {
+    // Verificar se já existe evolução para esta sessão ANTES de abrir o modal
+    if (note.session_id) {
+      const existingEvolucao = evolucoes.find(e => e.session_id === note.session_id)
+      if (existingEvolucao) {
+        toast({
+          title: "Evolução já existente",
+          description: "Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existente na página de Prontuários.",
+          variant: "default",
+        })
+        return
+      }
+    }
     setSelectedNoteForEvolucao(note)
     setEvolucaoModalOpen(true)
   }

@@ -31,7 +31,10 @@ export function TextPreview({ content, isHtml = false, title = "Visualização C
           <div 
             className="line-clamp-3 cursor-pointer hover:bg-accent/30 rounded p-1 -m-1 transition-colors"
             dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(content) }}
-            onClick={() => setIsModalOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsModalOpen(true)
+            }}
             style={{
               display: '-webkit-box',
               WebkitLineClamp: 3,
@@ -43,7 +46,10 @@ export function TextPreview({ content, isHtml = false, title = "Visualização C
         ) : (
           <div 
             className="line-clamp-3 cursor-pointer hover:bg-accent/30 rounded p-1 -m-1 transition-colors"
-            onClick={() => setIsModalOpen(true)}
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsModalOpen(true)
+            }}
             style={{
               display: '-webkit-box',
               WebkitLineClamp: 3,

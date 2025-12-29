@@ -256,25 +256,14 @@ export const EvolucaoModal = ({
             Evolução já existente
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Já existe uma evolução registrada para esta sessão. Deseja editar a evolução existente?
+            Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existente na página de Prontuários.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel onClick={() => {
-            setDuplicateWarningOpen(false)
-            setExistingEvolucaoForSession(null)
-            setEvolucao(prev => ({ ...prev, session_id: '' }))
-          }}>
-            Cancelar
-          </AlertDialogCancel>
           <AlertDialogAction onClick={() => {
             setDuplicateWarningOpen(false)
+            setExistingEvolucaoForSession(null)
             onOpenChange(false)
-            // Trigger edit of existing evolucao - would need callback
-            toast({
-              title: "Dica",
-              description: "Localize a evolução existente e clique em editar.",
-            })
           }}>
             Entendi
           </AlertDialogAction>
