@@ -14,8 +14,7 @@ interface Particle {
 }
 
 const AnimatedGiftBox = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const wrapperRef = useRef<HTMLDivElement>(null);
+  const floatingRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [particles, setParticles] = useState<Particle[]>([]);
@@ -35,7 +34,7 @@ const AnimatedGiftBox = () => {
 
   const generateParticles = () => {
     const newParticles: Particle[] = Array.from({ length: 20 }, (_, i) => {
-      const angle = (Math.PI * 0.3) + (Math.random() * Math.PI * 1.4); // Mostly upward
+      const angle = (Math.PI * 0.3) + (Math.random() * Math.PI * 1.4);
       const distance = 60 + Math.random() * 80;
       const types: ('circle' | 'star' | 'sparkle')[] = ['circle', 'star', 'sparkle'];
       
@@ -72,9 +71,10 @@ const AnimatedGiftBox = () => {
     };
   }, [isHovered, colors]);
 
+  // Floating animation - separated from hover
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
+    const floatingElement = floatingRef.current;
+    if (!floatingElement) return;
 
     let animationFrame: number;
     let angle = 0;
@@ -86,8 +86,8 @@ const AnimatedGiftBox = () => {
       const rotateY = Math.sin(angle * 0.4) * 6;
       const rotateX = Math.cos(angle * 0.3) * 2;
       
-      if (container) {
-        container.style.transform = `translateY(${floatY}px) translateX(${floatX}px) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
+      if (floatingElement) {
+        floatingElement.style.transform = `translateY(${floatY}px) translateX(${floatX}px) rotateY(${rotateY}deg) rotateX(${rotateX}deg)`;
       }
       animationFrame = requestAnimationFrame(animate);
     };
@@ -160,7 +160,6 @@ const AnimatedGiftBox = () => {
 
   return (
     <div 
-      ref={wrapperRef}
       className={`relative w-64 h-64 flex items-center justify-center -ml-72 transition-all duration-1000 ease-out ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
@@ -186,23 +185,27 @@ const AnimatedGiftBox = () => {
         />
       ))}
 
-      {/* 3D Gift Box - hover area is exactly on the gift */}
+      {/* Hover wrapper - handles hover state separately from floating animation */}
       <div 
-        ref={containerRef}
-        className={`relative cursor-pointer transition-transform duration-300 ease-out ${isHovered ? 'scale-110 -translate-y-2 rotate-2' : ''}`}
-        style={{ 
-          perspective: '800px', 
-          transformStyle: 'preserve-3d',
-          transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
-        }}
+        className="relative cursor-pointer"
+        style={{ perspective: '800px' }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Shadow */}
+        {/* Floating container - JavaScript animation applied here */}
         <div 
-          className="absolute top-32 left-1/2 -translate-x-1/2 w-24 h-5 bg-black/15 rounded-full blur-lg"
-          style={{ animation: 'shadowPulse 4s ease-in-out infinite' }}
-        />
+          ref={floatingRef}
+          className={`transition-transform duration-400 ease-out ${isHovered ? 'scale-110 -translate-y-3' : ''}`}
+          style={{ 
+            transformStyle: 'preserve-3d',
+            transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+          }}
+        >
+          {/* Shadow */}
+          <div 
+            className="absolute top-32 left-1/2 -translate-x-1/2 w-24 h-5 bg-black/15 rounded-full blur-lg"
+            style={{ animation: 'shadowPulse 4s ease-in-out infinite' }}
+          />
 
         {/* Box Base */}
         <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
@@ -343,6 +346,7 @@ const AnimatedGiftBox = () => {
                 }}
               />
             </div>
+          </div>
           </div>
         </div>
       </div>
