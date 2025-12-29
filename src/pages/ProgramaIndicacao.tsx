@@ -329,9 +329,9 @@ const ProgramaIndicacao = () => {
                 <div className="flex flex-col lg:flex-row items-center gap-8">
                   <div className="flex-1 space-y-6">
                     <div className="space-y-4">
-                      <h2 className="text-3xl font-bold">Ganhe 30% de Comissão</h2>
+                      <h2 className="text-3xl font-bold">Ganhe até 30% de Comissão</h2>
                       <p className="text-lg text-muted-foreground">
-                        Convide seus colegas profissionais e ganhe 30% do valor de cada assinatura realizada através do seu link. Pagamentos automáticos via Stripe!
+                        Convide seus colegas profissionais e ganhe comissões recorrentes! Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%. Pagamentos automáticos via Stripe!
                       </p>
                     </div>
                     
@@ -404,7 +404,7 @@ const ProgramaIndicacao = () => {
                   <div>
                     <h3 className="font-semibold">Ganhe Recompensas</h3>
                     <p className="text-sm text-muted-foreground">
-                      Receba 30% de comissão por cada assinatura
+                      Receba até 30% de comissão por cada assinatura
                     </p>
                   </div>
                 </div>
@@ -421,7 +421,7 @@ const ProgramaIndicacao = () => {
               <div className="grid gap-3 md:grid-cols-2">
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
-                  <span>Comissão de 30% por cada indicação</span>
+                  <span>Mensal: 30% no 1º mês, 15% nos seguintes</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
@@ -429,7 +429,7 @@ const ProgramaIndicacao = () => {
                 </div>
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
-                  <span>Comissão recorrente em renovações</span>
+                  <span>Anual: 20% de comissão recorrente</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <Star className="w-5 h-5 text-yellow-500" />
