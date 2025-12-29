@@ -606,16 +606,20 @@ export default function Sessoes() {
   }
 
   const handleViewNoteEdit = (note: SessionNote) => {
-    setEditingNote(note)
-    setSelectedSession(null)
+    // Close view modal first, then open edit modal after a brief delay
     setNoteViewModalOpen(false)
-    setNoteModalOpen(true)
+    setViewingNote(null)
+    setTimeout(() => {
+      setEditingNote(note)
+      setSelectedSession(null)
+      setNoteModalOpen(true)
+    }, 150)
   }
 
   const handleViewNoteDelete = async (noteId: string) => {
-    await handleDeleteNote(noteId)
     setNoteViewModalOpen(false)
     setViewingNote(null)
+    await handleDeleteNote(noteId)
   }
 
   const handleEditNote = (note: SessionNote) => {
