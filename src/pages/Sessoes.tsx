@@ -402,6 +402,15 @@ export default function Sessoes() {
   const handleBatchEditConfirm = async (changes: BatchEditChanges) => {
     try {
       const ids = Array.from(selectedSessions)
+      const selectedSessionsArray = getSelectedSessionsArray()
+      
+      // Collect old package_ids to recalculate their sessoes_consumidas
+      const oldPackageIds = new Set<string>()
+      selectedSessionsArray.forEach(session => {
+        if (session.package_id) {
+          oldPackageIds.add(session.package_id)
+        }
+      })
       
       // Build update object based on provided changes
       const sessionUpdate: any = {}
@@ -421,6 +430,43 @@ export default function Sessoes() {
           .in('id', ids)
 
         if (sessionError) throw sessionError
+      }
+
+      // Recalculate sessoes_consumidas for affected packages
+      if (changes.package_id) {
+        // Add new package to recalculate
+        oldPackageIds.add(changes.package_id)
+      }
+      
+      // Recalculate sessoes_consumidas for all affected packages
+      for (const pkgId of oldPackageIds) {
+        // Count sessions with status 'realizada' for this package
+        const { data: realizedSessions, error: countError } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('package_id', pkgId)
+          .eq('status', 'realizada')
+        
+        if (!countError && realizedSessions) {
+          const consumedCount = realizedSessions.length
+          
+          // Get package total to determine status
+          const { data: pkgData } = await supabase
+            .from('packages')
+            .select('total_sessoes')
+            .eq('id', pkgId)
+            .single()
+          
+          const newStatus = pkgData && consumedCount >= pkgData.total_sessoes ? 'concluido' : 'ativo'
+          
+          await supabase
+            .from('packages')
+            .update({ 
+              sessoes_consumidas: consumedCount,
+              status: newStatus
+            })
+            .eq('id', pkgId)
+        }
       }
 
       // Atualizar pagamentos relacionados (only for individual sessions with valor/metodo/status)
@@ -459,6 +505,7 @@ export default function Sessoes() {
       await loadData()
       window.dispatchEvent(new Event('sessionUpdated'))
       window.dispatchEvent(new Event('paymentUpdated'))
+      window.dispatchEvent(new Event('packageUpdated'))
     } catch (error) {
       console.error('Erro ao editar sessões:', error)
       toast({

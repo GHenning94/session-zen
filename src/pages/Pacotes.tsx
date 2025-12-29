@@ -71,7 +71,7 @@ export default function Pacotes() {
     refetchOnMount: 'always'
   });
 
-  // Refetch data when page is focused
+  // Refetch data when page is focused or sessions are updated
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
@@ -79,8 +79,19 @@ export default function Pacotes() {
       }
     };
     
+    const handleSessionUpdated = () => {
+      refetch();
+    };
+    
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('sessionUpdated', handleSessionUpdated);
+    window.addEventListener('packageUpdated', handleSessionUpdated);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('sessionUpdated', handleSessionUpdated);
+      window.removeEventListener('packageUpdated', handleSessionUpdated);
+    };
   }, [refetch]);
 
   // Check for packages without sessions and send notification - only after package creation
@@ -306,7 +317,7 @@ export default function Pacotes() {
                       <Progress value={progress.percentage} className="h-2" />
                       {progress.remaining > 0 && (
                         <p className="text-xs text-muted-foreground">
-                          {progress.remaining} sessão{progress.remaining !== 1 ? 'ões' : ''} restante{progress.remaining !== 1 ? 's' : ''}
+                          {progress.remaining} {progress.remaining === 1 ? 'sessão restante' : 'sessões restantes'}
                         </p>
                       )}
                     </div>
