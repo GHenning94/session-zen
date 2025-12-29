@@ -32,6 +32,7 @@ import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 import { BatchSelectionBar, SelectableItemCheckbox } from '@/components/BatchSelectionBar'
 import { BatchEditByTypeModal, BatchEditChanges } from '@/components/BatchEditByTypeModal'
+import { recalculateMultiplePackages } from '@/utils/packageUtils'
 
 interface Session {
   id: string
@@ -241,12 +242,20 @@ export default function Sessoes() {
 
   const handleCancelSession = async (sessionId: string) => {
     try {
+      // Get session to check if it belongs to a package
+      const sessionToUpdate = sessions.find(s => s.id === sessionId)
+      
       const { error } = await supabase
         .from('sessions')
         .update({ status: 'cancelada' })
         .eq('id', sessionId)
 
       if (error) throw error
+
+      // Recalculate package if session belonged to one
+      if (sessionToUpdate?.package_id) {
+        await recalculateMultiplePackages([sessionToUpdate.package_id])
+      }
 
       toast({
         title: "Sessão cancelada",
@@ -267,12 +276,20 @@ export default function Sessoes() {
 
   const handleMarkNoShow = async (sessionId: string) => {
     try {
+      // Get session to check if it belongs to a package
+      const sessionToUpdate = sessions.find(s => s.id === sessionId)
+      
       const { error } = await supabase
         .from('sessions')
         .update({ status: 'falta' })
         .eq('id', sessionId)
 
       if (error) throw error
+
+      // Recalculate package if session belonged to one
+      if (sessionToUpdate?.package_id) {
+        await recalculateMultiplePackages([sessionToUpdate.package_id])
+      }
 
       toast({
         title: "Sessão marcada como falta",
@@ -293,12 +310,21 @@ export default function Sessoes() {
 
   const handleDeleteSession = async (sessionId: string) => {
     try {
+      // Get session data before deleting to know if it belongs to a package
+      const sessionToDelete = sessions.find(s => s.id === sessionId)
+      const packageIdToRecalculate = sessionToDelete?.package_id
+
       const { error } = await supabase
         .from('sessions')
         .delete()
         .eq('id', sessionId)
 
       if (error) throw error
+
+      // Recalculate package consumption if session belonged to a package
+      if (packageIdToRecalculate) {
+        await recalculateMultiplePackages([packageIdToRecalculate])
+      }
 
       toast({
         title: "Sessão excluída",
@@ -343,12 +369,26 @@ export default function Sessoes() {
   const handleBatchDeleteSessions = async () => {
     try {
       const ids = Array.from(selectedSessions)
+      
+      // Collect package IDs to recalculate before deleting
+      const packageIdsToRecalculate = new Set<string>()
+      sessions.forEach(s => {
+        if (ids.includes(s.id) && s.package_id) {
+          packageIdsToRecalculate.add(s.package_id)
+        }
+      })
+      
       const { error } = await supabase
         .from('sessions')
         .delete()
         .in('id', ids)
 
       if (error) throw error
+
+      // Recalculate affected packages
+      if (packageIdsToRecalculate.size > 0) {
+        await recalculateMultiplePackages(Array.from(packageIdsToRecalculate))
+      }
 
       toast({
         title: "Sessões excluídas",
@@ -438,35 +478,18 @@ export default function Sessoes() {
         oldPackageIds.add(changes.package_id)
       }
       
+      // Also recalculate if status changed (affects sessoes_consumidas)
+      if (changes.status) {
+        selectedSessionsArray.forEach(session => {
+          if (session.package_id) {
+            oldPackageIds.add(session.package_id)
+          }
+        })
+      }
+      
       // Recalculate sessoes_consumidas for all affected packages
-      for (const pkgId of oldPackageIds) {
-        // Count sessions with status 'realizada' for this package
-        const { data: realizedSessions, error: countError } = await supabase
-          .from('sessions')
-          .select('id')
-          .eq('package_id', pkgId)
-          .eq('status', 'realizada')
-        
-        if (!countError && realizedSessions) {
-          const consumedCount = realizedSessions.length
-          
-          // Get package total to determine status
-          const { data: pkgData } = await supabase
-            .from('packages')
-            .select('total_sessoes')
-            .eq('id', pkgId)
-            .single()
-          
-          const newStatus = pkgData && consumedCount >= pkgData.total_sessoes ? 'concluido' : 'ativo'
-          
-          await supabase
-            .from('packages')
-            .update({ 
-              sessoes_consumidas: consumedCount,
-              status: newStatus
-            })
-            .eq('id', pkgId)
-        }
+      if (oldPackageIds.size > 0) {
+        await recalculateMultiplePackages(Array.from(oldPackageIds))
       }
 
       // Atualizar pagamentos relacionados (only for individual sessions with valor/metodo/status)

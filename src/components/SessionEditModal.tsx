@@ -11,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { formatTimeForDatabase } from "@/lib/utils"
 import { Package, Repeat, Info } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
+import { recalculateMultiplePackages } from "@/utils/packageUtils"
 
 // Função para atualizar evento no Google Calendar
 const updateGoogleCalendarEvent = async (session: any, clientName: string): Promise<boolean> => {
@@ -368,6 +369,19 @@ export const SessionEditModal = ({
             data_vencimento: formData.data,
             metodo_pagamento: formData.metodo_pagamento || 'A definir'
           }])
+      }
+
+      // Recalculate package consumption if package changed or status changed for package session
+      const affectedPackageIds: string[] = []
+      if (isPackageSession) {
+        if (session.package_id) affectedPackageIds.push(session.package_id)
+        if (selectedPackageId && selectedPackageId !== session.package_id) {
+          affectedPackageIds.push(selectedPackageId)
+        }
+      }
+      
+      if (affectedPackageIds.length > 0) {
+        await recalculateMultiplePackages(affectedPackageIds)
       }
 
       toast({
