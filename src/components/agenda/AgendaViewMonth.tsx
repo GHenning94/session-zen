@@ -21,6 +21,7 @@ interface AgendaViewMonthProps {
   onCreateSession: (date: Date) => void
   onDragSession: (sessionId: string, newDate: string, newTime: string) => void
   onDateSelect: (date: Date) => void
+  onSwitchToWeekView?: (date: Date) => void
   highlightedSessionId?: string | null
 }
 
@@ -34,6 +35,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   onCreateSession,
   onDragSession,
   onDateSelect,
+  onSwitchToWeekView,
   highlightedSessionId
 }) => {
   const [draggedSession, setDraggedSession] = useState<string | null>(null)
@@ -138,7 +140,9 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                     onDrop={(e) => handleDrop(e, date)}
                     onClick={() => {
                       onDateSelect(date)
-                      onCreateSession(date)
+                      if (onSwitchToWeekView) {
+                        onSwitchToWeekView(date)
+                      }
                     }}
                   >
                     <div className="flex justify-start items-start mb-1">
@@ -162,7 +166,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             onDragStart={(e) => handleDragStart(e, session.id)}
                             onDragEnd={handleDragEnd}
                             className={cn(
-                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary/20 dark:bg-primary/30 text-primary dark:text-primary-foreground hover:bg-primary/30 dark:hover:bg-primary/40 transition-colors group relative cursor-move border border-primary/30 dark:border-primary/50 shadow-sm",
+                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors group relative cursor-move border border-primary/50 shadow-sm",
                               highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
                               draggedSession === session.id && "opacity-50 scale-95"
                             )}
@@ -189,6 +193,11 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                               </div>
                               <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                             </div>
+                            {session.valor && (
+                              <div className="text-[10px] font-medium text-success mt-0.5">
+                                R$ {Number(session.valor).toFixed(2)}
+                              </div>
+                            )}
 
                             <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
@@ -198,7 +207,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                                   e.stopPropagation()
                                   onDeleteSession(session.id)
                                 }}
-                                className="h-4 w-4 md:h-5 md:w-5 p-0 text-destructive hover:text-destructive"
+                                className="h-4 w-4 md:h-5 md:w-5 p-0 text-primary-foreground hover:text-destructive"
                               >
                                 <Trash className="h-2.5 w-2.5 md:h-3 md:w-3" />
                               </Button>
