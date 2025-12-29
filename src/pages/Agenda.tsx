@@ -37,6 +37,7 @@ const Agenda = () => {
   const {
     sessions,
     clients,
+    packages,
     googleEvents,
     isLoading,
     isGoogleConnected,
@@ -477,6 +478,7 @@ const Agenda = () => {
               currentDate={selectedDate}
               sessions={sessions}
               clients={clients}
+              packages={packages}
               googleEvents={googleEvents}
               onEditSession={handleEditSession}
               onDeleteSession={handleDeleteSession}
@@ -491,6 +493,7 @@ const Agenda = () => {
               currentDate={selectedDate}
               sessions={sessions}
               clients={clients}
+              packages={packages}
               googleEvents={googleEvents}
               onEditSession={handleEditSession}
               onDeleteSession={handleDeleteSession}
@@ -505,6 +508,7 @@ const Agenda = () => {
               selectedDate={selectedDate}
               sessions={sessions}
               clients={clients}
+              packages={packages}
               googleEvents={googleEvents}
               onEditSession={handleEditSession}
               onDeleteSession={handleDeleteSession}

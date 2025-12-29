@@ -32,6 +32,13 @@ export interface CalendarClient {
   ativo: boolean
 }
 
+export interface CalendarPackage {
+  id: string
+  valor_por_sessao?: number
+  valor_total: number
+  total_sessoes: number
+}
+
 export const useCalendarData = () => {
   const { user } = useAuth()
   const { toast } = useToast()
@@ -47,6 +54,7 @@ export const useCalendarData = () => {
 
   const [sessions, setSessions] = useState<CalendarSession[]>([])
   const [clients, setClients] = useState<CalendarClient[]>([])
+  const [packages, setPackages] = useState<CalendarPackage[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [lastSyncTime, setLastSyncTime] = useState<Date | null>(null)
 
@@ -56,8 +64,8 @@ export const useCalendarData = () => {
 
     setIsLoading(true)
     try {
-      // Carregar sessões e clientes (campos otimizados)
-      const [sessionsResult, clientsResult] = await Promise.all([
+      // Carregar sessões, clientes e pacotes (campos otimizados)
+      const [sessionsResult, clientsResult, packagesResult] = await Promise.all([
         supabase
           .from('sessions')
           .select('id, user_id, client_id, data, horario, valor, anotacoes, status, metodo_pagamento, created_at, updated_at, google_event_id, google_sync_type, package_id, recurring_session_id')
@@ -67,7 +75,11 @@ export const useCalendarData = () => {
           .from('clients')
           .select('id, nome, email, telefone, user_id, ativo')
           .eq('user_id', user.id)
-          .order('nome', { ascending: true })
+          .order('nome', { ascending: true }),
+        supabase
+          .from('packages')
+          .select('id, valor_por_sessao, valor_total, total_sessoes')
+          .eq('user_id', user.id)
       ])
 
       if (sessionsResult.error) {
@@ -90,6 +102,12 @@ export const useCalendarData = () => {
         })
       } else {
         setClients(clientsResult.data || [])
+      }
+
+      if (packagesResult.error) {
+        console.error('Erro ao carregar pacotes:', packagesResult.error)
+      } else {
+        setPackages(packagesResult.data || [])
       }
 
       setLastSyncTime(new Date())
@@ -327,6 +345,7 @@ export const useCalendarData = () => {
     // Dados
     sessions,
     clients,
+    packages,
     googleEvents,
     isLoading: isLoading || googleLoading,
     lastSyncTime,

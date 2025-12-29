@@ -29,10 +29,18 @@ interface Client {
   nome: string
 }
 
+interface Package {
+  id: string
+  valor_por_sessao?: number
+  valor_total: number
+  total_sessoes: number
+}
+
 interface AgendaViewWeekProps {
   currentDate: Date
   sessions: Session[]
   clients: Client[]
+  packages?: Package[]
   googleEvents?: any[]
   onEditSession: (session: Session) => void
   onDeleteSession: (sessionId: string) => void
@@ -45,6 +53,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
   currentDate,
   sessions,
   clients,
+  packages = [],
   googleEvents = [],
   onEditSession,
   onDeleteSession,
@@ -60,6 +69,18 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
     const minute = i % 2 === 0 ? 0 : 30
     return { hour, minute, timeString: `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` }
   })
+
+  // Helper para obter valor da sessão (considera pacotes)
+  const getSessionValue = (session: Session): number | null => {
+    if (session.valor) return session.valor
+    if (session.package_id) {
+      const pkg = packages.find(p => p.id === session.package_id)
+      if (pkg) {
+        return pkg.valor_por_sessao || (pkg.valor_total / pkg.total_sessoes)
+      }
+    }
+    return null
+  }
   
   // Current time tracking for red line
   const [, setCurrentTime] = useState(new Date())
@@ -309,11 +330,14 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                   )}
                                   {getGoogleSyncIcon(session.google_sync_type)}
                                 </div>
-                                {(session.valor || session.package_id) && (
-                                  <div className="text-[10px] font-medium text-success mt-0.5">
-                                    R$ {Number(session.valor || 0).toFixed(2)}
-                                  </div>
-                                )}
+                                {(() => {
+                                  const valor = getSessionValue(session)
+                                  return valor ? (
+                                    <div className="text-[10px] font-medium text-success mt-0.5">
+                                      R$ {Number(valor).toFixed(2)}
+                                    </div>
+                                  ) : null
+                                })()}
                                 
                                 <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                   <Button

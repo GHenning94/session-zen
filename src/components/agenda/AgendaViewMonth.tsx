@@ -11,10 +11,18 @@ import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { sessionNeedsAttention } from "@/utils/sessionStatusUtils"
 import { GoogleSyncType } from "@/types/googleCalendar"
 
+interface Package {
+  id: string
+  valor_por_sessao?: number
+  valor_total: number
+  total_sessoes: number
+}
+
 interface AgendaViewMonthProps {
   selectedDate: Date
   sessions: any[]
   clients: any[]
+  packages?: Package[]
   googleEvents: any[]
   onEditSession: (session: any) => void
   onDeleteSession: (sessionId: string) => void
@@ -29,6 +37,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   selectedDate,
   sessions,
   clients,
+  packages = [],
   googleEvents,
   onEditSession,
   onDeleteSession,
@@ -45,7 +54,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 })
   const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 })
 
-  const calendarDays = []
+  const calendarDays: Date[] = []
   let currentDay = calendarStart
   
   while (currentDay <= calendarEnd) {
@@ -54,8 +63,20 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   }
 
   const getClientName = (clientId: string) => {
-    const client = clients.find(c => c.id === clientId)
+    const client = clients.find((c: any) => c.id === clientId)
     return client?.nome || 'Cliente'
+  }
+
+  // Helper para obter valor da sessão (considera pacotes)
+  const getSessionValue = (session: any): number | null => {
+    if (session.valor) return session.valor
+    if (session.package_id) {
+      const pkg = packages.find(p => p.id === session.package_id)
+      if (pkg) {
+        return pkg.valor_por_sessao || (pkg.valor_total / pkg.total_sessoes)
+      }
+    }
+    return null
   }
 
   const getSessionsForDate = (date: Date) => {
@@ -230,11 +251,14 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                               </div>
                               {getGoogleSyncIcon(session.google_sync_type)}
                             </div>
-                            {(session.valor || session.package_id) && (
-                              <div className="text-[10px] font-medium text-success mt-0.5 pl-1.5">
-                                R$ {Number(session.valor || 0).toFixed(2)}
-                              </div>
-                            )}
+                            {(() => {
+                              const valor = getSessionValue(session)
+                              return valor ? (
+                                <div className="text-[10px] font-medium text-success mt-0.5 pl-1.5">
+                                  R$ {Number(valor).toFixed(2)}
+                                </div>
+                              ) : null
+                            })()}
 
                             <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                               <Button
