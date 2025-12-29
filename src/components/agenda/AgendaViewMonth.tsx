@@ -2,14 +2,14 @@ import React, { useState } from 'react'
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Clock, User, Trash } from "lucide-react"
+import { Clock, User, Trash, Package, Repeat, Download, RefreshCw, Upload, EyeOff, XCircle } from "lucide-react"
 import { cn, formatClientName } from "@/lib/utils"
 import { addDays, startOfMonth, endOfMonth, startOfWeek, endOfWeek, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { formatTimeBR } from "@/utils/formatters"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { sessionNeedsAttention } from "@/utils/sessionStatusUtils"
-import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
+import { GoogleSyncType } from "@/types/googleCalendar"
 
 interface AgendaViewMonthProps {
   selectedDate: Date
@@ -74,6 +74,27 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
       }
       return false
     })
+  }
+
+  // Ícone do Google baseado no tipo de sincronização
+  const getGoogleSyncIcon = (syncType?: GoogleSyncType | string | null) => {
+    if (!syncType || syncType === 'local') return null
+    
+    const iconClass = "h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0"
+    switch (syncType) {
+      case 'importado':
+        return <Download className={iconClass} />
+      case 'espelhado':
+        return <RefreshCw className={iconClass} />
+      case 'enviado':
+        return <Upload className={iconClass} />
+      case 'ignorado':
+        return <EyeOff className={iconClass} />
+      case 'cancelado':
+        return <XCircle className={iconClass} />
+      default:
+        return null
+    }
   }
 
   const handleDragStart = (e: React.DragEvent, sessionId: string) => {
@@ -200,12 +221,18 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                                 <span className="truncate">
                                   {formatClientName(getClientName(session.client_id))}
                                 </span>
+                                {session.package_id && (
+                                  <Package className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary" />
+                                )}
+                                {session.recurring_session_id && !session.package_id && (
+                                  <Repeat className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary" />
+                                )}
                               </div>
-                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
+                              {getGoogleSyncIcon(session.google_sync_type)}
                             </div>
-                            {session.valor && (
+                            {(session.valor || session.package_id) && (
                               <div className="text-[10px] font-medium text-success mt-0.5 pl-1.5">
-                                R$ {Number(session.valor).toFixed(2)}
+                                R$ {Number(session.valor || 0).toFixed(2)}
                               </div>
                             )}
 
