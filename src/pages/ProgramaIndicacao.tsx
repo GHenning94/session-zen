@@ -16,7 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import AnimatedGiftBox from "@/components/AnimatedGiftBox";
+import referralGiftImage from "@/assets/referral-gift-horizontal.png";
 import ShareReferralModal from "@/components/ShareReferralModal";
 import confetti from "canvas-confetti";
 interface ReferralStats {
@@ -542,8 +542,12 @@ const ProgramaIndicacao = () => {
                     </p>
                   </div>
                   
-                  <div className="w-full lg:w-auto flex justify-center relative z-0 mt-8">
-                    <AnimatedGiftBox />
+                  <div className="w-full lg:w-auto flex justify-center relative z-0 mt-4">
+                    <img 
+                      src={referralGiftImage} 
+                      alt="Presentes e recompensas do programa de indicação" 
+                      className="w-80 lg:w-96 h-auto object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
                 </div>
               </CardContent>
