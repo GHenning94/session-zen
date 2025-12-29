@@ -176,9 +176,12 @@ const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
     const highlightParam = searchParams.get('highlight')
     
-    if (highlightParam && payments && payments.length > 0) {
+    if (highlightParam && payments && payments.length > 0 && clients.length > 0) {
+      // Get processed payments
+      const processedPayments = getSessionPayments()
+      
       // Find the payment by session_id
-      const payment = payments.find((p: any) => p.session_id === highlightParam)
+      const payment = processedPayments.find((p: any) => p.session_id === highlightParam)
       
       if (payment) {
         setSelectedPayment(payment)
@@ -188,7 +191,7 @@ const [isLoading, setIsLoading] = useState(false)
       // Clear the URL parameters
       setSearchParams({})
     }
-  }, [searchParams, setSearchParams, payments])
+  }, [searchParams, setSearchParams, payments, clients])
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)
