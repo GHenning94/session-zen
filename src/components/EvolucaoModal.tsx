@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
@@ -11,9 +12,10 @@ import { SimpleRichTextEditor } from "./SimpleRichTextEditor"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { getSessionStatusColor, getSessionStatusLabel, calculateSessionStatus } from "@/utils/sessionStatusUtils"
-import { formatDateBR } from "@/utils/formatters"
+import { formatDateBR, formatTimeBR } from "@/utils/formatters"
 import { Badge } from "@/components/ui/badge"
 import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
+import { AlertTriangle } from "lucide-react"
 
 interface EvolucaoModalProps {
   open: boolean
@@ -45,6 +47,8 @@ export const EvolucaoModal = ({
   const [loading, setLoading] = useState(false)
   const [sessions, setSessions] = useState<any[]>([])
   const [inputMode, setInputMode] = useState<'manual' | 'session'>('manual')
+  const [duplicateWarningOpen, setDuplicateWarningOpen] = useState(false)
+  const [existingEvolucaoForSession, setExistingEvolucaoForSession] = useState<any>(null)
 
   const [evolucao, setEvolucao] = useState({
     data_sessao: '',
@@ -124,9 +128,36 @@ export const EvolucaoModal = ({
     }
   }
 
-  const handleSessionSelect = (sessionId: string) => {
+  const checkExistingEvolucao = async (sessionId: string): Promise<any | null> => {
+    if (!user || !sessionId) return null
+    
+    const { data, error } = await supabase
+      .from('evolucoes')
+      .select('id, data_sessao, evolucao, session_id')
+      .eq('user_id', user.id)
+      .eq('session_id', sessionId)
+      .single()
+    
+    if (error && error.code !== 'PGRST116') {
+      console.error('Erro ao verificar evolução existente:', error)
+    }
+    
+    return data || null
+  }
+
+  const handleSessionSelect = async (sessionId: string) => {
     const selectedSession = sessions.find(s => s.id === sessionId)
     if (selectedSession) {
+      // Verificar se já existe evolução para esta sessão
+      if (!existingEvolucao) {
+        const existing = await checkExistingEvolucao(sessionId)
+        if (existing) {
+          setExistingEvolucaoForSession(existing)
+          setDuplicateWarningOpen(true)
+          return
+        }
+      }
+      
       setEvolucao(prev => ({
         ...prev,
         data_sessao: selectedSession.data,
@@ -144,6 +175,16 @@ export const EvolucaoModal = ({
         variant: "destructive",
       })
       return
+    }
+
+    // Verificar duplicidade antes de salvar (para novas evoluções)
+    if (!existingEvolucao && evolucao.session_id) {
+      const existing = await checkExistingEvolucao(evolucao.session_id)
+      if (existing) {
+        setExistingEvolucaoForSession(existing)
+        setDuplicateWarningOpen(true)
+        return
+      }
     }
 
     setLoading(true)
@@ -206,6 +247,41 @@ export const EvolucaoModal = ({
   }
 
   return (
+    <>
+    <AlertDialog open={duplicateWarningOpen} onOpenChange={setDuplicateWarningOpen}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
+            Evolução já existente
+          </AlertDialogTitle>
+          <AlertDialogDescription>
+            Já existe uma evolução registrada para esta sessão. Deseja editar a evolução existente?
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={() => {
+            setDuplicateWarningOpen(false)
+            setExistingEvolucaoForSession(null)
+            setEvolucao(prev => ({ ...prev, session_id: '' }))
+          }}>
+            Cancelar
+          </AlertDialogCancel>
+          <AlertDialogAction onClick={() => {
+            setDuplicateWarningOpen(false)
+            onOpenChange(false)
+            // Trigger edit of existing evolucao - would need callback
+            toast({
+              title: "Dica",
+              description: "Localize a evolução existente e clique em editar.",
+            })
+          }}>
+            Entendi
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[700px]">
         <DialogHeader>
@@ -285,7 +361,7 @@ export const EvolucaoModal = ({
                     <SelectItem key={session.id} value={session.id}>
                       <div className="flex items-center justify-between w-full">
                         <span>
-                          {formatDateBR(session.data)} às {session.horario}
+                          {formatDateBR(session.data)} às {formatTimeBR(session.horario)}
                         </span>
                         <Badge variant={getSessionStatusColor(session.status)} className="ml-2">
                           {getSessionStatusLabel(session.status)}
@@ -297,7 +373,7 @@ export const EvolucaoModal = ({
               </Select>
               {evolucao.session_id && (
                 <p className="text-sm text-muted-foreground mt-1">
-                  Sessão de {formatDateBR(evolucao.data_sessao)} às {evolucao.horario_sessao}
+                  Sessão de {formatDateBR(evolucao.data_sessao)} às {formatTimeBR(evolucao.horario_sessao)}
                 </p>
               )}
             </div>
@@ -309,7 +385,7 @@ export const EvolucaoModal = ({
               <Label>Sessão Vinculada</Label>
               <div className="p-3 bg-muted rounded-md">
                 <p className="text-sm">
-                  {formatDateBR(sessionData.data)} às {sessionData.horario}
+                  {formatDateBR(sessionData.data)} às {formatTimeBR(sessionData.horario)}
                 </p>
               </div>
             </div>
@@ -342,5 +418,6 @@ export const EvolucaoModal = ({
         </div>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

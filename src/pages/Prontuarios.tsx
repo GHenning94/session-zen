@@ -465,23 +465,26 @@ export default function Prontuarios() {
                       {clientEvolucoes.map((evolucao) => (
                          <div key={evolucao.id} className="border border-border rounded-lg p-4">
                            <div className="flex items-center justify-between mb-2">
-                             <div className="flex items-center gap-2">
-                               <Calendar className="h-4 w-4 text-primary" />
                                <div className="flex items-center gap-2">
-                                 <span className="text-xs text-muted-foreground">Sessão:</span>
-                                 <span className="font-medium">
-                                   {format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}
-                                 </span>
-                                 {evolucao.session && (
-                                   <>
-                                     <span className="text-muted-foreground">às {evolucao.session.horario}</span>
-                                     <Badge variant={getSessionStatusColor(evolucao.session.status)} className="text-xs">
-                                       {getSessionStatusLabel(evolucao.session.status)}
-                                     </Badge>
-                                   </>
-                                 )}
-                               </div>
-                             </div>
+                                <Calendar className="h-4 w-4 text-primary" />
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Sessão:</span>
+                                  <span className="font-medium">
+                                    {evolucao.session 
+                                      ? format(new Date(evolucao.session.data + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })
+                                      : format(new Date(evolucao.data_sessao + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })
+                                    }
+                                  </span>
+                                  {evolucao.session && (
+                                    <>
+                                      <span className="text-muted-foreground">às {evolucao.session.horario.substring(0, 5)}</span>
+                                      <Badge variant={getSessionStatusColor(evolucao.session.status)} className="text-xs">
+                                        {getSessionStatusLabel(evolucao.session.status)}
+                                      </Badge>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
                             <div className="flex gap-1">
                               <TooltipProvider>
                                 <Tooltip>
