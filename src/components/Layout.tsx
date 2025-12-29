@@ -73,7 +73,7 @@ export function Layout({ children }: LayoutProps) {
             {children}
           </main>
         </div>
-        <WhatsAppButton />
+        
       </div>
     </SidebarProvider>
   )

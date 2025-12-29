@@ -595,6 +595,9 @@ export default function Suporte() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* WhatsApp Button - Fixed right side with entrance animation */}
+      <WhatsAppButton />
     </Layout>
   )
 }
