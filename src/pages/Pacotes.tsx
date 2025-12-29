@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Package, usePackages } from '@/hooks/usePackages';
 import { PackageModal } from '@/components/PackageModal';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPaymentMethod } from '@/utils/formatters';
@@ -22,6 +22,50 @@ export default function Pacotes() {
   const { getPackageProgress } = usePackages();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Function to recalculate sessoes_consumidas for all packages based on actual sessions
+  const recalculateAllPackagesConsumption = useCallback(async (packagesData: Package[]) => {
+    if (!packagesData || packagesData.length === 0) return;
+    
+    for (const pkg of packagesData) {
+      // Count sessions with status 'realizada' for this package
+      const { data: realizedSessions, error: countError } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('package_id', pkg.id)
+        .eq('status', 'realizada');
+      
+      if (countError) {
+        console.error('Error counting realized sessions:', countError);
+        continue;
+      }
+
+      const consumedCount = realizedSessions?.length || 0;
+      
+      // Only update if the count is different
+      if (consumedCount !== pkg.sessoes_consumidas) {
+        console.log(`[Pacotes] Updating package ${pkg.id}: ${pkg.sessoes_consumidas} -> ${consumedCount}`);
+        
+        let newStatus = pkg.status;
+        if (pkg.status !== 'cancelado') {
+          newStatus = consumedCount >= pkg.total_sessoes ? 'concluido' : 'ativo';
+        }
+        
+        const { error: updateError } = await supabase
+          .from('packages')
+          .update({ 
+            sessoes_consumidas: consumedCount,
+            status: newStatus
+          })
+          .eq('id', pkg.id);
+        
+        if (updateError) {
+          console.error('Error updating package:', updateError);
+        }
+      }
+    }
+  }, []);
 
   // Fetch packages with client info
   const { data: packages, refetch } = useQuery({
@@ -39,7 +83,26 @@ export default function Pacotes() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as (Package & { clients: { id: string; nome: string } })[];
+      
+      // Recalculate consumption for all packages and then refetch
+      const packagesData = data as (Package & { clients: { id: string; nome: string } })[];
+      await recalculateAllPackagesConsumption(packagesData);
+      
+      // Refetch after recalculation to get updated values
+      const { data: refreshedData, error: refreshError } = await supabase
+        .from('packages')
+        .select(`
+          *,
+          clients (
+            id,
+            nome
+          )
+        `)
+        .order('created_at', { ascending: false });
+        
+      if (refreshError) throw refreshError;
+      
+      return refreshedData as (Package & { clients: { id: string; nome: string } })[];
     },
     staleTime: 0,
     refetchOnMount: 'always'
