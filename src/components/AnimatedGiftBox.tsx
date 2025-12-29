@@ -1,7 +1,15 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const AnimatedGiftBox = () => {
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Trigger entrance animation
+    const timer = setTimeout(() => setIsVisible(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -31,7 +39,12 @@ const AnimatedGiftBox = () => {
   }, []);
 
   return (
-    <div className="relative w-56 h-56 flex items-center justify-center -ml-8">
+    <div 
+      ref={wrapperRef}
+      className={`relative w-64 h-64 flex items-center justify-center -ml-16 transition-all duration-1000 ease-out ${
+        isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
+      }`}
+    >
       {/* Sparkles */}
       {[...Array(10)].map((_, i) => (
         <div

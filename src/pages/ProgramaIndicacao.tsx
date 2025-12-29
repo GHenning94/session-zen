@@ -171,7 +171,7 @@ const ProgramaIndicacao = () => {
           .insert({
             user_id: user.id,
             titulo: 'Complete seus dados bancários',
-            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações.',
+            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=financeiro]',
           });
 
         toast({
