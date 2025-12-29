@@ -331,7 +331,7 @@ const ProgramaIndicacao = () => {
                       <h2 className="text-3xl font-bold">Ganhe até 30% de Comissão</h2>
                       <p className="text-lg text-muted-foreground">
                         Convide seus colegas profissionais e ganhe comissões recorrentes!<br />
-                        Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%. Pagamentos automáticos via Stripe!
+                        Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%.
                       </p>
                     </div>
                     
