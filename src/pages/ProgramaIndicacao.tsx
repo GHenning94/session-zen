@@ -333,9 +333,29 @@ const ProgramaIndicacao = () => {
           <Card className="overflow-hidden">
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5" />
+              
+              {/* Wave Lines - Behind Gift Only */}
+              <div className="absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none">
+                {[...Array(12)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute"
+                    style={{
+                      left: '0%',
+                      top: `${10 + i * 7}%`,
+                      width: '120%',
+                      height: '2px',
+                      background: `linear-gradient(90deg, transparent 0%, hsl(var(--primary) / ${0.05 + i * 0.015}) 30%, hsl(var(--primary) / ${0.15 + i * 0.02}) 60%, hsl(var(--primary) / ${0.08 - i * 0.005}) 100%)`,
+                      transform: `rotate(${-2 + i * 0.5}deg) translateY(${Math.sin(i * 0.8) * 8}px)`,
+                      borderRadius: '50%',
+                    }}
+                  />
+                ))}
+              </div>
+              
               <CardContent className="relative p-8">
                 <div className="flex flex-col lg:flex-row items-center gap-8">
-                  <div className="flex-1 space-y-6">
+                  <div className="flex-1 space-y-6 relative z-10">
                     <div className="space-y-4">
                       <h2 className="text-3xl font-bold">Ganhe até 30% de Comissão</h2>
                       <p className="text-lg text-muted-foreground">
@@ -362,7 +382,7 @@ const ProgramaIndicacao = () => {
                     </p>
                   </div>
                   
-                  <div className="w-full lg:w-auto flex justify-center">
+                  <div className="w-full lg:w-auto flex justify-center relative z-0">
                     <AnimatedGiftBox />
                   </div>
                 </div>
