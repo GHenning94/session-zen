@@ -51,6 +51,7 @@ interface Session {
     avatar_url?: string
   }
   packages?: {
+    nome?: string
     metodo_pagamento?: string
   }
   recurring_sessions?: {
@@ -174,7 +175,7 @@ export default function Sessoes() {
           id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
           metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
           clients (nome, ativo, avatar_url),
-          packages:package_id (metodo_pagamento),
+          packages:package_id (nome, metodo_pagamento),
           recurring_sessions:recurring_session_id (metodo_pagamento)
         `)
         .order('data', { ascending: false })
@@ -1055,7 +1056,7 @@ export default function Sessoes() {
                                         {(session.valor != null || session.package_id) && (
                                           <span className="font-medium text-primary whitespace-nowrap">
                                             {formatCurrencyBR(getSessionValue(session))}
-                                            {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
+                                            {session.package_id && <span className="text-xs text-muted-foreground ml-1">(Pacote {session.packages?.nome || ''})</span>}
                                           </span>
                                         )}
                                       </div>
@@ -1151,7 +1152,7 @@ export default function Sessoes() {
                                   {(session.valor != null || session.package_id) && (
                                     <span className="font-medium text-primary whitespace-nowrap">
                                       {formatCurrencyBR(getSessionValue(session))}
-                                      {session.package_id && <span className="text-xs text-muted-foreground ml-1">(pacote)</span>}
+                                      {session.package_id && <span className="text-xs text-muted-foreground ml-1">(Pacote {session.packages?.nome || ''})</span>}
                                     </span>
                                   )}
                                 </div>
