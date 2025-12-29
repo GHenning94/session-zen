@@ -181,34 +181,6 @@ const GiftBox = ({
   );
 };
 
-// Floating particle (replacing coins) with intense glow
-const FloatingParticle = ({ 
-  x, 
-  y, 
-  size = 20,
-  delay = 0 
-}: { 
-  x: number; 
-  y: number; 
-  size?: number;
-  delay?: number;
-}) => {
-  return (
-    <div
-      className="absolute rounded-full"
-      style={{
-        left: `${x}%`,
-        top: `${y}%`,
-        width: `${size}px`,
-        height: `${size}px`,
-        background: `radial-gradient(circle, hsl(221, 83%, 75%) 0%, hsl(221, 83%, 60%) 40%, transparent 70%)`,
-        boxShadow: `0 0 ${size * 2}px ${size}px hsla(221, 83%, 60%, 0.7), 0 0 ${size * 3}px ${size * 1.5}px hsla(221, 83%, 53%, 0.5), 0 0 ${size * 4}px ${size * 2}px hsla(221, 83%, 50%, 0.3)`,
-        animation: `particleFloatLoop ${2.5 + delay}s ease-in-out infinite`,
-        animationDelay: `${delay}s`,
-      }}
-    />
-  );
-};
 
 const AnimatedGiftImage = () => {
   const floatingRef = useRef<HTMLDivElement>(null);
@@ -364,23 +336,32 @@ const AnimatedGiftImage = () => {
       {/* Floating Particles */}
       {particles.map(renderParticle)}
 
-      {/* Sparkles */}
-      {[...Array(14)].map((_, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            width: `${3 + Math.random() * 4}px`,
-            height: `${3 + Math.random() * 4}px`,
-            left: `${5 + (i * 7)}%`,
-            top: `${15 + Math.sin(i * 1.2) * 25}%`,
-            background: i % 2 === 0 ? 'hsl(221, 83%, 53%)' : 'hsl(221, 83%, 65%)',
-            animation: `sparkle ${2 + i * 0.25}s ease-in-out infinite`,
-            animationDelay: `${i * 0.15}s`,
-            boxShadow: '0 0 8px 2px hsla(221, 83%, 53%, 0.5)',
-          }}
-        />
-      ))}
+      {/* Sparkles - distributed around the gifts */}
+      {[...Array(24)].map((_, i) => {
+        const size = 3 + Math.random() * 5;
+        const opacity = 0.4 + Math.random() * 0.5;
+        return (
+          <div
+            key={i}
+            className="absolute rounded-full"
+            style={{
+              width: `${size}px`,
+              height: `${size}px`,
+              left: `${8 + (i * 3.5) + Math.sin(i) * 5}%`,
+              top: `${12 + Math.sin(i * 0.8) * 35 + Math.cos(i * 1.5) * 15}%`,
+              background: i % 3 === 0 
+                ? 'hsl(221, 83%, 53%)' 
+                : i % 3 === 1 
+                  ? 'hsl(221, 83%, 65%)' 
+                  : 'hsl(210, 100%, 70%)',
+              opacity,
+              animation: `sparkle ${1.8 + (i % 5) * 0.4}s ease-in-out infinite`,
+              animationDelay: `${(i % 8) * 0.2}s`,
+              boxShadow: `0 0 ${size * 2}px ${size / 2}px hsla(221, 83%, 53%, ${opacity * 0.8})`,
+            }}
+          />
+        );
+      })}
 
       {/* Hover wrapper */}
       <div 
@@ -408,14 +389,6 @@ const AnimatedGiftImage = () => {
           <GiftBox scale={1.1} offsetX={0} offsetY={0} delay={0} />
           <GiftBox scale={0.85} offsetX={115} offsetY={15} delay={0.5} />
 
-          {/* Floating Particles */}
-          <FloatingParticle x={8} y={55} size={18} delay={0.2} />
-          <FloatingParticle x={15} y={75} size={14} delay={0.8} />
-          <FloatingParticle x={30} y={20} size={16} delay={0.4} />
-          <FloatingParticle x={55} y={10} size={12} delay={0.6} />
-          <FloatingParticle x={70} y={25} size={15} delay={0.3} />
-          <FloatingParticle x={85} y={60} size={17} delay={0.7} />
-          <FloatingParticle x={90} y={80} size={13} delay={0.1} />
         </div>
       </div>
 
