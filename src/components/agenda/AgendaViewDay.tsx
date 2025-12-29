@@ -180,7 +180,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                     <Card 
                       key={session.id} 
                       className={cn(
-                        "relative group cursor-move transition-all hover:shadow-md bg-primary text-primary-foreground border-primary/50", 
+                        "relative group cursor-move transition-all hover:shadow-md bg-primary/20 text-primary-foreground border-primary/30 overflow-hidden", 
                         highlightedSessionId === session.id && "animate-pulse-highlight"
                       )}
                       draggable
@@ -190,12 +190,22 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                         onEditSession(session)
                       }}
                     >
+                      {/* Status indicator line */}
+                      <div className={cn(
+                        "absolute left-0 top-0 bottom-0 w-1",
+                        session.status === 'realizada' && "bg-success",
+                        session.status === 'agendada' && "bg-primary",
+                        session.status === 'cancelada' && "bg-destructive",
+                        (session.status === 'falta' || session.status === 'faltou') && "bg-warning",
+                        !['realizada', 'agendada', 'cancelada', 'falta', 'faltou'].includes(session.status) && "bg-muted-foreground"
+                      )} />
+                      
                       {needsAttention && (
-                        <div className="absolute top-2 left-2 z-10">
+                        <div className="absolute top-2 left-3 z-10">
                           <PulsingDot color="warning" size="sm" />
                         </div>
                       )}
-                      <CardContent className="p-2">
+                      <CardContent className="p-2 pl-3">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
@@ -210,7 +220,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                 </span>
                               </div>
                               {session.package_id && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary-foreground/20 text-primary-foreground border-0">
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/30 text-primary-foreground border-0">
                                   <Package className="h-2 w-2 mr-0.5" />
                                   Pacote
                                 </Badge>

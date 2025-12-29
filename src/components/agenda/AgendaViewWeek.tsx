@@ -238,7 +238,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             <Card 
                               key={session.id} 
                               className={cn(
-                                "cursor-move group relative transition-all hover:shadow-sm bg-primary text-primary-foreground border-primary/50",
+                                "cursor-move group relative transition-all hover:shadow-sm bg-primary/20 text-primary-foreground border-primary/30 overflow-hidden",
                                 highlightedSessionId === session.id && "animate-pulse-highlight"
                               )}
                               draggable
@@ -251,12 +251,22 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                                 onEditSession(session)
                               }}
                             >
+                              {/* Status indicator line */}
+                              <div className={cn(
+                                "absolute left-0 top-0 bottom-0 w-1",
+                                session.status === 'realizada' && "bg-success",
+                                session.status === 'agendada' && "bg-primary",
+                                session.status === 'cancelada' && "bg-destructive",
+                                (session.status === 'falta' || session.status === 'faltou') && "bg-warning",
+                                !['realizada', 'agendada', 'cancelada', 'falta', 'faltou'].includes(session.status) && "bg-muted-foreground"
+                              )} />
+                              
                               {needsAttention && (
-                                <div className="absolute top-1 left-1 z-10">
+                                <div className="absolute top-1 left-2 z-10">
                                   <PulsingDot color="warning" size="sm" />
                                 </div>
                               )}
-                              <CardContent className="p-1.5">
+                              <CardContent className="p-1.5 pl-2.5">
                                 <div className="flex items-center gap-1">
                                   <div className="flex items-center gap-1">
                                     <Clock className="h-2.5 w-2.5" />
