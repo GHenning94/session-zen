@@ -108,6 +108,25 @@ export const SessionEditModal = ({
     enabled: !!session?.package_id && open
   })
 
+  // Fetch clients with active packages for package sessions
+  const { data: clientsWithPackages } = useQuery({
+    queryKey: ['clients-with-packages'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('client_id')
+        .eq('status', 'ativo')
+      if (error) throw error
+      return new Set(data?.map(p => p.client_id) || [])
+    },
+    enabled: !!session?.package_id && open
+  })
+
+  // Filter clients for package sessions - only show clients with active packages
+  const availableClients = session?.package_id 
+    ? clients.filter(c => clientsWithPackages?.has(c.id))
+    : clients
+
   // Calculate package session value
   const getPackageSessionValue = (): number => {
     if (!packageData) return session?.valor || 0
@@ -498,7 +517,7 @@ export const SessionEditModal = ({
                 <SelectValue placeholder="Selecione um cliente" />
               </SelectTrigger>
               <SelectContent>
-                {clients.map((client) => (
+                {availableClients.map((client) => (
                   <SelectItem key={client.id} value={client.id}>
                     <div className="flex items-center gap-2">
                       <span>{client.nome}</span>
@@ -512,6 +531,11 @@ export const SessionEditModal = ({
                 ))}
               </SelectContent>
             </Select>
+            {isPackageSession && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Apenas clientes com pacotes ativos são exibidos.
+              </p>
+            )}
             {showReactivationMessage && (
               <div className="text-sm p-2 bg-warning/10 border border-warning/20 rounded-md text-warning">
                 Ao salvar, este cliente será reativado automaticamente.
