@@ -181,8 +181,8 @@ const GiftBox = ({
   );
 };
 
-// Floating coin component with blue glow
-const Coin = ({ 
+// Floating particle (replacing coins) with intense glow
+const FloatingParticle = ({ 
   x, 
   y, 
   size = 20,
@@ -201,19 +201,12 @@ const Coin = ({
         top: `${y}%`,
         width: `${size}px`,
         height: `${size}px`,
-        background: 'radial-gradient(circle at 30% 30%, hsl(210, 100%, 80%) 0%, hsl(221, 83%, 65%) 40%, hsl(221, 83%, 53%) 100%)',
-        boxShadow: `0 0 ${size * 1.5}px ${size / 2}px hsla(221, 83%, 60%, 0.6), 0 0 ${size * 2.5}px ${size}px hsla(221, 83%, 53%, 0.3), inset 0 1px 0 rgba(255,255,255,0.6)`,
-        animation: `coinFloat ${2.5 + delay}s ease-in-out infinite, coinGlow ${1.5 + delay * 0.5}s ease-in-out infinite`,
+        background: `radial-gradient(circle, hsl(221, 83%, 75%) 0%, hsl(221, 83%, 60%) 40%, transparent 70%)`,
+        boxShadow: `0 0 ${size * 2}px ${size}px hsla(221, 83%, 60%, 0.7), 0 0 ${size * 3}px ${size * 1.5}px hsla(221, 83%, 53%, 0.5), 0 0 ${size * 4}px ${size * 2}px hsla(221, 83%, 50%, 0.3)`,
+        animation: `particleFloatLoop ${2.5 + delay}s ease-in-out infinite`,
         animationDelay: `${delay}s`,
       }}
-    >
-      <div 
-        className="absolute inset-0 rounded-full"
-        style={{
-          background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, transparent 60%)',
-        }}
-      />
-    </div>
+    />
   );
 };
 
@@ -415,14 +408,14 @@ const AnimatedGiftImage = () => {
           <GiftBox scale={1.1} offsetX={0} offsetY={0} delay={0} />
           <GiftBox scale={0.85} offsetX={115} offsetY={15} delay={0.5} />
 
-          {/* Floating Coins */}
-          <Coin x={8} y={55} size={18} delay={0.2} />
-          <Coin x={15} y={75} size={14} delay={0.8} />
-          <Coin x={30} y={20} size={16} delay={0.4} />
-          <Coin x={55} y={10} size={12} delay={0.6} />
-          <Coin x={70} y={25} size={15} delay={0.3} />
-          <Coin x={85} y={60} size={17} delay={0.7} />
-          <Coin x={90} y={80} size={13} delay={0.1} />
+          {/* Floating Particles */}
+          <FloatingParticle x={8} y={55} size={18} delay={0.2} />
+          <FloatingParticle x={15} y={75} size={14} delay={0.8} />
+          <FloatingParticle x={30} y={20} size={16} delay={0.4} />
+          <FloatingParticle x={55} y={10} size={12} delay={0.6} />
+          <FloatingParticle x={70} y={25} size={15} delay={0.3} />
+          <FloatingParticle x={85} y={60} size={17} delay={0.7} />
+          <FloatingParticle x={90} y={80} size={13} delay={0.1} />
         </div>
       </div>
 
@@ -435,19 +428,9 @@ const AnimatedGiftImage = () => {
           0%, 100% { transform: translateX(var(--offset-x, 0)) translateY(var(--offset-y, 0)) scale(var(--scale, 1)); }
           50% { transform: translateX(var(--offset-x, 0)) translateY(calc(var(--offset-y, 0) - 5px)) scale(var(--scale, 1)); }
         }
-        @keyframes coinFloat {
-          0%, 100% { transform: translateY(0) rotate(0deg); }
-          50% { transform: translateY(-8px) rotate(10deg); }
-        }
-        @keyframes coinGlow {
-          0%, 100% { 
-            filter: brightness(1);
-            box-shadow: 0 0 20px 8px hsla(221, 83%, 60%, 0.5), 0 0 40px 16px hsla(221, 83%, 53%, 0.25);
-          }
-          50% { 
-            filter: brightness(1.2);
-            box-shadow: 0 0 30px 12px hsla(221, 83%, 65%, 0.7), 0 0 50px 20px hsla(221, 83%, 53%, 0.4);
-          }
+        @keyframes particleFloatLoop {
+          0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+          50% { transform: translateY(-10px) scale(1.15); opacity: 1; }
         }
         @keyframes shadowPulse {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.1; }
