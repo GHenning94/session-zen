@@ -18,6 +18,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import AnimatedGiftBox from "@/components/AnimatedGiftBox";
 import ShareReferralModal from "@/components/ShareReferralModal";
+import confetti from "canvas-confetti";
 interface ReferralStats {
   total_referrals: number;
   active_referrals: number;
@@ -136,6 +137,14 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
+      // Dispara confetes
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'],
+      });
+
       const { error } = await supabase
         .from('profiles')
         .update({ is_referral_partner: true })
