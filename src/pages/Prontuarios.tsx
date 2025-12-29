@@ -453,7 +453,7 @@ export default function Prontuarios() {
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <CardTitle>Evoluções Clínicas</CardTitle>
-                    <Button onClick={() => handleCreateEvolucao(selectedClient)} className="bg-gradient-primary hover:opacity-90">
+                    <Button onClick={() => handleCreateEvolucao(selectedClient)} size="sm" className="bg-gradient-primary hover:opacity-90">
                       <Plus className="h-4 w-4 mr-2" />
                       Nova Evolução
                     </Button>
