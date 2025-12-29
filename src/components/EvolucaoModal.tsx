@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
-import RichTextEditor from "./RichTextEditor"
+import { SimpleRichTextEditor } from "./SimpleRichTextEditor"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { getSessionStatusColor, getSessionStatusLabel, calculateSessionStatus } from "@/utils/sessionStatusUtils"
@@ -318,7 +318,7 @@ export const EvolucaoModal = ({
           <div>
             <Label htmlFor="evolucao">Evolução/Nota Clínica</Label>
             <div className="mt-2 max-h-[400px] overflow-y-auto">
-              <RichTextEditor
+              <SimpleRichTextEditor
                 value={evolucao.evolucao}
                 onChange={(value) => setEvolucao(prev => ({ ...prev, evolucao: value }))}
                 placeholder="Descreva a evolução do cliente nesta sessão, observações clínicas, progressos, etc."
