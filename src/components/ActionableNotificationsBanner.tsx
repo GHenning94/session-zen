@@ -79,12 +79,12 @@ export const ActionableNotificationsBanner = () => {
     const hiddenNotifications = localStorage.getItem('hiddenNotifications');
     const hidden = hiddenNotifications ? JSON.parse(hiddenNotifications) : [];
 
-    // Check for 2FA not configured
+    // Check for 2FA not configured - SEMPRE usa texto curto no botão
     if (!loading2FA && !has2FAConfigured() && !hidden.includes('2fa-not-configured')) {
       actionableNotifications.push({
         id: '2fa-not-configured',
         icon: <Shield className="h-5 w-5" />,
-        message: 'Aumente a segurança da sua conta ativando a autenticação de dois fatores',
+        message: 'Proteja sua conta com autenticação de dois fatores',
         action: 'Configurar 2FA',
         route: '/configuracoes?tab=seguranca',
       });

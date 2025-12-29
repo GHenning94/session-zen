@@ -2346,8 +2346,8 @@ const Dashboard = () => {
               </CardContent>
             </Card>
 
-            {/* Clientes Recentes */}
-            <Card className="shadow-soft flex-1 min-h-[400px] flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
+            {/* Clientes Recentes - Altura fixa para consistência */}
+            <Card className="shadow-soft min-h-[520px] flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
               <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
