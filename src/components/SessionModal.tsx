@@ -371,13 +371,21 @@ export const SessionModal = ({
     return null // Não mostrar ícone para individual
   }
 
+  // Determinar o título do modal
+  const getModalTitle = () => {
+    if (!session) return 'Nova Sessão'
+    if (session.recurring_session_id) return 'Editar Sessão Recorrente'
+    if (session.package_id) return 'Editar Sessão de Pacote'
+    return 'Editar Sessão Individual'
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {getSessionTypeIcon()}
-            {session ? (isEditingRecurringSession ? 'Editar Sessão Recorrente' : 'Editar Sessão') : 'Nova Sessão'}
+            {getModalTitle()}
           </DialogTitle>
         </DialogHeader>
 
