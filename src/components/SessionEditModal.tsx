@@ -494,14 +494,13 @@ export const SessionEditModal = ({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {session?.package_id ? (
-              <Package className="h-4 w-4" />
-            ) : session?.recurring_session_id ? (
-              <Repeat className="h-4 w-4" />
-            ) : null}
-            Editar Sessão
-            {isPackageSession && (
-              <span className="text-xs font-normal text-muted-foreground ml-2">(Sessão de pacote)</span>
+            {isPackageSession ? (
+              <>
+                <Package className="h-4 w-4" />
+                Editar Sessão de Pacote
+              </>
+            ) : (
+              <>Editar Sessão Individual</>
             )}
           </DialogTitle>
         </DialogHeader>
