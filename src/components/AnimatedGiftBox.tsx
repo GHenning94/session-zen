@@ -41,7 +41,7 @@ const AnimatedGiftBox = () => {
   return (
     <div 
       ref={wrapperRef}
-      className={`relative w-64 h-64 flex items-center justify-center -ml-16 transition-all duration-1000 ease-out ${
+      className={`relative w-64 h-64 flex items-center justify-center -ml-24 transition-all duration-1000 ease-out group ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
     >
@@ -66,7 +66,7 @@ const AnimatedGiftBox = () => {
       {/* 3D Gift Box */}
       <div 
         ref={containerRef}
-        className="relative"
+        className="relative transition-transform duration-300 ease-out group-hover:scale-110 group-hover:rotate-3"
         style={{ 
           perspective: '800px', 
           transformStyle: 'preserve-3d',
