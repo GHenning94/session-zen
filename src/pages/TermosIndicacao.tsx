@@ -31,7 +31,7 @@ const TermosIndicacao = () => {
             </CardDescription>
           </CardHeader>
           
-          <CardContent className="prose prose-sm dark:prose-invert max-w-none space-y-6">
+          <CardContent className="max-w-none space-y-6">
             {/* Seção 1 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
@@ -112,11 +112,32 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 6 */}
+            {/* Seção 6 - SAÍDA DO PROGRAMA */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                6. Cancelamento e Reembolsos
+                6. Saída do Programa
+              </h3>
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 mb-4">
+                <p className="text-sm font-medium text-destructive mb-2">⚠️ Atenção: Ação Irreversível</p>
+                <p className="text-sm text-muted-foreground">
+                  Ao optar por deixar o Programa de Indicação, esteja ciente das seguintes consequências:
+                </p>
+              </div>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li><strong>Perda total das indicações:</strong> Todas as indicações registradas em seu nome serão permanentemente removidas do sistema.</li>
+                <li><strong>Cancelamento de pagamentos pendentes:</strong> Quaisquer comissões pendentes ou em processamento serão canceladas e não serão pagas.</li>
+                <li><strong>Encerramento de comissões recorrentes:</strong> Você deixará de receber comissões de indicados ativos, mesmo que eles continuem assinantes.</li>
+                <li><strong>Ação irreversível:</strong> Esta ação não pode ser desfeita. Caso deseje participar novamente, será necessário iniciar do zero, sem recuperação de indicações ou histórico anterior.</li>
+                <li><strong>Link de indicação desativado:</strong> Seu link de indicação será permanentemente desativado e não poderá ser reativado.</li>
+              </ul>
+            </section>
+
+            {/* Seção 7 */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                7. Cancelamento e Reembolsos
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Se o indicado cancelar a assinatura dentro do período de reembolso, a comissão correspondente será estornada.</li>
@@ -125,11 +146,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 7 */}
+            {/* Seção 8 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                7. Responsabilidades
+                8. Responsabilidades
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro não se responsabiliza por perdas decorrentes de informações bancárias incorretas fornecidas pelo parceiro.</li>
@@ -138,11 +159,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 8 */}
+            {/* Seção 9 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                8. Modificações
+                9. Modificações
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro reserva-se o direito de modificar estes termos a qualquer momento.</li>
@@ -151,20 +172,21 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 9 */}
+            {/* Seção 10 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                9. Contato
+                10. Contato
               </h3>
               <p className="text-muted-foreground">
-                Para dúvidas sobre o Programa de Indicação, entre em contato através do e-mail{' '}
+                Para dúvidas sobre o Programa de Indicação, entre em contato através do e-mail{" "}
                 <a href="mailto:suporte@therapypro.app.br" className="text-primary hover:underline">
                   suporte@therapypro.app.br
-                </a>{' '}
+                </a>{" "}
                 ou pela página de suporte na plataforma.
               </p>
             </section>
+
 
             <div className="pt-6 border-t">
               <p className="text-sm text-muted-foreground text-center">
