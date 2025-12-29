@@ -17,7 +17,7 @@ const WhatsAppButton = ({ className }: WhatsAppButtonProps) => {
     <Button
       onClick={handleWhatsAppClick}
       className={cn(
-        "fixed bottom-6 left-20 z-50 h-14 w-14 rounded-full bg-success text-success-foreground shadow-lg hover:bg-success/90 transition-colors flex items-center justify-center",
+        "fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-success text-success-foreground shadow-lg hover:bg-success/90 hover:scale-110 transition-all duration-300 flex items-center justify-center animate-[slideInUp_0.5s_ease-out_forwards]",
         className
       )}
       size="icon"
