@@ -556,7 +556,7 @@ export const SessionEditModal = ({
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="client">Cliente *</Label>
+            <Label htmlFor="client">Cliente</Label>
             <Select
               value={formData.client_id}
               onValueChange={handleClientChange}
@@ -594,7 +594,7 @@ export const SessionEditModal = ({
           {/* Seletor de Pacote para sessões de pacote */}
           {isPackageSession && (
             <div>
-              <Label htmlFor="package">Pacote *</Label>
+              <Label htmlFor="package">Pacote</Label>
               <Select
                 value={selectedPackageId}
                 onValueChange={setSelectedPackageId}
