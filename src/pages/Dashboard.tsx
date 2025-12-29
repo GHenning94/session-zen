@@ -2005,7 +2005,7 @@ const Dashboard = () => {
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento - Modernizado */}
                 <ScrollAnimation animation="fade-up" delay={250} className="col-span-full">
-                  <Card className="shadow-soft h-full overflow-visible">
+                  <Card className="shadow-soft min-h-[600px] overflow-visible">
                     <CardHeader className="pb-4">
                       <div className="flex flex-col gap-4">
                         <div className="flex items-center justify-between">
