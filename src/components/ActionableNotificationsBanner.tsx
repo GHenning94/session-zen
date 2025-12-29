@@ -86,7 +86,7 @@ export const ActionableNotificationsBanner = () => {
         icon: <Shield className="h-5 w-5" />,
         message: 'Aumente a segurança da sua conta ativando a autenticação de dois fatores',
         action: 'Configurar 2FA',
-        route: '/configuracoes?tab=security',
+        route: '/configuracoes?tab=seguranca',
       });
     }
 

@@ -18,15 +18,10 @@ import { PasswordRequirements } from "@/components/PasswordRequirements"
 import { ArrowLeft, UserPlus, Gift } from "lucide-react"
 
 const PREDEFINED_PROFESSIONS = [
-  "Psicólogo",
+  "Psicólogo(a)",
   "Psicanalista", 
   "Terapeuta",
-  "Neurologista",
-  "Psicoterapeuta",
-  "Terapeuta Familiar",
-  "Terapeuta de Casal",
-  "Coach",
-  "Outros"
+  "Coach"
 ]
 
 const Signup = () => {

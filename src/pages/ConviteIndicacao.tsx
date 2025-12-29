@@ -16,15 +16,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 
 const PREDEFINED_PROFESSIONS = [
-  "Psicólogo",
+  "Psicólogo(a)",
   "Psicanalista", 
   "Terapeuta",
-  "Neurologista",
-  "Psicoterapeuta",
-  "Terapeuta Familiar",
-  "Terapeuta de Casal",
-  "Coach",
-  "Outros"
+  "Coach"
 ];
 
 interface ReferrerInfo {
