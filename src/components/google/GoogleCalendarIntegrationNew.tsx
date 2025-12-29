@@ -626,7 +626,7 @@ const GoogleCalendarIntegrationNew = () => {
                   <Button 
                     onClick={connectToGoogle}
                     disabled={loading || !isInitialized}
-                    className="bg-primary hover:bg-primary/90"
+                    className="bg-gradient-primary hover:opacity-90"
                   >
                     {loading ? (
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />

@@ -430,7 +430,7 @@ export const MetasManager = () => {
                             <SelectItem value="mensal">Mensal</SelectItem>
                           </SelectContent>
                         </Select>
-                        <Button onClick={() => handleCreateMeta(tipo)}>
+                        <Button onClick={() => handleCreateMeta(tipo)} className="bg-gradient-primary hover:opacity-90">
                           {metaConcluida ? `Meta ${metaConcluida.versao + 1}` : 'Criar'}
                         </Button>
                       </div>

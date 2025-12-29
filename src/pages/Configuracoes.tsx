@@ -973,7 +973,7 @@ const Configuracoes = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={handleSave} disabled={isLoading}>
+                <Button onClick={handleSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Dados Bancários
                 </Button>
