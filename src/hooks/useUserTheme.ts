@@ -6,13 +6,16 @@ import { useLocation } from 'react-router-dom'
 import { toast } from 'sonner'
 
 const USER_THEME_CACHE_KEY = 'user-theme-cache'
+// CRITICAL: This must match the storageKey in App.tsx ThemeProvider
+const NEXT_THEMES_STORAGE_KEY = 'user-platform-theme'
 
 export const useUserTheme = () => {
   const { setTheme } = useTheme()
   const { user } = useAuth()
   const location = useLocation()
 
-  // Check if we're on an admin page - admin has its own isolated theme system
+  // Check if we're on an admin page - admin has its own COMPLETELY isolated theme system
+  // This hook should NEVER modify any DOM or state when on admin pages
   const isAdminPage = useCallback(() => {
     return location.pathname.startsWith('/admin')
   }, [location.pathname])
@@ -128,10 +131,12 @@ export const useUserTheme = () => {
   }, [user, isPublicPage, isAdminPage])
 
   // Apply theme from cache IMMEDIATELY on route/user change (before useEffect runs)
-  // IMPORTANT: Admin pages are completely ignored here - they have their own AdminThemeProvider
+  // CRITICAL: Admin pages are completely ignored here - they have their own AdminThemeProvider
   useLayoutEffect(() => {
-    // Admin pages have their own isolated theme system via AdminThemeProvider - DO NOT TOUCH
+    // Admin pages have their own COMPLETELY ISOLATED theme system via AdminThemeProvider
+    // We must NOT touch the DOM at all when on admin pages
     if (isAdminPage()) {
+      console.log('[useUserTheme] ⛔ Admin page detected - skipping all theme operations')
       return
     }
 
@@ -143,6 +148,8 @@ export const useUserTheme = () => {
       root.classList.remove('dark')
       root.classList.add('light')
       root.setAttribute('data-theme', 'light')
+      // Also update next-themes internal state, but only its isolated storage key
+      localStorage.setItem(NEXT_THEMES_STORAGE_KEY, 'light')
       setTheme('light')
       requestAnimationFrame(() => {
         root.style.transition = ''
@@ -160,6 +167,8 @@ export const useUserTheme = () => {
         root.classList.remove(cachedTheme === 'dark' ? 'light' : 'dark')
         root.classList.add(cachedTheme)
         root.setAttribute('data-theme', cachedTheme)
+        // Sync with next-themes storage
+        localStorage.setItem(NEXT_THEMES_STORAGE_KEY, cachedTheme)
         setTheme(cachedTheme)
         console.log(`[useUserTheme] ✅ Tema do usuário aplicado do cache: ${cachedTheme}`)
         requestAnimationFrame(() => {

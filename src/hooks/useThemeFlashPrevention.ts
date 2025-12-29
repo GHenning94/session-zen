@@ -3,6 +3,10 @@
 
 const THEME_CACHE_KEY = 'user-theme-cache'
 const COLOR_CACHE_KEY = 'user-color-cache'
+// CRITICAL: Admin has its own completely isolated theme key - never mix with user platform
+const ADMIN_THEME_KEY = 'admin-theme-isolated'
+// CRITICAL: This must match the storageKey in App.tsx ThemeProvider
+const NEXT_THEMES_STORAGE_KEY = 'user-platform-theme'
 const DEFAULT_COLOR = '217 91% 45%' // Azul profissional padrão
 const VALID_THEMES = ['light', 'dark'] as const
 
@@ -57,13 +61,14 @@ const isAdminPage = () => {
 export const applyThemeInstantly = () => {
   if (typeof window === 'undefined') return
 
-  // Admin pages have their own completely isolated theme system - DO NOT TOUCH
+  // CRITICAL: Admin pages have their own COMPLETELY ISOLATED theme system
+  // We use a separate localStorage key and NEVER touch next-themes storage
   if (isAdminPage()) {
-    const ADMIN_THEME_KEY = 'admin-theme-isolated'
     const adminTheme = localStorage.getItem(ADMIN_THEME_KEY) as 'light' | 'dark' | null
     const themeToApply = adminTheme === 'dark' ? 'dark' : 'light'
     setDocumentTheme(themeToApply)
     applyColorToDocument(DEFAULT_COLOR) // Admin always uses default color
+    console.log(`[ThemeFlashPrevention] ⛔ Admin page - using isolated theme: ${themeToApply}`)
     return themeToApply
   }
 
@@ -83,7 +88,7 @@ export const applyThemeInstantly = () => {
       // For public pages, apply light theme but DO NOT save to localStorage
       themeToApply = 'light'
       colorToApply = DEFAULT_COLOR
-      // Apply theme and return early - don't modify localStorage
+      // Apply theme and return early - don't modify any localStorage
       setDocumentTheme(themeToApply)
       applyColorToDocument(colorToApply)
       return themeToApply
@@ -91,13 +96,14 @@ export const applyThemeInstantly = () => {
       const authData = JSON.parse(currentUser)
       const userId = authData?.user?.id
       if (userId) {
-        // Carregar tema
+        // Carregar tema from user-specific cache
         const themeCacheKey = `${THEME_CACHE_KEY}_${userId}`
         const cachedTheme = localStorage.getItem(themeCacheKey) as 'light' | 'dark' | null
         if (cachedTheme === 'dark' || cachedTheme === 'light') {
           themeToApply = cachedTheme
         } else {
-          const local = localStorage.getItem('theme') as 'light' | 'dark' | null
+          // Fallback to next-themes storage (NOT 'theme' key anymore)
+          const local = localStorage.getItem(NEXT_THEMES_STORAGE_KEY) as 'light' | 'dark' | null
           if (local === 'dark' || local === 'light') themeToApply = local
         }
         
@@ -109,7 +115,8 @@ export const applyThemeInstantly = () => {
         }
       }
     } else {
-      const local = localStorage.getItem('theme') as 'light' | 'dark' | null
+      // Fallback to next-themes storage for non-logged-in users
+      const local = localStorage.getItem(NEXT_THEMES_STORAGE_KEY) as 'light' | 'dark' | null
       if (local === 'dark' || local === 'light') themeToApply = local
     }
   } catch (error) {
@@ -118,7 +125,8 @@ export const applyThemeInstantly = () => {
 
   // Aplica tema e cor imediatamente para evitar flicker
   setDocumentTheme(themeToApply)
-  localStorage.setItem('theme', themeToApply)
+  // CRITICAL: Only update the next-themes storage key, NOT the old 'theme' key
+  localStorage.setItem(NEXT_THEMES_STORAGE_KEY, themeToApply)
   applyColorToDocument(colorToApply)
  
   return themeToApply

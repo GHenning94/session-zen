@@ -131,7 +131,7 @@ const App = () => (
       <ThemeProvider
         attribute="class"
         defaultTheme="light"
-        storageKey="theme"
+        storageKey="user-platform-theme"
         disableTransitionOnChange
       >
         <ThemeTransitionOverlay />
