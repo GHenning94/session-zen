@@ -304,6 +304,48 @@ const Login = () => {
   const handle2FASuccess = async () => {
     is2FASuccess.current = true
     
+    // ✅ CRITICAL: Aplicar tema do usuário ANTES de navegar
+    // Isso evita que a plataforma abra no tema errado após 2FA
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (session?.user?.id) {
+        const userId = session.user.id
+        const themeCacheKey = `user-theme-cache_${userId}`
+        const cachedTheme = localStorage.getItem(themeCacheKey)
+        
+        if (cachedTheme && (cachedTheme === 'light' || cachedTheme === 'dark')) {
+          const root = document.documentElement
+          root.classList.add(cachedTheme)
+          root.classList.remove(cachedTheme === 'dark' ? 'light' : 'dark')
+          root.setAttribute('data-theme', cachedTheme)
+          // Atualizar next-themes storage key
+          localStorage.setItem('user-platform-theme', cachedTheme)
+          console.log(`[Login] ✅ Tema aplicado após 2FA: ${cachedTheme}`)
+        } else {
+          // Se não tem cache, buscar do banco
+          const { data: config } = await supabase
+            .from('configuracoes')
+            .select('theme_preference')
+            .eq('user_id', userId)
+            .single()
+          
+          if (config?.theme_preference && (config.theme_preference === 'light' || config.theme_preference === 'dark')) {
+            const theme = config.theme_preference
+            const root = document.documentElement
+            root.classList.add(theme)
+            root.classList.remove(theme === 'dark' ? 'light' : 'dark')
+            root.setAttribute('data-theme', theme)
+            // Salvar no cache e next-themes
+            localStorage.setItem(themeCacheKey, theme)
+            localStorage.setItem('user-platform-theme', theme)
+            console.log(`[Login] ✅ Tema carregado do banco após 2FA: ${theme}`)
+          }
+        }
+      }
+    } catch (themeError) {
+      console.warn('[Login] Erro ao aplicar tema após 2FA:', themeError)
+    }
+    
     // ✅ Verificar se há plano pendente no localStorage ou backup
     const pendingPlan = localStorage.getItem('pending_plan') || 
                         sessionStorage.getItem('pending_plan_backup');
