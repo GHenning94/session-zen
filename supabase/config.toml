@@ -148,6 +148,21 @@ verify_jwt = false
 [functions.admin-get-dashboard-stats]
 verify_jwt = false
 
+[functions.admin-get-revenue-stats]
+verify_jwt = false
+
+[functions.admin-get-sessions-stats]
+verify_jwt = false
+
+[functions.admin-get-clients-stats]
+verify_jwt = false
+
+[functions.admin-get-referral-stats]
+verify_jwt = false
+
+[functions.admin-get-health-stats]
+verify_jwt = false
+
 [functions.cancel-subscription]
 verify_jwt = true
 
