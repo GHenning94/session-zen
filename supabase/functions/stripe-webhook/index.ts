@@ -522,17 +522,12 @@ async function processReferral(
       return;
     }
 
-    // Verificar se já existe referral para este usuário
-    const { data: existingReferral } = await supabase
-      .from('referrals')
-      .select('id')
-      .eq('referred_user_id', referredUserId)
+    // Buscar nome do indicado
+    const { data: referredProfile } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', referredUserId)
       .single();
-
-    if (existingReferral) {
-      console.log('[webhook] ⚠️ Referral already exists for this user');
-      return;
-    }
 
     // Calcular comissão baseada no intervalo de cobrança
     // Mensal: 30% no primeiro mês
@@ -541,36 +536,64 @@ async function processReferral(
     const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : FIRST_MONTH_COMMISSION_RATE;
     const commissionAmount = Math.round(amountPaid * commissionRate);
 
-    // Criar registro de referral
-    const { data: referral, error: referralError } = await supabase
+    // Verificar se já existe referral PENDENTE para este usuário (criada no cadastro)
+    const { data: existingReferral } = await supabase
       .from('referrals')
-      .insert({
-        referrer_user_id: referrerUserId,
-        referred_user_id: referredUserId,
-        referral_code: referralCode,
-        status: 'converted',
-        subscription_plan: planName,
-        subscription_amount: amountPaid,
-        commission_rate: commissionRate * 100,
-        commission_amount: commissionAmount,
-        first_payment_date: new Date().toISOString(),
-      })
-      .select()
+      .select('*')
+      .eq('referred_user_id', referredUserId)
       .single();
 
-    if (referralError) {
-      console.error('[webhook] ❌ Error creating referral:', referralError);
-      return;
+    let referral;
+
+    if (existingReferral) {
+      // Atualizar referral existente para 'converted'
+      const { data: updatedReferral, error: updateError } = await supabase
+        .from('referrals')
+        .update({
+          status: 'converted',
+          subscription_plan: planName,
+          subscription_amount: amountPaid,
+          commission_rate: commissionRate * 100,
+          commission_amount: commissionAmount,
+          first_payment_date: new Date().toISOString(),
+        })
+        .eq('id', existingReferral.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error('[webhook] ❌ Error updating referral:', updateError);
+        return;
+      }
+      
+      referral = updatedReferral;
+      console.log('[webhook] ✅ Referral updated to converted:', referral.id);
+    } else {
+      // Criar novo registro de referral (caso não tenha sido criado no cadastro)
+      const { data: newReferral, error: referralError } = await supabase
+        .from('referrals')
+        .insert({
+          referrer_user_id: referrerUserId,
+          referred_user_id: referredUserId,
+          referral_code: referralCode,
+          status: 'converted',
+          subscription_plan: planName,
+          subscription_amount: amountPaid,
+          commission_rate: commissionRate * 100,
+          commission_amount: commissionAmount,
+          first_payment_date: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (referralError) {
+        console.error('[webhook] ❌ Error creating referral:', referralError);
+        return;
+      }
+
+      referral = newReferral;
+      console.log('[webhook] ✅ Referral created:', referral.id);
     }
-
-    console.log('[webhook] ✅ Referral created:', referral.id);
-
-    // Buscar nome do indicado
-    const { data: referredProfile } = await supabase
-      .from('profiles')
-      .select('nome')
-      .eq('user_id', referredUserId)
-      .single();
 
     // Criar registro de payout pendente
     await supabase
@@ -589,14 +612,14 @@ async function processReferral(
 
     console.log('[webhook] ✅ Payout record created');
 
-    // Notificar o referrer
+    // Notificar o referrer sobre a assinatura
     const commissionDisplay = isAnnual ? '20%' : '30%';
     await supabase
       .from('notifications')
       .insert({
         user_id: referrerUserId,
-        titulo: 'Nova Indicação Convertida! 🎉',
-        conteudo: `${referredProfile?.nome || 'Um novo usuário'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você receberá R$ ${(commissionAmount / 100).toFixed(2)} (${commissionDisplay}) de comissão.`,
+        titulo: 'Indicação convertida em assinatura! 💰',
+        conteudo: `${referredProfile?.nome || 'Um usuário indicado'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você ganhou R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (${commissionDisplay}) de comissão.`,
       });
 
     // Tentar processar payout automaticamente

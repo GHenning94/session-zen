@@ -14,6 +14,7 @@ import {
 import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
+import { PasswordRequirements } from "@/components/PasswordRequirements"
 import { ArrowLeft, UserPlus, Gift } from "lucide-react"
 
 const PREDEFINED_PROFESSIONS = [
@@ -431,6 +432,7 @@ const Signup = () => {
                   required
                   placeholder="Sua senha"
                 />
+                {password && <PasswordRequirements password={password} />}
               </div>
 
               <Button 
