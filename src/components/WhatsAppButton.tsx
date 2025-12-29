@@ -2,11 +2,10 @@ import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
 interface WhatsAppButtonProps {
-  show?: boolean
   className?: string
 }
 
-const WhatsAppButton = ({ show = false, className }: WhatsAppButtonProps) => {
+const WhatsAppButton = ({ className }: WhatsAppButtonProps) => {
   const handleWhatsAppClick = () => {
     const phoneNumber = "+5511945539883"
     const message = "Olá! Preciso de ajuda com o TherapyPro."
@@ -14,13 +13,11 @@ const WhatsAppButton = ({ show = false, className }: WhatsAppButtonProps) => {
     window.open(whatsappUrl, '_blank')
   }
 
-  if (!show) return null
-
   return (
     <Button
       onClick={handleWhatsAppClick}
       className={cn(
-        "h-14 w-14 rounded-full bg-success text-success-foreground shadow-lg hover:bg-success/90 transition-colors flex items-center justify-center",
+        "fixed bottom-6 left-20 z-50 h-14 w-14 rounded-full bg-success text-success-foreground shadow-lg hover:bg-success/90 transition-colors flex items-center justify-center",
         className
       )}
       size="icon"

@@ -595,9 +595,6 @@ export default function Suporte() {
           </form>
         </DialogContent>
       </Dialog>
-      
-      {/* WhatsApp Button */}
-      <WhatsAppButton show={true} />
     </Layout>
   )
 }
