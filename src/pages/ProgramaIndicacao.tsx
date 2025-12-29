@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import referralGift from "@/assets/referral-gift.jpg";
+import AnimatedGiftBox from "@/components/AnimatedGiftBox";
 import ShareReferralModal from "@/components/ShareReferralModal";
-
 interface ReferralStats {
   total_referrals: number;
   active_referrals: number;
@@ -331,7 +330,8 @@ const ProgramaIndicacao = () => {
                     <div className="space-y-4">
                       <h2 className="text-3xl font-bold">Ganhe até 30% de Comissão</h2>
                       <p className="text-lg text-muted-foreground">
-                        Convide seus colegas profissionais e ganhe comissões recorrentes! Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%. Pagamentos automáticos via Stripe!
+                        Convide seus colegas profissionais e ganhe comissões recorrentes!<br />
+                        Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%. Pagamentos automáticos via Stripe!
                       </p>
                     </div>
                     
@@ -346,19 +346,15 @@ const ProgramaIndicacao = () => {
                     
                     <p className="text-sm text-muted-foreground">
                       Ao ingressar, você aceita nossos{" "}
-                      <span className="text-primary underline cursor-pointer">
+                      <Link to="/termos-indicacao" className="text-primary underline cursor-pointer hover:text-primary/80 transition-colors">
                         termos e condições
-                      </span>{" "}
+                      </Link>{" "}
                       do programa de indicação.
                     </p>
                   </div>
                   
                   <div className="w-full lg:w-auto flex justify-center">
-                    <img 
-                      src={referralGift} 
-                      alt="Programa de Indicação" 
-                      className="w-64 h-32 object-cover rounded-lg shadow-lg"
-                    />
+                    <AnimatedGiftBox />
                   </div>
                 </div>
               </CardContent>
