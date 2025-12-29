@@ -334,42 +334,125 @@ const ProgramaIndicacao = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5" />
               
-              {/* Wave Lines with Pulsing Glow - Behind Gift Only */}
-              <div className="absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none">
-                {[...Array(12)].map((_, i) => (
-                  <div
-                    key={i}
-                    className="absolute animate-pulse-glow"
-                    style={{
-                      left: '0%',
-                      top: `${10 + i * 7}%`,
-                      width: '120%',
-                      height: '2px',
-                      background: `linear-gradient(90deg, transparent 0%, hsl(var(--primary) / ${0.05 + i * 0.015}) 30%, hsl(var(--primary) / ${0.15 + i * 0.02}) 60%, hsl(var(--primary) / ${0.08 - i * 0.005}) 100%)`,
-                      transform: `rotate(${-2 + i * 0.5}deg) translateY(${Math.sin(i * 0.8) * 8}px)`,
-                      borderRadius: '50%',
-                      boxShadow: `0 0 8px 1px hsl(var(--primary) / ${0.1 + i * 0.02})`,
-                      animationDelay: `${i * 0.15}s`,
-                      animationDuration: `${2 + i * 0.1}s`,
-                    }}
+              {/* Aurora Curved Lines - Behind Gift Only */}
+              <div className="absolute right-0 top-0 bottom-0 w-2/3 overflow-hidden pointer-events-none">
+                <svg 
+                  className="absolute inset-0 w-full h-full"
+                  viewBox="0 0 400 300"
+                  preserveAspectRatio="none"
+                >
+                  <defs>
+                    <linearGradient id="aurora1" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                      <stop offset="30%" stopColor="hsl(var(--primary))" stopOpacity="0.08" />
+                      <stop offset="60%" stopColor="hsl(var(--primary))" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.05" />
+                    </linearGradient>
+                    <linearGradient id="aurora2" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                      <stop offset="40%" stopColor="hsl(var(--primary))" stopOpacity="0.12" />
+                      <stop offset="70%" stopColor="hsl(var(--primary))" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0.08" />
+                    </linearGradient>
+                    <filter id="glow">
+                      <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+                      <feMerge>
+                        <feMergeNode in="coloredBlur"/>
+                        <feMergeNode in="SourceGraphic"/>
+                      </feMerge>
+                    </filter>
+                  </defs>
+                  
+                  {/* Aurora Waves */}
+                  <path 
+                    d="M0,40 Q100,20 200,50 T400,30" 
+                    fill="none" 
+                    stroke="url(#aurora1)" 
+                    strokeWidth="3"
+                    className="aurora-wave aurora-wave-1"
+                    filter="url(#glow)"
                   />
-                ))}
+                  <path 
+                    d="M0,70 Q80,90 180,60 T400,80" 
+                    fill="none" 
+                    stroke="url(#aurora2)" 
+                    strokeWidth="4"
+                    className="aurora-wave aurora-wave-2"
+                    filter="url(#glow)"
+                  />
+                  <path 
+                    d="M0,100 Q120,80 220,110 T400,90" 
+                    fill="none" 
+                    stroke="url(#aurora1)" 
+                    strokeWidth="2.5"
+                    className="aurora-wave aurora-wave-3"
+                    filter="url(#glow)"
+                  />
+                  <path 
+                    d="M0,130 Q90,150 190,120 T400,140" 
+                    fill="none" 
+                    stroke="url(#aurora2)" 
+                    strokeWidth="3.5"
+                    className="aurora-wave aurora-wave-4"
+                    filter="url(#glow)"
+                  />
+                  <path 
+                    d="M0,160 Q110,140 210,170 T400,150" 
+                    fill="none" 
+                    stroke="url(#aurora1)" 
+                    strokeWidth="2"
+                    className="aurora-wave aurora-wave-5"
+                    filter="url(#glow)"
+                  />
+                  <path 
+                    d="M0,190 Q70,210 170,180 T400,200" 
+                    fill="none" 
+                    stroke="url(#aurora2)" 
+                    strokeWidth="3"
+                    className="aurora-wave aurora-wave-6"
+                    filter="url(#glow)"
+                  />
+                  <path 
+                    d="M0,220 Q130,200 230,230 T400,210" 
+                    fill="none" 
+                    stroke="url(#aurora1)" 
+                    strokeWidth="2.5"
+                    className="aurora-wave aurora-wave-7"
+                    filter="url(#glow)"
+                  />
+                  <path 
+                    d="M0,250 Q85,270 185,240 T400,260" 
+                    fill="none" 
+                    stroke="url(#aurora2)" 
+                    strokeWidth="2"
+                    className="aurora-wave aurora-wave-8"
+                    filter="url(#glow)"
+                  />
+                </svg>
               </div>
               
               <style>{`
-                @keyframes pulse-glow {
+                @keyframes auroraFloat {
                   0%, 100% {
-                    opacity: 0.6;
-                    filter: blur(0px);
+                    transform: translateY(0px) scaleY(1);
+                    opacity: 0.7;
                   }
                   50% {
+                    transform: translateY(-5px) scaleY(1.05);
                     opacity: 1;
-                    filter: blur(1px);
                   }
                 }
-                .animate-pulse-glow {
-                  animation: pulse-glow 2s ease-in-out infinite;
+                .aurora-wave {
+                  animation: auroraFloat 3s ease-in-out infinite;
                 }
+                .aurora-wave-1 { animation-delay: 0s; }
+                .aurora-wave-2 { animation-delay: 0.3s; }
+                .aurora-wave-3 { animation-delay: 0.6s; }
+                .aurora-wave-4 { animation-delay: 0.9s; }
+                .aurora-wave-5 { animation-delay: 1.2s; }
+                .aurora-wave-6 { animation-delay: 1.5s; }
+                .aurora-wave-7 { animation-delay: 1.8s; }
+                .aurora-wave-8 { animation-delay: 2.1s; }
               `}</style>
               
               <CardContent className="relative p-8">
