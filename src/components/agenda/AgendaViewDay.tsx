@@ -30,6 +30,13 @@ interface Client {
   nome: string
 }
 
+interface Package {
+  id: string
+  valor_por_sessao?: number
+  valor_total: number
+  total_sessoes: number
+}
+
 interface GoogleEvent {
   id: string
   summary: string
@@ -44,6 +51,7 @@ interface AgendaViewDayProps {
   currentDate: Date
   sessions: Session[]
   clients: Client[]
+  packages?: Package[]
   googleEvents?: GoogleEvent[]
   onEditSession: (session: Session) => void
   onDeleteSession: (sessionId: string) => void
@@ -56,6 +64,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   currentDate,
   sessions,
   clients,
+  packages = [],
   googleEvents = [],
   onEditSession,
   onDeleteSession,
@@ -75,6 +84,18 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
   useEffect(() => {
     setCurrentTime(new Date())
   }, [])
+  
+  // Helper para obter valor da sessão (considera pacotes)
+  const getSessionValue = (session: Session): number | null => {
+    if (session.valor) return session.valor
+    if (session.package_id) {
+      const pkg = packages.find(p => p.id === session.package_id)
+      if (pkg) {
+        return pkg.valor_por_sessao || (pkg.valor_total / pkg.total_sessoes)
+      }
+    }
+    return null
+  }
   
   const daySessionsData = sessions.filter(session => {
     return session.data === format(currentDate, 'yyyy-MM-dd')
@@ -232,20 +253,17 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                   Pacote
                                 </Badge>
                               )}
-                              {session.recurring_session_id && !session.package_id && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/30 text-primary-foreground border-0">
-                                  <Repeat className="h-2 w-2 mr-0.5" />
-                                  Recorrente
-                                </Badge>
-                              )}
                               <GoogleSyncBadge syncType={session.google_sync_type} showLabel={true} size="sm" />
                             </div>
                             <div className="flex items-center gap-1">
-                              {(session.valor || session.package_id) && (
-                                <span className="text-xs font-medium text-success">
-                                  R$ {Number(session.valor || 0).toFixed(2)}
-                                </span>
-                              )}
+                              {(() => {
+                                const valor = getSessionValue(session)
+                                return valor ? (
+                                  <span className="text-xs font-medium text-success">
+                                    R$ {Number(valor).toFixed(2)}
+                                  </span>
+                                ) : null
+                              })()}
                             </div>
                             {session.anotacoes && (
                               <div className="mt-1 text-xs text-primary-foreground/70 truncate">
