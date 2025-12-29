@@ -132,7 +132,6 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                       "min-h-[100px] md:min-h-[120px] border border-border p-2 cursor-pointer hover:bg-accent/20 transition-colors",
                       !isCurrentMonth && "text-muted-foreground bg-muted/50",
                       isToday && "bg-primary/5",
-                      isSelected && "ring-2 ring-primary ring-inset",
                       draggedSession && "border-dashed border-primary"
                     )}
                     onDragOver={handleDragOver}
