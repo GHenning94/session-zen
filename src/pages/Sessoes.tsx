@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast'
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from '@/utils/formatters'
 import { SessionNoteModal } from '@/components/SessionNoteModal'
 import { SessionNoteViewModal } from '@/components/SessionNoteViewModal'
+import { SessionNoteReadOnlyModal } from '@/components/SessionNoteReadOnlyModal'
 import { SessionModal } from '@/components/SessionModal'
 import { SessionEditModal } from '@/components/SessionEditModal'
 import { SessionDetailsModal } from '@/components/SessionDetailsModal'
@@ -105,6 +106,8 @@ export default function Sessoes() {
   const [editingNote, setEditingNote] = useState<SessionNote | null>(null)
   const [viewingNote, setViewingNote] = useState<SessionNote | null>(null)
   const [noteViewModalOpen, setNoteViewModalOpen] = useState(false)
+  const [noteReadOnlyModalOpen, setNoteReadOnlyModalOpen] = useState(false)
+  const [readOnlyNote, setReadOnlyNote] = useState<SessionNote | null>(null)
   const [selectedNoteForEvolucao, setSelectedNoteForEvolucao] = useState<SessionNote | null>(null)
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
   
@@ -1301,8 +1304,8 @@ export default function Sessoes() {
                         key={note.id} 
                         className="border border-border rounded-lg p-4 hover:bg-accent/50 transition-colors cursor-pointer"
                         onClick={() => {
-                          setViewingNote(note)
-                          setNoteViewModalOpen(true)
+                          setReadOnlyNote(note)
+                          setNoteReadOnlyModalOpen(true)
                         }}
                       >
                         <div className="flex items-start justify-between">
@@ -1426,6 +1429,12 @@ export default function Sessoes() {
           onOpenChange={setNoteViewModalOpen}
           onEdit={handleViewNoteEdit}
           onDelete={handleViewNoteDelete}
+        />
+
+        <SessionNoteReadOnlyModal
+          note={readOnlyNote}
+          open={noteReadOnlyModalOpen}
+          onOpenChange={setNoteReadOnlyModalOpen}
         />
         
         <SessionEditModal
