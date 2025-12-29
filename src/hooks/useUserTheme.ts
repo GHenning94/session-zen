@@ -32,13 +32,11 @@ export const useUserTheme = () => {
     const isBookingPage = location.pathname.startsWith('/agendar/')        // Agendamento público
     const isReferralPage = location.pathname.startsWith('/convite/')       // Convite de indicação
     const isRegistrationPage = location.pathname.startsWith('/register/')  // Registro via link
-    const isPublicTerms = location.pathname === '/termos-indicacao'        // Termos de indicação
     
     return publicRoutes.includes(location.pathname) || 
            isBookingPage || 
            isReferralPage || 
-           isRegistrationPage || 
-           isPublicTerms
+           isRegistrationPage
   }, [location.pathname])
 
   // Load user's theme preference with instant cache
