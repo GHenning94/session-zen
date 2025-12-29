@@ -69,15 +69,6 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
     }
   }, [open])
 
-  // Filter clients for package sessions - only show clients with active packages
-  const availableClients = useMemo(() => {
-    const sessionType = getSessionType()
-    if (sessionType === 'package') {
-      return clients.filter(c => clientsWithPackages.has(c.id))
-    }
-    return clients
-  }, [clients, clientsWithPackages, selectedSessions])
-
   // Determine the session type(s) selected
   const sessionTypeInfo = useMemo(() => {
     let hasPackage = false
@@ -105,7 +96,13 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
     return { type: 'individual' as SessionType, hasPackage, hasRecurring, hasIndividual }
   }, [selectedSessions])
 
-  const getSessionType = () => sessionTypeInfo.type
+  // Filter clients for package sessions - only show clients with active packages
+  const availableClients = useMemo(() => {
+    if (sessionTypeInfo.type === 'package') {
+      return clients.filter(c => clientsWithPackages.has(c.id))
+    }
+    return clients
+  }, [clients, clientsWithPackages, sessionTypeInfo.type])
 
   const handleConfirm = () => {
     const changes: BatchEditChanges = {}
