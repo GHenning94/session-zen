@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_login_attempts: {
+        Row: {
+          attempted_at: string
+          email_hash: string
+          id: string
+          ip_address: unknown
+          success: boolean
+        }
+        Insert: {
+          attempted_at?: string
+          email_hash: string
+          id?: string
+          ip_address: unknown
+          success?: boolean
+        }
+        Update: {
+          attempted_at?: string
+          email_hash?: string
+          id?: string
+          ip_address?: unknown
+          success?: boolean
+        }
+        Relationships: []
+      }
       admin_notifications: {
         Row: {
           created_at: string
@@ -1577,6 +1601,15 @@ export type Database = {
         Args: { client_user_id: string }
         Returns: boolean
       }
+      check_admin_lockout: {
+        Args: {
+          p_email_hash: string
+          p_ip: unknown
+          p_lockout_minutes?: number
+          p_max_attempts?: number
+        }
+        Returns: boolean
+      }
       check_overdue_payments: { Args: never; Returns: undefined }
       check_rate_limit: {
         Args: {
@@ -1592,6 +1625,10 @@ export type Database = {
       cleanup_expired_2fa_codes: { Args: never; Returns: undefined }
       cleanup_expired_registration_tokens: { Args: never; Returns: undefined }
       cleanup_old_notifications: { Args: never; Returns: undefined }
+      clear_admin_lockout: {
+        Args: { p_email_hash: string; p_ip: unknown }
+        Returns: undefined
+      }
       create_admin_notification: {
         Args: {
           p_message: string
@@ -1672,6 +1709,10 @@ export type Database = {
           p_client_id: string
           p_field_accessed?: string
         }
+        Returns: undefined
+      }
+      record_admin_login_attempt: {
+        Args: { p_email_hash: string; p_ip: unknown; p_success: boolean }
         Returns: undefined
       }
       register_client_from_token: {

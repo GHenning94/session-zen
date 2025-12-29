@@ -10,6 +10,10 @@ const ALLOWED_ORIGINS = [
   'http://localhost:3000',
 ]
 
+// Lockout configuration
+const MAX_FAILED_ATTEMPTS = 5
+const LOCKOUT_MINUTES = 15
+
 // Input validation schema
 const loginSchema = z.object({
   email: z.string().email().max(255).trim().toLowerCase(),
@@ -37,6 +41,16 @@ async function hashIP(ip: string): Promise<string> {
   const hashBuffer = await crypto.subtle.digest('SHA-256', data)
   const hashArray = Array.from(new Uint8Array(hashBuffer))
   return hashArray.slice(0, 8).map(b => b.toString(16).padStart(2, '0')).join('')
+}
+
+// Hash email for lockout tracking (privacy-preserving)
+async function hashEmail(email: string): Promise<string> {
+  if (!email) return 'unknown'
+  const encoder = new TextEncoder()
+  const data = encoder.encode(email.toLowerCase() + Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')?.slice(0, 16))
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+  const hashArray = Array.from(new Uint8Array(hashBuffer))
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('')
 }
 
 // Validate and sanitize IP address
@@ -81,7 +95,43 @@ Deno.serve(async (req) => {
 
     const { email, password, captchaToken } = parseResult.data
 
+    // Get client IP and email hash for lockout tracking
+    const clientIP = sanitizeIP(
+      req.headers.get('x-forwarded-for'),
+      req.headers.get('x-real-ip')
+    ) || '0.0.0.0'
+    
+    const emailHash = await hashEmail(email)
+
     console.log('[Admin Login] Attempt received')
+
+    // Check if account is locked out
+    const { data: lockoutData, error: lockoutError } = await supabase.rpc('check_admin_lockout', {
+      p_ip: clientIP,
+      p_email_hash: emailHash,
+      p_max_attempts: MAX_FAILED_ATTEMPTS,
+      p_lockout_minutes: LOCKOUT_MINUTES
+    })
+
+    if (lockoutError) {
+      console.error('[Admin Login] Lockout check error:', lockoutError.message)
+    }
+
+    if (lockoutData === true) {
+      console.log('[Admin Login] Account locked out due to too many failed attempts')
+      
+      // Add artificial delay to prevent enumeration
+      await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 500))
+      
+      return new Response(
+        JSON.stringify({ 
+          error: `Conta bloqueada temporariamente. Tente novamente em ${LOCKOUT_MINUTES} minutos.`,
+          locked: true,
+          lockoutMinutes: LOCKOUT_MINUTES
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      )
+    }
 
     // Validar CAPTCHA do Turnstile (modo tolerante - não bloqueia login se falhar)
     const turnstileSecret = Deno.env.get('TURNSTILE_SECRET_KEY')
@@ -139,6 +189,13 @@ Deno.serve(async (req) => {
     const credentialsValid = emailMatch === 0 && passwordMatch === 0;
 
     if (!credentialsValid) {
+      // Record failed attempt for lockout tracking
+      await supabase.rpc('record_admin_login_attempt', {
+        p_ip: clientIP,
+        p_email_hash: emailHash,
+        p_success: false
+      })
+
       // Add artificial delay to prevent timing analysis
       await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 200));
       
@@ -149,6 +206,18 @@ Deno.serve(async (req) => {
       )
     }
 
+    // Record successful login and clear lockout
+    await supabase.rpc('record_admin_login_attempt', {
+      p_ip: clientIP,
+      p_email_hash: emailHash,
+      p_success: true
+    })
+    
+    await supabase.rpc('clear_admin_lockout', {
+      p_ip: clientIP,
+      p_email_hash: emailHash
+    })
+
     // Gerar ID único para esta sessão admin (não depende de auth.users)
     const adminUserId = crypto.randomUUID()
     
@@ -156,12 +225,6 @@ Deno.serve(async (req) => {
     const sessionToken = crypto.randomUUID()
     const expiresAt = new Date(Date.now() + 12 * 60 * 60 * 1000) // 12 horas
 
-    // Sanitize and validate IP
-    const clientIP = sanitizeIP(
-      req.headers.get('x-forwarded-for'),
-      req.headers.get('x-real-ip')
-    )
-    
     // Truncate user agent for storage
     const userAgent = req.headers.get('user-agent')?.substring(0, 500) || null
 
