@@ -29,7 +29,11 @@ const GiftBox = ({
     <div 
       className="absolute"
       style={{ 
-        transform: `translateX(${offsetX}px) translateY(${offsetY}px) scale(${scale})`,
+        left: '50%',
+        bottom: '20px',
+        marginLeft: `${offsetX}px`,
+        marginBottom: `${-offsetY}px`,
+        transform: `translateX(-50%) scale(${scale})`,
         transformStyle: 'preserve-3d',
         animation: `giftFloat ${3 + delay}s ease-in-out infinite`,
         animationDelay: `${delay}s`,
@@ -331,7 +335,7 @@ const AnimatedGiftImage = () => {
       className={`relative flex items-center justify-center transition-all duration-1000 ease-out ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
-      style={{ width: '380px', height: '200px' }}
+      style={{ width: '500px', height: '220px' }}
     >
       {/* Floating Particles */}
       {particles.map(renderParticle)}
@@ -375,19 +379,19 @@ const AnimatedGiftImage = () => {
         {/* Floating container */}
         <div 
           ref={floatingRef}
-          className="relative flex items-end justify-center"
-          style={{ width: '340px', height: '160px' }}
+          className="relative"
+          style={{ width: '420px', height: '180px' }}
         >
           {/* Shadow */}
           <div 
-            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-6 bg-black/10 rounded-full blur-xl"
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-80 h-6 bg-black/10 rounded-full blur-xl"
             style={{ animation: 'shadowPulse 4s ease-in-out infinite' }}
           />
 
           {/* Multiple Gift Boxes - horizontal layout */}
-          <GiftBox scale={0.9} offsetX={-120} offsetY={10} delay={0.3} />
-          <GiftBox scale={1.1} offsetX={0} offsetY={0} delay={0} />
-          <GiftBox scale={0.85} offsetX={115} offsetY={15} delay={0.5} />
+          <GiftBox scale={0.75} offsetX={-140} offsetY={5} delay={0.3} />
+          <GiftBox scale={0.95} offsetX={0} offsetY={0} delay={0} />
+          <GiftBox scale={0.7} offsetX={135} offsetY={8} delay={0.5} />
 
         </div>
       </div>
@@ -398,8 +402,8 @@ const AnimatedGiftImage = () => {
           50% { transform: scale(1.3); opacity: 0.9; }
         }
         @keyframes giftFloat {
-          0%, 100% { transform: translateX(var(--offset-x, 0)) translateY(var(--offset-y, 0)) scale(var(--scale, 1)); }
-          50% { transform: translateX(var(--offset-x, 0)) translateY(calc(var(--offset-y, 0) - 5px)) scale(var(--scale, 1)); }
+          0%, 100% { transform: translateX(-50%) translateY(0); }
+          50% { transform: translateX(-50%) translateY(-6px); }
         }
         @keyframes particleFloatLoop {
           0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
