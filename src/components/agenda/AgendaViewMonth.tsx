@@ -166,7 +166,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             onDragStart={(e) => handleDragStart(e, session.id)}
                             onDragEnd={handleDragEnd}
                             className={cn(
-                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors group relative cursor-move border border-primary/50 shadow-sm",
+                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary/20 text-primary-foreground hover:bg-primary/30 transition-colors group relative cursor-move border border-primary/30 shadow-sm overflow-hidden",
                               highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
                               draggedSession === session.id && "opacity-50 scale-95"
                             )}
@@ -175,12 +175,22 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                               onEditSession(session)
                             }}
                           >
+                            {/* Status indicator line */}
+                            <div className={cn(
+                              "absolute left-0 top-0 bottom-0 w-1 rounded-l-lg",
+                              session.status === 'realizada' && "bg-success",
+                              session.status === 'agendada' && "bg-primary",
+                              session.status === 'cancelada' && "bg-destructive",
+                              (session.status === 'falta' || session.status === 'faltou') && "bg-warning",
+                              !['realizada', 'agendada', 'cancelada', 'falta', 'faltou'].includes(session.status) && "bg-muted-foreground"
+                            )} />
+                            
                             {needsAttention && (
-                              <div className="absolute top-0.5 left-0.5 z-10">
+                              <div className="absolute top-0.5 left-2 z-10">
                                 <PulsingDot color="warning" size="sm" />
                               </div>
                             )}
-                            <div className="flex items-center gap-1 text-[10px] md:text-xs">
+                            <div className="flex items-center gap-1 text-[10px] md:text-xs pl-1.5">
                               <div className="flex items-center gap-0.5">
                                 <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
                                 <span>{formatTimeBR(session.horario)}</span>
@@ -194,7 +204,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                               <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
                             </div>
                             {session.valor && (
-                              <div className="text-[10px] font-medium text-success mt-0.5">
+                              <div className="text-[10px] font-medium text-success mt-0.5 pl-1.5">
                                 R$ {Number(session.valor).toFixed(2)}
                               </div>
                             )}
