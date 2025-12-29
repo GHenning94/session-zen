@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Shield, Loader2 } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Shield, Loader2, AlertTriangle } from "lucide-react"
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
@@ -29,6 +30,7 @@ const AdminLogin = () => {
   const [captchaReady, setCaptchaReady] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [lockoutMessage, setLockoutMessage] = useState<string | null>(null)
   const turnstileRef = useRef<any>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -40,6 +42,9 @@ const AdminLogin = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Clear lockout message on new attempt
+    setLockoutMessage(null)
 
     if (!captchaReady) {
       toast.error('Por favor, complete o CAPTCHA')
@@ -75,6 +80,18 @@ const AdminLogin = () => {
       )
 
       const data = await response.json()
+
+      // Handle lockout response (429)
+      if (response.status === 429 && data.locked) {
+        setLockoutMessage(data.error)
+        toast.error(data.error)
+        // Reset CAPTCHA for next attempt
+        if (turnstileRef.current) {
+          turnstileRef.current.reset()
+        }
+        setCaptchaReady(false)
+        return
+      }
 
       if (!response.ok || !data.success) {
         throw new Error(data?.error || 'Falha no login')
@@ -118,7 +135,14 @@ const AdminLogin = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form ref={formRef} onSubmit={handleLogin} className="space-y-5">
+          {lockoutMessage && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>{lockoutMessage}</AlertDescription>
+              </Alert>
+            )}
+            
+            <form ref={formRef} onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
               <Label htmlFor="email">E-mail do Administrador</Label>
               <Input
