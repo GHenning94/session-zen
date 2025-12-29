@@ -181,7 +181,7 @@ const GiftBox = ({
   );
 };
 
-// Floating coin component
+// Floating coin component with blue glow
 const Coin = ({ 
   x, 
   y, 
@@ -201,9 +201,9 @@ const Coin = ({
         top: `${y}%`,
         width: `${size}px`,
         height: `${size}px`,
-        background: 'linear-gradient(135deg, hsl(45, 90%, 60%) 0%, hsl(40, 85%, 50%) 50%, hsl(35, 80%, 40%) 100%)',
-        boxShadow: '0 4px 12px hsla(40, 80%, 40%, 0.4), inset 0 1px 0 rgba(255,255,255,0.5)',
-        animation: `coinFloat ${2.5 + delay}s ease-in-out infinite`,
+        background: 'radial-gradient(circle at 30% 30%, hsl(210, 100%, 80%) 0%, hsl(221, 83%, 65%) 40%, hsl(221, 83%, 53%) 100%)',
+        boxShadow: `0 0 ${size * 1.5}px ${size / 2}px hsla(221, 83%, 60%, 0.6), 0 0 ${size * 2.5}px ${size}px hsla(221, 83%, 53%, 0.3), inset 0 1px 0 rgba(255,255,255,0.6)`,
+        animation: `coinFloat ${2.5 + delay}s ease-in-out infinite, coinGlow ${1.5 + delay * 0.5}s ease-in-out infinite`,
         animationDelay: `${delay}s`,
       }}
     >
@@ -438,6 +438,16 @@ const AnimatedGiftImage = () => {
         @keyframes coinFloat {
           0%, 100% { transform: translateY(0) rotate(0deg); }
           50% { transform: translateY(-8px) rotate(10deg); }
+        }
+        @keyframes coinGlow {
+          0%, 100% { 
+            filter: brightness(1);
+            box-shadow: 0 0 20px 8px hsla(221, 83%, 60%, 0.5), 0 0 40px 16px hsla(221, 83%, 53%, 0.25);
+          }
+          50% { 
+            filter: brightness(1.2);
+            box-shadow: 0 0 30px 12px hsla(221, 83%, 65%, 0.7), 0 0 50px 20px hsla(221, 83%, 53%, 0.4);
+          }
         }
         @keyframes shadowPulse {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.1; }
