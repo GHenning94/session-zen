@@ -164,6 +164,63 @@ serve(async (req: Request) => {
 
     console.log('[Email Confirmation] Profile upsert realizado com sucesso:', upsertData);
 
+    // Processar referral pendente se houver código de indicação
+    if (user_metadata?.referral_id) {
+      console.log('[Email Confirmation] Processando indicação pendente:', user_metadata.referral_id);
+      
+      try {
+        const referrerUserId = user_metadata.referral_id;
+        
+        // Verificar se o referrer é parceiro de indicação
+        const { data: referrer } = await supabaseAdmin
+          .from('profiles')
+          .select('user_id, nome, is_referral_partner')
+          .eq('user_id', referrerUserId)
+          .single();
+
+        if (referrer?.is_referral_partner && referrerUserId !== userId) {
+          // Verificar se já existe referral para este usuário
+          const { data: existingReferral } = await supabaseAdmin
+            .from('referrals')
+            .select('id')
+            .eq('referred_user_id', userId)
+            .single();
+
+          if (!existingReferral) {
+            // Criar registro de referral como pendente
+            await supabaseAdmin
+              .from('referrals')
+              .insert({
+                referrer_user_id: referrerUserId,
+                referred_user_id: userId,
+                referral_code: `REF-${referrerUserId.slice(0, 8).toUpperCase()}`,
+                status: 'pending',
+                subscription_plan: null,
+                subscription_amount: 0,
+                commission_rate: 0,
+                commission_amount: 0,
+              });
+
+            console.log('[Email Confirmation] Referral pendente criada com sucesso');
+
+            // Notificar o referrer sobre o cadastro
+            await supabaseAdmin
+              .from('notifications')
+              .insert({
+                user_id: referrerUserId,
+                titulo: 'Novo cadastro via indicação! 🎉',
+                conteudo: `${user_metadata?.nome || 'Um novo usuário'} se cadastrou usando seu link de indicação! Quando ele assinar um plano pago, você receberá sua comissão.`,
+              });
+
+            console.log('[Email Confirmation] Notificação enviada ao referrer');
+          }
+        }
+      } catch (referralError) {
+        console.error('[Email Confirmation] Erro ao processar indicação:', referralError);
+        // Não bloquear o cadastro por causa de erro na indicação
+      }
+    }
+
     // Usa a URL de produção ('redirect_to') vinda do frontend e adiciona o nonce
     const finalRedirectTo = `${redirect_to}?n=${nonce}`;
     console.log('[Email Confirmation] URL de Redirecionamento Final:', finalRedirectTo);

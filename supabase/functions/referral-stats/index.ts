@@ -47,10 +47,11 @@ serve(async (req) => {
     // Calcular estatísticas
     const totalReferrals = referrals?.length || 0;
     const activeReferrals = referrals?.filter(r => r.status === 'active' || r.status === 'converted').length || 0;
-    const premiumReferrals = referrals?.filter(r => r.subscription_plan === 'premium').length || 0;
-    const proReferrals = referrals?.filter(r => r.subscription_plan === 'pro').length || 0;
-    const basicReferrals = referrals?.filter(r => r.subscription_plan === 'basico' || !r.subscription_plan).length || 0;
+    const premiumReferrals = referrals?.filter(r => r.subscription_plan === 'premium' && r.status === 'converted').length || 0;
+    const proReferrals = referrals?.filter(r => r.subscription_plan === 'pro' && r.status === 'converted').length || 0;
+    const basicReferrals = referrals?.filter(r => r.status === 'pending' || (r.subscription_plan === 'basico' && r.status === 'converted') || (!r.subscription_plan && r.status !== 'pending')).length || 0;
     const pendingReferrals = referrals?.filter(r => r.status === 'pending').length || 0;
+    const convertedReferrals = referrals?.filter(r => r.status === 'converted').length || 0;
 
     // Calcular ganhos
     const totalEarned = payouts?.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
@@ -99,6 +100,7 @@ serve(async (req) => {
         total_referrals: totalReferrals,
         active_referrals: activeReferrals,
         pending_referrals: pendingReferrals,
+        converted_referrals: convertedReferrals,
         premium_referrals: premiumReferrals,
         pro_referrals: proReferrals,
         basic_referrals: basicReferrals,
