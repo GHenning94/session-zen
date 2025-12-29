@@ -7,7 +7,7 @@ interface TutorialButtonProps {
 
 export const TutorialButton = ({ onClick }: TutorialButtonProps) => {
   return (
-    <Button onClick={onClick} variant="default">
+    <Button onClick={onClick} variant="default" size="sm" className="bg-gradient-primary hover:opacity-90">
       <PlayCircle />
       Tutorial
     </Button>

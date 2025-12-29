@@ -668,7 +668,7 @@ const Configuracoes = () => {
                     rows={4}
                   />
                 </div>
-                <Button onClick={handleSave} disabled={isLoading}>
+                <Button onClick={handleSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Alterações
                 </Button>
@@ -1122,7 +1122,7 @@ const Configuracoes = () => {
                   </div>
                 </div>
                 
-                <Button onClick={handleSave} disabled={isLoading}>
+                <Button onClick={handleSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Preferências
                 </Button>
