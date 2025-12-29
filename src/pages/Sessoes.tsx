@@ -1274,7 +1274,6 @@ export default function Sessoes() {
           onDelete={handleDeleteSession}
           onCancel={handleCancelSession}
           onMarkNoShow={handleMarkNoShow}
-          onViewAgenda={handleViewInAgenda}
           onViewPayment={handleViewPayment}
           onAddNote={handleAddNote}
           hasNotes={selectedSession ? sessionNotes.some(note => note.session_id === selectedSession.id) : false}

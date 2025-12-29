@@ -14,7 +14,6 @@ import {
   X,
   AlertTriangle,
   CreditCard,
-  Eye,
   StickyNote,
   Package,
   Repeat,
@@ -33,7 +32,6 @@ interface SessionDetailsModalProps {
   onDelete: (sessionId: string) => void
   onCancel: (sessionId: string) => void
   onMarkNoShow: (sessionId: string) => void
-  onViewAgenda: (sessionId: string) => void
   onViewPayment: (sessionId: string) => void
   onAddNote: (session: any) => void
   hasNotes?: boolean
@@ -48,7 +46,6 @@ export const SessionDetailsModal = ({
   onDelete,
   onCancel,
   onMarkNoShow,
-  onViewAgenda,
   onViewPayment,
   onAddNote,
   hasNotes = false,
@@ -190,16 +187,6 @@ export const SessionDetailsModal = ({
 
         {/* Ações */}
         <div className="flex flex-wrap gap-2 pt-4 border-t mt-6">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => onViewAgenda(session.id)}
-            className="flex items-center gap-1.5"
-          >
-            <Eye className="w-4 h-4" />
-            Agenda
-          </Button>
-
           {/* Botão Editar - para sessões importadas abre modal de edição limitada */}
           <Button
             variant="outline"
@@ -227,17 +214,15 @@ export const SessionDetailsModal = ({
             {hasNotes ? 'Ver Anotação' : 'Criar Anotação'}
           </Button>
 
-          {session.status === 'realizada' && session.valor && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onViewPayment(session.id)}
-              className="flex items-center gap-1.5"
-            >
-              <CreditCard className="w-4 h-4" />
-              Pagamento
-            </Button>
-          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewPayment(session.id)}
+            className="flex items-center gap-1.5"
+          >
+            <CreditCard className="w-4 h-4" />
+            Pagamento
+          </Button>
 
           <Button
             variant="destructive"
