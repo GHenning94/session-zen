@@ -1,33 +1,63 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
+
+interface Particle {
+  id: number;
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  size: number;
+  delay: number;
+  duration: number;
+  color: string;
+  type: 'circle' | 'star' | 'sparkle';
+}
 
 const AnimatedGiftBox = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; delay: number }[]>([]);
+  const [particles, setParticles] = useState<Particle[]>([]);
+
+  const colors = useMemo(() => [
+    'hsl(221, 83%, 75%)',
+    'hsl(221, 83%, 53%)',
+    'hsl(221, 83%, 65%)',
+    'hsl(210, 100%, 70%)',
+    'hsl(230, 80%, 80%)',
+  ], []);
 
   useEffect(() => {
-    // Trigger entrance animation
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
     if (isHovered) {
-      // Generate particles on hover
-      const newParticles = Array.from({ length: 15 }, (_, i) => ({
-        id: Date.now() + i,
-        x: 40 + Math.random() * 20,
-        y: 30 + Math.random() * 20,
-        size: 3 + Math.random() * 5,
-        delay: Math.random() * 0.5,
-      }));
+      const newParticles: Particle[] = Array.from({ length: 25 }, (_, i) => {
+        const angle = (Math.random() * Math.PI * 2);
+        const distance = 80 + Math.random() * 60;
+        const types: ('circle' | 'star' | 'sparkle')[] = ['circle', 'star', 'sparkle'];
+        
+        return {
+          id: Date.now() + i,
+          startX: 50,
+          startY: 40,
+          endX: 50 + Math.cos(angle) * distance * 0.5,
+          endY: 40 + Math.sin(angle) * distance * 0.3 - 30,
+          size: 4 + Math.random() * 8,
+          delay: Math.random() * 0.4,
+          duration: 1.2 + Math.random() * 0.8,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          type: types[Math.floor(Math.random() * types.length)],
+        };
+      });
       setParticles(newParticles);
     } else {
       setParticles([]);
     }
-  }, [isHovered]);
+  }, [isHovered, colors]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -56,6 +86,65 @@ const AnimatedGiftBox = () => {
     };
   }, []);
 
+  const renderParticle = (particle: Particle) => {
+    const baseStyle = {
+      left: `${particle.startX}%`,
+      top: `${particle.startY}%`,
+      animationDelay: `${particle.delay}s`,
+      animationDuration: `${particle.duration}s`,
+      '--end-x': `${particle.endX - particle.startX}%`,
+      '--end-y': `${particle.endY - particle.startY}%`,
+    } as React.CSSProperties;
+
+    if (particle.type === 'star') {
+      return (
+        <svg
+          key={particle.id}
+          className="absolute pointer-events-none animate-particle-float"
+          style={baseStyle}
+          width={particle.size}
+          height={particle.size}
+          viewBox="0 0 24 24"
+          fill={particle.color}
+        >
+          <path d="M12 0L14.59 8.41L23 11L14.59 13.59L12 22L9.41 13.59L1 11L9.41 8.41L12 0Z" />
+        </svg>
+      );
+    }
+
+    if (particle.type === 'sparkle') {
+      return (
+        <div
+          key={particle.id}
+          className="absolute pointer-events-none animate-particle-float"
+          style={{
+            ...baseStyle,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            background: `radial-gradient(circle, ${particle.color} 0%, transparent 70%)`,
+            boxShadow: `0 0 ${particle.size * 2}px ${particle.size / 2}px ${particle.color}`,
+            borderRadius: '50%',
+          }}
+        />
+      );
+    }
+
+    return (
+      <div
+        key={particle.id}
+        className="absolute pointer-events-none animate-particle-float"
+        style={{
+          ...baseStyle,
+          width: `${particle.size}px`,
+          height: `${particle.size}px`,
+          background: `linear-gradient(135deg, ${particle.color}, hsl(221, 83%, 53%))`,
+          boxShadow: `0 0 ${particle.size}px 2px ${particle.color}`,
+          borderRadius: '50%',
+        }}
+      />
+    );
+  };
+
   return (
     <div 
       ref={wrapperRef}
@@ -66,24 +155,7 @@ const AnimatedGiftBox = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Floating Particles */}
-      {particles.map((particle) => (
-        <div
-          key={particle.id}
-          className="absolute pointer-events-none"
-          style={{
-            left: `${particle.x}%`,
-            top: `${particle.y}%`,
-            width: `${particle.size}px`,
-            height: `${particle.size}px`,
-            borderRadius: '50%',
-            background: 'linear-gradient(135deg, hsl(221, 83%, 75%), hsl(221, 83%, 53%))',
-            boxShadow: '0 0 10px 2px hsla(221, 83%, 53%, 0.6)',
-            animation: `floatParticle 1.5s ease-out forwards`,
-            animationDelay: `${particle.delay}s`,
-            opacity: 0,
-          }}
-        />
-      ))}
+      {particles.map(renderParticle)}
 
       {/* Sparkles */}
       {[...Array(10)].map((_, i) => (
@@ -274,18 +346,21 @@ const AnimatedGiftBox = () => {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.15; }
           50% { transform: translateX(-50%) scale(1.05); opacity: 0.2; }
         }
-        @keyframes floatParticle {
+        @keyframes particleFloat {
           0% {
             opacity: 1;
-            transform: translate(0, 0) scale(1);
+            transform: translate(0, 0) scale(1) rotate(0deg);
+          }
+          50% {
+            opacity: 1;
           }
           100% {
             opacity: 0;
-            transform: translate(
-              ${Math.random() > 0.5 ? '' : '-'}${20 + Math.random() * 40}px,
-              -${60 + Math.random() * 40}px
-            ) scale(0.3);
+            transform: translate(var(--end-x), var(--end-y)) scale(0.2) rotate(180deg);
           }
+        }
+        .animate-particle-float {
+          animation: particleFloat ease-out forwards;
         }
       `}</style>
     </div>
