@@ -7,6 +7,16 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { 
   Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, 
   Users, Crown, Briefcase, Circle, LogOut, ExternalLink, 
@@ -65,6 +75,7 @@ const ProgramaIndicacao = () => {
   const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null);
   const [hasBankDetails, setHasBankDetails] = useState(false);
   const [isSettingUpConnect, setIsSettingUpConnect] = useState(false);
+  const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   
   const referralCode = `REF-${user?.id?.slice(0, 8).toUpperCase() || 'DEFAULT'}`;
@@ -642,13 +653,51 @@ const ProgramaIndicacao = () => {
           <Button 
             variant="outline" 
             size="sm"
-            onClick={handleLeaveProgram}
+            onClick={() => setShowLeaveConfirmation(true)}
             className="text-destructive hover:text-destructive"
           >
             <LogOut className="w-4 h-4 mr-2" />
             Deixar Programa
           </Button>
         </div>
+
+        {/* Modal de confirmação para sair do programa */}
+        <AlertDialog open={showLeaveConfirmation} onOpenChange={setShowLeaveConfirmation}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+                <AlertCircle className="w-5 h-5" />
+                Deixar o Programa de Indicação?
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3 pt-2">
+                <p>
+                  <strong>Atenção:</strong> Ao deixar o programa, seu perfil de indicação será <strong>completamente resetado</strong>.
+                </p>
+                <p>
+                  Você perderá:
+                </p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Todas as indicações registradas</li>
+                  <li>Todos os pagamentos pendentes referentes às indicações</li>
+                  <li>Histórico de comissões</li>
+                  <li>Seu link de indicação atual</li>
+                </ul>
+                <p className="text-sm font-medium text-destructive">
+                  Esta ação não pode ser desfeita.
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleLeaveProgram}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Confirmar Saída
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Alertas de configuração */}
         {!hasBankDetails && (
