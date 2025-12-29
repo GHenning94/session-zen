@@ -31,7 +31,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 import { BatchSelectionBar, SelectableItemCheckbox } from '@/components/BatchSelectionBar'
-import { BatchEditModal, BatchEditChanges } from '@/components/BatchEditModal'
+import { BatchEditByTypeModal, BatchEditChanges } from '@/components/BatchEditByTypeModal'
 
 interface Session {
   id: string
@@ -366,6 +366,32 @@ export default function Sessoes() {
     }
   }
 
+  // Get selected sessions as array for the modal
+  const getSelectedSessionsArray = () => {
+    return sessions.filter(s => selectedSessions.has(s.id))
+  }
+
+  // Check if selected sessions have mixed types
+  const getSelectedSessionsTypeInfo = () => {
+    const selectedArray = getSelectedSessionsArray()
+    let hasPackage = false
+    let hasRecurring = false
+    let hasIndividual = false
+
+    selectedArray.forEach(session => {
+      if (session.package_id) {
+        hasPackage = true
+      } else if (session.recurring_session_id) {
+        hasRecurring = true
+      } else {
+        hasIndividual = true
+      }
+    })
+
+    const typeCount = [hasPackage, hasRecurring, hasIndividual].filter(Boolean).length
+    return { isMixed: typeCount > 1, hasPackage, hasRecurring, hasIndividual }
+  }
+
   const handleBatchEditSessions = () => {
     if (selectedSessions.size > 0) {
       setBatchEditModalOpen(true)
@@ -376,13 +402,15 @@ export default function Sessoes() {
     try {
       const ids = Array.from(selectedSessions)
       
-      // Atualizar sessões
-      if (changes.valor !== undefined || changes.metodo_pagamento || changes.status) {
-        const sessionUpdate: any = {}
-        if (changes.valor !== undefined) sessionUpdate.valor = changes.valor
-        if (changes.metodo_pagamento) sessionUpdate.metodo_pagamento = changes.metodo_pagamento
-        if (changes.status) sessionUpdate.status = changes.status
+      // Build update object based on provided changes
+      const sessionUpdate: any = {}
+      if (changes.valor !== undefined) sessionUpdate.valor = changes.valor
+      if (changes.metodo_pagamento) sessionUpdate.metodo_pagamento = changes.metodo_pagamento
+      if (changes.status) sessionUpdate.status = changes.status
+      if (changes.anotacoes !== undefined) sessionUpdate.anotacoes = changes.anotacoes
 
+      // Only update if there are changes
+      if (Object.keys(sessionUpdate).length > 0) {
         const { error: sessionError } = await supabase
           .from('sessions')
           .update(sessionUpdate)
@@ -391,25 +419,28 @@ export default function Sessoes() {
         if (sessionError) throw sessionError
       }
 
-      // Atualizar pagamentos relacionados
-      if (changes.valor !== undefined || changes.metodo_pagamento || changes.status) {
-        const paymentUpdate: any = {}
-        if (changes.valor !== undefined) paymentUpdate.valor = changes.valor
-        if (changes.metodo_pagamento) paymentUpdate.metodo_pagamento = changes.metodo_pagamento
-        if (changes.status) {
-          // Mapear status de sessão para status de pagamento
-          if (changes.status === 'realizada') paymentUpdate.status = 'pago'
-          else if (changes.status === 'cancelada') paymentUpdate.status = 'cancelado'
-          else if (changes.status === 'agendada') paymentUpdate.status = 'pendente'
-        }
+      // Atualizar pagamentos relacionados (only for individual sessions with valor/metodo/status)
+      const typeInfo = getSelectedSessionsTypeInfo()
+      if (!typeInfo.isMixed && !typeInfo.hasPackage && !typeInfo.hasRecurring) {
+        if (changes.valor !== undefined || changes.metodo_pagamento || changes.status) {
+          const paymentUpdate: any = {}
+          if (changes.valor !== undefined) paymentUpdate.valor = changes.valor
+          if (changes.metodo_pagamento) paymentUpdate.metodo_pagamento = changes.metodo_pagamento
+          if (changes.status) {
+            // Mapear status de sessão para status de pagamento
+            if (changes.status === 'realizada') paymentUpdate.status = 'pago'
+            else if (changes.status === 'cancelada') paymentUpdate.status = 'cancelado'
+            else if (changes.status === 'agendada') paymentUpdate.status = 'pendente'
+          }
 
-        if (Object.keys(paymentUpdate).length > 0) {
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .update(paymentUpdate)
-            .in('session_id', ids)
+          if (Object.keys(paymentUpdate).length > 0) {
+            const { error: paymentError } = await supabase
+              .from('payments')
+              .update(paymentUpdate)
+              .in('session_id', ids)
 
-          if (paymentError) console.error('Erro ao atualizar pagamentos:', paymentError)
+            if (paymentError) console.error('Erro ao atualizar pagamentos:', paymentError)
+          }
         }
       }
 
@@ -1316,13 +1347,12 @@ export default function Sessoes() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Modal de edição em lote */}
-        <BatchEditModal
+        {/* Modal de edição em lote por tipo */}
+        <BatchEditByTypeModal
           open={batchEditModalOpen}
           onClose={() => setBatchEditModalOpen(false)}
           onConfirm={handleBatchEditConfirm}
-          selectedCount={selectedSessions.size}
-          type="sessions"
+          selectedSessions={getSelectedSessionsArray()}
         />
       </div>
     </Layout>
