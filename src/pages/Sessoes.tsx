@@ -28,6 +28,7 @@ import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { cn } from '@/lib/utils'
 import { calculateSessionStatus, sessionNeedsAttention } from "@/utils/sessionStatusUtils"
 import { TextPreview } from '@/components/TextPreview'
+import DOMPurify from 'dompurify'
 import { ClientAvatar } from '@/components/ClientAvatar'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
@@ -1341,13 +1342,10 @@ export default function Sessoes() {
                                   </>
                                 )}
                               </div>
-                              <div className="text-sm text-muted-foreground mb-2">
-                                <TextPreview 
-                                  content={note.notes}
-                                  isHtml={true}
-                                  title={`Anotação - ${note.clients?.nome} - ${note.sessions ? formatDateBR(note.sessions.data) : 'Data não disponível'}`}
-                                />
-                              </div>
+                              <div 
+                                className="text-sm text-muted-foreground mb-2 line-clamp-3 prose prose-sm dark:prose-invert max-w-none"
+                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.notes) }}
+                              />
                               <div className="text-xs text-muted-foreground">
                                 Criado em {formatDateBR(note.created_at)} às {formatTimeBR(note.created_at)}
                               </div>

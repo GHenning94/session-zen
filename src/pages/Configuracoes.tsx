@@ -707,6 +707,7 @@ const Configuracoes = () => {
                 <Button 
                   onClick={handleEmailChange} 
                   disabled={isLoading || !newEmail}
+                  size="sm"
                 >
                   {isLoading ? (
                     <>
@@ -769,6 +770,7 @@ const Configuracoes = () => {
                 <Button 
                   onClick={handlePasswordChange} 
                   disabled={changingPassword || !currentPassword || !newPassword || !confirmNewPassword}
+                  size="sm"
                 >
                   {changingPassword ? (
                     <>
@@ -807,7 +809,7 @@ const Configuracoes = () => {
                 <CardDescription>Ações irreversíveis da conta</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" onClick={() => setShowDeleteConfirm(true)}>
+                <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
                   Deletar Conta Permanentemente
                 </Button>
               </CardContent>
@@ -973,7 +975,7 @@ const Configuracoes = () => {
                     />
                   </div>
                 </div>
-                <Button onClick={handleSave} disabled={isLoading} className="bg-gradient-primary hover:opacity-90">
+                <Button onClick={handleSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
                   <Save className="w-4 h-4 mr-2" />
                   Salvar Dados Bancários
                 </Button>
