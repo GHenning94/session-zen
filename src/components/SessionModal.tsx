@@ -469,8 +469,7 @@ export const SessionModal = ({
                   <Label htmlFor="client_id">Cliente{!session && ' *'}</Label>
                   <Select
                     value={formData.client_id}
-                    onValueChange={(value) => setFormData({ ...formData, client_id: value })}
-                    disabled={!!session} // Não permite trocar cliente em edição
+                    onValueChange={(value) => setFormData({ ...formData, client_id: value, package_id: '' })}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione um cliente" />
