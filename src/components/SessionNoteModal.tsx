@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
-import RichTextEditor from "./RichTextEditor"
+import { SimpleRichTextEditor } from "./SimpleRichTextEditor"
 import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface SessionNoteModalProps {
@@ -125,7 +125,7 @@ export const SessionNoteModal = ({
           <div>
             <Label htmlFor="notes">Anotação da Sessão</Label>
             <div className="mt-2 max-h-[400px] overflow-y-auto">
-              <RichTextEditor
+              <SimpleRichTextEditor
                 value={notes}
                 onChange={setNotes}
                 placeholder="Digite suas observações sobre a sessão..."

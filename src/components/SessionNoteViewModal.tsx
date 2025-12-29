@@ -1,11 +1,13 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Edit2, Trash2, Calendar, Clock, User } from "lucide-react"
+import { Edit2, Trash2, Calendar, Clock } from "lucide-react"
 import { formatDateBR, formatTimeBR } from "@/utils/formatters"
 import DOMPurify from "dompurify"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog"
 import { useState } from "react"
+import { ClientAvatar } from "./ClientAvatar"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 interface SessionNote {
   id: string
@@ -62,43 +64,59 @@ export const SessionNoteViewModal = ({
         <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <DialogTitle className="text-xl flex items-center gap-2">
-                  <User className="h-5 w-5" />
-                  Anotação - {note.clients?.nome || 'Cliente'}
-                </DialogTitle>
-                {note.sessions && (
-                  <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{formatDateBR(note.sessions.data)}</span>
+              <div className="flex items-center gap-4 flex-1">
+                <ClientAvatar 
+                  avatarPath={note.clients?.avatar_url}
+                  clientName={note.clients?.nome || 'Cliente'}
+                  size="lg"
+                />
+                <div>
+                  <DialogTitle className="text-xl">
+                    Anotação - {note.clients?.nome || 'Cliente'}
+                  </DialogTitle>
+                  {note.sessions && (
+                    <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>{formatDateBR(note.sessions.data)}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        <span>{formatTimeBR(note.sessions.horario)}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{formatTimeBR(note.sessions.horario)}</span>
-                    </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
               <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleEdit}
-                  className="flex items-center gap-1.5"
-                >
-                  <Edit2 className="h-4 w-4" />
-                  Editar
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="flex items-center gap-1.5"
-                >
-                  <Trash2 className="h-4 w-4" />
-                  Excluir
-                </Button>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleEdit}
+                      >
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Editar</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="destructive"
+                        size="icon"
+                        onClick={() => setShowDeleteConfirm(true)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Excluir</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
               </div>
             </div>
           </DialogHeader>
