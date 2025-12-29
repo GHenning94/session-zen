@@ -167,6 +167,37 @@ export const SessionEditModal = ({
   // Verificar se é uma sessão recorrente (edição limitada a status e anotações)
   const isRecurringSession = !!session?.recurring_session_id
 
+  // Check if session is from a package
+  const isPackageSession = !!session?.package_id
+
+  // Fetch available packages for the selected client
+  const { data: availablePackages = [] } = useQuery({
+    queryKey: ['packages-for-client', formData.client_id],
+    queryFn: async () => {
+      if (!formData.client_id) return []
+      const { data, error } = await supabase
+        .from('packages')
+        .select('id, nome, total_sessoes, sessoes_consumidas, status')
+        .eq('client_id', formData.client_id)
+        .eq('status', 'ativo')
+        .order('created_at', { ascending: false })
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!formData.client_id && isPackageSession && open
+  })
+
+  // State for selected package
+  const [selectedPackageId, setSelectedPackageId] = useState<string>(session?.package_id || '')
+
+  // Update selectedPackageId when session changes
+  useEffect(() => {
+    if (session?.package_id) {
+      setSelectedPackageId(session.package_id)
+    }
+  }, [session?.package_id])
+
+
   const handleSave = async () => {
     if (!session) return
 
@@ -266,17 +297,24 @@ export const SessionEditModal = ({
       const valorNumerico = parseFloat(formData.valor) || null
 
       // Atualizar sessão
+      const updateData: any = {
+        client_id: formData.client_id,
+        data: formData.data,
+        horario: formatTimeForDatabase(formData.horario),
+        valor: valorNumerico,
+        metodo_pagamento: formData.metodo_pagamento || null,
+        status: formData.status,
+        anotacoes: formData.anotacoes || null
+      }
+
+      // Se for sessão de pacote e o pacote foi alterado
+      if (isPackageSession && selectedPackageId && selectedPackageId !== session.package_id) {
+        updateData.package_id = selectedPackageId
+      }
+
       const { error } = await supabase
         .from('sessions')
-        .update({
-          client_id: formData.client_id,
-          data: formData.data,
-          horario: formatTimeForDatabase(formData.horario),
-          valor: valorNumerico,
-          metodo_pagamento: formData.metodo_pagamento || null,
-          status: formData.status,
-          anotacoes: formData.anotacoes || null
-        })
+        .update(updateData)
         .eq('id', session.id)
 
       if (error) {
@@ -486,9 +524,6 @@ export const SessionEditModal = ({
     )
   }
 
-  // Check if session is from a package
-  const isPackageSession = !!session?.package_id
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -507,7 +542,7 @@ export const SessionEditModal = ({
 
         <div className="space-y-4">
           <div>
-            <Label htmlFor="client">Cliente</Label>
+            <Label htmlFor="client">Cliente *</Label>
             <Select
               value={formData.client_id}
               onValueChange={handleClientChange}
@@ -541,6 +576,28 @@ export const SessionEditModal = ({
               </div>
             )}
           </div>
+
+          {/* Seletor de Pacote para sessões de pacote */}
+          {isPackageSession && (
+            <div>
+              <Label htmlFor="package">Pacote *</Label>
+              <Select
+                value={selectedPackageId}
+                onValueChange={setSelectedPackageId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um pacote" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePackages.map((pkg: any) => (
+                    <SelectItem key={pkg.id} value={pkg.id}>
+                      {pkg.nome} ({pkg.sessoes_consumidas}/{pkg.total_sessoes} usadas)
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
