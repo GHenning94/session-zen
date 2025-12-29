@@ -187,6 +187,30 @@ serve(async (req) => {
       );
     }
 
+    // Verificar se há um referral pendente para notificar o indicador
+    console.log('[Confirm Email Strict] 🔍 Verificando referrals pendentes...');
+    const { data: pendingReferral } = await supabaseAdmin
+      .from('referrals')
+      .select('id, referrer_user_id')
+      .eq('referred_user_id', user.id)
+      .eq('status', 'pending')
+      .single();
+
+    if (pendingReferral) {
+      console.log('[Confirm Email Strict] 📨 Notificando indicador sobre confirmação de e-mail...');
+      
+      // Enviar notificação ao indicador (sem mostrar o nome do indicado)
+      await supabaseAdmin
+        .from('notifications')
+        .insert({
+          user_id: pendingReferral.referrer_user_id,
+          titulo: 'Novo cadastro via indicação! 🎉',
+          conteudo: 'Alguém se cadastrou usando seu link de indicação e confirmou o e-mail! Quando ele assinar um plano pago, você receberá sua comissão.',
+        });
+
+      console.log('[Confirm Email Strict] ✅ Notificação de referral enviada ao indicador');
+    }
+
     console.log('[Confirm Email Strict] ✅✅✅ E-mail confirmado com sucesso completo!');
 
     return new Response(

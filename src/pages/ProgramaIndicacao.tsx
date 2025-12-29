@@ -96,13 +96,37 @@ const ProgramaIndicacao = () => {
         
         if (error) throw error;
         setIsEnrolled(profile?.is_referral_partner || false);
-        setHasBankDetails(!!(profile?.banco && profile?.agencia && profile?.conta));
+        const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta);
+        setHasBankDetails(hasBankData);
 
         if (profile?.is_referral_partner) {
           // Carregar estatísticas
           await loadStats();
           // Verificar status do Stripe Connect
           await loadConnectStatus();
+          
+          // Se o usuário é parceiro mas não tem dados bancários, criar notificação
+          if (!hasBankData) {
+            // Verificar se já existe uma notificação não lida sobre dados bancários
+            const { data: existingNotification } = await supabase
+              .from('notifications')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('lida', false)
+              .ilike('titulo', '%dados bancários%')
+              .single();
+
+            // Se não existe notificação pendente, criar uma nova
+            if (!existingNotification) {
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: user.id,
+                  titulo: 'Complete seus dados bancários',
+                  conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=financeiro]',
+                });
+            }
+          }
         }
       } catch (error) {
         console.error('Erro ao carregar dados:', error);
