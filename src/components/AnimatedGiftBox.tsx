@@ -33,30 +33,43 @@ const AnimatedGiftBox = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  const generateParticles = () => {
+    const newParticles: Particle[] = Array.from({ length: 20 }, (_, i) => {
+      const angle = (Math.PI * 0.3) + (Math.random() * Math.PI * 1.4); // Mostly upward
+      const distance = 60 + Math.random() * 80;
+      const types: ('circle' | 'star' | 'sparkle')[] = ['circle', 'star', 'sparkle'];
+      
+      return {
+        id: Date.now() + i + Math.random() * 1000,
+        startX: 45 + Math.random() * 10,
+        startY: 35 + Math.random() * 10,
+        endX: 50 + Math.cos(angle) * distance * 0.6,
+        endY: 50 - Math.sin(angle) * distance * 0.5,
+        size: 3 + Math.random() * 6,
+        delay: Math.random() * 0.3,
+        duration: 0.8 + Math.random() * 0.6,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        type: types[Math.floor(Math.random() * types.length)],
+      };
+    });
+    return newParticles;
+  };
+
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    
     if (isHovered) {
-      const newParticles: Particle[] = Array.from({ length: 25 }, (_, i) => {
-        const angle = (Math.random() * Math.PI * 2);
-        const distance = 80 + Math.random() * 60;
-        const types: ('circle' | 'star' | 'sparkle')[] = ['circle', 'star', 'sparkle'];
-        
-        return {
-          id: Date.now() + i,
-          startX: 50,
-          startY: 40,
-          endX: 50 + Math.cos(angle) * distance * 0.5,
-          endY: 40 + Math.sin(angle) * distance * 0.3 - 30,
-          size: 4 + Math.random() * 8,
-          delay: Math.random() * 0.4,
-          duration: 1.2 + Math.random() * 0.8,
-          color: colors[Math.floor(Math.random() * colors.length)],
-          type: types[Math.floor(Math.random() * types.length)],
-        };
-      });
-      setParticles(newParticles);
+      setParticles(generateParticles());
+      intervalId = setInterval(() => {
+        setParticles(generateParticles());
+      }, 800);
     } else {
       setParticles([]);
     }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
   }, [isHovered, colors]);
 
   useEffect(() => {
