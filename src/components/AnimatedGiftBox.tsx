@@ -161,7 +161,7 @@ const AnimatedGiftBox = () => {
   return (
     <div 
       ref={wrapperRef}
-      className={`relative w-64 h-64 flex items-center justify-center -ml-40 mt-8 transition-all duration-1000 ease-out group ${
+      className={`relative w-64 h-64 flex items-center justify-center -ml-56 mt-8 transition-all duration-1000 ease-out group ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
       onMouseEnter={() => setIsHovered(true)}
