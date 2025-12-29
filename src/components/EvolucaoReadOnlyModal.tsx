@@ -72,7 +72,8 @@ export const EvolucaoReadOnlyModal = ({
 
         <ScrollArea className="max-h-[60vh]">
           <div 
-            className="prose prose-sm dark:prose-invert max-w-none p-4 bg-muted/30 rounded-lg"
+            className="prose prose-sm dark:prose-invert max-w-none p-4 bg-muted/30 rounded-lg break-words"
+            style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
             dangerouslySetInnerHTML={{ __html: sanitizedHtml }}
           />
         </ScrollArea>
