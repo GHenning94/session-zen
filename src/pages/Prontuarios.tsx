@@ -21,6 +21,7 @@ import { AnamneseModal } from '@/components/AnamneseModal'
 import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { EvolucaoReadOnlyModal } from '@/components/EvolucaoReadOnlyModal'
 import { TextPreview } from '@/components/TextPreview'
+import DOMPurify from 'dompurify'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
@@ -495,13 +496,10 @@ export default function Prontuarios() {
                                     </>
                                   )}
                                 </div>
-                                <div className="text-sm text-muted-foreground mb-2">
-                                  <TextPreview 
-                                    content={evolucao.evolucao}
-                                    isHtml={true}
-                                    title={`Evolução - ${format(new Date(evolucao.data_sessao), "dd/MM/yyyy", { locale: ptBR })}`}
-                                  />
-                                </div>
+                                <div 
+                                  className="text-sm text-muted-foreground mb-2 line-clamp-3 prose prose-sm dark:prose-invert max-w-none"
+                                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(evolucao.evolucao) }}
+                                />
                                 <div className="text-xs text-muted-foreground">
                                   Criado em {format(new Date(evolucao.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
                                 </div>
