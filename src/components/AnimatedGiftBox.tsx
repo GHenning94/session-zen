@@ -161,12 +161,9 @@ const AnimatedGiftBox = () => {
   return (
     <div 
       ref={wrapperRef}
-      className={`relative w-64 h-64 flex items-center justify-center -ml-72 mt-8 transition-all duration-1000 ease-out group cursor-pointer ${
+      className={`relative w-64 h-64 flex items-center justify-center -ml-72 transition-all duration-1000 ease-out ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
-      } hover:scale-105 hover:-translate-y-1 hover:rotate-2`}
-      style={{ transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1s ease-out' }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      }`}
     >
       {/* Floating Particles */}
       {particles.map(renderParticle)}
@@ -189,14 +186,17 @@ const AnimatedGiftBox = () => {
         />
       ))}
 
-      {/* 3D Gift Box */}
+      {/* 3D Gift Box - hover area is exactly on the gift */}
       <div 
         ref={containerRef}
-        className="relative transition-transform duration-300 ease-out group-hover:scale-110 group-hover:rotate-3"
+        className={`relative cursor-pointer transition-transform duration-300 ease-out ${isHovered ? 'scale-110 -translate-y-2 rotate-2' : ''}`}
         style={{ 
           perspective: '800px', 
           transformStyle: 'preserve-3d',
+          transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
         }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Shadow */}
         <div 
