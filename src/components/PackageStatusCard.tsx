@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Package, ChevronLeft, ChevronRight, CheckCircle, AlertTriangle } from 'lucide-react'
@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 
 interface PackageWithSessions {
   id: string
@@ -61,8 +61,8 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     }, 150)
   }
 
-  // Fetch active packages with session counts
-  const { data: packages = [] } = useQuery({
+  // Fetch active packages with session counts and recalculate consumption
+  const { data: packages = [], refetch } = useQuery({
     queryKey: ['active-packages-with-sessions', user?.id],
     queryFn: async () => {
       if (!user?.id) return []
@@ -78,17 +78,52 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
       if (packagesError) throw packagesError
       if (!packagesData || packagesData.length === 0) return []
 
-      // Get session counts for each package
+      // Recalculate sessoes_consumidas for each package and get session counts
       const packagesWithSessions = await Promise.all(
         packagesData.map(async (pkg) => {
-          const { count } = await supabase
+          // Count all sessions for this package
+          const { count: totalCount } = await supabase
             .from('sessions')
             .select('*', { count: 'exact', head: true })
             .eq('package_id', pkg.id)
           
+          // Count realized sessions
+          const { data: realizedSessions } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('package_id', pkg.id)
+            .eq('status', 'realizada')
+          
+          const realizedCount = realizedSessions?.length || 0
+          
+          // Update sessoes_consumidas if different
+          if (realizedCount !== pkg.sessoes_consumidas) {
+            console.log(`[PackageStatusCard] Updating package ${pkg.id}: ${pkg.sessoes_consumidas} -> ${realizedCount}`)
+            
+            let newStatus = pkg.status
+            if (pkg.status !== 'cancelado') {
+              newStatus = realizedCount >= pkg.total_sessoes ? 'concluido' : 'ativo'
+            }
+            
+            await supabase
+              .from('packages')
+              .update({ 
+                sessoes_consumidas: realizedCount,
+                status: newStatus
+              })
+              .eq('id', pkg.id)
+            
+            return {
+              ...pkg,
+              sessoes_consumidas: realizedCount,
+              status: newStatus,
+              sessoes_criadas: totalCount || 0
+            }
+          }
+          
           return {
             ...pkg,
-            sessoes_criadas: count || 0
+            sessoes_criadas: totalCount || 0
           }
         })
       )
@@ -100,6 +135,21 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
     refetchOnMount: 'always',
     refetchOnWindowFocus: true
   })
+  
+  // Listen for package updates
+  useEffect(() => {
+    const handlePackageUpdated = () => {
+      refetch()
+    }
+    
+    window.addEventListener('packageUpdated', handlePackageUpdated)
+    window.addEventListener('sessionUpdated', handlePackageUpdated)
+    
+    return () => {
+      window.removeEventListener('packageUpdated', handlePackageUpdated)
+      window.removeEventListener('sessionUpdated', handlePackageUpdated)
+    }
+  }, [refetch])
 
   const activePackages = packages.filter(p => p.status === 'ativo')
   const currentPackage = activePackages[currentIndex]
