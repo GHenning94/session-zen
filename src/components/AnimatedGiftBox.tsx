@@ -4,12 +4,30 @@ const AnimatedGiftBox = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
+  const [particles, setParticles] = useState<{ id: number; x: number; y: number; size: number; delay: number }[]>([]);
 
   useEffect(() => {
     // Trigger entrance animation
     const timer = setTimeout(() => setIsVisible(true), 100);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (isHovered) {
+      // Generate particles on hover
+      const newParticles = Array.from({ length: 15 }, (_, i) => ({
+        id: Date.now() + i,
+        x: 40 + Math.random() * 20,
+        y: 30 + Math.random() * 20,
+        size: 3 + Math.random() * 5,
+        delay: Math.random() * 0.5,
+      }));
+      setParticles(newParticles);
+    } else {
+      setParticles([]);
+    }
+  }, [isHovered]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -41,10 +59,32 @@ const AnimatedGiftBox = () => {
   return (
     <div 
       ref={wrapperRef}
-      className={`relative w-64 h-64 flex items-center justify-center -ml-24 transition-all duration-1000 ease-out group ${
+      className={`relative w-64 h-64 flex items-center justify-center -ml-32 transition-all duration-1000 ease-out group ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
+      {/* Floating Particles */}
+      {particles.map((particle) => (
+        <div
+          key={particle.id}
+          className="absolute pointer-events-none"
+          style={{
+            left: `${particle.x}%`,
+            top: `${particle.y}%`,
+            width: `${particle.size}px`,
+            height: `${particle.size}px`,
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, hsl(221, 83%, 75%), hsl(221, 83%, 53%))',
+            boxShadow: '0 0 10px 2px hsla(221, 83%, 53%, 0.6)',
+            animation: `floatParticle 1.5s ease-out forwards`,
+            animationDelay: `${particle.delay}s`,
+            opacity: 0,
+          }}
+        />
+      ))}
+
       {/* Sparkles */}
       {[...Array(10)].map((_, i) => (
         <div
@@ -233,6 +273,19 @@ const AnimatedGiftBox = () => {
         @keyframes shadowPulse {
           0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.15; }
           50% { transform: translateX(-50%) scale(1.05); opacity: 0.2; }
+        }
+        @keyframes floatParticle {
+          0% {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(
+              ${Math.random() > 0.5 ? '' : '-'}${20 + Math.random() * 40}px,
+              -${60 + Math.random() * 40}px
+            ) scale(0.3);
+          }
         }
       `}</style>
     </div>

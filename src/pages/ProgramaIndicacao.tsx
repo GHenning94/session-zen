@@ -334,12 +334,12 @@ const ProgramaIndicacao = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5" />
               
-              {/* Wave Lines - Behind Gift Only */}
+              {/* Wave Lines with Pulsing Glow - Behind Gift Only */}
               <div className="absolute right-0 top-0 bottom-0 w-1/2 overflow-hidden pointer-events-none">
                 {[...Array(12)].map((_, i) => (
                   <div
                     key={i}
-                    className="absolute"
+                    className="absolute animate-pulse-glow"
                     style={{
                       left: '0%',
                       top: `${10 + i * 7}%`,
@@ -348,10 +348,29 @@ const ProgramaIndicacao = () => {
                       background: `linear-gradient(90deg, transparent 0%, hsl(var(--primary) / ${0.05 + i * 0.015}) 30%, hsl(var(--primary) / ${0.15 + i * 0.02}) 60%, hsl(var(--primary) / ${0.08 - i * 0.005}) 100%)`,
                       transform: `rotate(${-2 + i * 0.5}deg) translateY(${Math.sin(i * 0.8) * 8}px)`,
                       borderRadius: '50%',
+                      boxShadow: `0 0 8px 1px hsl(var(--primary) / ${0.1 + i * 0.02})`,
+                      animationDelay: `${i * 0.15}s`,
+                      animationDuration: `${2 + i * 0.1}s`,
                     }}
                   />
                 ))}
               </div>
+              
+              <style>{`
+                @keyframes pulse-glow {
+                  0%, 100% {
+                    opacity: 0.6;
+                    filter: blur(0px);
+                  }
+                  50% {
+                    opacity: 1;
+                    filter: blur(1px);
+                  }
+                }
+                .animate-pulse-glow {
+                  animation: pulse-glow 2s ease-in-out infinite;
+                }
+              `}</style>
               
               <CardContent className="relative p-8">
                 <div className="flex flex-col lg:flex-row items-center gap-8">
