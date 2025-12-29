@@ -28,6 +28,7 @@ import { cn } from '@/lib/utils'
 import { calculateSessionStatus, sessionNeedsAttention } from "@/utils/sessionStatusUtils"
 import { TextPreview } from '@/components/TextPreview'
 import { ClientAvatar } from '@/components/ClientAvatar'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { PulsingDot } from '@/components/ui/pulsing-dot'
 import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
@@ -1329,41 +1330,54 @@ export default function Sessoes() {
                             </div>
                           </div>
                         
-                          {/* Ícones de ação */}
+                          {/* Ícones de ação padronizados */}
                           <div className="flex gap-1 ml-4">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleIncluirNoProntuario(note)
-                              }}
-                              title="Incluir no prontuário"
-                            >
-                              <FileText className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleEditNote(note)
-                              }}
-                              title="Editar anotação"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                setDeleteNoteId(note.id)
-                              }}
-                              title="Excluir anotação"
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleIncluirNoProntuario(note)
+                                  }}
+                                >
+                                  <FileText className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Incluir no prontuário</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleEditNote(note)
+                                  }}
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Editar anotação</TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setDeleteNoteId(note.id)
+                                  }}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>Excluir anotação</TooltipContent>
+                            </Tooltip>
                           </div>
                         </div>
                       </div>

@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { FileText, Calendar, Plus, Edit, Trash2, AlertTriangle, BookOpen, Filter, Search, ChevronDown } from 'lucide-react'
+import { FileText, Calendar, Plus, Edit2, Trash2, AlertTriangle, BookOpen, Filter, Search, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -22,6 +22,7 @@ import { EvolucaoModal } from '@/components/EvolucaoModal'
 import { TextPreview } from '@/components/TextPreview'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
 import { cn } from '@/lib/utils'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 
 interface Client {
   id: string
@@ -373,7 +374,7 @@ export default function Prontuarios() {
                         variant="outline" 
                         onClick={() => handleEditAnamnese(clientAnamnese)}
                       >
-                        <Edit className="h-4 w-4 mr-2" />
+                        <Edit2 className="h-4 w-4 mr-2" />
                         Editar Anamnese
                       </Button>
                     ) : (
@@ -487,21 +488,36 @@ export default function Prontuarios() {
                                  </Badge>
                                </div>
                              </div>
-                            <div className="flex gap-2">
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleEditEvolucao(evolucao)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                                onClick={() => handleDeleteEvolucao(evolucao.id)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                            <div className="flex gap-1">
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon"
+                                      onClick={() => handleEditEvolucao(evolucao)}
+                                    >
+                                      <Edit2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Editar</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button 
+                                      variant="outline" 
+                                      size="icon"
+                                      onClick={() => handleDeleteEvolucao(evolucao.id)}
+                                      className="text-destructive hover:text-destructive"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>Excluir</TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
                           </div>
                            <TextPreview 
