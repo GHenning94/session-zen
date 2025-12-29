@@ -334,103 +334,137 @@ const ProgramaIndicacao = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5" />
               
-              {/* Flowing Wave Lines - Starting from bottom center */}
-              <div className="absolute right-0 top-0 bottom-0 w-2/3 overflow-hidden pointer-events-none">
+              {/* Flowing Wave Lines - Aurora effect from bottom region spreading upward */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none">
                 <svg 
                   className="absolute inset-0 w-full h-full"
-                  viewBox="0 0 500 200"
+                  viewBox="0 0 100 100"
                   preserveAspectRatio="none"
                 >
                   <defs>
-                    <linearGradient id="wave1" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(210, 100%, 55%)" stopOpacity="0.35" />
-                      <stop offset="50%" stopColor="hsl(200, 100%, 60%)" stopOpacity="0.25" />
-                      <stop offset="100%" stopColor="hsl(190, 100%, 70%)" stopOpacity="0.1" />
+                    {/* Gradients with transparency in the middle */}
+                    <linearGradient id="auroraLine1" x1="50%" y1="100%" x2="80%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(210, 100%, 55%)" stopOpacity="0.5" />
+                      <stop offset="40%" stopColor="hsl(200, 100%, 60%)" stopOpacity="0.1" />
+                      <stop offset="70%" stopColor="hsl(190, 100%, 70%)" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="hsl(185, 100%, 75%)" stopOpacity="0.15" />
                     </linearGradient>
-                    <linearGradient id="wave2" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(215, 100%, 60%)" stopOpacity="0.4" />
-                      <stop offset="50%" stopColor="hsl(205, 100%, 65%)" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="hsl(195, 100%, 75%)" stopOpacity="0.15" />
+                    <linearGradient id="auroraLine2" x1="50%" y1="100%" x2="90%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(215, 100%, 60%)" stopOpacity="0.45" />
+                      <stop offset="35%" stopColor="hsl(205, 100%, 65%)" stopOpacity="0.08" />
+                      <stop offset="65%" stopColor="hsl(195, 100%, 70%)" stopOpacity="0.2" />
+                      <stop offset="100%" stopColor="hsl(190, 100%, 75%)" stopOpacity="0.1" />
                     </linearGradient>
-                    <linearGradient id="wave3" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(220, 90%, 65%)" stopOpacity="0.3" />
-                      <stop offset="50%" stopColor="hsl(210, 90%, 70%)" stopOpacity="0.2" />
-                      <stop offset="100%" stopColor="hsl(200, 90%, 80%)" stopOpacity="0.08" />
+                    <linearGradient id="auroraLine3" x1="45%" y1="100%" x2="100%" y2="20%">
+                      <stop offset="0%" stopColor="hsl(220, 90%, 65%)" stopOpacity="0.4" />
+                      <stop offset="45%" stopColor="hsl(210, 90%, 70%)" stopOpacity="0.05" />
+                      <stop offset="80%" stopColor="hsl(200, 90%, 75%)" stopOpacity="0.18" />
+                      <stop offset="100%" stopColor="hsl(195, 90%, 80%)" stopOpacity="0.08" />
                     </linearGradient>
-                    <linearGradient id="wave4" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(205, 100%, 55%)" stopOpacity="0.28" />
-                      <stop offset="50%" stopColor="hsl(195, 100%, 60%)" stopOpacity="0.18" />
-                      <stop offset="100%" stopColor="hsl(185, 100%, 70%)" stopOpacity="0.06" />
+                    <linearGradient id="auroraLine4" x1="55%" y1="100%" x2="75%" y2="0%">
+                      <stop offset="0%" stopColor="hsl(205, 100%, 55%)" stopOpacity="0.35" />
+                      <stop offset="50%" stopColor="hsl(195, 100%, 60%)" stopOpacity="0.06" />
+                      <stop offset="100%" stopColor="hsl(185, 100%, 70%)" stopOpacity="0.22" />
                     </linearGradient>
                   </defs>
                   
-                  {/* Wave lines flowing from bottom-center to top */}
+                  {/* Line 1 - goes high to top-right */}
                   <path 
-                    d="M0,200 C50,180 100,120 180,100 S280,60 350,40 S420,30 500,35" 
+                    d="M45,105 C48,80 55,55 65,35 Q75,15 90,8" 
                     fill="none" 
-                    stroke="url(#wave1)" 
-                    strokeWidth="1.5"
-                    className="flowing-wave wave-1"
+                    stroke="url(#auroraLine1)" 
+                    strokeWidth="0.4"
+                    className="aurora-wave aurora-1"
                   />
+                  
+                  {/* Line 2 - curves to mid-right */}
                   <path 
-                    d="M0,200 C60,175 120,130 200,105 S310,55 380,50 S450,55 500,60" 
+                    d="M50,105 C55,85 62,65 72,50 Q82,35 95,32" 
                     fill="none" 
-                    stroke="url(#wave2)" 
-                    strokeWidth="2"
-                    className="flowing-wave wave-2"
+                    stroke="url(#auroraLine2)" 
+                    strokeWidth="0.5"
+                    className="aurora-wave aurora-2"
                   />
+                  
+                  {/* Line 3 - gentle curve to upper-mid */}
                   <path 
-                    d="M0,200 C40,170 90,140 160,120 S260,80 340,70 S430,65 500,80" 
+                    d="M48,105 C52,78 60,52 70,38 Q80,24 92,18" 
                     fill="none" 
-                    stroke="url(#wave3)" 
-                    strokeWidth="1.2"
-                    className="flowing-wave wave-3"
+                    stroke="url(#auroraLine3)" 
+                    strokeWidth="0.35"
+                    className="aurora-wave aurora-3"
                   />
+                  
+                  {/* Line 4 - ends mid-height right */}
                   <path 
-                    d="M0,200 C70,165 140,115 220,90 S330,50 400,55 S470,70 500,95" 
+                    d="M52,105 C58,88 68,72 78,58 Q88,44 98,42" 
                     fill="none" 
-                    stroke="url(#wave1)" 
-                    strokeWidth="1.8"
-                    className="flowing-wave wave-4"
+                    stroke="url(#auroraLine4)" 
+                    strokeWidth="0.45"
+                    className="aurora-wave aurora-4"
                   />
+                  
+                  {/* Line 5 - spreads wide to bottom-right area */}
                   <path 
-                    d="M0,200 C55,185 110,150 185,130 S290,90 365,85 S440,95 500,115" 
+                    d="M55,105 C62,92 72,80 82,70 Q92,60 100,58" 
                     fill="none" 
-                    stroke="url(#wave4)" 
-                    strokeWidth="1.3"
-                    className="flowing-wave wave-5"
+                    stroke="url(#auroraLine1)" 
+                    strokeWidth="0.38"
+                    className="aurora-wave aurora-5"
                   />
+                  
+                  {/* Line 6 - higher trajectory */}
                   <path 
-                    d="M0,200 C80,160 150,100 240,75 S360,40 430,50 S480,75 500,105" 
+                    d="M47,105 C50,72 58,42 68,25 Q78,8 88,5" 
                     fill="none" 
-                    stroke="url(#wave2)" 
-                    strokeWidth="1.6"
-                    className="flowing-wave wave-6"
+                    stroke="url(#auroraLine2)" 
+                    strokeWidth="0.42"
+                    className="aurora-wave aurora-6"
+                  />
+                  
+                  {/* Line 7 - mid curve */}
+                  <path 
+                    d="M53,105 C60,82 70,60 80,45 Q90,30 100,25" 
+                    fill="none" 
+                    stroke="url(#auroraLine3)" 
+                    strokeWidth="0.3"
+                    className="aurora-wave aurora-7"
+                  />
+                  
+                  {/* Line 8 - lower spread */}
+                  <path 
+                    d="M58,105 C65,95 78,85 88,78 Q98,71 100,70" 
+                    fill="none" 
+                    stroke="url(#auroraLine4)" 
+                    strokeWidth="0.35"
+                    className="aurora-wave aurora-8"
                   />
                 </svg>
               </div>
               
               <style>{`
-                @keyframes flowingWave {
+                @keyframes auroraFlow {
                   0%, 100% {
-                    stroke-dashoffset: 0;
-                    opacity: 0.7;
+                    stroke-dashoffset: 200;
+                    opacity: 0.6;
                   }
                   50% {
-                    stroke-dashoffset: 20;
+                    stroke-dashoffset: 0;
                     opacity: 1;
                   }
                 }
-                .flowing-wave {
-                  stroke-dasharray: 600;
-                  animation: flowingWave 4s ease-in-out infinite;
+                .aurora-wave {
+                  stroke-dasharray: 200;
+                  animation: auroraFlow 6s ease-in-out infinite;
                 }
-                .wave-1 { animation-delay: 0s; }
-                .wave-2 { animation-delay: 0.5s; }
-                .wave-3 { animation-delay: 1s; }
-                .wave-4 { animation-delay: 1.5s; }
-                .wave-5 { animation-delay: 2s; }
-                .wave-6 { animation-delay: 2.5s; }
+                .aurora-1 { animation-delay: 0s; animation-duration: 5s; }
+                .aurora-2 { animation-delay: 0.8s; animation-duration: 6s; }
+                .aurora-3 { animation-delay: 1.6s; animation-duration: 5.5s; }
+                .aurora-4 { animation-delay: 2.4s; animation-duration: 6.5s; }
+                .aurora-5 { animation-delay: 0.4s; animation-duration: 5.8s; }
+                .aurora-6 { animation-delay: 1.2s; animation-duration: 6.2s; }
+                .aurora-7 { animation-delay: 2s; animation-duration: 5.3s; }
+                .aurora-8 { animation-delay: 2.8s; animation-duration: 6.8s; }
               `}</style>
               
               <CardContent className="relative p-8">
