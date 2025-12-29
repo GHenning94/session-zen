@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { format, isSameDay } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Clock, User, Trash, Plus, Package } from 'lucide-react'
+import { Clock, User, Trash, Plus, Package, Repeat } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -21,6 +21,7 @@ interface Session {
   valor?: number
   anotacoes?: string
   package_id?: string
+  recurring_session_id?: string
   google_sync_type?: string
 }
 
@@ -218,6 +219,12 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                 <span className="text-xs truncate">
                                   {formatClientName(clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado')}
                                 </span>
+                                {session.package_id && (
+                                  <Package className="h-3 w-3 flex-shrink-0 text-primary" />
+                                )}
+                                {session.recurring_session_id && !session.package_id && (
+                                  <Repeat className="h-3 w-3 flex-shrink-0 text-primary" />
+                                )}
                               </div>
                               {session.package_id && (
                                 <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/30 text-primary-foreground border-0">
@@ -225,12 +232,18 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                                   Pacote
                                 </Badge>
                               )}
-                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={false} size="sm" />
+                              {session.recurring_session_id && !session.package_id && (
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/30 text-primary-foreground border-0">
+                                  <Repeat className="h-2 w-2 mr-0.5" />
+                                  Recorrente
+                                </Badge>
+                              )}
+                              <GoogleSyncBadge syncType={session.google_sync_type} showLabel={true} size="sm" />
                             </div>
                             <div className="flex items-center gap-1">
-                              {session.valor && (
+                              {(session.valor || session.package_id) && (
                                 <span className="text-xs font-medium text-success">
-                                  R$ {Number(session.valor).toFixed(2)}
+                                  R$ {Number(session.valor || 0).toFixed(2)}
                                 </span>
                               )}
                             </div>
