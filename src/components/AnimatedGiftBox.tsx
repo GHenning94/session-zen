@@ -185,20 +185,21 @@ const AnimatedGiftBox = () => {
         />
       ))}
 
-      {/* Hover wrapper - handles hover state separately from floating animation */}
+      {/* Hover wrapper - applies scale/translate OUTSIDE of floating animation */}
       <div 
-        className="relative cursor-pointer"
-        style={{ perspective: '800px' }}
+        className={`relative cursor-pointer transition-transform duration-300 ease-out ${isHovered ? 'scale-110 -translate-y-3' : 'scale-100 translate-y-0'}`}
+        style={{ 
+          perspective: '800px',
+          transitionTimingFunction: 'cubic-bezier(0.34, 1.56, 0.64, 1)',
+        }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
-        {/* Floating container - JavaScript animation applied here */}
+        {/* Floating container - JavaScript animation applied here (separate from hover) */}
         <div 
           ref={floatingRef}
-          className={`transition-transform duration-400 ease-out ${isHovered ? 'scale-110 -translate-y-3' : ''}`}
           style={{ 
             transformStyle: 'preserve-3d',
-            transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
           }}
         >
           {/* Shadow */}
