@@ -2266,7 +2266,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Top 5 Clientes que Mais Pagam */}
-            <Card className="shadow-soft opacity-0 animate-scale-fade-in flex flex-col overflow-visible" style={{ animationDelay: '475ms' }}>
+            <Card className="shadow-soft opacity-0 animate-scale-fade-in h-[460px] flex flex-col overflow-visible" style={{ animationDelay: '475ms' }}>
               <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-primary" />
@@ -2347,7 +2347,7 @@ const Dashboard = () => {
             </Card>
 
             {/* Clientes Recentes */}
-            <Card className="shadow-soft flex-1 flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
+            <Card className="shadow-soft h-[580px] flex flex-col opacity-0 animate-scale-fade-in" style={{ animationDelay: '550ms' }}>
               <CardHeader className="pb-2 flex-shrink-0">
                 <CardTitle className="flex items-center gap-2">
                   <Users className="w-5 h-5 text-success" />
