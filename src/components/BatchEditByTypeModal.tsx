@@ -178,7 +178,7 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
       case 'package':
         return `Editar ${count} ${sessionWord} de pacote`
       case 'individual':
-        return `Editar ${count} ${sessionWord} individual${count > 1 ? 'is' : ''}`
+        return `Editar ${count} ${sessionWord} individua${count > 1 ? 'is' : 'l'}`
       default:
         return `Editar ${count} ${sessionWord}`
     }
