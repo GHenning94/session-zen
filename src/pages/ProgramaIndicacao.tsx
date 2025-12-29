@@ -342,116 +342,116 @@ const ProgramaIndicacao = () => {
                   preserveAspectRatio="none"
                 >
                   <defs>
-                    {/* Gradients with transparency near the center/middle region */}
+                    {/* Gradients - very transparent on left (text area), visible on right (gift area) */}
                     <linearGradient id="auroraLine1" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(210, 80%, 55%)" stopOpacity="0.35" />
-                      <stop offset="30%" stopColor="hsl(200, 90%, 60%)" stopOpacity="0.08" />
-                      <stop offset="60%" stopColor="hsl(195, 85%, 65%)" stopOpacity="0.06" />
-                      <stop offset="100%" stopColor="hsl(190, 80%, 70%)" stopOpacity="0.25" />
+                      <stop offset="0%" stopColor="hsl(210, 80%, 55%)" stopOpacity="0.02" />
+                      <stop offset="40%" stopColor="hsl(200, 90%, 60%)" stopOpacity="0.03" />
+                      <stop offset="70%" stopColor="hsl(195, 85%, 65%)" stopOpacity="0.25" />
+                      <stop offset="100%" stopColor="hsl(190, 80%, 70%)" stopOpacity="0.45" />
                     </linearGradient>
                     <linearGradient id="auroraLine2" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(215, 85%, 60%)" stopOpacity="0.4" />
-                      <stop offset="35%" stopColor="hsl(205, 90%, 65%)" stopOpacity="0.05" />
-                      <stop offset="65%" stopColor="hsl(200, 85%, 70%)" stopOpacity="0.05" />
-                      <stop offset="100%" stopColor="hsl(195, 80%, 75%)" stopOpacity="0.2" />
+                      <stop offset="0%" stopColor="hsl(215, 85%, 60%)" stopOpacity="0.02" />
+                      <stop offset="35%" stopColor="hsl(205, 90%, 65%)" stopOpacity="0.04" />
+                      <stop offset="65%" stopColor="hsl(200, 85%, 70%)" stopOpacity="0.28" />
+                      <stop offset="100%" stopColor="hsl(195, 80%, 75%)" stopOpacity="0.5" />
                     </linearGradient>
                     <linearGradient id="auroraLine3" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(220, 75%, 58%)" stopOpacity="0.3" />
-                      <stop offset="40%" stopColor="hsl(210, 80%, 62%)" stopOpacity="0.04" />
-                      <stop offset="70%" stopColor="hsl(205, 75%, 68%)" stopOpacity="0.04" />
-                      <stop offset="100%" stopColor="hsl(200, 70%, 72%)" stopOpacity="0.18" />
+                      <stop offset="0%" stopColor="hsl(220, 75%, 58%)" stopOpacity="0.01" />
+                      <stop offset="45%" stopColor="hsl(210, 80%, 62%)" stopOpacity="0.03" />
+                      <stop offset="75%" stopColor="hsl(205, 75%, 68%)" stopOpacity="0.22" />
+                      <stop offset="100%" stopColor="hsl(200, 70%, 72%)" stopOpacity="0.4" />
                     </linearGradient>
                     <linearGradient id="auroraLine4" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(205, 90%, 55%)" stopOpacity="0.45" />
-                      <stop offset="25%" stopColor="hsl(200, 85%, 60%)" stopOpacity="0.06" />
-                      <stop offset="55%" stopColor="hsl(195, 80%, 65%)" stopOpacity="0.05" />
-                      <stop offset="100%" stopColor="hsl(190, 75%, 70%)" stopOpacity="0.22" />
+                      <stop offset="0%" stopColor="hsl(205, 90%, 55%)" stopOpacity="0.02" />
+                      <stop offset="30%" stopColor="hsl(200, 85%, 60%)" stopOpacity="0.04" />
+                      <stop offset="60%" stopColor="hsl(195, 80%, 65%)" stopOpacity="0.3" />
+                      <stop offset="100%" stopColor="hsl(190, 75%, 70%)" stopOpacity="0.55" />
                     </linearGradient>
                     <linearGradient id="auroraLine5" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(200, 70%, 50%)" stopOpacity="0.28" />
-                      <stop offset="45%" stopColor="hsl(195, 75%, 58%)" stopOpacity="0.03" />
-                      <stop offset="100%" stopColor="hsl(185, 70%, 65%)" stopOpacity="0.15" />
+                      <stop offset="0%" stopColor="hsl(200, 70%, 50%)" stopOpacity="0.01" />
+                      <stop offset="50%" stopColor="hsl(195, 75%, 58%)" stopOpacity="0.05" />
+                      <stop offset="100%" stopColor="hsl(185, 70%, 65%)" stopOpacity="0.35" />
                     </linearGradient>
                   </defs>
                   
-                  {/* Line 1 - starts bottom-left region, curves up then down, exits top-right */}
+                  {/* Line 1 - big organic waves, curves up and down, exits top-right */}
                   <path 
-                    d="M-5,110 Q15,85 25,70 T45,45 Q55,30 70,25 T95,8 L110,-5" 
+                    d="M-5,115 Q8,95 18,105 Q30,70 42,85 Q55,50 68,35 Q82,20 95,15 T112,5" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
-                    strokeWidth="0.3"
+                    strokeWidth="0.35"
                     className="aurora-wave aurora-1"
                   />
                   
-                  {/* Line 2 - lower curve, exits mid-right */}
+                  {/* Line 2 - deep curves, exits bottom-right */}
                   <path 
-                    d="M-8,105 Q10,92 28,82 T50,65 Q65,55 80,52 T105,48" 
+                    d="M-8,108 Q5,88 15,95 Q28,72 40,82 Q55,65 70,72 Q85,78 100,85 T112,95" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.4"
                     className="aurora-wave aurora-2"
                   />
                   
-                  {/* Line 3 - high curve with undulations */}
+                  {/* Line 3 - high peaks and valleys */}
                   <path 
-                    d="M-3,115 Q20,78 35,55 T55,30 Q70,15 85,10 T108,2" 
+                    d="M-3,118 Q12,85 22,98 Q35,55 48,72 Q62,30 78,22 Q92,12 105,8 T115,2" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
-                    strokeWidth="0.25"
+                    strokeWidth="0.28"
                     className="aurora-wave aurora-3"
                   />
                   
-                  {/* Line 4 - more horizontal, exits lower right */}
+                  {/* Line 4 - gentle waves, exits mid-bottom-right */}
                   <path 
-                    d="M-10,98 Q8,88 25,80 T52,72 Q72,66 88,65 T110,62" 
+                    d="M-10,100 Q2,82 14,90 Q28,70 42,78 Q58,62 74,68 Q90,74 102,82 T115,88" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
-                    strokeWidth="0.35"
+                    strokeWidth="0.38"
                     className="aurora-wave aurora-4"
                   />
                   
-                  {/* Line 5 - mid-height with wave pattern */}
+                  {/* Line 5 - dramatic curves, exits top-right corner */}
                   <path 
-                    d="M-6,108 Q18,82 32,62 T58,42 Q75,30 90,25 T112,15" 
+                    d="M-6,112 Q10,78 20,92 Q35,55 50,68 Q65,38 80,28 Q94,16 108,10 T118,-2" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
-                    strokeWidth="0.28"
+                    strokeWidth="0.3"
                     className="aurora-wave aurora-5"
                   />
                   
-                  {/* Line 6 - gentle low curve */}
+                  {/* Line 6 - low sweep, exits bottom-right corner */}
                   <path 
-                    d="M-12,95 Q5,85 22,78 T48,70 Q68,65 85,62 T108,58" 
+                    d="M-12,95 Q0,78 12,88 Q28,72 44,80 Q62,70 78,76 Q94,82 106,92 T115,105" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
-                    strokeWidth="0.32"
+                    strokeWidth="0.35"
                     className="aurora-wave aurora-6"
                   />
                   
-                  {/* Line 7 - upper trajectory with curves */}
+                  {/* Line 7 - undulating high trajectory */}
                   <path 
-                    d="M-4,112 Q22,72 40,48 T62,28 Q78,15 92,10 T110,5" 
+                    d="M-4,120 Q15,82 25,95 Q40,48 55,62 Q72,28 88,18 Q102,8 112,4" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
-                    strokeWidth="0.22"
+                    strokeWidth="0.25"
                     className="aurora-wave aurora-7"
                   />
                   
-                  {/* Line 8 - lowest spread */}
+                  {/* Line 8 - lowest with waves, exits bottom-right */}
                   <path 
-                    d="M-15,90 Q2,82 20,76 T45,72 Q65,70 82,68 T108,66" 
+                    d="M-15,90 Q-2,75 10,85 Q25,68 40,78 Q58,65 75,72 Q92,80 105,90 T115,102" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
-                    strokeWidth="0.3"
+                    strokeWidth="0.32"
                     className="aurora-wave aurora-8"
                   />
                   
-                  {/* Line 9 - very high, almost to top */}
+                  {/* Line 9 - high peaks, exits top */}
                   <path 
-                    d="M-2,118 Q25,68 42,40 T65,18 Q82,5 95,0 T112,-5" 
+                    d="M-2,122 Q18,75 28,90 Q45,42 60,55 Q78,22 94,12 Q108,2 118,-8" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
-                    strokeWidth="0.2"
+                    strokeWidth="0.22"
                     className="aurora-wave aurora-9"
                   />
                 </svg>
