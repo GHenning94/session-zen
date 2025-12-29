@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState, useMemo } from 'react';
-import referralGiftsImage from '@/assets/referral-gifts-transparent.png';
 
 interface Particle {
   id: number;
@@ -14,6 +13,210 @@ interface Particle {
   type: 'circle' | 'star' | 'sparkle';
 }
 
+// Single gift box component with customizable size and offset
+const GiftBox = ({ 
+  scale = 1, 
+  offsetX = 0,
+  offsetY = 0,
+  delay = 0 
+}: { 
+  scale?: number; 
+  offsetX?: number;
+  offsetY?: number;
+  delay?: number;
+}) => {
+  return (
+    <div 
+      className="absolute"
+      style={{ 
+        transform: `translateX(${offsetX}px) translateY(${offsetY}px) scale(${scale})`,
+        transformStyle: 'preserve-3d',
+        animation: `giftFloat ${3 + delay}s ease-in-out infinite`,
+        animationDelay: `${delay}s`,
+      }}
+    >
+      {/* Box Base */}
+      <div className="relative" style={{ transformStyle: 'preserve-3d' }}>
+        {/* Main box */}
+        <div 
+          className="w-20 h-18 rounded-lg relative overflow-hidden"
+          style={{
+            width: '80px',
+            height: '72px',
+            background: 'linear-gradient(135deg, hsl(221, 83%, 65%) 0%, hsl(221, 83%, 53%) 50%, hsl(221, 83%, 40%) 100%)',
+            boxShadow: '0 15px 35px -8px hsla(221, 83%, 53%, 0.5), inset 0 1px 0 rgba(255,255,255,0.3)',
+          }}
+        >
+          {/* Box shine */}
+          <div 
+            className="absolute inset-0 rounded-lg"
+            style={{
+              background: 'linear-gradient(135deg, rgba(255,255,255,0.4) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)',
+            }}
+          />
+          
+          {/* Vertical ribbon */}
+          <div 
+            className="absolute left-1/2 -translate-x-1/2 w-4 h-full"
+            style={{
+              background: 'linear-gradient(90deg, hsl(221, 83%, 75%) 0%, hsl(221, 83%, 85%) 30%, hsl(0, 0%, 100%) 50%, hsl(221, 83%, 85%) 70%, hsl(221, 83%, 75%) 100%)',
+              boxShadow: '0 0 8px hsla(221, 83%, 53%, 0.4)',
+            }}
+          />
+          
+          {/* Horizontal ribbon */}
+          <div 
+            className="absolute top-1/2 -translate-y-1/2 w-full h-4"
+            style={{
+              background: 'linear-gradient(180deg, hsl(221, 83%, 75%) 0%, hsl(221, 83%, 85%) 30%, hsl(0, 0%, 100%) 50%, hsl(221, 83%, 85%) 70%, hsl(221, 83%, 75%) 100%)',
+              boxShadow: '0 0 8px hsla(221, 83%, 53%, 0.4)',
+            }}
+          />
+
+          {/* Ribbon intersection */}
+          <div 
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-4 h-4 rounded-sm"
+            style={{
+              background: 'radial-gradient(circle, hsl(0, 0%, 100%) 0%, hsl(221, 83%, 85%) 100%)',
+            }}
+          />
+        </div>
+
+        {/* Box Lid */}
+        <div 
+          className="absolute -top-4 left-1/2 -translate-x-1/2 rounded-lg overflow-hidden"
+          style={{ 
+            width: '90px',
+            height: '20px',
+            background: 'linear-gradient(135deg, hsl(221, 83%, 70%) 0%, hsl(221, 83%, 53%) 50%, hsl(221, 83%, 45%) 100%)',
+            boxShadow: '0 -3px 15px hsla(221, 83%, 53%, 0.3), inset 0 1px 0 rgba(255,255,255,0.4)',
+          }}
+        >
+          <div 
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 60%)',
+            }}
+          />
+          
+          {/* Lid ribbon */}
+          <div 
+            className="absolute left-1/2 -translate-x-1/2 w-4 h-full"
+            style={{
+              background: 'linear-gradient(90deg, hsl(221, 83%, 75%) 0%, hsl(221, 83%, 85%) 30%, hsl(0, 0%, 100%) 50%, hsl(221, 83%, 85%) 70%, hsl(221, 83%, 75%) 100%)',
+            }}
+          />
+        </div>
+
+        {/* Bow */}
+        <div className="absolute -top-10 left-1/2 -translate-x-1/2">
+          {/* Left loop */}
+          <div 
+            className="absolute -left-6 top-2 w-7 h-5 rounded-full"
+            style={{ 
+              background: 'linear-gradient(135deg, hsl(0, 0%, 100%) 0%, hsl(221, 83%, 85%) 40%, hsl(221, 83%, 65%) 100%)',
+              transform: 'rotate(-25deg)',
+              boxShadow: '0 3px 12px hsla(221, 83%, 53%, 0.4)',
+            }}
+          >
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.6) 0%, transparent 60%)',
+              }}
+            />
+          </div>
+          
+          {/* Right loop */}
+          <div 
+            className="absolute -right-6 top-2 w-7 h-5 rounded-full"
+            style={{ 
+              background: 'linear-gradient(225deg, hsl(0, 0%, 100%) 0%, hsl(221, 83%, 85%) 40%, hsl(221, 83%, 65%) 100%)',
+              transform: 'rotate(25deg)',
+              boxShadow: '0 3px 12px hsla(221, 83%, 53%, 0.4)',
+            }}
+          >
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'linear-gradient(225deg, rgba(255,255,255,0.6) 0%, transparent 60%)',
+              }}
+            />
+          </div>
+
+          {/* Ribbon tails */}
+          <div 
+            className="absolute -left-2 top-6 w-2.5 h-8 rounded-b-full"
+            style={{ 
+              background: 'linear-gradient(180deg, hsl(221, 83%, 85%) 0%, hsl(221, 83%, 65%) 100%)',
+              transform: 'rotate(-12deg)',
+            }}
+          />
+          <div 
+            className="absolute -right-2 top-6 w-2.5 h-8 rounded-b-full"
+            style={{ 
+              background: 'linear-gradient(180deg, hsl(221, 83%, 85%) 0%, hsl(221, 83%, 65%) 100%)',
+              transform: 'rotate(12deg)',
+            }}
+          />
+          
+          {/* Bow center knot */}
+          <div 
+            className="relative w-4 h-4 rounded-full z-10 left-1/2 -translate-x-1/2 top-3"
+            style={{
+              background: 'radial-gradient(circle at 30% 30%, hsl(0, 0%, 100%) 0%, hsl(221, 83%, 80%) 50%, hsl(221, 83%, 53%) 100%)',
+              boxShadow: '0 2px 8px hsla(221, 83%, 40%, 0.4)',
+            }}
+          >
+            <div 
+              className="absolute inset-0 rounded-full"
+              style={{
+                background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.7) 0%, transparent 50%)',
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Floating coin component
+const Coin = ({ 
+  x, 
+  y, 
+  size = 20,
+  delay = 0 
+}: { 
+  x: number; 
+  y: number; 
+  size?: number;
+  delay?: number;
+}) => {
+  return (
+    <div
+      className="absolute rounded-full"
+      style={{
+        left: `${x}%`,
+        top: `${y}%`,
+        width: `${size}px`,
+        height: `${size}px`,
+        background: 'linear-gradient(135deg, hsl(45, 90%, 60%) 0%, hsl(40, 85%, 50%) 50%, hsl(35, 80%, 40%) 100%)',
+        boxShadow: '0 4px 12px hsla(40, 80%, 40%, 0.4), inset 0 1px 0 rgba(255,255,255,0.5)',
+        animation: `coinFloat ${2.5 + delay}s ease-in-out infinite`,
+        animationDelay: `${delay}s`,
+      }}
+    >
+      <div 
+        className="absolute inset-0 rounded-full"
+        style={{
+          background: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.6) 0%, transparent 60%)',
+        }}
+      />
+    </div>
+  );
+};
+
 const AnimatedGiftImage = () => {
   const floatingRef = useRef<HTMLDivElement>(null);
   const [isVisible, setIsVisible] = useState(false);
@@ -26,6 +229,7 @@ const AnimatedGiftImage = () => {
     'hsl(221, 83%, 65%)',
     'hsl(210, 100%, 70%)',
     'hsl(230, 80%, 80%)',
+    'hsl(45, 90%, 60%)',
   ], []);
 
   useEffect(() => {
@@ -81,9 +285,9 @@ const AnimatedGiftImage = () => {
     let angle = 0;
 
     const animate = () => {
-      angle += 0.012;
-      const floatY = Math.sin(angle) * 6;
-      const floatX = Math.cos(angle * 0.7) * 3;
+      angle += 0.01;
+      const floatY = Math.sin(angle) * 4;
+      const floatX = Math.cos(angle * 0.7) * 2;
       
       if (floatingElement) {
         floatingElement.style.transform = `translateY(${floatY}px) translateX(${floatX}px)`;
@@ -162,24 +366,24 @@ const AnimatedGiftImage = () => {
       className={`relative flex items-center justify-center transition-all duration-1000 ease-out ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
-      style={{ width: '400px', height: '280px' }}
+      style={{ width: '380px', height: '200px' }}
     >
       {/* Floating Particles */}
       {particles.map(renderParticle)}
 
       {/* Sparkles */}
-      {[...Array(12)].map((_, i) => (
+      {[...Array(14)].map((_, i) => (
         <div
           key={i}
           className="absolute rounded-full"
           style={{
-            width: `${4 + Math.random() * 4}px`,
-            height: `${4 + Math.random() * 4}px`,
-            left: `${5 + (i * 8)}%`,
-            top: `${10 + Math.sin(i * 1.2) * 30}%`,
+            width: `${3 + Math.random() * 4}px`,
+            height: `${3 + Math.random() * 4}px`,
+            left: `${5 + (i * 7)}%`,
+            top: `${15 + Math.sin(i * 1.2) * 25}%`,
             background: i % 2 === 0 ? 'hsl(221, 83%, 53%)' : 'hsl(221, 83%, 65%)',
-            animation: `sparkle ${2 + i * 0.3}s ease-in-out infinite`,
-            animationDelay: `${i * 0.2}s`,
+            animation: `sparkle ${2 + i * 0.25}s ease-in-out infinite`,
+            animationDelay: `${i * 0.15}s`,
             boxShadow: '0 0 8px 2px hsla(221, 83%, 53%, 0.5)',
           }}
         />
@@ -195,16 +399,30 @@ const AnimatedGiftImage = () => {
         onMouseLeave={() => setIsHovered(false)}
       >
         {/* Floating container */}
-        <div ref={floatingRef}>
-          {/* Gift Image */}
-          <img 
-            src={referralGiftsImage} 
-            alt="Presentes e recompensas do programa de indicação"
-            className="w-80 h-auto object-contain drop-shadow-2xl"
-            style={{
-              filter: 'drop-shadow(0 25px 50px hsla(221, 83%, 53%, 0.4))',
-            }}
+        <div 
+          ref={floatingRef}
+          className="relative flex items-end justify-center"
+          style={{ width: '340px', height: '160px' }}
+        >
+          {/* Shadow */}
+          <div 
+            className="absolute bottom-0 left-1/2 -translate-x-1/2 w-64 h-6 bg-black/10 rounded-full blur-xl"
+            style={{ animation: 'shadowPulse 4s ease-in-out infinite' }}
           />
+
+          {/* Multiple Gift Boxes - horizontal layout */}
+          <GiftBox scale={0.9} offsetX={-120} offsetY={10} delay={0.3} />
+          <GiftBox scale={1.1} offsetX={0} offsetY={0} delay={0} />
+          <GiftBox scale={0.85} offsetX={115} offsetY={15} delay={0.5} />
+
+          {/* Floating Coins */}
+          <Coin x={8} y={55} size={18} delay={0.2} />
+          <Coin x={15} y={75} size={14} delay={0.8} />
+          <Coin x={30} y={20} size={16} delay={0.4} />
+          <Coin x={55} y={10} size={12} delay={0.6} />
+          <Coin x={70} y={25} size={15} delay={0.3} />
+          <Coin x={85} y={60} size={17} delay={0.7} />
+          <Coin x={90} y={80} size={13} delay={0.1} />
         </div>
       </div>
 
@@ -212,6 +430,18 @@ const AnimatedGiftImage = () => {
         @keyframes sparkle {
           0%, 100% { transform: scale(1); opacity: 0.5; }
           50% { transform: scale(1.3); opacity: 0.9; }
+        }
+        @keyframes giftFloat {
+          0%, 100% { transform: translateX(var(--offset-x, 0)) translateY(var(--offset-y, 0)) scale(var(--scale, 1)); }
+          50% { transform: translateX(var(--offset-x, 0)) translateY(calc(var(--offset-y, 0) - 5px)) scale(var(--scale, 1)); }
+        }
+        @keyframes coinFloat {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-8px) rotate(10deg); }
+        }
+        @keyframes shadowPulse {
+          0%, 100% { transform: translateX(-50%) scale(1); opacity: 0.1; }
+          50% { transform: translateX(-50%) scale(1.05); opacity: 0.15; }
         }
         @keyframes particleFloat {
           0% {
