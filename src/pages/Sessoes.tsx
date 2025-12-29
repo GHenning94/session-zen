@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare, ChevronDown } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit2, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -1357,7 +1357,7 @@ export default function Sessoes() {
                                     handleEditNote(note)
                                   }}
                                 >
-                                  <Edit className="w-4 h-4" />
+                                  <Edit2 className="w-4 h-4" />
                                 </Button>
                               </TooltipTrigger>
                               <TooltipContent>Editar anotação</TooltipContent>
