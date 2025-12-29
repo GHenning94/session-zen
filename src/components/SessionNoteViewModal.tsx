@@ -48,26 +48,29 @@ export const SessionNoteViewModal = ({
   const sanitizedHtml = DOMPurify.sanitize(note.notes)
 
   const handleEdit = () => {
-    onOpenChange(false)
-    // Use setTimeout to ensure modal is fully closed before opening edit modal
-    setTimeout(() => {
-      onEdit(note)
-    }, 100)
+    // Just call onEdit - parent will handle modal state
+    onEdit(note)
   }
 
   const handleDeleteConfirm = () => {
     setShowDeleteConfirm(false)
-    // Use setTimeout to ensure confirm dialog is closed before proceeding
-    setTimeout(() => {
-      onDelete(note.id)
+    onDelete(note.id)
+  }
+
+  const handleOpenChange = (newOpen: boolean) => {
+    // Only allow closing through the X button or programmatically
+    // This prevents the modal from being re-triggered by click events
+    if (!newOpen) {
       onOpenChange(false)
-    }, 100)
+    }
   }
 
   return (
     <>
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[700px] max-h-[90vh]">
+      <Dialog open={open} onOpenChange={handleOpenChange} modal>
+        <DialogContent 
+          className="sm:max-w-[700px] max-h-[90vh]"
+        >
           <DialogHeader className="pr-12">
             <div className="flex items-center gap-4">
               <ClientAvatar 
