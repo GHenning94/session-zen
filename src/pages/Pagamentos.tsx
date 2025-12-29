@@ -64,7 +64,6 @@ const [isLoading, setIsLoading] = useState(false)
   const [detailsModalOpen, setDetailsModalOpen] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [selectedPayment, setSelectedPayment] = useState<any | null>(null)
-  const [highlightedPaymentId, setHighlightedPaymentId] = useState<string | null>(null)
   const [viewedPaymentIds, setViewedPaymentIds] = useState<Set<string>>(new Set())
   const [selectedPayments, setSelectedPayments] = useState<Set<string>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)
@@ -173,7 +172,7 @@ const [isLoading, setIsLoading] = useState(false)
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [user])
 
-  // Check for highlighted payment from URL params and open modal
+  // Check for session_id from URL params and open payment modal
   useEffect(() => {
     const highlightParam = searchParams.get('highlight')
     
@@ -182,23 +181,12 @@ const [isLoading, setIsLoading] = useState(false)
       const payment = payments.find((p: any) => p.session_id === highlightParam)
       
       if (payment) {
-        setHighlightedPaymentId(payment.id)
         setSelectedPayment(payment)
         setDetailsModalOpen(true)
-        
-        // Clear the URL parameters after opening the modal
-        setTimeout(() => {
-          setSearchParams({})
-          setHighlightedPaymentId(null)
-        }, 3000)
-      } else {
-        // If no payment found, just highlight and clear
-        setHighlightedPaymentId(highlightParam)
-        setTimeout(() => {
-          setSearchParams({})
-          setHighlightedPaymentId(null)
-        }, 3000)
       }
+      
+      // Clear the URL parameters
+      setSearchParams({})
     }
   }, [searchParams, setSearchParams, payments])
 
