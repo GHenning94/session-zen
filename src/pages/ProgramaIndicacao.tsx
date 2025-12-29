@@ -374,81 +374,81 @@ const ProgramaIndicacao = () => {
                     </linearGradient>
                   </defs>
                   
-                  {/* Line 1 - big organic waves, curves up and down, exits top-right */}
+                  {/* Line 1 - smooth organic wave flowing to top-right */}
                   <path 
-                    d="M-5,115 Q8,95 18,105 Q30,70 42,85 Q55,50 68,35 Q82,20 95,15 T112,5" 
+                    d="M-5,95 C10,95 15,75 35,70 C55,65 65,85 85,75 C105,65 110,45 120,30" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-1"
                   />
                   
-                  {/* Line 2 - deep curves, exits bottom-right */}
+                  {/* Line 2 - gentle wave exits bottom-right */}
                   <path 
-                    d="M-8,108 Q5,88 15,95 Q28,72 40,82 Q55,65 70,72 Q85,78 100,85 T112,95" 
+                    d="M-8,88 C12,88 20,75 40,78 C60,81 70,90 90,88 C110,86 115,95 125,100" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.4"
                     className="aurora-wave aurora-2"
                   />
                   
-                  {/* Line 3 - high peaks and valleys */}
+                  {/* Line 3 - high amplitude wave to top */}
                   <path 
-                    d="M-3,118 Q12,85 22,98 Q35,55 48,72 Q62,30 78,22 Q92,12 105,8 T115,2" 
+                    d="M-3,105 C15,100 20,60 45,55 C70,50 75,80 95,50 C115,20 118,10 125,0" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.28"
                     className="aurora-wave aurora-3"
                   />
                   
-                  {/* Line 4 - gentle waves, exits mid-bottom-right */}
-                  <path 
-                    d="M-10,100 Q2,82 14,90 Q28,70 42,78 Q58,62 74,68 Q90,74 102,82 T115,88" 
+                  {/* Line 4 - mid-level gentle curve */}
+                    <path 
+                    d="M-10,82 C10,78 25,68 45,72 C65,76 80,82 100,78 C115,75 120,85 130,90" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.38"
                     className="aurora-wave aurora-4"
                   />
                   
-                  {/* Line 5 - dramatic curves, exits top-right corner */}
+                  {/* Line 5 - dramatic sweep upward */}
                   <path 
-                    d="M-6,112 Q10,78 20,92 Q35,55 50,68 Q65,38 80,28 Q94,16 108,10 T118,-2" 
+                    d="M-6,98 C12,95 18,70 40,62 C62,54 72,75 92,55 C112,35 116,18 125,5" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.3"
                     className="aurora-wave aurora-5"
                   />
                   
-                  {/* Line 6 - low sweep, exits bottom-right corner */}
+                  {/* Line 6 - low sweep to bottom-right */}
                   <path 
-                    d="M-12,95 Q0,78 12,88 Q28,72 44,80 Q62,70 78,76 Q94,82 106,92 T115,105" 
+                    d="M-12,78 C8,75 18,65 38,70 C58,75 72,85 92,82 C112,79 118,98 130,108" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-6"
                   />
                   
-                  {/* Line 7 - undulating high trajectory */}
+                  {/* Line 7 - elegant high trajectory */}
                   <path 
-                    d="M-4,120 Q15,82 25,95 Q40,48 55,62 Q72,28 88,18 Q102,8 112,4" 
+                    d="M-4,110 C18,105 25,65 50,58 C75,51 82,78 105,45 C120,22 122,12 130,-5" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.25"
                     className="aurora-wave aurora-7"
                   />
                   
-                  {/* Line 8 - lowest with waves, exits bottom-right */}
+                  {/* Line 8 - lowest flowing wave */}
                   <path 
-                    d="M-15,90 Q-2,75 10,85 Q25,68 40,78 Q58,65 75,72 Q92,80 105,90 T115,102" 
+                    d="M-15,72 C5,70 15,60 35,65 C55,70 70,78 90,75 C110,72 118,88 130,98" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.32"
                     className="aurora-wave aurora-8"
                   />
                   
-                  {/* Line 9 - high peaks, exits top */}
+                  {/* Line 9 - highest arc to top corner */}
                   <path 
-                    d="M-2,122 Q18,75 28,90 Q45,42 60,55 Q78,22 94,12 Q108,2 118,-8" 
+                    d="M-2,115 C20,108 28,55 55,48 C82,41 88,72 110,35 C125,10 128,-5 135,-15" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.22"
