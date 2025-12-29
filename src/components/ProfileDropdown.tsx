@@ -113,8 +113,13 @@ export const ProfileDropdown = () => {
   }
 
   const getInitials = (name: string) => {
+    // Proteção contra valores inválidos
+    if (!name || name.includes('/') || name.includes('http') || name.includes('.') || name.length < 2) {
+      return ''
+    }
     return name
       .split(' ')
+      .filter(n => n.length > 0 && /^[a-zA-ZÀ-ÿ]/.test(n))
       .map(n => n[0])
       .slice(0, 2)
       .join('')

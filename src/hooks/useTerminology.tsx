@@ -118,12 +118,14 @@ export const TerminologyProvider = ({ children }: TerminologyProviderProps) => {
     }
   }, [user])
 
-  const isPatientMode = profession 
-    ? PATIENT_PROFESSIONS.some(p => 
-        profession.toLowerCase().includes(p.toLowerCase())
-      )
+  // Normalizar a profissão para comparação (lowercase e trim)
+  const normalizedProfession = profession?.toLowerCase().trim() || ''
+  
+  const isPatientMode = normalizedProfession
+    ? PATIENT_PROFESSIONS.some(p => normalizedProfession.includes(p.toLowerCase()))
     : false
 
+  // SEMPRE capitalizar corretamente os termos - nunca usar valores do banco diretamente
   const clientTerm = isPatientMode ? 'Paciente' : 'Cliente'
   const clientTermPlural = isPatientMode ? 'Pacientes' : 'Clientes'
 
