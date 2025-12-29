@@ -374,108 +374,108 @@ const ProgramaIndicacao = () => {
                     </linearGradient>
                   </defs>
                   
-                  {/* Line 1 - wavy, exits TOP (-10) */}
+                  {/* Line 1 - dramatic waves, exits TOP */}
                   <path 
-                    d="M-10,130 C5,115 15,135 30,105 C45,75 55,95 70,55 C85,15 100,25 120,-10" 
+                    d="M-10,130 C0,50 20,180 40,30 C60,-80 80,120 100,-30 C120,-100 135,20 160,-20" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-1"
                   />
                   
-                  {/* Line 2 - wavy, exits BOTTOM (115) */}
+                  {/* Line 2 - dramatic waves, exits BOTTOM */}
                   <path 
-                    d="M-8,120 C8,105 18,125 35,100 C52,75 62,95 78,80 C94,65 105,85 125,115" 
+                    d="M-8,120 C5,40 25,170 45,50 C65,-40 85,140 105,60 C125,0 140,100 165,115" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.4"
                     className="aurora-wave aurora-2"
                   />
                   
-                  {/* Line 3 - wavy, exits TOP (-20) */}
+                  {/* Line 3 - dramatic waves, exits TOP */}
                   <path 
-                    d="M-5,140 C12,120 22,145 40,100 C58,55 68,80 88,35 C108,-10 118,5 140,-20" 
+                    d="M-5,140 C10,60 30,190 50,40 C70,-70 90,130 110,-20 C130,-90 150,30 175,-25" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.28"
                     className="aurora-wave aurora-3"
                   />
                   
-                  {/* Line 4 - wavy, exits BOTTOM (120) */}
+                  {/* Line 4 - dramatic waves, exits BOTTOM */}
                   <path 
-                    d="M-12,115 C5,95 15,120 32,90 C49,60 59,85 75,70 C91,55 102,80 130,120" 
+                    d="M-12,115 C2,35 22,160 42,45 C62,-50 82,135 102,55 C122,-10 140,90 168,120" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.38"
                     className="aurora-wave aurora-4"
                   />
                   
-                  {/* Line 5 - wavy, exits TOP (0) */}
+                  {/* Line 5 - dramatic waves, exits TOP */}
                   <path 
-                    d="M-6,125 C10,108 20,130 38,90 C56,50 66,75 85,40 C104,5 115,20 145,0" 
+                    d="M-6,125 C8,45 28,175 48,35 C68,-75 88,125 108,-15 C128,-85 148,25 170,-10" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.3"
                     className="aurora-wave aurora-5"
                   />
                   
-                  {/* Line 6 - wavy, exits BOTTOM (110) */}
+                  {/* Line 6 - dramatic waves, exits BOTTOM */}
                   <path 
-                    d="M-15,110 C2,92 12,115 28,88 C44,61 54,85 72,72 C90,59 100,78 128,110" 
+                    d="M-15,110 C0,30 20,155 40,40 C60,-55 80,130 100,50 C120,-5 138,95 165,110" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-6"
                   />
                   
-                  {/* Line 7 - wavy, exits TOP (-15) */}
+                  {/* Line 7 - dramatic waves, exits TOP */}
                   <path 
-                    d="M-4,135 C14,112 24,140 45,95 C66,50 76,78 95,30 C114,-18 125,0 155,-15" 
+                    d="M-4,135 C12,55 32,185 52,45 C72,-65 92,128 112,-10 C132,-80 152,35 178,-15" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.25"
                     className="aurora-wave aurora-7"
                   />
                   
-                  {/* Line 8 - wavy, exits BOTTOM (105) */}
+                  {/* Line 8 - dramatic waves, exits BOTTOM */}
                   <path 
-                    d="M-18,105 C0,88 10,108 25,82 C40,56 50,78 68,65 C86,52 96,75 125,105" 
+                    d="M-18,105 C-2,25 18,150 38,35 C58,-60 78,128 98,48 C118,-12 136,88 162,105" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.32"
                     className="aurora-wave aurora-8"
                   />
                   
-                  {/* Line 9 - wavy, exits TOP (-25) */}
+                  {/* Line 9 - dramatic waves, exits TOP */}
                   <path 
-                    d="M-2,145 C18,118 28,148 52,98 C76,48 86,78 108,22 C130,-34 142,-10 170,-25" 
+                    d="M-2,145 C15,65 35,195 55,50 C75,-60 95,135 115,-5 C135,-75 155,40 180,-30" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.22"
                     className="aurora-wave aurora-9"
                   />
                   
-                  {/* Line 10 - wavy, exits BOTTOM (118) */}
+                  {/* Line 10 - dramatic waves, exits BOTTOM */}
                   <path 
-                    d="M-20,112 C-2,92 8,118 26,88 C44,58 54,82 72,68 C90,54 100,78 130,118" 
+                    d="M-20,112 C-5,32 15,158 35,42 C55,-52 75,132 95,52 C115,-8 135,92 163,118" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.26"
                     className="aurora-wave aurora-10"
                   />
                   
-                  {/* Line 11 - wavy, exits TOP (5) */}
+                  {/* Line 11 - dramatic waves, exits TOP */}
                   <path 
-                    d="M-8,128 C9,105 19,132 38,88 C57,44 67,72 88,32 C109,-8 120,12 150,5" 
+                    d="M-8,128 C6,48 26,178 46,38 C66,-72 86,125 106,-12 C126,-82 146,28 172,5" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
                     strokeWidth="0.3"
                     className="aurora-wave aurora-11"
                   />
                   
-                  {/* Line 12 - wavy, exits BOTTOM (112) */}
+                  {/* Line 12 - dramatic waves, exits BOTTOM */}
                   <path 
-                    d="M-14,118 C4,98 14,122 30,92 C46,62 56,85 74,72 C92,59 102,82 132,112" 
+                    d="M-14,118 C0,38 20,162 40,48 C60,-45 80,135 100,55 C120,0 138,95 165,112" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.28"
@@ -542,7 +542,7 @@ const ProgramaIndicacao = () => {
                     </p>
                   </div>
                   
-                  <div className="w-full lg:w-auto flex justify-center relative z-0">
+                  <div className="w-full lg:w-auto flex justify-center relative z-0 mt-8">
                     <AnimatedGiftBox />
                   </div>
                 </div>
