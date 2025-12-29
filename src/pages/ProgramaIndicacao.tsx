@@ -804,7 +804,7 @@ const ProgramaIndicacao = () => {
                   Ganhe <span className="text-primary font-semibold">30% no 1º mês</span> (mensal) ou <span className="text-primary font-semibold">20%</span> (anual)
                 </CardDescription>
               </div>
-              <Button onClick={() => setShareModalOpen(true)} className="shrink-0">
+              <Button onClick={() => setShareModalOpen(true)} className="shrink-0 bg-gradient-primary hover:opacity-90">
                 <Share2 className="w-4 h-4 mr-2" />
                 Compartilhar
               </Button>

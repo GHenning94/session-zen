@@ -48,14 +48,20 @@ export const SessionNoteViewModal = ({
   const sanitizedHtml = DOMPurify.sanitize(note.notes)
 
   const handleEdit = () => {
-    onEdit(note)
     onOpenChange(false)
+    // Use setTimeout to ensure modal is fully closed before opening edit modal
+    setTimeout(() => {
+      onEdit(note)
+    }, 100)
   }
 
   const handleDeleteConfirm = () => {
-    onDelete(note.id)
     setShowDeleteConfirm(false)
-    onOpenChange(false)
+    // Use setTimeout to ensure confirm dialog is closed before proceeding
+    setTimeout(() => {
+      onDelete(note.id)
+      onOpenChange(false)
+    }, 100)
   }
 
   return (

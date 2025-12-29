@@ -1312,9 +1312,14 @@ export default function Sessoes() {
                               <div className="flex items-center gap-2 mb-2">
                                 <h3 className="text-lg font-semibold">{note.clients?.nome || 'Cliente não encontrado'}</h3>
                                 {note.sessions && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {formatDateBR(note.sessions.data)} às {formatTimeBR(note.sessions.horario)}
-                                  </Badge>
+                                  <>
+                                    <Badge variant="outline" className="text-xs">
+                                      {formatDateBR(note.sessions.data)} às {formatTimeBR(note.sessions.horario)}
+                                    </Badge>
+                                    <Badge variant={getStatusColor(note.sessions.status)} className="text-xs">
+                                      {getStatusLabel(note.sessions.status)}
+                                    </Badge>
+                                  </>
                                 )}
                               </div>
                               <div className="text-sm text-muted-foreground mb-2">
