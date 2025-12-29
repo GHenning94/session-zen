@@ -33,8 +33,18 @@ interface BatchEditByTypeModalProps {
   clients?: Client[]
 }
 
+interface PackageInfo {
+  id: string
+  nome: string
+  client_id: string
+  status: string
+  total_sessoes: number
+  sessoes_consumidas: number
+}
+
 export interface BatchEditChanges {
   client_id?: string
+  package_id?: string
   data?: string
   valor?: number
   metodo_pagamento?: string
@@ -44,12 +54,14 @@ export interface BatchEditChanges {
 
 export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSessions, clients = [] }: BatchEditByTypeModalProps) {
   const [clientId, setClientId] = useState<string>('')
+  const [packageId, setPackageId] = useState<string>('')
   const [data, setData] = useState<string>('')
   const [valor, setValor] = useState<string>('')
   const [metodo, setMetodo] = useState<string>('')
   const [status, setStatus] = useState<string>('')
   const [anotacoes, setAnotacoes] = useState<string>('')
   const [clientsWithPackages, setClientsWithPackages] = useState<Set<string>>(new Set())
+  const [availablePackages, setAvailablePackages] = useState<PackageInfo[]>([])
 
   // Fetch clients with active packages
   useEffect(() => {
@@ -68,6 +80,30 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
       fetchClientsWithPackages()
     }
   }, [open])
+
+  // Fetch packages for the selected client
+  useEffect(() => {
+    const fetchPackagesForClient = async () => {
+      if (!clientId) {
+        setAvailablePackages([])
+        setPackageId('')
+        return
+      }
+
+      const { data: packagesData } = await supabase
+        .from('packages')
+        .select('id, nome, client_id, status, total_sessoes, sessoes_consumidas')
+        .eq('client_id', clientId)
+        .eq('status', 'ativo')
+        .order('created_at', { ascending: false })
+      
+      if (packagesData) {
+        setAvailablePackages(packagesData)
+      }
+    }
+    
+    fetchPackagesForClient()
+  }, [clientId])
 
   // Determine the session type(s) selected
   const sessionTypeInfo = useMemo(() => {
@@ -119,6 +155,7 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
       if (anotacoes) changes.anotacoes = anotacoes
     } else if (sessionTypeInfo.type === 'package') {
       if (clientId) changes.client_id = clientId
+      if (packageId) changes.package_id = packageId
       if (data) changes.data = data
       if (status) changes.status = status
       if (anotacoes) changes.anotacoes = anotacoes
@@ -130,6 +167,7 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
 
   const resetForm = () => {
     setClientId('')
+    setPackageId('')
     setData('')
     setValor('')
     setMetodo('')
@@ -163,10 +201,10 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
       return !!clientId || !!data || !!valor || !!metodo || !!status || !!anotacoes
     }
     if (sessionTypeInfo.type === 'package') {
-      return !!clientId || !!data || !!status || !!anotacoes
+      return !!clientId || !!packageId || !!data || !!status || !!anotacoes
     }
     return !!status || !!anotacoes
-  }, [clientId, data, valor, metodo, status, anotacoes, sessionTypeInfo.type])
+  }, [clientId, packageId, data, valor, metodo, status, anotacoes, sessionTypeInfo.type])
 
   const getTitle = () => {
     const count = selectedSessions.length
@@ -320,7 +358,10 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
           <div className="space-y-4 mt-4">
             <div>
               <Label htmlFor="client">Cliente</Label>
-              <Select value={clientId} onValueChange={setClientId}>
+              <Select value={clientId} onValueChange={(value) => {
+                setClientId(value)
+                setPackageId('')
+              }}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione um cliente (opcional)" />
                 </SelectTrigger>
@@ -343,6 +384,32 @@ export function BatchEditByTypeModal({ open, onClose, onConfirm, selectedSession
                 Apenas clientes com pacotes ativos são exibidos.
               </p>
             </div>
+
+            {clientId && availablePackages.length > 0 && (
+              <div>
+                <Label htmlFor="package">Pacote</Label>
+                <Select value={packageId} onValueChange={setPackageId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um pacote (opcional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availablePackages.map((pkg) => (
+                      <SelectItem key={pkg.id} value={pkg.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{pkg.nome}</span>
+                          <span className="text-muted-foreground text-xs">
+                            ({pkg.sessoes_consumidas}/{pkg.total_sessoes} sessões)
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pacotes ativos do cliente selecionado.
+                </p>
+              </div>
+            )}
 
             <div>
               <Label htmlFor="data">Data</Label>
