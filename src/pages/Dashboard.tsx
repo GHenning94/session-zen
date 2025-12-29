@@ -1702,15 +1702,15 @@ const Dashboard = () => {
                           <p className="text-xs text-muted-foreground mb-1">Média</p>
                           <p className="text-lg font-bold text-success">{formatCurrencyBR(ticketMedioAverage)}</p>
                         </div>
-                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
                           <p className="text-xs text-muted-foreground mb-1">Maior Pgto</p>
-                          <p className="text-lg font-bold text-foreground">
+                          <p className="text-lg font-bold text-primary">
                             {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.max(...filteredTicketChart.map(i => i.maxPagamento || 0)) : 0)}
                           </p>
                         </div>
                         <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
                           <p className="text-xs text-muted-foreground mb-1">Menor Pgto</p>
-                          <p className="text-lg font-bold text-foreground">
+                          <p className="text-lg font-bold text-muted-foreground">
                             {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.min(...filteredTicketChart.filter(i => (i.minPagamento || 0) > 0).map(i => i.minPagamento)) || 0 : 0)}
                           </p>
                         </div>
