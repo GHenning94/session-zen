@@ -161,9 +161,10 @@ const AnimatedGiftBox = () => {
   return (
     <div 
       ref={wrapperRef}
-      className={`relative w-64 h-64 flex items-center justify-center -ml-56 mt-8 transition-all duration-1000 ease-out group ${
+      className={`relative w-64 h-64 flex items-center justify-center -ml-72 mt-8 transition-all duration-1000 ease-out group cursor-pointer ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
-      }`}
+      } hover:scale-105 hover:-translate-y-1 hover:rotate-2`}
+      style={{ transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 1s ease-out' }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >

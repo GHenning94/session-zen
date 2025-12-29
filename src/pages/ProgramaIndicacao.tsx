@@ -374,85 +374,112 @@ const ProgramaIndicacao = () => {
                     </linearGradient>
                   </defs>
                   
-                  {/* Line 1 - smooth organic wave flowing to top-right */}
+                  {/* Line 1 - starts lower left, sweeps to top right */}
                   <path 
-                    d="M-5,95 C10,95 15,75 35,70 C55,65 65,85 85,75 C105,65 110,45 120,30" 
+                    d="M-10,120 C20,115 30,85 55,75 C80,65 90,55 120,25" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-1"
                   />
                   
-                  {/* Line 2 - gentle wave exits bottom-right */}
+                  {/* Line 2 - mid height wave */}
                   <path 
-                    d="M-8,88 C12,88 20,75 40,78 C60,81 70,90 90,88 C110,86 115,95 125,100" 
+                    d="M-8,105 C15,100 25,80 50,72 C75,64 88,75 115,45" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.4"
                     className="aurora-wave aurora-2"
                   />
                   
-                  {/* Line 3 - high amplitude wave to top */}
+                  {/* Line 3 - high sweep from bottom-left */}
                   <path 
-                    d="M-3,105 C15,100 20,60 45,55 C70,50 75,80 95,50 C115,20 118,10 125,0" 
+                    d="M-5,130 C25,120 35,70 60,55 C85,40 95,50 125,15" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.28"
                     className="aurora-wave aurora-3"
                   />
                   
-                  {/* Line 4 - mid-level gentle curve */}
-                    <path 
-                    d="M-10,82 C10,78 25,68 45,72 C65,76 80,82 100,78 C115,75 120,85 130,90" 
+                  {/* Line 4 - gentle mid curve */}
+                  <path 
+                    d="M-12,115 C18,110 28,88 55,82 C82,76 95,65 125,35" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.38"
                     className="aurora-wave aurora-4"
                   />
                   
-                  {/* Line 5 - dramatic sweep upward */}
+                  {/* Line 5 - dramatic upward sweep */}
                   <path 
-                    d="M-6,98 C12,95 18,70 40,62 C62,54 72,75 92,55 C112,35 116,18 125,5" 
+                    d="M-6,125 C22,118 32,75 58,62 C84,49 96,58 128,20" 
                     fill="none" 
                     stroke="url(#auroraLine1)" 
                     strokeWidth="0.3"
                     className="aurora-wave aurora-5"
                   />
                   
-                  {/* Line 6 - low sweep to bottom-right */}
+                  {/* Line 6 - low to mid curve */}
                   <path 
-                    d="M-12,78 C8,75 18,65 38,70 C58,75 72,85 92,82 C112,79 118,98 130,108" 
+                    d="M-15,110 C12,105 22,90 48,85 C74,80 88,70 118,50" 
                     fill="none" 
                     stroke="url(#auroraLine5)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-6"
                   />
                   
-                  {/* Line 7 - elegant high trajectory */}
+                  {/* Line 7 - elegant high arc */}
                   <path 
-                    d="M-4,110 C18,105 25,65 50,58 C75,51 82,78 105,45 C120,22 122,12 130,-5" 
+                    d="M-4,135 C28,125 38,65 65,52 C92,39 102,55 135,10" 
                     fill="none" 
                     stroke="url(#auroraLine2)" 
                     strokeWidth="0.25"
                     className="aurora-wave aurora-7"
                   />
                   
-                  {/* Line 8 - lowest flowing wave */}
+                  {/* Line 8 - lower flowing wave */}
                   <path 
-                    d="M-15,72 C5,70 15,60 35,65 C55,70 70,78 90,75 C110,72 118,88 130,98" 
+                    d="M-18,100 C8,95 18,78 45,72 C72,66 85,58 115,40" 
                     fill="none" 
                     stroke="url(#auroraLine3)" 
                     strokeWidth="0.32"
                     className="aurora-wave aurora-8"
                   />
                   
-                  {/* Line 9 - highest arc to top corner */}
+                  {/* Line 9 - highest arc from bottom */}
                   <path 
-                    d="M-2,115 C20,108 28,55 55,48 C82,41 88,72 110,35 C125,10 128,-5 135,-15" 
+                    d="M-2,140 C30,130 42,60 70,45 C98,30 108,42 140,0" 
                     fill="none" 
                     stroke="url(#auroraLine4)" 
                     strokeWidth="0.22"
                     className="aurora-wave aurora-9"
+                  />
+                  
+                  {/* Line 10 - extra sweep bottom-left to top-right */}
+                  <path 
+                    d="M-20,145 C15,138 30,95 58,80 C86,65 100,50 135,12" 
+                    fill="none" 
+                    stroke="url(#auroraLine1)" 
+                    strokeWidth="0.26"
+                    className="aurora-wave aurora-10"
+                  />
+                  
+                  {/* Line 11 - deep bottom start */}
+                  <path 
+                    d="M-8,150 C25,142 40,88 68,70 C96,52 110,60 145,18" 
+                    fill="none" 
+                    stroke="url(#auroraLine5)" 
+                    strokeWidth="0.24"
+                    className="aurora-wave aurora-11"
+                  />
+                  
+                  {/* Line 12 - gentle sweep from far bottom */}
+                  <path 
+                    d="M-15,138 C20,130 35,100 62,88 C89,76 102,68 132,38" 
+                    fill="none" 
+                    stroke="url(#auroraLine2)" 
+                    strokeWidth="0.28"
+                    className="aurora-wave aurora-12"
                   />
                 </svg>
               </div>
@@ -481,6 +508,9 @@ const ProgramaIndicacao = () => {
                 .aurora-7 { animation-delay: 1.5s; animation-duration: 6.2s; }
                 .aurora-8 { animation-delay: 2.1s; animation-duration: 8.5s; }
                 .aurora-9 { animation-delay: 2.7s; animation-duration: 5.8s; }
+                .aurora-10 { animation-delay: 0.4s; animation-duration: 7.8s; }
+                .aurora-11 { animation-delay: 1.0s; animation-duration: 6.6s; }
+                .aurora-12 { animation-delay: 1.6s; animation-duration: 7.3s; }
               `}</style>
               
               <CardContent className="relative p-8">
