@@ -162,71 +162,51 @@ export const ActionableNotificationsBanner = () => {
         className="touch-pan-y"
       >
         <Card className="mb-6 border-warning/50 bg-warning/5 overflow-hidden">
-          <CardContent className="p-3 md:p-4">
-            {/* Mobile: vertical layout with X on same line as first notification */}
-            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-2 md:gap-4">
-              
-              <div className="flex-1 space-y-3">
-                {notifications.map((notification, index) => (
-                  <div
-                    key={notification.id}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 md:gap-4"
-                  >
-                    {/* Message with icon - on mobile, first item has X button inline */}
-                    <div className="flex items-start md:items-center gap-3 flex-1">
-                      <div className="flex-shrink-0 text-warning mt-0.5 md:mt-0">
-                        {notification.icon}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium leading-snug">
-                          {notification.message}
-                        </p>
-                      </div>
-                      {/* Mobile: X button on same line as first notification text */}
-                      {index === 0 && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={handleDismiss}
-                          className="md:hidden flex-shrink-0 h-7 w-7 -mr-1"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                    {/* Action buttons */}
-                    <div className="flex items-center gap-2 ml-8 md:ml-0">
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => handleAction(notification.route)}
-                        className="whitespace-nowrap flex-shrink-0"
-                      >
-                        {notification.action}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => handleHideNotification(notification.id)}
-                        title="Não mostrar novamente"
-                        className="flex-shrink-0"
-                      >
-                        <EyeOff className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              {/* Desktop: Close button right side */}
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleDismiss}
-                className="hidden md:flex flex-shrink-0"
+          <CardContent className="py-2 px-3 md:px-4">
+            {notifications.map((notification, index) => (
+              <div
+                key={notification.id}
+                className="flex items-center justify-between gap-3"
               >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+                {/* Message with icon */}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className="flex-shrink-0 text-warning">
+                    {notification.icon}
+                  </div>
+                  <p className="text-sm font-medium truncate md:whitespace-normal">
+                    {notification.message}
+                  </p>
+                </div>
+                {/* Action buttons - grouped together */}
+                <div className="flex items-center gap-1 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => handleAction(notification.route)}
+                    className="whitespace-nowrap"
+                  >
+                    {notification.action}
+                  </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleHideNotification(notification.id)}
+                    title="Não mostrar novamente"
+                    className="h-8 w-8"
+                  >
+                    <EyeOff className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleDismiss}
+                    className="h-8 w-8"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
           </CardContent>
         </Card>
       </div>
