@@ -47,6 +47,22 @@ const Login = () => {
   // Ref para verificar se componente ainda está montado (previne erro removeChild)
   const isMountedRef = useRef(true)
   
+  // MOBILE FIX: Forçar tema claro na página de login
+  useEffect(() => {
+    // Forçar tema claro imediatamente
+    const root = document.documentElement
+    root.classList.remove('dark')
+    root.classList.add('light')
+    root.setAttribute('data-theme', 'light')
+    
+    // Limpar next-themes storage para evitar conflitos
+    localStorage.setItem('user-platform-theme', 'light')
+    
+    return () => {
+      // Não restaurar o tema ao sair - deixar a plataforma gerenciar
+    }
+  }, [])
+  
   useEffect(() => {
     isMountedRef.current = true
     return () => {

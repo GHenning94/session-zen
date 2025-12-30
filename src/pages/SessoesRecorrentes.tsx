@@ -194,19 +194,19 @@ export default function SessoesRecorrentes() {
 
   return (
     <Layout>
-      <div className="container mx-auto py-8 px-4 space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="container mx-auto py-4 sm:py-8 px-4 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-3">
-              <Repeat className="h-8 w-8 text-primary" />
-              Sessões Recorrentes
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-3">
+              <Repeat className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+              <span className="break-words">Sessões Recorrentes</span>
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-2 text-sm sm:text-base">
               Gerencie sessões que se repetem automaticamente
             </p>
           </div>
           
-          <Button onClick={handleOpenNewRecurring} size="sm">
+          <Button onClick={handleOpenNewRecurring} size="sm" className="self-start sm:self-center">
             <Plus className="h-4 w-4 mr-2" />
             Nova Recorrência
           </Button>
@@ -230,39 +230,39 @@ export default function SessoesRecorrentes() {
           <div className="grid gap-4">
             {recurringSessions.map((recurring) => (
               <Card key={recurring.id} className="hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 space-y-3">
-                      <div className="flex items-center gap-3">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                    <div className="flex-1 space-y-3 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                         <ClientAvatar 
                           avatarPath={recurring.clients?.avatar_url}
                           clientName={recurring.clients?.nome || 'Cliente'}
                           size="sm"
                         />
-                        <span className="font-semibold text-lg">
+                        <span className="font-semibold text-base sm:text-lg break-words">
                           {recurring.clients?.nome || 'Cliente não encontrado'}
                         </span>
                         {getStatusBadge(recurring.status)}
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
                         <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{getRecurrenceDescription(recurring)}</span>
+                          <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="break-words">{getRecurrenceDescription(recurring)}</span>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span>{recurring.horario}</span>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
                           <span>{formatCurrencyBR(recurring.valor || 0)}</span>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                      <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                         <span>
                           {instanceCounts[recurring.id] || 0} sessões geradas
                         </span>
@@ -274,7 +274,7 @@ export default function SessoesRecorrentes() {
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 shrink-0 self-end sm:self-start">
                       <Button
                         variant="outline"
                         size="icon"

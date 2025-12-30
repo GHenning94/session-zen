@@ -477,25 +477,26 @@ export default function Prontuarios() {
                             setEvolucaoReadOnlyModalOpen(true)
                           }}
                         >
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center space-x-4 flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                            <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
                               <ClientAvatar 
                                 avatarPath={selectedClient?.avatar_url}
                                 clientName={selectedClient?.nome || 'Cliente'}
                                 size="lg"
+                                className="shrink-0"
                               />
                               <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-2">
-                                  <h3 className="text-lg font-semibold">{selectedClient?.nome || 'Cliente'}</h3>
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                  <h3 className="text-base sm:text-lg font-semibold break-words">{selectedClient?.nome || 'Cliente'}</h3>
                                   {evolucao.session && (
-                                    <>
-                                      <Badge variant="outline" className="text-xs">
+                                    <div className="flex flex-wrap gap-1">
+                                      <Badge variant="outline" className="text-xs whitespace-nowrap">
                                         {format(new Date(evolucao.session.data + 'T00:00:00'), "dd/MM/yyyy", { locale: ptBR })} às {evolucao.session.horario.substring(0, 5)}
                                       </Badge>
                                       <Badge variant={getSessionStatusColor(evolucao.session.status)} className="text-xs">
                                         {getSessionStatusLabel(evolucao.session.status)}
                                       </Badge>
-                                    </>
+                                    </div>
                                   )}
                                 </div>
                                 <div 
@@ -508,7 +509,7 @@ export default function Prontuarios() {
                                 </div>
                               </div>
                             </div>
-                            <div className="flex gap-1 ml-4">
+                            <div className="flex gap-1 shrink-0 self-end sm:self-start">
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
