@@ -17,7 +17,9 @@ import {
   Plug,
   Clock,
   Crown,
-  Gift
+  Gift,
+  Cloud,
+  Trello
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
@@ -25,6 +27,7 @@ import { useTerminology } from "@/hooks/useTerminology"
 import { useSubscription } from "@/hooks/useSubscription"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { Badge } from "@/components/ui/badge"
 
 // Main tabs for bottom navigation (most used features)
 const mainTabs = [
@@ -46,9 +49,15 @@ const getMoreItems = (clientTermPlural: 'Pacientes' | 'Clientes') => [
   { title: "Página Pública" as const, url: "/pagina-publica", icon: Globe },
   { title: "Integrações" as const, url: "/integracoes", icon: Plug },
   { title: "Programa de Indicação" as const, url: "/programa-indicacao", icon: Gift },
-  { title: "Em Breve" as const, url: "/estudos", icon: Clock },
   { title: "Configurações" as const, url: "/configuracoes", icon: Settings },
   { title: "Suporte" as const, url: "/suporte", icon: HelpCircle },
+]
+
+// Coming soon items with badges
+const comingSoonItems = [
+  { title: "Google Drive" as const, url: "#", icon: Cloud, disabled: true },
+  { title: "OneDrive" as const, url: "#", icon: Cloud, disabled: true },
+  { title: "Trello" as const, url: "#", icon: Trello, disabled: true },
 ]
 
 export function MobileBottomNav() {
@@ -134,12 +143,12 @@ export function MobileBottomNav() {
               </button>
             </SheetTrigger>
             
-            <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
+            <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl">
               <SheetHeader className="pb-4">
                 <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               
-              <ScrollArea className="h-[calc(70vh-80px)]">
+              <ScrollArea className="h-[calc(85vh-80px)]">
                 {/* Premium Banner */}
                 {!isPremium && (
                   <NavLink
@@ -157,7 +166,7 @@ export function MobileBottomNav() {
                   </NavLink>
                 )}
                 
-                <div className="grid grid-cols-3 gap-3 pb-8">
+                <div className="grid grid-cols-3 gap-3 pb-4">
                   {moreItems.map((item) => {
                     const active = isActive(item.url)
                     return (
@@ -179,6 +188,27 @@ export function MobileBottomNav() {
                       </NavLink>
                     )
                   })}
+                </div>
+                
+                {/* Coming Soon Section */}
+                <div className="pt-4 border-t border-border">
+                  <p className="text-xs font-medium text-muted-foreground mb-3 px-1">Em Breve</p>
+                  <div className="grid grid-cols-3 gap-3 pb-8">
+                    {comingSoonItems.map((item) => (
+                      <div
+                        key={item.title}
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl bg-muted/30 text-muted-foreground opacity-60 cursor-not-allowed relative"
+                      >
+                        <item.icon className="w-6 h-6 mb-2" />
+                        <span className="text-xs font-medium text-center leading-tight">
+                          {item.title}
+                        </span>
+                        <Badge variant="secondary" className="absolute top-1 right-1 text-[8px] px-1 py-0">
+                          Em breve
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </ScrollArea>
             </SheetContent>
