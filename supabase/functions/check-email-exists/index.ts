@@ -51,11 +51,25 @@ serve(async (req) => {
 
     if (error) throw error;
 
-    const emailExists = data.users.some(
-      user => user.email?.toLowerCase() === email.toLowerCase()
+    const user = data.users.find(
+      u => u.email?.toLowerCase() === email.toLowerCase()
     );
 
-    return new Response(JSON.stringify({ exists: emailExists }), {
+    const emailExists = !!user;
+    let emailConfirmed = false;
+
+    // Se o email existe, verificar se está confirmado na tabela profiles
+    if (emailExists && user) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('email_confirmed_strict')
+        .eq('user_id', user.id)
+        .single();
+      
+      emailConfirmed = profile?.email_confirmed_strict === true;
+    }
+
+    return new Response(JSON.stringify({ exists: emailExists, emailConfirmed }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     });

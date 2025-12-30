@@ -189,10 +189,33 @@ const Login = () => {
         
         if (signInError.message.includes('captcha') || signInError.message.includes('timeout-or-duplicate')) {
           errorMessage = 'Erro de verificação. Por favor, resolva o CAPTCHA novamente.'
+          console.error('Erro de Login:', signInError)
+          toast.error(errorMessage)
+          if (isMountedRef.current) setIsLoading(false)
+          return
         } else if (signInError.message.includes('Email not confirmed')) {
-          errorMessage = 'Confirme seu e-mail para ativar sua conta antes de fazer login.'
+          // Email não confirmado - mostrar modal de reenvio
+          setAwaitingEmailConfirmation(true)
+          setConfirmationEmail(formData.email)
+          toast.info('Você precisa confirmar seu e-mail antes de fazer login. Verifique sua caixa de entrada.')
+          
+          // Tentar reenviar automaticamente
+          try {
+            const { error: autoResendError } = await supabase.functions.invoke('resend-confirmation-email', {
+              body: { email: formData.email }
+            })
+            if (!isMountedRef.current) return
+            if (!autoResendError) {
+              setResendCooldown(60)
+            }
+          } catch (autoErr) {
+            console.warn('Falha no reenvio automático:', autoErr)
+          }
+          
+          if (isMountedRef.current) setIsLoading(false)
+          return
         } else if (signInError.message.includes('Invalid login credentials') || signInError.message.includes('Invalid email or password')) {
-          // Verificar se o email existe para dar mensagem mais específica
+          // Verificar se o email existe e se está confirmado
           const { data: emailCheck } = await supabase.functions.invoke('check-email-exists', {
             body: { email: formData.email }
           })
@@ -201,6 +224,27 @@ const Login = () => {
           
           if (emailCheck?.exists === false) {
             errorMessage = 'Esta conta não existe. Verifique o e-mail ou crie uma nova conta.'
+          } else if (emailCheck?.exists === true && emailCheck?.emailConfirmed === false) {
+            // Email existe mas não está confirmado - mostrar modal de reenvio
+            setAwaitingEmailConfirmation(true)
+            setConfirmationEmail(formData.email)
+            toast.info('Você precisa confirmar seu e-mail antes de fazer login. Verifique sua caixa de entrada.')
+            
+            // Tentar reenviar automaticamente
+            try {
+              const { error: autoResendError } = await supabase.functions.invoke('resend-confirmation-email', {
+                body: { email: formData.email }
+              })
+              if (!isMountedRef.current) return
+              if (!autoResendError) {
+                setResendCooldown(60)
+              }
+            } catch (autoErr) {
+              console.warn('Falha no reenvio automático:', autoErr)
+            }
+            
+            if (isMountedRef.current) setIsLoading(false)
+            return
           } else {
             errorMessage = 'Senha incorreta. Tente novamente ou redefina sua senha.'
           }
