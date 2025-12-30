@@ -567,12 +567,12 @@ const GoogleCalendarIntegrationNew = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full`} 
+                  <div className={`w-3 h-3 rounded-full flex-shrink-0`} 
                        style={{ backgroundColor: isSignedIn ? 'hsl(var(--success))' : '#d1d5db' }} />
                   <div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
                       <p className="font-medium">
                         {isSignedIn ? 'Conectado' : 'Não conectado'}
                       </p>
@@ -627,7 +627,7 @@ const GoogleCalendarIntegrationNew = () => {
                     onClick={connectToGoogle}
                     disabled={loading || !isInitialized}
                     size="sm"
-                    className="bg-gradient-primary hover:opacity-90"
+                    className="bg-gradient-primary hover:opacity-90 w-full sm:w-auto"
                   >
                     {loading ? (
                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
