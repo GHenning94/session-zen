@@ -188,9 +188,9 @@ const GoogleCalendarIntegration = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className={`w-3 h-3 rounded-full`} 
+                <div className={`w-3 h-3 rounded-full shrink-0`} 
                      style={{ backgroundColor: isSignedIn ? 'hsl(var(--success))' : '#d1d5db' }} />
                 <div>
                   <p className="font-medium">
@@ -206,20 +206,22 @@ const GoogleCalendarIntegration = () => {
               </div>
               
               {isSignedIn ? (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Button 
                     variant="outline" 
                     size="sm"
                     onClick={loadEvents}
                     disabled={loading}
+                    className="flex-1 sm:flex-none"
                   >
                     <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Sincronizar tudo
+                    <span className="whitespace-nowrap">Sincronizar</span>
                   </Button>
                   <UnsyncButton onSuccess={loadEvents} />
                   <Button 
                     variant="outline" 
                     size="sm"
+                    className="flex-1 sm:flex-none"
                     onClick={async () => {
                       // Limpar eventos importados sem desconectar
                       try {
@@ -255,21 +257,21 @@ const GoogleCalendarIntegration = () => {
                       }
                     }}
                   >
-                    Limpar importações
+                    <span className="whitespace-nowrap">Limpar</span>
                   </Button>
                 </div>
               ) : (
                 <Button 
                   onClick={connectToGoogle}
                   disabled={loading}
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
                 >
                   {loading ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <Link className="w-4 h-4 mr-2" />
                   )}
-                  Conectar Google
+                  <span className="whitespace-nowrap">Conectar Google</span>
                 </Button>
               )}
             </div>

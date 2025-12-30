@@ -15,11 +15,14 @@ import {
   HelpCircle,
   Globe,
   Plug,
-  X
+  Clock,
+  Crown,
+  Gift
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useTerminology } from "@/hooks/useTerminology"
+import { useSubscription } from "@/hooks/useSubscription"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
@@ -42,6 +45,8 @@ const getMoreItems = (clientTermPlural: 'Pacientes' | 'Clientes') => [
   { title: "Metas" as const, url: "/metas", icon: Target },
   { title: "Página Pública" as const, url: "/pagina-publica", icon: Globe },
   { title: "Integrações" as const, url: "/integracoes", icon: Plug },
+  { title: "Programa de Indicação" as const, url: "/programa-indicacao", icon: Gift },
+  { title: "Em Breve" as const, url: "/estudos", icon: Clock },
   { title: "Configurações" as const, url: "/configuracoes", icon: Settings },
   { title: "Suporte" as const, url: "/suporte", icon: HelpCircle },
 ]
@@ -50,7 +55,10 @@ export function MobileBottomNav() {
   const location = useLocation()
   const currentPath = location.pathname
   const { clientTermPlural } = useTerminology()
+  const { currentPlan } = useSubscription()
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  
+  const isPremium = currentPlan === 'premium'
   
   // PROTEÇÃO: Garantir que clientTermPlural é um valor válido
   const safeClientTermPlural: 'Pacientes' | 'Clientes' = 
@@ -128,10 +136,27 @@ export function MobileBottomNav() {
             
             <SheetContent side="bottom" className="h-[70vh] rounded-t-3xl">
               <SheetHeader className="pb-4">
-                <SheetTitle className="text-left">Menu</SheetTitle>
+                <SheetTitle>Menu</SheetTitle>
               </SheetHeader>
               
               <ScrollArea className="h-[calc(70vh-80px)]">
+                {/* Premium Banner */}
+                {!isPremium && (
+                  <NavLink
+                    to="/upgrade"
+                    onClick={() => setIsMoreOpen(false)}
+                    className="flex items-center gap-3 p-4 mb-4 rounded-2xl bg-gradient-to-r from-warning/20 to-warning/10 border border-warning/30"
+                  >
+                    <div className="p-2 rounded-xl bg-warning/20">
+                      <Crown className="w-5 h-5 text-warning" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-semibold text-foreground">Seja Premium</p>
+                      <p className="text-xs text-muted-foreground">Desbloqueie todos os recursos</p>
+                    </div>
+                  </NavLink>
+                )}
+                
                 <div className="grid grid-cols-3 gap-3 pb-8">
                   {moreItems.map((item) => {
                     const active = isActive(item.url)
