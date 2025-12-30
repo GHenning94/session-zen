@@ -567,7 +567,7 @@ const GoogleCalendarIntegrationNew = () => {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full flex-shrink-0`} 
                        style={{ backgroundColor: isSignedIn ? 'hsl(var(--success))' : '#d1d5db' }} />
