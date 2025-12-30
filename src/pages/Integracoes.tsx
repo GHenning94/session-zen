@@ -107,11 +107,11 @@ const Integracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
-            <TabsTrigger value="google-calendar" className="text-xs sm:text-sm">Google Agenda</TabsTrigger>
-            <TabsTrigger value="google-drive" className="text-xs sm:text-sm">Google Drive</TabsTrigger>
-            <TabsTrigger value="onedrive" className="text-xs sm:text-sm">OneDrive</TabsTrigger>
-            <TabsTrigger value="trello" className="text-xs sm:text-sm">Trello</TabsTrigger>
+          <TabsList className="flex flex-col sm:grid sm:grid-cols-4 w-full h-auto gap-1 sm:gap-0">
+            <TabsTrigger value="google-calendar" className="text-xs sm:text-sm w-full justify-center">Google Agenda</TabsTrigger>
+            <TabsTrigger value="google-drive" className="text-xs sm:text-sm w-full justify-center">Google Drive</TabsTrigger>
+            <TabsTrigger value="onedrive" className="text-xs sm:text-sm w-full justify-center">OneDrive</TabsTrigger>
+            <TabsTrigger value="trello" className="text-xs sm:text-sm w-full justify-center">Trello</TabsTrigger>
           </TabsList>
           
           <TabsContent value="google-calendar" className="space-y-6">
