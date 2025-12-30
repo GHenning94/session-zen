@@ -107,11 +107,11 @@ const Integracoes = () => {
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="flex flex-col sm:grid sm:grid-cols-4 w-full h-auto gap-1 sm:gap-0">
-            <TabsTrigger value="google-calendar" className="text-xs sm:text-sm w-full justify-center">Google Agenda</TabsTrigger>
-            <TabsTrigger value="google-drive" className="text-xs sm:text-sm w-full justify-center">Google Drive</TabsTrigger>
-            <TabsTrigger value="onedrive" className="text-xs sm:text-sm w-full justify-center">OneDrive</TabsTrigger>
-            <TabsTrigger value="trello" className="text-xs sm:text-sm w-full justify-center">Trello</TabsTrigger>
+          <TabsList className="w-full h-auto p-1 bg-muted/50 rounded-lg flex flex-col sm:flex-row gap-1">
+            <TabsTrigger value="google-calendar" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md py-2">Google Agenda</TabsTrigger>
+            <TabsTrigger value="google-drive" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md py-2">Google Drive</TabsTrigger>
+            <TabsTrigger value="onedrive" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md py-2">OneDrive</TabsTrigger>
+            <TabsTrigger value="trello" className="flex-1 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-md py-2">Trello</TabsTrigger>
           </TabsList>
           
           <TabsContent value="google-calendar" className="space-y-6">

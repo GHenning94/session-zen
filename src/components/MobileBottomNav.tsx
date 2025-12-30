@@ -18,8 +18,8 @@ import {
   Clock,
   Crown,
   Gift,
-  Cloud,
-  Trello
+  BookOpen,
+  Share2
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
@@ -53,11 +53,11 @@ const getMoreItems = (clientTermPlural: 'Pacientes' | 'Clientes') => [
   { title: "Suporte" as const, url: "/suporte", icon: HelpCircle },
 ]
 
-// Coming soon items with badges
+// Coming soon items with badges - matching sidebar items
 const comingSoonItems = [
-  { title: "Google Drive" as const, url: "#", icon: Cloud, disabled: true },
-  { title: "OneDrive" as const, url: "#", icon: Cloud, disabled: true },
-  { title: "Trello" as const, url: "#", icon: Trello, disabled: true },
+  { title: "Eventos" as const, url: "#", icon: Calendar, disabled: true },
+  { title: "Estudos" as const, url: "#", icon: BookOpen, disabled: true },
+  { title: "Redes Sociais" as const, url: "#", icon: Share2, disabled: true },
 ]
 
 export function MobileBottomNav() {
@@ -197,15 +197,15 @@ export function MobileBottomNav() {
                     {comingSoonItems.map((item) => (
                       <div
                         key={item.title}
-                        className="flex flex-col items-center justify-center p-4 rounded-2xl bg-muted/30 text-muted-foreground opacity-60 cursor-not-allowed relative"
+                        className="flex flex-col items-center justify-center p-4 rounded-2xl bg-muted/30 text-muted-foreground opacity-50 cursor-not-allowed relative"
                       >
+                        <Badge className="absolute -top-1 right-1 text-[8px] px-1.5 py-0.5 bg-warning text-warning-foreground">
+                          Em breve
+                        </Badge>
                         <item.icon className="w-6 h-6 mb-2" />
                         <span className="text-xs font-medium text-center leading-tight">
                           {item.title}
                         </span>
-                        <Badge variant="secondary" className="absolute top-1 right-1 text-[8px] px-1 py-0">
-                          Em breve
-                        </Badge>
                       </div>
                     ))}
                   </div>
