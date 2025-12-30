@@ -1439,16 +1439,18 @@ const Dashboard = () => {
                 <ScrollAnimation animation="fade-up" delay={100} className="col-span-full">
                   <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         {/* Título e descrição */}
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-primary" />
-                          <CardTitle>Receita Financeira</CardTitle>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="w-5 h-5 text-primary" />
+                            <CardTitle>Receita Financeira</CardTitle>
+                          </div>
+                          <CardDescription className="mt-1">
+                            Acompanhe sua evolução financeira
+                          </CardDescription>
                         </div>
-                        <CardDescription>
-                          Acompanhe sua evolução financeira
-                        </CardDescription>
-                        {/* Botões de período - sempre abaixo no mobile */}
+                        {/* Botões de período - abaixo no mobile, ao lado no desktop */}
                         <div className="flex gap-1 flex-wrap">
                           {(['1', '3', '6', '12'] as const).map((period) => (
                             <button
@@ -1662,16 +1664,18 @@ const Dashboard = () => {
                 <ScrollAnimation animation="fade-up" delay={150} className="col-span-full">
                   <Card className="shadow-soft overflow-hidden">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         {/* Título e descrição */}
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="w-5 h-5 text-success" />
-                          <CardTitle>Ticket Médio</CardTitle>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <TrendingUp className="w-5 h-5 text-success" />
+                            <CardTitle>Ticket Médio</CardTitle>
+                          </div>
+                          <CardDescription className="mt-1">
+                            Evolução do valor médio por sessão
+                          </CardDescription>
                         </div>
-                        <CardDescription>
-                          Evolução do valor médio por sessão
-                        </CardDescription>
-                        {/* Botões de período - sempre abaixo no mobile */}
+                        {/* Botões de período - abaixo no mobile, ao lado no desktop */}
                         <div className="flex gap-1 flex-wrap">
                           {(['1', '3', '6', '12'] as const).map((period) => (
                             <button
@@ -2003,35 +2007,34 @@ const Dashboard = () => {
                 <ScrollAnimation animation="fade-up" delay={250} className="col-span-full">
                   <Card className="shadow-soft min-h-[600px] overflow-visible">
                     <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-primary" />
-                            <CardTitle>Receita por Canal</CardTitle>
-                            <CardDescription className="hidden sm:block sm:ml-2">
-                              | Distribuição da receita por método de pagamento
-                            </CardDescription>
-                          </div>
-                          <div className="flex gap-1">
-                            {(['1', '3', '6', '12'] as const).map((period) => (
-                              <button
-                                key={period}
-                                onClick={() => handleCanalPeriodChange(period)}
-                                className={cn(
-                                  "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200",
-                                  canalPeriod === period
-                                    ? "bg-primary text-primary-foreground shadow-sm"
-                                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                                )}
-                              >
-                                {period === '12' ? '1 ano' : `${period}m`}
-                              </button>
-                            ))}
-                          </div>
+                      <div className="flex flex-col gap-3">
+                        {/* Título */}
+                        <div className="flex items-center gap-2">
+                          <DollarSign className="w-5 h-5 text-primary" />
+                          <CardTitle>Receita por Canal</CardTitle>
                         </div>
-                        <CardDescription className="sm:hidden">
+                        {/* Descrição */}
+                        <CardDescription>
                           Distribuição da receita por método de pagamento
                         </CardDescription>
+                        {/* Botões de período - abaixo no mobile, ao lado no desktop */}
+                        <div className="flex gap-1 flex-wrap sm:self-end sm:-mt-12">
+                          {(['1', '3', '6', '12'] as const).map((period) => (
+                            <button
+                              key={period}
+                              data-no-min-height
+                              onClick={() => handleCanalPeriodChange(period)}
+                              className={cn(
+                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
+                                canalPeriod === period
+                                  ? "bg-primary text-primary-foreground shadow-sm"
+                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              )}
+                            >
+                              {period === '12' ? '1 ano' : `${period}m`}
+                            </button>
+                          ))}
+                        </div>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">

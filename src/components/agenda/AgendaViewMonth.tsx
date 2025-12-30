@@ -160,7 +160,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
 
         {/* Calendar grid - Horizontal scrollable on mobile for better visualization */}
         <div className="overflow-x-auto md:overflow-x-visible">
-          <div className="min-w-[700px] md:min-w-0">
+          <div className="min-w-[800px] md:min-w-0">
             <div className="grid grid-cols-7">
               {calendarDays.map((date) => {
                 const daySessionsData = getSessionsForDate(date)

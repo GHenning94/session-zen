@@ -400,8 +400,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   <Label htmlFor="crianca-adolescente">Criança/Adolescente</Label>
                 </div>
 
-                {/* LAYOUT DE 2 COLUNAS - NOME E TELEFONE */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* LAYOUT - Nome em linha própria no mobile, DDD+Telefone juntos */}
+                <div className="space-y-4">
                   <div className="grid gap-2">
                     <Label htmlFor="name">Nome *</Label>
                     <Input 
@@ -417,7 +417,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                     <Label htmlFor="phone">Telefone *</Label>
                     <div className="flex gap-2">
                       <Select defaultValue="+55">
-                        <SelectTrigger className="w-[100px]">
+                        <SelectTrigger className="w-[80px] sm:w-[100px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -481,7 +481,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 {/* CAMPOS ESPECÍFICOS PARA CRIANÇA/ADOLESCENTE */}
                 {newClient.ehCriancaAdolescente && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="nome-pai">Nome do Pai:</Label>
                         <Input 
@@ -504,7 +504,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="nome-mae">Nome da Mãe:</Label>
                         <Input 
@@ -544,7 +544,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 {/* CAMPOS CONTATOS DE EMERGÊNCIA - Cadastro completo e adultos OU criança sem checkbox marcado */}
                 {!isQuickRegistration && !newClient.ehCriancaAdolescente && (
                   <>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="contato-emergencia-1-nome">Nome Contato Emergência 1:</Label>
                         <Input 
@@ -567,7 +567,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="contato-emergencia-2-nome">Nome Contato Emergência 2:</Label>
                         <Input 
@@ -595,7 +595,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                 {/* CAMPOS CONTATOS DE EMERGÊNCIA PARA CRIANÇA - Cadastro completo apenas se checkbox NÃO estiver marcado */}
                 {!isQuickRegistration && newClient.ehCriancaAdolescente && !newClient.emergenciaIgualPais && (
               <>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="contato-emergencia-1-nome">Nome Contato Emergência 1:</Label>
                     <Input 
@@ -618,7 +618,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="grid gap-2">
                     <Label htmlFor="contato-emergencia-2-nome">Nome Contato Emergência 2:</Label>
                     <Input 
@@ -669,7 +669,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
             {/* GÊNERO E PROFISSÃO - lado a lado para ADULTOS */}
             {!newClient.ehCriancaAdolescente && (
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label htmlFor="genero">Gênero:</Label>
                   <Input 
@@ -708,7 +708,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
             )}
 
             {/* PLANO DE SAÚDE E TRATAMENTO - lado a lado para TODOS */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="plano-saude">Plano de Saúde:</Label>
                 <Input 

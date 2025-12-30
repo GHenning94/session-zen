@@ -87,12 +87,13 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
         </div>
         
         {/* WhatsApp button */}
-        <div className="flex items-center justify-center shrink-0">
+        <div className="flex items-center justify-center shrink-0" data-no-min-height>
           {client.telefone && (
             <Button
               variant="ghost"
               size="sm"
-              className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-success hover:bg-success/90 text-success-foreground p-0"
+              data-no-min-height
+              className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-success hover:bg-success/90 text-success-foreground p-0 min-h-0 min-w-0"
               onClick={(e) => {
                 e.stopPropagation()
                 const phone = client.telefone.replace(/\D/g, '')

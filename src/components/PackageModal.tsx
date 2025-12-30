@@ -216,7 +216,7 @@ export const PackageModal = ({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {/* Cliente */}
               <div className="col-span-2">
                 <Label htmlFor="client_id">Cliente *</Label>
@@ -251,61 +251,66 @@ export const PackageModal = ({
                 />
               </div>
 
-              <div>
-                <Label htmlFor="total_sessoes">Total de Sessões *</Label>
-                <Input
-                  id="total_sessoes"
-                  type="number"
-                  min="1"
-                  value={formData.total_sessoes}
-                  onChange={(e) => handleTotalSessoesChange(parseInt(e.target.value) || 1)}
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="total_sessoes">Total de Sessões *</Label>
+                  <Input
+                    id="total_sessoes"
+                    type="number"
+                    min="1"
+                    value={formData.total_sessoes}
+                    onChange={(e) => handleTotalSessoesChange(parseInt(e.target.value) || 1)}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="valor_total">Valor Total (R$) *</Label>
+                  <Input
+                    id="valor_total"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.valor_total}
+                    onChange={(e) => handleValorTotalChange(parseFloat(e.target.value) || 0)}
+                    required
+                  />
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="valor_total">Valor Total (R$) *</Label>
-                <Input
-                  id="valor_total"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={formData.valor_total}
-                  onChange={(e) => handleValorTotalChange(parseFloat(e.target.value) || 0)}
-                  required
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Valor por Sessão (calculado)</Label>
+                  <Input
+                    value={`R$ ${formData.valor_por_sessao.toFixed(2)}`}
+                    disabled
+                    className="bg-muted"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                  <Select
+                    value={formData.metodo_pagamento}
+                    onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione um método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pix">PIX</SelectItem>
+                      <SelectItem value="cartao">Cartão</SelectItem>
+                      <SelectItem value="boleto">Boleto</SelectItem>
+                      <SelectItem value="transferencia">Transferência</SelectItem>
+                      <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
-              <div>
-                <Label>Valor por Sessão (calculado)</Label>
-                <Input
-                  value={`R$ ${formData.valor_por_sessao.toFixed(2)}`}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
-                <Select
-                  value={formData.metodo_pagamento}
-                  onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecione um método" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pix">PIX</SelectItem>
-                    <SelectItem value="cartao">Cartão</SelectItem>
-                    <SelectItem value="boleto">Boleto</SelectItem>
-                    <SelectItem value="transferencia">Transferência</SelectItem>
-                    <SelectItem value="dinheiro">Dinheiro</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Data de Início *</Label>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label>Data de Início *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -333,11 +338,11 @@ export const PackageModal = ({
                       className="pointer-events-auto"
                     />
                   </PopoverContent>
-                </Popover>
-              </div>
+              </Popover>
+                </div>
 
-              <div>
-                <Label>Data de Término *</Label>
+                <div>
+                  <Label>Data de Término *</Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
@@ -365,10 +370,11 @@ export const PackageModal = ({
                       className="pointer-events-auto"
                     />
                   </PopoverContent>
-                </Popover>
+              </Popover>
+                </div>
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <Label htmlFor="observacoes">Observações</Label>
                 <Textarea
                   id="observacoes"
