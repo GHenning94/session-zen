@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog'
 import { FileText, Calendar, Plus, Edit2, Trash2, AlertTriangle, BookOpen, Filter, Search, ChevronDown } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -86,6 +87,7 @@ export default function Prontuarios() {
   const [editingEvolucao, setEditingEvolucao] = useState<Evolucao | null>(null)
   const [viewingEvolucao, setViewingEvolucao] = useState<Evolucao | null>(null)
   const [evolucaoReadOnlyModalOpen, setEvolucaoReadOnlyModalOpen] = useState(false)
+  const [deleteEvolucaoId, setDeleteEvolucaoId] = useState<string | null>(null)
   
   // Estados para filtros
   const [filters, setFilters] = useState({
@@ -532,7 +534,7 @@ export default function Prontuarios() {
                                       size="icon"
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        handleDeleteEvolucao(evolucao.id)
+                                        setDeleteEvolucaoId(evolucao.id)
                                       }}
                                       className="text-destructive hover:text-destructive"
                                     >
@@ -742,6 +744,32 @@ export default function Prontuarios() {
           )}
         </div>
       </div>
+
+      {/* Diálogo de confirmação para excluir evolução */}
+      <AlertDialog open={!!deleteEvolucaoId} onOpenChange={(open) => !open && setDeleteEvolucaoId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir Evolução</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja excluir esta evolução? Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (deleteEvolucaoId) {
+                  handleDeleteEvolucao(deleteEvolucaoId)
+                  setDeleteEvolucaoId(null)
+                }
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Layout>
   )
 }
