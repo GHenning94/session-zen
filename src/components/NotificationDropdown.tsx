@@ -280,6 +280,56 @@ const NotificationDropdown = () => {
     </section>
   )
 
+  // Mobile-specific notification content - shows all notifications directly without duplicate titles
+  const MobileNotificationContent = () => (
+    <div className="space-y-2">
+      {/* Header with mark all read */}
+      <div className="flex items-center justify-between px-2">
+        {unreadCount > 0 && (
+          <Badge variant="secondary" className="text-xs">
+            {unreadCount} não lidas
+          </Badge>
+        )}
+        {unreadCount > 0 && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleMarkAllAsRead}
+            className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <CheckCheck className="w-3 h-3 mr-1" />
+            Marcar todas
+          </Button>
+        )}
+      </div>
+      
+      {/* Content - show ALL notifications */}
+      {loading ? (
+        <div className="p-6 text-center text-sm text-muted-foreground">
+          Carregando notificações...
+        </div>
+      ) : notifications.length === 0 ? (
+        <div className="p-8 text-center text-sm text-muted-foreground">
+          <BellOff className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p>Nenhuma notificação</p>
+        </div>
+      ) : (
+        <ScrollArea className="h-[calc(80vh-120px)]">
+          <div className="p-1 space-y-0.5">
+            {notifications.map((notification) => (
+              <NotificationItem
+                key={notification.id}
+                notification={notification}
+                onClick={() => handleNotificationClick(notification)}
+                showDeleteButton={true}
+              />
+            ))}
+          </div>
+        </ScrollArea>
+      )}
+    </div>
+  )
+
   // Mobile: usa Sheet
   if (isMobile) {
     return (
@@ -308,7 +358,7 @@ const NotificationDropdown = () => {
               </SheetTitle>
             </SheetHeader>
             <div className="p-2">
-              <NotificationListContent />
+              <MobileNotificationContent />
             </div>
           </SheetContent>
         </Sheet>

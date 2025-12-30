@@ -183,7 +183,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
         <CardContent className="p-0">
           {/* Horizontal scrollable on mobile */}
           <div className="overflow-x-auto md:overflow-x-visible">
-            <div className="min-w-[800px] md:min-w-0">
+            <div className="min-w-[1000px] md:min-w-0">
               {/* Header com dias da semana - fixo */}
               <div className="grid grid-cols-8 border-b border-border sticky top-0 z-20 bg-background">
             <div className="p-3 text-center text-sm font-medium text-muted-foreground bg-muted">
