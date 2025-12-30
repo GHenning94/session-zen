@@ -1321,25 +1321,26 @@ export default function Sessoes() {
                           setNoteReadOnlyModalOpen(true)
                         }}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center space-x-4 flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                          <div className="flex items-start space-x-3 sm:space-x-4 flex-1 min-w-0">
                             <ClientAvatar 
                               avatarPath={note.clients?.avatar_url}
                               clientName={note.clients?.nome || 'Cliente'}
                               size="lg"
+                              className="shrink-0"
                             />
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-2">
-                                <h3 className="text-lg font-semibold">{note.clients?.nome || 'Cliente não encontrado'}</h3>
+                              <div className="flex flex-wrap items-center gap-2 mb-2">
+                                <h3 className="text-base sm:text-lg font-semibold break-words">{note.clients?.nome || 'Cliente não encontrado'}</h3>
                                 {note.sessions && (
-                                  <>
-                                    <Badge variant="outline" className="text-xs">
+                                  <div className="flex flex-wrap gap-1">
+                                    <Badge variant="outline" className="text-xs whitespace-nowrap">
                                       {formatDateBR(note.sessions.data)} às {formatTimeBR(note.sessions.horario)}
                                     </Badge>
                                     <Badge variant={getStatusColor(note.sessions.status)} className="text-xs">
                                       {getStatusLabel(note.sessions.status)}
                                     </Badge>
-                                  </>
+                                  </div>
                                 )}
                               </div>
                               <div 
@@ -1353,8 +1354,8 @@ export default function Sessoes() {
                             </div>
                           </div>
                         
-                          {/* Ícones de ação padronizados */}
-                          <div className="flex gap-1 ml-4">
+                          {/* Ícones de ação padronizados - sempre à direita no mobile */}
+                          <div className="flex gap-1 shrink-0 self-end sm:self-start">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <Button

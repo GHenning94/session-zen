@@ -401,9 +401,18 @@ html.theme-transitioning .theme-transition-overlay {
     -webkit-overflow-scrolling: touch;
   }
   
-  /* Better touch targets */
-  button, a, [role="button"] {
+  /* Better touch targets - exclude small UI elements like dots, checkboxes, icon buttons */
+  button:not([data-no-min-height]):not(.h-2):not(.h-4):not(.w-2):not(.w-4):not([data-state]):not(.peer), 
+  a:not([data-no-min-height]), 
+  [role="button"]:not([data-no-min-height]) {
     min-height: 44px;
+  }
+  
+  /* Ensure carousel dots, checkboxes and small buttons maintain their size */
+  button.h-2, button.w-2, 
+  button[class*="rounded-full"][class*="h-2"],
+  [data-state] {
+    min-height: auto !important;
   }
   
   /* Prevent pull-to-refresh interference */

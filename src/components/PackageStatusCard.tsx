@@ -424,11 +424,12 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            <div className="flex gap-1">
+            <div className="flex gap-1.5 items-center">
               {activePackages.map((_, index) => (
                 <button
                   key={index}
-                  className={`h-2 w-2 rounded-full transition-colors ${
+                  data-no-min-height
+                  className={`h-2 w-2 min-h-0 min-w-0 shrink-0 rounded-full transition-colors ${
                     index === currentIndex 
                       ? 'bg-primary' 
                       : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
