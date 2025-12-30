@@ -1343,7 +1343,7 @@ export default function Sessoes() {
                                 )}
                               </div>
                               <div 
-                                className="text-sm text-muted-foreground mb-2 line-clamp-5 prose prose-sm dark:prose-invert max-w-none break-words overflow-hidden"
+                                className="text-sm text-foreground/80 mb-2 line-clamp-5 max-w-none break-words overflow-hidden [&_*]:!text-foreground/80"
                                 style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
                                 dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(note.notes) }}
                               />
