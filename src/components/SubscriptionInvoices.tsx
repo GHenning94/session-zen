@@ -258,33 +258,33 @@ export const SubscriptionInvoices = () => {
             {invoices.map((invoice) => (
               <div
                 key={invoice.id}
-                className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors gap-3"
               >
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <FileText className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    <span className="font-medium text-sm sm:text-base truncate">
                       {invoice.number || `Fatura #${invoice.id.slice(-8)}`}
                     </span>
                     {getStatusBadge(invoice.status)}
                   </div>
-                  <div className="text-sm text-muted-foreground ml-7">
+                  <div className="text-sm text-muted-foreground ml-6 sm:ml-7">
                     <p>Data: {format(new Date(invoice.created * 1000), "dd/MM/yyyy", { locale: ptBR })}</p>
                     <p className="font-semibold text-foreground mt-1">
                       Valor: {formatCurrency(invoice.amount_paid, invoice.currency)}
                     </p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 ml-6 sm:ml-0 flex-wrap sm:flex-nowrap">
                   {invoice.hosted_invoice_url && (
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
-                      className="gap-2"
+                      className="gap-1.5 text-xs sm:text-sm"
                     >
-                      <Receipt className="h-4 w-4" />
-                      Ver Recibo
+                      <Receipt className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden xs:inline">Ver</span> Recibo
                     </Button>
                   )}
                   {invoice.invoice_pdf && (
@@ -292,10 +292,10 @@ export const SubscriptionInvoices = () => {
                       variant="outline"
                       size="sm"
                       onClick={() => window.open(invoice.invoice_pdf!, '_blank')}
-                      className="gap-2"
+                      className="gap-1.5 text-xs sm:text-sm"
                     >
-                      <Download className="h-4 w-4" />
-                      Download PDF
+                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                      <span className="hidden xs:inline">Download</span> PDF
                     </Button>
                   )}
                 </div>
