@@ -4,7 +4,6 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
@@ -12,7 +11,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
 import { 
   User, 
   LogOut, 
@@ -183,8 +181,6 @@ export const ProfileDropdown = () => {
         </div>
       </div>
 
-      <Separator />
-
       {/* Premium Upgrade Item */}
       {menuItems.premium.length > 0 && (
         <>
@@ -208,7 +204,6 @@ export const ProfileDropdown = () => {
               )}
             </button>
           ))}
-          <Separator />
         </>
       )}
 
@@ -224,8 +219,6 @@ export const ProfileDropdown = () => {
         </button>
       ))}
 
-      <Separator />
-
       {/* Payment Menu Items */}
       {menuItems.payments.map((item, index) => (
         <button 
@@ -237,8 +230,6 @@ export const ProfileDropdown = () => {
           <span className="font-medium text-sm">{item.label}</span>
         </button>
       ))}
-
-      <Separator />
 
       {/* Referral Program */}
       {menuItems.referral.map((item, index) => (
@@ -259,8 +250,6 @@ export const ProfileDropdown = () => {
         </button>
       ))}
 
-      <Separator />
-
       {/* Support */}
       {menuItems.support.map((item, index) => (
         <button 
@@ -272,8 +261,6 @@ export const ProfileDropdown = () => {
           <span className="font-medium text-sm">{item.label}</span>
         </button>
       ))}
-
-      <Separator />
 
       {/* Logout */}
       <button 
@@ -382,7 +369,6 @@ export const ProfileDropdown = () => {
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuGroup>
-              <DropdownMenuSeparator />
             </>
           )}
 
@@ -402,8 +388,6 @@ export const ProfileDropdown = () => {
             ))}
           </DropdownMenuGroup>
 
-          <DropdownMenuSeparator />
-
           {/* Payment Menu Items */}
           <DropdownMenuGroup>
             {menuItems.payments.map((item, index) => (
@@ -419,8 +403,6 @@ export const ProfileDropdown = () => {
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
 
           {/* Referral Program */}
           <DropdownMenuGroup>
@@ -443,8 +425,6 @@ export const ProfileDropdown = () => {
             ))}
           </DropdownMenuGroup>
 
-          <DropdownMenuSeparator />
-
           {/* Support */}
           <DropdownMenuGroup>
             {menuItems.support.map((item, index) => (
@@ -460,8 +440,6 @@ export const ProfileDropdown = () => {
               </DropdownMenuItem>
             ))}
           </DropdownMenuGroup>
-
-          <DropdownMenuSeparator />
 
           {/* Logout */}
           <DropdownMenuGroup>
