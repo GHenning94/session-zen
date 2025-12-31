@@ -48,6 +48,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
 
 interface SubscriptionContextType {
   currentPlan: SubscriptionPlan
+  billingInterval: string | null
   planLimits: PlanLimits
   canAddClient: (currentClientCount: number) => boolean
   canAddSession: (currentSessionCount: number) => boolean
@@ -74,6 +75,7 @@ interface SubscriptionProviderProps {
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
   const { user } = useAuth()
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>('basico')
+  const [billingInterval, setBillingInterval] = useState<string | null>(null)
   // Começa como 'true' para esperar a verificação inicial
   const [isLoading, setIsLoading] = useState(true)
 
@@ -81,6 +83,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const checkSubscription = async () => {
     if (!user) {
       setCurrentPlan('basico')
+      setBillingInterval(null)
       setIsLoading(false)
       return
     }
@@ -90,12 +93,13 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       // 1) Fast path: read from profiles.subscription_plan
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('subscription_plan')
+        .select('subscription_plan, billing_interval')
         .eq('user_id', user.id)
         .single()
 
       if (!profileError && profile?.subscription_plan) {
         setCurrentPlan(profile.subscription_plan as SubscriptionPlan)
+        setBillingInterval(profile.billing_interval)
         return
       }
 
@@ -138,10 +142,11 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           filter: `user_id=eq.${user.id}`,
         },
         (payload: any) => {
-          console.log('🔔 Profile subscription updated:', payload.new.subscription_plan)
+          console.log('🔔 Profile subscription updated:', payload.new.subscription_plan, payload.new.billing_interval)
           if (payload.new.subscription_plan) {
             setCurrentPlan(payload.new.subscription_plan as SubscriptionPlan)
           }
+          setBillingInterval(payload.new.billing_interval || null)
         }
       )
       .subscribe()
@@ -173,6 +178,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   return (
     <SubscriptionContext.Provider value={{
       currentPlan,
+      billingInterval,
       planLimits,
       canAddClient,
       canAddSession,

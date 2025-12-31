@@ -54,7 +54,7 @@ import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { currentPlan } = useSubscription()
+  const { currentPlan, billingInterval } = useSubscription()
   const { clientTerm, clientTermPlural } = useTerminology()
   const { subscribe } = useGlobalRealtime()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -2260,7 +2260,7 @@ const Dashboard = () => {
             {/* Upgrade de Plano */}
             <Card className="shadow-soft opacity-0 animate-scale-fade-in" style={{ animationDelay: '400ms' }}>
               <CardContent className="p-6">
-                <UpgradePlanCard currentPlan={currentPlan} />
+                <UpgradePlanCard currentPlan={currentPlan} currentBillingInterval={billingInterval} />
               </CardContent>
             </Card>
 
