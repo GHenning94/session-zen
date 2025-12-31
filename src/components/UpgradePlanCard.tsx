@@ -135,7 +135,22 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
     navigate('/upgrade')
   }
 
-  const displayedPlans = allPlans.filter(plan => plan.id !== currentPlan)
+  // Lógica de exibição dos planos:
+  // - Plano free (basico): mostrar todos os 3 planos
+  // - Plano profissional (pro): mostrar apenas pro (atual) e premium
+  // - Plano premium: mostrar apenas premium (atual)
+  const getDisplayedPlans = () => {
+    if (currentPlan === 'basico') {
+      return allPlans // Mostrar todos os planos
+    } else if (currentPlan === 'pro') {
+      return allPlans.filter(plan => plan.id === 'pro' || plan.id === 'premium')
+    } else if (currentPlan === 'premium') {
+      return allPlans.filter(plan => plan.id === 'premium')
+    }
+    return allPlans
+  }
+
+  const displayedPlans = getDisplayedPlans()
 
   return (
     <Card className="shadow-soft">
@@ -174,10 +189,11 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
         {displayedPlans.map((plan) => {
           const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice
           const isAnnual = billingCycle === 'annual'
+          const isCurrentPlan = plan.id === currentPlan
           
           return (
-            <Card key={plan.id} className="relative border-2 border-border hover:border-primary/50 transition-colors">
-              {plan.recommended && (
+            <Card key={plan.id} className={`relative border-2 transition-colors ${isCurrentPlan ? 'border-primary' : 'border-border hover:border-primary/50'}`}>
+              {plan.recommended && !isCurrentPlan && (
                 <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
                   Recomendado
                 </Badge>
@@ -215,10 +231,10 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
                   className="w-full" 
                   size="sm"
                   onClick={() => handleChangePlan(plan)}
-                  disabled={loading}
-                  variant={plan.recommended ? "default" : "outline"}
+                  disabled={loading || isCurrentPlan}
+                  variant={isCurrentPlan ? "secondary" : plan.recommended ? "default" : "outline"}
                 >
-                  {loading ? 'Processando...' : `Escolher ${plan.name}`}
+                  {loading ? 'Processando...' : isCurrentPlan ? 'Plano Atual' : `Escolher ${plan.name}`}
                 </Button>
               </CardContent>
             </Card>
