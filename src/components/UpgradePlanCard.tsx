@@ -25,9 +25,10 @@ interface Plan {
 
 interface UpgradePlanCardProps {
   currentPlan: string
+  currentBillingInterval?: string | null
 }
 
-export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
+export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: UpgradePlanCardProps) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
@@ -189,16 +190,29 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
         {displayedPlans.map((plan) => {
           const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice
           const isAnnual = billingCycle === 'annual'
-          const isCurrentPlan = plan.id === currentPlan
+          
+          // Determina se é o plano atual considerando o ciclo de cobrança
+          // Para plano básico, não precisa verificar o ciclo
+          // Para planos pagos, verifica se o ciclo atual (monthly/yearly) corresponde ao selecionado
+          const isCurrentPlanAndCycle = plan.id === currentPlan && (
+            plan.id === 'basico' || 
+            (billingCycle === 'monthly' && currentBillingInterval === 'month') ||
+            (billingCycle === 'annual' && currentBillingInterval === 'year')
+          )
           
           return (
-            <Card key={plan.id} className={`relative border-2 transition-colors ${isCurrentPlan ? 'border-primary' : 'border-border hover:border-primary/50'}`}>
-              {plan.recommended && !isCurrentPlan && (
+            <Card key={plan.id} className={`relative border-2 transition-colors ${isCurrentPlanAndCycle ? 'border-primary' : 'border-border hover:border-primary/50'}`}>
+              {isCurrentPlanAndCycle && (
+                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1 text-xs font-medium">
+                  Plano Atual
+                </Badge>
+              )}
+              {plan.recommended && !isCurrentPlanAndCycle && (
                 <Badge className="absolute -top-2 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
                   Recomendado
                 </Badge>
               )}
-              <CardHeader className="pb-3">
+              <CardHeader className="pb-3 pt-5">
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-lg bg-primary/10 text-primary">
                     {plan.icon}
@@ -231,10 +245,10 @@ export const UpgradePlanCard = ({ currentPlan }: UpgradePlanCardProps) => {
                   className="w-full" 
                   size="sm"
                   onClick={() => handleChangePlan(plan)}
-                  disabled={loading || isCurrentPlan}
-                  variant={isCurrentPlan ? "secondary" : plan.recommended ? "default" : "outline"}
+                  disabled={loading || isCurrentPlanAndCycle}
+                  variant={isCurrentPlanAndCycle ? "secondary" : plan.recommended ? "default" : "outline"}
                 >
-                  {loading ? 'Processando...' : isCurrentPlan ? 'Plano Atual' : `Escolher ${plan.name}`}
+                  {loading ? 'Processando...' : isCurrentPlanAndCycle ? 'Plano Atual' : `Escolher ${plan.name}`}
                 </Button>
               </CardContent>
             </Card>
