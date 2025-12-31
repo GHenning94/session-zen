@@ -23,7 +23,18 @@ serve(async (req) => {
     
     if (!user) throw new Error("User not authenticated.");
 
-    console.log("[cancel-subscription] Canceling for user:", user.id);
+    // Parse request body for action type
+    let action = 'cancel';
+    let targetPlan = 'basico';
+    try {
+      const body = await req.json();
+      action = body.action || 'cancel';
+      targetPlan = body.targetPlan || 'basico';
+    } catch {
+      // Default to cancel if no body provided
+    }
+
+    console.log(`[cancel-subscription] Action: ${action}, Target: ${targetPlan} for user:`, user.id);
 
     // Get profile with subscription data
     const { data: profile, error: profileError } = await supabaseClient
@@ -82,13 +93,20 @@ serve(async (req) => {
       console.error("[cancel-subscription] Error updating profile:", updateError);
     }
 
-    // Create notification
+    // Create notification based on action type
+    const isDowngrade = action === 'downgrade';
+    const notificationTitle = isDowngrade ? "Downgrade Agendado" : "Assinatura Cancelada";
+    const targetPlanName = targetPlan === 'pro' ? 'Profissional' : targetPlan === 'premium' ? 'Premium' : 'Básico';
+    const notificationContent = isDowngrade
+      ? `Seu plano ${profile.subscription_plan} ficará ativo até ${new Date(cancelAt).toLocaleDateString('pt-BR')}. Após essa data, você será movido para o plano ${targetPlanName}.`
+      : `Seu plano ${profile.subscription_plan} ficará ativo até ${new Date(cancelAt).toLocaleDateString('pt-BR')}. Após essa data, você retornará ao plano gratuito.`;
+
     await supabaseClient
       .from("notifications")
       .insert({
         user_id: user.id,
-        titulo: "Assinatura Cancelada",
-        conteudo: `Seu plano ${profile.subscription_plan} ficará ativo até ${new Date(cancelAt).toLocaleDateString('pt-BR')}. Após essa data, você retornará ao plano gratuito.`
+        titulo: notificationTitle,
+        conteudo: notificationContent
       });
 
     // Send remarketing email
@@ -103,7 +121,9 @@ serve(async (req) => {
           email: user.email,
           userName: profile.nome || 'Profissional',
           previousPlan: profile.subscription_plan,
-          cancelAt: cancelAt
+          targetPlan: isDowngrade ? targetPlan : 'basico',
+          cancelAt: cancelAt,
+          isDowngrade: isDowngrade
         }
       });
       console.log("[cancel-subscription] Remarketing email sent successfully");
@@ -114,9 +134,11 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({
       success: true,
-      message: "Assinatura cancelada com sucesso",
+      message: isDowngrade ? "Downgrade agendado com sucesso" : "Assinatura cancelada com sucesso",
       cancel_at: cancelAt,
-      grace_period_end: cancelAt
+      grace_period_end: cancelAt,
+      action: action,
+      targetPlan: targetPlan
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

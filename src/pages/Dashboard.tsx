@@ -12,6 +12,7 @@ import { SmartNotificationCard } from "@/components/SmartNotificationCard"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { DashboardFooter } from "@/components/DashboardFooter"
 import { ScrollAnimation } from "@/hooks/useScrollAnimation"
+import { UpgradeWelcomeModal } from "@/components/UpgradeWelcomeModal"
 import { 
   Calendar, 
   Users, 
@@ -107,6 +108,10 @@ const Dashboard = () => {
   const [sessionNotes, setSessionNotes] = useState<any[]>([])
   const [evolucoes, setEvolucoes] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [upgradeWelcomeModal, setUpgradeWelcomeModal] = useState<{
+    open: boolean
+    newPlan: 'pro' | 'premium'
+  }>({ open: false, newPlan: 'pro' })
   
   // Cooperative cancellation refs
   const isActiveRef = useRef(true)
@@ -155,6 +160,17 @@ const Dashboard = () => {
     isActiveRef.current = true
     // Ativar animações após mount
     const timer = setTimeout(() => setChartsAnimated(true), 100)
+    
+    // Check for upgrade welcome modal
+    const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
+    if (showWelcome) {
+      sessionStorage.removeItem('show_upgrade_welcome')
+      setUpgradeWelcomeModal({
+        open: true,
+        newPlan: showWelcome as 'pro' | 'premium'
+      })
+    }
+    
     return () => {
       isActiveRef.current = false
       clearTimeout(timer)
@@ -226,6 +242,10 @@ const Dashboard = () => {
               origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
             })
           }, 250)
+          
+          // Store the new plan for welcome modal
+          const newPlan = data.subscription_tier === 'premium' ? 'premium' : 'pro'
+          sessionStorage.setItem('show_upgrade_welcome', newPlan)
           
           // Clear URL params before reload
           searchParams.delete('payment')
@@ -2458,6 +2478,11 @@ const Dashboard = () => {
       <TutorialModal
         open={isTutorialOpen}
         onOpenChange={setIsTutorialOpen}
+      />
+      <UpgradeWelcomeModal
+        open={upgradeWelcomeModal.open}
+        onOpenChange={(open) => setUpgradeWelcomeModal({ ...upgradeWelcomeModal, open })}
+        newPlan={upgradeWelcomeModal.newPlan}
       />
     </Layout>
   )
