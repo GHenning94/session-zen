@@ -50,6 +50,7 @@ import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { toast } from "sonner"
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime"
 import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
+import confetti from "canvas-confetti"
 
 const Dashboard = () => {
   const navigate = useNavigate()
@@ -201,12 +202,37 @@ const Dashboard = () => {
         if (data?.subscription_tier && data.subscription_tier !== 'basico') {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
           
+          // Disparar confetti de celebração
+          const duration = 3000
+          const animationEnd = Date.now() + duration
+          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 }
+
+          const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min
+
+          const interval = window.setInterval(() => {
+            const timeLeft = animationEnd - Date.now()
+            if (timeLeft <= 0) {
+              return clearInterval(interval)
+            }
+            const particleCount = 50 * (timeLeft / duration)
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
+            })
+            confetti({
+              ...defaults,
+              particleCount,
+              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
+            })
+          }, 250)
+          
           // Clear URL params before reload
           searchParams.delete('payment')
           setSearchParams(searchParams, { replace: true })
           
           // Small delay then reload to get fresh data with new plan
-          await new Promise(resolve => setTimeout(resolve, 500))
+          await new Promise(resolve => setTimeout(resolve, 2500))
           window.location.href = '/dashboard'
           return true
         }
