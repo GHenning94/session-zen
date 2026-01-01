@@ -369,8 +369,8 @@ const ProgramaIndicacao = () => {
             <div className="relative">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-primary/5" />
               
-              {/* Flowing Aurora Lines - organic water-like waves */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none">
+              {/* Flowing Aurora Lines - organic water-like waves - HIDDEN ON MOBILE for performance */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none hidden md:block">
                 <svg 
                   className="absolute inset-0 w-full h-full"
                   viewBox="0 0 100 100"
@@ -396,20 +396,9 @@ const ProgramaIndicacao = () => {
                       <stop offset="75%" stopColor="hsl(205, 75%, 68%)" stopOpacity="0.22" />
                       <stop offset="100%" stopColor="hsl(200, 70%, 72%)" stopOpacity="0.4" />
                     </linearGradient>
-                    <linearGradient id="auroraLine4" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(205, 90%, 55%)" stopOpacity="0.02" />
-                      <stop offset="30%" stopColor="hsl(200, 85%, 60%)" stopOpacity="0.04" />
-                      <stop offset="60%" stopColor="hsl(195, 80%, 65%)" stopOpacity="0.3" />
-                      <stop offset="100%" stopColor="hsl(190, 75%, 70%)" stopOpacity="0.55" />
-                    </linearGradient>
-                    <linearGradient id="auroraLine5" x1="0%" y1="100%" x2="100%" y2="0%">
-                      <stop offset="0%" stopColor="hsl(200, 70%, 50%)" stopOpacity="0.01" />
-                      <stop offset="50%" stopColor="hsl(195, 75%, 58%)" stopOpacity="0.05" />
-                      <stop offset="100%" stopColor="hsl(185, 70%, 65%)" stopOpacity="0.35" />
-                    </linearGradient>
                   </defs>
                   
-                  {/* Line 1 - dramatic waves, exits TOP */}
+                  {/* Reduced to 6 lines for better performance while maintaining visual effect */}
                   <path 
                     d="M-10,130 C0,50 20,180 40,30 C60,-80 80,120 100,-30 C120,-100 135,20 160,-20" 
                     fill="none" 
@@ -417,8 +406,6 @@ const ProgramaIndicacao = () => {
                     strokeWidth="0.35"
                     className="aurora-wave aurora-1"
                   />
-                  
-                  {/* Line 2 - dramatic waves, exits BOTTOM */}
                   <path 
                     d="M-8,120 C5,40 25,170 45,50 C65,-40 85,140 105,60 C125,0 140,100 165,115" 
                     fill="none" 
@@ -426,8 +413,6 @@ const ProgramaIndicacao = () => {
                     strokeWidth="0.4"
                     className="aurora-wave aurora-2"
                   />
-                  
-                  {/* Line 3 - dramatic waves, exits TOP */}
                   <path 
                     d="M-5,140 C10,60 30,190 50,40 C70,-70 90,130 110,-20 C130,-90 150,30 175,-25" 
                     fill="none" 
@@ -435,88 +420,33 @@ const ProgramaIndicacao = () => {
                     strokeWidth="0.28"
                     className="aurora-wave aurora-3"
                   />
-                  
-                  {/* Line 4 - dramatic waves, exits BOTTOM */}
                   <path 
                     d="M-12,115 C2,35 22,160 42,45 C62,-50 82,135 102,55 C122,-10 140,90 168,120" 
                     fill="none" 
-                    stroke="url(#auroraLine4)" 
+                    stroke="url(#auroraLine1)" 
                     strokeWidth="0.38"
                     className="aurora-wave aurora-4"
                   />
-                  
-                  {/* Line 5 - dramatic waves, exits TOP */}
                   <path 
                     d="M-6,125 C8,45 28,175 48,35 C68,-75 88,125 108,-15 C128,-85 148,25 170,-10" 
                     fill="none" 
-                    stroke="url(#auroraLine1)" 
+                    stroke="url(#auroraLine2)" 
                     strokeWidth="0.3"
                     className="aurora-wave aurora-5"
                   />
-                  
-                  {/* Line 6 - dramatic waves, exits BOTTOM */}
                   <path 
                     d="M-15,110 C0,30 20,155 40,40 C60,-55 80,130 100,50 C120,-5 138,95 165,110" 
                     fill="none" 
-                    stroke="url(#auroraLine5)" 
+                    stroke="url(#auroraLine3)" 
                     strokeWidth="0.35"
                     className="aurora-wave aurora-6"
                   />
-                  
-                  {/* Line 7 - dramatic waves, exits TOP */}
-                  <path 
-                    d="M-4,135 C12,55 32,185 52,45 C72,-65 92,128 112,-10 C132,-80 152,35 178,-15" 
-                    fill="none" 
-                    stroke="url(#auroraLine2)" 
-                    strokeWidth="0.25"
-                    className="aurora-wave aurora-7"
-                  />
-                  
-                  {/* Line 8 - dramatic waves, exits BOTTOM */}
-                  <path 
-                    d="M-18,105 C-2,25 18,150 38,35 C58,-60 78,128 98,48 C118,-12 136,88 162,105" 
-                    fill="none" 
-                    stroke="url(#auroraLine3)" 
-                    strokeWidth="0.32"
-                    className="aurora-wave aurora-8"
-                  />
-                  
-                  {/* Line 9 - dramatic waves, exits TOP */}
-                  <path 
-                    d="M-2,145 C15,65 35,195 55,50 C75,-60 95,135 115,-5 C135,-75 155,40 180,-30" 
-                    fill="none" 
-                    stroke="url(#auroraLine4)" 
-                    strokeWidth="0.22"
-                    className="aurora-wave aurora-9"
-                  />
-                  
-                  {/* Line 10 - dramatic waves, exits BOTTOM */}
-                  <path 
-                    d="M-20,112 C-5,32 15,158 35,42 C55,-52 75,132 95,52 C115,-8 135,92 163,118" 
-                    fill="none" 
-                    stroke="url(#auroraLine1)" 
-                    strokeWidth="0.26"
-                    className="aurora-wave aurora-10"
-                  />
-                  
-                  {/* Line 11 - dramatic waves, exits TOP */}
-                  <path 
-                    d="M-8,128 C6,48 26,178 46,38 C66,-72 86,125 106,-12 C126,-82 146,28 172,5" 
-                    fill="none" 
-                    stroke="url(#auroraLine5)" 
-                    strokeWidth="0.3"
-                    className="aurora-wave aurora-11"
-                  />
-                  
-                  {/* Line 12 - dramatic waves, exits BOTTOM */}
-                  <path 
-                    d="M-14,118 C0,38 20,162 40,48 C60,-45 80,135 100,55 C120,0 138,95 165,112" 
-                    fill="none" 
-                    stroke="url(#auroraLine2)" 
-                    strokeWidth="0.28"
-                    className="aurora-wave aurora-12"
-                  />
                 </svg>
+              </div>
+              
+              {/* Mobile-optimized simple gradient overlay */}
+              <div className="absolute inset-0 overflow-hidden pointer-events-none md:hidden">
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/10" />
               </div>
               
               <style>{`
@@ -540,12 +470,6 @@ const ProgramaIndicacao = () => {
                 .aurora-4 { animation-delay: 1.8s; animation-duration: 7.5s; }
                 .aurora-5 { animation-delay: 0.3s; animation-duration: 6.8s; }
                 .aurora-6 { animation-delay: 0.9s; animation-duration: 7.2s; }
-                .aurora-7 { animation-delay: 1.5s; animation-duration: 6.2s; }
-                .aurora-8 { animation-delay: 2.1s; animation-duration: 8.5s; }
-                .aurora-9 { animation-delay: 2.7s; animation-duration: 5.8s; }
-                .aurora-10 { animation-delay: 0.4s; animation-duration: 7.8s; }
-                .aurora-11 { animation-delay: 1.0s; animation-duration: 6.6s; }
-                .aurora-12 { animation-delay: 1.6s; animation-duration: 7.3s; }
               `}</style>
               
               <CardContent className="relative p-8">
