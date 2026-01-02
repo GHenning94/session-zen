@@ -75,15 +75,16 @@ const AnimatedGiftImage = () => {
       {/* Floating container */}
       <div 
         ref={floatingRef}
-        className="relative flex items-center justify-center"
+        className="relative flex items-center justify-center w-full h-full"
       >
         <img 
           src={giftSvg} 
           alt="Gift boxes" 
           className="object-contain drop-shadow-2xl"
           style={{ 
-            maxHeight: '220px',
-            maxWidth: '100%',
+            width: '300px',
+            height: 'auto',
+            minHeight: '180px',
             filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4))'
           }}
         />
