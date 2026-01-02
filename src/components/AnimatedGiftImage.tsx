@@ -38,7 +38,7 @@ const AnimatedGiftImage = () => {
 
   return (
     <div 
-      className={`relative flex items-center justify-center transition-all duration-1000 ease-out w-full h-full ${
+      className={`relative flex items-center justify-center transition-all duration-1000 ease-out w-full h-full overflow-hidden ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
     >
@@ -52,7 +52,7 @@ const AnimatedGiftImage = () => {
           alt="Gift box" 
           className="object-contain drop-shadow-2xl"
           style={{ 
-            width: '300px',
+            width: '500px',
             height: 'auto',
             filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3))'
           }}
