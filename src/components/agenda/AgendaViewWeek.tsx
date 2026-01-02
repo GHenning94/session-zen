@@ -285,7 +285,7 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                             <Card 
                               key={session.id} 
                               className={cn(
-                                "cursor-move group relative transition-all hover:shadow-sm bg-primary/20 text-primary-foreground border-primary/30 overflow-hidden",
+                                "cursor-move group relative transition-all hover:shadow-sm bg-primary/20 text-primary dark:text-primary-foreground border-primary/30 overflow-hidden",
                                 highlightedSessionId === session.id && "animate-pulse-highlight"
                               )}
                               draggable
