@@ -38,14 +38,14 @@ const AnimatedGiftImage = () => {
 
   return (
     <div 
-      className={`relative flex items-center justify-center transition-all duration-1000 ease-out w-full h-full overflow-hidden ${
+      className={`relative flex items-center justify-center transition-all duration-1000 ease-out w-full h-full ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
     >
-      {/* Floating container */}
+      {/* Floating container - absolute centering */}
       <div 
         ref={floatingRef}
-        className="relative flex items-center justify-center w-full h-full"
+        className="absolute inset-0 flex items-center justify-center"
       >
         <img 
           src={giftImage} 
