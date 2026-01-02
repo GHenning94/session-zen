@@ -202,7 +202,7 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                     <Card 
                       key={session.id} 
                       className={cn(
-                        "relative group cursor-move transition-all hover:shadow-md bg-primary/20 text-primary-foreground border-primary/30 overflow-hidden", 
+                        "relative group cursor-move transition-all hover:shadow-md bg-primary/20 text-primary dark:text-primary-foreground border-primary/30 overflow-hidden", 
                         highlightedSessionId === session.id && "animate-pulse-highlight"
                       )}
                       draggable
