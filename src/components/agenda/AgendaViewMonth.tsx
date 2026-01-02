@@ -208,7 +208,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             onDragStart={(e) => handleDragStart(e, session.id)}
                             onDragEnd={handleDragEnd}
                             className={cn(
-                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary/20 text-primary-foreground hover:bg-primary/30 transition-colors group relative cursor-move border border-primary/30 shadow-sm overflow-hidden",
+                              "text-[10px] md:text-xs p-1 md:p-2 rounded-lg bg-primary/20 text-primary dark:text-primary-foreground hover:bg-primary/30 transition-colors group relative cursor-move border border-primary/30 shadow-sm overflow-hidden",
                               highlightedSessionId === session.id && "ring-2 ring-primary ring-offset-1 animate-pulse",
                               draggedSession === session.id && "opacity-50 scale-95"
                             )}
