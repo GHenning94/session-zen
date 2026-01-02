@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import giftImage from '@/assets/gift.png';
 
 const AnimatedGiftImage = () => {
-  const floatingRef = useRef<HTMLDivElement>(null);
+  const floatingRef = useRef<HTMLImageElement>(null);
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
@@ -24,7 +24,7 @@ const AnimatedGiftImage = () => {
       const floatX = Math.cos(angle * 0.7) * 2;
       
       if (floatingElement) {
-        floatingElement.style.transform = `translate(-50%, -50%) translateY(${floatY}px) translateX(${floatX}px)`;
+        floatingElement.style.transform = `translateY(${floatY}px) translateX(${floatX}px)`;
       }
       animationFrame = requestAnimationFrame(animate);
     };
@@ -38,27 +38,21 @@ const AnimatedGiftImage = () => {
 
   return (
     <div 
-      className={`absolute inset-0 transition-opacity duration-1000 ease-out ${
+      className={`w-full h-full flex items-center justify-center transition-opacity duration-1000 ease-out ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {/* Floating gift container - centered absolutely */}
-      <div 
+      <img 
         ref={floatingRef}
-        className="absolute top-1/2 left-1/2"
-        style={{ transform: 'translate(-50%, -50%)' }}
-      >
-        <img 
-          src={giftImage} 
-          alt="Gift box" 
-          className="drop-shadow-2xl"
-          style={{ 
-            width: '700px',
-            height: 'auto',
-            filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3))'
-          }}
-        />
-      </div>
+        src={giftImage} 
+        alt="Gift box" 
+        className="drop-shadow-2xl max-w-none"
+        style={{ 
+          width: '500px',
+          height: 'auto',
+          filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3))'
+        }}
+      />
     </div>
   );
 };
