@@ -232,23 +232,23 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
                           <div className="flex-1">
                             <div className="flex items-center gap-2">
                               <div className="flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
+                                <Clock className="h-3 w-3 text-primary dark:text-primary-foreground" />
                                 <span className="text-xs font-medium">{formatTimeBR(session.horario)}</span>
                               </div>
                               <div className="flex items-center gap-1 min-w-0">
-                                <User className="h-3 w-3 flex-shrink-0" />
+                                <User className="h-3 w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 <span className="text-xs truncate">
                                   {formatClientName(clients.find(c => c.id === session.client_id)?.nome || 'Cliente não encontrado')}
                                 </span>
                                 {session.package_id && (
-                                  <Package className="h-3 w-3 flex-shrink-0 text-primary" />
+                                  <Package className="h-3 w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 )}
                                 {session.recurring_session_id && !session.package_id && (
-                                  <Repeat className="h-3 w-3 flex-shrink-0 text-primary" />
+                                  <Repeat className="h-3 w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 )}
                               </div>
                               {session.package_id && (
-                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/30 text-primary-foreground border-0">
+                                <Badge variant="secondary" className="text-[10px] px-1 py-0 h-4 bg-primary/30 text-primary dark:text-primary-foreground border-0">
                                   <Package className="h-2 w-2 mr-0.5" />
                                   Pacote
                                 </Badge>
