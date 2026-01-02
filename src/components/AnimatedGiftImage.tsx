@@ -38,15 +38,16 @@ const AnimatedGiftImage = () => {
 
   return (
     <div 
-      className={`relative flex items-center justify-center transition-all duration-1000 ease-out ${
+      className={`relative flex items-center justify-center transition-all duration-1000 ease-out w-full h-full ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
-      style={{ width: '100%', height: '100%', minHeight: '200px' }}
     >
-      {/* Sparkles - distributed around the gifts */}
-      {[...Array(18)].map((_, i) => {
-        const size = 4 + Math.random() * 6;
+      {/* Sparkles - distributed around the image */}
+      {[...Array(16)].map((_, i) => {
+        const size = 4 + Math.random() * 5;
         const opacity = 0.5 + Math.random() * 0.4;
+        const angle = (i / 16) * Math.PI * 2;
+        const radius = 35 + Math.random() * 15;
         return (
           <div
             key={i}
@@ -54,8 +55,8 @@ const AnimatedGiftImage = () => {
             style={{
               width: `${size}px`,
               height: `${size}px`,
-              left: `${35 + (i * 2) + Math.sin(i) * 8}%`,
-              top: `${5 + Math.sin(i * 0.8) * 25 + Math.cos(i * 1.5) * 10}%`,
+              left: `${50 + Math.cos(angle) * radius}%`,
+              top: `${50 + Math.sin(angle) * radius}%`,
               background: i % 3 === 0 
                 ? 'hsl(221, 83%, 53%)' 
                 : i % 3 === 1 
@@ -65,6 +66,7 @@ const AnimatedGiftImage = () => {
               animation: `sparkle ${1.8 + (i % 5) * 0.4}s ease-in-out infinite`,
               animationDelay: `${(i % 8) * 0.2}s`,
               boxShadow: `0 0 ${size * 2}px ${size / 2}px hsla(221, 83%, 53%, ${opacity * 0.8})`,
+              transform: 'translate(-50%, -50%)',
             }}
           />
         );
@@ -73,16 +75,15 @@ const AnimatedGiftImage = () => {
       {/* Floating container */}
       <div 
         ref={floatingRef}
-        className="relative flex items-end justify-center"
-        style={{ height: '100%', width: '100%' }}
+        className="relative flex items-center justify-center"
       >
         <img 
           src={giftSvg} 
           alt="Gift boxes" 
-          className="h-auto object-contain drop-shadow-2xl"
+          className="object-contain drop-shadow-2xl"
           style={{ 
-            maxHeight: '280px',
-            width: 'auto',
+            maxHeight: '220px',
+            maxWidth: '100%',
             filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4))'
           }}
         />
