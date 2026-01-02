@@ -501,7 +501,7 @@ const ProgramaIndicacao = () => {
                     </p>
                   </div>
                   
-                  <div className="w-full lg:w-80 h-56 lg:h-64 flex items-center justify-center relative z-0">
+                  <div className="w-full lg:w-80 h-56 lg:h-64 relative z-0 overflow-hidden">
                     <AnimatedGiftImage />
                   </div>
                 </div>

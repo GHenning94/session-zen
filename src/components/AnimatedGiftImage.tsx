@@ -24,7 +24,7 @@ const AnimatedGiftImage = () => {
       const floatX = Math.cos(angle * 0.7) * 2;
       
       if (floatingElement) {
-        floatingElement.style.transform = `translateY(${floatY}px) translateX(${floatX}px)`;
+        floatingElement.style.transform = `translate(-50%, -50%) translateY(${floatY}px) translateX(${floatX}px)`;
       }
       animationFrame = requestAnimationFrame(animate);
     };
@@ -38,21 +38,26 @@ const AnimatedGiftImage = () => {
 
   return (
     <div 
-      className={`relative flex items-center justify-center transition-all duration-1000 ease-out w-full h-full ${
-        isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
+      className={`absolute inset-0 transition-all duration-1000 ease-out ${
+        isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {/* Floating container - absolute centering */}
+      {/* Decorative background circles */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary/10" />
+      <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full bg-primary/8" />
+      
+      {/* Floating gift container - centered absolutely */}
       <div 
         ref={floatingRef}
-        className="absolute inset-0 flex items-center justify-center"
+        className="absolute top-1/2 left-1/2"
+        style={{ transform: 'translate(-50%, -50%)' }}
       >
         <img 
           src={giftImage} 
           alt="Gift box" 
-          className="object-contain drop-shadow-2xl"
+          className="drop-shadow-2xl"
           style={{ 
-            width: '500px',
+            width: '220px',
             height: 'auto',
             filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3))'
           }}
