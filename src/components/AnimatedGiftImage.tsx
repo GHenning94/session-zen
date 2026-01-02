@@ -41,12 +41,12 @@ const AnimatedGiftImage = () => {
       className={`relative flex items-center justify-center transition-all duration-1000 ease-out ${
         isVisible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 translate-y-8 scale-90'
       }`}
-      style={{ width: '100%', maxWidth: '750px', height: 'auto' }}
+      style={{ width: '100%', height: '100%', minHeight: '200px' }}
     >
       {/* Sparkles - distributed around the gifts */}
-      {[...Array(24)].map((_, i) => {
-        const size = 3 + Math.random() * 5;
-        const opacity = 0.4 + Math.random() * 0.5;
+      {[...Array(18)].map((_, i) => {
+        const size = 4 + Math.random() * 6;
+        const opacity = 0.5 + Math.random() * 0.4;
         return (
           <div
             key={i}
@@ -54,8 +54,8 @@ const AnimatedGiftImage = () => {
             style={{
               width: `${size}px`,
               height: `${size}px`,
-              left: `${8 + (i * 3.5) + Math.sin(i) * 5}%`,
-              top: `${12 + Math.sin(i * 0.8) * 35 + Math.cos(i * 1.5) * 15}%`,
+              left: `${35 + (i * 2) + Math.sin(i) * 8}%`,
+              top: `${5 + Math.sin(i * 0.8) * 25 + Math.cos(i * 1.5) * 10}%`,
               background: i % 3 === 0 
                 ? 'hsl(221, 83%, 53%)' 
                 : i % 3 === 1 
@@ -73,12 +73,18 @@ const AnimatedGiftImage = () => {
       {/* Floating container */}
       <div 
         ref={floatingRef}
-        className="relative w-full"
+        className="relative flex items-end justify-center"
+        style={{ height: '100%', width: '100%' }}
       >
         <img 
           src={giftSvg} 
           alt="Gift boxes" 
-          className="w-full h-auto"
+          className="h-auto object-contain drop-shadow-2xl"
+          style={{ 
+            maxHeight: '280px',
+            width: 'auto',
+            filter: 'drop-shadow(0 20px 30px rgba(0, 0, 0, 0.4))'
+          }}
         />
       </div>
 
