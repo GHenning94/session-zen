@@ -474,7 +474,7 @@ const ProgramaIndicacao = () => {
               
               <CardContent className="relative p-8 overflow-hidden">
                 {/* Imagem do presente - posicionada absolutamente à direita */}
-                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-80 h-80 pointer-events-none hidden lg:block">
+                <div className="absolute right-8 top-[60%] -translate-y-1/2 w-80 h-80 pointer-events-none hidden lg:block">
                   <AnimatedGiftImage />
                 </div>
                 
