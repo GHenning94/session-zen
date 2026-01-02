@@ -38,14 +38,10 @@ const AnimatedGiftImage = () => {
 
   return (
     <div 
-      className={`absolute inset-0 transition-all duration-1000 ease-out ${
+      className={`absolute inset-0 transition-opacity duration-1000 ease-out ${
         isVisible ? 'opacity-100' : 'opacity-0'
       }`}
     >
-      {/* Decorative background circles */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full bg-primary/10" />
-      <div className="absolute top-0 right-0 w-[200px] h-[200px] rounded-full bg-primary/8" />
-      
       {/* Floating gift container - centered absolutely */}
       <div 
         ref={floatingRef}
@@ -57,7 +53,7 @@ const AnimatedGiftImage = () => {
           alt="Gift box" 
           className="drop-shadow-2xl"
           style={{ 
-            width: '220px',
+            width: '500px',
             height: 'auto',
             filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3))'
           }}
