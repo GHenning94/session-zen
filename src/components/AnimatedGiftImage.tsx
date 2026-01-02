@@ -52,7 +52,7 @@ const AnimatedGiftImage = () => {
           alt="Gift box" 
           className="object-contain drop-shadow-2xl"
           style={{ 
-            width: '200px',
+            width: '300px',
             height: 'auto',
             filter: 'drop-shadow(0 15px 25px rgba(0, 0, 0, 0.3))'
           }}
