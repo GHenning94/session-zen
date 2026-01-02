@@ -101,7 +101,7 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
   const getGoogleSyncIcon = (syncType?: GoogleSyncType | string | null) => {
     if (!syncType || syncType === 'local') return null
     
-    const iconClass = "h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0"
+    const iconClass = "h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary dark:text-primary-foreground"
     switch (syncType) {
       case 'importado':
         return <Download className={iconClass} />
@@ -234,19 +234,19 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
                             )}
                             <div className="flex items-center gap-1 text-[10px] md:text-xs pl-1.5">
                               <div className="flex items-center gap-0.5">
-                                <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
+                                <Clock className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 <span>{formatTimeBR(session.horario)}</span>
                               </div>
                               <div className="flex items-center gap-0.5 min-w-0">
-                                <User className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0" />
+                                <User className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 <span className="truncate">
                                   {formatClientName(getClientName(session.client_id))}
                                 </span>
                                 {session.package_id && (
-                                  <Package className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary" />
+                                  <Package className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 )}
                                 {session.recurring_session_id && !session.package_id && (
-                                  <Repeat className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary" />
+                                  <Repeat className="h-2.5 w-2.5 md:h-3 md:w-3 flex-shrink-0 text-primary dark:text-primary-foreground" />
                                 )}
                               </div>
                               {getGoogleSyncIcon(session.google_sync_type)}
