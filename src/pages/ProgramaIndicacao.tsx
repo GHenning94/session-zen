@@ -472,38 +472,42 @@ const ProgramaIndicacao = () => {
                 .aurora-6 { animation-delay: 0.9s; animation-duration: 7.2s; }
               `}</style>
               
-              <CardContent className="relative p-8">
-                <div className="flex flex-col lg:flex-row items-center gap-8">
-                  <div className="flex-1 space-y-6 relative z-10">
-                    <div className="space-y-4">
-                      <h2 className="text-3xl font-bold">Ganhe até 30% de Comissão</h2>
-                      <p className="text-lg text-muted-foreground">
-                        Convide seus colegas profissionais e ganhe comissões recorrentes!<br />
-                        Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%.
-                      </p>
-                    </div>
-                    
-                    <Button 
-                      onClick={handleEnrollment}
-                      size="lg" 
-                      className="w-full sm:w-auto"
-                    >
-                      <Gift className="w-5 h-5 mr-2" />
-                      Ingressar no Programa de Indicação
-                    </Button>
-                    
-                    <p className="text-sm text-muted-foreground">
-                      Ao ingressar, você aceita nossos{" "}
-                      <Link to="/termos-indicacao" className="text-primary underline cursor-pointer hover:text-primary/80 transition-colors">
-                        termos e condições
-                      </Link>{" "}
-                      do programa de indicação.
+              <CardContent className="relative p-8 overflow-hidden">
+                {/* Imagem do presente - posicionada absolutamente à direita */}
+                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-80 h-80 pointer-events-none hidden lg:block">
+                  <AnimatedGiftImage />
+                </div>
+                
+                <div className="flex-1 space-y-6 relative z-10 lg:pr-64">
+                  <div className="space-y-4">
+                    <h2 className="text-3xl font-bold">Ganhe até 30% de Comissão</h2>
+                    <p className="text-lg text-muted-foreground">
+                      Convide seus colegas profissionais e ganhe comissões recorrentes!<br />
+                      Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%.
                     </p>
                   </div>
                   
-                  <div className="w-full lg:w-80 h-56 lg:h-64 relative z-0 overflow-hidden">
-                    <AnimatedGiftImage />
-                  </div>
+                  <Button 
+                    onClick={handleEnrollment}
+                    size="lg" 
+                    className="w-full sm:w-auto"
+                  >
+                    <Gift className="w-5 h-5 mr-2" />
+                    Ingressar no Programa de Indicação
+                  </Button>
+                  
+                  <p className="text-sm text-muted-foreground">
+                    Ao ingressar, você aceita nossos{" "}
+                    <Link to="/termos-indicacao" className="text-primary underline cursor-pointer hover:text-primary/80 transition-colors">
+                      termos e condições
+                    </Link>{" "}
+                    do programa de indicação.
+                  </p>
+                </div>
+                
+                {/* Versão mobile - abaixo do conteúdo */}
+                <div className="w-full h-48 relative mt-6 lg:hidden overflow-hidden">
+                  <AnimatedGiftImage />
                 </div>
               </CardContent>
             </div>
