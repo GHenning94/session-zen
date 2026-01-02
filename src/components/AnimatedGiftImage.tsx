@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import giftSvg from '@/assets/gift.svg';
+import giftImage from '@/assets/gift.png';
 
 const AnimatedGiftImage = () => {
   const floatingRef = useRef<HTMLDivElement>(null);
@@ -78,8 +78,8 @@ const AnimatedGiftImage = () => {
         className="relative flex items-center justify-center w-full h-full"
       >
         <img 
-          src={giftSvg} 
-          alt="Gift boxes" 
+          src={giftImage} 
+          alt="Gift boxes"
           className="object-contain drop-shadow-2xl"
           style={{ 
             width: '300px',
