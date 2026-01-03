@@ -19,7 +19,8 @@ import {
   Trash2,
   UserX,
   UserCheck,
-  FileText
+  FileText,
+  Cake
 } from "lucide-react"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -48,6 +49,14 @@ export const ClientDetailsModal = ({
 
   const { avatarUrl } = useAvatarUrl(client?.avatar_url)
   const hasMedications = client.medicamentos && client.medicamentos.length > 0
+
+  // Check if client has birthday this month
+  const isBirthdayThisMonth = () => {
+    if (!client.data_nascimento) return false
+    const today = new Date()
+    const birthDate = new Date(client.data_nascimento)
+    return birthDate.getMonth() === today.getMonth()
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -79,6 +88,12 @@ export const ClientDetailsModal = ({
                 >
                   {client.ativo !== false ? "Ativo" : "Inativo"}
                 </Badge>
+                {isBirthdayThisMonth() && (
+                  <Badge className="bg-pink-500/10 text-pink-600 hover:bg-pink-500/20 flex items-center gap-1">
+                    <Cake className="w-3 h-3" />
+                    Aniversariante do mês
+                  </Badge>
+                )}
                 {hasMedications && (
                   <Badge variant="outline" className="flex items-center gap-1">
                     <Pill className="w-3 h-3" />
