@@ -64,6 +64,7 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
   const elements = useElements();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  const [isCvvFocused, setIsCvvFocused] = useState(false);
   
   // Card preview state
   const [cardPreview, setCardPreview] = useState({
@@ -191,6 +192,7 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
           expMonth={expiryParts.month}
           expYear={expiryParts.year}
           size="md"
+          isFlipped={isCvvFocused}
         />
       </div>
 
@@ -234,7 +236,12 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
           <div>
             <Label htmlFor="card-cvc">CVV</Label>
             <div className="mt-1 p-3 border rounded-md bg-background">
-              <CardCvcElement id="card-cvc" options={elementOptions} />
+              <CardCvcElement 
+                id="card-cvc" 
+                options={elementOptions}
+                onFocus={() => setIsCvvFocused(true)}
+                onBlur={() => setIsCvvFocused(false)}
+              />
             </div>
           </div>
         </div>
