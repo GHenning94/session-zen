@@ -220,12 +220,12 @@ const Dashboard = () => {
         if (data?.subscription_tier && data.subscription_tier !== 'basico') {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
           
-          // Disparar confetti de celebração (mesmo estilo do programa de indicação)
+          // Disparar confetti de celebração com cores douradas para premium
           confetti({
             particleCount: 150,
             spread: 70,
             origin: { y: 0.6 },
-            colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'],
+            colors: ['#FFD700', '#FFC107', '#FFAB00', '#FF8F00', '#FFE082'],
           })
           
           // Store the new plan for welcome modal
