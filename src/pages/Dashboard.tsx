@@ -457,7 +457,7 @@ const Dashboard = () => {
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         // Buscar pagamentos pagos para cálculo de ticket médio por cliente
         supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
-        supabase.from('payments').select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento)').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
+        supabase.from('payments').select('metodo_pagamento, valor, session_id, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento))').eq('user_id', user?.id).eq('status', 'pago').not('valor', 'is', null),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
         supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id),
@@ -626,10 +626,13 @@ const Dashboard = () => {
       const allPaymentMethods = allPaymentMethodsResult.data
 
       const canalPayments: { [key: string]: { valor: number; count: number } } = {}
-      allPaymentMethods?.forEach(payment => {
-        // Priorizar o método de pagamento da sessão (que é atualizado quando a recorrência muda)
-        // sobre o método de pagamento do payment (que pode estar desatualizado)
-        let metodo = payment.sessions?.metodo_pagamento || payment.metodo_pagamento || 'A definir'
+      allPaymentMethods?.forEach((payment: any) => {
+        // Priorizar: sessão recorrente > sessão > payment
+        let metodo = 
+          payment.sessions?.recurring_sessions?.metodo_pagamento || 
+          payment.sessions?.metodo_pagamento || 
+          payment.metodo_pagamento || 
+          'A definir'
         // Consolidar cartao_credito e cartao_debito em cartao
         if (metodo === 'cartao_credito' || metodo === 'cartao_debito') {
           metodo = 'cartao'
