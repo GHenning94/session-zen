@@ -74,6 +74,9 @@ export default function Upgrade() {
 
   const currentPlanLevel = getPlanLevel(currentPlan)
 
+  // Determinar o billingInterval atual normalizado para comparação
+  const currentBillingInterval = billingInterval || null
+  
   const plans = [
     { 
       id: 'basico', 
@@ -112,7 +115,11 @@ export default function Upgrade() {
       ], 
       recommended: true, 
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.pro_monthly : STRIPE_PRICES.pro_annual, 
-      current: currentPlan === 'pro',
+      // Verificar se é o plano atual E o ciclo de cobrança corresponde
+      current: currentPlan === 'pro' && (
+        (billingCycle === 'monthly' && currentBillingInterval === 'monthly') ||
+        (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
+      ),
       annualPrice: 'R$ 298,80',
       annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null,
       planLevel: 2,
@@ -138,7 +145,11 @@ export default function Upgrade() {
       ], 
       recommended: false, 
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.premium_monthly : STRIPE_PRICES.premium_annual, 
-      current: currentPlan === 'premium',
+      // Verificar se é o plano atual E o ciclo de cobrança corresponde
+      current: currentPlan === 'premium' && (
+        (billingCycle === 'monthly' && currentBillingInterval === 'monthly') ||
+        (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
+      ),
       annualPrice: 'R$ 498,96',
       annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null,
       planLevel: 3,

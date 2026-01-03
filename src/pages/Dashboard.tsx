@@ -627,8 +627,10 @@ const Dashboard = () => {
       const allPaymentMethods = allPaymentMethodsResult.data
 
       const canalPayments: { [key: string]: { valor: number; count: number } } = {}
-      allPaymentMethods?.forEach(session => {
-        let metodo = session.metodo_pagamento || 'A definir'
+      allPaymentMethods?.forEach(payment => {
+        // Priorizar o método de pagamento da sessão (que é atualizado quando a recorrência muda)
+        // sobre o método de pagamento do payment (que pode estar desatualizado)
+        let metodo = payment.sessions?.metodo_pagamento || payment.metodo_pagamento || 'A definir'
         // Consolidar cartao_credito e cartao_debito em cartao
         if (metodo === 'cartao_credito' || metodo === 'cartao_debito') {
           metodo = 'cartao'
@@ -636,7 +638,7 @@ const Dashboard = () => {
         if (!canalPayments[metodo]) {
           canalPayments[metodo] = { valor: 0, count: 0 }
         }
-        canalPayments[metodo].valor += Number(session.valor) || 0
+        canalPayments[metodo].valor += Number(payment.valor) || 0
         canalPayments[metodo].count += 1
       })
 
