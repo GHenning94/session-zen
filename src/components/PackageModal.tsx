@@ -216,9 +216,9 @@ export const PackageModal = ({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 gap-4">
+            <div className="space-y-4">
               {/* Cliente */}
-              <div className="col-span-2">
+              <div>
                 <Label htmlFor="client_id">Cliente *</Label>
                 <Select
                   value={formData.client_id}
@@ -240,7 +240,7 @@ export const PackageModal = ({
                 </Select>
               </div>
 
-              <div className="col-span-2">
+              <div>
                 <Label htmlFor="nome">Nome do Pacote *</Label>
                 <Input
                   id="nome"
@@ -251,8 +251,8 @@ export const PackageModal = ({
                 />
               </div>
 
-              {/* Row 1: Total de Sessões e Valor Total */}
-              <div className="grid grid-cols-2 gap-4">
+              {/* Row 1: 4 campos em uma linha no desktop */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="total_sessoes">Total de Sessões *</Label>
                   <Input
@@ -277,10 +277,7 @@ export const PackageModal = ({
                     required
                   />
                 </div>
-              </div>
 
-              {/* Row 2: Valor por Sessão e Método de Pagamento */}
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Valor por Sessão</Label>
                   <Input
@@ -291,7 +288,7 @@ export const PackageModal = ({
                 </div>
 
                 <div>
-                  <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                  <Label htmlFor="metodo_pagamento">Método Pagamento</Label>
                   <Select
                     value={formData.metodo_pagamento}
                     onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
@@ -310,8 +307,8 @@ export const PackageModal = ({
                 </div>
               </div>
 
-              {/* Row 2: Dates side by side on web, stacked on mobile */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Row 2: Datas e Observações */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div>
                   <Label>Data de Início *</Label>
                   <Popover>
@@ -326,7 +323,7 @@ export const PackageModal = ({
                         <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                         <span className="truncate">
                           {formData.data_inicio ? (
-                            format(formData.data_inicio, 'dd/MM/yyyy', { locale: ptBR })
+                            format(formData.data_inicio, 'dd/MM/yy', { locale: ptBR })
                           ) : (
                             'Selecionar'
                           )}
@@ -360,7 +357,7 @@ export const PackageModal = ({
                         <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
                         <span className="truncate">
                           {formData.data_fim ? (
-                            format(formData.data_fim, 'dd/MM/yyyy', { locale: ptBR })
+                            format(formData.data_fim, 'dd/MM/yy', { locale: ptBR })
                           ) : (
                             'Selecionar'
                           )}
@@ -379,17 +376,17 @@ export const PackageModal = ({
                     </PopoverContent>
                   </Popover>
                 </div>
-              </div>
 
-              <div>
-                <Label htmlFor="observacoes">Observações</Label>
-                <Textarea
-                  id="observacoes"
-                  value={formData.observacoes}
-                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                  placeholder="Informações adicionais sobre o pacote..."
-                  rows={3}
-                />
+                <div className="col-span-2">
+                  <Label htmlFor="observacoes">Observações</Label>
+                  <Textarea
+                    id="observacoes"
+                    value={formData.observacoes}
+                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                    placeholder="Informações adicionais sobre o pacote..."
+                    rows={2}
+                  />
+                </div>
               </div>
             </div>
 
