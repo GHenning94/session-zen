@@ -307,8 +307,8 @@ export const PackageModal = ({
                 </div>
               </div>
 
-              {/* Row 2: Datas e Observações */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Row 2: Datas */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Data de Início *</Label>
                   <Popover>
@@ -376,17 +376,18 @@ export const PackageModal = ({
                     </PopoverContent>
                   </Popover>
                 </div>
+              </div>
 
-                <div className="col-span-2">
-                  <Label htmlFor="observacoes">Observações</Label>
-                  <Textarea
-                    id="observacoes"
-                    value={formData.observacoes}
-                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                    placeholder="Informações adicionais sobre o pacote..."
-                    rows={2}
-                  />
-                </div>
+              {/* Row 3: Observações em linha separada */}
+              <div>
+                <Label htmlFor="observacoes">Observações</Label>
+                <Textarea
+                  id="observacoes"
+                  value={formData.observacoes}
+                  onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
+                  placeholder="Informações adicionais sobre o pacote..."
+                  rows={2}
+                />
               </div>
             </div>
 
