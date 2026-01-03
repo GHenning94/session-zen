@@ -229,6 +229,7 @@ export const useRecurringSessions = () => {
             updateFields.metodo_pagamento = data.metodo_pagamento;
           }
 
+          // Atualizar sessões futuras não modificadas
           const { error: updateSessionsError } = await supabase
             .from('sessions')
             .update(updateFields)
@@ -237,6 +238,38 @@ export const useRecurringSessions = () => {
             .gte('data', today);
 
           if (updateSessionsError) throw updateSessionsError;
+
+          // Também atualizar os pagamentos associados a essas sessões
+          // Buscar IDs das sessões que foram atualizadas
+          const { data: updatedSessions } = await supabase
+            .from('sessions')
+            .select('id')
+            .eq('recurring_session_id', id)
+            .eq('is_modified', false)
+            .gte('data', today);
+
+          if (updatedSessions && updatedSessions.length > 0) {
+            const sessionIds = updatedSessions.map(s => s.id);
+            const paymentUpdateFields: any = {};
+            
+            if (data.valor !== undefined) {
+              paymentUpdateFields.valor = data.valor;
+            }
+            if (data.metodo_pagamento !== undefined) {
+              paymentUpdateFields.metodo_pagamento = data.metodo_pagamento;
+            }
+
+            // Atualizar pagamentos pendentes associados às sessões
+            const { error: updatePaymentsError } = await supabase
+              .from('payments')
+              .update(paymentUpdateFields)
+              .in('session_id', sessionIds)
+              .eq('status', 'pendente');
+
+            if (updatePaymentsError) {
+              console.error('Erro ao atualizar pagamentos:', updatePaymentsError);
+            }
+          }
         }
       }
 
