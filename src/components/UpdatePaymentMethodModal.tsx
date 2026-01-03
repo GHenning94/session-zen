@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { loadStripe, StripeCardNumberElementChangeEvent } from '@stripe/stripe-js';
 import {
   Elements,
@@ -17,23 +17,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
 import { CreditCardVisual } from './CreditCardVisual';
 
-// Fetch Stripe key from environment - requires VITE_STRIPE_PUBLIC_KEY to be set
-const getStripeKey = (): string => {
-  const envKey = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-  if (!envKey) {
-    console.error('[Stripe] VITE_STRIPE_PUBLIC_KEY environment variable not configured');
-    throw new Error('Stripe key not configured. Please set VITE_STRIPE_PUBLIC_KEY environment variable.');
-  }
-  return envKey;
-};
-
-// Initialize Stripe promise - will throw if key not configured
-let stripePromise: ReturnType<typeof loadStripe> | null = null;
-try {
-  stripePromise = loadStripe(getStripeKey());
-} catch (error) {
-  console.error('[Stripe] Failed to initialize:', error);
-}
+// Stripe publishable key - same key used for checkout
+const STRIPE_PUBLIC_KEY = 'pk_live_51MjxMVBJ2uJnSxl1IxfXyCHCUqvGgWfMPujVXCWNOeZQCJjLzCQnGLv1VQmTMJQqYBfnzL1cXQZQiNMZW4gZ9P5A00T5wIvQjR';
 
 interface UpdatePaymentMethodModalProps {
   open: boolean;
@@ -276,24 +261,21 @@ export const UpdatePaymentMethodModal: React.FC<UpdatePaymentMethodModalProps> =
   onOpenChange,
   onSuccess,
 }) => {
+  // Initialize Stripe lazily when modal opens
+  const stripePromise = useMemo(() => loadStripe(STRIPE_PUBLIC_KEY), []);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Adicionar Cartão de Pagamento</DialogTitle>
         </DialogHeader>
-        {stripePromise ? (
-          <Elements stripe={stripePromise}>
-            <PaymentForm 
-              onSuccess={onSuccess} 
-              onClose={() => onOpenChange(false)} 
-            />
-          </Elements>
-        ) : (
-          <div className="text-center py-8 text-muted-foreground">
-            Erro ao carregar o formulário de pagamento. Verifique a configuração do Stripe.
-          </div>
-        )}
+        <Elements stripe={stripePromise}>
+          <PaymentForm 
+            onSuccess={onSuccess} 
+            onClose={() => onOpenChange(false)} 
+          />
+        </Elements>
       </DialogContent>
     </Dialog>
   );

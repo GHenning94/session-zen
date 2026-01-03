@@ -908,13 +908,6 @@ const Configuracoes = () => {
               </CardContent>
             </Card>
 
-            {showUpdatePaymentModal && (
-              <UpdatePaymentMethodModal
-                open={showUpdatePaymentModal}
-                onOpenChange={setShowUpdatePaymentModal}
-                onSuccess={handlePaymentSuccess}
-              />
-            )}
           </TabsContent>
 
           <TabsContent value="bank-details" className="space-y-6">
