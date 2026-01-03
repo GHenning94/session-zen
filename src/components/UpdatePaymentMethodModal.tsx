@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { loadStripe } from '@stripe/stripe-js';
+import React, { useState, useCallback } from 'react';
+import { loadStripe, StripeCardNumberElementChangeEvent } from '@stripe/stripe-js';
 import {
   Elements,
   CardNumberElement,
@@ -11,9 +11,11 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { CreditCardVisual } from './CreditCardVisual';
 
 // Fetch Stripe key from environment - requires VITE_STRIPE_PUBLIC_KEY to be set
 const getStripeKey = (): string => {
@@ -62,6 +64,22 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
   const elements = useElements();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  
+  // Card preview state
+  const [cardPreview, setCardPreview] = useState({
+    brand: '',
+    last4: '',
+    expiry: '',
+    cardHolder: '',
+  });
+
+  // Handle card number change to detect brand
+  const handleCardNumberChange = useCallback((event: StripeCardNumberElementChangeEvent) => {
+    setCardPreview(prev => ({
+      ...prev,
+      brand: event.brand || '',
+    }));
+  }, []);
 
   // NOTE: AdBlocker errors (net::ERR_BLOCKED_BY_ADBLOCKER) are normal and expected
   // Stripe SDK automatically tries alternative URLs if blocked. No action needed.
@@ -111,6 +129,9 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
       const { error: confirmError, setupIntent } = await stripe.confirmCardSetup(data.client_secret, {
         payment_method: {
           card: cardNumberElement,
+          billing_details: {
+            name: cardPreview.cardHolder || undefined,
+          },
         },
       });
 
@@ -131,7 +152,7 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
 
         toast({
           title: "Sucesso!",
-          description: "Cartão atualizado com sucesso.",
+          description: "Cartão adicionado com sucesso.",
         });
 
         onSuccess();
@@ -141,7 +162,7 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
       console.error('[Stripe] Error updating payment method:', error);
       toast({
         title: "Erro",
-        description: error.message || "Erro ao atualizar o cartão.",
+        description: error.message || "Erro ao adicionar o cartão.",
         variant: "destructive",
       });
     } finally {
@@ -149,26 +170,70 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
     }
   };
 
+  // Parse expiry for preview
+  const parseExpiry = (expiry: string) => {
+    const parts = expiry.split('/');
+    return {
+      month: parts[0] || '',
+      year: parts[1] || '',
+    };
+  };
+
+  const expiryParts = parseExpiry(cardPreview.expiry);
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Card preview */}
+      <div className="flex justify-center">
+        <CreditCardVisual
+          brand={cardPreview.brand}
+          cardHolder={cardPreview.cardHolder}
+          expMonth={expiryParts.month}
+          expYear={expiryParts.year}
+          size="md"
+        />
+      </div>
+
       <div className="space-y-4">
+        {/* Card Holder */}
+        <div>
+          <Label htmlFor="card-holder">Nome no Cartão</Label>
+          <Input
+            id="card-holder"
+            placeholder="NOME COMO ESTÁ NO CARTÃO"
+            className="mt-1 uppercase"
+            value={cardPreview.cardHolder}
+            onChange={(e) => setCardPreview(prev => ({ ...prev, cardHolder: e.target.value.toUpperCase() }))}
+          />
+        </div>
+
+        {/* Card Number */}
         <div>
           <Label htmlFor="card-number">Número do Cartão</Label>
-          <div className="mt-1 p-3 border rounded-md">
-            <CardNumberElement id="card-number" options={elementOptions} />
+          <div className="mt-1 p-3 border rounded-md bg-background">
+            <CardNumberElement 
+              id="card-number" 
+              options={elementOptions}
+              onChange={handleCardNumberChange}
+            />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
+          {/* Expiry */}
           <div>
             <Label htmlFor="card-expiry">Validade</Label>
-            <div className="mt-1 p-3 border rounded-md">
-              <CardExpiryElement id="card-expiry" options={elementOptions} />
+            <div className="mt-1 p-3 border rounded-md bg-background">
+              <CardExpiryElement 
+                id="card-expiry" 
+                options={elementOptions}
+              />
             </div>
           </div>
+          {/* CVC */}
           <div>
-            <Label htmlFor="card-cvc">CVC</Label>
-            <div className="mt-1 p-3 border rounded-md">
+            <Label htmlFor="card-cvc">CVV</Label>
+            <div className="mt-1 p-3 border rounded-md bg-background">
               <CardCvcElement id="card-cvc" options={elementOptions} />
             </div>
           </div>
@@ -179,9 +244,9 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
         <Button type="button" variant="outline" onClick={onClose} disabled={loading}>
           Cancelar
         </Button>
-        <Button type="submit" disabled={!stripe || loading}>
+        <Button type="submit" disabled={!stripe || loading} className="min-w-[140px]">
           {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Salvar Cartão
+          {loading ? 'Salvando...' : 'Salvar Cartão'}
         </Button>
       </div>
     </form>
@@ -195,16 +260,22 @@ export const UpdatePaymentMethodModal: React.FC<UpdatePaymentMethodModalProps> =
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Atualizar Cartão de Pagamento</DialogTitle>
+          <DialogTitle>Adicionar Cartão de Pagamento</DialogTitle>
         </DialogHeader>
-        <Elements stripe={stripePromise}>
-          <PaymentForm 
-            onSuccess={onSuccess} 
-            onClose={() => onOpenChange(false)} 
-          />
-        </Elements>
+        {stripePromise ? (
+          <Elements stripe={stripePromise}>
+            <PaymentForm 
+              onSuccess={onSuccess} 
+              onClose={() => onOpenChange(false)} 
+            />
+          </Elements>
+        ) : (
+          <div className="text-center py-8 text-muted-foreground">
+            Erro ao carregar o formulário de pagamento. Verifique a configuração do Stripe.
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
