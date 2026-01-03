@@ -166,14 +166,18 @@ export function formatPaymentMethod(method: string | null | undefined): string {
     'dinheiro': 'Dinheiro',
     'pix': 'PIX',
     'cartao': 'Cartão',
-    'cartao_credito': 'Cartão', // Mapear legados para Cartão
-    'cartao_debito': 'Cartão', // Mapear legados para Cartão
+    'cartao_credito': 'Cartão',
+    'cartao_debito': 'Cartão',
+    'cartão': 'Cartão',
+    'cartão de crédito': 'Cartão',
+    'cartão de débito': 'Cartão',
     'transferencia': 'Transferência',
+    'transferência': 'Transferência',
     'boleto': 'Boleto',
     'A definir': 'A definir',
     'a definir': 'A definir'
   }
   
-  const lowerMethod = method.toLowerCase()
+  const lowerMethod = method.toLowerCase().trim()
   return methodMap[lowerMethod] || method.charAt(0).toUpperCase() + method.slice(1)
 }

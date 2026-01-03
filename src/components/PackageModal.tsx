@@ -251,7 +251,8 @@ export const PackageModal = ({
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Row 1: Total de Sessões, Valor Total, Valor por Sessão, Método de Pagamento */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 <div>
                   <Label htmlFor="total_sessoes">Total de Sessões *</Label>
                   <Input
@@ -276,9 +277,7 @@ export const PackageModal = ({
                     required
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Valor por Sessão (calculado)</Label>
                   <Input
@@ -295,7 +294,7 @@ export const PackageModal = ({
                     onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Selecione um método" />
+                      <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="pix">PIX</SelectItem>
@@ -308,69 +307,74 @@ export const PackageModal = ({
                 </div>
               </div>
 
+              {/* Row 2: Dates side by side on web, stacked on mobile */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <Label>Data de Início *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !formData.data_inicio && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.data_inicio ? (
-                        format(formData.data_inicio, 'PPP', { locale: ptBR })
-                      ) : (
-                        'Selecionar data'
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.data_inicio}
-                      onSelect={(date) => setFormData({ ...formData, data_inicio: date })}
-                      initialFocus
-                      locale={ptBR}
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-              </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !formData.data_inicio && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {formData.data_inicio ? (
+                            format(formData.data_inicio, 'dd/MM/yyyy', { locale: ptBR })
+                          ) : (
+                            'Selecionar'
+                          )}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.data_inicio}
+                        onSelect={(date) => setFormData({ ...formData, data_inicio: date })}
+                        initialFocus
+                        locale={ptBR}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
                   <Label>Data de Término *</Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !formData.data_fim && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.data_fim ? (
-                        format(formData.data_fim, 'PPP', { locale: ptBR })
-                      ) : (
-                        'Selecionar data'
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.data_fim}
-                      onSelect={(date) => setFormData({ ...formData, data_fim: date })}
-                      initialFocus
-                      locale={ptBR}
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-              </Popover>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !formData.data_fim && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span className="truncate">
+                          {formData.data_fim ? (
+                            format(formData.data_fim, 'dd/MM/yyyy', { locale: ptBR })
+                          ) : (
+                            'Selecionar'
+                          )}
+                        </span>
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={formData.data_fim}
+                        onSelect={(date) => setFormData({ ...formData, data_fim: date })}
+                        initialFocus
+                        locale={ptBR}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 
