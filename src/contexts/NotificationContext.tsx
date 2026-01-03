@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { playNotificationSound } from '@/hooks/useNotificationSound'
@@ -34,6 +35,7 @@ interface NotificationProviderProps {
 
 export const NotificationProvider = ({ children }: NotificationProviderProps) => {
   const { user } = useAuth()
+  const location = useLocation()
   const [notifications, setNotifications] = useState<Notification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
   const [loading, setLoading] = useState(true)
@@ -51,9 +53,18 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const pendingNotificationsShownRef = useRef(false)
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
 
+  // Check if user is on dashboard
+  const isOnDashboard = location.pathname === '/dashboard' || location.pathname === '/'
+
   // Process the notification queue one at a time
   const processNextNotification = useCallback((playSound = true) => {
-    console.log('[NotificationContext] processNextNotification called, queue length:', notificationQueueRef.current.length, 'isProcessing:', isProcessingQueueRef.current)
+    console.log('[NotificationContext] processNextNotification called, queue length:', notificationQueueRef.current.length, 'isProcessing:', isProcessingQueueRef.current, 'isOnDashboard:', isOnDashboard)
+    
+    // Only show toasts when on dashboard
+    if (!isOnDashboard) {
+      console.log('[NotificationContext] Not on dashboard, skipping toast display')
+      return
+    }
     
     if (isProcessingQueueRef.current) {
       console.log('[NotificationContext] Already processing, skipping')
@@ -76,7 +87,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     }
     
     setIncomingNotification(nextNotification)
-  }, [])
+  }, [isOnDashboard])
 
   // Add notification to queue and start processing if not already
   const enqueueNotification = useCallback((notification: Notification, playSoundWithDisplay = true) => {
@@ -399,7 +410,13 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     }
   }, [user, notifications, enqueueNotification])
 
-  // Auto-marcar notificações como lidas quando o dropdown abrir
+  // Process pending notifications when navigating to dashboard
+  useEffect(() => {
+    if (isOnDashboard && notificationQueueRef.current.length > 0 && !isProcessingQueueRef.current) {
+      console.log('[NotificationContext] User navigated to dashboard, processing pending notifications')
+      processNextNotification(true)
+    }
+  }, [isOnDashboard, processNextNotification])
   const markVisibleAsRead = async () => {
     const unreadNotifications = notifications.filter(n => !n.lida)
     if (unreadNotifications.length === 0) return
