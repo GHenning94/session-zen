@@ -251,8 +251,8 @@ export const PackageModal = ({
                 />
               </div>
 
-              {/* Row 1: Total de Sessões, Valor Total, Valor por Sessão, Método de Pagamento */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {/* Row 1: Total de Sessões e Valor Total */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="total_sessoes">Total de Sessões *</Label>
                   <Input
@@ -277,9 +277,12 @@ export const PackageModal = ({
                     required
                   />
                 </div>
+              </div>
 
+              {/* Row 2: Valor por Sessão e Método de Pagamento */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label>Valor por Sessão (calculado)</Label>
+                  <Label>Valor por Sessão</Label>
                   <Input
                     value={`R$ ${formData.valor_por_sessao.toFixed(2)}`}
                     disabled

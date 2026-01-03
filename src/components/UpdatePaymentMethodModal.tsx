@@ -82,8 +82,6 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
     }
   }, []);
 
-  // Track card number input via a hidden input synced with Stripe element
-  const [rawCardNumber, setRawCardNumber] = useState('');
 
   // NOTE: AdBlocker errors (net::ERR_BLOCKED_BY_ADBLOCKER) are normal and expected
   // Stripe SDK automatically tries alternative URLs if blocked. No action needed.
@@ -190,14 +188,12 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
       {/* Card preview */}
       <div className="flex justify-center py-2">
         <CreditCardVisual
-          brand={cardPreview.brand || detectBrand(rawCardNumber)}
+          brand={cardPreview.brand}
           cardHolder={cardPreview.cardHolder}
           expMonth={expiryParts.month}
           expYear={expiryParts.year}
           size="md"
           isFlipped={isCvvFocused}
-          showFullNumber={true}
-          cardNumber={rawCardNumber}
         />
       </div>
 
@@ -214,46 +210,42 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
           />
         </div>
 
-        {/* Card Number - Single input that syncs with Stripe */}
+        {/* Card Number - Stripe Element visible */}
         <div>
           <Label htmlFor="card-number">Número do Cartão</Label>
-          <div className="mt-1 relative">
-            {/* Custom overlay to capture and display card number for preview */}
-            <Input
-              id="card-number-display"
-              placeholder="0000 0000 0000 0000"
-              className="font-mono tracking-wider"
-              value={rawCardNumber.replace(/(\d{4})(?=\d)/g, '$1 ').trim()}
-              onChange={(e) => {
-                const value = e.target.value.replace(/\D/g, '').slice(0, 16);
-                setRawCardNumber(value);
-                setCardPreview(prev => ({ ...prev, brand: detectBrand(value) }));
-              }}
-              maxLength={19}
-            />
-          </div>
-          {/* Hidden Stripe element for secure payment processing */}
-          <div className="sr-only" aria-hidden="true">
+          <div className="mt-1 p-3 border rounded-md bg-background">
             <CardNumberElement 
               id="card-number" 
               options={elementOptions}
-              onChange={handleCardNumberChange}
+              onChange={(e) => {
+                handleCardNumberChange(e);
+                // Extract last4 when complete
+                if (e.complete && e.brand) {
+                  setCardPreview(prev => ({ ...prev, brand: e.brand || '' }));
+                }
+              }}
             />
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {/* Expiry */}
+          {/* Expiry - Stripe Element visible */}
           <div>
             <Label htmlFor="card-expiry">Validade</Label>
             <div className="mt-1 p-3 border rounded-md bg-background">
               <CardExpiryElement 
                 id="card-expiry" 
                 options={elementOptions}
+                onChange={(e) => {
+                  // Stripe doesn't give us the values, just complete status
+                  if (e.complete) {
+                    // We can't get the actual values from Stripe for security
+                  }
+                }}
               />
             </div>
           </div>
-          {/* CVC */}
+          {/* CVC - Stripe Element visible */}
           <div>
             <Label htmlFor="card-cvc">CVV</Label>
             <div className="mt-1 p-3 border rounded-md bg-background">
