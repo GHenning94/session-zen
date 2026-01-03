@@ -1,27 +1,47 @@
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Upload, X, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
-import { compressImageWithProgress, getOptimalCompressionSettings } from "@/utils/imageCompression"
+import { ImageCropper } from "@/components/ImageCropper"
+import { getSignedUrl } from "@/utils/storageUtils"
 
 interface ImageUploadProps {
   label: string
   value: string
   onChange: (value: string) => void
   placeholder?: string
+  aspectRatio?: number
 }
 
-export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUploadProps) => {
+export const ImageUpload = ({ label, value, onChange, placeholder, aspectRatio }: ImageUploadProps) => {
   const [uploading, setUploading] = useState(false)
-  const [compressionProgress, setCompressionProgress] = useState(0)
+  const [showCropper, setShowCropper] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
   const { user } = useAuth()
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Generate signed URL for preview when value changes
+  useEffect(() => {
+    const loadPreview = async () => {
+      if (value && !value.startsWith('http')) {
+        const signedUrl = await getSignedUrl(value)
+        if (signedUrl) {
+          setPreviewUrl(signedUrl)
+        }
+      } else if (value) {
+        setPreviewUrl(value)
+      } else {
+        setPreviewUrl(null)
+      }
+    }
+    loadPreview()
+  }, [value])
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (!file || !user) return
 
@@ -45,54 +65,41 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
       return
     }
 
-    setUploading(true)
-    try {
-      // Compress image automatically
-      const compressionSettings = getOptimalCompressionSettings(file)
-      const compressedBlob = await compressImageWithProgress(
-        file, 
-        compressionSettings,
-        (progress) => setCompressionProgress(progress)
-      )
+    // Create object URL for the cropper
+    const imageUrl = URL.createObjectURL(file)
+    setSelectedImage(imageUrl)
+    setShowCropper(true)
 
-      // Create unique filename with .webp extension
-      const fileName = `${user.id}/${Date.now()}.webp`
-
-      // Upload compressed image to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from('user-uploads')
-        .upload(fileName, compressedBlob, {
-          cacheControl: '3600',
-          upsert: false
-        })
-
-      if (error) {
-        console.error('Storage error:', error)
-        throw error
-      }
-
-      // Return storage path instead of public URL
-      onChange(data.path)
-
-      toast({
-        title: "Sucesso",
-        description: "Imagem carregada com sucesso.",
-      })
-    } catch (error) {
-      console.error('Erro ao fazer upload:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível fazer upload da imagem.",
-        variant: "destructive",
-      })
-    } finally {
-      setUploading(false)
-      setCompressionProgress(0)
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
+  }
+
+  const handleCropComplete = async (croppedImagePath: string) => {
+    setShowCropper(false)
+    setSelectedImage(null)
+    onChange(croppedImagePath)
+    
+    // Get signed URL for preview
+    const signedUrl = await getSignedUrl(croppedImagePath)
+    if (signedUrl) {
+      setPreviewUrl(signedUrl)
+    }
+    
+    toast({
+      title: "Sucesso",
+      description: "Imagem carregada com sucesso.",
+    })
+  }
+
+  const handlePreview = (previewBlobUrl: string) => {
+    setPreviewUrl(previewBlobUrl)
   }
 
   const removeImage = () => {
     onChange('')
+    setPreviewUrl(null)
   }
 
   return (
@@ -100,10 +107,11 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
       <Label>{label}</Label>
       
       <div className="flex gap-2">
-        <Input
+        <input
+          ref={fileInputRef}
           type="file"
           accept="image/*"
-          onChange={handleFileUpload}
+          onChange={handleFileSelect}
           disabled={uploading}
           className="hidden"
           id={`file-upload-${label}`}
@@ -111,7 +119,7 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
         <Button
           type="button"
           variant="outline"
-          onClick={() => document.getElementById(`file-upload-${label}`)?.click()}
+          onClick={() => fileInputRef.current?.click()}
           disabled={uploading}
         >
           {uploading ? (
@@ -119,10 +127,7 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
           ) : (
             <Upload className="h-4 w-4 mr-2" />
           )}
-          {uploading 
-            ? `Otimizando... ${compressionProgress}%` 
-            : 'Fazer Upload'
-          }
+          {uploading ? 'Processando...' : 'Fazer Upload'}
         </Button>
         {value && (
           <Button
@@ -136,12 +141,12 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
         )}
       </div>
 
-      {value && (
+      {previewUrl && (
         <div className="mt-2">
           <Label className="text-sm text-muted-foreground">Preview</Label>
           <div className="w-full h-32 bg-muted rounded border overflow-hidden">
             <img
-              src={value}
+              src={previewUrl}
               alt="Preview"
               className="w-full h-full object-cover"
               onError={(e) => {
@@ -150,6 +155,21 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
             />
           </div>
         </div>
+      )}
+
+      {showCropper && selectedImage && (
+        <ImageCropper
+          isOpen={showCropper}
+          onClose={() => {
+            setShowCropper(false)
+            setSelectedImage(null)
+          }}
+          imageSrc={selectedImage}
+          onCropComplete={handleCropComplete}
+          onPreview={handlePreview}
+          aspectRatio={aspectRatio}
+          circularCrop={false}
+        />
       )}
     </div>
   )
