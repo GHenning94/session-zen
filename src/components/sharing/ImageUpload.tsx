@@ -99,57 +99,41 @@ export const ImageUpload = ({ label, value, onChange, placeholder }: ImageUpload
     <div className="space-y-2">
       <Label>{label}</Label>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label className="text-sm text-muted-foreground">URL da imagem</Label>
-          <Input
-            type="url"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder || "https://exemplo.com/imagem.jpg"}
-          />
-        </div>
-        
-        <div>
-          <Label className="text-sm text-muted-foreground">Ou fazer upload</Label>
-          <div className="flex gap-2">
-            <Input
-              type="file"
-              accept="image/*"
-              onChange={handleFileUpload}
-              disabled={uploading}
-              className="hidden"
-              id={`file-upload-${label}`}
-            />
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full"
-              onClick={() => document.getElementById(`file-upload-${label}`)?.click()}
-              disabled={uploading}
-            >
-              {uploading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Upload className="h-4 w-4 mr-2" />
-              )}
-              {uploading 
-                ? `Otimizando... ${compressionProgress}%` 
-                : 'Upload'
-              }
-            </Button>
-            {value && (
-              <Button
-                type="button"
-                variant="outline"
-                size="icon"
-                onClick={removeImage}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-          </div>
-        </div>
+      <div className="flex gap-2">
+        <Input
+          type="file"
+          accept="image/*"
+          onChange={handleFileUpload}
+          disabled={uploading}
+          className="hidden"
+          id={`file-upload-${label}`}
+        />
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => document.getElementById(`file-upload-${label}`)?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Upload className="h-4 w-4 mr-2" />
+          )}
+          {uploading 
+            ? `Otimizando... ${compressionProgress}%` 
+            : 'Fazer Upload'
+          }
+        </Button>
+        {value && (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={removeImage}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {value && (
