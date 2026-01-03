@@ -205,5 +205,11 @@ verify_jwt = true
 [functions.referral-process-payout]
 verify_jwt = false
 
+[functions.reactivate-subscription]
+verify_jwt = true
+
+[functions.upgrade-subscription]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true
