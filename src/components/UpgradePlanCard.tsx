@@ -120,10 +120,11 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
     if (!user) return
     
     // Verifica se é o plano atual no mesmo ciclo
+    // billing_interval no banco pode ser: 'monthly', 'yearly', ou null (para basico)
     const isCurrentPlanAndCycle = plan.id === currentPlan && (
       plan.id === 'basico' || 
-      (billingCycle === 'monthly' && currentBillingInterval === 'month') ||
-      (billingCycle === 'annual' && currentBillingInterval === 'year')
+      (billingCycle === 'monthly' && currentBillingInterval === 'monthly') ||
+      (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
     )
     
     if (isCurrentPlanAndCycle) return
@@ -294,10 +295,11 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
             // Determina se é o plano atual considerando o ciclo de cobrança
             // Para plano básico, não precisa verificar o ciclo
             // Para planos pagos, verifica se o ciclo atual (monthly/yearly) corresponde ao selecionado
+            // billing_interval no banco pode ser: 'monthly', 'yearly', ou null (para basico)
             const isCurrentPlanAndCycle = plan.id === currentPlan && (
               plan.id === 'basico' || 
-              (billingCycle === 'monthly' && currentBillingInterval === 'month') ||
-              (billingCycle === 'annual' && currentBillingInterval === 'year')
+              (billingCycle === 'monthly' && currentBillingInterval === 'monthly') ||
+              (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
             )
             
             // Premium sempre com destaque quando não é o plano atual no ciclo
