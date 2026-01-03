@@ -4,10 +4,20 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { supabase } from '@/integrations/supabase/client'
 import { useToast } from '@/hooks/use-toast'
-import { Download, FileText, Receipt, Calendar, AlertTriangle, Loader2 } from 'lucide-react'
+import { Download, FileText, Receipt, Calendar, AlertTriangle, Loader2, RotateCcw } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { CancelSubscriptionFlow } from './CancelSubscriptionFlow'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 
 interface Invoice {
   id: string
@@ -49,7 +59,9 @@ export const SubscriptionInvoices = () => {
   const [currentPlan, setCurrentPlan] = useState<string>('basico')
   const [loading, setLoading] = useState(true)
   const [isCanceling, setIsCanceling] = useState(false)
+  const [isReactivating, setIsReactivating] = useState(false)
   const [showCancelDialog, setShowCancelDialog] = useState(false)
+  const [showReactivateDialog, setShowReactivateDialog] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
@@ -112,6 +124,32 @@ export const SubscriptionInvoices = () => {
       })
     } finally {
       setIsCanceling(false)
+    }
+  }
+
+  const handleReactivateSubscription = async () => {
+    try {
+      setIsReactivating(true)
+      const { data, error } = await supabase.functions.invoke('reactivate-subscription')
+
+      if (error) throw error
+
+      toast({
+        title: 'Assinatura reativada!',
+        description: data.message || 'Sua assinatura foi reativada com sucesso.',
+      })
+
+      await loadInvoices()
+      setShowReactivateDialog(false)
+    } catch (error: any) {
+      console.error('Error reactivating subscription:', error)
+      toast({
+        title: 'Erro ao reativar',
+        description: error.message,
+        variant: 'destructive',
+      })
+    } finally {
+      setIsReactivating(false)
     }
   }
 
@@ -214,20 +252,31 @@ export const SubscriptionInvoices = () => {
 
             {subscriptionStatus?.is_canceled && subscriptionStatus?.cancel_at && (
               <div className="rounded-lg bg-amber-50 dark:bg-amber-950 p-3 border border-amber-200 dark:border-amber-800 mt-3">
-                <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-900 dark:text-amber-100">
-                      Assinatura Cancelada
-                    </p>
-                    <p className="text-amber-800 dark:text-amber-200 mt-1">
-                      Seu plano ficará ativo até{' '}
-                      <span className="font-semibold">
-                        {format(new Date(subscriptionStatus.cancel_at), "dd/MM/yyyy", { locale: ptBR })}
-                      </span>.
-                      Após essa data, você retornará ao plano gratuito.
-                    </p>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-2 flex-1">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-amber-900 dark:text-amber-100">
+                        Assinatura Cancelada
+                      </p>
+                      <p className="text-amber-800 dark:text-amber-200 mt-1">
+                        Seu plano ficará ativo até{' '}
+                        <span className="font-semibold">
+                          {format(new Date(subscriptionStatus.cancel_at), "dd/MM/yyyy", { locale: ptBR })}
+                        </span>.
+                        Após essa data, você retornará ao plano gratuito.
+                      </p>
+                    </div>
                   </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => setShowReactivateDialog(true)}
+                    className="flex-shrink-0 gap-1.5 bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Desistir do cancelamento
+                  </Button>
                 </div>
               </div>
             )}
@@ -323,6 +372,37 @@ export const SubscriptionInvoices = () => {
         onConfirmCancel={handleCancelSubscription}
         planName={getPlanDisplayName(currentPlan, subscriptionStatus?.billing_interval)}
       />
+
+      <AlertDialog open={showReactivateDialog} onOpenChange={setShowReactivateDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Desistir do cancelamento?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Sua assinatura será reativada e a cobrança continuará normalmente na data prevista. 
+              Você manterá acesso a todos os recursos do seu plano atual.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isReactivating}>
+              Voltar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleReactivateSubscription}
+              disabled={isReactivating}
+              className="bg-primary hover:bg-primary/90"
+            >
+              {isReactivating ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  Reativando...
+                </>
+              ) : (
+                'Sim, manter minha assinatura'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   )
 }
