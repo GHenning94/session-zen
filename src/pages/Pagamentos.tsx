@@ -95,13 +95,14 @@ const [isLoading, setIsLoading] = useState(false)
         .order('horario', { ascending: false })
       
       // Carregar pagamentos com relacionamentos (campos otimizados)
+      // Inclui recurring_sessions nested para obter método de pagamento correto
       const { data: paymentsData, error: paymentsError } = await supabase
         .from('payments')
         .select(`
           id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
           observacoes, created_at, package_id, session_id, client_id,
           packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio, metodo_pagamento),
-          sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type)
+          sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type, recurring_sessions:recurring_session_id (metodo_pagamento))
         `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -208,7 +209,7 @@ const getSessionPayments = () => {
     const time = isPackage ? '00:00:00' : (p.sessions?.horario || '00:00:00')
     
     // Para sessões recorrentes, buscar o método de pagamento da configuração de recorrência
-    // Prioridade: sessão > pagamento > recorrência
+    // Prioridade: sessão > pagamento > recorrência (via nested query)
     let method = 'A definir'
     if (!isPackage && p.sessions) {
       // Primeiro tenta pegar da sessão (que é atualizado quando a recorrência muda)
@@ -217,8 +218,13 @@ const getSessionPayments = () => {
       } else if (p.metodo_pagamento && p.metodo_pagamento !== 'A definir') {
         // Fallback para o pagamento
         method = p.metodo_pagamento
+      } else if (p.sessions.recurring_session_id && p.sessions.recurring_sessions?.metodo_pagamento) {
+        // Se a sessão é recorrente e não tem método definido, busca da recorrência via nested query
+        if (p.sessions.recurring_sessions.metodo_pagamento !== 'A definir') {
+          method = p.sessions.recurring_sessions.metodo_pagamento
+        }
       } else if (p.sessions.recurring_session_id) {
-        // Se a sessão é recorrente e não tem método definido, busca da recorrência
+        // Fallback para recurringSessions array (compatibilidade)
         const recurring = recurringSessions.find(r => r.id === p.sessions.recurring_session_id)
         if (recurring?.metodo_pagamento && recurring.metodo_pagamento !== 'A definir') {
           method = recurring.metodo_pagamento
