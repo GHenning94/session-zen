@@ -195,12 +195,10 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
   const handleSaveClient = async () => {
     if (!user) return
 
-    if (!newClient.name || (!isQuickRegistration && !newClient.email) || !newClient.phone) {
+    if (!newClient.name || !newClient.phone) {
       toast({
         title: "Erro",
-        description: isQuickRegistration 
-          ? "Preencha pelo menos nome e telefone" 
-          : "Preencha pelo menos nome, email e telefone",
+        description: "Preencha pelo menos nome e telefone",
         variant: "destructive",
       })
       return
