@@ -177,6 +177,31 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                 <div className="flex items-center justify-between"><div><Label>Mostrar Preço</Label></div><Switch checked={settings.show_price ?? true} onCheckedChange={(checked) => onSettingsChange('show_price', checked)} /></div>
                 <div className="flex items-center justify-between"><div><Label>Mostrar Duração</Label></div><Switch checked={settings.show_duration ?? true} onCheckedChange={(checked) => onSettingsChange('show_duration', checked)} /></div>
               </div>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Mostrar Especialidade</Label>
+                    <p className="text-sm text-muted-foreground">Exibir sua especialidade na página</p>
+                  </div>
+                  <Switch 
+                    checked={settings.show_specialty ?? true} 
+                    onCheckedChange={(checked) => onSettingsChange('show_specialty', checked)} 
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Mostrar Bio</Label>
+                    <p className="text-sm text-muted-foreground">Exibir sua bio na página</p>
+                  </div>
+                  <Switch 
+                    checked={settings.show_bio ?? true} 
+                    onCheckedChange={(checked) => onSettingsChange('show_bio', checked)} 
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
+                💡 A especialidade e a bio são preenchidas na aba "Perfil" em Configurações.
+              </p>
               <div className="pt-4">
                 <Button onClick={onSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
                   {isLoading ? "Salvando..." : "Salvar Configurações"}
@@ -201,10 +226,11 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                     <Input type="color" value={settings.background_color || '#ffffff'} onChange={(e) => onSettingsChange('background_color', e.target.value)} />
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label>Logo (URL)</Label>
-                  <Input value={settings.logo_url || ''} onChange={(e) => onSettingsChange('logo_url', e.target.value)} placeholder="https://exemplo.com/logo.png" />
-                </div>
+                <ImageUpload 
+                  label="Logo"
+                  value={settings.logo_url || ''}
+                  onChange={(url) => onSettingsChange('logo_url', url)}
+                />
                 <div className="space-y-2">
                   <ImageUpload 
                     label="Imagem de Fundo"
@@ -214,10 +240,6 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                   <p className="text-xs text-muted-foreground">
                     A imagem carregada terá prioridade sobre a cor de fundo selecionada.
                   </p>
-                </div>
-                <div className="space-y-2">
-                  <Label>CSS Personalizado</Label>
-                  <Textarea value={settings.custom_css || ''} onChange={(e) => onSettingsChange('custom_css', e.target.value)} placeholder="/* Seu CSS personalizado */" rows={4} />
                 </div>
               </CardContent>
             </Card>
