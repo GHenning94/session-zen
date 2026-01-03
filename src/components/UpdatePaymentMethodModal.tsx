@@ -60,21 +60,30 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
     cardNumber: '',
   });
 
-  // Handle card number change to detect brand and capture last 4 digits
+  // Detect card brand from number
+  const detectBrand = (number: string): string => {
+    const cleaned = number.replace(/\D/g, '');
+    if (/^4/.test(cleaned)) return 'visa';
+    if (/^5[1-5]/.test(cleaned) || /^2[2-7]/.test(cleaned)) return 'mastercard';
+    if (/^3[47]/.test(cleaned)) return 'amex';
+    if (/^(636368|438935|504175|451416|636297|5067|4576|4011)/.test(cleaned)) return 'elo';
+    if (/^(38|60)/.test(cleaned)) return 'hipercard';
+    return '';
+  };
+
+  // Handle card number change from Stripe element (for validation)
   const handleCardNumberChange = useCallback((event: StripeCardNumberElementChangeEvent) => {
-    // Extract the last 4 digits if complete
-    let cardNum = '';
-    if (event.complete && event.brand) {
-      // When complete, we know it's valid - show masked with bullets
-      cardNum = '••••••••••••' + (event.brand === 'amex' ? '•••••' : '••••');
+    // We still use Stripe's brand detection as fallback
+    if (event.brand && event.brand !== 'unknown') {
+      setCardPreview(prev => ({
+        ...prev,
+        brand: prev.brand || event.brand || '',
+      }));
     }
-    
-    setCardPreview(prev => ({
-      ...prev,
-      brand: event.brand || '',
-      cardNumber: cardNum,
-    }));
   }, []);
+
+  // Track card number input via a hidden input synced with Stripe element
+  const [rawCardNumber, setRawCardNumber] = useState('');
 
   // NOTE: AdBlocker errors (net::ERR_BLOCKED_BY_ADBLOCKER) are normal and expected
   // Stripe SDK automatically tries alternative URLs if blocked. No action needed.
@@ -181,14 +190,14 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
       {/* Card preview */}
       <div className="flex justify-center py-2">
         <CreditCardVisual
-          brand={cardPreview.brand}
+          brand={cardPreview.brand || detectBrand(rawCardNumber)}
           cardHolder={cardPreview.cardHolder}
           expMonth={expiryParts.month}
           expYear={expiryParts.year}
           size="md"
           isFlipped={isCvvFocused}
           showFullNumber={true}
-          cardNumber={cardPreview.cardNumber}
+          cardNumber={rawCardNumber}
         />
       </div>
 
@@ -205,16 +214,32 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
           />
         </div>
 
-        {/* Card Number */}
+        {/* Card Number - Custom input with real-time display */}
         <div>
-          <Label htmlFor="card-number">Número do Cartão</Label>
-          <div className="mt-1 p-3 border rounded-md bg-background">
+          <Label htmlFor="card-number-input">Número do Cartão</Label>
+          <Input
+            id="card-number-input"
+            placeholder="0000 0000 0000 0000"
+            className="mt-1 font-mono tracking-wider"
+            value={rawCardNumber.replace(/(\d{4})(?=\d)/g, '$1 ').trim()}
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '').slice(0, 16);
+              setRawCardNumber(value);
+              setCardPreview(prev => ({ ...prev, brand: detectBrand(value) }));
+            }}
+            maxLength={19}
+          />
+          {/* Hidden Stripe element for actual payment processing */}
+          <div className="mt-2 p-3 border rounded-md bg-background">
             <CardNumberElement 
               id="card-number" 
               options={elementOptions}
               onChange={handleCardNumberChange}
             />
           </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            Digite o número acima para visualização e confirme no campo seguro do Stripe abaixo.
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
