@@ -174,17 +174,16 @@ export default function Upgrade() {
     }
     
     if (isUpgrade && currentPlan !== 'basico') {
-      // Para upgrade de plano pago, calcular valor proporcional
-      // Por enquanto, mostrar aviso de que o Stripe vai calcular o pro-rata
+      // Para upgrade de plano pago, mostrar modal e processar via upgrade-subscription
       setUpgradeModal({ 
         open: true, 
         targetPlan: plan, 
-        proratedAmount: null // Stripe calculará automaticamente
+        proratedAmount: null
       })
       return
     }
     
-    // Upgrade de plano gratuito ou primeiro plano
+    // Upgrade de plano gratuito ou primeiro plano - usa checkout normal
     await processCheckout(plan)
   }
 
@@ -232,8 +231,34 @@ export default function Upgrade() {
 
   const handleConfirmUpgrade = async () => {
     if (!upgradeModal.targetPlan) return
+    
+    const plan = upgradeModal.targetPlan
     setUpgradeModal({ ...upgradeModal, open: false })
-    await processCheckout(upgradeModal.targetPlan)
+    setLoading(true)
+    
+    try {
+      // Usar a função de upgrade com proration para assinaturas existentes
+      const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
+        body: { newPriceId: plan.stripePrice }
+      })
+      
+      if (error) throw error
+      
+      if (data?.requiresPayment && data?.paymentUrl) {
+        // Se precisa pagar valor proporcional, redirecionar para checkout
+        toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
+        window.location.href = data.paymentUrl
+      } else {
+        // Upgrade realizado com sucesso sem pagamento adicional
+        toast.success(data?.message || 'Upgrade realizado com sucesso!')
+        navigate('/dashboard?upgrade=success')
+      }
+    } catch (error: any) {
+      console.error('Erro ao processar upgrade:', error)
+      toast.error(`Erro ao processar upgrade: ${error.message || 'Tente novamente.'}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleConfirmDowngrade = async () => {
@@ -389,12 +414,12 @@ export default function Upgrade() {
               <p>
                 Você está prestes a fazer upgrade para o plano <strong>{upgradeModal.targetPlan?.name}</strong>.
               </p>
-              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                  <div className="text-sm text-amber-800 dark:text-amber-200">
-                    <p className="font-medium">Sobre o valor:</p>
-                    <p>O Stripe calculará automaticamente o valor proporcional baseado no tempo restante do seu período atual. Você verá o valor exato antes de confirmar o pagamento.</p>
+                  <Check className="h-4 w-4 text-green-600 mt-0.5" />
+                  <div className="text-sm text-green-800 dark:text-green-200">
+                    <p className="font-medium">Cobrança proporcional:</p>
+                    <p>Você pagará apenas a diferença proporcional baseada no tempo restante da sua assinatura atual. O crédito do plano anterior será aplicado automaticamente.</p>
                   </div>
                 </div>
               </div>
@@ -405,8 +430,15 @@ export default function Upgrade() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmUpgrade}>
-              Continuar para Pagamento
+            <AlertDialogAction onClick={handleConfirmUpgrade} disabled={loading}>
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processando...
+                </>
+              ) : (
+                'Confirmar Upgrade'
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
