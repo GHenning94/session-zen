@@ -208,13 +208,17 @@ const getSessionPayments = () => {
     const time = isPackage ? '00:00:00' : (p.sessions?.horario || '00:00:00')
     
     // Para sessões recorrentes, buscar o método de pagamento da configuração de recorrência
-    let method = p.metodo_pagamento || 'A definir'
+    // Prioridade: sessão > pagamento > recorrência
+    let method = 'A definir'
     if (!isPackage && p.sessions) {
-      // Primeiro tenta pegar da sessão
-      method = p.sessions.metodo_pagamento || 'A definir'
-      
-      // Se a sessão é recorrente e não tem método definido, busca da recorrência
-      if (p.sessions.recurring_session_id && method === 'A definir') {
+      // Primeiro tenta pegar da sessão (que é atualizado quando a recorrência muda)
+      if (p.sessions.metodo_pagamento && p.sessions.metodo_pagamento !== 'A definir') {
+        method = p.sessions.metodo_pagamento
+      } else if (p.metodo_pagamento && p.metodo_pagamento !== 'A definir') {
+        // Fallback para o pagamento
+        method = p.metodo_pagamento
+      } else if (p.sessions.recurring_session_id) {
+        // Se a sessão é recorrente e não tem método definido, busca da recorrência
         const recurring = recurringSessions.find(r => r.id === p.sessions.recurring_session_id)
         if (recurring?.metodo_pagamento && recurring.metodo_pagamento !== 'A definir') {
           method = recurring.metodo_pagamento
@@ -223,6 +227,9 @@ const getSessionPayments = () => {
     } else if (isPackage && p.packages) {
       // Para pacotes, usar o método do pacote
       method = p.packages.metodo_pagamento || p.metodo_pagamento || 'A definir'
+    } else {
+      // Fallback para sessões sem relacionamento
+      method = p.metodo_pagamento || 'A definir'
     }
 
     return {

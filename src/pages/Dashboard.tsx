@@ -220,30 +220,13 @@ const Dashboard = () => {
         if (data?.subscription_tier && data.subscription_tier !== 'basico') {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
           
-          // Disparar confetti de celebração
-          const duration = 3000
-          const animationEnd = Date.now() + duration
-          const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 9999 }
-
-          const randomInRange = (min: number, max: number) => Math.random() * (max - min) + min
-
-          const interval = window.setInterval(() => {
-            const timeLeft = animationEnd - Date.now()
-            if (timeLeft <= 0) {
-              return clearInterval(interval)
-            }
-            const particleCount = 50 * (timeLeft / duration)
-            confetti({
-              ...defaults,
-              particleCount,
-              origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 }
-            })
-            confetti({
-              ...defaults,
-              particleCount,
-              origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 }
-            })
-          }, 250)
+          // Disparar confetti de celebração (mesmo estilo do programa de indicação)
+          confetti({
+            particleCount: 150,
+            spread: 70,
+            origin: { y: 0.6 },
+            colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'],
+          })
           
           // Store the new plan for welcome modal
           const newPlan = data.subscription_tier === 'premium' ? 'premium' : 'pro'
