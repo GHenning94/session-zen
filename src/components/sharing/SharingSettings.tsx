@@ -163,40 +163,44 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                   Esta foto será exibida no seu link público de agendamento quando ativada
                 </p>
               </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label>Mostrar Foto na Página</Label>
-                  <p className="text-sm text-muted-foreground">Exibir sua foto na página pública</p>
-                </div>
-                <Switch 
-                  checked={settings.show_photo !== false} 
-                  onCheckedChange={(checked) => onSettingsChange('show_photo', checked)} 
-                />
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between"><div><Label>Mostrar Preço</Label></div><Switch checked={settings.show_price ?? true} onCheckedChange={(checked) => onSettingsChange('show_price', checked)} /></div>
-                <div className="flex items-center justify-between"><div><Label>Mostrar Duração</Label></div><Switch checked={settings.show_duration ?? true} onCheckedChange={(checked) => onSettingsChange('show_duration', checked)} /></div>
-              </div>
-              <div className="grid md:grid-cols-2 gap-4">
-                <div className="flex items-center justify-between">
-                  <div>
+              <div className="space-y-4">
+                <h4 className="font-medium">Exibição na Página Pública</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_photo !== false} 
+                      onCheckedChange={(checked) => onSettingsChange('show_photo', checked)} 
+                    />
+                    <Label>Mostrar Foto</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_price ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_price', checked)} 
+                    />
+                    <Label>Mostrar Preço</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_duration ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_duration', checked)} 
+                    />
+                    <Label>Mostrar Duração</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_specialty ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_specialty', checked)} 
+                    />
                     <Label>Mostrar Especialidade</Label>
-                    <p className="text-sm text-muted-foreground">Exibir sua especialidade na página</p>
                   </div>
-                  <Switch 
-                    checked={settings.show_specialty ?? true} 
-                    onCheckedChange={(checked) => onSettingsChange('show_specialty', checked)} 
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_bio ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_bio', checked)} 
+                    />
                     <Label>Mostrar Bio</Label>
-                    <p className="text-sm text-muted-foreground">Exibir sua bio na página</p>
                   </div>
-                  <Switch 
-                    checked={settings.show_bio ?? true} 
-                    onCheckedChange={(checked) => onSettingsChange('show_bio', checked)} 
-                  />
                 </div>
               </div>
               <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
