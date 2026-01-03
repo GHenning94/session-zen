@@ -34,8 +34,7 @@ const PAYMENT_METHODS = [
   { value: 'A definir', label: 'A definir' },
   { value: 'Dinheiro', label: 'Dinheiro' },
   { value: 'PIX', label: 'PIX' },
-  { value: 'Cartão de Crédito', label: 'Cartão de Crédito' },
-  { value: 'Cartão de Débito', label: 'Cartão de Débito' },
+  { value: 'Cartão', label: 'Cartão' },
   { value: 'Transferência', label: 'Transferência' }
 ];
 

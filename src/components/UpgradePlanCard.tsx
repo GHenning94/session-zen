@@ -309,7 +309,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                 key={plan.id} 
                 className={`relative border-2 transition-colors ${
                   isCurrentPlanAndCycle 
-                    ? 'border-primary' 
+                    ? 'border-green-500 ring-2 ring-green-500/20' 
                     : 'border-border hover:border-primary/50'
                 }`}
               >
@@ -353,7 +353,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     onClick={() => !isCurrentPlanAndCycle && handleChangePlan(plan)}
                     disabled={loading || isCurrentPlanAndCycle}
                     variant={isCurrentPlanAndCycle ? "secondary" : showHighlight ? "default" : "outline"}
-                    style={isCurrentPlanAndCycle ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
+                    style={isCurrentPlanAndCycle ? { pointerEvents: 'none', opacity: 0.6, cursor: 'not-allowed' } : undefined}
                   >
                     {loading ? 'Processando...' : isCurrentPlanAndCycle ? 'Plano Atual' : `Escolher ${plan.name}`}
                   </Button>

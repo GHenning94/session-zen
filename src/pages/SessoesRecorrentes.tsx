@@ -8,7 +8,7 @@ import { useRecurringSessions } from "@/hooks/useRecurringSessions"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
-import { Repeat, Plus, Edit, Trash2, Calendar, Clock, DollarSign } from "lucide-react"
+import { Repeat, Plus, Pencil, Trash2, Calendar, Clock, DollarSign } from "lucide-react"
 import { ClientAvatar } from "@/components/ClientAvatar"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { useToast } from "@/hooks/use-toast"
@@ -275,12 +275,12 @@ export default function SessoesRecorrentes() {
                     </div>
 
                     <div className="flex gap-2 shrink-0 self-end sm:self-start">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleEdit(recurring)}
-                      >
-                        <Edit className="h-4 w-4" />
+                                      <Button
+                                        variant="outline"
+                                        size="icon"
+                                        onClick={() => handleEdit(recurring)}
+                                      >
+                                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
