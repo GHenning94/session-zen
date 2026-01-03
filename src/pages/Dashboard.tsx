@@ -191,6 +191,23 @@ const Dashboard = () => {
     if (paymentStatus === 'success' && user) {
       handlePaymentSuccess()
     }
+    
+    // Check if returning from direct upgrade (no payment required)
+    const upgradeStatus = searchParams.get('upgrade')
+    const upgradePlan = searchParams.get('plan')
+    if (upgradeStatus === 'success' && upgradePlan && user) {
+      // Clear URL params
+      searchParams.delete('upgrade')
+      searchParams.delete('plan')
+      setSearchParams(searchParams, { replace: true })
+      
+      // Show upgrade welcome modal for tier changes
+      if (upgradePlan === 'premium' || upgradePlan === 'pro') {
+        sessionStorage.setItem('show_upgrade_welcome', upgradePlan)
+        // Reload to trigger the modal
+        window.location.href = '/dashboard'
+      }
+    }
   }, [user, loadDashboardDataOptimized, searchParams])
 
   const handlePaymentSuccess = async () => {
@@ -220,9 +237,16 @@ const Dashboard = () => {
         if (data?.subscription_tier && data.subscription_tier !== 'basico') {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
           
-          // Store the new plan for welcome modal (confetti agora é disparado pelo modal)
-          const newPlan = data.subscription_tier === 'premium' ? 'premium' : 'pro'
-          sessionStorage.setItem('show_upgrade_welcome', newPlan)
+          // Verificar se há um pending_tier_upgrade (indica mudança de tier)
+          const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade')
+          
+          if (pendingTierUpgrade) {
+            // É mudança de tier - mostrar animação
+            sessionStorage.removeItem('pending_tier_upgrade')
+            sessionStorage.setItem('show_upgrade_welcome', pendingTierUpgrade)
+          }
+          // Se não há pending_tier_upgrade, pode ser apenas mudança de período
+          // Nesse caso, não mostramos a animação de boas-vindas
           
           // Clear URL params before reload
           searchParams.delete('payment')

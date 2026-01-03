@@ -54,8 +54,19 @@ export default function Upgrade() {
   const [upgradeModal, setUpgradeModal] = useState<{
     open: boolean
     targetPlan: any
-    proratedAmount: number | null
-  }>({ open: false, targetPlan: null, proratedAmount: null })
+    prorationData: {
+      proratedAmount: number
+      proratedAmountFormatted: string
+      creditAmount: number
+      creditFormatted: string
+      daysRemaining: number
+      periodEndDate: string
+      currentPlan: string
+      newPlan: string
+      isTierChange: boolean
+    } | null
+    isLoadingProration: boolean
+  }>({ open: false, targetPlan: null, prorationData: null, isLoadingProration: false })
   const [downgradeModal, setDowngradeModal] = useState<{
     open: boolean
     targetPlan: any
@@ -166,6 +177,7 @@ export default function Upgrade() {
     
     const isDowngrade = plan.planLevel < currentPlanLevel
     const isUpgrade = plan.planLevel > currentPlanLevel
+    const isSameTierDifferentInterval = plan.planLevel === currentPlanLevel && !plan.current
     
     if (isDowngrade) {
       // Mostrar modal de retenção para downgrade
@@ -173,13 +185,35 @@ export default function Upgrade() {
       return
     }
     
-    if (isUpgrade && currentPlan !== 'basico') {
-      // Para upgrade de plano pago, mostrar modal e processar via upgrade-subscription
+    if ((isUpgrade || isSameTierDifferentInterval) && currentPlan !== 'basico') {
+      // Para upgrade de plano pago ou mudança de período, buscar preview de proration
       setUpgradeModal({ 
         open: true, 
         targetPlan: plan, 
-        proratedAmount: null
+        prorationData: null,
+        isLoadingProration: true
       })
+      
+      // Buscar preview de proration
+      try {
+        const { data, error } = await supabase.functions.invoke('preview-proration', {
+          body: { newPriceId: plan.stripePrice }
+        })
+        
+        if (error) throw error
+        
+        setUpgradeModal(prev => ({ 
+          ...prev, 
+          prorationData: data,
+          isLoadingProration: false
+        }))
+      } catch (error) {
+        console.error('Erro ao buscar preview de proration:', error)
+        setUpgradeModal(prev => ({ 
+          ...prev, 
+          isLoadingProration: false
+        }))
+      }
       return
     }
     
@@ -233,7 +267,9 @@ export default function Upgrade() {
     if (!upgradeModal.targetPlan) return
     
     const plan = upgradeModal.targetPlan
-    setUpgradeModal({ ...upgradeModal, open: false })
+    const isTierChange = upgradeModal.prorationData?.isTierChange ?? true
+    
+    setUpgradeModal({ ...upgradeModal, open: false, prorationData: null, isLoadingProration: false })
     setLoading(true)
     
     try {
@@ -245,13 +281,22 @@ export default function Upgrade() {
       if (error) throw error
       
       if (data?.requiresPayment && data?.paymentUrl) {
+        // Guardar se é mudança de tier para o modal de boas vindas
+        if (isTierChange) {
+          sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
+        }
         // Se precisa pagar valor proporcional, redirecionar para checkout
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
         window.location.href = data.paymentUrl
       } else {
         // Upgrade realizado com sucesso sem pagamento adicional
         toast.success(data?.message || 'Upgrade realizado com sucesso!')
-        navigate('/dashboard?upgrade=success')
+        // Só mostrar modal de boas vindas se for mudança de tier
+        if (isTierChange) {
+          navigate(`/dashboard?upgrade=success&plan=${data.newPlan}`)
+        } else {
+          navigate('/dashboard')
+        }
       }
     } catch (error: any) {
       console.error('Erro ao processar upgrade:', error)
@@ -404,40 +449,74 @@ export default function Upgrade() {
 
       {/* Modal de confirmação de upgrade */}
       <AlertDialog open={upgradeModal.open} onOpenChange={(open) => setUpgradeModal({ ...upgradeModal, open })}>
-        <AlertDialogContent>
+        <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <Crown className="h-5 w-5 text-primary" />
-              Confirmar Upgrade
+              {upgradeModal.prorationData?.isTierChange ? 'Confirmar Upgrade' : 'Confirmar Alteração de Plano'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
-              <p>
-                Você está prestes a fazer upgrade para o plano <strong>{upgradeModal.targetPlan?.name}</strong>.
-              </p>
-              <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800">
-                <div className="flex items-start gap-2">
-                  <Check className="h-4 w-4 text-green-600 mt-0.5" />
-                  <div className="text-sm text-green-800 dark:text-green-200">
-                    <p className="font-medium">Cobrança proporcional:</p>
-                    <p>Você pagará apenas a diferença proporcional baseada no tempo restante da sua assinatura atual. O crédito do plano anterior será aplicado automaticamente.</p>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                {upgradeModal.isLoadingProration ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-3 text-muted-foreground">Calculando valor proporcional...</span>
                   </div>
-                </div>
+                ) : upgradeModal.prorationData ? (
+                  <>
+                    <p className="text-sm">
+                      Você está alterando de <strong>{upgradeModal.prorationData.currentPlan}</strong> para <strong>{upgradeModal.prorationData.newPlan}</strong>.
+                    </p>
+                    
+                    {/* Detalhes do cálculo */}
+                    <div className="space-y-2 p-4 rounded-lg bg-muted/50 border">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Dias restantes no plano atual:</span>
+                        <span className="font-medium">{upgradeModal.prorationData.daysRemaining} dias</span>
+                      </div>
+                      {upgradeModal.prorationData.creditAmount > 0 && (
+                        <div className="flex justify-between text-sm">
+                          <span className="text-muted-foreground">Crédito proporcional:</span>
+                          <span className="font-medium text-green-600">- {upgradeModal.prorationData.creditFormatted}</span>
+                        </div>
+                      )}
+                      <div className="border-t pt-2 mt-2">
+                        <div className="flex justify-between">
+                          <span className="font-medium">Valor a pagar agora:</span>
+                          <span className="text-lg font-bold text-primary">{upgradeModal.prorationData.proratedAmountFormatted}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
+                      <p className="text-xs text-blue-800 dark:text-blue-200">
+                        Após a alteração, seu próximo ciclo de cobrança será em <strong>{upgradeModal.prorationData.periodEndDate}</strong>.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <p className="text-sm">
+                    Você está alterando para o plano <strong>{upgradeModal.targetPlan?.name}</strong>.
+                  </p>
+                )}
               </div>
-              <p className="text-sm">
-                Valor do novo plano: <strong>{upgradeModal.targetPlan?.price}{upgradeModal.targetPlan?.period}</strong>
-              </p>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmUpgrade} disabled={loading}>
+            <AlertDialogAction 
+              onClick={handleConfirmUpgrade} 
+              disabled={loading || upgradeModal.isLoadingProration}
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processando...
                 </>
+              ) : upgradeModal.prorationData ? (
+                `Pagar ${upgradeModal.prorationData.proratedAmountFormatted}`
               ) : (
-                'Confirmar Upgrade'
+                'Confirmar'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
