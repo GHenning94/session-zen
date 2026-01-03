@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import giftImage from '@/assets/gift.png';
+import giftImage from '@/assets/gift.webp';
 
 const AnimatedGiftImage = () => {
   const floatingRef = useRef<HTMLImageElement>(null);
