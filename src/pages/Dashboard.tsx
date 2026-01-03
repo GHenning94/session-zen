@@ -30,7 +30,8 @@ import {
   Package,
   Repeat,
   PenLine,
-  FileText
+  FileText,
+  Cake
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend, PolarAngleAxis } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -66,7 +67,8 @@ const Dashboard = () => {
     activeClients: 0,
     monthlyRevenue: 0,
     pendingRevenue: 0,
-    completionRate: 94
+    completionRate: 94,
+    birthdaysThisMonth: 0
   })
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([])
   const [recentPayments, setRecentPayments] = useState<any[]>([])
@@ -805,13 +807,29 @@ const Dashboard = () => {
         ? Math.round((completedSessionsCount / totalSessionsCount) * 100)
         : 0
 
+      // Buscar aniversariantes do mês
+      const currentMonth = new Date().getMonth() + 1
+      const { data: allClientsForBirthday } = await supabase
+        .from('clients')
+        .select('id, data_nascimento')
+        .eq('user_id', user?.id)
+        .eq('ativo', true)
+        .not('data_nascimento', 'is', null)
+      
+      const birthdaysThisMonth = (allClientsForBirthday || []).filter(client => {
+        if (!client.data_nascimento) return false
+        const birthMonth = new Date(client.data_nascimento).getMonth() + 1
+        return birthMonth === currentMonth
+      }).length
+
       // Preparar dashboard data (não setar ainda)
       const dashboardDataPrepared = {
         sessionsToday: todaySessions?.length || 0,
         activeClients: clientsCount || 0,
         monthlyRevenue,
         pendingRevenue: pendingPayments.reduce((sum, p) => sum + (p.valor || 0), 0),
-        completionRate: calculatedCompletionRate
+        completionRate: calculatedCompletionRate,
+        birthdaysThisMonth
       }
 
       // Ordenar upcoming sessions e recent payments (futuras primeiro, depois passadas)
@@ -1056,7 +1074,7 @@ const Dashboard = () => {
       change: "+2 vs ontem",
       icon: Calendar,
       color: "text-primary",
-      bgColor: "bg-primary/10"
+      bgColor: "bg-primary"
     },
     {
       title: `${clientTermPlural} Ativos`,
@@ -1064,7 +1082,7 @@ const Dashboard = () => {
       change: "+5 este mês",
       icon: Users,
       color: "text-success",
-      bgColor: "bg-success/10"
+      bgColor: "bg-success"
     },
     {
       title: "Receita Mensal",
@@ -1072,7 +1090,7 @@ const Dashboard = () => {
       change: "+15% vs mês anterior",
       icon: DollarSign,
       color: "text-success",
-      bgColor: "bg-success/10"
+      bgColor: "bg-success"
     },
     {
       title: "Taxa de Conclusão",
@@ -1080,7 +1098,18 @@ const Dashboard = () => {
       change: "+3% este mês",
       icon: TrendingUp,
       color: "text-warning",
-      bgColor: "bg-warning/10"
+      bgColor: "bg-warning"
+    },
+    {
+      title: "Aniversariantes",
+      value: dashboardData.birthdaysThisMonth.toString(),
+      change: "Este mês",
+      icon: Cake,
+      color: "text-pink-500",
+      bgColor: "bg-pink-500",
+      hasAction: true,
+      actionLabel: "Ver tudo",
+      actionUrl: "/clientes?filter=aniversariantes"
     }
   ]
 
@@ -1101,10 +1130,10 @@ const Dashboard = () => {
         {/* Actionable Notifications Banner */}
         <ActionableNotificationsBanner />
 
-        {/* Stats Cards - 2x2 grid on mobile */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
+        {/* Stats Cards - 2x2 grid on mobile, 5 cols on desktop */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
         {isLoading ? (
-          Array.from({ length: 4 }).map((_, index) => (
+          Array.from({ length: 5 }).map((_, index) => (
             <Card key={index} className="shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
                 <Skeleton className="h-3 md:h-4 w-16 md:w-24" />
@@ -1127,18 +1156,25 @@ const Dashboard = () => {
                 <CardTitle className="text-[10px] md:text-sm font-medium text-muted-foreground">
                   {stat.title}
                 </CardTitle>
-                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${
-                  index === 0 ? 'bg-primary' : 
-                  index === 1 ? 'bg-success' : 
-                  index === 2 ? 'bg-success' : 
-                  'bg-warning'
-                } flex items-center justify-center`}>
+                <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full ${stat.bgColor} flex items-center justify-center`}>
                   <stat.icon className="w-4 h-4 md:w-5 md:h-5 text-white" />
                 </div>
               </CardHeader>
               <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
                 <div className="text-lg md:text-2xl font-bold truncate">{stat.value}</div>
-                <p className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.change}</p>
+                <div className="flex items-center justify-between gap-1">
+                  <p className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.change}</p>
+                  {'hasAction' in stat && stat.hasAction && (
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      className="h-auto p-0 text-[10px] md:text-xs text-primary hover:underline"
+                      onClick={() => navigate(stat.actionUrl!)}
+                    >
+                      {stat.actionLabel}
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           ))

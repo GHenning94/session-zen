@@ -23,6 +23,7 @@ import {
   Link,
   AlertTriangle,
   ChevronDown,
+  Cake,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
@@ -37,7 +38,7 @@ import { BatchSelectionBar, SelectableItemCheckbox } from "@/components/BatchSel
 import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { cn } from "@/lib/utils"
 
 const Clientes = () => {
@@ -47,6 +48,7 @@ const Clientes = () => {
   const { currentPlan, planLimits, canAddClient } = useSubscription()
   const { clientTerm, clientTermPlural, getClientTerm } = useTerminology()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
   const [searchTerm, setSearchTerm] = useState("")
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<any>(null)
@@ -55,6 +57,7 @@ const Clientes = () => {
   const [clients, setClients] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("todos")
+  const [birthdayFilter, setBirthdayFilter] = useState<boolean>(false)
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<any>(null)
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   
@@ -68,8 +71,18 @@ const Clientes = () => {
     let count = 0
     if (statusFilter && statusFilter !== 'todos') count++
     if (searchTerm) count++
+    if (birthdayFilter) count++
     return count
-  }, [statusFilter, searchTerm])
+  }, [statusFilter, searchTerm, birthdayFilter])
+
+  // Check URL params for filter on mount
+  useEffect(() => {
+    const filter = searchParams.get('filter')
+    if (filter === 'aniversariantes') {
+      setBirthdayFilter(true)
+      setIsFiltersOpen(true)
+    }
+  }, [searchParams])
 
   const [newClient, setNewClient] = useState({
     name: "",
@@ -539,6 +552,14 @@ const Clientes = () => {
   }
 
   // Filtrar clientes por busca, status e ordenar por data de criação (mais recente primeiro)
+  // Helper function to check if birthday is this month
+  const isBirthdayThisMonth = (dataNascimento: string | null) => {
+    if (!dataNascimento) return false
+    const birthMonth = new Date(dataNascimento).getMonth()
+    const currentMonth = new Date().getMonth()
+    return birthMonth === currentMonth
+  }
+
   const filteredClients = [...clients]
     .filter(client => {
       const matchesSearch = client.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -549,7 +570,9 @@ const Clientes = () => {
         (statusFilter === "ativo" && client.ativo !== false) ||
         (statusFilter === "inativo" && client.ativo === false)
       
-      return matchesSearch && matchesStatus
+      const matchesBirthday = !birthdayFilter || isBirthdayThisMonth(client.data_nascimento)
+      
+      return matchesSearch && matchesStatus && matchesBirthday
     })
     .sort((a, b) => {
       return new Date(b.created_at || b.view_accessed_at).getTime() - new Date(a.created_at || a.view_accessed_at).getTime()
@@ -655,7 +678,7 @@ const Clientes = () => {
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
                   <div>
                     <Label htmlFor="search" className="text-xs">Buscar</Label>
                     <div className="relative">
@@ -685,6 +708,29 @@ const Clientes = () => {
                   </div>
 
                   <div>
+                    <Label className="text-xs">Aniversariantes</Label>
+                    <Button 
+                      variant={birthdayFilter ? "default" : "outline"}
+                      size="sm" 
+                      className={cn(
+                        "w-full h-9 gap-2",
+                        birthdayFilter && "bg-pink-500 hover:bg-pink-600 text-white"
+                      )}
+                      onClick={() => {
+                        setBirthdayFilter(!birthdayFilter)
+                        // Clear URL param when toggling off
+                        if (birthdayFilter) {
+                          searchParams.delete('filter')
+                          setSearchParams(searchParams, { replace: true })
+                        }
+                      }}
+                    >
+                      <Cake className="w-4 h-4" />
+                      <span className="hidden sm:inline">Do mês</span>
+                    </Button>
+                  </div>
+
+                  <div>
                     <Label className="text-xs">Limpar</Label>
                     <Button 
                       variant="outline" 
@@ -693,6 +739,9 @@ const Clientes = () => {
                       onClick={() => {
                         setSearchTerm('')
                         setStatusFilter('todos')
+                        setBirthdayFilter(false)
+                        searchParams.delete('filter')
+                        setSearchParams(searchParams, { replace: true })
                       }}
                       disabled={activeFiltersCount === 0}
                     >

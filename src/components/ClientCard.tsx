@@ -1,18 +1,27 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { User, Mail, Phone, Pill, Baby } from "lucide-react"
+import { User, Mail, Phone, Pill, Baby, Cake } from "lucide-react"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
 interface ClientCardProps {
   client: any
   onClick: () => void
   onWhatsAppClick: (phone: string) => void
+  showBirthdayBadge?: boolean
 }
 
-export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps) => {
+export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge = true }: ClientCardProps) => {
   const { avatarUrl, isLoading, hasError } = useAvatarUrl(client.avatar_url)
   const [imageError, setImageError] = useState(false)
+  
+  // Check if client has birthday this month
+  const isBirthdayThisMonth = () => {
+    if (!client.data_nascimento) return false
+    const birthMonth = new Date(client.data_nascimento).getMonth()
+    const currentMonth = new Date().getMonth()
+    return birthMonth === currentMonth
+  }
   
   // Log avatar information for debugging
   if (client.avatar_url) {
@@ -27,6 +36,7 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
   }
 
   const showFallbackIcon = !avatarUrl || hasError || imageError
+  const hasBirthday = showBirthdayBadge && isBirthdayThisMonth()
 
   return (
     <div
@@ -66,6 +76,16 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick }: ClientCardProps
               >
                 {client.ativo !== false ? "Ativo" : "Inativo"}
               </Badge>
+              {hasBirthday && (
+                <Badge 
+                  variant="outline"
+                  className="shrink-0 bg-pink-500/10 text-pink-600 border-pink-300 dark:text-pink-400 dark:border-pink-500/50"
+                >
+                  <Cake className="w-3 h-3 mr-1" />
+                  <span className="hidden sm:inline">Aniversariante do mês</span>
+                  <span className="sm:hidden">Aniver.</span>
+                </Badge>
+              )}
             </div>
             <div className="text-xs md:text-sm text-muted-foreground space-y-1">
               <div className="flex flex-wrap items-center gap-1 md:gap-2">
