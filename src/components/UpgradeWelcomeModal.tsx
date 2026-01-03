@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -56,127 +56,77 @@ export const UpgradeWelcomeModal = ({
   newPlan 
 }: UpgradeWelcomeModalProps) => {
   const plan = planDetails[newPlan]
-  const [isAnimating, setIsAnimating] = useState(false)
   const [showContent, setShowContent] = useState(false)
+  const hasTriggeredRef = useRef(false)
   
-  // Disparar confetti e animação quando o modal abre
-  const triggerCelebration = useCallback(() => {
-    if (!open || isAnimating) return
-    
-    setIsAnimating(true)
-    setShowContent(false)
-    
-    // Usar requestAnimationFrame para garantir fluidez
-    requestAnimationFrame(() => {
-      // Primeiro burst de confetti (centro)
-      confetti({
-        particleCount: 80,
-        spread: 100,
-        origin: { x: 0.5, y: 0.5 },
-        colors: plan.confettiColors,
-        startVelocity: 30,
-        gravity: 0.8,
-        scalar: 1.2,
-        drift: 0,
-        ticks: 100,
-        disableForReducedMotion: true
-      })
+  // Disparar confetti uma única vez quando o modal abre
+  useEffect(() => {
+    if (open && !hasTriggeredRef.current) {
+      hasTriggeredRef.current = true
       
-      // Segundo burst (esquerda) - com pequeno delay
-      setTimeout(() => {
+      // Pequeno delay para garantir que o modal está montado
+      const timer = setTimeout(() => {
+        // Explosão única de confetti (igual ao programa de indicação)
         confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { x: 0.3, y: 0.6 },
+          particleCount: 100,
+          spread: 70,
+          origin: { y: 0.6 },
           colors: plan.confettiColors,
-          startVelocity: 25,
-          gravity: 0.9,
-          scalar: 1,
-          ticks: 80,
           disableForReducedMotion: true
         })
+        
+        // Mostrar conteúdo do modal imediatamente após o confetti
+        setShowContent(true)
       }, 100)
       
-      // Terceiro burst (direita) - com delay
-      setTimeout(() => {
-        confetti({
-          particleCount: 50,
-          spread: 60,
-          origin: { x: 0.7, y: 0.6 },
-          colors: plan.confettiColors,
-          startVelocity: 25,
-          gravity: 0.9,
-          scalar: 1,
-          ticks: 80,
-          disableForReducedMotion: true
-        })
-      }, 200)
-      
-      // Mostrar conteúdo do modal após o burst inicial
-      setTimeout(() => {
-        setShowContent(true)
-      }, 150)
-    })
-  }, [open, isAnimating, plan.confettiColors])
-  
-  useEffect(() => {
-    if (open) {
-      // Reset states and trigger celebration
-      setIsAnimating(false)
-      setShowContent(false)
-      // Pequeno delay para garantir que o modal está visível
-      const timer = setTimeout(triggerCelebration, 50)
       return () => clearTimeout(timer)
-    } else {
-      setIsAnimating(false)
+    }
+    
+    if (!open) {
+      // Reset quando o modal fecha
+      hasTriggeredRef.current = false
       setShowContent(false)
     }
-  }, [open, triggerCelebration])
+  }, [open, plan.confettiColors])
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className={`max-w-md transition-all duration-500 ease-out ${
-          showContent 
-            ? 'opacity-100 scale-100 translate-y-0' 
-            : 'opacity-0 scale-90 translate-y-4'
-        }`}
-        style={{
-          willChange: 'transform, opacity'
-        }}
-      >
+      <DialogContent className="max-w-md">
         <DialogHeader className="text-center pb-4">
           <div 
-            className={`flex justify-center mb-4 transition-all duration-500 ease-out delay-100 ${
+            className={`flex justify-center mb-4 transition-all duration-300 ease-out ${
               showContent ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
             }`}
           >
-            <div className={`p-4 rounded-full ${plan.bgColor} ${plan.color} animate-pulse`}>
+            <div className={`p-4 rounded-full ${plan.bgColor} ${plan.color}`}>
               {plan.icon}
             </div>
           </div>
           <div 
-            className={`flex items-center justify-center gap-2 mb-2 transition-all duration-500 ease-out delay-150 ${
+            className={`flex items-center justify-center gap-2 mb-2 transition-all duration-300 ease-out ${
               showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
             }`}
+            style={{ transitionDelay: showContent ? '50ms' : '0ms' }}
           >
-            <Sparkles className={`h-5 w-5 ${plan.color} animate-pulse`} />
+            <Sparkles className={`h-5 w-5 ${plan.color}`} />
             <DialogTitle className="text-2xl">Parabéns!</DialogTitle>
-            <Sparkles className={`h-5 w-5 ${plan.color} animate-pulse`} />
+            <Sparkles className={`h-5 w-5 ${plan.color}`} />
           </div>
           <DialogDescription 
-            className={`text-base transition-all duration-500 ease-out delay-200 ${
+            className={`text-base transition-all duration-300 ease-out ${
               showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'
             }`}
+            style={{ transitionDelay: showContent ? '100ms' : '0ms' }}
           >
             Você agora é assinante do plano <strong className={plan.color}>{plan.name}</strong>!
           </DialogDescription>
         </DialogHeader>
 
         <div 
-          className={`space-y-4 transition-all duration-500 ease-out delay-300 ${
+          className={`space-y-4 transition-all duration-300 ease-out ${
             showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
+          style={{ transitionDelay: showContent ? '150ms' : '0ms' }}
         >
           <div className="flex items-center justify-center gap-2">
             <Badge variant="secondary" className="text-sm px-3 py-1">
@@ -193,7 +143,7 @@ export const UpgradeWelcomeModal = ({
                   showContent ? 'opacity-100 translate-x-0' : 'opacity-0 -translate-x-4'
                 }`}
                 style={{ 
-                  transitionDelay: showContent ? `${350 + index * 50}ms` : '0ms'
+                  transitionDelay: showContent ? `${200 + index * 30}ms` : '0ms'
                 }}
               >
                 <div className="flex-shrink-0">
@@ -205,20 +155,20 @@ export const UpgradeWelcomeModal = ({
           </div>
 
           <p 
-            className={`text-xs text-muted-foreground text-center transition-all duration-500 ease-out ${
+            className={`text-xs text-muted-foreground text-center transition-all duration-300 ease-out ${
               showContent ? 'opacity-100' : 'opacity-0'
             }`}
-            style={{ transitionDelay: showContent ? '600ms' : '0ms' }}
+            style={{ transitionDelay: showContent ? '400ms' : '0ms' }}
           >
             Aproveite todos os recursos do seu novo plano!
           </p>
         </div>
 
         <DialogFooter 
-          className={`pt-4 transition-all duration-500 ease-out ${
+          className={`pt-4 transition-all duration-300 ease-out ${
             showContent ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
           }`}
-          style={{ transitionDelay: showContent ? '650ms' : '0ms' }}
+          style={{ transitionDelay: showContent ? '450ms' : '0ms' }}
         >
           <Button onClick={() => onOpenChange(false)} className="w-full">
             Começar a usar
