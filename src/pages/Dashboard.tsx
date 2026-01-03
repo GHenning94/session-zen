@@ -966,11 +966,23 @@ const Dashboard = () => {
       const canalData: { [key: string]: { valor: number; count: number } } = {}
       
       paymentsData?.forEach((p) => {
-        let method = p.metodo_pagamento || p.sessions?.metodo_pagamento || 'Outros'
-        // Consolidar cartao_credito e cartao_debito em cartao
-        if (method === 'cartao_credito' || method === 'cartao_debito') {
+        let method = (p.metodo_pagamento || p.sessions?.metodo_pagamento || 'Outros').toLowerCase().trim()
+        
+        // Consolidar cartao_credito, cartao_debito, cartão de débito, cartão de crédito em cartao
+        if (method === 'cartao_credito' || method === 'cartao_debito' || 
+            method === 'cartão de débito' || method === 'cartão de crédito' ||
+            method === 'cartão' || method === 'cartao de credito' || method === 'cartao de debito') {
           method = 'cartao'
         }
+        // Normalizar transferência para transferencia
+        if (method === 'transferência') {
+          method = 'transferencia'
+        }
+        // Normalizar outros valores
+        if (!method || method === 'null' || method === 'undefined') {
+          method = 'Outros'
+        }
+        
         if (!canalData[method]) {
           canalData[method] = { valor: 0, count: 0 }
         }
