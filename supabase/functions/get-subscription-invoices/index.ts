@@ -133,18 +133,13 @@ serve(async (req) => {
 
     console.log('[get-subscription-invoices] 📅 Subscription info:', subscriptionInfo);
 
-    // ✅ IMPORTANTE: Buscar apenas faturas PAGAS da assinatura atual
-    // Isso evita mostrar faturas de teste ou de assinaturas antigas
+    // ✅ IMPORTANTE: Buscar TODAS as faturas PAGAS do cliente (histórico completo)
+    // Não filtrar por subscription para incluir faturas de assinaturas anteriores
     const invoiceListParams: Stripe.InvoiceListParams = {
       customer: customerId,
-      limit: 12,
+      limit: 100, // Aumentar limite para pegar todo o histórico
       status: 'paid'
     };
-
-    // Se temos uma assinatura, filtrar apenas faturas dessa assinatura
-    if (subscriptionId) {
-      invoiceListParams.subscription = subscriptionId;
-    }
 
     const invoices = await stripe.invoices.list(invoiceListParams);
 
@@ -182,6 +177,9 @@ serve(async (req) => {
         period_end: invoice.period_end,
         hosted_invoice_url: invoice.hosted_invoice_url,
         invoice_pdf: invoice.invoice_pdf,
+        // Adicionar informações extras do plano
+        subscription_id: invoice.subscription,
+        description: invoice.description || invoice.lines?.data?.[0]?.description || null
       }));
 
     console.log('[get-subscription-invoices] ✅ Filtered invoices count:', formattedInvoices.length);

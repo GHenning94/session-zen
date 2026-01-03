@@ -3,18 +3,63 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Check, ArrowLeft, Crown, Zap, Star } from "lucide-react"
+import { Check, ArrowLeft, Crown, Zap, Star, Loader2, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
+import { DowngradeRetentionFlow } from "@/components/DowngradeRetentionFlow"
+import { toast } from "sonner"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
+// Mapeia plano para features que serão perdidas em downgrade
+const planFeatures: Record<string, string[]> = {
+  premium: [
+    'Clientes ilimitados',
+    'Histórico completo de atendimentos',
+    'Relatórios em PDF',
+    'Integração com WhatsApp',
+    'Suporte prioritário'
+  ],
+  pro: [
+    'Até 20 clientes ativos',
+    'Sessões ilimitadas por cliente',
+    'Histórico básico de atendimentos',
+    'Agendamento online'
+  ]
+}
+
+const getPlanLevel = (planId: string): number => {
+  if (planId === 'basico') return 1
+  if (planId === 'pro') return 2
+  if (planId === 'premium') return 3
+  return 0
+}
 
 export default function Upgrade() {
   const { user } = useAuth()
-  const { currentPlan } = useSubscription()
+  const { currentPlan, billingInterval } = useSubscription()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const selectedPlan = searchParams.get('plan')
   const [loading, setLoading] = useState(false)
+  const [upgradeModal, setUpgradeModal] = useState<{
+    open: boolean
+    targetPlan: any
+    proratedAmount: number | null
+  }>({ open: false, targetPlan: null, proratedAmount: null })
+  const [downgradeModal, setDowngradeModal] = useState<{
+    open: boolean
+    targetPlan: any
+  }>({ open: false, targetPlan: null })
 
   useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
 
@@ -26,6 +71,8 @@ export default function Upgrade() {
   }
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+
+  const currentPlanLevel = getPlanLevel(currentPlan)
 
   const plans = [
     { 
@@ -43,7 +90,10 @@ export default function Upgrade() {
       ], 
       recommended: false, 
       stripePrice: null, 
-      current: currentPlan === 'basico' 
+      current: currentPlan === 'basico',
+      planLevel: 1,
+      monthlyValue: 0,
+      annualValue: 0
     },
     { 
       id: 'pro', 
@@ -64,7 +114,10 @@ export default function Upgrade() {
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.pro_monthly : STRIPE_PRICES.pro_annual, 
       current: currentPlan === 'pro',
       annualPrice: 'R$ 298,80',
-      annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null
+      annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null,
+      planLevel: 2,
+      monthlyValue: 29.90,
+      annualValue: 298.80
     },
     { 
       id: 'premium', 
@@ -87,12 +140,64 @@ export default function Upgrade() {
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.premium_monthly : STRIPE_PRICES.premium_annual, 
       current: currentPlan === 'premium',
       annualPrice: 'R$ 498,96',
-      annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null
+      annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null,
+      planLevel: 3,
+      monthlyValue: 49.90,
+      annualValue: 498.96
     }
   ]
 
-  const handleSubscribe = async (plan: typeof plans[0]) => {
-    if (!user || !plan.stripePrice) return
+  const handlePlanClick = async (plan: typeof plans[0]) => {
+    if (!user) return
+    
+    // Se é o plano atual, não fazer nada
+    if (plan.current) return
+    
+    const isDowngrade = plan.planLevel < currentPlanLevel
+    const isUpgrade = plan.planLevel > currentPlanLevel
+    
+    if (isDowngrade) {
+      // Mostrar modal de retenção para downgrade
+      setDowngradeModal({ open: true, targetPlan: plan })
+      return
+    }
+    
+    if (isUpgrade && currentPlan !== 'basico') {
+      // Para upgrade de plano pago, calcular valor proporcional
+      // Por enquanto, mostrar aviso de que o Stripe vai calcular o pro-rata
+      setUpgradeModal({ 
+        open: true, 
+        targetPlan: plan, 
+        proratedAmount: null // Stripe calculará automaticamente
+      })
+      return
+    }
+    
+    // Upgrade de plano gratuito ou primeiro plano
+    await processCheckout(plan)
+  }
+
+  const processCheckout = async (plan: typeof plans[0]) => {
+    if (!user || !plan.stripePrice) {
+      // Para plano básico, usar função de teste
+      if (plan.id === 'basico') {
+        setLoading(true)
+        try {
+          const { data, error } = await supabase.functions.invoke('test-upgrade', {
+            body: { plan: 'basico' }
+          })
+          if (error) throw error
+          toast.success('Plano alterado com sucesso para Básico!')
+          navigate('/dashboard')
+        } catch (error) {
+          console.error('Erro ao alterar plano:', error)
+          toast.error('Erro ao alterar plano. Tente novamente.')
+        } finally {
+          setLoading(false)
+        }
+      }
+      return
+    }
     
     setLoading(true)
     try {
@@ -108,11 +213,55 @@ export default function Upgrade() {
       if (data?.url) window.location.href = data.url
     } catch (error: any) {
       console.error('Erro ao processar pagamento:', error)
-      alert(`Erro ao processar plano\n\n${error.message || 'Verifique os IDs de preço no Stripe Dashboard'}`)
+      toast.error(`Erro ao processar plano: ${error.message || 'Verifique os IDs de preço no Stripe Dashboard'}`)
     } finally {
       setLoading(false)
     }
   }
+
+  const handleConfirmUpgrade = async () => {
+    if (!upgradeModal.targetPlan) return
+    setUpgradeModal({ ...upgradeModal, open: false })
+    await processCheckout(upgradeModal.targetPlan)
+  }
+
+  const handleConfirmDowngrade = async () => {
+    if (!downgradeModal.targetPlan) return
+    
+    const plan = downgradeModal.targetPlan
+    
+    setLoading(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('cancel-subscription', {
+        body: { 
+          action: 'downgrade',
+          targetPlan: plan.id
+        }
+      })
+
+      if (error) throw error
+      
+      toast.success(`Downgrade agendado! Você permanecerá no plano atual até o fim do período de assinatura.`)
+      navigate('/dashboard')
+    } catch (error) {
+      console.error('Erro ao processar downgrade:', error)
+      toast.error('Erro ao processar downgrade. Tente novamente.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const getLostFeatures = (): string[] => {
+    if (currentPlan === 'premium') {
+      return planFeatures.premium
+    }
+    if (currentPlan === 'pro') {
+      return planFeatures.pro
+    }
+    return []
+  }
+
+  const currentPlanInfo = plans.find(p => p.id === currentPlan)
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,61 +297,119 @@ export default function Upgrade() {
           </div>
         </div>
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-          {plans.map((plan) => (
-            <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${plan.id === currentPlan ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
-                  style={plan.id === currentPlan ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
-              {plan.id === currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
-              {plan.recommended && plan.id !== currentPlan && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
-              {plan.annualDiscount && (<Badge variant="secondary" className="absolute -top-3 right-3">Economize {plan.annualDiscount}</Badge>)}
-               <CardHeader className="text-center space-y-4">
-                <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
-                <div>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription className="mt-2">{plan.description}</CardDescription>
-                </div>
-                <div className="flex flex-col items-center justify-center">
-                  <div className="flex items-baseline">
-                    <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                    <span className="text-muted-foreground ml-2">{plan.period}</span>
+          {plans.map((plan) => {
+            const isCurrent = plan.current
+            
+            return (
+              <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${isCurrent ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
+                    style={isCurrent ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
+                {isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
+                {plan.recommended && !isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
+                {plan.annualDiscount && !isCurrent && (<Badge variant="secondary" className="absolute -top-3 right-3">{plan.annualDiscount}</Badge>)}
+                 <CardHeader className="text-center space-y-4">
+                  <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
+                  <div>
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardDescription className="mt-2">{plan.description}</CardDescription>
                   </div>
-                  {billingCycle === 'annual' && plan.annualPrice && (
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Cobrança anual de {plan.annualPrice}
-                    </p>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="flex flex-col flex-grow">
-                <ul className="space-y-3 mb-6 flex-grow">
-                  {plan.features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                      <div className="flex-shrink-0"><Check className="h-4 w-4" style={{ color: 'hsl(142 71% 45%)' }} /></div>
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-                {plan.current ? (
-                  <Button size="lg" disabled className="w-full">
-                    Plano Atual
-                  </Button>
-                ) : (
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="flex items-baseline">
+                      <span className="text-4xl font-bold text-foreground">{plan.price}</span>
+                      <span className="text-muted-foreground ml-2">{plan.period}</span>
+                    </div>
+                    {billingCycle === 'annual' && plan.annualPrice && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Cobrança anual de {plan.annualPrice}
+                      </p>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex flex-col flex-grow">
+                  <ul className="space-y-3 mb-6 flex-grow">
+                    {plan.features.map((feature, index) => (
+                      <li key={index} className="flex items-center gap-3">
+                        <div className="flex-shrink-0"><Check className="h-4 w-4" style={{ color: 'hsl(142 71% 45%)' }} /></div>
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
                   <Button 
                     size="lg" 
-                    className={`w-full max-w-[200px] mx-auto ${plan.recommended ? 'bg-primary hover:bg-primary/90' : ''}`}
-                    onClick={() => handleSubscribe(plan)}
-                    disabled={loading || !plan.stripePrice}
+                    className={`w-full ${plan.recommended && !isCurrent ? 'bg-primary hover:bg-primary/90' : ''}`}
+                    onClick={() => handlePlanClick(plan)}
+                    disabled={loading || isCurrent}
+                    variant={isCurrent ? "secondary" : plan.recommended ? "default" : "outline"}
+                    style={isCurrent ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                   >
-                    {loading ? 'Processando...' : plan.id === 'basico' ? 'Acessar' : 'Fazer Upgrade'}
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processando...
+                      </>
+                    ) : isCurrent ? (
+                      'Plano Atual'
+                    ) : plan.planLevel < currentPlanLevel ? (
+                      'Fazer Downgrade'
+                    ) : plan.id === 'basico' ? (
+                      'Acessar'
+                    ) : (
+                      'Fazer Upgrade'
+                    )}
                   </Button>
-                )}
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
         <div className="text-center mt-12">
           <p className="text-sm text-muted-foreground">Você pode alterar ou cancelar seu plano a qualquer momento</p>
         </div>
       </div>
+
+      {/* Modal de confirmação de upgrade */}
+      <AlertDialog open={upgradeModal.open} onOpenChange={(open) => setUpgradeModal({ ...upgradeModal, open })}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              Confirmar Upgrade
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>
+                Você está prestes a fazer upgrade para o plano <strong>{upgradeModal.targetPlan?.name}</strong>.
+              </p>
+              <div className="p-3 rounded-lg bg-amber-50 dark:bg-amber-950 border border-amber-200 dark:border-amber-800">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                  <div className="text-sm text-amber-800 dark:text-amber-200">
+                    <p className="font-medium">Sobre o valor:</p>
+                    <p>O Stripe calculará automaticamente o valor proporcional baseado no tempo restante do seu período atual. Você verá o valor exato antes de confirmar o pagamento.</p>
+                  </div>
+                </div>
+              </div>
+              <p className="text-sm">
+                Valor do novo plano: <strong>{upgradeModal.targetPlan?.price}{upgradeModal.targetPlan?.period}</strong>
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUpgrade}>
+              Continuar para Pagamento
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Modal de retenção para downgrade */}
+      <DowngradeRetentionFlow
+        open={downgradeModal.open}
+        onOpenChange={(open) => setDowngradeModal({ ...downgradeModal, open })}
+        onConfirmDowngrade={handleConfirmDowngrade}
+        currentPlanName={currentPlanInfo?.name || ''}
+        targetPlanName={downgradeModal.targetPlan?.name || ''}
+        lostFeatures={getLostFeatures()}
+      />
     </div>
   )
 }

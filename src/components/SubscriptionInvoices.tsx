@@ -20,6 +20,8 @@ interface Invoice {
   period_end: number
   hosted_invoice_url: string | null
   invoice_pdf: string | null
+  subscription_id?: string
+  description?: string | null
 }
 
 interface SubscriptionInfo {
@@ -243,7 +245,7 @@ export const SubscriptionInvoices = () => {
           </div>
         </div>
 
-        {/* Invoices List */}
+        {/* Invoices List - Histórico Completo */}
         {invoices.length === 0 ? (
           <div className="text-center py-8">
             <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
@@ -254,53 +256,63 @@ export const SubscriptionInvoices = () => {
           </div>
         ) : (
           <div className="space-y-3">
-            <h4 className="font-semibold text-sm">Faturas Recentes</h4>
-            {invoices.map((invoice) => (
-              <div
-                key={invoice.id}
-                className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors gap-3"
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
-                    <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                    <span className="font-medium text-sm sm:text-base truncate">
-                      {invoice.number || `Fatura #${invoice.id.slice(-8)}`}
-                    </span>
-                    {getStatusBadge(invoice.status)}
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm">Histórico Completo de Pagamentos</h4>
+              <Badge variant="outline" className="text-xs">
+                {invoices.length} {invoices.length === 1 ? 'pagamento' : 'pagamentos'}
+              </Badge>
+            </div>
+            <div className="space-y-2 max-h-[400px] overflow-y-auto pr-2">
+              {invoices.map((invoice) => (
+                <div
+                  key={invoice.id}
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 rounded-lg border bg-card hover:bg-muted/50 transition-colors gap-3"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-1">
+                      <FileText className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      <span className="font-medium text-sm sm:text-base truncate">
+                        {invoice.number || `Fatura #${invoice.id.slice(-8)}`}
+                      </span>
+                      {getStatusBadge(invoice.status)}
+                    </div>
+                    <div className="text-sm text-muted-foreground ml-6 sm:ml-7">
+                      <p>Data: {format(new Date(invoice.created * 1000), "dd/MM/yyyy", { locale: ptBR })}</p>
+                      {invoice.description && (
+                        <p className="text-xs truncate max-w-[200px]">{invoice.description}</p>
+                      )}
+                      <p className="font-semibold text-foreground mt-1">
+                        Valor: {formatCurrency(invoice.amount_paid, invoice.currency)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-sm text-muted-foreground ml-6 sm:ml-7">
-                    <p>Data: {format(new Date(invoice.created * 1000), "dd/MM/yyyy", { locale: ptBR })}</p>
-                    <p className="font-semibold text-foreground mt-1">
-                      Valor: {formatCurrency(invoice.amount_paid, invoice.currency)}
-                    </p>
+                  <div className="flex gap-2 ml-6 sm:ml-0 flex-wrap sm:flex-nowrap">
+                    {invoice.hosted_invoice_url && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
+                        className="gap-1.5 text-xs sm:text-sm"
+                      >
+                        <Receipt className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden xs:inline">Ver</span> Recibo
+                      </Button>
+                    )}
+                    {invoice.invoice_pdf && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => window.open(invoice.invoice_pdf!, '_blank')}
+                        className="gap-1.5 text-xs sm:text-sm"
+                      >
+                        <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                        <span className="hidden xs:inline">Download</span> PDF
+                      </Button>
+                    )}
                   </div>
                 </div>
-                <div className="flex gap-2 ml-6 sm:ml-0 flex-wrap sm:flex-nowrap">
-                  {invoice.hosted_invoice_url && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(invoice.hosted_invoice_url!, '_blank')}
-                      className="gap-1.5 text-xs sm:text-sm"
-                    >
-                      <Receipt className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden xs:inline">Ver</span> Recibo
-                    </Button>
-                  )}
-                  {invoice.invoice_pdf && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(invoice.invoice_pdf!, '_blank')}
-                      className="gap-1.5 text-xs sm:text-sm"
-                    >
-                      <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="hidden xs:inline">Download</span> PDF
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         )}
       </CardContent>
