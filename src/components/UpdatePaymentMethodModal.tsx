@@ -72,13 +72,22 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
     last4: '',
     expiry: '',
     cardHolder: '',
+    cardNumber: '',
   });
 
-  // Handle card number change to detect brand
+  // Handle card number change to detect brand and capture last 4 digits
   const handleCardNumberChange = useCallback((event: StripeCardNumberElementChangeEvent) => {
+    // Extract the last 4 digits if complete
+    let cardNum = '';
+    if (event.complete && event.brand) {
+      // When complete, we know it's valid - show masked with bullets
+      cardNum = '••••••••••••' + (event.brand === 'amex' ? '•••••' : '••••');
+    }
+    
     setCardPreview(prev => ({
       ...prev,
       brand: event.brand || '',
+      cardNumber: cardNum,
     }));
   }, []);
 
@@ -185,7 +194,7 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Card preview */}
-      <div className="flex justify-center">
+      <div className="flex justify-center py-2">
         <CreditCardVisual
           brand={cardPreview.brand}
           cardHolder={cardPreview.cardHolder}
@@ -193,6 +202,8 @@ const PaymentForm: React.FC<{ onSuccess: () => void; onClose: () => void }> = ({
           expYear={expiryParts.year}
           size="md"
           isFlipped={isCvvFocused}
+          showFullNumber={true}
+          cardNumber={cardPreview.cardNumber}
         />
       </div>
 
