@@ -163,9 +163,18 @@ export const useRecurringSessions = () => {
     }
   };
 
-  const updateRecurring = async (id: string, data: Partial<RecurringSession>) => {
+  const updateRecurring = async (id: string, data: Partial<RecurringSession>, regenerateFutureSessions: boolean = true) => {
     setLoading(true);
     try {
+      // Buscar configuração atual para comparação
+      const { data: currentRecurring, error: fetchError } = await supabase
+        .from('recurring_sessions')
+        .select('dia_da_semana, horario, recurrence_type, recurrence_interval')
+        .eq('id', id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
       // Formatar horário se presente nos dados
       const formattedData = {
         ...data,
@@ -181,9 +190,35 @@ export const useRecurringSessions = () => {
 
       if (error) throw error;
 
+      // Verificar se houve alteração no dia da semana, horário ou tipo de recorrência
+      const needsRegeneration = regenerateFutureSessions && (
+        (data.dia_da_semana !== undefined && data.dia_da_semana !== currentRecurring.dia_da_semana) ||
+        (data.horario !== undefined && formatTimeForDatabase(data.horario) !== currentRecurring.horario) ||
+        (data.recurrence_type !== undefined && data.recurrence_type !== currentRecurring.recurrence_type) ||
+        (data.recurrence_interval !== undefined && data.recurrence_interval !== currentRecurring.recurrence_interval)
+      );
+
+      if (needsRegeneration) {
+        // Deletar sessões futuras não modificadas
+        const today = new Date().toISOString().split('T')[0];
+        const { error: deleteError } = await supabase
+          .from('sessions')
+          .delete()
+          .eq('recurring_session_id', id)
+          .eq('is_modified', false)
+          .gte('data', today);
+
+        if (deleteError) throw deleteError;
+
+        // Regenerar instâncias com a nova configuração
+        await regenerateInstancesInternal(recurringSession);
+      }
+
       toast({
         title: 'Recorrência atualizada',
-        description: 'Configuração atualizada com sucesso.',
+        description: needsRegeneration 
+          ? 'Configuração e sessões futuras atualizadas com sucesso.' 
+          : 'Configuração atualizada com sucesso.',
       });
 
       return recurringSession;
@@ -197,6 +232,80 @@ export const useRecurringSessions = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Função interna para regenerar instâncias baseada na configuração atualizada
+  const regenerateInstancesInternal = async (recurring: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Usuário não autenticado');
+
+    const instances = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const endDate = recurring.recurrence_end_date 
+      ? new Date(recurring.recurrence_end_date) 
+      : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000); // 90 dias à frente
+
+    let currentDate = new Date(today);
+    
+    // Para recorrência semanal, ajustar para o próximo dia da semana correto
+    if (recurring.recurrence_type === 'semanal' && recurring.dia_da_semana !== null) {
+      const targetDay = recurring.dia_da_semana;
+      const currentDay = currentDate.getDay();
+      let daysUntilTarget = targetDay - currentDay;
+      
+      if (daysUntilTarget <= 0) {
+        daysUntilTarget += 7;
+      }
+      
+      currentDate.setDate(currentDate.getDate() + daysUntilTarget);
+    }
+
+    let count = 0;
+    const maxCount = recurring.recurrence_count || 100;
+
+    while (currentDate <= endDate && count < maxCount) {
+      instances.push({
+        user_id: user.id,
+        client_id: recurring.client_id,
+        recurring_session_id: recurring.id,
+        session_type: 'recorrente',
+        data: currentDate.toISOString().split('T')[0],
+        horario: formatTimeForDatabase(recurring.horario),
+        valor: recurring.valor,
+        status: 'agendada',
+        is_modified: false
+      });
+
+      count++;
+
+      // Avançar para a próxima data baseado no tipo de recorrência
+      switch (recurring.recurrence_type) {
+        case 'diaria':
+          currentDate.setDate(currentDate.getDate() + recurring.recurrence_interval);
+          break;
+        case 'semanal':
+          currentDate.setDate(currentDate.getDate() + (7 * recurring.recurrence_interval));
+          break;
+        case 'quinzenal':
+          currentDate.setDate(currentDate.getDate() + (14 * recurring.recurrence_interval));
+          break;
+        case 'mensal':
+          currentDate.setMonth(currentDate.getMonth() + recurring.recurrence_interval);
+          break;
+      }
+    }
+
+    if (instances.length > 0) {
+      const { error: insertError } = await supabase
+        .from('sessions')
+        .insert(instances);
+
+      if (insertError) throw insertError;
+    }
+
+    return instances;
   };
 
   const deleteRecurring = async (id: string, deleteInstances: boolean = false) => {
