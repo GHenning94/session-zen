@@ -169,7 +169,7 @@ export const useRecurringSessions = () => {
       // Buscar configuração atual para comparação
       const { data: currentRecurring, error: fetchError } = await supabase
         .from('recurring_sessions')
-        .select('dia_da_semana, horario, recurrence_type, recurrence_interval')
+        .select('dia_da_semana, horario, recurrence_type, recurrence_interval, valor, metodo_pagamento')
         .eq('id', id)
         .single();
 
@@ -212,6 +212,32 @@ export const useRecurringSessions = () => {
 
         // Regenerar instâncias com a nova configuração
         await regenerateInstancesInternal(recurringSession);
+      } else {
+        // Mesmo sem regeneração, atualizar valor e método de pagamento nas sessões futuras não modificadas
+        const hasValueOrPaymentChange = 
+          (data.valor !== undefined && data.valor !== currentRecurring.valor) ||
+          (data.metodo_pagamento !== undefined && data.metodo_pagamento !== currentRecurring.metodo_pagamento);
+
+        if (hasValueOrPaymentChange) {
+          const today = new Date().toISOString().split('T')[0];
+          const updateFields: any = {};
+          
+          if (data.valor !== undefined) {
+            updateFields.valor = data.valor;
+          }
+          if (data.metodo_pagamento !== undefined) {
+            updateFields.metodo_pagamento = data.metodo_pagamento;
+          }
+
+          const { error: updateSessionsError } = await supabase
+            .from('sessions')
+            .update(updateFields)
+            .eq('recurring_session_id', id)
+            .eq('is_modified', false)
+            .gte('data', today);
+
+          if (updateSessionsError) throw updateSessionsError;
+        }
       }
 
       toast({
@@ -274,6 +300,7 @@ export const useRecurringSessions = () => {
         data: currentDate.toISOString().split('T')[0],
         horario: formatTimeForDatabase(recurring.horario),
         valor: recurring.valor,
+        metodo_pagamento: recurring.metodo_pagamento || 'A definir',
         status: 'agendada',
         is_modified: false
       });
