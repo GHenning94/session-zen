@@ -633,9 +633,19 @@ const Dashboard = () => {
           payment.sessions?.metodo_pagamento || 
           payment.metodo_pagamento || 
           'A definir'
-        // Consolidar cartao_credito e cartao_debito em cartao
-        if (metodo === 'cartao_credito' || metodo === 'cartao_debito') {
+        
+        // Normalizar para lowercase para evitar duplicatas (ex: "Transferência" vs "transferencia")
+        metodo = metodo.toLowerCase().trim()
+        
+        // Consolidar cartao_credito, cartao_debito, cartão de débito, cartão de crédito em cartao
+        if (metodo === 'cartao_credito' || metodo === 'cartao_debito' || 
+            metodo === 'cartão de débito' || metodo === 'cartão de crédito' ||
+            metodo === 'cartão' || metodo === 'cartao de credito' || metodo === 'cartao de debito') {
           metodo = 'cartao'
+        }
+        // Normalizar transferência para transferencia
+        if (metodo === 'transferência') {
+          metodo = 'transferencia'
         }
         if (!canalPayments[metodo]) {
           canalPayments[metodo] = { valor: 0, count: 0 }
