@@ -10,6 +10,8 @@ interface CreditCardVisualProps {
   size?: 'sm' | 'md' | 'lg';
   showFullNumber?: boolean;
   cardNumber?: string;
+  isFlipped?: boolean;
+  cvv?: string;
 }
 
 // Brand logo components
@@ -121,6 +123,8 @@ export const CreditCardVisual: React.FC<CreditCardVisualProps> = ({
   size = 'md',
   showFullNumber = false,
   cardNumber,
+  isFlipped = false,
+  cvv = '',
 }) => {
   const sizeClasses = {
     sm: 'w-48 h-28 text-xs',
@@ -140,65 +144,135 @@ export const CreditCardVisual: React.FC<CreditCardVisualProps> = ({
     lg: 'h-10',
   };
 
+  const magneticStripeSizes = {
+    sm: 'h-6 mt-4',
+    md: 'h-10 mt-6',
+    lg: 'h-12 mt-8',
+  };
+
+  const cvvBoxSizes = {
+    sm: 'h-5 w-10 text-[10px]',
+    md: 'h-7 w-14 text-sm',
+    lg: 'h-8 w-16 text-base',
+  };
+
   return (
     <div 
-      className={`
-        ${sizeClasses[size]}
-        ${getCardGradient(brand)}
-        rounded-xl p-4 relative overflow-hidden shadow-xl
-        transition-all duration-300
-      `}
+      className={`${sizeClasses[size]} perspective-1000`}
+      style={{ perspective: '1000px' }}
     >
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full" />
-        <div className="absolute -right-5 top-10 w-32 h-32 bg-white/5 rounded-full" />
-        <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full" />
-      </div>
+      <div 
+        className="relative w-full h-full transition-transform duration-500"
+        style={{ 
+          transformStyle: 'preserve-3d',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        }}
+      >
+        {/* Front of card */}
+        <div 
+          className={`
+            absolute inset-0
+            ${getCardGradient(brand)}
+            rounded-xl p-4 overflow-hidden shadow-xl
+          `}
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          {/* Background decoration */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full" />
+            <div className="absolute -right-5 top-10 w-32 h-32 bg-white/5 rounded-full" />
+            <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full" />
+          </div>
 
-      {/* Card content */}
-      <div className="relative h-full flex flex-col justify-between">
-        {/* Top row - chip and contactless */}
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
-            {/* Chip */}
-            <div className={`${chipSizes[size]} bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 rounded-md flex items-center justify-center`}>
-              <div className="w-2/3 h-2/3 border border-yellow-600/30 rounded-sm grid grid-cols-2 grid-rows-2 gap-px">
-                <div className="bg-yellow-400/50 rounded-sm" />
-                <div className="bg-yellow-400/50 rounded-sm" />
-                <div className="bg-yellow-400/50 rounded-sm" />
-                <div className="bg-yellow-400/50 rounded-sm" />
+          {/* Card content */}
+          <div className="relative h-full flex flex-col justify-between">
+            {/* Top row - chip and contactless */}
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-2">
+                {/* Chip */}
+                <div className={`${chipSizes[size]} bg-gradient-to-br from-yellow-300 via-yellow-400 to-yellow-500 rounded-md flex items-center justify-center`}>
+                  <div className="w-2/3 h-2/3 border border-yellow-600/30 rounded-sm grid grid-cols-2 grid-rows-2 gap-px">
+                    <div className="bg-yellow-400/50 rounded-sm" />
+                    <div className="bg-yellow-400/50 rounded-sm" />
+                    <div className="bg-yellow-400/50 rounded-sm" />
+                    <div className="bg-yellow-400/50 rounded-sm" />
+                  </div>
+                </div>
+                {/* Contactless icon */}
+                <Wifi className={`${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} text-white/60 rotate-90`} />
+              </div>
+              {/* Brand logo */}
+              <BrandLogo brand={brand} className={brandLogoSizes[size]} />
+            </div>
+
+            {/* Card number */}
+            <div className={`text-white font-mono tracking-wider ${size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-xl'}`}>
+              {formatCardNumber(showFullNumber ? cardNumber : undefined, last4)}
+            </div>
+
+            {/* Bottom row - holder and expiry */}
+            <div className="flex justify-between items-end">
+              <div>
+                <div className="text-white/60 text-[10px] uppercase tracking-wide mb-0.5">
+                  TITULAR DO CARTÃO
+                </div>
+                <div className="text-white font-medium uppercase tracking-wide truncate max-w-[140px]">
+                  {cardHolder || 'NOME DO TITULAR'}
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-white/60 text-[10px] uppercase tracking-wide mb-0.5">
+                  VALIDADE
+                </div>
+                <div className="text-white font-medium">
+                  {formatExpiry(expMonth, expYear)}
+                </div>
               </div>
             </div>
-            {/* Contactless icon */}
-            <Wifi className={`${size === 'sm' ? 'w-4 h-4' : 'w-5 h-5'} text-white/60 rotate-90`} />
           </div>
-          {/* Brand logo */}
-          <BrandLogo brand={brand} className={brandLogoSizes[size]} />
         </div>
 
-        {/* Card number */}
-        <div className={`text-white font-mono tracking-wider ${size === 'sm' ? 'text-sm' : size === 'md' ? 'text-lg' : 'text-xl'}`}>
-          {formatCardNumber(showFullNumber ? cardNumber : undefined, last4)}
-        </div>
+        {/* Back of card */}
+        <div 
+          className={`
+            absolute inset-0
+            ${getCardGradient(brand)}
+            rounded-xl overflow-hidden shadow-xl
+          `}
+          style={{ 
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+          }}
+        >
+          {/* Background decoration */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/5 rounded-full" />
+            <div className="absolute -left-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full" />
+          </div>
 
-        {/* Bottom row - holder and expiry */}
-        <div className="flex justify-between items-end">
-          <div>
-            <div className="text-white/60 text-[10px] uppercase tracking-wide mb-0.5">
-              TITULAR DO CARTÃO
+          {/* Magnetic stripe */}
+          <div className={`w-full bg-gray-900/90 ${magneticStripeSizes[size]}`} />
+
+          {/* CVV section */}
+          <div className="relative px-4 mt-4">
+            <div className="flex items-center gap-2">
+              {/* Signature strip */}
+              <div className="flex-1 bg-gray-100/90 rounded h-8 flex items-center px-2">
+                <div className="w-full h-4 bg-[repeating-linear-gradient(90deg,transparent,transparent_2px,#ddd_2px,#ddd_4px)]" />
+              </div>
+              {/* CVV box */}
+              <div className={`${cvvBoxSizes[size]} bg-white rounded flex items-center justify-center font-mono text-gray-800 font-bold`}>
+                {cvv || '•••'}
+              </div>
             </div>
-            <div className="text-white font-medium uppercase tracking-wide truncate max-w-[140px]">
-              {cardHolder || 'NOME DO TITULAR'}
+            <div className="text-white/60 text-[10px] uppercase tracking-wide mt-2 text-right">
+              CVV
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-white/60 text-[10px] uppercase tracking-wide mb-0.5">
-              VALIDADE
-            </div>
-            <div className="text-white font-medium">
-              {formatExpiry(expMonth, expYear)}
-            </div>
+
+          {/* Brand logo on back */}
+          <div className="absolute bottom-4 right-4">
+            <BrandLogo brand={brand} className={brandLogoSizes[size]} />
           </div>
         </div>
       </div>
