@@ -660,7 +660,8 @@ const Dashboard = () => {
         'boleto': '#F59E0B',
         'dinheiro': '#10B981',
         'transferencia': '#8B5CF6',
-        'A definir': '#6B7280'
+        'a definir': '#6B7280',
+        'outros': '#6B7280'
       }
 
       const receitaPorCanalData = Object.entries(canalPayments)
@@ -996,8 +997,8 @@ const Dashboard = () => {
         'boleto': '#F59E0B',
         'dinheiro': '#10B981',
         'transferencia': '#8B5CF6',
-        'A definir': '#6B7280',
-        'Outros': '#6B7280'
+        'a definir': '#6B7280',
+        'outros': '#6B7280'
       }
 
       const filteredCanalData = Object.entries(canalData)
