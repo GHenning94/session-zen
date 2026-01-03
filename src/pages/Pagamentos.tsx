@@ -587,11 +587,10 @@ const pastPayments = filteredPayments.filter(item => {
       return
     }
 
-    const session = sessions.find(s => s.id === payment.session_id)
-    const client = clients.find(c => c.id === session?.client_id)
+    const client = clients.find(c => c.nome === payment.client || c.id === payment.raw?.client_id)
     const profile = profiles[0]
     
-    if (!session || !client || !profile) {
+    if (!client || !profile) {
       toast({
         title: "Erro",
         description: "Dados incompletos para gerar o recibo.",
@@ -600,7 +599,7 @@ const pastPayments = filteredPayments.filter(item => {
       return
     }
 
-    const methodLabels = {
+    const methodLabels: Record<string, string> = {
       'pix': 'PIX',
       'cartao': 'Cartão',
       'boleto': 'Boleto',
@@ -608,15 +607,23 @@ const pastPayments = filteredPayments.filter(item => {
       'dinheiro': 'Dinheiro'
     };
 
+    // Determinar o tipo de pagamento (individual, pacote ou recorrente)
+    const isPackage = !!payment.package_id
+    const isRecurring = !!payment.recurring_session_id && !isPackage
+    
     const receiptData = {
       clientName: client.nome,
-      sessionDate: session.data,
-      sessionTime: session.horario,
-      value: session.valor || 0,
-      paymentMethod: methodLabels[session.metodo_pagamento as keyof typeof methodLabels] || session.metodo_pagamento || 'Dinheiro',
+      sessionDate: payment.date || new Date().toISOString().split('T')[0],
+      sessionTime: payment.time || '00:00',
+      value: payment.value || 0,
+      paymentMethod: methodLabels[payment.method as keyof typeof methodLabels] || payment.method || 'Dinheiro',
       professionalName: profile.nome,
       professionalCRP: profile.crp,
-      sessionId: session.id
+      sessionId: payment.id,
+      // Campos adicionais para pacotes e recorrentes
+      type: isPackage ? 'package' as const : isRecurring ? 'recurring' as const : 'session' as const,
+      packageName: payment.package_name,
+      packageSessions: payment.package_sessions
     }
 
     try {

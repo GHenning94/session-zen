@@ -350,9 +350,10 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                   <Button 
                     className="w-full" 
                     size="sm"
-                    onClick={() => handleChangePlan(plan)}
+                    onClick={() => !isCurrentPlanAndCycle && handleChangePlan(plan)}
                     disabled={loading || isCurrentPlanAndCycle}
                     variant={isCurrentPlanAndCycle ? "secondary" : showHighlight ? "default" : "outline"}
+                    style={isCurrentPlanAndCycle ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                   >
                     {loading ? 'Processando...' : isCurrentPlanAndCycle ? 'Plano Atual' : `Escolher ${plan.name}`}
                   </Button>
