@@ -138,13 +138,13 @@ const App = () => (
         <TooltipProvider>
           <AuthProvider>
             <GlobalRealtimeProvider>
-              <NotificationProvider>
-                <GlobalNotificationToast />
                 <SubscriptionProvider>
                   <TerminologyProvider>
                     <RealtimeSyncProvider>
                       <ProfileModalProvider>
                     <BrowserRouter>
+                      <NotificationProvider>
+                        <GlobalNotificationToast />
                       <AnalyticsWrapper>
                         <AuthRedirect />
                         <BackNavigationGuard />
@@ -392,6 +392,7 @@ const App = () => (
                   } />
                       </Routes>
                     </AnalyticsWrapper>
+                      </NotificationProvider>
                   </BrowserRouter>
                   <Toaster />
                   <Sonner />
@@ -399,7 +400,6 @@ const App = () => (
               </RealtimeSyncProvider>
                   </TerminologyProvider>
             </SubscriptionProvider>
-              </NotificationProvider>
             </GlobalRealtimeProvider>
           </AuthProvider>
         </TooltipProvider>
