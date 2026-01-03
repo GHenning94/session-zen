@@ -2166,7 +2166,7 @@ const Dashboard = () => {
                       
                       <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 min-h-[380px] overflow-visible">
                         {/* Gráfico RadialBar moderno - altura fixa para consistência visual */}
-                        <div className="h-[320px] min-h-[320px] flex items-center justify-center relative">
+                        <div className="h-[400px] min-h-[400px] flex items-center justify-center relative">
                           {receitaPorCanal.length > 0 ? (
                             <>
                               <ResponsiveContainer key={`canal-${renderedCanalPeriod}`} width="100%" height="100%">
