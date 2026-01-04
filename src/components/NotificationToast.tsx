@@ -26,12 +26,12 @@ const getCategory = (titulo: string): string => {
 
 // Helper to get short summary from content
 const getShortSummary = (conteudo: string): string => {
-  // Remove special tags and markdown links
+  // Remove special tags and markdown links completely
   const clean = conteudo
     .replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
     .replace(/\s*\[REDIRECT:[^\]]+\]/, '')
     .replace(/\s*\[PACKAGE_EDIT:[^\]]+\]/, '')
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '') // Remove markdown links completely
     .trim()
   
   // Return first ~40 chars
@@ -123,22 +123,21 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   return (
     <div
       className={cn(
-        // Fixed position at top right, to the LEFT of the notification bell
-        "fixed top-4 right-28 z-[100]",
+        // Fixed position - more to the left and lower
+        "fixed top-16 right-36 z-[100]",
         "whitespace-nowrap pointer-events-none",
-        "transition-all duration-500 ease-out",
         // Entry animation - slides in from the right
-        !isExiting && "animate-in fade-in slide-in-from-right-4",
-        // Exit animation - slides right into the bell icon
-        isExiting && "animate-out fade-out slide-out-to-right-8 duration-500"
+        !isExiting && "animate-in fade-in slide-in-from-right-4 duration-300",
+        // Exit animation - slides right into the bell icon with no flicker
+        isExiting && "animate-out fade-out slide-out-to-right-8 duration-300 fill-mode-forwards"
       )}
     >
       <div className="flex items-center gap-2 bg-gradient-to-r from-primary/90 to-primary/70 text-primary-foreground rounded-full py-2 px-4 shadow-xl shadow-primary/25 backdrop-blur-md border border-primary-foreground/10">
         {/* Bell icon */}
         <Bell className="h-4 w-4 text-primary-foreground flex-shrink-0" />
         
-        {/* Category badge */}
-        <span className="text-xs font-semibold text-primary bg-primary-foreground/20 px-2.5 py-0.5 rounded-full">
+        {/* Category badge - high contrast */}
+        <span className="text-xs font-bold text-primary-foreground bg-background/30 px-2.5 py-0.5 rounded-full">
           {category}
         </span>
         
