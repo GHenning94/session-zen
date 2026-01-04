@@ -86,7 +86,8 @@ const NotificationDropdown = () => {
       .replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
       .replace(/\s*\[REDIRECT:[^\]]+\]/, '')
       .replace(/\s*\[PACKAGE_EDIT:[^\]]+\]/, '')
-      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '') // Remove markdown links completely
+      .trim()
   }
 
   const getNotificationIcon = (titulo: string) => {
