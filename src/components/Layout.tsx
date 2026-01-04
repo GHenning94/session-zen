@@ -9,6 +9,7 @@ import { useUserTheme } from "@/hooks/useUserTheme"
 import { useInstantTheme } from "@/hooks/useInstantTheme"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { useBirthdayNotifications } from "@/hooks/useBirthdayNotifications"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -26,6 +27,9 @@ export function Layout({ children }: LayoutProps) {
   
   // Load and apply user's color preference
   useColorTheme()
+  
+  // Check for client birthdays and create notifications
+  useBirthdayNotifications()
   
   // Show loading state while authenticating
   if (loading) {
