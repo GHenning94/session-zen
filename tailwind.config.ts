@@ -147,25 +147,37 @@ export default {
 						transform: 'translateY(0)'
 					}
 				},
-				'scale-fade-in': {
-					'0%': {
-						opacity: '0',
-						transform: 'scale(0.96)'
-					},
-					'100%': {
-						opacity: '1',
-						transform: 'scale(1)'
-					}
+			'scale-fade-in': {
+				'0%': {
+					opacity: '0',
+					transform: 'scale(0.96)'
+				},
+				'100%': {
+					opacity: '1',
+					transform: 'scale(1)'
 				}
 			},
-			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out',
-				'pulse-highlight': 'pulse-highlight 2s ease-in-out infinite',
-				'slow-pulse': 'slow-pulse 20s ease-in-out infinite',
-				'fade-in-up': 'fade-in-up 0.4s ease-out forwards',
-				'scale-fade-in': 'scale-fade-in 0.35s ease-out forwards'
+			'shake': {
+				'0%, 100%': {
+					transform: 'rotate(0deg)'
+				},
+				'10%, 30%, 50%, 70%, 90%': {
+					transform: 'rotate(-12deg)'
+				},
+				'20%, 40%, 60%, 80%': {
+					transform: 'rotate(12deg)'
+				}
 			}
+		},
+		animation: {
+			'accordion-down': 'accordion-down 0.2s ease-out',
+			'accordion-up': 'accordion-up 0.2s ease-out',
+			'pulse-highlight': 'pulse-highlight 2s ease-in-out infinite',
+			'slow-pulse': 'slow-pulse 20s ease-in-out infinite',
+			'fade-in-up': 'fade-in-up 0.4s ease-out forwards',
+			'scale-fade-in': 'scale-fade-in 0.35s ease-out forwards',
+			'shake': 'shake 0.6s ease-in-out infinite'
+		}
 		}
 	},
 	plugins: [require("tailwindcss-animate")],
