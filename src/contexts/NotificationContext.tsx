@@ -53,16 +53,34 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const pendingNotificationsShownRef = useRef(false)
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
 
-  // Check if user is on dashboard
-  const isOnDashboard = location.pathname === '/dashboard' || location.pathname === '/'
+  // Check if any modal is currently open (dialogs, sheets, drawers)
+  const isModalOpen = useCallback(() => {
+    // Check for Radix UI dialogs (data-state="open")
+    const radixDialogs = document.querySelectorAll('[role="dialog"][data-state="open"]')
+    const radixAlertDialogs = document.querySelectorAll('[role="alertdialog"][data-state="open"]')
+    // Check for sheets/drawers
+    const sheets = document.querySelectorAll('[data-vaul-drawer][data-state="open"]')
+    
+    return radixDialogs.length > 0 || radixAlertDialogs.length > 0 || sheets.length > 0
+  }, [])
+
+  // Check if tab is visible
+  const isTabVisible = useCallback(() => {
+    return document.visibilityState === 'visible'
+  }, [])
+
+  // Check if notification can be shown (tab visible AND no modal open)
+  const canShowNotification = useCallback(() => {
+    return isTabVisible() && !isModalOpen()
+  }, [isTabVisible, isModalOpen])
 
   // Process the notification queue one at a time
   const processNextNotification = useCallback((playSound = true) => {
-    console.log('[NotificationContext] processNextNotification called, queue length:', notificationQueueRef.current.length, 'isProcessing:', isProcessingQueueRef.current, 'isOnDashboard:', isOnDashboard)
+    console.log('[NotificationContext] processNextNotification called, queue length:', notificationQueueRef.current.length, 'isProcessing:', isProcessingQueueRef.current, 'canShow:', canShowNotification())
     
-    // Only show toasts when on dashboard
-    if (!isOnDashboard) {
-      console.log('[NotificationContext] Not on dashboard, skipping toast display')
+    // Only show toasts when tab is visible and no modal is open
+    if (!canShowNotification()) {
+      console.log('[NotificationContext] Cannot show notification (tab hidden or modal open), keeping in queue')
       return
     }
     
@@ -87,7 +105,7 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     }
     
     setIncomingNotification(nextNotification)
-  }, [isOnDashboard])
+  }, [canShowNotification])
 
   // Add notification to queue and start processing if not already
   const enqueueNotification = useCallback((notification: Notification, playSoundWithDisplay = true) => {
@@ -410,13 +428,33 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     }
   }, [user, notifications, enqueueNotification])
 
-  // Process pending notifications when navigating to dashboard
+  // Process pending notifications when conditions become favorable (modal closes, tab becomes visible)
   useEffect(() => {
-    if (isOnDashboard && notificationQueueRef.current.length > 0 && !isProcessingQueueRef.current) {
-      console.log('[NotificationContext] User navigated to dashboard, processing pending notifications')
-      processNextNotification(true)
+    // Set up an interval to check if we can show pending notifications
+    const checkAndProcessQueue = () => {
+      if (canShowNotification() && notificationQueueRef.current.length > 0 && !isProcessingQueueRef.current) {
+        console.log('[NotificationContext] Conditions are favorable, processing pending notifications')
+        processNextNotification(true)
+      }
     }
-  }, [isOnDashboard, processNextNotification])
+
+    // Check periodically for modal close events
+    const intervalId = setInterval(checkAndProcessQueue, 500)
+
+    // Also check immediately when visibility changes
+    const handleVisibilityForQueue = () => {
+      if (document.visibilityState === 'visible') {
+        setTimeout(checkAndProcessQueue, 300)
+      }
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityForQueue)
+
+    return () => {
+      clearInterval(intervalId)
+      document.removeEventListener('visibilitychange', handleVisibilityForQueue)
+    }
+  }, [canShowNotification, processNextNotification])
   const markVisibleAsRead = async () => {
     const unreadNotifications = notifications.filter(n => !n.lida)
     if (unreadNotifications.length === 0) return
