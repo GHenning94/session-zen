@@ -84,6 +84,20 @@ const Clientes = () => {
     }
   }, [searchParams])
 
+  // Check URL params to open specific client modal
+  useEffect(() => {
+    const clientId = searchParams.get('cliente')
+    if (clientId && clients.length > 0) {
+      const client = clients.find(c => c.id === clientId)
+      if (client) {
+        setSelectedClient(client)
+        setIsClientDetailsOpen(true)
+        // Clear the URL param after opening
+        setSearchParams({}, { replace: true })
+      }
+    }
+  }, [searchParams, clients, setSearchParams])
+
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",

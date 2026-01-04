@@ -23,7 +23,8 @@ import {
   CreditCard,
   Settings,
   X,
-  Edit2
+  Edit2,
+  Cake
 } from "lucide-react"
 import { formatDistanceToNow, format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -73,18 +74,26 @@ const NotificationDropdown = () => {
     return match ? match[1] : null
   }
 
+  // Extrair link markdown do conteúdo [texto](url)
+  const extractMarkdownLink = (conteudo: string): { text: string; url: string } | null => {
+    const match = conteudo.match(/\[([^\]]+)\]\(([^)]+)\)/)
+    return match ? { text: match[1], url: match[2] } : null
+  }
+
   // Remover tags especiais do texto exibido
   const getDisplayContent = (conteudo: string): string => {
     return conteudo
       .replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
       .replace(/\s*\[REDIRECT:[^\]]+\]/, '')
       .replace(/\s*\[PACKAGE_EDIT:[^\]]+\]/, '')
+      .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
   }
 
   const getNotificationIcon = (titulo: string) => {
+    if (titulo.toLowerCase().includes('aniversário')) return <Cake className="w-4 h-4" />
     if (titulo.toLowerCase().includes('agendamento') || titulo.toLowerCase().includes('sessão')) return <Calendar className="w-4 h-4" />
     if (titulo.toLowerCase().includes('pagamento')) return <CreditCard className="w-4 h-4" />
-    if (titulo.toLowerCase().includes('cliente')) return <User className="w-4 h-4" />
+    if (titulo.toLowerCase().includes('cliente') || titulo.toLowerCase().includes('paciente')) return <User className="w-4 h-4" />
     if (titulo.toLowerCase().includes('configuração')) return <Settings className="w-4 h-4" />
     return <Bell className="w-4 h-4" />
   }
@@ -424,6 +433,15 @@ const NotificationDropdown = () => {
                         Editar Pacote
                       </Button>
                     )}
+                    {extractMarkdownLink(selectedNotification.conteudo) && (
+                      <Button 
+                        className="w-full"
+                        onClick={() => handleRedirect(extractMarkdownLink(selectedNotification.conteudo)!.url)}
+                      >
+                        <User className="w-4 h-4 mr-2" />
+                        {extractMarkdownLink(selectedNotification.conteudo)!.text}
+                      </Button>
+                    )}
                   </div>
                 </div>
               </ScrollArea>
@@ -516,6 +534,14 @@ const NotificationDropdown = () => {
                   >
                     <Edit2 className="w-4 h-4 mr-2" />
                     Editar Pacote
+                  </Button>
+                )}
+                {extractMarkdownLink(selectedNotification.conteudo) && (
+                  <Button 
+                    onClick={() => handleRedirect(extractMarkdownLink(selectedNotification.conteudo)!.url)}
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    {extractMarkdownLink(selectedNotification.conteudo)!.text}
                   </Button>
                 )}
               </div>
@@ -642,6 +668,15 @@ const NotificationDropdown = () => {
                         >
                           <Edit2 className="w-4 h-4 mr-2" />
                           Editar Pacote
+                        </Button>
+                      )}
+                      {extractMarkdownLink(selectedNotification.conteudo) && (
+                        <Button 
+                          size="sm"
+                          onClick={() => handleRedirect(extractMarkdownLink(selectedNotification.conteudo)!.url)}
+                        >
+                          <User className="w-4 h-4 mr-2" />
+                          {extractMarkdownLink(selectedNotification.conteudo)!.text}
                         </Button>
                       )}
                     </div>

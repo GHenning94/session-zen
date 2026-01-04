@@ -14,6 +14,7 @@ interface NotificationToastProps {
 // Helper to get category from notification title
 const getCategory = (titulo: string): string => {
   const lowerTitle = titulo.toLowerCase()
+  if (lowerTitle.includes('aniversário')) return 'Aniversário'
   if (lowerTitle.includes('meta')) return 'Meta'
   if (lowerTitle.includes('pagamento')) return 'Pagamento'
   if (lowerTitle.includes('sessão') || lowerTitle.includes('agendamento')) return 'Sessão'
@@ -25,11 +26,12 @@ const getCategory = (titulo: string): string => {
 
 // Helper to get short summary from content
 const getShortSummary = (conteudo: string): string => {
-  // Remove special tags
+  // Remove special tags and markdown links
   const clean = conteudo
     .replace(/\s*\[SESSION_ID:[^\]]+\]/, '')
     .replace(/\s*\[REDIRECT:[^\]]+\]/, '')
     .replace(/\s*\[PACKAGE_EDIT:[^\]]+\]/, '')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1') // Remove markdown links but keep text
     .trim()
   
   // Return first ~40 chars
