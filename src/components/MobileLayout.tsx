@@ -7,16 +7,17 @@ interface MobileLayoutProps {
 
 export function MobileLayout({ children }: MobileLayoutProps) {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="mobile-layout-container h-screen bg-background flex flex-col overflow-hidden">
       <MobileHeader />
       
       {/* Main Content - scrollable area with padding for bottom nav */}
       <main className="flex-1 overflow-y-auto">
-        <div className="p-4 pb-0">
+        <div className="p-4 pb-20">
           {children}
         </div>
-        <MobileBottomNav />
       </main>
+      
+      <MobileBottomNav />
     </div>
   )
 }

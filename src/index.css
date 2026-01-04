@@ -11,10 +11,24 @@ html, body {
 }
 
 /* Layout autenticado - controle de scroll único */
-.app-layout-container {
+.app-layout-container,
+.mobile-layout-container {
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
+}
+
+/* Prevenir scroll duplo no html/body quando layouts autenticados estão presentes */
+html:has(.app-layout-container),
+html:has(.mobile-layout-container) {
+  overflow: hidden;
+  height: 100%;
+}
+
+html:has(.app-layout-container) body,
+html:has(.mobile-layout-container) body {
+  overflow: hidden;
+  height: 100%;
 }
 
 @layer base {
