@@ -111,6 +111,7 @@ export default function Sessoes() {
   const [readOnlyNote, setReadOnlyNote] = useState<SessionNote | null>(null)
   const [selectedNoteForEvolucao, setSelectedNoteForEvolucao] = useState<SessionNote | null>(null)
   const [deleteNoteId, setDeleteNoteId] = useState<string | null>(null)
+  const [evolucaoExistenteDialogOpen, setEvolucaoExistenteDialogOpen] = useState(false)
   
   // Estado para seleção em lote
   const [selectedSessions, setSelectedSessions] = useState<Set<string>>(new Set())
@@ -689,11 +690,7 @@ export default function Sessoes() {
     if (note.session_id) {
       const existingEvolucao = evolucoes.find(e => e.session_id === note.session_id)
       if (existingEvolucao) {
-        toast({
-          title: "Evolução já existente",
-          description: "Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existente na página de Prontuários.",
-          variant: "default",
-        })
+        setEvolucaoExistenteDialogOpen(true)
         return
       }
     }
@@ -1509,7 +1506,26 @@ export default function Sessoes() {
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Modal de edição em lote por tipo */}
+        {/* Diálogo de evolução já existente */}
+        <AlertDialog open={evolucaoExistenteDialogOpen} onOpenChange={setEvolucaoExistenteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Evolução já existente
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existentes.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction onClick={() => setEvolucaoExistenteDialogOpen(false)}>
+                Entendi
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         <BatchEditByTypeModal
           open={batchEditModalOpen}
           onClose={() => setBatchEditModalOpen(false)}

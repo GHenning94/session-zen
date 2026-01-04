@@ -489,7 +489,10 @@ const filterByPeriod = (items: any[]) => {
   const filteredPayments = filterByPeriod(allPayments).filter(payment => {
     const statusMatch = filterStatus === "todos" || payment.status === filterStatus
     const nameMatch = filterName === "" || payment.client.toLowerCase().includes(filterName.toLowerCase())
-    const methodMatch = filterMethod === "todos" || payment.method === filterMethod
+    
+    // Normalizar comparação de método de pagamento (case insensitive e remover acentos)
+    const normalizeMethod = (m: string) => m.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')
+    const methodMatch = filterMethod === "todos" || normalizeMethod(payment.method || '') === normalizeMethod(filterMethod)
     
     // Filtro por tipo de pagamento (individual/pacote/recorrente)
     let typeMatch = true
