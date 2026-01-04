@@ -4,17 +4,15 @@ import { MetasManager } from "@/components/MetasManager"
 export default function Metas() {
   return (
     <Layout>
-      <div className="flex flex-col h-full">
-        <div className="space-y-6 pb-8">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
-            <p className="text-muted-foreground mt-1">
-              Defina e acompanhe suas metas de crescimento profissional
-            </p>
-          </div>
-
-          <MetasManager />
+      <div className="space-y-6 pb-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
+          <p className="text-muted-foreground mt-1">
+            Defina e acompanhe suas metas de crescimento profissional
+          </p>
         </div>
+
+        <MetasManager />
       </div>
     </Layout>
   )
