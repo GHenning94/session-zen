@@ -121,8 +121,8 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
   return (
     <div
       className={cn(
-        // Fixed position at top right, completely to the LEFT of the bell icon
-        "fixed top-4 right-32 z-[100]",
+        // Fixed position at top right, aligned with notification bell
+        "fixed top-16 right-20 z-[100]",
         "whitespace-nowrap pointer-events-none",
         "transition-all duration-500 ease-out",
         // Entry animation - slides in from the right
@@ -131,7 +131,7 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
         isExiting && "animate-out fade-out slide-out-to-right-8 duration-500"
       )}
     >
-      <div className="flex items-center gap-2 bg-primary text-primary-foreground rounded-full py-2 px-4 shadow-xl shadow-primary/30 backdrop-blur-sm border border-primary-foreground/20">
+      <div className="flex items-center gap-2 bg-gradient-to-r from-primary/90 to-primary/70 text-primary-foreground rounded-full py-2 px-4 shadow-xl shadow-primary/25 backdrop-blur-md border border-primary-foreground/10">
         {/* Bell icon */}
         <Bell className="h-4 w-4 text-primary-foreground flex-shrink-0" />
         
