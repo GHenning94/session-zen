@@ -458,24 +458,12 @@ const Dashboard = () => {
         // Buscar pagamentos pagos para cálculo de ticket médio por cliente
         supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
         // Buscar pagamentos dos últimos 12 meses para o gráfico de canais (período inicial = 12)
-        // Usando mesma lógica de MESES DO CALENDÁRIO que os outros gráficos
-        (() => {
-          const now = new Date()
-          const currentYear = now.getFullYear()
-          const currentMonth = now.getMonth() // 0-indexed
-          // Para 12 meses: do mês atual - 11 até o mês atual
-          const startMonth = currentMonth - 11
-          const startDate = new Date(currentYear, startMonth, 1)
-          const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
-          
-          return supabase.from('payments')
-            .select('metodo_pagamento, valor, session_id, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), data_pagamento')
-            .eq('user_id', user?.id)
-            .eq('status', 'pago')
-            .not('valor', 'is', null)
-            .gte('data_pagamento', startDate.toISOString().split('T')[0])
-            .lte('data_pagamento', endDate.toISOString().split('T')[0])
-        })(),
+        // Busca TODOS os pagamentos pagos e filtra no código para incluir "A definir" (que pode não ter data_pagamento)
+        supabase.from('payments')
+          .select('metodo_pagamento, valor, session_id, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento), data), data_pagamento, created_at')
+          .eq('user_id', user?.id)
+          .eq('status', 'pago')
+          .not('valor', 'is', null),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
         supabase.from('payments').select('id, session_id, package_id, valor, status, data_vencimento, data_pagamento, created_at, sessions:session_id(data, horario, status), packages:package_id(data_fim, data_inicio, nome, total_sessoes)').eq('user_id', user?.id),
@@ -643,8 +631,27 @@ const Dashboard = () => {
 
       const allPaymentMethods = allPaymentMethodsResult.data
 
+      // Calcular período padrão de 12 meses para o gráfico de canais
+      const canalNow = new Date()
+      const canalCurrentYear = canalNow.getFullYear()
+      const canalCurrentMonth = canalNow.getMonth()
+      const canalStartMonth = canalCurrentMonth - 11
+      const canalStartDate = new Date(canalCurrentYear, canalStartMonth, 1)
+      const canalEndDate = new Date(canalCurrentYear, canalCurrentMonth + 1, 0, 23, 59, 59)
+
       const canalPayments: { [key: string]: { valor: number; count: number } } = {}
       allPaymentMethods?.forEach((payment: any) => {
+        // Filtrar por período usando data_pagamento OU created_at como fallback
+        const paymentDate = payment.data_pagamento 
+          ? new Date(payment.data_pagamento) 
+          : (payment.sessions?.data 
+            ? new Date(payment.sessions.data) 
+            : new Date(payment.created_at))
+        
+        if (paymentDate < canalStartDate || paymentDate > canalEndDate) {
+          return // Pular pagamentos fora do período
+        }
+
         // Priorizar: payment > sessão > sessão recorrente (mais específico primeiro)
         let metodo = 
           payment.metodo_pagamento || 
@@ -991,14 +998,12 @@ const Dashboard = () => {
         monthsToInclude
       })
 
-      // Buscar pagamentos com recurring_sessions para consistência
+      // Buscar TODOS os pagamentos pagos e filtrar no código para incluir "A definir"
       const { data: paymentsData, error } = await supabase
         .from('payments')
-        .select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), data_pagamento, created_at')
+        .select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento), data), data_pagamento, created_at')
         .eq('user_id', user.id)
         .eq('status', 'pago')
-        .gte('data_pagamento', startDate.toISOString().split('T')[0])
-        .lte('data_pagamento', endDate.toISOString().split('T')[0])
         .not('valor', 'is', null)
 
       if (error) throw error
@@ -1006,6 +1011,17 @@ const Dashboard = () => {
       const canalData: { [key: string]: { valor: number; count: number } } = {}
       
       paymentsData?.forEach((p: any) => {
+        // Filtrar por período usando data_pagamento OU data da sessão OU created_at como fallback
+        const paymentDate = p.data_pagamento 
+          ? new Date(p.data_pagamento) 
+          : (p.sessions?.data 
+            ? new Date(p.sessions.data) 
+            : new Date(p.created_at))
+        
+        if (paymentDate < startDate || paymentDate > endDate) {
+          return // Pular pagamentos fora do período
+        }
+
         // Priorizar: payment > sessão > sessão recorrente (mesma lógica do carregamento inicial)
         let method = 
           p.metodo_pagamento || 
@@ -1014,6 +1030,11 @@ const Dashboard = () => {
         
         // Normalizar para lowercase
         method = method ? method.toLowerCase().trim() : ''
+        
+        // Validar se é um valor inválido e normalizar para 'a definir'
+        if (!method || method === 'null' || method === 'undefined' || method === 'outros' || method === '') {
+          method = 'a definir'
+        }
         
         // Validar se é um valor inválido e normalizar para 'a definir'
         if (!method || method === 'null' || method === 'undefined' || method === 'outros' || method === '') {
@@ -2175,21 +2196,43 @@ const Dashboard = () => {
                         </CardDescription>
                         {/* Botões de período - abaixo no mobile, ao lado no desktop */}
                         <div className="flex gap-1 flex-wrap sm:self-end sm:-mt-12">
-                          {(['1', '3', '6', '12'] as const).map((period) => (
-                            <button
-                              key={period}
-                              data-no-min-height
-                              onClick={() => handleCanalPeriodChange(period)}
-                              className={cn(
-                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
-                                canalPeriod === period
-                                  ? "bg-primary text-primary-foreground shadow-sm"
-                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              )}
-                            >
-                              {period === '12' ? '1 ano' : `${period}m`}
-                            </button>
-                          ))}
+                          {(['1', '3', '6', '12'] as const).map((period) => {
+                            // Calcular range de datas para tooltip
+                            const monthsToInclude = parseInt(period)
+                            const now = new Date()
+                            const currentYear = now.getFullYear()
+                            const currentMonth = now.getMonth()
+                            const startMonth = currentMonth - (monthsToInclude - 1)
+                            const startDate = new Date(currentYear, startMonth, 1)
+                            const endDate = new Date(currentYear, currentMonth + 1, 0)
+                            
+                            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+                            const rangeLabel = monthsToInclude === 1 
+                              ? `${monthNames[startDate.getMonth()]}/${startDate.getFullYear()}`
+                              : `${monthNames[startDate.getMonth()]}/${startDate.getFullYear()} - ${monthNames[endDate.getMonth()]}/${endDate.getFullYear()}`
+                            
+                            return (
+                              <Tooltip key={period}>
+                                <TooltipTrigger asChild>
+                                  <button
+                                    data-no-min-height
+                                    onClick={() => handleCanalPeriodChange(period)}
+                                    className={cn(
+                                      "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
+                                      canalPeriod === period
+                                        ? "bg-primary text-primary-foreground shadow-sm"
+                                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    )}
+                                  >
+                                    {period === '12' ? '1 ano' : `${period}m`}
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="text-xs">
+                                  <p>{rangeLabel}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            )
+                          })}
                         </div>
                       </div>
                     </CardHeader>
