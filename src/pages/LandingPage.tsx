@@ -273,11 +273,14 @@ const LandingPage = () => {
   };
 
 
-  useEffect(() => {
+  // CRITICAL: Force light theme IMMEDIATELY on mount, before any paint
+  useLayoutEffect(() => {
     document.documentElement.classList.remove('dark');
     document.documentElement.classList.add('light');
     document.documentElement.setAttribute('data-theme', 'light');
     document.body.style.colorScheme = 'light';
+    // Also clear any cached theme from localStorage for next-themes
+    localStorage.setItem('user-platform-theme', 'light');
     resetToDefaultColors();
     return () => { document.body.style.colorScheme = '' };
   }, [resetToDefaultColors]);

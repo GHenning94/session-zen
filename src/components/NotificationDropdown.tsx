@@ -345,7 +345,7 @@ const NotificationDropdown = () => {
     return (
       <>
         <Button variant="ghost" size="icon" className="relative h-9 w-9" onClick={() => setOpen(true)}>
-          <Bell className={`w-5 h-5 transition-all duration-300 ${incomingNotification ? 'animate-pulse text-primary' : ''}`} />
+          <Bell className={`w-5 h-5 transition-all duration-300 ${incomingNotification ? 'animate-shake text-primary' : ''}`} />
           {unreadCount > 0 && (
             <Badge 
               variant="destructive" 
@@ -462,7 +462,7 @@ const NotificationDropdown = () => {
       <DropdownMenu open={open} onOpenChange={handleOpenChange}>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
-            <Bell className={`w-5 h-5 transition-all duration-300 ${incomingNotification ? 'animate-pulse text-primary' : ''}`} />
+            <Bell className={`w-5 h-5 transition-all duration-300 ${incomingNotification ? 'animate-shake text-primary' : ''}`} />
             {unreadCount > 0 && (
               <Badge 
                 variant="destructive" 
