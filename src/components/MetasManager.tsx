@@ -315,7 +315,7 @@ export const MetasManager = () => {
         </DialogContent>
       </Dialog>
       
-      <Tabs defaultValue="gerenciar">
+      <Tabs defaultValue="gerenciar" className="overflow-visible">
         {/* Legenda explicativa */}
         <Collapsible open={isLegendOpen} onOpenChange={setIsLegendOpen}>
           <CollapsibleTrigger asChild>
@@ -368,7 +368,7 @@ export const MetasManager = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="gerenciar" className="mt-4 space-y-4">
+        <TabsContent value="gerenciar" className="mt-4 space-y-4 overflow-visible">
           {tiposMeta.map((tipo) => {
             const metaAtiva = getMetaAtiva(tipo);
             const metaConcluida = getMetaConcluida(tipo);
@@ -512,7 +512,7 @@ export const MetasManager = () => {
           })}
         </TabsContent>
 
-        <TabsContent value="historico" className="mt-4 space-y-4">
+        <TabsContent value="historico" className="mt-4 space-y-4 overflow-visible">
         {tiposMeta.map((tipo) => {
           const historico = getHistoricoMetas(tipo);
           
