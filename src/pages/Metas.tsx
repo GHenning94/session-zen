@@ -11,8 +11,8 @@ export default function Metas() {
             Defina e acompanhe suas metas de crescimento profissional
           </p>
         </div>
+        <MetasManager />
       </div>
-      <MetasManager />
     </Layout>
   )
 }
