@@ -256,7 +256,7 @@ export const EvolucaoModal = ({
             Evolução já existente
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existente na página de Prontuários.
+            Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existentes.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
