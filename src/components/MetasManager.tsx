@@ -368,8 +368,8 @@ export const MetasManager = () => {
           </TabsTrigger>
         </TabsList>
 
-      <TabsContent value="gerenciar" className="mt-4 space-y-4">
-        {tiposMeta.map((tipo) => {
+        <TabsContent value="gerenciar" className="mt-4 space-y-4">
+          {tiposMeta.map((tipo) => {
             const metaAtiva = getMetaAtiva(tipo);
             const metaConcluida = getMetaConcluida(tipo);
 
@@ -510,9 +510,9 @@ export const MetasManager = () => {
               </Card>
             );
           })}
-      </TabsContent>
+        </TabsContent>
 
-      <TabsContent value="historico" className="mt-4 space-y-4">
+        <TabsContent value="historico" className="mt-4 space-y-4">
         {tiposMeta.map((tipo) => {
           const historico = getHistoricoMetas(tipo);
           
@@ -558,8 +558,8 @@ export const MetasManager = () => {
             </CardContent>
           </Card>
         )}
-      </TabsContent>
-    </Tabs>
+        </TabsContent>
+      </Tabs>
     </>
   );
 };
