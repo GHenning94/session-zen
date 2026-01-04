@@ -5,41 +5,25 @@ import { useTerminology } from '@/hooks/useTerminology'
 
 /**
  * Hook that checks for client birthdays on the current day and creates notifications
- * Runs once per session to avoid duplicate notifications
+ * Runs on mount and whenever clients are updated
  */
 export const useBirthdayNotifications = () => {
   const { user } = useAuth()
   const { clientTerm } = useTerminology()
-  const hasCheckedRef = useRef(false)
-  const todayRef = useRef<string>('')
+  const isCheckingRef = useRef(false)
 
   const checkBirthdays = useCallback(async () => {
-    if (!user) return
+    if (!user || isCheckingRef.current) return
 
-    // Get today's date
-    const today = new Date()
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
-    
-    // Only check once per day per session
-    if (hasCheckedRef.current && todayRef.current === todayKey) {
-      return
-    }
-    
-    hasCheckedRef.current = true
-    todayRef.current = todayKey
-
-    // Check localStorage to see if we already sent birthday notifications today
-    const lastBirthdayCheck = localStorage.getItem(`birthday_check_${user.id}`)
-    if (lastBirthdayCheck === todayKey) {
-      console.log('[BirthdayNotifications] Already checked birthdays today')
-      return
-    }
+    isCheckingRef.current = true
 
     try {
+      const today = new Date()
       const currentMonth = today.getMonth() + 1
       const currentDay = today.getDate()
+      const todayKey = `${today.getFullYear()}-${String(currentMonth).padStart(2, '0')}-${String(currentDay).padStart(2, '0')}`
 
-      // Fetch all clients with birthdays
+      // Fetch all active clients with birthdays
       const { data: clients, error } = await supabase
         .from('clients')
         .select('id, nome, data_nascimento, avatar_url')
@@ -53,7 +37,6 @@ export const useBirthdayNotifications = () => {
       }
 
       if (!clients || clients.length === 0) {
-        localStorage.setItem(`birthday_check_${user.id}`, todayKey)
         return
       }
 
@@ -66,7 +49,6 @@ export const useBirthdayNotifications = () => {
 
       if (birthdayClients.length === 0) {
         console.log('[BirthdayNotifications] No birthdays today')
-        localStorage.setItem(`birthday_check_${user.id}`, todayKey)
         return
       }
 
@@ -118,19 +100,40 @@ export const useBirthdayNotifications = () => {
         }
       }
 
-      // Mark today as checked
-      localStorage.setItem(`birthday_check_${user.id}`, todayKey)
-
     } catch (error) {
       console.error('[BirthdayNotifications] Error:', error)
+    } finally {
+      isCheckingRef.current = false
     }
   }, [user, clientTerm])
 
   useEffect(() => {
-    if (user) {
-      // Small delay to ensure everything is loaded
-      const timeout = setTimeout(checkBirthdays, 2000)
-      return () => clearTimeout(timeout)
+    if (!user) return
+
+    // Check on mount
+    const timeout = setTimeout(checkBirthdays, 2000)
+
+    // Subscribe to client changes to recheck when a client is updated
+    const channel = supabase
+      .channel('birthday-check')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'clients',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          console.log('[BirthdayNotifications] Client updated, rechecking birthdays...')
+          checkBirthdays()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      clearTimeout(timeout)
+      supabase.removeChannel(channel)
     }
   }, [user, checkBirthdays])
 }
