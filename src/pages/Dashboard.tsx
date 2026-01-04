@@ -627,15 +627,19 @@ const Dashboard = () => {
 
       const canalPayments: { [key: string]: { valor: number; count: number } } = {}
       allPaymentMethods?.forEach((payment: any) => {
-        // Priorizar: sessão recorrente > sessão > payment
+        // Priorizar: payment > sessão > sessão recorrente (mais específico primeiro)
         let metodo = 
-          payment.sessions?.recurring_sessions?.metodo_pagamento || 
-          payment.sessions?.metodo_pagamento || 
           payment.metodo_pagamento || 
-          'A definir'
+          payment.sessions?.metodo_pagamento || 
+          payment.sessions?.recurring_sessions?.metodo_pagamento
         
         // Normalizar para lowercase para evitar duplicatas (ex: "Transferência" vs "transferencia")
-        metodo = metodo.toLowerCase().trim()
+        metodo = metodo ? metodo.toLowerCase().trim() : ''
+        
+        // Validar se é um valor inválido e normalizar para 'a definir'
+        if (!metodo || metodo === 'null' || metodo === 'undefined' || metodo === 'outros' || metodo === '') {
+          metodo = 'a definir'
+        }
         
         // Consolidar cartao_credito, cartao_debito, cartão de débito, cartão de crédito em cartao
         if (metodo === 'cartao_credito' || metodo === 'cartao_debito' || 
@@ -953,10 +957,10 @@ const Dashboard = () => {
       const monthsToSubtract = parseInt(period)
       startDate.setMonth(currentDate.getMonth() - monthsToSubtract)
 
-      // Buscar pagamentos (ao invés de sessions)
+      // Buscar pagamentos com recurring_sessions para consistência
       const { data: paymentsData, error } = await supabase
         .from('payments')
-        .select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento), data_pagamento, created_at')
+        .select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), data_pagamento, created_at')
         .eq('user_id', user.id)
         .eq('status', 'pago')
         .gte('created_at', startDate.toISOString().split('T')[0])
@@ -966,8 +970,20 @@ const Dashboard = () => {
 
       const canalData: { [key: string]: { valor: number; count: number } } = {}
       
-      paymentsData?.forEach((p) => {
-        let method = (p.metodo_pagamento || p.sessions?.metodo_pagamento || 'a definir').toLowerCase().trim()
+      paymentsData?.forEach((p: any) => {
+        // Priorizar: payment > sessão > sessão recorrente (mesma lógica do carregamento inicial)
+        let method = 
+          p.metodo_pagamento || 
+          p.sessions?.metodo_pagamento || 
+          p.sessions?.recurring_sessions?.metodo_pagamento
+        
+        // Normalizar para lowercase
+        method = method ? method.toLowerCase().trim() : ''
+        
+        // Validar se é um valor inválido e normalizar para 'a definir'
+        if (!method || method === 'null' || method === 'undefined' || method === 'outros' || method === '') {
+          method = 'a definir'
+        }
         
         // Consolidar cartao_credito, cartao_debito, cartão de débito, cartão de crédito em cartao
         if (method === 'cartao_credito' || method === 'cartao_debito' || 
@@ -978,10 +994,6 @@ const Dashboard = () => {
         // Normalizar transferência para transferencia
         if (method === 'transferência') {
           method = 'transferencia'
-        }
-        // Normalizar outros valores
-        if (!method || method === 'null' || method === 'undefined' || method === 'outros') {
-          method = 'a definir'
         }
         
         if (!canalData[method]) {
