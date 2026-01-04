@@ -457,10 +457,10 @@ const Dashboard = () => {
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         // Buscar pagamentos pagos para cálculo de ticket médio por cliente
         supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
-        // Buscar pagamentos do último mês para o gráfico de canais (período inicial)
+        // Buscar pagamentos dos últimos 12 meses para o gráfico de canais (período inicial = 12)
         (() => {
           const startDate = new Date()
-          startDate.setMonth(startDate.getMonth() - 1)
+          startDate.setMonth(startDate.getMonth() - 12)
           return supabase.from('payments')
             .select('metodo_pagamento, valor, session_id, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), created_at')
             .eq('user_id', user?.id)
