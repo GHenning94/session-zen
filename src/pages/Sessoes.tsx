@@ -1515,7 +1515,7 @@ export default function Sessoes() {
                 Evolução já existente
               </AlertDialogTitle>
               <AlertDialogDescription>
-                Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existentes.
+                Já existe uma evolução registrada para esta sessão. Você deve editar a evolução existente na página de Prontuários.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
