@@ -263,7 +263,7 @@ export const MetasManager = () => {
   }
 
   return (
-    <div>
+    <>
       {/* Modal de confirmação de exclusão (controlado para evitar erro removeChild) */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <AlertDialogContent>
@@ -560,6 +560,6 @@ export const MetasManager = () => {
         )}
         </TabsContent>
       </Tabs>
-    </div>
+    </>
   );
 };
