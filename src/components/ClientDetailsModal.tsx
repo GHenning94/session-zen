@@ -22,7 +22,7 @@ import {
   FileText,
   Cake
 } from "lucide-react"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 
@@ -54,8 +54,9 @@ export const ClientDetailsModal = ({
   const isBirthdayThisMonth = () => {
     if (!client.data_nascimento) return false
     const today = new Date()
-    const birthDate = new Date(client.data_nascimento)
-    return birthDate.getMonth() === today.getMonth()
+    // Parse date string directly to avoid timezone issues
+    const [year, month, day] = client.data_nascimento.split('-').map(Number)
+    return month === today.getMonth() + 1 // month is 1-indexed from string
   }
 
   return (
@@ -124,7 +125,7 @@ export const ClientDetailsModal = ({
                   <div>
                     <label className="text-sm text-muted-foreground">Data de Nascimento</label>
                     <p className="font-medium">
-                      {format(new Date(client.data_nascimento), "dd/MM/yyyy", { locale: ptBR })}
+                      {format(parseISO(client.data_nascimento), "dd/MM/yyyy", { locale: ptBR })}
                     </p>
                   </div>
                 )}
