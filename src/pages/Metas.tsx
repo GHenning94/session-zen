@@ -513,56 +513,56 @@ export default function Metas() {
             )}
           </TabsContent>
         </Tabs>
+
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir Meta?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Esta ação não pode ser desfeita. A meta será permanentemente excluída.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setMetaToDelete(null)}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDelete}>
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <Dialog open={warningModalOpen} onOpenChange={setWarningModalOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-amber-600">
+                <AlertTriangle className="h-5 w-5" />
+                Meta Já Cumprida
+              </DialogTitle>
+              <DialogDescription className="pt-4 space-y-3">
+                <p>
+                  O valor definido (<strong>{warningData ? formatarValor(warningData.tipo, warningData.valorDefinido) : ''}</strong>) 
+                  é menor ou igual ao seu valor atual.
+                </p>
+                <p className="text-foreground font-medium">
+                  Valor atual: <span className="text-primary">{warningData ? formatarValor(warningData.tipo, warningData.valorAtual) : ''}</span>
+                </p>
+                <p>
+                  Para definir uma meta desafiadora, utilize um valor acima de{' '}
+                  <strong className="text-primary">{warningData ? formatarValor(warningData.tipo, warningData.valorAtual) : ''}</strong>.
+                </p>
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter className="gap-2 sm:gap-0">
+              <Button variant="outline" onClick={() => setWarningModalOpen(false)}>
+                Alterar Valor
+              </Button>
+              <Button variant="secondary" onClick={warningData?.isEdit ? handleConfirmEditMeta : handleConfirmCreateMeta}>
+                {warningData?.isEdit ? 'Editar Mesmo Assim' : 'Criar Mesmo Assim'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Excluir Meta?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Esta ação não pode ser desfeita. A meta será permanentemente excluída.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setMetaToDelete(null)}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>
-              Excluir
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <Dialog open={warningModalOpen} onOpenChange={setWarningModalOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertTriangle className="h-5 w-5" />
-              Meta Já Cumprida
-            </DialogTitle>
-            <DialogDescription className="pt-4 space-y-3">
-              <p>
-                O valor definido (<strong>{warningData ? formatarValor(warningData.tipo, warningData.valorDefinido) : ''}</strong>) 
-                é menor ou igual ao seu valor atual.
-              </p>
-              <p className="text-foreground font-medium">
-                Valor atual: <span className="text-primary">{warningData ? formatarValor(warningData.tipo, warningData.valorAtual) : ''}</span>
-              </p>
-              <p>
-                Para definir uma meta desafiadora, utilize um valor acima de{' '}
-                <strong className="text-primary">{warningData ? formatarValor(warningData.tipo, warningData.valorAtual) : ''}</strong>.
-              </p>
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setWarningModalOpen(false)}>
-              Alterar Valor
-            </Button>
-            <Button variant="secondary" onClick={warningData?.isEdit ? handleConfirmEditMeta : handleConfirmCreateMeta}>
-              {warningData?.isEdit ? 'Editar Mesmo Assim' : 'Criar Mesmo Assim'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </Layout>
   );
 }
