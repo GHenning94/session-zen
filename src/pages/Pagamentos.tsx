@@ -815,6 +815,7 @@ const pastPayments = filteredPayments.filter(item => {
                         <SelectItem value="boleto">Boleto</SelectItem>
                         <SelectItem value="transferencia">Transferência</SelectItem>
                         <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                        <SelectItem value="a definir">A Definir</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
