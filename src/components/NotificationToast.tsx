@@ -124,7 +124,7 @@ export const NotificationToast = ({ notification, onAnimationComplete }: Notific
     <div
       className={cn(
         // Fixed position - aligned with header icons
-        "fixed top-4 right-36 z-[100]",
+        "fixed top-5 right-36 z-[100]",
         "whitespace-nowrap pointer-events-none",
         // Entry animation - slides in from the right
         !isExiting && "animate-in fade-in slide-in-from-right-4 duration-300",
