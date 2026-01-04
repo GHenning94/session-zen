@@ -458,15 +458,23 @@ const Dashboard = () => {
         // Buscar pagamentos pagos para cálculo de ticket médio por cliente
         supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
         // Buscar pagamentos dos últimos 12 meses para o gráfico de canais (período inicial = 12)
+        // Usando mesma lógica de MESES DO CALENDÁRIO que os outros gráficos
         (() => {
-          const startDate = new Date()
-          startDate.setMonth(startDate.getMonth() - 12)
+          const now = new Date()
+          const currentYear = now.getFullYear()
+          const currentMonth = now.getMonth() // 0-indexed
+          // Para 12 meses: do mês atual - 11 até o mês atual
+          const startMonth = currentMonth - 11
+          const startDate = new Date(currentYear, startMonth, 1)
+          const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
+          
           return supabase.from('payments')
-            .select('metodo_pagamento, valor, session_id, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), created_at')
+            .select('metodo_pagamento, valor, session_id, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), data_pagamento')
             .eq('user_id', user?.id)
             .eq('status', 'pago')
             .not('valor', 'is', null)
-            .gte('created_at', startDate.toISOString().split('T')[0])
+            .gte('data_pagamento', startDate.toISOString().split('T')[0])
+            .lte('data_pagamento', endDate.toISOString().split('T')[0])
         })(),
         supabase.from('packages').select('id, nome, total_sessoes, sessoes_consumidas, valor_total, status, client_id, data_inicio, data_fim').eq('user_id', user?.id),
         supabase.from('sessions').select('id, status, data, horario').eq('user_id', user?.id).order('data', { ascending: false }).limit(50), // Reduzido de 500 para 50
@@ -955,17 +963,33 @@ const Dashboard = () => {
   }
 
   // Load canal data with period filter (usando payments)
+  // IMPORTANTE: Usar mesma lógica de meses do calendário que os outros gráficos
   const loadCanalData = useCallback(async (period: '1' | '3' | '6' | '12') => {
     try {
       if (!user) return
 
       console.log('💳 Carregando dados do canal para período:', period)
       
-      // Calculate date range based on period
-      const currentDate = new Date()
-      const startDate = new Date()
-      const monthsToSubtract = parseInt(period)
-      startDate.setMonth(currentDate.getMonth() - monthsToSubtract)
+      // Calcular range de datas baseado em MESES DO CALENDÁRIO (mesma lógica dos outros gráficos)
+      const monthsToInclude = parseInt(period)
+      const now = new Date()
+      const currentYear = now.getFullYear()
+      const currentMonth = now.getMonth() // 0-indexed
+      
+      // Calcular o primeiro dia do mês inicial do período
+      // Se period=1, queremos apenas o mês atual
+      // Se period=3, queremos os últimos 3 meses incluindo o atual
+      const startMonth = currentMonth - (monthsToInclude - 1)
+      const startDate = new Date(currentYear, startMonth, 1)
+      
+      // Último dia do mês atual
+      const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59)
+      
+      console.log('📅 Período de canais:', {
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString(),
+        monthsToInclude
+      })
 
       // Buscar pagamentos com recurring_sessions para consistência
       const { data: paymentsData, error } = await supabase
@@ -973,7 +997,8 @@ const Dashboard = () => {
         .select('metodo_pagamento, valor, sessions:session_id(metodo_pagamento, recurring_session_id, recurring_sessions:recurring_session_id(metodo_pagamento)), data_pagamento, created_at')
         .eq('user_id', user.id)
         .eq('status', 'pago')
-        .gte('created_at', startDate.toISOString().split('T')[0])
+        .gte('data_pagamento', startDate.toISOString().split('T')[0])
+        .lte('data_pagamento', endDate.toISOString().split('T')[0])
         .not('valor', 'is', null)
 
       if (error) throw error
