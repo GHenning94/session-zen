@@ -144,39 +144,45 @@ serve(async (req) => {
 
     console.log('[get-subscription-invoices] 📃 Raw invoices count:', invoices.data.length);
     
-    // Log all invoices for debug
+    // Log ALL invoices for debug - mostrar tudo antes de filtrar
     invoices.data.forEach(inv => {
-      console.log('[get-subscription-invoices] 📄 Invoice:', {
+      console.log('[get-subscription-invoices] 📄 ALL Invoice:', {
         id: inv.id,
         number: inv.number,
         status: inv.status,
         amount_due: inv.amount_due,
         amount_paid: inv.amount_paid,
         billing_reason: inv.billing_reason,
+        total: inv.total,
+        subtotal: inv.subtotal,
         created: new Date(inv.created * 1000).toISOString()
       });
     });
 
     // ✅ Filtrar faturas válidas
     // Incluir: paid (pagas), open (pendentes de pagamento)
-    // Excluir: draft, void, uncollectible, faturas de $0
+    // Excluir: draft, void, uncollectible
+    // IMPORTANTE: Para proration, o valor pode estar em amount_paid ou total
     const formattedInvoices = invoices.data
       .filter(invoice => {
-        const hasAmount = invoice.amount_due > 0 || invoice.amount_paid > 0;
+        // Verificar se tem algum valor (pode ser negativo para créditos)
+        const hasAmount = invoice.amount_due > 0 || invoice.amount_paid > 0 || Math.abs(invoice.total || 0) > 0;
         const isValidStatus = invoice.status === 'paid' || invoice.status === 'open';
         const isNotDraft = !invoice.draft;
         
         // Log para debug
-        if (!hasAmount || !isValidStatus) {
-          console.log('[get-subscription-invoices] ⏭️ Skipping invoice:', {
-            id: invoice.id,
-            number: invoice.number,
-            amount_due: invoice.amount_due,
-            amount_paid: invoice.amount_paid,
-            status: invoice.status,
-            reason: !hasAmount ? 'zero amount' : 'invalid status'
-          });
-        }
+        console.log('[get-subscription-invoices] 🔍 Filtering invoice:', {
+          id: invoice.id,
+          number: invoice.number,
+          billing_reason: invoice.billing_reason,
+          amount_due: invoice.amount_due,
+          amount_paid: invoice.amount_paid,
+          total: invoice.total,
+          status: invoice.status,
+          hasAmount,
+          isValidStatus,
+          willInclude: hasAmount && isValidStatus && isNotDraft
+        });
         
         return hasAmount && isValidStatus && isNotDraft;
       })
@@ -184,6 +190,8 @@ serve(async (req) => {
         id: invoice.id,
         number: invoice.number,
         amount_paid: invoice.amount_paid,
+        amount_due: invoice.amount_due,
+        total: invoice.total,
         currency: invoice.currency,
         status: invoice.status,
         created: invoice.created,
@@ -191,8 +199,8 @@ serve(async (req) => {
         period_end: invoice.period_end,
         hosted_invoice_url: invoice.hosted_invoice_url,
         invoice_pdf: invoice.invoice_pdf,
-        // Adicionar informações extras do plano
         subscription_id: invoice.subscription,
+        billing_reason: invoice.billing_reason, // Adicionar billing_reason
         description: invoice.description || invoice.lines?.data?.[0]?.description || null
       }));
 
