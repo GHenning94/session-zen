@@ -263,7 +263,6 @@ const BookingPage = () => {
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p>Carregando...</p></div>
   if (!profile || !config) return <div className="min-h-screen flex items-center justify-center"><p>Perfil não encontrado.</p></div>
-  if (!config.slug) return <div className="min-h-screen flex items-center justify-center flex-col gap-4"><p className="text-lg font-medium">Página não disponível</p><p className="text-muted-foreground">O profissional ainda não configurou o slug personalizado.</p></div>
 
   console.log("Config:", config);
   console.log("Profile:", profile);
