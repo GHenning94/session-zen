@@ -118,7 +118,7 @@ serve(async (req) => {
 
     console.log("[upgrade-subscription] 💰 Prorated amount:", proratedAmountFormatted);
 
-    // Atualizar a assinatura com proration
+    // Atualizar a assinatura com proration - always_invoice cobra imediatamente
     const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
       items: [
         {
@@ -126,10 +126,12 @@ serve(async (req) => {
           price: newPriceId,
         },
       ],
-      proration_behavior: 'create_prorations',
-      payment_behavior: 'error_if_incomplete',
+      proration_behavior: 'always_invoice', // Cobra o proration imediatamente
+      payment_behavior: 'default_incomplete', // Permite criar invoice mesmo se pagamento falhar
       expand: ['latest_invoice.payment_intent'],
     });
+    
+    console.log("[upgrade-subscription] 📄 Latest invoice status:", (updatedSubscription.latest_invoice as Stripe.Invoice)?.status);
 
     console.log("[upgrade-subscription] ✅ Subscription updated:", updatedSubscription.id);
 
@@ -137,45 +139,70 @@ serve(async (req) => {
     const latestInvoice = updatedSubscription.latest_invoice as Stripe.Invoice;
     let paymentUrl: string | null = null;
     let requiresPayment = false;
+    let invoicePaid = false;
 
-    if (latestInvoice && latestInvoice.status === 'open') {
-      // Há uma fatura pendente que precisa ser paga
-      const paymentIntent = latestInvoice.payment_intent as Stripe.PaymentIntent;
-      
-      if (paymentIntent && paymentIntent.status === 'requires_payment_method') {
-        // Criar um checkout session para pagar a fatura pendente
-        const session = await stripe.checkout.sessions.create({
-          customer: customer.id,
-          mode: 'payment',
-          line_items: [
-            {
-              price_data: {
-                currency: 'brl',
-                product_data: {
-                  name: `Upgrade para ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'} (${newPriceInfo.interval === 'monthly' ? 'Mensal' : 'Anual'})`,
-                  description: 'Valor proporcional do upgrade',
-                },
-                unit_amount: proratedAmount,
-              },
-              quantity: 1,
-            },
-          ],
-          // CRITICAL: Use payment=success (not upgrade=success) so Dashboard handles it correctly
-          success_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/dashboard?payment=success&upgrade_plan=${newPriceInfo.plan}`,
-          cancel_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/upgrade?upgrade=cancelled`,
-          metadata: {
-            user_id: user.id,
-            type: 'proration_payment',
-            subscription_id: subscription.id,
-            plan_name: newPriceInfo.plan,
-            billing_interval: newPriceInfo.interval,
-          },
-          locale: 'pt-BR',
-        });
+    console.log("[upgrade-subscription] 📄 Invoice details:", {
+      id: latestInvoice?.id,
+      status: latestInvoice?.status,
+      amount_due: latestInvoice?.amount_due,
+      amount_paid: latestInvoice?.amount_paid,
+    });
+
+    if (latestInvoice) {
+      if (latestInvoice.status === 'paid') {
+        // Fatura já foi paga (cobrada automaticamente do cartão em arquivo)
+        invoicePaid = true;
+        console.log("[upgrade-subscription] ✅ Invoice already paid:", latestInvoice.id);
+      } else if (latestInvoice.status === 'open') {
+        // Há uma fatura pendente que precisa ser paga
+        const paymentIntent = latestInvoice.payment_intent as Stripe.PaymentIntent;
         
-        paymentUrl = session.url;
-        requiresPayment = true;
-        console.log("[upgrade-subscription] 💳 Payment required, created checkout session:", session.id);
+        console.log("[upgrade-subscription] 💳 Payment intent status:", paymentIntent?.status);
+        
+        if (paymentIntent && (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'requires_action')) {
+          // Usar hosted_invoice_url para pagar a fatura diretamente
+          if (latestInvoice.hosted_invoice_url) {
+            paymentUrl = latestInvoice.hosted_invoice_url;
+            requiresPayment = true;
+            console.log("[upgrade-subscription] 💳 Payment required, using hosted invoice URL:", latestInvoice.id);
+          } else {
+            // Fallback: Criar um checkout session para pagar a fatura pendente
+            const session = await stripe.checkout.sessions.create({
+              customer: customer.id,
+              mode: 'payment',
+              line_items: [
+                {
+                  price_data: {
+                    currency: 'brl',
+                    product_data: {
+                      name: `Upgrade para ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'} (${newPriceInfo.interval === 'monthly' ? 'Mensal' : 'Anual'})`,
+                      description: 'Valor proporcional do upgrade',
+                    },
+                    unit_amount: proratedAmount,
+                  },
+                  quantity: 1,
+                },
+              ],
+              success_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/dashboard?payment=success&upgrade_plan=${newPriceInfo.plan}`,
+              cancel_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/upgrade?upgrade=cancelled`,
+              metadata: {
+                user_id: user.id,
+                type: 'proration_payment',
+                subscription_id: subscription.id,
+                plan_name: newPriceInfo.plan,
+                billing_interval: newPriceInfo.interval,
+              },
+              locale: 'pt-BR',
+            });
+            
+            paymentUrl = session.url;
+            requiresPayment = true;
+            console.log("[upgrade-subscription] 💳 Payment required, created checkout session:", session.id);
+          }
+        } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+          invoicePaid = true;
+          console.log("[upgrade-subscription] ✅ Payment already succeeded");
+        }
       }
     }
 
@@ -205,9 +232,13 @@ serve(async (req) => {
         newInterval: newPriceInfo.interval,
         requiresPayment,
         paymentUrl,
+        invoicePaid,
+        invoiceId: latestInvoice?.id,
         message: requiresPayment 
           ? `Upgrade realizado! Você será redirecionado para pagar o valor proporcional de ${proratedAmountFormatted}.`
-          : `Upgrade realizado com sucesso para o plano ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'}!`
+          : invoicePaid
+            ? `Upgrade realizado com sucesso! O valor de ${proratedAmountFormatted} foi cobrado automaticamente.`
+            : `Upgrade realizado com sucesso para o plano ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'}!`
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
