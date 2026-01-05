@@ -186,9 +186,16 @@ const Dashboard = () => {
       loadDashboardDataOptimized(true)
     }
     
-    // Check if returning from successful payment
+    // Check if returning from successful payment (both new subscription and upgrade proration)
     const paymentStatus = searchParams.get('payment')
+    const upgradePlanFromPayment = searchParams.get('upgrade_plan')
+    
     if (paymentStatus === 'success' && user) {
+      // If this was an upgrade proration payment, store the plan for welcome modal
+      if (upgradePlanFromPayment) {
+        sessionStorage.setItem('pending_tier_upgrade', upgradePlanFromPayment)
+        searchParams.delete('upgrade_plan')
+      }
       handlePaymentSuccess()
     }
     

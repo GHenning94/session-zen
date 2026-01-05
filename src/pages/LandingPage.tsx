@@ -274,15 +274,32 @@ const LandingPage = () => {
 
 
   // CRITICAL: Force light theme IMMEDIATELY on mount, before any paint
+  // This must run synchronously before React renders anything
   useLayoutEffect(() => {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-    document.documentElement.setAttribute('data-theme', 'light');
+    const root = document.documentElement;
+    // Force synchronous class update to prevent any flash
+    root.style.transition = 'none';
+    root.classList.remove('dark');
+    root.classList.add('light');
+    root.setAttribute('data-theme', 'light');
+    root.setAttribute('style', 'color-scheme: light !important');
     document.body.style.colorScheme = 'light';
-    // Also clear any cached theme from localStorage for next-themes
+    // Set next-themes storage key to light (must match ThemeProvider storageKey)
     localStorage.setItem('user-platform-theme', 'light');
+    // Also set a flag to prevent useUserTheme from overriding
+    sessionStorage.setItem('force_light_theme_page', 'true');
     resetToDefaultColors();
-    return () => { document.body.style.colorScheme = '' };
+    
+    // Re-enable transitions after paint
+    requestAnimationFrame(() => {
+      root.style.transition = '';
+      root.setAttribute('style', 'color-scheme: light');
+    });
+    
+    return () => { 
+      document.body.style.colorScheme = '';
+      sessionStorage.removeItem('force_light_theme_page');
+    };
   }, [resetToDefaultColors]);
 
   // Typewriter animation - usando ref para evitar múltiplas instâncias (StrictMode safe)
