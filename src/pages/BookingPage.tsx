@@ -263,6 +263,7 @@ const BookingPage = () => {
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p>Carregando...</p></div>
   if (!profile || !config) return <div className="min-h-screen flex items-center justify-center"><p>Perfil não encontrado.</p></div>
+  if (!config.slug) return <div className="min-h-screen flex items-center justify-center flex-col gap-4"><p className="text-lg font-medium">Página não disponível</p><p className="text-muted-foreground">O profissional ainda não configurou o slug personalizado.</p></div>
 
   console.log("Config:", config);
   console.log("Profile:", profile);
@@ -371,15 +372,19 @@ const BookingPage = () => {
                   }}
                 />
               )}
-              <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: config.brand_color }}>
-                {config.page_title || `${profile.nome}`}
-              </CardTitle>
-              <CardDescription className="text-sm sm:text-base">
-                {config.page_description || profile.bio || `${profile.profissao}`}
-              </CardDescription>
+              {(config.show_page_title !== false) && (
+                <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: config.brand_color }}>
+                  {config.page_title || `${profile.nome}`}
+                </CardTitle>
+              )}
+              {(config.show_page_description !== false) && (
+                <CardDescription className="text-sm sm:text-base">
+                  {config.page_description || profile.bio || `${profile.profissao}`}
+                </CardDescription>
+              )}
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
-              {profile.bio && (
+              {profile.bio && (config.show_bio !== false) && (
                 <div className="p-3 sm:p-4 bg-muted/50 rounded-lg">
                   <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
                     <Info className="w-4 h-4" />
@@ -389,7 +394,7 @@ const BookingPage = () => {
                 </div>
               )}
 
-              {profile.especialidade && (
+              {profile.especialidade && (config.show_specialty !== false) && (
                 <div>
                   <h3 className="font-semibold mb-2 text-sm sm:text-base">Especialidade</h3>
                   <Badge variant="secondary" className="text-xs sm:text-sm">{profile.especialidade}</Badge>
@@ -402,7 +407,7 @@ const BookingPage = () => {
                   Formas de Pagamento
                 </h3>
                 
-                {config.show_price && config.valor_padrao && (
+                {(config.show_price !== false) && (config.show_session_value !== false) && config.valor_padrao && (
                   <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
                     <p className="font-semibold text-primary text-sm sm:text-base">Valor da Sessão: R$ {config.valor_padrao.toFixed(2)}</p>
                     {config.show_duration && config.duracao_sessao && (
@@ -411,7 +416,13 @@ const BookingPage = () => {
                   </div>
                 )}
 
-                {config?.chave_pix && (
+                {(config.show_first_consultation_value !== false) && config.valor_primeira_consulta && (
+                  <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="font-semibold text-primary text-sm sm:text-base">Valor da 1ª Consulta: R$ {config.valor_primeira_consulta.toFixed(2)}</p>
+                  </div>
+                )}
+
+                {(config.show_pix_key !== false) && config?.chave_pix && (
                   <div className="p-3 sm:p-4 rounded-lg border" 
                        style={{ 
                          backgroundColor: 'hsl(142 71% 45% / 0.1)', 
@@ -424,7 +435,7 @@ const BookingPage = () => {
                   </div>
                 )}
                 
-                {config?.dados_bancarios && (
+                {(config.show_bank_details !== false) && config?.dados_bancarios && (
                   <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
                     <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Dados Bancários</h3>
                     <p className="text-xs sm:text-sm text-blue-700 whitespace-pre-line">{config.dados_bancarios}</p>

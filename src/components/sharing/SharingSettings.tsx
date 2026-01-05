@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
-import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X } from "lucide-react"
+import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X, RotateCcw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast" 
 import { ImageCropper } from "@/components/ImageCropper"
 import { ImageUpload } from "@/components/sharing/ImageUpload"
@@ -121,7 +121,7 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                 <div className="space-y-2"><Label>Descrição</Label><Input value={settings.page_description || ''} onChange={(e) => onSettingsChange('page_description', e.target.value)} placeholder="Psicoterapia online" /></div>
               </div>
               <div className="space-y-2">
-                <Label>Foto Pública</Label>
+                <Label>Foto Pública / Logo</Label>
                 <div className="flex items-center gap-3">
                   <div 
                     className="relative group cursor-pointer"
@@ -201,6 +201,48 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                     />
                     <Label>Mostrar Bio</Label>
                   </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_session_value ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_session_value', checked)} 
+                    />
+                    <Label>Mostrar Valor Sessão</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_first_consultation_value ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_first_consultation_value', checked)} 
+                    />
+                    <Label>Mostrar Valor 1ª Consulta</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_pix_key ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_pix_key', checked)} 
+                    />
+                    <Label>Mostrar Chave PIX</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_bank_details ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_bank_details', checked)} 
+                    />
+                    <Label>Mostrar Dados Bancários</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_page_title ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_page_title', checked)} 
+                    />
+                    <Label>Mostrar Título</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_page_description ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_page_description', checked)} 
+                    />
+                    <Label>Mostrar Descrição</Label>
+                  </div>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground bg-muted/50 p-3 rounded-md">
@@ -230,11 +272,21 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                     <Input type="color" value={settings.background_color || '#ffffff'} onChange={(e) => onSettingsChange('background_color', e.target.value)} />
                   </div>
                 </div>
-                <ImageUpload 
-                  label="Logo"
-                  value={settings.logo_url || ''}
-                  onChange={(url) => onSettingsChange('logo_url', url)}
-                />
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      onSettingsChange('brand_color', '#3b82f6');
+                      onSettingsChange('background_color', '#ffffff');
+                      onSettingsChange('background_image', '');
+                      toast({ title: "Cores restauradas para o padrão!" });
+                    }}
+                  >
+                    <RotateCcw className="w-4 h-4 mr-2" />
+                    Restaurar Cores Padrão
+                  </Button>
+                </div>
                 <div className="space-y-2">
                   <ImageUpload 
                     label="Imagem de Fundo"
