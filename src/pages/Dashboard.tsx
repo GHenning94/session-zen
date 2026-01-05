@@ -163,19 +163,24 @@ const Dashboard = () => {
     // Ativar animações após mount
     const timer = setTimeout(() => setChartsAnimated(true), 100)
     
-    // Check for upgrade welcome modal
-    const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
-    if (showWelcome) {
-      sessionStorage.removeItem('show_upgrade_welcome')
-      setUpgradeWelcomeModal({
-        open: true,
-        newPlan: showWelcome as 'pro' | 'premium'
-      })
-    }
+    // Check for upgrade welcome modal - do this with a small delay to ensure DOM is ready
+    const welcomeTimer = setTimeout(() => {
+      const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
+      console.log('[Dashboard] 🔍 Checking for upgrade welcome modal:', showWelcome)
+      if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
+        console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
+        sessionStorage.removeItem('show_upgrade_welcome')
+        setUpgradeWelcomeModal({
+          open: true,
+          newPlan: showWelcome as 'pro' | 'premium'
+        })
+      }
+    }, 500) // Small delay to ensure page is fully loaded
     
     return () => {
       isActiveRef.current = false
       clearTimeout(timer)
+      clearTimeout(welcomeTimer)
     }
   }, [])
 
@@ -191,10 +196,10 @@ const Dashboard = () => {
     const upgradePlanFromPayment = searchParams.get('upgrade_plan')
     
     if (paymentStatus === 'success' && user) {
-      // If this was an upgrade proration payment, store the plan for welcome modal
+      // If this was an upgrade proration payment, store the plan for welcome modal immediately
       if (upgradePlanFromPayment) {
+        console.log('[Dashboard] 🎯 Upgrade payment detected for plan:', upgradePlanFromPayment)
         sessionStorage.setItem('pending_tier_upgrade', upgradePlanFromPayment)
-        searchParams.delete('upgrade_plan')
       }
       handlePaymentSuccess()
     }
@@ -248,6 +253,7 @@ const Dashboard = () => {
           const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade')
           
           if (pendingTierUpgrade) {
+            console.log('[Dashboard] 🎉 Tier upgrade confirmed, preparing welcome modal for:', pendingTierUpgrade)
             // É mudança de tier - mostrar animação
             sessionStorage.removeItem('pending_tier_upgrade')
             sessionStorage.setItem('show_upgrade_welcome', pendingTierUpgrade)
@@ -255,12 +261,14 @@ const Dashboard = () => {
           // Se não há pending_tier_upgrade, pode ser apenas mudança de período
           // Nesse caso, não mostramos a animação de boas-vindas
           
-          // Clear URL params before reload
-          searchParams.delete('payment')
-          setSearchParams(searchParams, { replace: true })
+          // Clear URL params
+          const newUrl = new URL(window.location.href)
+          newUrl.searchParams.delete('payment')
+          newUrl.searchParams.delete('upgrade_plan')
+          window.history.replaceState({}, '', newUrl.pathname)
           
           // Small delay then reload to get fresh data with new plan
-          await new Promise(resolve => setTimeout(resolve, 2500))
+          await new Promise(resolve => setTimeout(resolve, 1500))
           window.location.href = '/dashboard'
           return true
         }
