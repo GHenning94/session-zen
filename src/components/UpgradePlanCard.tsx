@@ -1,13 +1,27 @@
 import { useState } from "react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Crown, Zap, Star, ArrowRight } from "lucide-react"
+import { Crown, Zap, Star, ArrowRight, Loader2, AlertTriangle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import { DowngradeRetentionFlow } from "./DowngradeRetentionFlow"
 import { toast } from "sonner"
+
+interface ProrationData {
+  proratedAmount: number
+  proratedAmountFormatted: string
+  creditAmount: number
+  creditFormatted: string
+  daysRemaining: number
+  periodEndDate: string
+  currentPlan: string
+  newPlan: string
+  isTierChange: boolean
+  newPlanPriceFormatted: string
+}
 
 interface Plan {
   id: string
@@ -64,6 +78,13 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
     open: boolean
     targetPlan: Plan | null
   }>({ open: false, targetPlan: null })
+  const [prorationModal, setProrationModal] = useState<{
+    open: boolean
+    targetPlan: Plan | null
+    data: ProrationData | null
+    isLoading: boolean
+    error: string | null
+  }>({ open: false, targetPlan: null, data: null, isLoading: false, error: null })
 
   const allPlans: Plan[] = [
     {
@@ -138,8 +159,81 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       return
     }
     
-    // Upgrade normal
+    // Se o usuário já tem plano pago, mostrar modal de proration
+    if (currentPlan !== 'basico') {
+      const stripePrice = billingCycle === 'monthly' ? plan.monthlyStripePrice : plan.annualStripePrice
+      
+      setProrationModal({
+        open: true,
+        targetPlan: plan,
+        data: null,
+        isLoading: true,
+        error: null
+      })
+
+      try {
+        console.log('[UpgradePlanCard] 📊 Fetching proration preview for:', stripePrice)
+        const { data, error } = await supabase.functions.invoke('preview-proration', {
+          body: { newPriceId: stripePrice }
+        })
+
+        if (error) throw error
+
+        console.log('[UpgradePlanCard] ✅ Proration data received:', data)
+        setProrationModal(prev => ({
+          ...prev,
+          data: data,
+          isLoading: false
+        }))
+      } catch (error: any) {
+        console.error('[UpgradePlanCard] ❌ Error fetching proration:', error)
+        setProrationModal(prev => ({
+          ...prev,
+          isLoading: false,
+          error: error.message || 'Erro ao calcular valor proporcional'
+        }))
+      }
+      return
+    }
+    
+    // Upgrade normal para usuários no plano básico
     await processUpgrade(plan)
+  }
+
+  const handleConfirmProration = async () => {
+    if (!prorationModal.targetPlan || !user) return
+
+    setLoading(true)
+    try {
+      const stripePrice = billingCycle === 'monthly' 
+        ? prorationModal.targetPlan.monthlyStripePrice 
+        : prorationModal.targetPlan.annualStripePrice
+        
+      console.log('[UpgradePlanCard] 🚀 Processing upgrade with proration')
+      const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
+        body: { newPriceId: stripePrice }
+      })
+
+      if (error) throw error
+
+      if (data?.requiresPayment && data?.paymentUrl) {
+        // Store for welcome modal after payment
+        sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
+        toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
+        window.location.href = data.paymentUrl
+      } else {
+        // Upgrade completed without additional payment
+        toast.success(data?.message || 'Upgrade realizado com sucesso!')
+        sessionStorage.setItem('show_upgrade_welcome', data.newPlan)
+        setProrationModal({ open: false, targetPlan: null, data: null, isLoading: false, error: null })
+        window.location.href = '/dashboard'
+      }
+    } catch (err: any) {
+      console.error('[UpgradePlanCard] ❌ Error processing upgrade:', err)
+      toast.error(`Erro ao processar upgrade: ${err.message || 'Tente novamente.'}`)
+    } finally {
+      setLoading(false)
+    }
   }
 
   const processUpgrade = async (plan: Plan) => {
@@ -166,7 +260,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       return
     }
     
-    // Para planos pagos, usar Stripe
+    // Para planos pagos (usuários no plano básico), usar Stripe checkout
     setLoading(true)
     try {
       const stripePrice = billingCycle === 'monthly' ? plan.monthlyStripePrice : plan.annualStripePrice
@@ -384,6 +478,97 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
         targetPlanName={downgradeModal.targetPlan?.name || ''}
         lostFeatures={getLostFeatures()}
       />
+
+      {/* Modal de proration para upgrade */}
+      <Dialog 
+        open={prorationModal.open} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setProrationModal({ open: false, targetPlan: null, data: null, isLoading: false, error: null })
+          }
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Crown className="h-5 w-5 text-primary" />
+              Confirmar Upgrade
+            </DialogTitle>
+          </DialogHeader>
+
+          {prorationModal.isLoading ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-muted-foreground">Calculando valor proporcional...</p>
+            </div>
+          ) : prorationModal.error ? (
+            <div className="flex flex-col items-center justify-center py-8 gap-4">
+              <AlertTriangle className="h-8 w-8 text-destructive" />
+              <p className="text-destructive text-center">{prorationModal.error}</p>
+              <Button 
+                variant="outline" 
+                onClick={() => setProrationModal({ open: false, targetPlan: null, data: null, isLoading: false, error: null })}
+              >
+                Fechar
+              </Button>
+            </div>
+          ) : prorationModal.data ? (
+            <div className="space-y-6">
+              <p className="text-muted-foreground">
+                Você está alterando de <span className="font-semibold text-foreground">{prorationModal.data.currentPlan}</span> para{' '}
+                <span className="font-semibold text-primary">{prorationModal.data.newPlan}</span>.
+              </p>
+
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3 border">
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Dias restantes no plano atual:</span>
+                  <span className="font-medium">{prorationModal.data.daysRemaining} dias</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Crédito proporcional:</span>
+                  <span className="text-green-600 font-medium">- {prorationModal.data.creditFormatted}</span>
+                </div>
+                <div className="border-t border-border my-2" />
+                <div className="flex justify-between items-center text-lg font-semibold">
+                  <span>Valor a pagar agora:</span>
+                  <span className="text-primary">{prorationModal.data.proratedAmountFormatted}</span>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Após a alteração, seu próximo ciclo de cobrança será em <span className="font-semibold">{prorationModal.data.periodEndDate}</span>.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  className="flex-1" 
+                  onClick={() => setProrationModal({ open: false, targetPlan: null, data: null, isLoading: false, error: null })}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  className="flex-1" 
+                  onClick={handleConfirmProration}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processando...
+                    </>
+                  ) : (
+                    `Pagar ${prorationModal.data.proratedAmountFormatted}`
+                  )}
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
