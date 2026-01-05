@@ -133,38 +133,52 @@ serve(async (req) => {
 
     console.log('[get-subscription-invoices] 📅 Subscription info:', subscriptionInfo);
 
-    // ✅ IMPORTANTE: Buscar TODAS as faturas PAGAS do cliente (histórico completo)
-    // Não filtrar por subscription para incluir faturas de assinaturas anteriores
+    // ✅ IMPORTANTE: Buscar TODAS as faturas do cliente (histórico completo)
+    // Incluir paid + open (para faturas de proration pendentes)
     const invoiceListParams: Stripe.InvoiceListParams = {
       customer: customerId,
       limit: 100, // Aumentar limite para pegar todo o histórico
-      status: 'paid'
     };
 
     const invoices = await stripe.invoices.list(invoiceListParams);
 
     console.log('[get-subscription-invoices] 📃 Raw invoices count:', invoices.data.length);
+    
+    // Log all invoices for debug
+    invoices.data.forEach(inv => {
+      console.log('[get-subscription-invoices] 📄 Invoice:', {
+        id: inv.id,
+        number: inv.number,
+        status: inv.status,
+        amount_due: inv.amount_due,
+        amount_paid: inv.amount_paid,
+        billing_reason: inv.billing_reason,
+        created: new Date(inv.created * 1000).toISOString()
+      });
+    });
 
-    // ✅ Filtrar apenas faturas reais com valores pagos
-    // Excluir faturas de $0 (prorated credits, trials, etc)
+    // ✅ Filtrar faturas válidas
+    // Incluir: paid (pagas), open (pendentes de pagamento)
+    // Excluir: draft, void, uncollectible, faturas de $0
     const formattedInvoices = invoices.data
       .filter(invoice => {
-        const hasAmount = invoice.amount_paid > 0;
-        const isPaid = invoice.status === 'paid';
+        const hasAmount = invoice.amount_due > 0 || invoice.amount_paid > 0;
+        const isValidStatus = invoice.status === 'paid' || invoice.status === 'open';
         const isNotDraft = !invoice.draft;
         
         // Log para debug
-        if (!hasAmount || !isPaid) {
+        if (!hasAmount || !isValidStatus) {
           console.log('[get-subscription-invoices] ⏭️ Skipping invoice:', {
             id: invoice.id,
             number: invoice.number,
+            amount_due: invoice.amount_due,
             amount_paid: invoice.amount_paid,
             status: invoice.status,
-            reason: !hasAmount ? 'zero amount' : 'not paid'
+            reason: !hasAmount ? 'zero amount' : 'invalid status'
           });
         }
         
-        return hasAmount && isPaid && isNotDraft;
+        return hasAmount && isValidStatus && isNotDraft;
       })
       .map(invoice => ({
         id: invoice.id,
