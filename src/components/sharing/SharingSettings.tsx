@@ -110,10 +110,10 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
             <CardHeader><CardTitle className="text-lg">Configurações Básicas</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Seu Slug Personalizado</Label>
+                <Label>Seu Slug Personalizado <span className="text-destructive">*</span></Label>
                 <div className="flex items-center">
                   <span className="text-sm p-2 bg-muted rounded-l-md border border-r-0">therapypro.app.br/agendar/slug/</span>
-                  <Input value={settings.slug || ''} onChange={(e) => onSettingsChange('slug', generateSlug(e.target.value))} className="rounded-l-none" />
+                  <Input value={settings.slug || ''} onChange={(e) => onSettingsChange('slug', generateSlug(e.target.value))} className="rounded-l-none" required />
                 </div>
               </div>
               <div className="grid md:grid-cols-2 gap-4">
@@ -171,14 +171,7 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                       checked={settings.show_photo !== false} 
                       onCheckedChange={(checked) => onSettingsChange('show_photo', checked)} 
                     />
-                    <Label>Mostrar Foto</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Switch 
-                      checked={settings.show_price ?? true} 
-                      onCheckedChange={(checked) => onSettingsChange('show_price', checked)} 
-                    />
-                    <Label>Mostrar Preço</Label>
+                    <Label>Mostrar Foto / Logo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch 
