@@ -160,13 +160,17 @@ serve(async (req) => {
               quantity: 1,
             },
           ],
-          success_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/dashboard?upgrade=success`,
+          // CRITICAL: Use payment=success (not upgrade=success) so Dashboard handles it correctly
+          success_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/dashboard?payment=success&upgrade_plan=${newPriceInfo.plan}`,
           cancel_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/upgrade?upgrade=cancelled`,
           metadata: {
             user_id: user.id,
             type: 'proration_payment',
             subscription_id: subscription.id,
+            plan_name: newPriceInfo.plan,
+            billing_interval: newPriceInfo.interval,
           },
+          locale: 'pt-BR',
         });
         
         paymentUrl = session.url;

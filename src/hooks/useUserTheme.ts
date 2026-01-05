@@ -22,10 +22,16 @@ export const useUserTheme = () => {
 
   // Check if we're on a public/external page that should always be light theme
   const isPublicPage = useCallback(() => {
+    // Check if a page explicitly requested light theme
+    if (sessionStorage.getItem('force_light_theme_page') === 'true') {
+      return true;
+    }
+    
     const publicRoutes = [
       '/',           // Landing Page
       '/login',      // Login do usuário
       '/signup',     // Cadastro
+      '/welcome',    // Welcome page
     ]
     
     // Páginas externas que devem sempre usar tema claro
