@@ -453,7 +453,7 @@ const Dashboard = () => {
         // Buscar sessões futuras incluindo hoje
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, package_id, recurring_session_id, google_sync_type, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
         // Buscar pagamentos recentes da tabela PAYMENTS (não sessions)
-        supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
+        supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario, recurring_session_id)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         // Buscar pagamentos pagos para cálculo de ticket médio por cliente
         supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
@@ -1550,12 +1550,40 @@ const Dashboard = () => {
                         key={payment.id || index} 
                         className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
                       >
-                        <div>
-                          <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {paymentDate ? formatDateBR(paymentDate) : 'Sem data'}
-                            {paymentTime ? ` às ${formatTimeBR(paymentTime)}` : ''}
-                          </p>
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
+                              {payment.package_id && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Package className="w-3.5 h-3.5 text-primary dark:text-primary-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Pacote</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                              {payment.sessions?.recurring_session_id && (
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <Repeat className="w-3.5 h-3.5 text-primary dark:text-primary-foreground" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Sessão Recorrente</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              )}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {paymentDate ? formatDateBR(paymentDate) : 'Sem data'}
+                              {paymentTime ? ` às ${formatTimeBR(paymentTime)}` : ''}
+                            </p>
+                          </div>
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
