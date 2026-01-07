@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useLayoutEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,6 +42,14 @@ const Signup = () => {
   
   // Capturar plano selecionado da URL (ex: /signup?plan=premium)
   const selectedPlan = searchParams.get('plan')
+
+  // Force light theme on this page
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    html.classList.remove('dark');
+    html.classList.add('light');
+    html.style.colorScheme = 'light';
+  }, []);
 
   // Verificar referral ao montar o componente
   useEffect(() => {
@@ -257,24 +265,33 @@ const Signup = () => {
     }
   }
 
+  // Light theme styles (inline to guarantee they apply)
+  const lightThemeStyles = {
+    backgroundColor: '#ffffff',
+    color: '#1a1a1a',
+  };
+
   // Tela de sucesso após cadastro
   if (showSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
-        <div className="w-full max-w-md">
-          <Card className="shadow-xl">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
+        {/* Blue blob background */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
+        <div className="w-full max-w-md relative z-10">
+          <Card className="shadow-xl" style={{ backgroundColor: '#ffffff' }}>
             <CardHeader className="text-center space-y-4">
               <div className="flex justify-center">
-                <div className="w-16 h-16 bg-green-100 dark:bg-green-900/20 rounded-full flex items-center justify-center">
-                  <UserPlus className="w-8 h-8 text-green-600 dark:text-green-400" />
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                  <UserPlus className="w-8 h-8 text-green-600" />
                 </div>
               </div>
               <div>
-                <CardTitle className="text-2xl font-bold">Conta Criada!</CardTitle>
-                <CardDescription className="mt-4">
-                  Enviamos um link de confirmação para <strong>{email}</strong>
+                <CardTitle className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Conta Criada!</CardTitle>
+                <CardDescription className="mt-4" style={{ color: '#6b7280' }}>
+                  Enviamos um link de confirmação para <strong style={{ color: '#1a1a1a' }}>{email}</strong>
                 </CardDescription>
-                <p className="text-sm text-muted-foreground mt-2">
+                <p className="text-sm mt-2" style={{ color: '#6b7280' }}>
                   Clique no link para confirmar seu e-mail e acessar a plataforma.
                 </p>
               </div>
@@ -308,9 +325,12 @@ const Signup = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        <Card className="shadow-xl">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
+      {/* Blue blob background */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
+      <div className="w-full max-w-md relative z-10">
+        <Card className="shadow-xl" style={{ backgroundColor: '#ffffff' }}>
           <CardHeader className="text-center space-y-4">
             <div className="flex justify-center">
               <div className="w-16 h-16 bg-gradient-primary rounded-full flex items-center justify-center">
@@ -318,8 +338,8 @@ const Signup = () => {
               </div>
             </div>
             <div>
-              <CardTitle className="text-2xl font-bold">Criar Conta</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>Criar Conta</CardTitle>
+              <CardDescription style={{ color: '#6b7280' }}>
                 Comece sua jornada profissional no TherapyPro
               </CardDescription>
               {referralUser && (
@@ -352,7 +372,7 @@ const Signup = () => {
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="nome">Nome Completo</Label>
+                <Label htmlFor="nome" style={{ color: '#1a1a1a' }}>Nome Completo</Label>
                 <Input
                   id="nome"
                   type="text"
@@ -360,11 +380,12 @@ const Signup = () => {
                   onChange={(e) => setNome(e.target.value)}
                   required
                   placeholder="Seu nome completo"
+                  style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="profissao">Profissão</Label>
+                <Label htmlFor="profissao" style={{ color: '#1a1a1a' }}>Profissão</Label>
                 <Select
                   value={showCustomProfissao ? "Outros" : profissao}
                   onValueChange={(value) => {
@@ -378,10 +399,10 @@ const Signup = () => {
                     }
                   }}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="w-full" style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}>
                     <SelectValue placeholder="Selecione sua profissão" />
                   </SelectTrigger>
-                  <SelectContent className="bg-background">
+                  <SelectContent style={{ backgroundColor: '#ffffff' }}>
                     {PREDEFINED_PROFESSIONS.map((prof) => (
                       <SelectItem key={prof} value={prof}>
                         {prof}
@@ -401,12 +422,13 @@ const Signup = () => {
                     required
                     placeholder="Digite sua profissão"
                     className="mt-2"
+                    style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}
                   />
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" style={{ color: '#1a1a1a' }}>Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -414,11 +436,12 @@ const Signup = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   placeholder="seu@email.com"
+                  style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+                <Label htmlFor="password" style={{ color: '#1a1a1a' }}>Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -426,6 +449,7 @@ const Signup = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   placeholder="Sua senha"
+                  style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}
                 />
                 {password && <PasswordRequirements password={password} />}
               </div>
@@ -444,6 +468,7 @@ const Signup = () => {
                 variant="ghost" 
                 onClick={() => navigate('/login')}
                 className="text-sm"
+                style={{ color: '#6b7280' }}
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Voltar para Login
