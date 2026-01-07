@@ -257,10 +257,10 @@ export const ProfileDropdown = () => {
     setShowCouponsTab(false)
   }
 
-  // Componente de notificação (bolinha vermelha)
+  // Componente de notificação (bolinha vermelha pulsante)
   const NotificationDot = ({ className }: { className?: string }) => (
     <span className={cn(
-      "absolute h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background",
+      "absolute h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background animate-pulse",
       className
     )} />
   )
@@ -613,7 +613,10 @@ export const ProfileDropdown = () => {
               <DropdownMenuGroup>
                 <DropdownMenuItem 
                   className="p-2 rounded-lg cursor-pointer justify-between"
-                  onClick={handleOpenCouponsTab}
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    handleOpenCouponsTab()
+                  }}
                 >
                   <span className="flex items-center gap-2 font-medium relative">
                     <Ticket className="h-5 w-5 text-muted-foreground" />
