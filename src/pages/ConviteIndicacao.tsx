@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, Percent, AlertCircle } from 'lucide-react';
+import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
@@ -117,10 +117,19 @@ const ConviteIndicacao = () => {
     }
   ];
 
+  // Capitalize first letter of profession
+  const formatProfession = (profissao: string | null) => {
+    if (!profissao) return null;
+    return profissao.charAt(0).toUpperCase() + profissao.slice(1).toLowerCase();
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg bg-white">
+      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+        {/* Blue blob background */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+        <Card className="w-full max-w-lg bg-card relative z-10">
           <CardHeader className="text-center">
             <Skeleton className="h-16 w-16 rounded-full mx-auto mb-4" />
             <Skeleton className="h-8 w-48 mx-auto mb-2" />
@@ -139,8 +148,11 @@ const ConviteIndicacao = () => {
   // Link inválido ou expirado
   if (!isValidCode) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg bg-white border-orange-200 shadow-xl">
+      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+        {/* Blue blob background */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+        <Card className="w-full max-w-lg bg-card border-orange-200 shadow-xl relative z-10">
           <CardHeader className="text-center pb-2">
             <div className="relative mx-auto mb-4">
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
@@ -148,11 +160,11 @@ const ConviteIndicacao = () => {
               </div>
             </div>
             
-            <CardTitle className="text-2xl font-bold text-slate-800">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Link Inválido ou Expirado
             </CardTitle>
             
-            <CardDescription className="text-base mt-2 text-slate-600">
+            <CardDescription className="text-base mt-2 text-muted-foreground">
               Este link de convite não é mais válido. O indicador pode ter saído do programa ou o link expirou.
             </CardDescription>
           </CardHeader>
@@ -167,7 +179,7 @@ const ConviteIndicacao = () => {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             
-            <p className="text-xs text-center text-slate-500">
+            <p className="text-xs text-center text-muted-foreground">
               Você ainda pode criar sua conta normalmente.
             </p>
           </CardContent>
@@ -177,10 +189,13 @@ const ConviteIndicacao = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg space-y-6">
+    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      {/* Blue blob background */}
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+      <div className="w-full max-w-lg space-y-6 relative z-10">
         {/* Main Card */}
-        <Card className="border-2 border-primary/20 shadow-xl bg-white">
+        <Card className="border-2 border-primary/20 shadow-xl bg-card">
           <CardHeader className="text-center pb-2">
             <div className="relative mx-auto mb-4">
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
@@ -191,18 +206,18 @@ const ConviteIndicacao = () => {
               </div>
             </div>
             
-            <CardTitle className="text-2xl font-bold text-slate-800">
+            <CardTitle className="text-2xl font-bold text-foreground">
               Você foi convidado!
             </CardTitle>
             
             {referrerInfo && (
-              <CardDescription className="text-base mt-2 text-slate-600">
-                <span className="font-semibold text-slate-800">{referrerInfo.nome}</span>
+              <CardDescription className="text-base mt-2 text-muted-foreground">
+                <span className="font-semibold text-foreground">{referrerInfo.nome}</span>
                 {referrerInfo.profissao && (
-                  <span className="text-slate-500"> ({referrerInfo.profissao})</span>
+                  <span className="text-muted-foreground"> ({formatProfession(referrerInfo.profissao)})</span>
                 )}
                 <br />
-                <span className="text-slate-500">te convidou para conhecer o Meu Consultório</span>
+                <span className="text-muted-foreground">te convidou para conhecer o TherapyPro</span>
               </CardDescription>
             )}
           </CardHeader>
@@ -211,7 +226,6 @@ const ConviteIndicacao = () => {
             {/* Discount Banner */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
               <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
-                <Percent className="h-5 w-5" />
                 <span className="font-bold text-lg">20% OFF no primeiro mês</span>
               </div>
               
@@ -238,21 +252,21 @@ const ConviteIndicacao = () => {
 
             {/* Benefits */}
             <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-500 text-center">
+              <p className="text-sm font-medium text-muted-foreground text-center">
                 O que você terá acesso:
               </p>
               <div className="grid gap-3">
                 {benefits.map((benefit, index) => (
                   <div 
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {benefit.icon}
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-slate-800">{benefit.title}</p>
-                      <p className="text-xs text-slate-500">{benefit.description}</p>
+                      <p className="font-medium text-sm text-foreground">{benefit.title}</p>
+                      <p className="text-xs text-muted-foreground">{benefit.description}</p>
                     </div>
                   </div>
                 ))}
@@ -269,14 +283,14 @@ const ConviteIndicacao = () => {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
 
-            <p className="text-xs text-center text-slate-500">
+            <p className="text-xs text-center text-muted-foreground">
               Ao criar sua conta, você concorda com nossos termos de uso e política de privacidade.
             </p>
           </CardContent>
         </Card>
 
         {/* Trust indicators */}
-        <div className="flex items-center justify-center gap-6 text-slate-500">
+        <div className="flex items-center justify-center gap-6 text-muted-foreground">
           <div className="flex items-center gap-1 text-xs">
             <CheckCircle className="h-3.5 w-3.5 text-green-500" />
             <span>100% Seguro</span>
