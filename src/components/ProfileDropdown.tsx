@@ -140,12 +140,16 @@ export const ProfileDropdown = () => {
         return
       }
 
+      console.log('[ProfileDropdown] Referral data:', referralData)
+
       // Se o usuário foi indicado, mostrar o cupom
       if (referralData) {
         const isUsed = !!referralData.first_payment_date
         const seenCouponsKey = `seen_coupons_${user.id}`
         const seenCoupons = JSON.parse(localStorage.getItem(seenCouponsKey) || '[]')
         const isNew = !seenCoupons.includes('INDICACAO20') && !isUsed
+
+        console.log('[ProfileDropdown] Coupon status - isUsed:', isUsed, 'isNew:', isNew, 'seenCoupons:', seenCoupons)
 
         setReferralCoupon({
           code: 'INDICACAO20',
@@ -155,9 +159,8 @@ export const ProfileDropdown = () => {
           isNew
         })
 
-        if (isNew) {
-          setHasNewCoupon(true)
-        }
+        // Sempre setar hasNewCoupon se o cupom é novo e não foi usado
+        setHasNewCoupon(isNew)
       }
     } catch (err) {
       console.error('[ProfileDropdown] Exception:', err)
@@ -413,23 +416,6 @@ export const ProfileDropdown = () => {
         </>
       )}
 
-      {/* Coupons Tab */}
-      <button 
-        className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent text-left"
-        onClick={handleOpenCouponsTab}
-      >
-        <span className="flex items-center gap-2 font-medium text-sm relative">
-          <Ticket className="h-5 w-5 text-muted-foreground" />
-          Cupons
-          {hasNewCoupon && (
-            <NotificationDot className="-top-0.5 -right-3" />
-          )}
-        </span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-          <path d="m9 18 6-6-6-6"/>
-        </svg>
-      </button>
-
       {/* Profile Menu Items */}
       {menuItems.profile.map((item, index) => (
         <button 
@@ -472,6 +458,23 @@ export const ProfileDropdown = () => {
           )}
         </button>
       ))}
+
+      {/* Coupons Tab - After Referral Program */}
+      <button 
+        className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent text-left"
+        onClick={handleOpenCouponsTab}
+      >
+        <span className="flex items-center gap-2 font-medium text-sm relative">
+          <Ticket className="h-5 w-5 text-muted-foreground" />
+          Cupons
+          {hasNewCoupon && (
+            <NotificationDot className="-top-0.5 -right-3" />
+          )}
+        </span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+          <path d="m9 18 6-6-6-6"/>
+        </svg>
+      </button>
 
       {/* Support */}
       {menuItems.support.map((item, index) => (
@@ -609,28 +612,6 @@ export const ProfileDropdown = () => {
                 </>
               )}
 
-              {/* Coupons Tab */}
-              <DropdownMenuGroup>
-                <DropdownMenuItem 
-                  className="p-2 rounded-lg cursor-pointer justify-between"
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    handleOpenCouponsTab()
-                  }}
-                >
-                  <span className="flex items-center gap-2 font-medium relative">
-                    <Ticket className="h-5 w-5 text-muted-foreground" />
-                    Cupons
-                    {hasNewCoupon && (
-                      <NotificationDot className="-top-0.5 -right-3" />
-                    )}
-                  </span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-                    <path d="m9 18 6-6-6-6"/>
-                  </svg>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-
               {/* Profile Menu Items */}
               <DropdownMenuGroup>
                 {menuItems.profile.map((item, index) => (
@@ -682,6 +663,28 @@ export const ProfileDropdown = () => {
                     )}
                   </DropdownMenuItem>
                 ))}
+              </DropdownMenuGroup>
+
+              {/* Coupons Tab - After Referral Program */}
+              <DropdownMenuGroup>
+                <DropdownMenuItem 
+                  className="p-2 rounded-lg cursor-pointer justify-between"
+                  onSelect={(e) => {
+                    e.preventDefault()
+                    handleOpenCouponsTab()
+                  }}
+                >
+                  <span className="flex items-center gap-2 font-medium relative">
+                    <Ticket className="h-5 w-5 text-muted-foreground" />
+                    Cupons
+                    {hasNewCoupon && (
+                      <NotificationDot className="-top-0.5 -right-3" />
+                    )}
+                  </span>
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
+                    <path d="m9 18 6-6-6-6"/>
+                  </svg>
+                </DropdownMenuItem>
               </DropdownMenuGroup>
 
               {/* Support */}
