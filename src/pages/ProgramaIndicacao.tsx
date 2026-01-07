@@ -237,17 +237,45 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
-      const { error } = await supabase
+      // 1. Marcar usuário como não-parceiro
+      const { error: profileError } = await supabase
         .from('profiles')
         .update({ is_referral_partner: false })
         .eq('user_id', user.id);
       
-      if (error) throw error;
+      if (profileError) throw profileError;
+
+      // 2. Cancelar todas as indicações ativas (expirar o link)
+      const { error: referralsError } = await supabase
+        .from('referrals')
+        .update({ status: 'expired' })
+        .eq('referrer_user_id', user.id);
       
+      if (referralsError) {
+        console.error('Erro ao expirar referrals:', referralsError);
+      }
+
+      // 3. Cancelar pagamentos pendentes
+      const { error: payoutsError } = await supabase
+        .from('referral_payouts')
+        .update({ status: 'cancelled' })
+        .eq('referrer_user_id', user.id)
+        .eq('status', 'pending');
+      
+      if (payoutsError) {
+        console.error('Erro ao cancelar payouts:', payoutsError);
+      }
+      
+      // 4. Limpar estado local
       setIsEnrolled(false);
+      setStats(null);
+      setMonthlyHistory([]);
+      setRecentPayouts([]);
+      setConnectStatus(null);
+      
       toast({
         title: "Você deixou o programa",
-        description: "Você pode ingressar novamente a qualquer momento.",
+        description: "Suas indicações foram expiradas. Ao reingressar, um novo link será gerado.",
       });
     } catch (error) {
       console.error('Erro ao sair do programa:', error);

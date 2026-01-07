@@ -3,24 +3,12 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, ChevronDown } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, Percent, AlertCircle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
-const PREDEFINED_PROFESSIONS = [
-  "Psicólogo(a)",
-  "Psicanalista", 
-  "Terapeuta",
-  "Coach"
-];
+// Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
+const REFERRAL_DISCOUNT_CODE = 'INDICACAO20';
 
 interface ReferrerInfo {
   nome: string;
@@ -34,6 +22,14 @@ const ConviteIndicacao = () => {
   const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isValidCode, setIsValidCode] = useState(false);
+
+  // Force light theme on mount
+  useEffect(() => {
+    document.documentElement.classList.remove('dark');
+    document.documentElement.classList.add('light');
+    document.documentElement.setAttribute('data-theme', 'light');
+    document.documentElement.style.colorScheme = 'light';
+  }, []);
 
   useEffect(() => {
     const validateAndFetchReferrer = async () => {
@@ -51,6 +47,7 @@ const ConviteIndicacao = () => {
         const userIdPart = code.replace('REF-', '').toLowerCase();
         
         // Try to find the user by matching the beginning of their user_id
+        // IMPORTANT: Only find users who are STILL active referral partners
         const { data: profiles, error } = await supabase
           .from('profiles')
           .select('nome, profissao, avatar_url, user_id')
@@ -74,6 +71,9 @@ const ConviteIndicacao = () => {
             avatar_url: referrer.avatar_url
           });
           setIsValidCode(true);
+        } else {
+          // Link expirado ou indicador saiu do programa
+          setIsValidCode(false);
         }
       } catch (error) {
         console.error('Error validating referral code:', error);
@@ -88,6 +88,10 @@ const ConviteIndicacao = () => {
   const handleSignup = () => {
     // The referral code is already stored in localStorage
     navigate('/signup');
+  };
+
+  const copyDiscountCode = () => {
+    navigator.clipboard.writeText(REFERRAL_DISCOUNT_CODE);
   };
 
   const benefits = [
@@ -115,8 +119,8 @@ const ConviteIndicacao = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
-        <Card className="w-full max-w-lg">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5 flex items-center justify-center p-4">
+        <Card className="w-full max-w-lg bg-white">
           <CardHeader className="text-center">
             <Skeleton className="h-16 w-16 rounded-full mx-auto mb-4" />
             <Skeleton className="h-8 w-48 mx-auto mb-2" />
@@ -132,11 +136,51 @@ const ConviteIndicacao = () => {
     );
   }
 
+  // Link inválido ou expirado
+  if (!isValidCode) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-orange-50 flex items-center justify-center p-4">
+        <Card className="w-full max-w-lg bg-white border-orange-200 shadow-xl">
+          <CardHeader className="text-center pb-2">
+            <div className="relative mx-auto mb-4">
+              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
+                <AlertCircle className="h-10 w-10 text-white" />
+              </div>
+            </div>
+            
+            <CardTitle className="text-2xl font-bold text-slate-800">
+              Link Inválido ou Expirado
+            </CardTitle>
+            
+            <CardDescription className="text-base mt-2 text-slate-600">
+              Este link de convite não é mais válido. O indicador pode ter saído do programa ou o link expirou.
+            </CardDescription>
+          </CardHeader>
+          
+          <CardContent className="space-y-6 pt-4">
+            <Button 
+              onClick={() => navigate('/signup')}
+              size="lg"
+              className="w-full text-base font-semibold h-12 shadow-lg hover:shadow-xl transition-all"
+            >
+              Criar conta sem desconto
+              <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            
+            <p className="text-xs text-center text-slate-500">
+              Você ainda pode criar sua conta normalmente.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-primary/5 flex items-center justify-center p-4">
       <div className="w-full max-w-lg space-y-6">
         {/* Main Card */}
-        <Card className="border-2 border-primary/20 shadow-xl">
+        <Card className="border-2 border-primary/20 shadow-xl bg-white">
           <CardHeader className="text-center pb-2">
             <div className="relative mx-auto mb-4">
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
@@ -147,44 +191,68 @@ const ConviteIndicacao = () => {
               </div>
             </div>
             
-            <CardTitle className="text-2xl font-bold">
+            <CardTitle className="text-2xl font-bold text-slate-800">
               Você foi convidado!
             </CardTitle>
             
-            {isValidCode && referrerInfo ? (
-              <CardDescription className="text-base mt-2">
-                <span className="font-semibold text-foreground">{referrerInfo.nome}</span>
+            {referrerInfo && (
+              <CardDescription className="text-base mt-2 text-slate-600">
+                <span className="font-semibold text-slate-800">{referrerInfo.nome}</span>
                 {referrerInfo.profissao && (
-                  <span className="text-muted-foreground"> ({referrerInfo.profissao})</span>
+                  <span className="text-slate-500"> ({referrerInfo.profissao})</span>
                 )}
                 <br />
-                <span className="text-muted-foreground">te convidou para conhecer o Meu Consultório</span>
-              </CardDescription>
-            ) : (
-              <CardDescription className="text-base mt-2">
-                Você recebeu um convite especial para conhecer o Meu Consultório
+                <span className="text-slate-500">te convidou para conhecer o Meu Consultório</span>
               </CardDescription>
             )}
           </CardHeader>
           
           <CardContent className="space-y-6 pt-4">
+            {/* Discount Banner */}
+            <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
+              <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
+                <Percent className="h-5 w-5" />
+                <span className="font-bold text-lg">20% OFF no primeiro mês</span>
+              </div>
+              
+              <p className="text-sm text-green-600 text-center mb-3">
+                Use o código abaixo no checkout do <strong>Plano Profissional</strong>:
+              </p>
+              
+              <div 
+                onClick={copyDiscountCode}
+                className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-green-300 rounded-lg py-2 px-4 cursor-pointer hover:bg-green-50 transition-colors"
+              >
+                <code className="text-lg font-mono font-bold text-green-700">
+                  {REFERRAL_DISCOUNT_CODE}
+                </code>
+                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 hover:bg-green-200">
+                  Copiar
+                </Badge>
+              </div>
+              
+              <p className="text-xs text-green-600 text-center mt-2">
+                * Válido apenas para o Plano Profissional. Desconto aplicado somente no 1º mês.
+              </p>
+            </div>
+
             {/* Benefits */}
             <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground text-center">
+              <p className="text-sm font-medium text-slate-500 text-center">
                 O que você terá acesso:
               </p>
               <div className="grid gap-3">
                 {benefits.map((benefit, index) => (
                   <div 
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {benefit.icon}
                     </div>
                     <div>
-                      <p className="font-medium text-sm">{benefit.title}</p>
-                      <p className="text-xs text-muted-foreground">{benefit.description}</p>
+                      <p className="font-medium text-sm text-slate-800">{benefit.title}</p>
+                      <p className="text-xs text-slate-500">{benefit.description}</p>
                     </div>
                   </div>
                 ))}
@@ -201,14 +269,14 @@ const ConviteIndicacao = () => {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-xs text-center text-slate-500">
               Ao criar sua conta, você concorda com nossos termos de uso e política de privacidade.
             </p>
           </CardContent>
         </Card>
 
         {/* Trust indicators */}
-        <div className="flex items-center justify-center gap-6 text-muted-foreground">
+        <div className="flex items-center justify-center gap-6 text-slate-500">
           <div className="flex items-center gap-1 text-xs">
             <CheckCircle className="h-3.5 w-3.5 text-green-500" />
             <span>100% Seguro</span>
