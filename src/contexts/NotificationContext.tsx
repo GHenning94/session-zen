@@ -53,6 +53,16 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const pendingNotificationsShownRef = useRef(false)
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
 
+  // External pages where notifications should NOT appear (public pages)
+  const EXTERNAL_PAGES = ['/convite', '/agendar', '/register', '/termos-indicacao', '/login', '/signup', '/admin', '/reset-password', '/auth-confirm', '/auth-callback', '/email-change-confirmation', '/']
+  
+  // Check if current page is an external page
+  const isExternalPage = useCallback(() => {
+    const path = location.pathname
+    // Check if path starts with any external page prefix
+    return EXTERNAL_PAGES.some(page => path === page || path.startsWith(page + '/'))
+  }, [location.pathname])
+
   // Check if any modal is currently open (dialogs, sheets, drawers)
   const isModalOpen = useCallback(() => {
     // Check for Radix UI dialogs (data-state="open")
@@ -69,10 +79,10 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     return document.visibilityState === 'visible'
   }, [])
 
-  // Check if notification can be shown (tab visible AND no modal open)
+  // Check if notification can be shown (tab visible AND no modal open AND not on external page)
   const canShowNotification = useCallback(() => {
-    return isTabVisible() && !isModalOpen()
-  }, [isTabVisible, isModalOpen])
+    return isTabVisible() && !isModalOpen() && !isExternalPage()
+  }, [isTabVisible, isModalOpen, isExternalPage])
 
   // Process the notification queue one at a time
   const processNextNotification = useCallback((playSound = true) => {
