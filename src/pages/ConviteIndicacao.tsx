@@ -8,6 +8,7 @@ import { Gift, CheckCircle, Users, Star, ArrowRight, AlertCircle, Copy } from 'l
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
+import { getAvatarSignedUrl } from '@/utils/avatarUtils';
 
 // Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
 const REFERRAL_DISCOUNT_CODE = 'INDICACAO20';
@@ -43,6 +44,7 @@ const ConviteIndicacao = () => {
   const { code } = useParams<{ code: string }>();
   const navigate = useNavigate();
   const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
+  const [avatarSignedUrl, setAvatarSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isValidCode, setIsValidCode] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
@@ -81,6 +83,10 @@ const ConviteIndicacao = () => {
         );
 
         if (referrer) {
+          // Get signed URL for avatar
+          const signedUrl = await getAvatarSignedUrl(referrer.avatar_url);
+          setAvatarSignedUrl(signedUrl);
+          
           setReferrerInfo({
             nome: referrer.nome,
             profissao: referrer.profissao,
@@ -246,9 +252,9 @@ const ConviteIndicacao = () => {
             {referrerInfo && (
               <div className="relative mx-auto mb-4">
                 <div className="h-20 w-20 rounded-full ring-4 ring-blue-100 shadow-lg overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
-                  {referrerInfo.avatar_url ? (
+                  {avatarSignedUrl ? (
                     <img 
-                      src={referrerInfo.avatar_url} 
+                      src={avatarSignedUrl} 
                       alt={referrerInfo.nome}
                       className="h-full w-full object-cover"
                       onError={(e) => {
