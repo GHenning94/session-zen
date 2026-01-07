@@ -60,16 +60,9 @@ const ConviteIndicacao = () => {
         // Store the referral code in localStorage for later use during checkout
         localStorage.setItem('referral_code', code);
 
-        // The referral code format is: REF-{userId.slice(0,8).toUpperCase()}
-        // Extract the user ID part
-        const userIdPart = code.replace('REF-', '').toLowerCase();
-        
-        // Try to find the user by matching the beginning of their user_id
-        // IMPORTANT: Only find users who are STILL active referral partners
-        const { data: profiles, error } = await supabase
-          .from('profiles')
-          .select('nome, profissao, avatar_url, user_id')
-          .eq('is_referral_partner', true);
+        // Use secure RPC function to get referrer info (doesn't require auth)
+        const { data: referrerData, error } = await supabase
+          .rpc('get_referrer_public_info', { referral_code: code });
 
         if (error) {
           console.error('Error fetching referrer:', error);
@@ -77,20 +70,20 @@ const ConviteIndicacao = () => {
           return;
         }
 
-        // Find the profile that matches the referral code
-        const referrer = profiles?.find(profile => 
-          profile.user_id.slice(0, 8).toLowerCase() === userIdPart
-        );
+        console.log('[ConviteIndicacao] Referrer data:', referrerData);
 
-        if (referrer) {
+        // Type guard and cast the response
+        const referrer = referrerData as { nome?: string; profissao?: string; avatar_url?: string } | null;
+
+        if (referrer && referrer.nome) {
           // Get signed URL for avatar
-          const signedUrl = await getAvatarSignedUrl(referrer.avatar_url);
+          const signedUrl = await getAvatarSignedUrl(referrer.avatar_url || null);
           setAvatarSignedUrl(signedUrl);
           
           setReferrerInfo({
             nome: referrer.nome,
-            profissao: referrer.profissao,
-            avatar_url: referrer.avatar_url
+            profissao: referrer.profissao || null,
+            avatar_url: referrer.avatar_url || null
           });
           setIsValidCode(true);
         } else {
