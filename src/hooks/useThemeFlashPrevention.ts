@@ -44,10 +44,26 @@ const applyColorToDocument = (colorValue: string) => {
 }
 
 // Utilitário: detecta se é página pública que deve forçar light
+// CRITICAL: This list must match index.html script for consistency
 const isPublicPage = () => {
   if (typeof window === 'undefined') return false
   const path = window.location.pathname || '/'
-  return path === '/' || path === '/login' || path === '/signup' || path.startsWith('/agendar/')
+  const publicExactRoutes = [
+    '/',
+    '/login',
+    '/signup',
+    '/welcome',
+    '/reset-password',
+    '/auth-confirm',
+    '/auth-callback',
+    '/email-change-confirmation',
+    '/termos-indicacao',
+  ]
+  const isBookingPage = path.startsWith('/agendar/')
+  const isReferralPage = path.startsWith('/convite/')
+  const isRegistrationPage = path.startsWith('/register/')
+  
+  return publicExactRoutes.includes(path) || isBookingPage || isReferralPage || isRegistrationPage
 }
 
 // Utilitário: detecta se é página admin (tem seu próprio sistema de tema isolado)

@@ -24,8 +24,15 @@ interface GoogleEvent {
 }
 
 const GOOGLE_CLIENT_ID = "1039606606801-9ofdjvl0abgcr808q3i1jgmb6kojdk9d.apps.googleusercontent.com"
+// Request offline access for refresh token
 const SCOPES = 'https://www.googleapis.com/auth/calendar'
-const TOKEN_EXPIRY_BUFFER = 5 * 60 * 1000 // 5 minutos antes de expirar
+// Increased buffer to refresh token earlier (15 minutes before expiry)
+const TOKEN_EXPIRY_BUFFER = 15 * 60 * 1000
+// Storage keys for persistent token management
+const TOKEN_STORAGE_KEY = 'google_access_token'
+const REFRESH_TOKEN_STORAGE_KEY = 'google_refresh_token'
+const TOKEN_EXPIRY_STORAGE_KEY = 'google_token_expires_at'
+const CONNECTION_STATUS_KEY = 'google_calendar_connected'
 
 export const useOptimizedGoogleCalendar = () => {
   const { user } = useAuth()
@@ -39,81 +46,126 @@ export const useOptimizedGoogleCalendar = () => {
 
   // Verificar se o token está expirado ou prestes a expirar
   const isTokenExpired = useCallback(() => {
-    const expiresAt = localStorage.getItem('google_token_expires_at')
+    const expiresAt = localStorage.getItem(TOKEN_EXPIRY_STORAGE_KEY)
     if (!expiresAt) return true
     return Date.now() >= (parseInt(expiresAt) - TOKEN_EXPIRY_BUFFER)
   }, [])
 
+  // Check if user was previously connected (for reconnection purposes)
+  const wasConnected = useCallback(() => {
+    return localStorage.getItem(CONNECTION_STATUS_KEY) === 'true'
+  }, [])
+
   // Salvar token com tempo de expiração
-  const saveToken = useCallback((accessToken: string, expiresIn: number) => {
+  const saveToken = useCallback((accessToken: string, expiresIn: number, refreshToken?: string) => {
     const expiresAt = Date.now() + (expiresIn * 1000)
-    localStorage.setItem('google_access_token', accessToken)
-    localStorage.setItem('google_token_expires_at', expiresAt.toString())
+    localStorage.setItem(TOKEN_STORAGE_KEY, accessToken)
+    localStorage.setItem(TOKEN_EXPIRY_STORAGE_KEY, expiresAt.toString())
+    localStorage.setItem(CONNECTION_STATUS_KEY, 'true')
     
-    // Agendar renovação automática
+    // Store refresh token if provided
+    if (refreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, refreshToken)
+    }
+    
+    // Agendar renovação automática - 15 min antes de expirar
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current)
     }
     
-    // Renovar 5 minutos antes de expirar
-    const refreshIn = (expiresIn * 1000) - TOKEN_EXPIRY_BUFFER
-    if (refreshIn > 0) {
-      refreshTimeoutRef.current = setTimeout(() => {
-        refreshTokenSilently()
-      }, refreshIn)
-    }
+    // Renovar bem antes de expirar para garantir continuidade
+    const refreshIn = Math.max((expiresIn * 1000) - TOKEN_EXPIRY_BUFFER, 30000) // Mínimo 30 segundos
+    console.log(`[GoogleCalendar] Token salvo, próxima renovação em ${Math.round(refreshIn / 60000)} minutos`)
+    
+    refreshTimeoutRef.current = setTimeout(() => {
+      refreshTokenSilently()
+    }, refreshIn)
   }, [])
 
-  // Renovar token silenciosamente
-  const refreshTokenSilently = useCallback(async () => {
+  // Renovar token silenciosamente - NUNCA desconecta automaticamente
+  const refreshTokenSilently = useCallback(async (): Promise<boolean> => {
+    // Verificar se temos o token client inicializado
     if (!tokenClientRef.current) {
-      console.log('Token client não inicializado, aguardando...')
+      console.log('[GoogleCalendar] Token client não inicializado, aguardando...')
+      
+      // Se estava conectado, tentar novamente em alguns segundos
+      if (wasConnected()) {
+        setTimeout(() => refreshTokenSilently(), 3000)
+      }
       return false
     }
 
     try {
-      console.log('Renovando token do Google silenciosamente...')
+      console.log('[GoogleCalendar] Renovando token silenciosamente...')
       
       return new Promise<boolean>((resolve) => {
+        const originalCallback = tokenClientRef.current.callback
+        
         tokenClientRef.current.callback = (response: any) => {
           if (response.access_token) {
-            saveToken(response.access_token, response.expires_in || 3600)
+            saveToken(response.access_token, response.expires_in || 3600, response.refresh_token)
             setIsSignedIn(true)
-            console.log('Token renovado com sucesso!')
+            console.log('[GoogleCalendar] ✅ Token renovado com sucesso!')
             resolve(true)
           } else if (response.error) {
-            console.error('Erro ao renovar token:', response.error)
-            // Se falhar silenciosamente, não desconectar - aguardar próxima tentativa
+            console.warn('[GoogleCalendar] Renovação silenciosa falhou:', response.error)
+            
+            // CRÍTICO: Não desconectar - apenas agendar nova tentativa
+            // Token pode estar temporariamente indisponível
+            if (wasConnected()) {
+              console.log('[GoogleCalendar] Mantendo status conectado, tentando novamente em 60s...')
+              setTimeout(() => refreshTokenSilently(), 60000)
+            }
+            
             resolve(false)
           }
         }
         
-        // Tentar renovar sem mostrar popup (silenciosamente)
+        // Tentar renovar sem popup (silenciosamente) - prompt vazio
         tokenClientRef.current.requestAccessToken({ prompt: '' })
       })
     } catch (error) {
-      console.error('Erro ao renovar token:', error)
+      console.error('[GoogleCalendar] Erro ao renovar token:', error)
+      
+      // CRÍTICO: Não desconectar em caso de erro - tentar novamente
+      if (wasConnected()) {
+        console.log('[GoogleCalendar] Erro na renovação, tentando novamente em 60s...')
+        setTimeout(() => refreshTokenSilently(), 60000)
+      }
+      
       return false
     }
-  }, [saveToken])
+  }, [saveToken, wasConnected])
 
   // Obter token válido (renovando se necessário)
   const getValidToken = useCallback(async (): Promise<string | null> => {
-    const accessToken = localStorage.getItem('google_access_token')
+    const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY)
     
-    if (!accessToken) return null
-    
-    if (isTokenExpired()) {
-      console.log('Token expirado, tentando renovar...')
-      const refreshed = await refreshTokenSilently()
-      if (refreshed) {
-        return localStorage.getItem('google_access_token')
+    if (!accessToken) {
+      // Se estava conectado mas não tem token, tentar renovar
+      if (wasConnected()) {
+        console.log('[GoogleCalendar] Token ausente mas estava conectado, tentando renovar...')
+        const refreshed = await refreshTokenSilently()
+        if (refreshed) {
+          return localStorage.getItem(TOKEN_STORAGE_KEY)
+        }
       }
       return null
     }
     
+    if (isTokenExpired()) {
+      console.log('[GoogleCalendar] Token expirado, tentando renovar...')
+      const refreshed = await refreshTokenSilently()
+      if (refreshed) {
+        return localStorage.getItem(TOKEN_STORAGE_KEY)
+      }
+      // Mesmo que falhe, retornar o token antigo para tentar usar
+      // A API vai rejeitar se estiver inválido e tentaremos de novo
+      return accessToken
+    }
+    
     return accessToken
-  }, [isTokenExpired, refreshTokenSilently])
+  }, [isTokenExpired, refreshTokenSilently, wasConnected])
 
   // Memoizar carregamento de eventos
   const loadEvents = useCallback(async () => {
@@ -273,10 +325,13 @@ export const useOptimizedGoogleCalendar = () => {
     }
   }, [isInitialized, loadEvents, saveToken, toast])
 
-  // Desconectar
+  // Desconectar - único ponto de desconexão (manual pelo usuário)
   const disconnectFromGoogle = useCallback(() => {
-    localStorage.removeItem('google_access_token')
-    localStorage.removeItem('google_token_expires_at')
+    console.log('[GoogleCalendar] Desconectando manualmente...')
+    localStorage.removeItem(TOKEN_STORAGE_KEY)
+    localStorage.removeItem(TOKEN_EXPIRY_STORAGE_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+    localStorage.removeItem(CONNECTION_STATUS_KEY)
     if (refreshTimeoutRef.current) {
       clearTimeout(refreshTimeoutRef.current)
     }
@@ -355,38 +410,54 @@ export const useOptimizedGoogleCalendar = () => {
   }, [getValidToken, loadEvents, refreshTokenSilently, toast])
 
   // Verificar conexão existente e configurar renovação
+  // CRÍTICO: Manter conexão persistente baseado no status salvo, não apenas no token
   useEffect(() => {
-    const accessToken = localStorage.getItem('google_access_token')
-    const expiresAt = localStorage.getItem('google_token_expires_at')
+    const accessToken = localStorage.getItem(TOKEN_STORAGE_KEY)
+    const expiresAt = localStorage.getItem(TOKEN_EXPIRY_STORAGE_KEY)
+    const wasUserConnected = wasConnected()
     
-    if (accessToken && isInitialized) {
+    // Se o usuário estava conectado, manter o status mesmo se o token expirou
+    if (wasUserConnected && isInitialized) {
       setIsSignedIn(true)
       
-      // Configurar renovação automática se tiver tempo de expiração
-      if (expiresAt) {
-        const expiresAtMs = parseInt(expiresAt)
-        const now = Date.now()
-        
-        if (expiresAtMs > now) {
-          // Token ainda válido - agendar renovação
-          const refreshIn = expiresAtMs - now - TOKEN_EXPIRY_BUFFER
-          if (refreshIn > 0) {
+      if (accessToken) {
+        // Tem token - verificar se precisa renovar
+        if (expiresAt) {
+          const expiresAtMs = parseInt(expiresAt)
+          const now = Date.now()
+          
+          if (expiresAtMs > now) {
+            // Token ainda válido - agendar renovação
+            const refreshIn = Math.max(expiresAtMs - now - TOKEN_EXPIRY_BUFFER, 30000)
+            console.log(`[GoogleCalendar] Token válido, renovação em ${Math.round(refreshIn / 60000)} min`)
+            
+            if (refreshTimeoutRef.current) clearTimeout(refreshTimeoutRef.current)
             refreshTimeoutRef.current = setTimeout(() => {
               refreshTokenSilently()
             }, refreshIn)
           } else {
-            // Expiração iminente - renovar agora
+            // Token expirado - renovar imediatamente
+            console.log('[GoogleCalendar] Token expirado, renovando...')
             refreshTokenSilently()
           }
         } else {
-          // Token expirado - tentar renovar silenciosamente
+          // Sem data de expiração - renovar por segurança
           refreshTokenSilently()
         }
+        
+        loadEvents()
+      } else {
+        // Sem token mas estava conectado - tentar renovar
+        console.log('[GoogleCalendar] Sem token mas usuário estava conectado, tentando renovar...')
+        refreshTokenSilently()
       }
-      
+    } else if (accessToken && isInitialized) {
+      // Tem token mas status não estava salvo (migração) - considerar conectado
+      setIsSignedIn(true)
+      localStorage.setItem(CONNECTION_STATUS_KEY, 'true')
       loadEvents()
     }
-  }, [isInitialized, loadEvents, refreshTokenSilently])
+  }, [isInitialized, loadEvents, refreshTokenSilently, wasConnected])
 
   // Auto-refresh de eventos (menos frequente)
   useEffect(() => {
@@ -400,27 +471,46 @@ export const useOptimizedGoogleCalendar = () => {
   }, [isSignedIn, loadEvents])
 
   // Refresh token when tab becomes visible after being hidden
+  // CRÍTICO: Sempre verifica e tenta renovar para manter conexão persistente
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && isSignedIn) {
-        // When tab becomes visible, check if token needs refresh
-        const expiresAt = localStorage.getItem('google_token_expires_at')
-        if (expiresAt) {
-          const expiresAtMs = parseInt(expiresAt)
-          const now = Date.now()
+      if (document.visibilityState === 'visible') {
+        // Se estava conectado, verificar e renovar token se necessário
+        if (wasConnected() || isSignedIn) {
+          const expiresAt = localStorage.getItem(TOKEN_EXPIRY_STORAGE_KEY)
           
-          // If token is expired or will expire soon, refresh it
-          if (expiresAtMs - now < TOKEN_EXPIRY_BUFFER) {
-            console.log('Tab visible - token expired or expiring soon, refreshing...')
+          if (expiresAt) {
+            const expiresAtMs = parseInt(expiresAt)
+            const now = Date.now()
+            
+            // Se token expirado ou vai expirar em breve, renovar
+            if (expiresAtMs - now < TOKEN_EXPIRY_BUFFER) {
+              console.log('[GoogleCalendar] Tab visível - renovando token...')
+              refreshTokenSilently()
+            }
+          } else {
+            // Sem data de expiração - tentar renovar
+            console.log('[GoogleCalendar] Tab visível - sem data de expiração, renovando...')
             refreshTokenSilently()
+          }
+          
+          // Manter status conectado
+          if (!isSignedIn && wasConnected()) {
+            setIsSignedIn(true)
           }
         }
       }
     }
 
     document.addEventListener('visibilitychange', handleVisibilityChange)
+    
+    // Também verificar ao carregar a página
+    if (wasConnected() && !isSignedIn) {
+      setIsSignedIn(true)
+    }
+    
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [isSignedIn, refreshTokenSilently])
+  }, [isSignedIn, refreshTokenSilently, wasConnected])
 
   return {
     isInitialized,

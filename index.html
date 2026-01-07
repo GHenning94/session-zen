@@ -99,8 +99,46 @@
       (function() {
         try {
           var path = window.location.pathname || '/';
-          var isPublic = (path === '/' || path === '/login' || path === '/signup' || path.indexOf('/agendar/') === 0);
+          var isAdmin = path.indexOf('/admin') === 0;
+          // CRITICAL: ALL external/public pages MUST be light theme - expanded list
+          var isPublic = (
+            path === '/' || 
+            path === '/login' || 
+            path === '/signup' || 
+            path === '/welcome' ||
+            path === '/reset-password' ||
+            path === '/auth-confirm' ||
+            path === '/auth-callback' ||
+            path === '/email-change-confirmation' ||
+            path === '/termos-indicacao' ||
+            path.indexOf('/agendar/') === 0 ||
+            path.indexOf('/convite/') === 0 ||
+            path.indexOf('/register/') === 0
+          );
 
+          var root = document.documentElement;
+          
+          // CRITICAL: For public pages, ALWAYS force light theme - no exceptions
+          if (isPublic) {
+            root.classList.remove('dark');
+            root.classList.add('light');
+            root.setAttribute('data-theme', 'light');
+            root.style.colorScheme = 'light';
+            // Update the next-themes storage key
+            localStorage.setItem('user-platform-theme', 'light');
+            return; // Exit early - do not check any cached themes
+          }
+
+          // For admin pages, use admin's isolated theme
+          if (isAdmin) {
+            var adminTheme = localStorage.getItem('admin-theme-isolated') || 'light';
+            root.classList.remove('light', 'dark');
+            root.classList.add(adminTheme);
+            root.setAttribute('data-theme', adminTheme);
+            return;
+          }
+
+          // For authenticated pages, check user's cached theme
           var token = localStorage.getItem('sb-supabase-auth-token');
           var preferred = 'light';
           if (token) {
@@ -112,20 +150,16 @@
             }
           }
 
-          // Resolve final theme with public-page override
-          var theme = isPublic ? 'light' : (localStorage.getItem('theme') || preferred || 'light');
-
-          var root = document.documentElement;
+          var theme = preferred;
           root.classList.remove('light','dark');
           root.classList.add(theme);
           root.setAttribute('data-theme', theme);
-
-          // Persist to keep next-themes aligned
-          localStorage.setItem('theme', theme);
+          localStorage.setItem('user-platform-theme', theme);
         } catch (e) {
+          document.documentElement.classList.remove('dark');
           document.documentElement.classList.add('light');
           document.documentElement.setAttribute('data-theme','light');
-          localStorage.setItem('theme', 'light');
+          localStorage.setItem('user-platform-theme', 'light');
         }
       })();
     </script>
