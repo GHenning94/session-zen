@@ -98,17 +98,35 @@ serve(async (req) => {
     // Buscar cupom de desconto para indicações (INDICACAO20 - 20% off primeiro mês, apenas plano pro mensal)
     let discounts: { coupon?: string }[] = [];
     
+    // Admin client para verificar uso do cupom
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+    
     // Se tem referral code e é plano pro mensal, aplicar desconto automaticamente
     if (referralCode && priceInfo.plan === 'pro' && priceInfo.interval === 'monthly') {
       try {
-        // Verificar se o cupom existe no Stripe
-        const coupon = await stripe.coupons.retrieve('INDICACAO20').catch(() => null);
-        if (coupon && coupon.valid) {
-          discounts = [{ coupon: 'INDICACAO20' }];
-          console.log('[create-checkout] 🎁 Aplicando desconto de indicação automaticamente');
+        // Verificar se o usuário já usou o cupom de indicação anteriormente
+        const { data: referralData } = await supabaseAdmin
+          .from('referrals')
+          .select('id, status, first_payment_date')
+          .eq('referred_user_id', user.id)
+          .single();
+        
+        // Se já fez pagamento anteriormente (first_payment_date preenchido), não aplicar desconto
+        if (referralData?.first_payment_date) {
+          console.log('[create-checkout] ⚠️ Usuário já utilizou o cupom de indicação anteriormente');
+        } else {
+          // Verificar se o cupom existe no Stripe
+          const coupon = await stripe.coupons.retrieve('INDICACAO20').catch(() => null);
+          if (coupon && coupon.valid) {
+            discounts = [{ coupon: 'INDICACAO20' }];
+            console.log('[create-checkout] 🎁 Aplicando desconto de indicação automaticamente');
+          }
         }
       } catch (e) {
-        console.log('[create-checkout] ⚠️ Cupom INDICACAO20 não encontrado, usuário pode inserir manualmente');
+        console.log('[create-checkout] ⚠️ Erro ao verificar cupom:', e);
       }
     }
 

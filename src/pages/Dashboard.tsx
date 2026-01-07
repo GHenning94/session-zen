@@ -12,6 +12,7 @@ import { SmartNotificationCard } from "@/components/SmartNotificationCard"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { DashboardFooter } from "@/components/DashboardFooter"
 import { ScrollAnimation } from "@/hooks/useScrollAnimation"
+import { ReferralDiscountBadge } from "@/components/ReferralDiscountBadge"
 import { UpgradeWelcomeModal } from "@/components/UpgradeWelcomeModal"
 import { 
   Calendar, 
@@ -1236,6 +1237,9 @@ const Dashboard = () => {
           </div>
           <TutorialButton onClick={handleOpenTutorial} />
         </div>
+
+        {/* Referral Discount Badge - shows only for referred users */}
+        <ReferralDiscountBadge />
 
         {/* Actionable Notifications Banner */}
         <ActionableNotificationsBanner />
