@@ -1,6 +1,6 @@
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import { encode as base32Encode } from "https://deno.land/std@0.190.0/encoding/base32.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.45.0";
+import { encode as base32Encode } from "https://deno.land/std@0.168.0/encoding/base32.ts";
 import { decode as jwtDecode } from "https://deno.land/x/djwt@v2.8/mod.ts";
 
 const corsHeaders = {
