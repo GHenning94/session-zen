@@ -1,15 +1,38 @@
-import { useEffect, useState, useLayoutEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, AlertCircle, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 // Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
 const REFERRAL_DISCOUNT_CODE = 'INDICACAO20';
+
+// Mapeamento de profissões sem acento para com acento
+const PROFESSION_MAP: Record<string, string> = {
+  'psicologo': 'Psicólogo',
+  'psicologa': 'Psicóloga',
+  'psiquiatra': 'Psiquiatra',
+  'terapeuta': 'Terapeuta',
+  'nutricionista': 'Nutricionista',
+  'fisioterapeuta': 'Fisioterapeuta',
+  'fonoaudiologo': 'Fonoaudiólogo',
+  'fonoaudiologa': 'Fonoaudióloga',
+  'medico': 'Médico',
+  'medica': 'Médica',
+  'enfermeiro': 'Enfermeiro',
+  'enfermeira': 'Enfermeira',
+  'coach': 'Coach',
+  'pedagogo': 'Pedagogo',
+  'pedagoga': 'Pedagoga',
+  'psicopedagogo': 'Psicopedagogo',
+  'psicopedagoga': 'Psicopedagoga',
+};
 
 interface ReferrerInfo {
   nome: string;
@@ -23,24 +46,6 @@ const ConviteIndicacao = () => {
   const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isValidCode, setIsValidCode] = useState(false);
-
-  // Force light theme on mount - use useLayoutEffect to prevent flash
-  useLayoutEffect(() => {
-    const html = document.documentElement;
-    const originalClass = html.className;
-    const originalStyle = html.style.colorScheme;
-    
-    html.classList.remove('dark');
-    html.classList.add('light');
-    html.setAttribute('data-theme', 'light');
-    html.style.colorScheme = 'light';
-    
-    return () => {
-      // Restore original theme when leaving
-      html.className = originalClass;
-      html.style.colorScheme = originalStyle || '';
-    };
-  }, []);
 
   useEffect(() => {
     const validateAndFetchReferrer = async () => {
@@ -103,6 +108,14 @@ const ConviteIndicacao = () => {
 
   const copyDiscountCode = () => {
     navigator.clipboard.writeText(REFERRAL_DISCOUNT_CODE);
+    
+    // Trigger confetti animation
+    confetti({
+      particleCount: 100,
+      spread: 70,
+      origin: { y: 0.6 }
+    });
+    
     toast.success('Código copiado!', {
       description: 'Cole o código no checkout para obter seu desconto.',
     });
@@ -131,20 +144,36 @@ const ConviteIndicacao = () => {
     }
   ];
 
-  // Capitalize first letter of profession while preserving accents
+  // Format profession with proper accents
   const formatProfession = (profissao: string | null) => {
     if (!profissao) return null;
-    // Just capitalize first letter, keep rest as-is to preserve accents
+    const normalized = profissao.toLowerCase().trim();
+    // Check if we have a mapped version with proper accents
+    if (PROFESSION_MAP[normalized]) {
+      return PROFESSION_MAP[normalized];
+    }
+    // Otherwise just capitalize first letter
     return profissao.charAt(0).toUpperCase() + profissao.slice(1);
+  };
+
+  // Get initials for avatar fallback
+  const getInitials = (nome: string) => {
+    return nome.split(' ').map(n => n[0]).slice(0, 2).join('').toUpperCase();
+  };
+
+  // Light theme styles (inline to guarantee they apply)
+  const lightThemeStyles = {
+    backgroundColor: '#ffffff',
+    color: '#1a1a1a',
   };
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
         {/* Blue blob background */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
-        <Card className="w-full max-w-lg bg-card relative z-10">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
+        <Card className="w-full max-w-lg relative z-10" style={{ backgroundColor: '#ffffff' }}>
           <CardHeader className="text-center">
             <Skeleton className="h-16 w-16 rounded-full mx-auto mb-4" />
             <Skeleton className="h-8 w-48 mx-auto mb-2" />
@@ -163,11 +192,11 @@ const ConviteIndicacao = () => {
   // Link inválido ou expirado
   if (!isValidCode) {
     return (
-      <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+      <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
         {/* Blue blob background */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
-        <Card className="w-full max-w-lg bg-card border-orange-200 shadow-xl relative z-10">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
+        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
+        <Card className="w-full max-w-lg border-orange-200 shadow-xl relative z-10" style={{ backgroundColor: '#ffffff' }}>
           <CardHeader className="text-center pb-2">
             <div className="relative mx-auto mb-4">
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center shadow-lg">
@@ -175,11 +204,11 @@ const ConviteIndicacao = () => {
               </div>
             </div>
             
-            <CardTitle className="text-2xl font-bold text-foreground">
+            <CardTitle className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>
               Link Inválido ou Expirado
             </CardTitle>
             
-            <CardDescription className="text-base mt-2 text-muted-foreground">
+            <CardDescription className="text-base mt-2" style={{ color: '#6b7280' }}>
               Este link de convite não é mais válido. O indicador pode ter saído do programa ou o link expirou.
             </CardDescription>
           </CardHeader>
@@ -194,7 +223,7 @@ const ConviteIndicacao = () => {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-xs text-center" style={{ color: '#6b7280' }}>
               Você ainda pode criar sua conta normalmente.
             </p>
           </CardContent>
@@ -204,35 +233,43 @@ const ConviteIndicacao = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background relative overflow-hidden flex items-center justify-center p-4">
+    <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
       {/* Blue blob background */}
-      <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
+      <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
+      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
       <div className="w-full max-w-lg space-y-6 relative z-10 animate-fade-in">
         {/* Main Card */}
-        <Card className="border-2 border-primary/20 shadow-xl bg-card animate-scale-in">
+        <Card className="border-2 shadow-xl animate-scale-in" style={{ backgroundColor: '#ffffff', borderColor: 'rgba(59, 130, 246, 0.2)' }}>
           <CardHeader className="text-center pb-2">
-            <div className="relative mx-auto mb-4">
-              <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
-                <Gift className="h-10 w-10 text-primary-foreground" />
+            {/* Avatar do profissional */}
+            {referrerInfo && (
+              <div className="relative mx-auto mb-4">
+                <Avatar className="h-20 w-20 ring-4 ring-blue-100 shadow-lg">
+                  {referrerInfo.avatar_url ? (
+                    <AvatarImage src={referrerInfo.avatar_url} alt={referrerInfo.nome} />
+                  ) : null}
+                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
+                    {getInitials(referrerInfo.nome)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-green-500 flex items-center justify-center ring-2 ring-white">
+                  <Gift className="h-3.5 w-3.5 text-white" />
+                </div>
               </div>
-              <div className="absolute -top-1 -right-1 h-6 w-6 rounded-full bg-green-500 flex items-center justify-center">
-                <Sparkles className="h-3 w-3 text-white" />
-              </div>
-            </div>
+            )}
             
-            <CardTitle className="text-2xl font-bold text-foreground">
+            <CardTitle className="text-2xl font-bold" style={{ color: '#1a1a1a' }}>
               Você foi convidado!
             </CardTitle>
             
             {referrerInfo && (
-              <CardDescription className="text-base mt-2 text-muted-foreground">
-                <span className="font-semibold text-foreground">{referrerInfo.nome}</span>
+              <CardDescription className="text-base mt-2" style={{ color: '#6b7280' }}>
+                <span className="font-semibold" style={{ color: '#1a1a1a' }}>{referrerInfo.nome}</span>
                 {referrerInfo.profissao && (
-                  <span className="text-muted-foreground"> ({formatProfession(referrerInfo.profissao)})</span>
+                  <span style={{ color: '#6b7280' }}> ({formatProfession(referrerInfo.profissao)})</span>
                 )}
                 <br />
-                <span className="text-muted-foreground">te convidou para conhecer o TherapyPro</span>
+                <span style={{ color: '#6b7280' }}>te convidou para conhecer o TherapyPro</span>
               </CardDescription>
             )}
           </CardHeader>
@@ -268,21 +305,22 @@ const ConviteIndicacao = () => {
 
             {/* Benefits */}
             <div className="space-y-3">
-              <p className="text-sm font-medium text-muted-foreground text-center">
+              <p className="text-sm font-medium text-center" style={{ color: '#6b7280' }}>
                 O que você terá acesso:
               </p>
               <div className="grid gap-3">
                 {benefits.map((benefit, index) => (
                   <div 
                     key={index}
-                    className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                    className="flex items-start gap-3 p-3 rounded-lg transition-colors"
+                    style={{ backgroundColor: '#f9fafb' }}
                   >
                     <div className="flex-shrink-0 mt-0.5">
                       {benefit.icon}
                     </div>
                     <div>
-                      <p className="font-medium text-sm text-foreground">{benefit.title}</p>
-                      <p className="text-xs text-muted-foreground">{benefit.description}</p>
+                      <p className="font-medium text-sm" style={{ color: '#1a1a1a' }}>{benefit.title}</p>
+                      <p className="text-xs" style={{ color: '#6b7280' }}>{benefit.description}</p>
                     </div>
                   </div>
                 ))}
@@ -299,14 +337,14 @@ const ConviteIndicacao = () => {
               <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
 
-            <p className="text-xs text-center text-muted-foreground">
+            <p className="text-xs text-center" style={{ color: '#6b7280' }}>
               Ao criar sua conta, você concorda com nossos termos de uso e política de privacidade.
             </p>
           </CardContent>
         </Card>
 
         {/* Trust indicators */}
-        <div className="flex items-center justify-center gap-6 text-muted-foreground animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <div className="flex items-center justify-center gap-6 animate-fade-in" style={{ animationDelay: '0.2s', color: '#6b7280' }}>
           <div className="flex items-center gap-1 text-xs">
             <CheckCircle className="h-3.5 w-3.5 text-green-500" />
             <span>100% Seguro</span>
