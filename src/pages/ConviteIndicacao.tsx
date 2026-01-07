@@ -1,11 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useLayoutEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, AlertCircle } from 'lucide-react';
+import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, AlertCircle, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { toast } from 'sonner';
 
 // Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
 const REFERRAL_DISCOUNT_CODE = 'INDICACAO20';
@@ -23,12 +24,22 @@ const ConviteIndicacao = () => {
   const [loading, setLoading] = useState(true);
   const [isValidCode, setIsValidCode] = useState(false);
 
-  // Force light theme on mount
-  useEffect(() => {
-    document.documentElement.classList.remove('dark');
-    document.documentElement.classList.add('light');
-    document.documentElement.setAttribute('data-theme', 'light');
-    document.documentElement.style.colorScheme = 'light';
+  // Force light theme on mount - use useLayoutEffect to prevent flash
+  useLayoutEffect(() => {
+    const html = document.documentElement;
+    const originalClass = html.className;
+    const originalStyle = html.style.colorScheme;
+    
+    html.classList.remove('dark');
+    html.classList.add('light');
+    html.setAttribute('data-theme', 'light');
+    html.style.colorScheme = 'light';
+    
+    return () => {
+      // Restore original theme when leaving
+      html.className = originalClass;
+      html.style.colorScheme = originalStyle || '';
+    };
   }, []);
 
   useEffect(() => {
@@ -92,6 +103,9 @@ const ConviteIndicacao = () => {
 
   const copyDiscountCode = () => {
     navigator.clipboard.writeText(REFERRAL_DISCOUNT_CODE);
+    toast.success('Código copiado!', {
+      description: 'Cole o código no checkout para obter seu desconto.',
+    });
   };
 
   const benefits = [
@@ -117,10 +131,11 @@ const ConviteIndicacao = () => {
     }
   ];
 
-  // Capitalize first letter of profession
+  // Capitalize first letter of profession while preserving accents
   const formatProfession = (profissao: string | null) => {
     if (!profissao) return null;
-    return profissao.charAt(0).toUpperCase() + profissao.slice(1).toLowerCase();
+    // Just capitalize first letter, keep rest as-is to preserve accents
+    return profissao.charAt(0).toUpperCase() + profissao.slice(1);
   };
 
   if (loading) {
@@ -193,9 +208,9 @@ const ConviteIndicacao = () => {
       {/* Blue blob background */}
       <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" />
       <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-primary/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" />
-      <div className="w-full max-w-lg space-y-6 relative z-10">
+      <div className="w-full max-w-lg space-y-6 relative z-10 animate-fade-in">
         {/* Main Card */}
-        <Card className="border-2 border-primary/20 shadow-xl bg-card">
+        <Card className="border-2 border-primary/20 shadow-xl bg-card animate-scale-in">
           <CardHeader className="text-center pb-2">
             <div className="relative mx-auto mb-4">
               <div className="h-20 w-20 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center shadow-lg">
@@ -235,12 +250,13 @@ const ConviteIndicacao = () => {
               
               <div 
                 onClick={copyDiscountCode}
-                className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-green-300 rounded-lg py-2 px-4 cursor-pointer hover:bg-green-50 transition-colors"
+                className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-green-300 rounded-lg py-2 px-4 cursor-pointer hover:bg-green-50 transition-colors active:scale-95"
               >
                 <code className="text-lg font-mono font-bold text-green-700">
                   {REFERRAL_DISCOUNT_CODE}
                 </code>
-                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 hover:bg-green-200">
+                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-1">
+                  <Copy className="h-3 w-3" />
                   Copiar
                 </Badge>
               </div>
@@ -290,7 +306,7 @@ const ConviteIndicacao = () => {
         </Card>
 
         {/* Trust indicators */}
-        <div className="flex items-center justify-center gap-6 text-muted-foreground">
+        <div className="flex items-center justify-center gap-6 text-muted-foreground animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="flex items-center gap-1 text-xs">
             <CheckCircle className="h-3.5 w-3.5 text-green-500" />
             <span>100% Seguro</span>
