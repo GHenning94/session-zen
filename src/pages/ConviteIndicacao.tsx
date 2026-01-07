@@ -46,6 +46,7 @@ const ConviteIndicacao = () => {
   const [referrerInfo, setReferrerInfo] = useState<ReferrerInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [isValidCode, setIsValidCode] = useState(false);
+  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     const validateAndFetchReferrer = async () => {
@@ -108,6 +109,7 @@ const ConviteIndicacao = () => {
 
   const copyDiscountCode = () => {
     navigator.clipboard.writeText(REFERRAL_DISCOUNT_CODE);
+    setCodeCopied(true);
     
     // Trigger confetti animation
     confetti({
@@ -277,12 +279,30 @@ const ConviteIndicacao = () => {
           <CardContent className="space-y-6 pt-4">
             {/* Discount Banner */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
+              {/* Status do desconto */}
+              <div className={`flex items-center justify-center gap-2 mb-2 ${codeCopied ? 'text-green-700' : 'text-orange-600'}`}>
+                {codeCopied ? (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="font-semibold text-sm">Desconto garantido</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="h-4 w-4" />
+                    <span className="font-semibold text-sm">Desconto não garantido</span>
+                  </>
+                )}
+              </div>
+              
               <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
                 <span className="font-bold text-lg">20% OFF no primeiro mês</span>
               </div>
               
               <p className="text-sm text-green-600 text-center mb-3">
-                Use o código abaixo no checkout do <strong>Plano Profissional</strong>:
+                {codeCopied 
+                  ? 'Código copiado! Use-o no checkout do Plano Profissional:'
+                  : 'Copie o código abaixo para garantir seu desconto:'
+                }
               </p>
               
               <div 
@@ -294,7 +314,7 @@ const ConviteIndicacao = () => {
                 </code>
                 <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-1">
                   <Copy className="h-3 w-3" />
-                  Copiar
+                  {codeCopied ? 'Copiado!' : 'Copiar'}
                 </Badge>
               </div>
               
