@@ -1669,6 +1669,10 @@ export type Database = {
       }
       get_clients_safe_security_status: { Args: never; Returns: Json }
       get_public_profile_by_slug: { Args: { page_slug: string }; Returns: Json }
+      get_referrer_public_info: {
+        Args: { referral_code: string }
+        Returns: Json
+      }
       get_safe_booking_data: { Args: { page_slug: string }; Returns: Json }
       get_safe_clients: {
         Args: never
