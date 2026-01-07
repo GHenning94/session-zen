@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
-import { ArrowLeft, UserPlus, Gift } from "lucide-react"
+import { ArrowLeft, UserPlus } from "lucide-react"
 
 const PREDEFINED_PROFESSIONS = [
   "Psicólogo(a)",
@@ -342,30 +342,6 @@ const Signup = () => {
               <CardDescription style={{ color: '#6b7280' }}>
                 Comece sua jornada profissional no TherapyPro
               </CardDescription>
-              {referralUser && (
-                <div className="mt-4 p-3 rounded-lg border" 
-                     style={{ 
-                       backgroundColor: 'hsl(142 71% 45% / 0.1)', 
-                       borderColor: 'hsl(142 71% 45% / 0.3)' 
-                     }}>
-                  <div className="flex items-center justify-center gap-2" 
-                       style={{ color: 'hsl(142 71% 35%)' }}>
-                    <Gift className="w-4 h-4" />
-                    <span className="text-sm font-medium">Convite Especial</span>
-                  </div>
-                  <p className="text-xs mt-1" 
-                     style={{ color: 'hsl(142 71% 40%)' }}>
-                    Convidado por <strong>{referralUser.nome}</strong>
-                  </p>
-                  <Badge variant="secondary" className="mt-2 text-xs px-2 py-1" 
-                         style={{ 
-                           backgroundColor: 'hsl(142 71% 45% / 0.2)', 
-                           color: 'hsl(142 71% 35%)' 
-                         }}>
-                    20% OFF no primeiro mês
-                  </Badge>
-                </div>
-              )}
             </div>
           </CardHeader>
 
