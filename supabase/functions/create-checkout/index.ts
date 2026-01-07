@@ -95,6 +95,23 @@ serve(async (req) => {
       console.log("[create-checkout] 🎯 Including referral code in metadata:", referralCode);
     }
 
+    // Buscar cupom de desconto para indicações (INDICACAO20 - 20% off primeiro mês, apenas plano pro)
+    let discounts: { coupon?: string }[] = [];
+    
+    // Se tem referral code e é plano pro mensal, aplicar desconto automaticamente
+    if (referralCode && priceInfo.plan === 'pro' && priceInfo.interval === 'monthly') {
+      try {
+        // Verificar se o cupom existe no Stripe
+        const coupon = await stripe.coupons.retrieve('INDICACAO20').catch(() => null);
+        if (coupon && coupon.valid) {
+          discounts = [{ coupon: 'INDICACAO20' }];
+          console.log('[create-checkout] 🎁 Aplicando desconto de indicação automaticamente');
+        }
+      } catch (e) {
+        console.log('[create-checkout] ⚠️ Cupom INDICACAO20 não encontrado, usuário pode inserir manualmente');
+      }
+    }
+
     // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
@@ -112,8 +129,8 @@ serve(async (req) => {
       subscription_data: {
         metadata: sessionMetadata
       },
-      // Permitir códigos promocionais
-      allow_promotion_codes: true,
+      // Aplicar desconto se disponível, senão permitir códigos promocionais
+      ...(discounts.length > 0 ? { discounts } : { allow_promotion_codes: true }),
     });
 
     if (!session.url) {
