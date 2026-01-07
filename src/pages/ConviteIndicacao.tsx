@@ -4,8 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Gift, CheckCircle, Users, Star, ArrowRight, Sparkles, AlertCircle, Copy } from 'lucide-react';
+import { Gift, CheckCircle, Users, Star, ArrowRight, AlertCircle, Copy } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -246,14 +245,23 @@ const ConviteIndicacao = () => {
             {/* Avatar do profissional */}
             {referrerInfo && (
               <div className="relative mx-auto mb-4">
-                <Avatar className="h-20 w-20 ring-4 ring-blue-100 shadow-lg">
+                <div className="h-20 w-20 rounded-full ring-4 ring-blue-100 shadow-lg overflow-hidden bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center">
                   {referrerInfo.avatar_url ? (
-                    <AvatarImage src={referrerInfo.avatar_url} alt={referrerInfo.nome} />
-                  ) : null}
-                  <AvatarFallback className="bg-gradient-to-br from-blue-500 to-blue-600 text-white text-xl font-bold">
-                    {getInitials(referrerInfo.nome)}
-                  </AvatarFallback>
-                </Avatar>
+                    <img 
+                      src={referrerInfo.avatar_url} 
+                      alt={referrerInfo.nome}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        // Hide img and show fallback
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <span className="text-white text-xl font-bold">
+                      {getInitials(referrerInfo.nome)}
+                    </span>
+                  )}
+                </div>
                 <div className="absolute -bottom-1 -right-1 h-7 w-7 rounded-full bg-green-500 flex items-center justify-center ring-2 ring-white">
                   <Gift className="h-3.5 w-3.5 text-white" />
                 </div>
@@ -279,30 +287,13 @@ const ConviteIndicacao = () => {
           <CardContent className="space-y-6 pt-4">
             {/* Discount Banner */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
-              {/* Status do desconto */}
-              <div className={`flex items-center justify-center gap-2 mb-2 ${codeCopied ? 'text-green-700' : 'text-orange-600'}`}>
-                {codeCopied ? (
-                  <>
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="font-semibold text-sm">Desconto garantido</span>
-                  </>
-                ) : (
-                  <>
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="font-semibold text-sm">Desconto não garantido</span>
-                  </>
-                )}
-              </div>
-              
               <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
+                <Gift className="h-5 w-5" />
                 <span className="font-bold text-lg">20% OFF no primeiro mês</span>
               </div>
               
               <p className="text-sm text-green-600 text-center mb-3">
-                {codeCopied 
-                  ? 'Código copiado! Use-o no checkout do Plano Profissional:'
-                  : 'Copie o código abaixo para garantir seu desconto:'
-                }
+                Copie o código abaixo para usar no checkout:
               </p>
               
               <div 
