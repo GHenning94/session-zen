@@ -21,6 +21,7 @@ export const useUserTheme = () => {
   }, [location.pathname])
 
   // Check if we're on a public/external page that should always be light theme
+  // CRITICAL: This list must match index.html script for consistency
   const isPublicPage = useCallback(() => {
     // Check if a page explicitly requested light theme
     if (sessionStorage.getItem('force_light_theme_page') === 'true') {
@@ -28,10 +29,15 @@ export const useUserTheme = () => {
     }
     
     const publicRoutes = [
-      '/',           // Landing Page
-      '/login',      // Login do usuário
-      '/signup',     // Cadastro
-      '/welcome',    // Welcome page
+      '/',                           // Landing Page
+      '/login',                      // Login do usuário
+      '/signup',                     // Cadastro
+      '/welcome',                    // Welcome page
+      '/reset-password',             // Reset de senha
+      '/auth-confirm',               // Confirmação de auth
+      '/auth-callback',              // Callback de auth
+      '/email-change-confirmation',  // Confirmação de mudança de email
+      '/termos-indicacao',           // Termos de indicação
     ]
     
     // Páginas externas que devem sempre usar tema claro
