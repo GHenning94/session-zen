@@ -82,6 +82,8 @@ const Configuracoes = () => {
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
   const [passwordChangeCaptchaToken, setPasswordChangeCaptchaToken] = useState<string | null>(null)
   const passwordCaptchaRef = useRef<TurnstileInstance>(null)
+  const [emailChangeCaptchaToken, setEmailChangeCaptchaToken] = useState<string | null>(null)
+  const emailCaptchaRef = useRef<TurnstileInstance>(null)
   const [cpfCnpjValid, setCpfCnpjValid] = useState<boolean | null>(null)
   const [savingBankDetails, setSavingBankDetails] = useState(false)
   
@@ -364,6 +366,15 @@ const Configuracoes = () => {
       });
       return;
     }
+
+    if (!emailChangeCaptchaToken) {
+      toast({
+        title: "Erro",
+        description: "Por favor, complete a verificação de segurança",
+        variant: "destructive"
+      });
+      return;
+    }
     
     setIsLoading(true);
     const oldEmail = user?.email || '';
@@ -391,6 +402,8 @@ const Configuracoes = () => {
       setNewEmail('');
       setEmailChangePassword('');
       setShowEmailChangeDialog(false);
+      setEmailChangeCaptchaToken(null);
+      emailCaptchaRef.current?.reset();
 
       // Marcar que está em processo de mudança de email
       sessionStorage.setItem('IS_EMAIL_CHANGE_PENDING', 'true');
@@ -1458,7 +1471,13 @@ const Configuracoes = () => {
       )}
 
       {/* Dialog de confirmação de mudança de email */}
-      <AlertDialog open={showEmailChangeDialog} onOpenChange={setShowEmailChangeDialog}>
+      <AlertDialog open={showEmailChangeDialog} onOpenChange={(open) => {
+        setShowEmailChangeDialog(open);
+        if (!open) {
+          setEmailChangeCaptchaToken(null);
+          emailCaptchaRef.current?.reset();
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar mudança de e-mail</AlertDialogTitle>
@@ -1466,18 +1485,33 @@ const Configuracoes = () => {
               Ao prosseguir com a alteração do e-mail, você será deslogado da plataforma e precisará confirmar o novo e-mail através do link enviado. Após a confirmação, será necessário fazer login novamente com os novos dados.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <div className="space-y-2">
-            <Label>Digite sua senha para confirmar</Label>
-            <Input
-              type="password"
-              value={emailChangePassword}
-              onChange={(e) => setEmailChangePassword(e.target.value)}
-              placeholder="Senha"
-            />
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Digite sua senha para confirmar</Label>
+              <Input
+                type="password"
+                value={emailChangePassword}
+                onChange={(e) => setEmailChangePassword(e.target.value)}
+                placeholder="Senha"
+              />
+            </div>
+            <div className="flex justify-center">
+              <Turnstile
+                ref={emailCaptchaRef}
+                siteKey="0x4AAAAAAB43UmamQYOA5yfH"
+                onSuccess={(token) => setEmailChangeCaptchaToken(token)}
+                onExpire={() => setEmailChangeCaptchaToken(null)}
+                onError={() => setEmailChangeCaptchaToken(null)}
+              />
+            </div>
           </div>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setEmailChangePassword('')}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEmailChange} disabled={isLoading || !emailChangePassword}>
+            <AlertDialogCancel onClick={() => {
+              setEmailChangePassword('');
+              setEmailChangeCaptchaToken(null);
+              emailCaptchaRef.current?.reset();
+            }}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmEmailChange} disabled={isLoading || !emailChangePassword || !emailChangeCaptchaToken}>
               {isLoading ? 'Processando...' : 'Continuar'}
             </AlertDialogAction>
           </AlertDialogFooter>
