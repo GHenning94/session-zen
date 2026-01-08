@@ -58,6 +58,11 @@ const TermosIndicacao = () => {
                 <li>O indicado deve completar a assinatura de um plano pago para que a indicação seja validada.</li>
                 <li>As comissões são recorrentes enquanto o indicado mantiver a assinatura ativa.</li>
               </ul>
+              <div className="mt-4 p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Importante:</strong> O pagamento imediato da assinatura pelo indicado não implica liberação imediata da comissão, que estará sujeita ao período de validação, confirmação do pagamento e às regras deste programa.
+                </p>
+              </div>
             </section>
 
             {/* Seção 3 - NOVA ESTRUTURA DE COMISSÕES */}
@@ -90,11 +95,13 @@ const TermosIndicacao = () => {
                 4. Pagamentos
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li>As comissões são calculadas sobre o valor líquido da assinatura.</li>
-                <li>Os pagamentos são processados mensalmente via Stripe Connect ou transferência bancária.</li>
+                <li>As comissões são calculadas sobre o valor líquido efetivamente recebido pelo TherapyPro, já descontadas taxas, impostos, estornos e chargebacks.</li>
+                <li>As comissões passam por um período de validação e ficam com status "pendente" até o encerramento do ciclo de faturamento e do prazo de contestação do pagamento.</li>
+                <li>Os pagamentos são processados mensalmente, até o dia 15 do mês subsequente, referentes às comissões aprovadas no mês anterior.</li>
                 <li>O valor mínimo para saque é de R$ 50,00.</li>
-                <li>É necessário ter dados bancários válidos ou conta Stripe Connect configurada para receber os pagamentos.</li>
-                <li>O TherapyPro reserva-se o direito de reter pagamentos em caso de suspeita de fraude.</li>
+                <li>É necessário manter dados bancários válidos ou conta Stripe Connect configurada para receber os pagamentos.</li>
+                <li>O TherapyPro poderá solicitar validação dos dados bancários informados, incluindo documentos, confirmação de titularidade ou outros meios de verificação, como condição para liberação dos pagamentos.</li>
+                <li>O TherapyPro reserva-se o direito de reter, suspender ou cancelar pagamentos em caso de suspeita de fraude, irregularidade ou violação destes termos.</li>
               </ul>
             </section>
 
@@ -125,10 +132,9 @@ const TermosIndicacao = () => {
                 </p>
               </div>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li><strong>Perda total das indicações:</strong> Todas as indicações registradas em seu nome serão permanentemente removidas do sistema.</li>
-                <li><strong>Cancelamento de pagamentos pendentes:</strong> Quaisquer comissões pendentes ou em processamento serão canceladas e não serão pagas.</li>
-                <li><strong>Encerramento de comissões recorrentes:</strong> Você deixará de receber comissões de indicados ativos, mesmo que eles continuem assinantes.</li>
-                <li><strong>Ação irreversível:</strong> Esta ação não pode ser desfeita. Caso deseje participar novamente, será necessário iniciar do zero, sem recuperação de indicações ou histórico anterior.</li>
+                <li><strong>Perda do direito a comissões futuras:</strong> Ao optar por sair do Programa de Indicação, o parceiro perde o direito a receber comissões futuras, incluindo comissões recorrentes de indicados ativos.</li>
+                <li><strong>Comissões pendentes:</strong> Comissões pendentes ou não liquidadas até a data da solicitação de saída poderão ser canceladas, a critério do TherapyPro.</li>
+                <li><strong>Ação irreversível:</strong> Esta ação não pode ser desfeita. Caso deseje participar novamente, será necessário iniciar do zero, com um novo link de indicação, sem recuperação de indicações ou histórico anterior.</li>
                 <li><strong>Link de indicação desativado:</strong> Seu link de indicação será permanentemente desativado e não poderá ser reativado.</li>
               </ul>
             </section>
