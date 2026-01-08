@@ -51,12 +51,12 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // ✅ Price IDs atualizados do Stripe TherapyPro
+    // ✅ Price IDs corretos do Stripe TherapyPro
     const priceMap: Record<string, { plan: string; interval: string; price: number }> = {
-      'price_1SSMNgCP57sNVd3laEmlQOcb': { plan: 'pro', interval: 'monthly', price: 29.90 },
-      'price_1SSMOdCP57sNVd3la4kMOinN': { plan: 'pro', interval: 'yearly', price: 299.90 },
+      'price_1RowvqFeTymAqTGEU6jkKtXi': { plan: 'pro', interval: 'monthly', price: 29.90 },
+      'price_1SMifUFeTymAqTGEucpJaUBz': { plan: 'pro', interval: 'yearly', price: 298.80 },
       'price_1SSMOBCP57sNVd3lqjfLY6Du': { plan: 'premium', interval: 'monthly', price: 49.90 },
-      'price_1SSMP7CP57sNVd3lSf4oYINX': { plan: 'premium', interval: 'yearly', price: 499.90 }
+      'price_1SSMP7CP57sNVd3lSf4oYINX': { plan: 'premium', interval: 'yearly', price: 498.96 }
     };
 
     const priceInfo = priceMap[priceId];
