@@ -459,11 +459,11 @@ const ProgramaIndicacao = () => {
             </div>
           </div>
 
-          {/* Aviso de Cooldown - Banner acima do card principal */}
+          {/* Aviso de Cooldown - Banner compacto */}
           {cooldownEndDate && cooldownEndDate > new Date() && (
-            <Alert className="border-amber-500/50 bg-amber-500/10">
-              <AlertCircle className="h-4 w-4 text-amber-500" />
-              <AlertDescription className="text-amber-700 dark:text-amber-300">
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/50 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500 flex-shrink-0" />
+              <p className="text-sm text-amber-700 dark:text-amber-300">
                 <strong>Período de carência ativo.</strong> Você poderá reingressar no programa em{' '}
                 <strong>
                   {cooldownEndDate.toLocaleDateString('pt-BR', { 
@@ -472,8 +472,8 @@ const ProgramaIndicacao = () => {
                     year: 'numeric' 
                   })}
                 </strong>.
-              </AlertDescription>
-            </Alert>
+              </p>
+            </div>
           )}
 
           {/* Banner Principal */}
