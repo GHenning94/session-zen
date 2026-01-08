@@ -947,6 +947,22 @@ const Configuracoes = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Aviso importante */}
+                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
+                  <div className="flex gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                        Atenção: Dados devem ser do titular da conta
+                      </p>
+                      <p className="text-sm text-amber-700 dark:text-amber-300">
+                        Os dados bancários informados devem pertencer à mesma pessoa cadastrada nesta conta. 
+                        Pagamentos não serão realizados se os dados não corresponderem ao usuário registrado.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 {/* Tipo de Pessoa */}
                 <div className="space-y-2">
                   <Label>Tipo de Pessoa</Label>
@@ -956,6 +972,7 @@ const Configuracoes = () => {
                       handleSettingsChange('tipo_pessoa', v);
                       handleSettingsChange('cpf_cnpj', '');
                       setCpfCnpjValid(null);
+                      handleSettingsChange('bank_data_confirmed', false);
                     }}
                   >
                     <SelectTrigger><SelectValue placeholder="Selecione o tipo de pessoa" /></SelectTrigger>
@@ -978,6 +995,7 @@ const Configuracoes = () => {
                     onChange={(e) => {
                       const formatted = formatCPFCNPJ(e.target.value);
                       handleSettingsChange('cpf_cnpj', formatted);
+                      handleSettingsChange('bank_data_confirmed', false);
                       
                       const cleaned = formatted.replace(/\D/g, '');
                       if (settings.tipo_pessoa === 'fisica' && cleaned.length === 11) {
@@ -991,6 +1009,9 @@ const Configuracoes = () => {
                     placeholder={settings.tipo_pessoa === 'juridica' ? '00.000.000/0000-00' : '000.000.000-00'}
                     maxLength={settings.tipo_pessoa === 'juridica' ? 18 : 14}
                     className={cpfCnpjValid === false ? 'border-destructive focus-visible:ring-destructive' : cpfCnpjValid === true ? 'border-green-500 focus-visible:ring-green-500' : ''}
+                    autoComplete="off"
+                    name="cpf_cnpj_field"
+                    id="cpf_cnpj_field"
                   />
                   {cpfCnpjValid === false && (
                     <p className="text-sm text-destructive flex items-center gap-1">
@@ -1006,12 +1027,15 @@ const Configuracoes = () => {
                   <Input
                     value={settings.nome_titular ?? ''}
                     onChange={(e) => {
-                      // Limita a 100 caracteres e permite apenas letras, espaços e acentos
                       const value = e.target.value.slice(0, 100);
                       handleSettingsChange('nome_titular', value);
+                      handleSettingsChange('bank_data_confirmed', false);
                     }}
                     placeholder={settings.tipo_pessoa === 'juridica' ? 'Razão Social' : 'Nome completo conforme documento'}
                     maxLength={100}
+                    autoComplete="off"
+                    name="nome_titular_field"
+                    id="nome_titular_field"
                   />
                 </div>
 
@@ -1020,7 +1044,10 @@ const Configuracoes = () => {
                     <Label>Banco</Label>
                     <Select
                       value={settings.banco ?? undefined}
-                      onValueChange={(v) => handleSettingsChange('banco', v)}
+                      onValueChange={(v) => {
+                        handleSettingsChange('banco', v);
+                        handleSettingsChange('bank_data_confirmed', false);
+                      }}
                     >
                       <SelectTrigger><SelectValue placeholder="Selecione o banco" /></SelectTrigger>
                       <SelectContent className="max-h-[300px]">
@@ -1039,10 +1066,14 @@ const Configuracoes = () => {
                       onChange={(e) => {
                         const formatted = formatAgencia(e.target.value);
                         handleSettingsChange('agencia', formatted);
+                        handleSettingsChange('bank_data_confirmed', false);
                       }}
-                      placeholder="00000"
+                      placeholder="0000"
                       maxLength={5}
                       inputMode="numeric"
+                      autoComplete="off"
+                      name="agencia_field"
+                      id="agencia_field"
                     />
                   </div>
                   <div className="space-y-2">
@@ -1052,17 +1083,24 @@ const Configuracoes = () => {
                       onChange={(e) => {
                         const formatted = formatConta(e.target.value);
                         handleSettingsChange('conta', formatted);
+                        handleSettingsChange('bank_data_confirmed', false);
                       }}
                       placeholder="00000000-0"
                       maxLength={15}
                       inputMode="numeric"
+                      autoComplete="off"
+                      name="conta_field"
+                      id="conta_field"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Tipo de Conta</Label>
                     <Select
                       value={settings.tipo_conta ?? undefined}
-                      onValueChange={(v) => handleSettingsChange('tipo_conta', v)}
+                      onValueChange={(v) => {
+                        handleSettingsChange('tipo_conta', v);
+                        handleSettingsChange('bank_data_confirmed', false);
+                      }}
                     >
                       <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>
@@ -1079,16 +1117,37 @@ const Configuracoes = () => {
                   <Input
                     value={settings.chave_pix ?? ''}
                     onChange={(e) => {
-                      // Limita a 100 caracteres
                       const value = e.target.value.slice(0, 100);
                       handleSettingsChange('chave_pix', value);
+                      handleSettingsChange('bank_data_confirmed', false);
                     }}
                     placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória"
                     maxLength={100}
+                    autoComplete="off"
+                    name="chave_pix_field"
+                    id="chave_pix_field"
                   />
                   <p className="text-xs text-muted-foreground">
                     Se preenchido, a chave PIX será usada preferencialmente para pagamentos
                   </p>
+                </div>
+
+                {/* Checkbox de confirmação obrigatório */}
+                <div className="flex items-start space-x-3 p-4 border rounded-lg bg-muted/30">
+                  <input
+                    type="checkbox"
+                    id="bank_data_confirmed"
+                    checked={settings.bank_data_confirmed === true}
+                    onChange={(e) => handleSettingsChange('bank_data_confirmed', e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                  />
+                  <label htmlFor="bank_data_confirmed" className="text-sm text-foreground cursor-pointer">
+                    <span className="font-medium">Confirmo que os dados bancários informados são da minha titularidade</span>
+                    <span className="block text-muted-foreground mt-1">
+                      Declaro que sou o titular da conta bancária informada e que os dados estão corretos. 
+                      Estou ciente de que pagamentos não serão realizados para contas de terceiros.
+                    </span>
+                  </label>
                 </div>
 
                 <Button 
@@ -1112,6 +1171,10 @@ const Configuracoes = () => {
                       toast({ title: "Preencha todos os dados bancários", variant: "destructive" });
                       return;
                     }
+                    if (!settings.bank_data_confirmed) {
+                      toast({ title: "Confirme que os dados são da sua titularidade", variant: "destructive" });
+                      return;
+                    }
                     
                     setSavingBankDetails(true);
                     try {
@@ -1125,7 +1188,8 @@ const Configuracoes = () => {
                           agencia: settings.agencia,
                           conta: settings.conta,
                           tipo_conta: settings.tipo_conta,
-                          chave_pix: settings.chave_pix || null
+                          chave_pix: settings.chave_pix || null,
+                          bank_data_confirmed: true
                         }
                       });
                       
@@ -1145,7 +1209,7 @@ const Configuracoes = () => {
                       setSavingBankDetails(false);
                     }
                   }} 
-                  disabled={savingBankDetails || cpfCnpjValid === false} 
+                  disabled={savingBankDetails || cpfCnpjValid === false || !settings.bank_data_confirmed} 
                   size="sm" 
                   className="bg-gradient-primary hover:opacity-90"
                 >
