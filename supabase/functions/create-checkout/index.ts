@@ -95,39 +95,45 @@ serve(async (req) => {
       console.log("[create-checkout] 🎯 Including referral code in metadata:", referralCode);
     }
 
-    // Buscar cupom de desconto para indicações (INDICACAO20 - 20% off primeiro mês, apenas plano pro mensal)
-    let discounts: { coupon?: string }[] = [];
-    
-    // Admin client para verificar uso do cupom
+    // Admin client para verificar se usuário foi indicado
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
     
-    // Se tem referral code e é plano pro mensal, aplicar desconto automaticamente
-    if (referralCode && priceInfo.plan === 'pro' && priceInfo.interval === 'monthly') {
-      try {
-        // Verificar se o usuário já usou o cupom de indicação anteriormente
-        const { data: referralData } = await supabaseAdmin
-          .from('referrals')
-          .select('id, status, first_payment_date')
-          .eq('referred_user_id', user.id)
-          .single();
-        
-        // Se já fez pagamento anteriormente (first_payment_date preenchido), não aplicar desconto
-        if (referralData?.first_payment_date) {
-          console.log('[create-checkout] ⚠️ Usuário já utilizou o cupom de indicação anteriormente');
-        } else {
-          // Usar diretamente o ID do Promotion Code criado pelo usuário
-          const INDICACAO20_PROMO_ID = 'promo_1Sn9ifFeTymAqTGEC7pyM7Ee';
-          
-          console.log('[create-checkout] 🎁 Aplicando promotion code INDICACAO20:', INDICACAO20_PROMO_ID);
-          discounts = [{ promotion_code: INDICACAO20_PROMO_ID }];
-        }
-      } catch (e) {
-        console.log('[create-checkout] ⚠️ Erro ao verificar cupom:', e);
+    // Verificar se usuário foi indicado (existe como referred_user_id na tabela referrals)
+    let isReferredUser = false;
+    let hasUsedCoupon = false;
+
+    try {
+      const { data: referralData } = await supabaseAdmin
+        .from('referrals')
+        .select('id, status, first_payment_date')
+        .eq('referred_user_id', user.id)
+        .single();
+      
+      if (referralData) {
+        isReferredUser = true;
+        hasUsedCoupon = !!referralData.first_payment_date;
+        console.log('[create-checkout] 🎯 Usuário indicado:', { isReferredUser, hasUsedCoupon });
       }
+    } catch (e) {
+      console.log('[create-checkout] ℹ️ Usuário não é indicado ou erro ao verificar:', e);
     }
+
+    // Determinar se habilita códigos promocionais:
+    // - Usuário deve ser indicado
+    // - Plano deve ser PRO (mensal ou anual)
+    // - Usuário não pode ter usado o cupom antes
+    const allowPromoCodes = isReferredUser && 
+                            priceInfo.plan === 'pro' && 
+                            !hasUsedCoupon;
+
+    console.log('[create-checkout] 💳 Allow promo codes:', allowPromoCodes, { 
+      isReferredUser, 
+      plan: priceInfo.plan, 
+      hasUsedCoupon 
+    });
 
     // Criar sessão de checkout
     const session = await stripe.checkout.sessions.create({
@@ -146,8 +152,8 @@ serve(async (req) => {
       subscription_data: {
         metadata: sessionMetadata
       },
-      // Aplicar desconto se disponível, senão permitir códigos promocionais
-      ...(discounts.length > 0 ? { discounts } : { allow_promotion_codes: true }),
+      // Só habilitar códigos promocionais para usuários indicados em planos Pro
+      ...(allowPromoCodes ? { allow_promotion_codes: true } : {}),
     });
 
     if (!session.url) {
