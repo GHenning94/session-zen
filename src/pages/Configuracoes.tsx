@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
 import {
@@ -33,7 +33,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
-import { formatPhone, formatCRP, formatCRM, validatePassword } from "@/utils/inputMasks"
+import { formatPhone, formatCRP, formatCRM, validatePassword, formatCPFCNPJ, validateCPFCNPJ } from "@/utils/inputMasks"
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
 import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 import { cleanupInvalidSession } from "@/utils/sessionCleanup"
@@ -81,6 +81,8 @@ const Configuracoes = () => {
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
   const [passwordChangeCaptchaToken, setPasswordChangeCaptchaToken] = useState<string | null>(null)
   const passwordCaptchaRef = useRef<TurnstileInstance>(null)
+  const [cpfCnpjValid, setCpfCnpjValid] = useState<boolean | null>(null)
+  const [savingBankDetails, setSavingBankDetails] = useState(false)
   
   // Ler tab da URL
   useEffect(() => {
@@ -125,7 +127,7 @@ const Configuracoes = () => {
     try {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, subscription_plan, billing_interval, created_at, updated_at')
+        .select('id, user_id, nome, profissao, especialidade, bio, crp, telefone, avatar_url, public_avatar_url, subscription_plan, billing_interval, created_at, updated_at, banco, agencia, conta, tipo_conta, cpf_cnpj, tipo_pessoa, nome_titular, chave_pix, bank_details_validated')
         .eq('user_id', user.id)
         .single();
       
@@ -932,12 +934,84 @@ const Configuracoes = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building /> Dados Bancários
+                  {settings.bank_details_validated && (
+                    <span className="flex items-center gap-1 text-sm font-normal text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
+                      <CheckCircle2 className="w-4 h-4" />
+                      Validado
+                    </span>
+                  )}
                 </CardTitle>
                 <CardDescription>
                   Estes dados são usados exclusivamente para pagamentos do programa de indicação
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
+                {/* Tipo de Pessoa */}
+                <div className="space-y-2">
+                  <Label>Tipo de Pessoa</Label>
+                  <Select
+                    value={settings.tipo_pessoa || ''}
+                    onValueChange={(v) => {
+                      handleSettingsChange('tipo_pessoa', v);
+                      handleSettingsChange('cpf_cnpj', ''); // Limpa CPF/CNPJ ao mudar tipo
+                      setCpfCnpjValid(null);
+                    }}
+                  >
+                    <SelectTrigger><SelectValue placeholder="Selecione o tipo de pessoa" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="fisica">Pessoa Física</SelectItem>
+                      <SelectItem value="juridica">Pessoa Jurídica</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* CPF/CNPJ com validação em tempo real */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    {settings.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'}
+                    {cpfCnpjValid === true && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    {cpfCnpjValid === false && <XCircle className="w-4 h-4 text-destructive" />}
+                  </Label>
+                  <Input
+                    value={settings.cpf_cnpj || ''}
+                    onChange={(e) => {
+                      const formatted = formatCPFCNPJ(e.target.value);
+                      handleSettingsChange('cpf_cnpj', formatted);
+                      
+                      // Validação em tempo real
+                      const cleaned = formatted.replace(/\D/g, '');
+                      if (settings.tipo_pessoa === 'fisica' && cleaned.length === 11) {
+                        setCpfCnpjValid(validateCPFCNPJ(formatted));
+                      } else if (settings.tipo_pessoa === 'juridica' && cleaned.length === 14) {
+                        setCpfCnpjValid(validateCPFCNPJ(formatted));
+                      } else if (cleaned.length > 0) {
+                        setCpfCnpjValid(null);
+                      } else {
+                        setCpfCnpjValid(null);
+                      }
+                    }}
+                    placeholder={settings.tipo_pessoa === 'juridica' ? '00.000.000/0000-00' : '000.000.000-00'}
+                    maxLength={settings.tipo_pessoa === 'juridica' ? 18 : 14}
+                    className={cpfCnpjValid === false ? 'border-destructive focus-visible:ring-destructive' : cpfCnpjValid === true ? 'border-green-500 focus-visible:ring-green-500' : ''}
+                  />
+                  {cpfCnpjValid === false && (
+                    <p className="text-sm text-destructive flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      {settings.tipo_pessoa === 'juridica' ? 'CNPJ inválido' : 'CPF inválido'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Nome do Titular */}
+                <div className="space-y-2">
+                  <Label>Nome do Titular</Label>
+                  <Input
+                    value={settings.nome_titular || ''}
+                    onChange={(e) => handleSettingsChange('nome_titular', e.target.value)}
+                    placeholder={settings.tipo_pessoa === 'juridica' ? 'Razão Social' : 'Nome completo conforme documento'}
+                  />
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Banco</Label>
@@ -951,8 +1025,9 @@ const Configuracoes = () => {
                     <Label>Agência</Label>
                     <Input
                       value={settings.agencia || ''}
-                      onChange={(e) => handleSettingsChange('agencia', e.target.value)}
+                      onChange={(e) => handleSettingsChange('agencia', e.target.value.replace(/\D/g, ''))}
                       placeholder="0000"
+                      maxLength={6}
                     />
                   </div>
                   <div className="space-y-2">
@@ -969,25 +1044,97 @@ const Configuracoes = () => {
                       value={settings.tipo_conta || ''}
                       onValueChange={(v) => handleSettingsChange('tipo_conta', v)}
                     >
-                      <SelectTrigger><SelectValue placeholder="Selecione"/></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="corrente">Conta Corrente</SelectItem>
                         <SelectItem value="poupanca">Conta Poupança</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label>CPF/CNPJ</Label>
-                    <Input
-                      value={settings.cpf_cnpj || ''}
-                      onChange={(e) => handleSettingsChange('cpf_cnpj', e.target.value)}
-                      placeholder="000.000.000-00"
-                    />
-                  </div>
                 </div>
-                <Button onClick={handleSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
-                  <Save className="w-4 h-4 mr-2" />
-                  Salvar Dados Bancários
+
+                {/* Chave PIX */}
+                <div className="space-y-2">
+                  <Label>Chave PIX (opcional)</Label>
+                  <Input
+                    value={settings.chave_pix || ''}
+                    onChange={(e) => handleSettingsChange('chave_pix', e.target.value)}
+                    placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se preenchido, a chave PIX será usada preferencialmente para pagamentos
+                  </p>
+                </div>
+
+                <Button 
+                  onClick={async () => {
+                    if (!user) return;
+                    
+                    // Validar campos obrigatórios
+                    if (!settings.tipo_pessoa) {
+                      toast({ title: "Selecione o tipo de pessoa", variant: "destructive" });
+                      return;
+                    }
+                    if (!settings.cpf_cnpj || cpfCnpjValid === false) {
+                      toast({ title: settings.tipo_pessoa === 'juridica' ? 'CNPJ inválido' : 'CPF inválido', variant: "destructive" });
+                      return;
+                    }
+                    if (!settings.nome_titular) {
+                      toast({ title: "Preencha o nome do titular", variant: "destructive" });
+                      return;
+                    }
+                    if (!settings.banco || !settings.agencia || !settings.conta || !settings.tipo_conta) {
+                      toast({ title: "Preencha todos os dados bancários", variant: "destructive" });
+                      return;
+                    }
+                    
+                    setSavingBankDetails(true);
+                    try {
+                      // Chamar edge function para validar e salvar
+                      const { data, error } = await supabase.functions.invoke('referral-validate-bank-details', {
+                        body: {
+                          tipo_pessoa: settings.tipo_pessoa,
+                          cpf_cnpj: settings.cpf_cnpj,
+                          nome_titular: settings.nome_titular,
+                          banco: settings.banco,
+                          agencia: settings.agencia,
+                          conta: settings.conta,
+                          tipo_conta: settings.tipo_conta,
+                          chave_pix: settings.chave_pix || null
+                        }
+                      });
+                      
+                      if (error) throw error;
+                      if (!data?.success) throw new Error(data?.error || 'Erro ao validar dados');
+                      
+                      handleSettingsChange('bank_details_validated', true);
+                      toast({ title: "Dados bancários validados e salvos com sucesso!" });
+                    } catch (error: any) {
+                      console.error('Erro ao salvar dados bancários:', error);
+                      toast({ 
+                        title: "Erro ao validar dados", 
+                        description: error.message || "Verifique os dados e tente novamente",
+                        variant: "destructive" 
+                      });
+                    } finally {
+                      setSavingBankDetails(false);
+                    }
+                  }} 
+                  disabled={savingBankDetails || cpfCnpjValid === false} 
+                  size="sm" 
+                  className="bg-gradient-primary hover:opacity-90"
+                >
+                  {savingBankDetails ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Validando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 mr-2" />
+                      Validar e Salvar Dados Bancários
+                    </>
+                  )}
                 </Button>
               </CardContent>
             </Card>

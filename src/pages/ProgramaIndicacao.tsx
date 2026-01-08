@@ -158,36 +158,25 @@ const ProgramaIndicacao = () => {
         colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'],
       });
 
-      // Verificar se já existe um código de indicação (usuário reentrando)
-      const { data: existingProfile } = await supabase
-        .from('profiles')
-        .select('referral_code')
-        .eq('user_id', user.id)
-        .single();
-
-      let finalReferralCode = existingProfile?.referral_code;
-
-      // Só gera novo código se não existir um
-      if (!finalReferralCode) {
-        const { data: newCodeData, error: codeError } = await supabase
-          .rpc('generate_unique_referral_code');
-        
-        if (codeError) throw codeError;
-        finalReferralCode = newCodeData as string;
-      }
+      // Sempre gerar um novo código ao entrar/reentrar no programa
+      const { data: newCodeData, error: codeError } = await supabase
+        .rpc('generate_unique_referral_code');
+      
+      if (codeError) throw codeError;
+      const newReferralCode = newCodeData as string;
 
       const { error } = await supabase
         .from('profiles')
         .update({ 
           is_referral_partner: true,
-          referral_code: finalReferralCode
+          referral_code: newReferralCode
         })
         .eq('user_id', user.id);
       
       if (error) throw error;
       
       setIsEnrolled(true);
-      setReferralCode(finalReferralCode);
+      setReferralCode(newReferralCode);
 
       // Verificar dados bancários
       const { data: profile } = await supabase
@@ -236,27 +225,28 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
-      // Apenas desativar o parceiro, mantendo os referrals existentes intactos
-      // Os indicados continuam com seus descontos válidos
+      // Desativar o parceiro e limpar o código de indicação (invalida o link)
+      // Os referrals existentes continuam intactos (descontos dos indicados válidos)
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          is_referral_partner: false
-          // NÃO limpa referral_code para manter histórico e links de desconto funcionando
+          is_referral_partner: false,
+          referral_code: null // Invalida o link de convite
         })
         .eq('user_id', user.id);
       
       if (profileError) throw profileError;
       
-      // Limpar estado local
+      // Limpar estado local completamente
       setIsEnrolled(false);
+      setReferralCode('');
       setStats(null);
       setMonthlyHistory([]);
       setRecentPayouts([]);
       
       toast({
         title: "Você deixou o programa",
-        description: "Os descontos dos seus indicados continuam válidos. Você pode reingressar a qualquer momento.",
+        description: "Seu link foi desativado. Os descontos dos seus indicados continuam válidos. Ao reingressar, um novo link será gerado.",
       });
     } catch (error) {
       console.error('Erro ao sair do programa:', error);
