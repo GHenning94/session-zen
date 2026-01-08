@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useSearchParams } from "react-router-dom"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -42,6 +42,7 @@ import { useGoogleCalendarBackgroundSync } from "@/hooks/useGoogleCalendarBackgr
 import { useNotificationSound, playNotificationSound } from "@/hooks/useNotificationSound"
 import { useNotifications } from "@/hooks/useNotifications"
 import { Volume2, VolumeX } from "lucide-react"
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 
 type AllSettings = Record<string, any>;
 
@@ -78,6 +79,8 @@ const Configuracoes = () => {
   const [pendingNewPassword, setPendingNewPassword] = useState('')
   const [emailChangePassword, setEmailChangePassword] = useState('')
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
+  const [passwordChangeCaptchaToken, setPasswordChangeCaptchaToken] = useState<string | null>(null)
+  const passwordCaptchaRef = useRef<TurnstileInstance>(null)
   
   // Ler tab da URL
   useEffect(() => {
@@ -245,12 +248,24 @@ const Configuracoes = () => {
   };
 
   const confirmPasswordChange = async () => {
+    if (!passwordChangeCaptchaToken) {
+      toast({
+        title: "Erro",
+        description: "Por favor, complete a verificação de segurança",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setChangingPassword(true);
     try {
       // Primeiro, validar a senha atual tentando fazer reauthentication
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user?.email || '',
         password: currentPassword,
+        options: {
+          captchaToken: passwordChangeCaptchaToken
+        }
       });
 
       if (authError) {
@@ -292,6 +307,8 @@ const Configuracoes = () => {
       setNewPassword('');
       setConfirmNewPassword('');
       setShowPasswordChangeDialog(false);
+      setPasswordChangeCaptchaToken(null);
+      passwordCaptchaRef.current?.reset();
 
       // Aguardar 2 segundos para o usuário ver a mensagem
       setTimeout(async () => {
@@ -740,7 +757,7 @@ const Configuracoes = () => {
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="Digite sua senha atual"
-                    autoComplete="current-password"
+                    autoComplete="off"
                   />
                 </div>
                 
@@ -1223,7 +1240,13 @@ const Configuracoes = () => {
       </AlertDialog>
 
       {/* Dialog de confirmação de mudança de senha */}
-      <AlertDialog open={showPasswordChangeDialog} onOpenChange={setShowPasswordChangeDialog}>
+      <AlertDialog open={showPasswordChangeDialog} onOpenChange={(open) => {
+        setShowPasswordChangeDialog(open);
+        if (!open) {
+          setPasswordChangeCaptchaToken(null);
+          passwordCaptchaRef.current?.reset();
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmar mudança de senha</AlertDialogTitle>
@@ -1232,12 +1255,23 @@ const Configuracoes = () => {
               Esta ação não pode ser desfeita e você precisará da nova senha para acessar sua conta.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="flex justify-center my-4">
+            <Turnstile
+              ref={passwordCaptchaRef}
+              siteKey="0x4AAAAAABbG2yQ-OqVnxkn0"
+              onSuccess={(token) => setPasswordChangeCaptchaToken(token)}
+              onExpire={() => setPasswordChangeCaptchaToken(null)}
+              onError={() => setPasswordChangeCaptchaToken(null)}
+            />
+          </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setCurrentPassword('');
               setPendingNewPassword('');
+              setPasswordChangeCaptchaToken(null);
+              passwordCaptchaRef.current?.reset();
             }}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmPasswordChange} disabled={changingPassword}>
+            <AlertDialogAction onClick={confirmPasswordChange} disabled={changingPassword || !passwordChangeCaptchaToken}>
               {changingPassword ? 'Processando...' : 'Confirmar e Deslogar'}
             </AlertDialogAction>
           </AlertDialogFooter>
