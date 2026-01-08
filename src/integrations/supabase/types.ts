@@ -875,8 +875,11 @@ export type Database = {
           agencia: string | null
           avatar_url: string | null
           banco: string | null
+          bank_details_updated_at: string | null
+          bank_details_validated: boolean | null
           billing_interval: string | null
           bio: string | null
+          chave_pix: string | null
           conta: string | null
           cpf_cnpj: string | null
           created_at: string
@@ -891,9 +894,11 @@ export type Database = {
           id: string
           is_referral_partner: boolean | null
           nome: string
+          nome_titular: string | null
           pending_new_email: string | null
           profissao: string | null
           public_avatar_url: string | null
+          referral_code: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_cancel_at: string | null
@@ -901,6 +906,7 @@ export type Database = {
           subscription_plan: string | null
           telefone: string | null
           tipo_conta: string | null
+          tipo_pessoa: string | null
           updated_at: string
           user_id: string
         }
@@ -908,8 +914,11 @@ export type Database = {
           agencia?: string | null
           avatar_url?: string | null
           banco?: string | null
+          bank_details_updated_at?: string | null
+          bank_details_validated?: boolean | null
           billing_interval?: string | null
           bio?: string | null
+          chave_pix?: string | null
           conta?: string | null
           cpf_cnpj?: string | null
           created_at?: string
@@ -924,9 +933,11 @@ export type Database = {
           id?: string
           is_referral_partner?: boolean | null
           nome: string
+          nome_titular?: string | null
           pending_new_email?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
+          referral_code?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_cancel_at?: string | null
@@ -934,6 +945,7 @@ export type Database = {
           subscription_plan?: string | null
           telefone?: string | null
           tipo_conta?: string | null
+          tipo_pessoa?: string | null
           updated_at?: string
           user_id: string
         }
@@ -941,8 +953,11 @@ export type Database = {
           agencia?: string | null
           avatar_url?: string | null
           banco?: string | null
+          bank_details_updated_at?: string | null
+          bank_details_validated?: boolean | null
           billing_interval?: string | null
           bio?: string | null
+          chave_pix?: string | null
           conta?: string | null
           cpf_cnpj?: string | null
           created_at?: string
@@ -957,9 +972,11 @@ export type Database = {
           id?: string
           is_referral_partner?: boolean | null
           nome?: string
+          nome_titular?: string | null
           pending_new_email?: string | null
           profissao?: string | null
           public_avatar_url?: string | null
+          referral_code?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_cancel_at?: string | null
@@ -967,6 +984,7 @@ export type Database = {
           subscription_plan?: string | null
           telefone?: string | null
           tipo_conta?: string | null
+          tipo_pessoa?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1113,11 +1131,13 @@ export type Database = {
       referral_payouts: {
         Row: {
           amount: number
+          asaas_transfer_id: string | null
           created_at: string
           currency: string | null
           failure_reason: string | null
           id: string
           paid_at: string | null
+          payment_method: string | null
           period_end: string | null
           period_start: string | null
           referral_id: string | null
@@ -1130,11 +1150,13 @@ export type Database = {
         }
         Insert: {
           amount: number
+          asaas_transfer_id?: string | null
           created_at?: string
           currency?: string | null
           failure_reason?: string | null
           id?: string
           paid_at?: string | null
+          payment_method?: string | null
           period_end?: string | null
           period_start?: string | null
           referral_id?: string | null
@@ -1147,11 +1169,13 @@ export type Database = {
         }
         Update: {
           amount?: number
+          asaas_transfer_id?: string | null
           created_at?: string
           currency?: string | null
           failure_reason?: string | null
           id?: string
           paid_at?: string | null
+          payment_method?: string | null
           period_end?: string | null
           period_start?: string | null
           referral_id?: string | null
@@ -1689,6 +1713,7 @@ export type Database = {
         Args: { p_client_id: string }
         Returns: Json
       }
+      generate_unique_referral_code: { Args: never; Returns: string }
       get_client_medical_data: { Args: { p_client_id: string }; Returns: Json }
       get_client_summary: { Args: { client_id: string }; Returns: Json }
       get_clients_safe_data: {
@@ -1713,7 +1738,12 @@ export type Database = {
       get_public_profile_by_slug: { Args: { page_slug: string }; Returns: Json }
       get_referrer_public_info: {
         Args: { referral_code: string }
-        Returns: Json
+        Returns: {
+          avatar_url: string
+          nome: string
+          profissao: string
+          user_id: string
+        }[]
       }
       get_safe_booking_data: { Args: { page_slug: string }; Returns: Json }
       get_safe_clients: {

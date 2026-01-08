@@ -99,8 +99,9 @@ const TermosIndicacao = () => {
                 <li>As comissões passam por um período de validação e ficam com status "pendente" até o encerramento do ciclo de faturamento e do prazo de contestação do pagamento.</li>
                 <li>Os pagamentos são processados mensalmente, até o dia 15 do mês subsequente, referentes às comissões aprovadas no mês anterior.</li>
                 <li>O valor mínimo para saque é de R$ 50,00.</li>
-                <li>É necessário manter dados bancários válidos ou conta Stripe Connect configurada para receber os pagamentos.</li>
+                <li>É necessário manter dados bancários válidos para receber os pagamentos via PIX ou transferência bancária.</li>
                 <li>O TherapyPro poderá solicitar validação dos dados bancários informados, incluindo documentos, confirmação de titularidade ou outros meios de verificação, como condição para liberação dos pagamentos.</li>
+                <li>O parceiro autoriza expressamente o TherapyPro a realizar os pagamentos de comissões de forma automática, utilizando os dados bancários informados.</li>
                 <li>O TherapyPro reserva-se o direito de reter, suspender ou cancelar pagamentos em caso de suspeita de fraude, irregularidade ou violação destes termos.</li>
               </ul>
             </section>
