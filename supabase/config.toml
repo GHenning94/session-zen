@@ -226,5 +226,8 @@ verify_jwt = true
 [functions.referral-process-payout-asaas]
 verify_jwt = false
 
+[functions.send-referral-exit-email]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
