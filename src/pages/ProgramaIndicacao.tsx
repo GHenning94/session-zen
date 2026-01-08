@@ -19,9 +19,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { 
   Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, 
-  Users, Crown, Briefcase, Circle, LogOut, ExternalLink, 
+  Users, Crown, Briefcase, Circle, LogOut, 
   CheckCircle2, AlertCircle, Loader2, DollarSign, TrendingUp,
-  Calendar, CreditCard, Building2, ArrowRight, Share2
+  Calendar, CreditCard, Building2, Share2
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,12 +56,6 @@ interface RecentPayout {
   created_at: string;
 }
 
-interface ConnectStatus {
-  has_account: boolean;
-  account_status: string | null;
-  payouts_enabled: boolean;
-  details_submitted: boolean;
-}
 
 const ProgramaIndicacao = () => {
   const { user } = useAuth();
@@ -72,14 +66,13 @@ const ProgramaIndicacao = () => {
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [monthlyHistory, setMonthlyHistory] = useState<MonthlyHistory[]>([]);
   const [recentPayouts, setRecentPayouts] = useState<RecentPayout[]>([]);
-  const [connectStatus, setConnectStatus] = useState<ConnectStatus | null>(null);
   const [hasBankDetails, setHasBankDetails] = useState(false);
-  const [isSettingUpConnect, setIsSettingUpConnect] = useState(false);
+  const [bankDetailsValidated, setBankDetailsValidated] = useState(false);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
+  const [referralCode, setReferralCode] = useState<string>('');
   
-  const referralCode = `REF-${user?.id?.slice(0, 8).toUpperCase() || 'DEFAULT'}`;
-  const inviteLink = `${window.location.origin}/convite/${referralCode}`;
+  const inviteLink = referralCode ? `${window.location.origin}/convite/${referralCode}` : '';
 
   // Carregar todos os dados
   useEffect(() => {
@@ -87,23 +80,23 @@ const ProgramaIndicacao = () => {
       if (!user) return;
       
       try {
-        // Carregar status de parceiro e dados bancários
+        // Carregar status de parceiro, código de indicação e dados bancários
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('is_referral_partner, banco, agencia, conta')
+          .select('is_referral_partner, referral_code, banco, agencia, conta, bank_details_validated')
           .eq('user_id', user.id)
           .single();
         
         if (error) throw error;
         setIsEnrolled(profile?.is_referral_partner || false);
+        setReferralCode(profile?.referral_code || '');
         const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta);
         setHasBankDetails(hasBankData);
+        setBankDetailsValidated(profile?.bank_details_validated || false);
 
         if (profile?.is_referral_partner) {
           // Carregar estatísticas
           await loadStats();
-          // Verificar status do Stripe Connect
-          await loadConnectStatus();
           
           // Se o usuário é parceiro mas não tem dados bancários, criar notificação
           if (!hasBankData) {
@@ -123,7 +116,7 @@ const ProgramaIndicacao = () => {
                 .insert({
                   user_id: user.id,
                   titulo: 'Complete seus dados bancários',
-                  conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=financeiro]',
+                  conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
                 });
             }
           }
@@ -136,11 +129,6 @@ const ProgramaIndicacao = () => {
     };
 
     loadData();
-
-    // Verificar se voltou do onboarding do Stripe
-    if (searchParams.get('refresh') === 'true') {
-      loadConnectStatus();
-    }
   }, [user, searchParams]);
 
   const loadStats = async () => {
@@ -158,16 +146,6 @@ const ProgramaIndicacao = () => {
     }
   };
 
-  const loadConnectStatus = async () => {
-    try {
-      const { data, error } = await supabase.functions.invoke('referral-connect-status');
-      if (error) throw error;
-      setConnectStatus(data);
-    } catch (error) {
-      console.error('Erro ao verificar status do Connect:', error);
-    }
-  };
-
   const handleEnrollment = async () => {
     if (!user) return;
     
@@ -180,14 +158,26 @@ const ProgramaIndicacao = () => {
         colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'],
       });
 
+      // Generate a new unique referral code
+      const { data: newCodeData, error: codeError } = await supabase
+        .rpc('generate_unique_referral_code');
+      
+      if (codeError) throw codeError;
+
+      const newReferralCode = newCodeData as string;
+
       const { error } = await supabase
         .from('profiles')
-        .update({ is_referral_partner: true })
+        .update({ 
+          is_referral_partner: true,
+          referral_code: newReferralCode
+        })
         .eq('user_id', user.id);
       
       if (error) throw error;
       
       setIsEnrolled(true);
+      setReferralCode(newReferralCode);
 
       // Verificar dados bancários
       const { data: profile } = await supabase
@@ -206,7 +196,7 @@ const ProgramaIndicacao = () => {
           .insert({
             user_id: user.id,
             titulo: 'Complete seus dados bancários',
-            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=financeiro]',
+            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
           });
 
         toast({
@@ -222,7 +212,6 @@ const ProgramaIndicacao = () => {
 
       // Carregar dados
       await loadStats();
-      await loadConnectStatus();
     } catch (error) {
       console.error('Erro ao ingressar no programa:', error);
       toast({
@@ -237,10 +226,13 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
-      // 1. Marcar usuário como não-parceiro
+      // 1. Limpar o código de indicação e marcar como não-parceiro
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ is_referral_partner: false })
+        .update({ 
+          is_referral_partner: false,
+          referral_code: null
+        })
         .eq('user_id', user.id);
       
       if (profileError) throw profileError;
@@ -268,10 +260,10 @@ const ProgramaIndicacao = () => {
       
       // 4. Limpar estado local
       setIsEnrolled(false);
+      setReferralCode('');
       setStats(null);
       setMonthlyHistory([]);
       setRecentPayouts([]);
-      setConnectStatus(null);
       
       toast({
         title: "Você deixou o programa",
@@ -284,33 +276,6 @@ const ProgramaIndicacao = () => {
         description: "Não foi possível sair do programa. Tente novamente.",
         variant: "destructive",
       });
-    }
-  };
-
-  const handleSetupConnect = async () => {
-    setIsSettingUpConnect(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('referral-connect-onboard', {
-        body: {
-          return_url: `${window.location.origin}/programa-indicacao`,
-          refresh_url: `${window.location.origin}/programa-indicacao?refresh=true`,
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.onboarding_url) {
-        window.location.href = data.onboarding_url;
-      }
-    } catch (error) {
-      console.error('Erro ao configurar Stripe Connect:', error);
-      toast({
-        title: "Erro",
-        description: "Não foi possível iniciar a configuração. Tente novamente.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSettingUpConnect(false);
     }
   };
 
@@ -697,55 +662,28 @@ const ProgramaIndicacao = () => {
           </Alert>
         )}
 
-        {connectStatus && !connectStatus.has_account && hasBankDetails && (
-          <Alert className="border-blue-500/50 bg-blue-500/10">
-            <CreditCard className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>Configure sua conta de pagamento para receber comissões automaticamente.</span>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={handleSetupConnect}
-                disabled={isSettingUpConnect}
-              >
-                {isSettingUpConnect ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ExternalLink className="w-4 h-4 mr-2" />
-                )}
-                Configurar Stripe
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {connectStatus?.has_account && !connectStatus.payouts_enabled && (
+        {hasBankDetails && !bankDetailsValidated && (
           <Alert className="border-orange-500/50 bg-orange-500/10">
             <AlertCircle className="h-4 w-4 text-orange-500" />
             <AlertDescription className="flex items-center justify-between">
-              <span>Sua conta Stripe precisa de informações adicionais para habilitar pagamentos.</span>
+              <span>Seus dados bancários precisam ser validados para receber pagamentos.</span>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={handleSetupConnect}
-                disabled={isSettingUpConnect}
+                onClick={() => navigate('/configuracoes?tab=bank-details')}
               >
-                {isSettingUpConnect ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <ArrowRight className="w-4 h-4 mr-2" />
-                )}
-                Completar cadastro
+                <Building2 className="w-4 h-4 mr-2" />
+                Validar Dados
               </Button>
             </AlertDescription>
           </Alert>
         )}
 
-        {connectStatus?.payouts_enabled && (
+        {hasBankDetails && bankDetailsValidated && (
           <Alert className="border-green-500/50 bg-green-500/10">
             <CheckCircle2 className="h-4 w-4 text-green-500" />
             <AlertDescription>
-              Sua conta está configurada! Pagamentos serão processados automaticamente.
+              Seus dados bancários estão validados! Pagamentos serão processados automaticamente via PIX.
             </AlertDescription>
           </Alert>
         )}

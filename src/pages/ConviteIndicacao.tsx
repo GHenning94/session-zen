@@ -8,7 +8,6 @@ import { Gift, CheckCircle, Users, Star, ArrowRight, AlertCircle, Copy } from 'l
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { getAvatarSignedUrl } from '@/utils/avatarUtils';
 
 // Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
 const REFERRAL_DISCOUNT_CODE = 'INDICACAO20';
@@ -61,6 +60,7 @@ const ConviteIndicacao = () => {
         localStorage.setItem('referral_code', code);
 
         // Use secure RPC function to get referrer info (doesn't require auth)
+        // The function now returns a table, so we get an array
         const { data: referrerData, error } = await supabase
           .rpc('get_referrer_public_info', { referral_code: code });
 
@@ -72,13 +72,25 @@ const ConviteIndicacao = () => {
 
         console.log('[ConviteIndicacao] Referrer data:', referrerData);
 
-        // Type guard and cast the response
-        const referrer = referrerData as { nome?: string; profissao?: string; avatar_url?: string } | null;
+        // The RPC now returns an array of rows
+        const referrerArray = referrerData as Array<{ nome: string; profissao: string | null; avatar_url: string | null; user_id: string }>;
+        const referrer = referrerArray && referrerArray.length > 0 ? referrerArray[0] : null;
 
         if (referrer && referrer.nome) {
-          // Get signed URL for avatar
-          const signedUrl = await getAvatarSignedUrl(referrer.avatar_url || null);
-          setAvatarSignedUrl(signedUrl);
+          // Get signed URL for avatar using the public edge function
+          if (referrer.avatar_url) {
+            try {
+              const { data: avatarData, error: avatarError } = await supabase.functions.invoke('get-public-avatar', {
+                body: { avatar_path: referrer.avatar_url }
+              });
+              
+              if (!avatarError && avatarData?.signedUrl) {
+                setAvatarSignedUrl(avatarData.signedUrl);
+              }
+            } catch (avatarFetchError) {
+              console.error('[ConviteIndicacao] Error fetching avatar:', avatarFetchError);
+            }
+          }
           
           setReferrerInfo({
             nome: referrer.nome,

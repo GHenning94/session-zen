@@ -1,0 +1,211 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// Validate CPF
+function validateCPF(cpf: string): boolean {
+  cpf = cpf.replace(/[^\d]/g, '');
+  if (cpf.length !== 11) return false;
+  if (/^(\d)\1+$/.test(cpf)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i++) {
+    sum += parseInt(cpf.charAt(i)) * (10 - i);
+  }
+  let remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  if (remainder !== parseInt(cpf.charAt(9))) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i++) {
+    sum += parseInt(cpf.charAt(i)) * (11 - i);
+  }
+  remainder = (sum * 10) % 11;
+  if (remainder === 10 || remainder === 11) remainder = 0;
+  if (remainder !== parseInt(cpf.charAt(10))) return false;
+
+  return true;
+}
+
+// Validate CNPJ
+function validateCNPJ(cnpj: string): boolean {
+  cnpj = cnpj.replace(/[^\d]/g, '');
+  if (cnpj.length !== 14) return false;
+  if (/^(\d)\1+$/.test(cnpj)) return false;
+
+  let size = cnpj.length - 2;
+  let numbers = cnpj.substring(0, size);
+  const digits = cnpj.substring(size);
+  let sum = 0;
+  let pos = size - 7;
+
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  let result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(0))) return false;
+
+  size = size + 1;
+  numbers = cnpj.substring(0, size);
+  sum = 0;
+  pos = size - 7;
+
+  for (let i = size; i >= 1; i--) {
+    sum += parseInt(numbers.charAt(size - i)) * pos--;
+    if (pos < 2) pos = 9;
+  }
+
+  result = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+  if (result !== parseInt(digits.charAt(1))) return false;
+
+  return true;
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseServiceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
+
+    // Get user from auth header
+    const authHeader = req.headers.get("Authorization")!;
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+
+    if (authError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const body = await req.json();
+    const { 
+      tipo_pessoa, 
+      cpf_cnpj, 
+      nome_titular, 
+      banco, 
+      agencia, 
+      conta, 
+      tipo_conta,
+      chave_pix 
+    } = body;
+
+    const errors: string[] = [];
+
+    // Validate tipo_pessoa
+    if (!tipo_pessoa || !['PF', 'PJ'].includes(tipo_pessoa)) {
+      errors.push("Tipo de pessoa inválido");
+    }
+
+    // Validate CPF/CNPJ
+    if (!cpf_cnpj) {
+      errors.push("CPF/CNPJ é obrigatório");
+    } else {
+      const cleanDoc = cpf_cnpj.replace(/[^\d]/g, '');
+      if (tipo_pessoa === 'PF') {
+        if (!validateCPF(cleanDoc)) {
+          errors.push("CPF inválido");
+        }
+      } else if (tipo_pessoa === 'PJ') {
+        if (!validateCNPJ(cleanDoc)) {
+          errors.push("CNPJ inválido");
+        }
+      }
+    }
+
+    // Validate nome_titular
+    if (!nome_titular || nome_titular.trim().length < 3) {
+      errors.push("Nome do titular inválido");
+    }
+
+    // Validate banco
+    if (!banco || banco.trim().length < 2) {
+      errors.push("Banco é obrigatório");
+    }
+
+    // Validate agencia
+    if (!agencia || !/^\d{1,6}(-?\d)?$/.test(agencia.replace(/\s/g, ''))) {
+      errors.push("Agência inválida");
+    }
+
+    // Validate conta
+    if (!conta || !/^\d{3,13}(-?\d)?$/.test(conta.replace(/\s/g, ''))) {
+      errors.push("Conta inválida");
+    }
+
+    // Validate tipo_conta
+    if (!tipo_conta || !['corrente', 'poupanca'].includes(tipo_conta)) {
+      errors.push("Tipo de conta inválido");
+    }
+
+    // Validate chave_pix format if provided
+    if (chave_pix && chave_pix.trim()) {
+      const cleanPix = chave_pix.trim();
+      const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanPix);
+      const isPhone = /^\+?55?\d{10,11}$/.test(cleanPix.replace(/[\s()-]/g, ''));
+      const isCPF = validateCPF(cleanPix);
+      const isCNPJ = validateCNPJ(cleanPix);
+      const isRandom = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(cleanPix);
+
+      if (!isEmail && !isPhone && !isCPF && !isCNPJ && !isRandom) {
+        errors.push("Formato de chave PIX inválido");
+      }
+    }
+
+    if (errors.length > 0) {
+      return new Response(
+        JSON.stringify({ valid: false, errors }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Update profile with validated data
+    const { error: updateError } = await supabase
+      .from("profiles")
+      .update({
+        tipo_pessoa,
+        cpf_cnpj: cpf_cnpj.replace(/[^\d]/g, ''),
+        nome_titular: nome_titular.trim(),
+        banco: banco.trim(),
+        agencia: agencia.trim(),
+        conta: conta.trim(),
+        tipo_conta,
+        chave_pix: chave_pix?.trim() || null,
+        bank_details_validated: true,
+        bank_details_updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", user.id);
+
+    if (updateError) {
+      console.error('[referral-validate-bank-details] Update error:', updateError);
+      return new Response(
+        JSON.stringify({ error: "Erro ao salvar dados bancários" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log('[referral-validate-bank-details] Bank details validated and saved for user:', user.id);
+
+    return new Response(
+      JSON.stringify({ valid: true, message: "Dados bancários validados e salvos com sucesso" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (error) {
+    console.error('[referral-validate-bank-details] Error:', error);
+    return new Response(
+      JSON.stringify({ error: "Internal server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
