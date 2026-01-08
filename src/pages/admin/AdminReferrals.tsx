@@ -1,16 +1,19 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import { AdminLayout } from "@/components/admin/AdminLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
-import { Gift, Loader2, RefreshCcw, Users, DollarSign, TrendingUp, Percent, Clock, UserMinus, UserCheck, CreditCard, AlertCircle } from "lucide-react"
+import { Gift, Loader2, RefreshCcw, Users, DollarSign, TrendingUp, Percent, Clock, UserMinus, UserCheck, CreditCard, AlertCircle, Download, Search, X } from "lucide-react"
 import { adminApiCall } from "@/utils/adminApi"
 import { MetricCard } from "@/components/admin/MetricCard"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
+import * as XLSX from "xlsx"
 
 interface Partner {
   user_id: string
@@ -58,6 +61,14 @@ const AdminReferrals = () => {
   const [referrals, setReferrals] = useState<Referral[]>([])
   const [partners, setPartners] = useState<Partner[]>([])
   const [payouts, setPayouts] = useState<Payout[]>([])
+  
+  // Filters
+  const [partnerSearch, setPartnerSearch] = useState("")
+  const [partnerStatusFilter, setPartnerStatusFilter] = useState<string>("all")
+  const [referralSearch, setReferralSearch] = useState("")
+  const [referralStatusFilter, setReferralStatusFilter] = useState<string>("all")
+  const [payoutSearch, setPayoutSearch] = useState("")
+  const [payoutStatusFilter, setPayoutStatusFilter] = useState<string>("all")
 
   useEffect(() => { fetchData() }, [])
 
@@ -95,6 +106,141 @@ const AdminReferrals = () => {
     }
   }
 
+  // Filtered data
+  const filteredPartners = useMemo(() => {
+    return partners.filter(p => {
+      const matchesSearch = !partnerSearch || 
+        p.nome?.toLowerCase().includes(partnerSearch.toLowerCase()) ||
+        p.referral_code?.toLowerCase().includes(partnerSearch.toLowerCase())
+      const matchesStatus = partnerStatusFilter === "all" || p.status === partnerStatusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [partners, partnerSearch, partnerStatusFilter])
+
+  const filteredReferrals = useMemo(() => {
+    return referrals.filter(r => {
+      const matchesSearch = !referralSearch || 
+        r.referrer_name?.toLowerCase().includes(referralSearch.toLowerCase()) ||
+        r.referred_name?.toLowerCase().includes(referralSearch.toLowerCase())
+      const matchesStatus = referralStatusFilter === "all" || r.status === referralStatusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [referrals, referralSearch, referralStatusFilter])
+
+  const filteredPayouts = useMemo(() => {
+    return payouts.filter(p => {
+      const matchesSearch = !payoutSearch || 
+        p.partner_name?.toLowerCase().includes(payoutSearch.toLowerCase())
+      const matchesStatus = payoutStatusFilter === "all" || p.status === payoutStatusFilter
+      return matchesSearch && matchesStatus
+    })
+  }, [payouts, payoutSearch, payoutStatusFilter])
+
+  // Export functions
+  const exportToExcel = (data: any[], filename: string, sheetName: string) => {
+    const ws = XLSX.utils.json_to_sheet(data)
+    const wb = XLSX.utils.book_new()
+    XLSX.utils.book_append_sheet(wb, ws, sheetName)
+    XLSX.writeFile(wb, `${filename}_${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+    toast.success(`Arquivo ${filename} exportado com sucesso!`)
+  }
+
+  const exportPartners = () => {
+    const data = filteredPartners.map(p => ({
+      'Nome': p.nome || 'N/A',
+      'Código': p.referral_code || '-',
+      'Status': p.status === 'active' ? 'Ativo' : p.status === 'cooldown' ? 'Em Cooldown' : 'Inativo',
+      'Dias Restantes Cooldown': p.days_remaining || '-',
+      'Fim do Cooldown': p.cooldown_end_date ? formatDate(p.cooldown_end_date) : '-',
+      'Total Indicações': p.total_referrals,
+      'Indicações Ativas': p.active_referrals,
+      'Comissão Total (R$)': p.total_commission_earned.toFixed(2),
+      'Stripe Connect': p.stripe_connect_onboarded ? 'Configurado' : p.stripe_connect_account_id ? 'Pendente' : 'Não configurado'
+    }))
+    exportToExcel(data, 'parceiros_indicacao', 'Parceiros')
+  }
+
+  const exportReferrals = () => {
+    const data = filteredReferrals.map(r => ({
+      'Data': formatDateTime(r.created_at),
+      'Indicador': r.referrer_name,
+      'Indicado': r.referred_name,
+      'Plano': r.subscription_plan || 'N/A',
+      'Comissão (R$)': ((r.commission_amount || 0) / 100).toFixed(2),
+      'Status': r.status === 'active' ? 'Ativo' : r.status === 'pending' ? 'Pendente' : r.status
+    }))
+    exportToExcel(data, 'indicacoes', 'Indicações')
+  }
+
+  const exportPayouts = () => {
+    const data = filteredPayouts.map(p => ({
+      'Data Criação': formatDateTime(p.created_at),
+      'Parceiro': p.partner_name,
+      'Valor (R$)': ((p.amount || 0) / 100).toFixed(2),
+      'Status': p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : p.status,
+      'Data Pagamento': p.paid_at ? formatDateTime(p.paid_at) : '-'
+    }))
+    exportToExcel(data, 'pagamentos_comissao', 'Pagamentos')
+  }
+
+  const exportAll = () => {
+    const wb = XLSX.utils.book_new()
+    
+    // Partners sheet
+    const partnersData = partners.map(p => ({
+      'Nome': p.nome || 'N/A',
+      'Código': p.referral_code || '-',
+      'Status': p.status === 'active' ? 'Ativo' : p.status === 'cooldown' ? 'Em Cooldown' : 'Inativo',
+      'Dias Restantes Cooldown': p.days_remaining || '-',
+      'Fim do Cooldown': p.cooldown_end_date ? formatDate(p.cooldown_end_date) : '-',
+      'Total Indicações': p.total_referrals,
+      'Indicações Ativas': p.active_referrals,
+      'Comissão Total (R$)': p.total_commission_earned.toFixed(2),
+      'Stripe Connect': p.stripe_connect_onboarded ? 'Configurado' : p.stripe_connect_account_id ? 'Pendente' : 'Não configurado'
+    }))
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(partnersData), 'Parceiros')
+    
+    // Referrals sheet
+    const referralsData = referrals.map(r => ({
+      'Data': formatDateTime(r.created_at),
+      'Indicador': r.referrer_name,
+      'Indicado': r.referred_name,
+      'Plano': r.subscription_plan || 'N/A',
+      'Comissão (R$)': ((r.commission_amount || 0) / 100).toFixed(2),
+      'Status': r.status === 'active' ? 'Ativo' : r.status === 'pending' ? 'Pendente' : r.status
+    }))
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(referralsData), 'Indicações')
+    
+    // Payouts sheet
+    const payoutsData = payouts.map(p => ({
+      'Data Criação': formatDateTime(p.created_at),
+      'Parceiro': p.partner_name,
+      'Valor (R$)': ((p.amount || 0) / 100).toFixed(2),
+      'Status': p.status === 'paid' ? 'Pago' : p.status === 'pending' ? 'Pendente' : p.status,
+      'Data Pagamento': p.paid_at ? formatDateTime(p.paid_at) : '-'
+    }))
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(payoutsData), 'Pagamentos')
+    
+    // Stats sheet
+    const statsData = [{
+      'Parceiros Ativos': stats.activeReferrers || 0,
+      'Em Cooldown': stats.inCooldown || 0,
+      'Inativos': stats.inactivePartners || 0,
+      'Total Parceiros': stats.totalPartners || 0,
+      'Clientes Indicados': stats.totalReferred || 0,
+      'Indicações Ativas': stats.activeReferrals || 0,
+      'Taxa de Conversão (%)': (stats.conversionRate || 0).toFixed(1),
+      'MRR de Indicações (R$)': (stats.referralMrr || 0).toFixed(2),
+      'Comissão Total (R$)': (stats.totalCommission || 0).toFixed(2),
+      'Comissão Paga (R$)': (stats.paidCommission || 0).toFixed(2),
+      'Comissão Pendente (R$)': (stats.pendingCommission || 0).toFixed(2)
+    }]
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(statsData), 'Resumo')
+    
+    XLSX.writeFile(wb, `programa_indicacao_completo_${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+    toast.success('Relatório completo exportado com sucesso!')
+  }
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -114,6 +260,19 @@ const AdminReferrals = () => {
     }
   }
 
+  const clearFilters = (tab: 'partners' | 'referrals' | 'payouts') => {
+    if (tab === 'partners') {
+      setPartnerSearch("")
+      setPartnerStatusFilter("all")
+    } else if (tab === 'referrals') {
+      setReferralSearch("")
+      setReferralStatusFilter("all")
+    } else {
+      setPayoutSearch("")
+      setPayoutStatusFilter("all")
+    }
+  }
+
   if (isLoading) {
     return (
       <AdminLayout>
@@ -128,7 +287,7 @@ const AdminReferrals = () => {
     <AdminLayout>
       <div className="p-4 md:p-6 space-y-6 max-w-7xl mx-auto">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-3">
               <Gift className="h-8 w-8 text-orange-500" />
@@ -136,10 +295,16 @@ const AdminReferrals = () => {
             </h1>
             <p className="text-muted-foreground">Métricas completas e gestão do programa de afiliados</p>
           </div>
-          <Button onClick={fetchData} variant="outline" size="sm">
-            <RefreshCcw className="h-4 w-4 mr-2" />
-            Atualizar
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={exportAll} variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Exportar Tudo
+            </Button>
+            <Button onClick={fetchData} variant="outline" size="sm">
+              <RefreshCcw className="h-4 w-4 mr-2" />
+              Atualizar
+            </Button>
+          </div>
         </div>
 
         {/* Main Stats */}
@@ -234,17 +399,54 @@ const AdminReferrals = () => {
         {/* Tabs for detailed data */}
         <Tabs defaultValue="partners" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="partners">Parceiros ({partners.length})</TabsTrigger>
-            <TabsTrigger value="referrals">Indicações ({referrals.length})</TabsTrigger>
-            <TabsTrigger value="payouts">Pagamentos ({payouts.length})</TabsTrigger>
+            <TabsTrigger value="partners">Parceiros ({filteredPartners.length})</TabsTrigger>
+            <TabsTrigger value="referrals">Indicações ({filteredReferrals.length})</TabsTrigger>
+            <TabsTrigger value="payouts">Pagamentos ({filteredPayouts.length})</TabsTrigger>
           </TabsList>
 
           {/* Partners Tab */}
           <TabsContent value="partners">
             <Card>
               <CardHeader>
-                <CardTitle>Parceiros do Programa</CardTitle>
-                <CardDescription>Todos os usuários que participam ou participaram do programa de indicação</CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <CardTitle>Parceiros do Programa</CardTitle>
+                    <CardDescription>Todos os usuários que participam ou participaram do programa de indicação</CardDescription>
+                  </div>
+                  <Button onClick={exportPartners} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por nome ou código..."
+                      value={partnerSearch}
+                      onChange={(e) => setPartnerSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={partnerStatusFilter} onValueChange={setPartnerStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="cooldown">Em Cooldown</SelectItem>
+                      <SelectItem value="inactive">Inativo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(partnerSearch || partnerStatusFilter !== "all") && (
+                    <Button variant="ghost" size="sm" onClick={() => clearFilters('partners')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -260,13 +462,13 @@ const AdminReferrals = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {partners.length === 0 ? (
+                    {filteredPartners.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                          Nenhum parceiro encontrado
+                          {partners.length === 0 ? 'Nenhum parceiro encontrado' : 'Nenhum resultado para os filtros aplicados'}
                         </TableCell>
                       </TableRow>
-                    ) : partners.map((partner) => (
+                    ) : filteredPartners.map((partner) => (
                       <TableRow key={partner.user_id}>
                         <TableCell className="font-medium">{partner.nome || 'N/A'}</TableCell>
                         <TableCell>
@@ -325,8 +527,45 @@ const AdminReferrals = () => {
           <TabsContent value="referrals">
             <Card>
               <CardHeader>
-                <CardTitle>Histórico de Indicações</CardTitle>
-                <CardDescription>Todas as indicações realizadas no programa</CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <CardTitle>Histórico de Indicações</CardTitle>
+                    <CardDescription>Todas as indicações realizadas no programa</CardDescription>
+                  </div>
+                  <Button onClick={exportReferrals} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por indicador ou indicado..."
+                      value={referralSearch}
+                      onChange={(e) => setReferralSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={referralStatusFilter} onValueChange={setReferralStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      <SelectItem value="active">Ativo</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="cancelled">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(referralSearch || referralStatusFilter !== "all") && (
+                    <Button variant="ghost" size="sm" onClick={() => clearFilters('referrals')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -341,13 +580,13 @@ const AdminReferrals = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {referrals.length === 0 ? (
+                    {filteredReferrals.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                          Nenhuma indicação encontrada
+                          {referrals.length === 0 ? 'Nenhuma indicação encontrada' : 'Nenhum resultado para os filtros aplicados'}
                         </TableCell>
                       </TableRow>
-                    ) : referrals.map((referral) => (
+                    ) : filteredReferrals.map((referral) => (
                       <TableRow key={referral.id}>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDateTime(referral.created_at)}
@@ -371,8 +610,45 @@ const AdminReferrals = () => {
           <TabsContent value="payouts">
             <Card>
               <CardHeader>
-                <CardTitle>Histórico de Pagamentos</CardTitle>
-                <CardDescription>Todos os pagamentos de comissões processados</CardDescription>
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                  <div>
+                    <CardTitle>Histórico de Pagamentos</CardTitle>
+                    <CardDescription>Todos os pagamentos de comissões processados</CardDescription>
+                  </div>
+                  <Button onClick={exportPayouts} variant="outline" size="sm">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
+                {/* Filters */}
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                  <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Buscar por parceiro..."
+                      value={payoutSearch}
+                      onChange={(e) => setPayoutSearch(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  <Select value={payoutStatusFilter} onValueChange={setPayoutStatusFilter}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos os status</SelectItem>
+                      <SelectItem value="pending">Pendente</SelectItem>
+                      <SelectItem value="paid">Pago</SelectItem>
+                      <SelectItem value="cancelled">Cancelado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {(payoutSearch || payoutStatusFilter !== "all") && (
+                    <Button variant="ghost" size="sm" onClick={() => clearFilters('payouts')}>
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar
+                    </Button>
+                  )}
+                </div>
               </CardHeader>
               <CardContent>
                 <Table>
@@ -386,13 +662,13 @@ const AdminReferrals = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {payouts.length === 0 ? (
+                    {filteredPayouts.length === 0 ? (
                       <TableRow>
                         <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                          Nenhum pagamento encontrado
+                          {payouts.length === 0 ? 'Nenhum pagamento encontrado' : 'Nenhum resultado para os filtros aplicados'}
                         </TableCell>
                       </TableRow>
-                    ) : payouts.map((payout) => (
+                    ) : filteredPayouts.map((payout) => (
                       <TableRow key={payout.id}>
                         <TableCell className="text-sm text-muted-foreground">
                           {formatDateTime(payout.created_at)}
