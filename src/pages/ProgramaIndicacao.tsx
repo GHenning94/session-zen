@@ -646,36 +646,46 @@ const ProgramaIndicacao = () => {
 
         {/* Alertas de configuração */}
         {!hasBankDetails && (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10">
-            <AlertCircle className="h-4 w-4 text-yellow-500" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>Complete seus dados bancários para receber comissões.</span>
+          <Alert className="border-yellow-500/50 bg-yellow-500/10 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <AlertCircle className="h-5 w-5 text-yellow-500 flex-shrink-0" />
+                <span className="text-sm font-medium truncate md:whitespace-normal">
+                  Complete seus dados bancários para receber comissões.
+                </span>
+              </div>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate('/configuracoes?tab=bank-details')}
+                className="flex-shrink-0 whitespace-nowrap"
               >
                 <Building2 className="w-4 h-4 mr-2" />
                 Configurar
               </Button>
-            </AlertDescription>
+            </div>
           </Alert>
         )}
 
         {hasBankDetails && !bankDetailsValidated && (
-          <Alert className="border-orange-500/50 bg-orange-500/10">
-            <AlertCircle className="h-4 w-4 text-orange-500" />
-            <AlertDescription className="flex items-center justify-between">
-              <span>Seus dados bancários precisam ser validados para receber pagamentos.</span>
+          <Alert className="border-orange-500/50 bg-orange-500/10 py-2">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <AlertCircle className="h-5 w-5 text-orange-500 flex-shrink-0" />
+                <span className="text-sm font-medium truncate md:whitespace-normal">
+                  Seus dados bancários precisam ser validados para receber pagamentos.
+                </span>
+              </div>
               <Button 
                 variant="outline" 
                 size="sm"
                 onClick={() => navigate('/configuracoes?tab=bank-details')}
+                className="flex-shrink-0 whitespace-nowrap"
               >
                 <Building2 className="w-4 h-4 mr-2" />
                 Validar Dados
               </Button>
-            </AlertDescription>
+            </div>
           </Alert>
         )}
 
