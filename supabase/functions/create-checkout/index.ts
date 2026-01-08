@@ -118,11 +118,27 @@ serve(async (req) => {
         if (referralData?.first_payment_date) {
           console.log('[create-checkout] ⚠️ Usuário já utilizou o cupom de indicação anteriormente');
         } else {
-          // Verificar se o cupom existe no Stripe
-          const coupon = await stripe.coupons.retrieve('INDICACAO20').catch(() => null);
-          if (coupon && coupon.valid) {
-            discounts = [{ coupon: 'INDICACAO20' }];
-            console.log('[create-checkout] 🎁 Aplicando desconto de indicação automaticamente');
+          // Buscar promotion code ao invés de coupon (Fix Item 3)
+          console.log('[create-checkout] 🔍 Buscando promotion code INDICACAO20...');
+          const promotionCodes = await stripe.promotionCodes.list({
+            code: 'INDICACAO20',
+            active: true,
+            limit: 1
+          }).catch((e) => {
+            console.log('[create-checkout] ⚠️ Erro ao buscar promotion code:', e);
+            return { data: [] };
+          });
+          
+          if (promotionCodes.data.length > 0) {
+            discounts = [{ promotion_code: promotionCodes.data[0].id }];
+            console.log('[create-checkout] 🎁 Aplicando promotion code:', promotionCodes.data[0].id);
+          } else {
+            // Fallback: tentar com coupon direto
+            const coupon = await stripe.coupons.retrieve('INDICACAO20').catch(() => null);
+            if (coupon && coupon.valid) {
+              discounts = [{ coupon: 'INDICACAO20' }];
+              console.log('[create-checkout] 🎁 Aplicando desconto de indicação (coupon)');
+            }
           }
         }
       } catch (e) {
@@ -136,7 +152,7 @@ serve(async (req) => {
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
       success_url: `${origin}/dashboard?payment=success`,
-      cancel_url: `${origin}/welcome?payment=cancelled`,
+      cancel_url: `${origin}/dashboard?payment=cancelled`,
       metadata: sessionMetadata,
       locale: 'pt-BR',
       custom_text: {

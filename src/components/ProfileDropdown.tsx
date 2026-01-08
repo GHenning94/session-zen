@@ -157,19 +157,33 @@ export const ProfileDropdown = () => {
     if (!user) return
 
     try {
+      // Filtrar cupons expirados automaticamente (Fix Item 2)
+      const now = new Date().toISOString()
       const { data, error } = await supabase
         .from('user_coupons')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_used', false)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
         .order('created_at', { ascending: false })
+
+      // Também buscar cupons usados para mostrar histórico
+      const { data: usedData } = await supabase
+        .from('user_coupons')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_used', true)
+        .order('created_at', { ascending: false })
+        .limit(5)
 
       if (error) {
         console.error('[ProfileDropdown] Error loading coupons:', error)
         return
       }
 
-      console.log('[ProfileDropdown] Coupons loaded:', data)
-      setCoupons(data || [])
+      const allCoupons = [...(data || []), ...(usedData || [])]
+      console.log('[ProfileDropdown] Coupons loaded:', allCoupons.length)
+      setCoupons(allCoupons)
 
       // Check if there are any new unseen coupons (not used and not seen)
       const hasNew = (data || []).some(coupon => 
@@ -184,21 +198,23 @@ export const ProfileDropdown = () => {
   const handleCouponHover = (couponCode: string) => {
     if (!user) return
     
-    // Marcar o cupom como visto
     const seenCouponsKey = `seen_coupons_${user.id}`
-    const currentSeenCoupons = [...seenCoupons]
     
-    if (!currentSeenCoupons.includes(couponCode)) {
-      currentSeenCoupons.push(couponCode)
-      localStorage.setItem(seenCouponsKey, JSON.stringify(currentSeenCoupons))
-      setSeenCoupons(currentSeenCoupons)
+    // Usar functional update para evitar stale closure
+    setSeenCoupons(prev => {
+      if (prev.includes(couponCode)) return prev
       
-      // Check if there are still unseen coupons
+      const updated = [...prev, couponCode]
+      localStorage.setItem(seenCouponsKey, JSON.stringify(updated))
+      
+      // Recalcular hasNewCoupon imediatamente com valores atualizados
       const stillHasNew = coupons.some(coupon => 
-        !coupon.is_used && !currentSeenCoupons.includes(coupon.code)
+        !coupon.is_used && !updated.includes(coupon.code)
       )
       setHasNewCoupon(stillHasNew)
-    }
+      
+      return updated
+    })
   }
 
   const handleCopyCode = async (code: string) => {
