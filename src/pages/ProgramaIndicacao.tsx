@@ -158,26 +158,36 @@ const ProgramaIndicacao = () => {
         colors: ['#3b82f6', '#60a5fa', '#93c5fd', '#1d4ed8', '#2563eb'],
       });
 
-      // Generate a new unique referral code
-      const { data: newCodeData, error: codeError } = await supabase
-        .rpc('generate_unique_referral_code');
-      
-      if (codeError) throw codeError;
+      // Verificar se já existe um código de indicação (usuário reentrando)
+      const { data: existingProfile } = await supabase
+        .from('profiles')
+        .select('referral_code')
+        .eq('user_id', user.id)
+        .single();
 
-      const newReferralCode = newCodeData as string;
+      let finalReferralCode = existingProfile?.referral_code;
+
+      // Só gera novo código se não existir um
+      if (!finalReferralCode) {
+        const { data: newCodeData, error: codeError } = await supabase
+          .rpc('generate_unique_referral_code');
+        
+        if (codeError) throw codeError;
+        finalReferralCode = newCodeData as string;
+      }
 
       const { error } = await supabase
         .from('profiles')
         .update({ 
           is_referral_partner: true,
-          referral_code: newReferralCode
+          referral_code: finalReferralCode
         })
         .eq('user_id', user.id);
       
       if (error) throw error;
       
       setIsEnrolled(true);
-      setReferralCode(newReferralCode);
+      setReferralCode(finalReferralCode);
 
       // Verificar dados bancários
       const { data: profile } = await supabase
@@ -226,48 +236,27 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
-      // 1. Limpar o código de indicação e marcar como não-parceiro
+      // Apenas desativar o parceiro, mantendo os referrals existentes intactos
+      // Os indicados continuam com seus descontos válidos
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
-          is_referral_partner: false,
-          referral_code: null
+          is_referral_partner: false
+          // NÃO limpa referral_code para manter histórico e links de desconto funcionando
         })
         .eq('user_id', user.id);
       
       if (profileError) throw profileError;
-
-      // 2. Cancelar todas as indicações ativas (expirar o link)
-      const { error: referralsError } = await supabase
-        .from('referrals')
-        .update({ status: 'expired' })
-        .eq('referrer_user_id', user.id);
       
-      if (referralsError) {
-        console.error('Erro ao expirar referrals:', referralsError);
-      }
-
-      // 3. Cancelar pagamentos pendentes
-      const { error: payoutsError } = await supabase
-        .from('referral_payouts')
-        .update({ status: 'cancelled' })
-        .eq('referrer_user_id', user.id)
-        .eq('status', 'pending');
-      
-      if (payoutsError) {
-        console.error('Erro ao cancelar payouts:', payoutsError);
-      }
-      
-      // 4. Limpar estado local
+      // Limpar estado local
       setIsEnrolled(false);
-      setReferralCode('');
       setStats(null);
       setMonthlyHistory([]);
       setRecentPayouts([]);
       
       toast({
         title: "Você deixou o programa",
-        description: "Suas indicações foram expiradas. Ao reingressar, um novo link será gerado.",
+        description: "Os descontos dos seus indicados continuam válidos. Você pode reingressar a qualquer momento.",
       });
     } catch (error) {
       console.error('Erro ao sair do programa:', error);
