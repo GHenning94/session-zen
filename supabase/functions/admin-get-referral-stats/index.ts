@@ -65,8 +65,18 @@ Deno.serve(async (req) => {
     const { data: payouts, error: payoutsError } = await supabaseClient
       .from('referral_payouts')
       .select('*')
+      .order('created_at', { ascending: false })
 
     if (payoutsError) throw payoutsError
+
+    // Get all referral partner profiles (is_referral_partner = true OR left_referral_program_at is not null)
+    const { data: partnerProfiles, error: partnersError } = await supabaseClient
+      .from('profiles')
+      .select('user_id, nome, is_referral_partner, referral_code, left_referral_program_at, stripe_connect_account_id, stripe_connect_onboarded, created_at')
+      .or('is_referral_partner.eq.true,left_referral_program_at.not.is.null')
+      .order('created_at', { ascending: false })
+
+    if (partnersError) throw partnersError
 
     // Get user profiles for referrer and referred names
     const allUserIds = [
@@ -93,8 +103,49 @@ Deno.serve(async (req) => {
       referred_name: profilesMap[r.referred_user_id]?.nome || 'Usuário'
     })) || []
 
+    // Calculate cooldown status for partners
+    const now = new Date()
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
+    
+    const enrichedPartners = partnerProfiles?.map(p => {
+      let cooldownStatus = 'none'
+      let cooldownEndDate = null
+      let daysRemaining = null
+      
+      if (p.left_referral_program_at) {
+        const leftDate = new Date(p.left_referral_program_at)
+        const cooldownEnd = new Date(leftDate.getTime() + thirtyDaysMs)
+        cooldownEndDate = cooldownEnd.toISOString()
+        
+        if (cooldownEnd > now) {
+          cooldownStatus = 'active'
+          daysRemaining = Math.ceil((cooldownEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000))
+        } else {
+          cooldownStatus = 'expired'
+        }
+      }
+      
+      // Count referrals for this partner
+      const partnerReferrals = referrals?.filter(r => r.referrer_user_id === p.user_id) || []
+      const activePartnerReferrals = partnerReferrals.filter(r => r.status === 'active')
+      const totalCommissionEarned = partnerReferrals.reduce((sum, r) => sum + (r.commission_amount || 0), 0)
+      
+      return {
+        ...p,
+        status: p.is_referral_partner ? 'active' : (cooldownStatus === 'active' ? 'cooldown' : 'inactive'),
+        cooldown_status: cooldownStatus,
+        cooldown_end_date: cooldownEndDate,
+        days_remaining: daysRemaining,
+        total_referrals: partnerReferrals.length,
+        active_referrals: activePartnerReferrals.length,
+        total_commission_earned: totalCommissionEarned / 100
+      }
+    }) || []
+
     // Calculate stats
-    const activeReferrers = new Set(referrals?.map(r => r.referrer_user_id) || []).size
+    const activeReferrers = partnerProfiles?.filter(p => p.is_referral_partner).length || 0
+    const inCooldown = enrichedPartners.filter(p => p.cooldown_status === 'active').length
+    const inactivePartners = enrichedPartners.filter(p => p.status === 'inactive').length
     const totalReferred = referrals?.length || 0
     const activeReferrals = referrals?.filter(r => r.status === 'active').length || 0
     const conversionRate = totalReferred > 0 ? (activeReferrals / totalReferred) * 100 : 0
@@ -125,14 +176,24 @@ Deno.serve(async (req) => {
         success: true,
         stats: {
           activeReferrers,
+          inCooldown,
+          inactivePartners,
+          totalPartners: partnerProfiles?.length || 0,
           totalReferred,
+          activeReferrals,
           conversionRate,
           referralMrr,
-          totalCommission: totalCommission / 100, // Convert from cents
+          totalCommission: totalCommission / 100,
           paidCommission: paidCommission / 100,
-          pendingCommission: pendingCommission / 100
+          pendingCommission: pendingCommission / 100,
+          totalPayouts: payouts?.length || 0
         },
-        referrals: enrichedReferrals
+        referrals: enrichedReferrals,
+        partners: enrichedPartners,
+        payouts: payouts?.map(p => ({
+          ...p,
+          partner_name: profilesMap[p.user_id]?.nome || 'Usuário'
+        })) || []
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
