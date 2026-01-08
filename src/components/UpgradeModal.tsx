@@ -52,7 +52,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Suporte por email'
       ],
       recommended: currentPlan === 'basico',
-      stripePrice: 'price_1RowvqFeTymAqTGEU6jkKtXi'
+      stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb'
     },
     {
       name: 'Premium',
