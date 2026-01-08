@@ -120,24 +120,35 @@ serve(async (req) => {
         } else {
           // Buscar promotion code ao invés de coupon (Fix Item 3)
           console.log('[create-checkout] 🔍 Buscando promotion code INDICACAO20...');
+          
+          // Primeiro tentar promotion code (o que clientes digitam)
           const promotionCodes = await stripe.promotionCodes.list({
             code: 'INDICACAO20',
             active: true,
             limit: 1
           }).catch((e) => {
-            console.log('[create-checkout] ⚠️ Erro ao buscar promotion code:', e);
+            console.log('[create-checkout] ⚠️ Erro ao buscar promotion code:', e.message);
             return { data: [] };
           });
           
+          console.log('[create-checkout] 📋 Promotion codes encontrados:', promotionCodes.data.length);
+          
           if (promotionCodes.data.length > 0) {
             discounts = [{ promotion_code: promotionCodes.data[0].id }];
-            console.log('[create-checkout] 🎁 Aplicando promotion code:', promotionCodes.data[0].id);
+            console.log('[create-checkout] 🎁 Aplicando promotion code:', promotionCodes.data[0].id, promotionCodes.data[0].code);
           } else {
-            // Fallback: tentar com coupon direto
-            const coupon = await stripe.coupons.retrieve('INDICACAO20').catch(() => null);
+            // Fallback: tentar aplicar coupon diretamente (funciona se for aplicação automática)
+            console.log('[create-checkout] 🔍 Buscando coupon INDICACAO20 como fallback...');
+            const coupon = await stripe.coupons.retrieve('INDICACAO20').catch((e) => {
+              console.log('[create-checkout] ⚠️ Coupon não encontrado:', e.message);
+              return null;
+            });
+            
             if (coupon && coupon.valid) {
               discounts = [{ coupon: 'INDICACAO20' }];
-              console.log('[create-checkout] 🎁 Aplicando desconto de indicação (coupon)');
+              console.log('[create-checkout] 🎁 Aplicando coupon diretamente:', coupon.id, coupon.percent_off + '%');
+            } else {
+              console.log('[create-checkout] ❌ Nenhum cupom válido encontrado para INDICACAO20');
             }
           }
         }
