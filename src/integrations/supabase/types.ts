@@ -893,6 +893,7 @@ export type Database = {
           first_login_completed: boolean | null
           id: string
           is_referral_partner: boolean | null
+          left_referral_program_at: string | null
           nome: string
           nome_titular: string | null
           pending_new_email: string | null
@@ -932,6 +933,7 @@ export type Database = {
           first_login_completed?: boolean | null
           id?: string
           is_referral_partner?: boolean | null
+          left_referral_program_at?: string | null
           nome: string
           nome_titular?: string | null
           pending_new_email?: string | null
@@ -971,6 +973,7 @@ export type Database = {
           first_login_completed?: boolean | null
           id?: string
           is_referral_partner?: boolean | null
+          left_referral_program_at?: string | null
           nome?: string
           nome_titular?: string | null
           pending_new_email?: string | null

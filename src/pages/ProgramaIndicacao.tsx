@@ -71,6 +71,8 @@ const ProgramaIndicacao = () => {
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [referralCode, setReferralCode] = useState<string>('');
+  const [cooldownEndDate, setCooldownEndDate] = useState<Date | null>(null);
+  const [userEmail, setUserEmail] = useState<string>('');
   
   const inviteLink = referralCode ? `${window.location.origin}/convite/${referralCode}` : '';
 
@@ -80,10 +82,16 @@ const ProgramaIndicacao = () => {
       if (!user) return;
       
       try {
-        // Carregar status de parceiro, código de indicação e dados bancários
+        // Carregar email do usuário
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        if (authUser?.email) {
+          setUserEmail(authUser.email);
+        }
+
+        // Carregar status de parceiro, código de indicação, dados bancários e data de saída
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('is_referral_partner, referral_code, banco, agencia, conta, bank_details_validated')
+          .select('is_referral_partner, referral_code, banco, agencia, conta, bank_details_validated, left_referral_program_at, nome')
           .eq('user_id', user.id)
           .single();
         
@@ -93,6 +101,19 @@ const ProgramaIndicacao = () => {
         const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta);
         setHasBankDetails(hasBankData);
         setBankDetailsValidated(profile?.bank_details_validated || false);
+
+        // Verificar cooldown de 30 dias
+        if (profile?.left_referral_program_at && !profile?.is_referral_partner) {
+          const leftDate = new Date(profile.left_referral_program_at);
+          const cooldownEnd = new Date(leftDate.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 dias
+          if (cooldownEnd > new Date()) {
+            setCooldownEndDate(cooldownEnd);
+          } else {
+            setCooldownEndDate(null);
+          }
+        } else {
+          setCooldownEndDate(null);
+        }
 
         if (profile?.is_referral_partner) {
           // Carregar estatísticas
@@ -148,6 +169,17 @@ const ProgramaIndicacao = () => {
 
   const handleEnrollment = async () => {
     if (!user) return;
+
+    // Verificar cooldown de 30 dias
+    if (cooldownEndDate && cooldownEndDate > new Date()) {
+      const daysRemaining = Math.ceil((cooldownEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+      toast({
+        title: "Período de carência ativo",
+        description: `Você poderá reingressar no programa em ${daysRemaining} dia(s).`,
+        variant: "destructive",
+      });
+      return;
+    }
     
     try {
       // Dispara confetes
@@ -165,11 +197,13 @@ const ProgramaIndicacao = () => {
       if (codeError) throw codeError;
       const newReferralCode = newCodeData as string;
 
+      // Limpar data de saída ao reingressar
       const { error } = await supabase
         .from('profiles')
         .update({ 
           is_referral_partner: true,
-          referral_code: newReferralCode
+          referral_code: newReferralCode,
+          left_referral_program_at: null
         })
         .eq('user_id', user.id);
       
@@ -177,6 +211,7 @@ const ProgramaIndicacao = () => {
       
       setIsEnrolled(true);
       setReferralCode(newReferralCode);
+      setCooldownEndDate(null);
 
       // Verificar dados bancários
       const { data: profile } = await supabase
@@ -225,12 +260,22 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
+      // Obter nome do usuário para o email
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('nome')
+        .eq('user_id', user.id)
+        .single();
+      
+      const userName = profile?.nome || 'Usuário';
+
       // 1. Desativar o parceiro, limpar o código e registrar data de saída para cooldown
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
           is_referral_partner: false,
-          referral_code: null // Invalida o link de convite
+          referral_code: null, // Invalida o link de convite
+          left_referral_program_at: new Date().toISOString() // Registrar data de saída para cooldown
         })
         .eq('user_id', user.id);
       
@@ -238,18 +283,21 @@ const ProgramaIndicacao = () => {
 
       // 2. Cancelar todas as comissões pendentes (conforme regras do programa)
       // Comissões já pagas não são afetadas
-      const { error: payoutsError } = await supabase
+      const { data: cancelledPayouts, error: payoutsError } = await supabase
         .from('referral_payouts')
         .update({ 
           status: 'cancelled',
           failure_reason: 'Usuário deixou o programa de indicação'
         })
         .eq('referrer_user_id', user.id)
-        .eq('status', 'pending');
+        .eq('status', 'pending')
+        .select('id');
       
       if (payoutsError) {
         console.error('Erro ao cancelar comissões pendentes:', payoutsError);
       }
+
+      const pendingCommissionsCancelled = (cancelledPayouts?.length || 0) > 0;
 
       // 3. Marcar referrals existentes como inativos (o parceiro não receberá mais comissões)
       // Os descontos dos indicados continuam válidos (status não é alterado para 'expired')
@@ -262,17 +310,39 @@ const ProgramaIndicacao = () => {
       if (referralsError) {
         console.error('Erro ao atualizar referrals:', referralsError);
       }
+
+      // 4. Enviar email de confirmação de saída
+      try {
+        await supabase.functions.invoke('send-referral-exit-email', {
+          body: {
+            userId: user.id,
+            userName,
+            userEmail,
+            pendingCommissionsCancelled,
+            totalReferrals: stats?.total_referrals || 0
+          }
+        });
+        console.log('Email de saída enviado com sucesso');
+      } catch (emailError) {
+        console.error('Erro ao enviar email de saída:', emailError);
+        // Não bloquear a saída se o email falhar
+      }
       
-      // 4. Limpar estado local completamente
+      // 5. Limpar estado local completamente
       setIsEnrolled(false);
       setReferralCode('');
       setStats(null);
       setMonthlyHistory([]);
       setRecentPayouts([]);
       
+      // Calcular data de fim do cooldown
+      const cooldownEnd = new Date();
+      cooldownEnd.setDate(cooldownEnd.getDate() + 30);
+      setCooldownEndDate(cooldownEnd);
+      
       toast({
         title: "Você deixou o programa",
-        description: "Seu link foi desativado e comissões pendentes foram canceladas. Os descontos dos seus indicados permanecem válidos.",
+        description: "Seu link foi desativado e comissões pendentes foram canceladas. Um email de confirmação foi enviado.",
       });
     } catch (error) {
       console.error('Erro ao sair do programa:', error);
@@ -484,14 +554,34 @@ const ProgramaIndicacao = () => {
                       Planos mensais: 30% no 1º mês e 15% nos seguintes. Planos anuais: 20%.
                     </p>
                   </div>
+
+                  {/* Aviso de Cooldown */}
+                  {cooldownEndDate && cooldownEndDate > new Date() && (
+                    <Alert className="border-amber-500/50 bg-amber-500/10">
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                      <AlertDescription className="text-amber-700 dark:text-amber-300">
+                        <strong>Período de carência ativo.</strong> Você poderá reingressar no programa em{' '}
+                        <strong>
+                          {cooldownEndDate.toLocaleDateString('pt-BR', { 
+                            day: '2-digit', 
+                            month: '2-digit', 
+                            year: 'numeric' 
+                          })}
+                        </strong>.
+                      </AlertDescription>
+                    </Alert>
+                  )}
                   
                   <Button 
                     onClick={handleEnrollment}
                     size="lg" 
                     className="w-full sm:w-auto"
+                    disabled={!!(cooldownEndDate && cooldownEndDate > new Date())}
                   >
                     <Gift className="w-5 h-5 mr-2" />
-                    Ingressar no Programa de Indicação
+                    {cooldownEndDate && cooldownEndDate > new Date() 
+                      ? 'Aguardando período de carência' 
+                      : 'Ingressar no Programa de Indicação'}
                   </Button>
                   
                   <p className="text-sm text-muted-foreground">
