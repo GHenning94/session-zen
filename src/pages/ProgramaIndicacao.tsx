@@ -109,7 +109,34 @@ const ProgramaIndicacao = () => {
           if (cooldownEnd > new Date()) {
             setCooldownEndDate(cooldownEnd);
           } else {
+            // Cooldown acabou! Verificar se já existe notificação de liberação
             setCooldownEndDate(null);
+            
+            // Verificar se já existe uma notificação não lida sobre liberação do programa
+            const { data: existingNotification } = await supabase
+              .from('notifications')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('lida', false)
+              .ilike('titulo', '%reingressar no programa%')
+              .single();
+
+            // Se não existe notificação pendente, criar uma nova
+            if (!existingNotification) {
+              await supabase
+                .from('notifications')
+                .insert({
+                  user_id: user.id,
+                  titulo: '🎉 Você pode reingressar no programa de indicação!',
+                  conteudo: 'O período de carência de 30 dias terminou. Você pode agora reingressar no Programa de Indicação e começar a ganhar comissões novamente. [REDIRECT:/programa-indicacao]',
+                });
+            }
+            
+            // Limpar a data de saída para evitar notificações duplicadas no futuro
+            await supabase
+              .from('profiles')
+              .update({ left_referral_program_at: null })
+              .eq('user_id', user.id);
           }
         } else {
           setCooldownEndDate(null);
@@ -423,7 +450,7 @@ const ProgramaIndicacao = () => {
   if (!isEnrolled) {
     return (
       <Layout>
-        <div className="space-y-8">
+        <div className="space-y-6">
           <div className="flex items-center gap-3">
             <Gift className="w-8 h-8 text-primary" />
             <div>
@@ -431,6 +458,23 @@ const ProgramaIndicacao = () => {
               <p className="text-muted-foreground">Indique amigos e ganhe recompensas</p>
             </div>
           </div>
+
+          {/* Aviso de Cooldown - Banner acima do card principal */}
+          {cooldownEndDate && cooldownEndDate > new Date() && (
+            <Alert className="border-amber-500/50 bg-amber-500/10">
+              <AlertCircle className="h-4 w-4 text-amber-500" />
+              <AlertDescription className="text-amber-700 dark:text-amber-300">
+                <strong>Período de carência ativo.</strong> Você poderá reingressar no programa em{' '}
+                <strong>
+                  {cooldownEndDate.toLocaleDateString('pt-BR', { 
+                    day: '2-digit', 
+                    month: '2-digit', 
+                    year: 'numeric' 
+                  })}
+                </strong>.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Banner Principal */}
           <Card className="overflow-hidden">
@@ -555,22 +599,6 @@ const ProgramaIndicacao = () => {
                     </p>
                   </div>
 
-                  {/* Aviso de Cooldown */}
-                  {cooldownEndDate && cooldownEndDate > new Date() && (
-                    <Alert className="border-amber-500/50 bg-amber-500/10">
-                      <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <AlertDescription className="text-amber-700 dark:text-amber-300">
-                        <strong>Período de carência ativo.</strong> Você poderá reingressar no programa em{' '}
-                        <strong>
-                          {cooldownEndDate.toLocaleDateString('pt-BR', { 
-                            day: '2-digit', 
-                            month: '2-digit', 
-                            year: 'numeric' 
-                          })}
-                        </strong>.
-                      </AlertDescription>
-                    </Alert>
-                  )}
                   
                   <Button 
                     onClick={handleEnrollment}
