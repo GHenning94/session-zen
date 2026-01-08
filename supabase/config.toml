@@ -214,5 +214,8 @@ verify_jwt = true
 [functions.upgrade-subscription]
 verify_jwt = true
 
+[functions.admin-manage-coupons]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
