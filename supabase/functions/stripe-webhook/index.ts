@@ -226,8 +226,8 @@ serve(async (req) => {
         // Determinar plano baseado no price ID
         const priceId = subscription.items.data[0]?.price.id;
         const priceToPlans: { [key: string]: string } = {
-          'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',
-          'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',
+          'price_1RowvqFeTymAqTGEU6jkKtXi': 'pro',
+          'price_1SMifUFeTymAqTGEucpJaUBz': 'pro',
           'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium',
           'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'
         };
@@ -327,8 +327,8 @@ serve(async (req) => {
           
           // Mapear price IDs para planos
           const priceToPlans: { [key: string]: string } = {
-            'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',  // Profissional Mensal
-            'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',  // Profissional Anual
+            'price_1RowvqFeTymAqTGEU6jkKtXi': 'pro',  // Profissional Mensal
+            'price_1SMifUFeTymAqTGEucpJaUBz': 'pro',  // Profissional Anual
             'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium', // Premium Mensal
             'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'  // Premium Anual
           };

@@ -47,9 +47,9 @@ export const CheckoutRedirect = () => {
         // Mapear plano para price IDs
         const priceMap: Record<string, { monthly: string; yearly: string; annually: string }> = {
           'pro': {
-            monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
-            yearly: 'price_1SSMOdCP57sNVd3la4kMOinN',
-            annually: 'price_1SSMOdCP57sNVd3la4kMOinN'
+            monthly: 'price_1RowvqFeTymAqTGEU6jkKtXi',
+            yearly: 'price_1SMifUFeTymAqTGEucpJaUBz',
+            annually: 'price_1SMifUFeTymAqTGEucpJaUBz'
           },
           'premium': {
             monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
