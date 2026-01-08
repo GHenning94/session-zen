@@ -1258,7 +1258,7 @@ const Configuracoes = () => {
           <div className="flex justify-center my-4">
             <Turnstile
               ref={passwordCaptchaRef}
-              siteKey="0x4AAAAAABbG2yQ-OqVnxkn0"
+              siteKey="0x4AAAAAAB43UmamQYOA5yfH"
               onSuccess={(token) => setPasswordChangeCaptchaToken(token)}
               onExpire={() => setPasswordChangeCaptchaToken(null)}
               onError={() => setPasswordChangeCaptchaToken(null)}
