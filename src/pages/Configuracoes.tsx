@@ -947,21 +947,6 @@ const Configuracoes = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Aviso importante */}
-                <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-4">
-                  <div className="flex gap-3">
-                    <AlertCircle className="w-5 h-5 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                        Atenção: Dados devem ser do titular da conta
-                      </p>
-                      <p className="text-sm text-amber-700 dark:text-amber-300">
-                        Os dados bancários informados devem pertencer à mesma pessoa cadastrada nesta conta. 
-                        Pagamentos não serão realizados se os dados não corresponderem ao usuário registrado.
-                      </p>
-                    </div>
-                  </div>
-                </div>
 
                 {/* Tipo de Pessoa */}
                 <div className="space-y-2">
@@ -1009,9 +994,11 @@ const Configuracoes = () => {
                     placeholder={settings.tipo_pessoa === 'juridica' ? '00.000.000/0000-00' : '000.000.000-00'}
                     maxLength={settings.tipo_pessoa === 'juridica' ? 18 : 14}
                     className={cpfCnpjValid === false ? 'border-destructive focus-visible:ring-destructive' : cpfCnpjValid === true ? 'border-green-500 focus-visible:ring-green-500' : ''}
-                    autoComplete="off"
-                    name="cpf_cnpj_field"
-                    id="cpf_cnpj_field"
+                    autoComplete="new-password"
+                    data-form-type="other"
+                    data-1p-ignore="true"
+                    data-lpignore="true"
+                    name={`cpf_cnpj_nofill_${Date.now()}`}
                   />
                   {cpfCnpjValid === false && (
                     <p className="text-sm text-destructive flex items-center gap-1">
@@ -1033,9 +1020,11 @@ const Configuracoes = () => {
                     }}
                     placeholder={settings.tipo_pessoa === 'juridica' ? 'Razão Social' : 'Nome completo conforme documento'}
                     maxLength={100}
-                    autoComplete="off"
-                    name="nome_titular_field"
-                    id="nome_titular_field"
+                    autoComplete="new-password"
+                    data-form-type="other"
+                    data-1p-ignore="true"
+                    data-lpignore="true"
+                    name={`nome_titular_nofill_${Date.now()}`}
                   />
                 </div>
 
@@ -1071,9 +1060,11 @@ const Configuracoes = () => {
                       placeholder="0000"
                       maxLength={5}
                       inputMode="numeric"
-                      autoComplete="off"
-                      name="agencia_field"
-                      id="agencia_field"
+                      autoComplete="new-password"
+                      data-form-type="other"
+                      data-1p-ignore="true"
+                      data-lpignore="true"
+                      name={`agencia_nofill_${Date.now()}`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1088,9 +1079,11 @@ const Configuracoes = () => {
                       placeholder="00000000-0"
                       maxLength={15}
                       inputMode="numeric"
-                      autoComplete="off"
-                      name="conta_field"
-                      id="conta_field"
+                      autoComplete="new-password"
+                      data-form-type="other"
+                      data-1p-ignore="true"
+                      data-lpignore="true"
+                      name={`conta_nofill_${Date.now()}`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -1123,9 +1116,11 @@ const Configuracoes = () => {
                     }}
                     placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória"
                     maxLength={77}
-                    autoComplete="off"
-                    name="chave_pix_field"
-                    id="chave_pix_field"
+                    autoComplete="new-password"
+                    data-form-type="other"
+                    data-1p-ignore="true"
+                    data-lpignore="true"
+                    name={`chave_pix_nofill_${Date.now()}`}
                   />
                   <p className="text-xs text-muted-foreground">
                     {settings.chave_pix ? (
