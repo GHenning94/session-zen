@@ -33,7 +33,7 @@ import { ThemeToggle } from "@/components/ThemeToggle"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
-import { formatPhone, formatCRP, formatCRM, validatePassword, formatCPFCNPJ, validateCPFCNPJ } from "@/utils/inputMasks"
+import { formatPhone, formatCRP, formatCRM, validatePassword, formatCPFCNPJ, validateCPFCNPJ, formatPixKey, detectPixKeyType } from "@/utils/inputMasks"
 import { BRAZILIAN_BANKS, formatAgencia, formatConta } from "@/utils/brazilianBanks"
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
 import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
@@ -1117,18 +1117,32 @@ const Configuracoes = () => {
                   <Input
                     value={settings.chave_pix ?? ''}
                     onChange={(e) => {
-                      const value = e.target.value.slice(0, 100);
-                      handleSettingsChange('chave_pix', value);
+                      const formatted = formatPixKey(e.target.value);
+                      handleSettingsChange('chave_pix', formatted);
                       handleSettingsChange('bank_data_confirmed', false);
                     }}
                     placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória"
-                    maxLength={100}
+                    maxLength={77}
                     autoComplete="off"
                     name="chave_pix_field"
                     id="chave_pix_field"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Se preenchido, a chave PIX será usada preferencialmente para pagamentos
+                    {settings.chave_pix ? (
+                      <>
+                        Tipo detectado: {' '}
+                        <span className="font-medium">
+                          {detectPixKeyType(settings.chave_pix) === 'email' && 'E-mail'}
+                          {detectPixKeyType(settings.chave_pix) === 'phone' && 'Telefone'}
+                          {detectPixKeyType(settings.chave_pix) === 'cpf' && 'CPF'}
+                          {detectPixKeyType(settings.chave_pix) === 'cnpj' && 'CNPJ'}
+                          {detectPixKeyType(settings.chave_pix) === 'random' && 'Chave Aleatória'}
+                          {detectPixKeyType(settings.chave_pix) === 'unknown' && 'Formato não reconhecido'}
+                        </span>
+                      </>
+                    ) : (
+                      'Se preenchido, a chave PIX será usada preferencialmente para pagamentos'
+                    )}
                   </p>
                 </div>
 
