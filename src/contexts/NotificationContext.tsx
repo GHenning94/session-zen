@@ -54,12 +54,13 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
 
   // External pages where notifications should NOT appear (public pages)
-  const EXTERNAL_PAGES = ['/convite', '/agendar', '/register', '/termos-indicacao', '/login', '/signup', '/admin', '/reset-password', '/auth-confirm', '/auth-callback', '/email-change-confirmation', '/']
+  // Note: '/' is NOT included as it's the dashboard when logged in
+  const EXTERNAL_PAGES = ['/convite', '/agendar', '/register', '/termos-indicacao', '/login', '/signup', '/admin', '/reset-password', '/auth-confirm', '/auth-callback', '/email-change-confirmation']
   
   // Check if current page is an external page
   const isExternalPage = useCallback(() => {
     const path = location.pathname
-    // Check if path starts with any external page prefix
+    // Check if path starts with any external page prefix (but not exactly '/' which is the dashboard)
     return EXTERNAL_PAGES.some(page => path === page || path.startsWith(page + '/'))
   }, [location.pathname])
 
