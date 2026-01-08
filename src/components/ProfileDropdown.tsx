@@ -42,12 +42,16 @@ interface Profile {
   is_referral_partner?: boolean
 }
 
-interface ReferralCoupon {
+interface UserCoupon {
+  id: string
   code: string
   discount: string
   description: string
-  isUsed: boolean
-  isNew: boolean
+  coupon_type: string
+  is_used: boolean
+  used_at: string | null
+  expires_at: string | null
+  created_at: string
 }
 
 export const ProfileDropdown = () => {
@@ -60,17 +64,23 @@ export const ProfileDropdown = () => {
   const { avatarUrl } = useAvatarUrl(profile.avatar_url)
   
   // Coupon states
-  const [referralCoupon, setReferralCoupon] = useState<ReferralCoupon | null>(null)
+  const [coupons, setCoupons] = useState<UserCoupon[]>([])
   const [hasNewCoupon, setHasNewCoupon] = useState(false)
   const [copiedCode, setCopiedCode] = useState<string | null>(null)
+  const [seenCoupons, setSeenCoupons] = useState<string[]>([])
 
   useEffect(() => {
     if (user) {
+      // Load seen coupons from localStorage
+      const seenCouponsKey = `seen_coupons_${user.id}`
+      const savedSeenCoupons = JSON.parse(localStorage.getItem(seenCouponsKey) || '[]')
+      setSeenCoupons(savedSeenCoupons)
+      
       fetchProfile()
-      checkReferralCoupon()
+      loadCoupons(savedSeenCoupons)
       
       // Subscribe to profile changes
-      const channel = supabase
+      const profileChannel = supabase
         .channel('profile-changes')
         .on(
           'postgres_changes',
@@ -87,8 +97,27 @@ export const ProfileDropdown = () => {
         )
         .subscribe()
 
+      // Subscribe to coupon changes
+      const couponChannel = supabase
+        .channel('coupon-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_coupons',
+            filter: `user_id=eq.${user.id}`
+          },
+          () => {
+            console.log('Coupons updated')
+            loadCoupons(seenCoupons)
+          }
+        )
+        .subscribe()
+
       return () => {
-        supabase.removeChannel(channel)
+        supabase.removeChannel(profileChannel)
+        supabase.removeChannel(couponChannel)
       }
     }
   }, [user])
@@ -124,46 +153,31 @@ export const ProfileDropdown = () => {
     }
   }
 
-  const checkReferralCoupon = async () => {
+  const loadCoupons = async (currentSeenCoupons: string[]) => {
     if (!user) return
 
     try {
-      // Verificar se o usuário foi indicado
-      const { data: referralData, error } = await supabase
-        .from('referrals')
-        .select('id, status, first_payment_date')
-        .eq('referred_user_id', user.id)
-        .maybeSingle()
+      const { data, error } = await supabase
+        .from('user_coupons')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('[ProfileDropdown] Error checking referral:', error)
+        console.error('[ProfileDropdown] Error loading coupons:', error)
         return
       }
 
-      console.log('[ProfileDropdown] Referral data:', referralData)
+      console.log('[ProfileDropdown] Coupons loaded:', data)
+      setCoupons(data || [])
 
-      // Se o usuário foi indicado, mostrar o cupom
-      if (referralData) {
-        const isUsed = !!referralData.first_payment_date
-        const seenCouponsKey = `seen_coupons_${user.id}`
-        const seenCoupons = JSON.parse(localStorage.getItem(seenCouponsKey) || '[]')
-        const isNew = !seenCoupons.includes('INDICACAO20') && !isUsed
-
-        console.log('[ProfileDropdown] Coupon status - isUsed:', isUsed, 'isNew:', isNew, 'seenCoupons:', seenCoupons)
-
-        setReferralCoupon({
-          code: 'INDICACAO20',
-          discount: '20%',
-          description: '20% de desconto no primeiro mês do plano Profissional',
-          isUsed,
-          isNew
-        })
-
-        // Sempre setar hasNewCoupon se o cupom é novo e não foi usado
-        setHasNewCoupon(isNew)
-      }
+      // Check if there are any new unseen coupons (not used and not seen)
+      const hasNew = (data || []).some(coupon => 
+        !coupon.is_used && !currentSeenCoupons.includes(coupon.code)
+      )
+      setHasNewCoupon(hasNew)
     } catch (err) {
-      console.error('[ProfileDropdown] Exception:', err)
+      console.error('[ProfileDropdown] Exception loading coupons:', err)
     }
   }
 
@@ -172,17 +186,18 @@ export const ProfileDropdown = () => {
     
     // Marcar o cupom como visto
     const seenCouponsKey = `seen_coupons_${user.id}`
-    const seenCoupons = JSON.parse(localStorage.getItem(seenCouponsKey) || '[]')
+    const currentSeenCoupons = [...seenCoupons]
     
-    if (!seenCoupons.includes(couponCode)) {
-      seenCoupons.push(couponCode)
-      localStorage.setItem(seenCouponsKey, JSON.stringify(seenCoupons))
+    if (!currentSeenCoupons.includes(couponCode)) {
+      currentSeenCoupons.push(couponCode)
+      localStorage.setItem(seenCouponsKey, JSON.stringify(currentSeenCoupons))
+      setSeenCoupons(currentSeenCoupons)
       
-      // Atualizar estados
-      if (referralCoupon && referralCoupon.code === couponCode) {
-        setReferralCoupon({ ...referralCoupon, isNew: false })
-      }
-      setHasNewCoupon(false)
+      // Check if there are still unseen coupons
+      const stillHasNew = coupons.some(coupon => 
+        !coupon.is_used && !currentSeenCoupons.includes(coupon.code)
+      )
+      setHasNewCoupon(stillHasNew)
     }
   }
 
@@ -268,6 +283,11 @@ export const ProfileDropdown = () => {
     )} />
   )
 
+  // Check if a coupon is new (not seen and not used)
+  const isCouponNew = (coupon: UserCoupon) => {
+    return !coupon.is_used && !seenCoupons.includes(coupon.code)
+  }
+
   // Conteúdo da aba de cupons
   const CouponsTabContent = () => (
     <div className="p-3">
@@ -281,79 +301,89 @@ export const ProfileDropdown = () => {
           </svg>
         </button>
         <h3 className="font-semibold text-sm">Meus Cupons</h3>
+        {coupons.filter(c => !c.is_used).length > 0 && (
+          <Badge variant="secondary" className="text-[10px]">
+            {coupons.filter(c => !c.is_used).length} disponível(is)
+          </Badge>
+        )}
       </div>
 
-      {referralCoupon ? (
-        <div 
-          className={cn(
-            "relative rounded-xl border p-4 transition-all",
-            referralCoupon.isUsed 
-              ? "bg-muted/50 border-border" 
-              : "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-200 dark:border-emerald-800"
-          )}
-          onMouseEnter={() => handleCouponHover(referralCoupon.code)}
-        >
-          {/* Badge de status */}
-          <div className="absolute top-2 right-2">
-            {referralCoupon.isNew && (
-              <NotificationDot className="top-0 right-0" />
-            )}
-            <Badge 
-              variant={referralCoupon.isUsed ? "secondary" : "default"}
+      {coupons.length > 0 ? (
+        <div className="space-y-3 max-h-[400px] overflow-y-auto">
+          {coupons.map((coupon) => (
+            <div 
+              key={coupon.id}
               className={cn(
-                "text-[10px]",
-                !referralCoupon.isUsed && "bg-emerald-500 hover:bg-emerald-600"
+                "relative rounded-xl border p-4 transition-all",
+                coupon.is_used 
+                  ? "bg-muted/50 border-border" 
+                  : "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-200 dark:border-emerald-800"
               )}
+              onMouseEnter={() => handleCouponHover(coupon.code)}
             >
-              {referralCoupon.isUsed ? "Utilizado" : "Disponível"}
-            </Badge>
-          </div>
-
-          <div className="flex items-start gap-3">
-            <div className={cn(
-              "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-              referralCoupon.isUsed 
-                ? "bg-muted" 
-                : "bg-emerald-100 dark:bg-emerald-900/50"
-            )}>
-              <Ticket className={cn(
-                "h-5 w-5",
-                referralCoupon.isUsed 
-                  ? "text-muted-foreground" 
-                  : "text-emerald-600 dark:text-emerald-400"
-              )} />
-            </div>
-            
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className={cn(
-                  "text-lg font-bold",
-                  referralCoupon.isUsed 
-                    ? "text-muted-foreground" 
-                    : "text-emerald-600 dark:text-emerald-400"
-                )}>
-                  {referralCoupon.discount} OFF
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {referralCoupon.description}
-              </p>
-              
-              {!referralCoupon.isUsed && (
-                <button
-                  onClick={() => handleCopyCode(referralCoupon.code)}
-                  className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95"
-                >
-                  <span className="font-mono">{referralCoupon.code}</span>
-                  {copiedCode === referralCoupon.code ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <Copy className="h-3.5 w-3.5" />
+              {/* Badge de status */}
+              <div className="absolute top-2 right-2 flex items-center gap-1">
+                {isCouponNew(coupon) && (
+                  <NotificationDot className="relative top-0 right-0" />
+                )}
+                <Badge 
+                  variant={coupon.is_used ? "secondary" : "default"}
+                  className={cn(
+                    "text-[10px]",
+                    !coupon.is_used && "bg-emerald-500 hover:bg-emerald-600"
                   )}
-                </button>
-              )}
+                >
+                  {coupon.is_used ? "Utilizado" : "Disponível"}
+                </Badge>
+              </div>
+
+              <div className="flex items-start gap-3">
+                <div className={cn(
+                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
+                  coupon.is_used 
+                    ? "bg-muted" 
+                    : "bg-emerald-100 dark:bg-emerald-900/50"
+                )}>
+                  <Ticket className={cn(
+                    "h-5 w-5",
+                    coupon.is_used 
+                      ? "text-muted-foreground" 
+                      : "text-emerald-600 dark:text-emerald-400"
+                  )} />
+                </div>
+                
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={cn(
+                      "text-lg font-bold",
+                      coupon.is_used 
+                        ? "text-muted-foreground" 
+                        : "text-emerald-600 dark:text-emerald-400"
+                    )}>
+                      {coupon.discount} OFF
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {coupon.description}
+                  </p>
+                  
+                  {!coupon.is_used && (
+                    <button
+                      onClick={() => handleCopyCode(coupon.code)}
+                      className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95"
+                    >
+                      <span className="font-mono">{coupon.code}</span>
+                      {copiedCode === coupon.code ? (
+                        <Check className="h-3.5 w-3.5" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          ))}
         </div>
       ) : (
         <div className="flex flex-col items-center justify-center py-8 text-center">
