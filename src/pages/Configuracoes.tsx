@@ -34,6 +34,7 @@ import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
 import { formatPhone, formatCRP, formatCRM, validatePassword, formatCPFCNPJ, validateCPFCNPJ } from "@/utils/inputMasks"
+import { BRAZILIAN_BANKS, formatAgencia, formatConta } from "@/utils/brazilianBanks"
 import { EncryptionAuditReport } from "@/components/EncryptionAuditReport"
 import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 import { cleanupInvalidSession } from "@/utils/sessionCleanup"
@@ -950,10 +951,10 @@ const Configuracoes = () => {
                 <div className="space-y-2">
                   <Label>Tipo de Pessoa</Label>
                   <Select
-                    value={settings.tipo_pessoa || ''}
+                    value={settings.tipo_pessoa ?? undefined}
                     onValueChange={(v) => {
                       handleSettingsChange('tipo_pessoa', v);
-                      handleSettingsChange('cpf_cnpj', ''); // Limpa CPF/CNPJ ao mudar tipo
+                      handleSettingsChange('cpf_cnpj', '');
                       setCpfCnpjValid(null);
                     }}
                   >
@@ -973,19 +974,16 @@ const Configuracoes = () => {
                     {cpfCnpjValid === false && <XCircle className="w-4 h-4 text-destructive" />}
                   </Label>
                   <Input
-                    value={settings.cpf_cnpj || ''}
+                    value={settings.cpf_cnpj ?? ''}
                     onChange={(e) => {
                       const formatted = formatCPFCNPJ(e.target.value);
                       handleSettingsChange('cpf_cnpj', formatted);
                       
-                      // Validação em tempo real
                       const cleaned = formatted.replace(/\D/g, '');
                       if (settings.tipo_pessoa === 'fisica' && cleaned.length === 11) {
                         setCpfCnpjValid(validateCPFCNPJ(formatted));
                       } else if (settings.tipo_pessoa === 'juridica' && cleaned.length === 14) {
                         setCpfCnpjValid(validateCPFCNPJ(formatted));
-                      } else if (cleaned.length > 0) {
-                        setCpfCnpjValid(null);
                       } else {
                         setCpfCnpjValid(null);
                       }
@@ -1006,42 +1004,64 @@ const Configuracoes = () => {
                 <div className="space-y-2">
                   <Label>Nome do Titular</Label>
                   <Input
-                    value={settings.nome_titular || ''}
-                    onChange={(e) => handleSettingsChange('nome_titular', e.target.value)}
+                    value={settings.nome_titular ?? ''}
+                    onChange={(e) => {
+                      // Limita a 100 caracteres e permite apenas letras, espaços e acentos
+                      const value = e.target.value.slice(0, 100);
+                      handleSettingsChange('nome_titular', value);
+                    }}
                     placeholder={settings.tipo_pessoa === 'juridica' ? 'Razão Social' : 'Nome completo conforme documento'}
+                    maxLength={100}
                   />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Banco</Label>
-                    <Input
-                      value={settings.banco || ''}
-                      onChange={(e) => handleSettingsChange('banco', e.target.value)}
-                      placeholder="Ex: Banco do Brasil"
-                    />
+                    <Select
+                      value={settings.banco ?? undefined}
+                      onValueChange={(v) => handleSettingsChange('banco', v)}
+                    >
+                      <SelectTrigger><SelectValue placeholder="Selecione o banco" /></SelectTrigger>
+                      <SelectContent className="max-h-[300px]">
+                        {BRAZILIAN_BANKS.map((bank) => (
+                          <SelectItem key={bank.code} value={`${bank.code} - ${bank.name}`}>
+                            {bank.code} - {bank.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Agência</Label>
                     <Input
-                      value={settings.agencia || ''}
-                      onChange={(e) => handleSettingsChange('agencia', e.target.value.replace(/\D/g, ''))}
-                      placeholder="0000"
-                      maxLength={6}
+                      value={settings.agencia ?? ''}
+                      onChange={(e) => {
+                        const formatted = formatAgencia(e.target.value);
+                        handleSettingsChange('agencia', formatted);
+                      }}
+                      placeholder="00000"
+                      maxLength={5}
+                      inputMode="numeric"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Conta</Label>
                     <Input
-                      value={settings.conta || ''}
-                      onChange={(e) => handleSettingsChange('conta', e.target.value)}
-                      placeholder="00000-0"
+                      value={settings.conta ?? ''}
+                      onChange={(e) => {
+                        const formatted = formatConta(e.target.value);
+                        handleSettingsChange('conta', formatted);
+                      }}
+                      placeholder="00000000-0"
+                      maxLength={15}
+                      inputMode="numeric"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label>Tipo de Conta</Label>
                     <Select
-                      value={settings.tipo_conta || ''}
+                      value={settings.tipo_conta ?? undefined}
                       onValueChange={(v) => handleSettingsChange('tipo_conta', v)}
                     >
                       <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
@@ -1057,9 +1077,14 @@ const Configuracoes = () => {
                 <div className="space-y-2">
                   <Label>Chave PIX (opcional)</Label>
                   <Input
-                    value={settings.chave_pix || ''}
-                    onChange={(e) => handleSettingsChange('chave_pix', e.target.value)}
+                    value={settings.chave_pix ?? ''}
+                    onChange={(e) => {
+                      // Limita a 100 caracteres
+                      const value = e.target.value.slice(0, 100);
+                      handleSettingsChange('chave_pix', value);
+                    }}
                     placeholder="E-mail, telefone, CPF/CNPJ ou chave aleatória"
+                    maxLength={100}
                   />
                   <p className="text-xs text-muted-foreground">
                     Se preenchido, a chave PIX será usada preferencialmente para pagamentos
