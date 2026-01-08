@@ -111,8 +111,8 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       description: 'Para profissionais em crescimento',
       features: ['Até 20 clientes', 'Sessões ilimitadas', 'Histórico básico', 'Agendamento online'],
       recommended: true,
-      monthlyStripePrice: 'price_1RowvqFeTymAqTGEU6jkKtXi',
-      annualStripePrice: 'price_1SMifUFeTymAqTGEucpJaUBz',
+      monthlyStripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb',
+      annualStripePrice: 'price_1SSMOdCP57sNVd3la4kMOinN',
       currentPlan: currentPlan === 'pro',
       annualSubtext: '12x R$ 24,90 = R$ 298,80/ano',
       planLevel: 2

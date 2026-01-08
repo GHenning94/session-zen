@@ -44,8 +44,8 @@ serve(async (req) => {
 
     // Price map para validação
     const priceMap: Record<string, { plan: string; interval: string; price: number }> = {
-      'price_1RowvqFeTymAqTGEU6jkKtXi': { plan: 'pro', interval: 'monthly', price: 2990 },
-      'price_1SMifUFeTymAqTGEucpJaUBz': { plan: 'pro', interval: 'yearly', price: 29880 },
+      'price_1SSMNgCP57sNVd3laEmlQOcb': { plan: 'pro', interval: 'monthly', price: 2990 },
+      'price_1SSMOdCP57sNVd3la4kMOinN': { plan: 'pro', interval: 'yearly', price: 29880 },
       'price_1SSMOBCP57sNVd3lqjfLY6Du': { plan: 'premium', interval: 'monthly', price: 4990 },
       'price_1SSMP7CP57sNVd3lSf4oYINX': { plan: 'premium', interval: 'yearly', price: 49896 }
     };
