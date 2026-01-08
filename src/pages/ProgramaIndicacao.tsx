@@ -225,8 +225,7 @@ const ProgramaIndicacao = () => {
     if (!user) return;
     
     try {
-      // Desativar o parceiro e limpar o código de indicação (invalida o link)
-      // Os referrals existentes continuam intactos (descontos dos indicados válidos)
+      // 1. Desativar o parceiro, limpar o código e registrar data de saída para cooldown
       const { error: profileError } = await supabase
         .from('profiles')
         .update({ 
@@ -236,8 +235,35 @@ const ProgramaIndicacao = () => {
         .eq('user_id', user.id);
       
       if (profileError) throw profileError;
+
+      // 2. Cancelar todas as comissões pendentes (conforme regras do programa)
+      // Comissões já pagas não são afetadas
+      const { error: payoutsError } = await supabase
+        .from('referral_payouts')
+        .update({ 
+          status: 'cancelled',
+          failure_reason: 'Usuário deixou o programa de indicação'
+        })
+        .eq('referrer_user_id', user.id)
+        .eq('status', 'pending');
       
-      // Limpar estado local completamente
+      if (payoutsError) {
+        console.error('Erro ao cancelar comissões pendentes:', payoutsError);
+      }
+
+      // 3. Marcar referrals existentes como inativos (o parceiro não receberá mais comissões)
+      // Os descontos dos indicados continuam válidos (status não é alterado para 'expired')
+      const { error: referralsError } = await supabase
+        .from('referrals')
+        .update({ status: 'partner_left' })
+        .eq('referrer_user_id', user.id)
+        .in('status', ['active', 'pending']);
+      
+      if (referralsError) {
+        console.error('Erro ao atualizar referrals:', referralsError);
+      }
+      
+      // 4. Limpar estado local completamente
       setIsEnrolled(false);
       setReferralCode('');
       setStats(null);
@@ -246,7 +272,7 @@ const ProgramaIndicacao = () => {
       
       toast({
         title: "Você deixou o programa",
-        description: "Seu link foi desativado. Os descontos dos seus indicados continuam válidos. Ao reingressar, um novo link será gerado.",
+        description: "Seu link foi desativado e comissões pendentes foram canceladas. Os descontos dos seus indicados permanecem válidos.",
       });
     } catch (error) {
       console.error('Erro ao sair do programa:', error);

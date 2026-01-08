@@ -120,31 +120,65 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 6 - SAÍDA DO PROGRAMA */}
+            {/* Seção 6 - FUNCIONAMENTO DO LINK */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                6. Saída do Programa
+                6. Funcionamento do Link de Indicação
               </h3>
-              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 mb-4">
-                <p className="text-sm font-medium text-destructive mb-2">⚠️ Atenção: Ação Irreversível</p>
-                <p className="text-sm text-muted-foreground">
-                  Ao optar por deixar o Programa de Indicação, esteja ciente das seguintes consequências:
-                </p>
-              </div>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li><strong>Perda do direito a comissões futuras:</strong> Ao optar por sair do Programa de Indicação, o parceiro perde o direito a receber comissões futuras, incluindo comissões recorrentes de indicados ativos.</li>
-                <li><strong>Comissões pendentes:</strong> Comissões pendentes ou não liquidadas até a data da solicitação de saída poderão ser canceladas, a critério do TherapyPro.</li>
-                <li><strong>Ação irreversível:</strong> Esta ação não pode ser desfeita. Caso deseje participar novamente, será necessário iniciar do zero, com um novo link de indicação, sem recuperação de indicações ou histórico anterior.</li>
-                <li><strong>Link de indicação desativado:</strong> Seu link de indicação será permanentemente desativado e não poderá ser reativado.</li>
+                <li>Cada vez que um usuário ingressa no Programa de Indicação, é gerado um <strong>link exclusivo</strong>, válido apenas enquanto o usuário permanecer ativo no programa.</li>
+                <li>O link de indicação é pessoal, intransferível e vinculado ao período de participação do usuário no programa.</li>
+                <li>Indicações realizadas por meio do link ativo são registradas normalmente e podem gerar comissões conforme as regras vigentes.</li>
               </ul>
             </section>
 
-            {/* Seção 7 */}
+            {/* Seção 7 - SAÍDA DO PROGRAMA */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                7. Cancelamento e Reembolsos
+                7. Saída do Programa
+              </h3>
+              <div className="p-4 rounded-lg bg-destructive/10 border border-destructive/20 mb-4">
+                <p className="text-sm font-medium text-destructive mb-2">⚠️ Atenção: Leia com atenção</p>
+                <p className="text-sm text-muted-foreground">
+                  Ao optar por sair do Programa de Indicação, você declara estar ciente e concorda com as seguintes condições:
+                </p>
+              </div>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li><strong>Link desativado imediatamente:</strong> O link de indicação é imediatamente desativado e não poderá mais ser utilizado para novas indicações.</li>
+                <li><strong>Perda de comissões futuras:</strong> O usuário deixa de receber comissões futuras, incluindo comissões recorrentes provenientes de indicados que permaneçam com assinatura ativa.</li>
+                <li><strong>Comissões pendentes canceladas:</strong> Comissões pendentes, ainda em período de validação ou não liquidadas até a data da saída, serão canceladas e não serão pagas.</li>
+                <li><strong>Comissões já aprovadas:</strong> Comissões já aprovadas antes da solicitação de saída poderão ser pagas no próximo ciclo de pagamento, desde que cumpridos os requisitos mínimos do programa.</li>
+                <li><strong>Benefícios dos indicados mantidos:</strong> Benefícios concedidos aos indicados, como cupons de desconto, permanecem válidos e não são afetados pela saída do parceiro do programa.</li>
+              </ul>
+            </section>
+
+            {/* Seção 8 - REINGRESSO */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                8. Reingresso no Programa
+              </h3>
+              <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20 mb-4">
+                <p className="text-sm text-muted-foreground">
+                  <strong className="text-foreground">Importante:</strong> Caso decida reingressar no Programa de Indicação, um novo ciclo será iniciado do zero.
+                </p>
+              </div>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li><strong>Novo ciclo de participação:</strong> Um novo ciclo de participação será iniciado.</li>
+                <li><strong>Novo link gerado:</strong> Um novo link de indicação será gerado (o anterior não será reativado).</li>
+                <li><strong>Contagem reiniciada:</strong> A contagem de indicados é reiniciada.</li>
+                <li><strong>Histórico não recuperável:</strong> Indicações, comissões e histórico do ciclo anterior não são recuperados nem reativados.</li>
+                <li><strong>Período de carência:</strong> O TherapyPro poderá aplicar um período de carência (cooldown) entre a saída e um novo ingresso, como medida de segurança e prevenção de uso indevido do programa.</li>
+              </ul>
+            </section>
+
+            {/* Seção 9 */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                9. Cancelamento e Reembolsos
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>Se o indicado cancelar a assinatura dentro do período de reembolso, a comissão correspondente será estornada.</li>
@@ -153,11 +187,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 8 */}
+            {/* Seção 10 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                8. Responsabilidades
+                10. Responsabilidades
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro não se responsabiliza por perdas decorrentes de informações bancárias incorretas fornecidas pelo parceiro.</li>
@@ -166,11 +200,24 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 9 */}
+            {/* Seção 11 - DISPOSIÇÕES GERAIS */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                9. Modificações
+                11. Disposições Gerais
+              </h3>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li>A participação no Programa de Indicação constitui um <strong>benefício condicional</strong>, não representando direito adquirido ou vitalício.</li>
+                <li>O TherapyPro reserva-se o direito de cancelar, suspender ou ajustar comissões em caso de uso indevido, tentativa de manipulação do sistema ou violação destes termos.</li>
+                <li>As regras do Programa de Indicação podem ser atualizadas a qualquer momento, conforme os termos gerais da plataforma.</li>
+              </ul>
+            </section>
+
+            {/* Seção 12 */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                12. Modificações
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro reserva-se o direito de modificar estes termos a qualquer momento.</li>
@@ -179,11 +226,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 10 */}
+            {/* Seção 13 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                10. Contato
+                13. Contato
               </h3>
               <p className="text-muted-foreground">
                 Para dúvidas sobre o Programa de Indicação, entre em contato através do e-mail{" "}
