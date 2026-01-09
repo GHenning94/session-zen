@@ -9,9 +9,12 @@ const corsHeaders = {
 
 const SITE_URL = Deno.env.get("SITE_URL") || "https://therapypro.app.br";
 
+// Desconto de 20% para indicados (apenas primeiro mês do plano Profissional)
+const REFERRAL_DISCOUNT_PERCENT = 20;
+
 /**
- * Stripe Checkout - Apenas para usuários NORMAIS (não indicados)
- * Usuários indicados são roteados para Asaas
+ * Stripe Checkout - TODOS os usuários pagam via Stripe
+ * Usuários indicados recebem 20% de desconto no primeiro mês do plano Profissional
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -72,6 +75,42 @@ serve(async (req) => {
 
     console.log("[create-checkout] 📊 Plan info:", priceInfo);
 
+    // Admin client para verificar indicação
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
+    );
+
+    // Verificar perfil do usuário
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('professional_discount_used')
+      .eq('user_id', user.id)
+      .single();
+
+    // Verificar se usuário foi indicado
+    const { data: referralData } = await supabaseAdmin
+      .from('referrals')
+      .select('id, referrer_user_id, first_payment_date')
+      .eq('referred_user_id', user.id)
+      .single();
+
+    const isReferredUser = !!referralData;
+    const hasUsedDiscount = profile?.professional_discount_used === true;
+    const isProfessionalPlan = priceInfo.plan === 'pro';
+
+    // Desconto: 20% apenas para indicados, plano Pro, primeiro mês, não usado
+    const shouldApplyDiscount = isReferredUser && 
+                                isProfessionalPlan && 
+                                !hasUsedDiscount;
+
+    console.log('[create-checkout] 🎯 Discount check:', {
+      isReferredUser,
+      hasUsedDiscount,
+      isProfessionalPlan,
+      shouldApplyDiscount
+    });
+
     // Buscar ou criar cliente Stripe
     const { data: customers } = await stripe.customers.list({ email: user.email, limit: 1 });
     
@@ -87,16 +126,19 @@ serve(async (req) => {
 
     const origin = (typeof returnUrl === 'string' && returnUrl.length > 0) ? returnUrl : SITE_URL;
 
-    // Build metadata - simples, sem indicação
+    // Build metadata
     const sessionMetadata: Record<string, string> = { 
       user_id: user.id,
       plan_name: priceInfo.plan,
-      billing_interval: priceInfo.interval
+      billing_interval: priceInfo.interval,
+      is_referred: isReferredUser ? 'true' : 'false',
+      referral_id: referralData?.id || '',
+      referrer_user_id: referralData?.referrer_user_id || '',
+      discount_applied: shouldApplyDiscount ? 'true' : 'false',
     };
 
-    // Criar sessão de checkout - sem códigos promocionais
-    // Stripe é apenas para usuários normais (não indicados)
-    const session = await stripe.checkout.sessions.create({
+    // Configurar checkout session
+    const checkoutConfig: any = {
       customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
@@ -112,7 +154,35 @@ serve(async (req) => {
       subscription_data: {
         metadata: sessionMetadata
       }
-    });
+    };
+
+    // Aplicar desconto de 20% apenas no primeiro mês se elegível
+    if (shouldApplyDiscount) {
+      // Criar cupom temporário para 20% off no primeiro mês
+      // Para planos mensais: aplicar desconto na primeira cobrança
+      // Para planos anuais: NÃO aplicar desconto (regra: apenas primeiro MÊS)
+      
+      if (priceInfo.interval === 'monthly') {
+        // Criar coupon para desconto único
+        const coupon = await stripe.coupons.create({
+          percent_off: REFERRAL_DISCOUNT_PERCENT,
+          duration: 'once', // Apenas uma vez
+          name: 'Desconto de Indicação - 20% primeiro mês',
+          metadata: {
+            type: 'referral_discount',
+            referred_user_id: user.id,
+          }
+        });
+
+        checkoutConfig.discounts = [{ coupon: coupon.id }];
+        console.log('[create-checkout] 🎁 Desconto 20% aplicado:', coupon.id);
+      } else {
+        console.log('[create-checkout] ℹ️ Desconto não aplicado em plano anual (apenas mensal)');
+      }
+    }
+
+    // Criar sessão de checkout
+    const session = await stripe.checkout.sessions.create(checkoutConfig);
 
     if (!session.url) {
       console.error("[create-checkout] ❌ No session URL generated");
@@ -121,7 +191,11 @@ serve(async (req) => {
 
     console.log("[create-checkout] ✅ Session created successfully:", session.id);
 
-    return new Response(JSON.stringify({ url: session.url }), {
+    return new Response(JSON.stringify({ 
+      url: session.url,
+      discount_applied: shouldApplyDiscount && priceInfo.interval === 'monthly',
+      is_referred: isReferredUser
+    }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

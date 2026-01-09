@@ -7,11 +7,10 @@ const corsHeaders = {
 };
 
 /**
- * Smart Gateway Router - Determina qual gateway de pagamento usar
+ * Payment Gateway Router - TODOS usam Stripe
  * 
- * Regras:
- * - Usuários indicados (com referral ativo) → Asaas
- * - Usuários não indicados → Stripe
+ * Este endpoint retorna informações sobre o gateway de pagamento
+ * e status de indicação do usuário. Agora todos pagam via Stripe.
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -34,6 +33,7 @@ serve(async (req) => {
       return new Response(JSON.stringify({ 
         gateway: 'stripe',
         isReferred: false,
+        canApplyDiscount: false,
         reason: 'not_authenticated'
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -48,7 +48,7 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Verificar se usuário foi indicado (existe como referred_user_id na tabela referrals)
+    // Verificar se usuário foi indicado
     const { data: referralData, error: referralError } = await supabaseAdmin
       .from('referrals')
       .select('id, status, first_payment_date, referrer_user_id, subscription_plan')
@@ -59,65 +59,33 @@ serve(async (req) => {
       console.error('[check-payment-gateway] ❌ Error checking referral:', referralError);
     }
 
-    // Verificar se o Asaas está configurado
-    const asaasApiKey = Deno.env.get("ASAAS_API_KEY");
-    const asaasConfigured = !!asaasApiKey;
+    // Verificar se desconto já foi usado
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('professional_discount_used')
+      .eq('user_id', user.id)
+      .single();
 
-    if (!asaasConfigured) {
-      console.log('[check-payment-gateway] ⚠️ Asaas not configured, using Stripe');
-      return new Response(JSON.stringify({ 
-        gateway: 'stripe',
-        isReferred: !!referralData,
-        reason: 'asaas_not_configured'
-      }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200,
-      });
-    }
+    const isReferred = !!referralData;
+    const hasUsedDiscount = profile?.professional_discount_used === true;
+    const canApplyDiscount = isReferred && !hasUsedDiscount;
 
-    // Se usuário foi indicado → Asaas
-    if (referralData) {
-      const isActiveReferral = ['pending', 'converted'].includes(referralData.status);
-      const hasNotPaidYet = !referralData.first_payment_date;
-      
-      // Somente usar Asaas se:
-      // 1. Referral está ativo
-      // 2. Usuário ainda não pagou (primeiro pagamento)
-      // OU se já pagou mas continua com assinatura ativa via Asaas
-      const useAsaas = isActiveReferral;
-
-      console.log('[check-payment-gateway] 🎯 Referral found:', {
-        referralId: referralData.id,
-        status: referralData.status,
-        firstPayment: referralData.first_payment_date,
-        isActiveReferral,
-        hasNotPaidYet,
-        useAsaas
-      });
-
-      if (useAsaas) {
-        return new Response(JSON.stringify({ 
-          gateway: 'asaas',
-          isReferred: true,
-          referralId: referralData.id,
-          referrerId: referralData.referrer_user_id,
-          hasFirstPayment: !!referralData.first_payment_date,
-          canApplyDiscount: hasNotPaidYet,
-          reason: 'referred_user'
-        }), {
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 200,
-        });
-      }
-    }
-
-    // Usuário não indicado ou referral inativo → Stripe
-    console.log('[check-payment-gateway] 💳 Using Stripe (default)');
+    console.log('[check-payment-gateway] 💳 Gateway check result:', {
+      gateway: 'stripe',
+      isReferred,
+      hasUsedDiscount,
+      canApplyDiscount
+    });
     
+    // TODOS usam Stripe
     return new Response(JSON.stringify({ 
       gateway: 'stripe',
-      isReferred: false,
-      reason: 'not_referred'
+      isReferred,
+      referralId: referralData?.id || null,
+      referrerId: referralData?.referrer_user_id || null,
+      hasFirstPayment: !!referralData?.first_payment_date,
+      canApplyDiscount,
+      reason: isReferred ? 'referred_user' : 'not_referred'
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -125,10 +93,10 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("[check-payment-gateway] ❌ Error:", error);
-    // Em caso de erro, usar Stripe como fallback
     return new Response(JSON.stringify({ 
       gateway: 'stripe',
       isReferred: false,
+      canApplyDiscount: false,
       reason: 'error',
       error: error instanceof Error ? error.message : String(error)
     }), {
