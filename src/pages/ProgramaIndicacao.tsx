@@ -285,15 +285,30 @@ const ProgramaIndicacao = () => {
       setReferralCode(newReferralCode);
       setCooldownEndDate(null);
 
-      // Verificar dados bancários
+      // Verificar dados bancários e criar subconta Asaas automaticamente
       const { data: profile } = await supabase
         .from('profiles')
-        .select('banco, agencia, conta')
+        .select('banco, agencia, conta, chave_pix')
         .eq('user_id', user.id)
         .single();
 
-      const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta);
+      const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta) || !!profile?.chave_pix;
       setHasBankDetails(hasBankData);
+
+      // Se tem dados bancários, criar subconta Asaas para split automático
+      if (hasBankData) {
+        try {
+          const { data: asaasResult, error: asaasError } = await supabase.functions.invoke('referral-asaas-onboard');
+          if (asaasError) {
+            console.error('Erro ao criar subconta Asaas:', asaasError);
+            // Não bloquear inscrição se falhar criação da subconta
+          } else {
+            console.log('Subconta Asaas criada:', asaasResult);
+          }
+        } catch (asaasErr) {
+          console.error('Erro ao criar subconta Asaas:', asaasErr);
+        }
+      }
 
       if (!hasBankData) {
         // Criar notificação para preencher dados bancários
@@ -302,17 +317,17 @@ const ProgramaIndicacao = () => {
           .insert({
             user_id: user.id,
             titulo: 'Complete seus dados bancários',
-            conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
+            conteudo: 'Para receber suas comissões do programa de indicação automaticamente, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
           });
 
         toast({
           title: "Parabéns!",
-          description: "Você foi inscrito no programa. Complete seus dados bancários para receber comissões.",
+          description: "Você foi inscrito no programa. Complete seus dados bancários para receber comissões automaticamente.",
         });
       } else {
         toast({
           title: "Parabéns!",
-          description: "Você foi inscrito no programa de indicação com sucesso.",
+          description: "Você foi inscrito no programa de indicação! Suas comissões serão creditadas automaticamente.",
         });
       }
 
