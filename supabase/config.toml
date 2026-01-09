@@ -241,5 +241,14 @@ verify_jwt = false
 [functions.check-payment-gateway]
 verify_jwt = true
 
+[functions.preview-proration-asaas]
+verify_jwt = true
+
+[functions.upgrade-subscription-asaas]
+verify_jwt = true
+
+[functions.admin-get-referral-logs]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
