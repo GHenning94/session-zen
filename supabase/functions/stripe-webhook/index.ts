@@ -220,11 +220,55 @@ async function checkFraudSignals(referrerId: string, referredId: string, custome
       console.log('[stripe-webhook] ⚠️ Could not check IPs:', ipError);
     }
 
-    // Bloquear se houver sinais críticos (mesmo CPF, mesmo cartão ou mesmo customer_id)
-    const blocked = signals.includes('same_cpf') || signals.includes('same_card') || signals.includes('shared_customer_id');
+    // =========================================================
+    // REGRAS DE BLOQUEIO ANTIFRAUDE (ENTERPRISE)
+    // =========================================================
+    // 
+    // SINAIS CRÍTICOS (bloqueiam imediatamente):
+    // - same_cpf: Indicador e indicado têm o mesmo CPF
+    // - same_card: Indicador e indicado usam o mesmo cartão (fingerprint)
+    // - shared_customer_id: Indicador e indicado são o mesmo cliente no Stripe
+    //
+    // SINAIS DE WARNING (não bloqueiam sozinhos):
+    // - same_phone: Mesmo telefone
+    // - same_ip: IPs compartilhados
+    // - same_device: Device fingerprint compartilhado (futuro)
+    //
+    // REGRA COMBINADA:
+    // - IP sozinho NUNCA bloqueia
+    // - 2+ warnings simultâneos = BLOQUEIO AUTOMÁTICO
+    // =========================================================
     
+    const criticalSignals = ['same_cpf', 'same_card', 'shared_customer_id'];
+    const warningSignals = ['same_phone', 'same_ip', 'same_device'];
+    
+    const hasCriticalSignal = signals.some(s => criticalSignals.includes(s));
+    const warningCount = signals.filter(s => warningSignals.includes(s)).length;
+    
+    // Bloqueio: sinal crítico OU 2+ warnings simultâneos
+    const blocked = hasCriticalSignal || warningCount >= 2;
+    
+    // Log detalhado
     if (signals.length > 0) {
-      console.log(`[stripe-webhook] 🚨 Fraud signals detected:`, signals, blocked ? '(BLOCKED)' : '(WARNING)');
+      const blockReason = hasCriticalSignal 
+        ? `CRITICAL SIGNAL (${signals.filter(s => criticalSignals.includes(s)).join(', ')})`
+        : warningCount >= 2 
+          ? `COMBINED WARNINGS (${warningCount} signals: ${signals.filter(s => warningSignals.includes(s)).join(' + ')})`
+          : `WARNING ONLY (${warningCount} signal, needs 2+ to block)`;
+      
+      console.log(`[stripe-webhook] 🚨 Fraud signals detected:`, signals, blocked ? `(BLOCKED: ${blockReason})` : `(${blockReason})`);
+      
+      // Se bloqueado por warnings combinados, registrar ação especial
+      if (blocked && !hasCriticalSignal && warningCount >= 2) {
+        await supabase.from('referral_fraud_signals').insert({
+          referrer_user_id: referrerId,
+          referred_user_id: referredId,
+          signal_type: 'combined_warnings',
+          signal_value: signals.filter(s => warningSignals.includes(s)).join('+'),
+          action_taken: 'blocked',
+          notes: `Auto-blocked: ${warningCount} simultaneous warning signals`
+        });
+      }
     }
 
     return { blocked, signals };
