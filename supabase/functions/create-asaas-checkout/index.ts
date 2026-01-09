@@ -19,6 +19,10 @@ const PRICE_MAP: Record<string, { plan: string; interval: string; priceInCents: 
 // Desconto de 20% para indicados (apenas no primeiro mês do plano Profissional)
 const REFERRAL_DISCOUNT_PERCENT = 20;
 
+// Comissões do programa de indicação
+const RECURRING_MONTHLY_COMMISSION_RATE = 0.10; // 10% mensal recorrente
+const ANNUAL_COMMISSION_RATE = 0.05; // 5% anual (pagamento único)
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -92,10 +96,12 @@ serve(async (req) => {
     let isReferredUser = false;
     let hasUsedDiscount = false;
     let referralId: string | null = null;
+    let referrerUserId: string | null = null;
+    let referrerWalletId: string | null = null;
 
     const { data: referralData } = await supabaseAdmin
       .from('referrals')
-      .select('id, status, first_payment_date')
+      .select('id, status, first_payment_date, referrer_user_id')
       .eq('referred_user_id', user.id)
       .single();
     
@@ -103,7 +109,23 @@ serve(async (req) => {
       isReferredUser = true;
       hasUsedDiscount = !!referralData.first_payment_date;
       referralId = referralData.id;
-      console.log('[create-asaas-checkout] 🎯 Usuário indicado:', { isReferredUser, hasUsedDiscount });
+      referrerUserId = referralData.referrer_user_id;
+      console.log('[create-asaas-checkout] 🎯 Usuário indicado:', { isReferredUser, hasUsedDiscount, referrerUserId });
+
+      // Buscar wallet do afiliado para split automático
+      const { data: referrerAccount } = await supabaseAdmin
+        .from('asaas_subaccounts')
+        .select('wallet_id, account_status')
+        .eq('user_id', referrerUserId)
+        .eq('account_status', 'active')
+        .single();
+
+      if (referrerAccount?.wallet_id) {
+        referrerWalletId = referrerAccount.wallet_id;
+        console.log('[create-asaas-checkout] 💰 Wallet do afiliado encontrado:', referrerWalletId);
+      } else {
+        console.log('[create-asaas-checkout] ⚠️ Afiliado não tem wallet Asaas ativo - comissão será manual');
+      }
     }
 
     // Calcular desconto: 20% apenas para indicados, plano Pro, primeiro pagamento
@@ -166,13 +188,17 @@ serve(async (req) => {
       console.log('[create-asaas-checkout] 👤 Cliente criado:', asaasCustomerId);
     }
 
-    // 2. Criar assinatura no Asaas
+    // 2. Criar assinatura no Asaas com split automático se houver afiliado
     const today = new Date();
     const nextDueDate = new Date(today);
     nextDueDate.setDate(nextDueDate.getDate() + 1); // Vencimento em 1 dia
     
     // Definir ciclo de cobrança
     const billingCycle = priceInfo.interval === 'yearly' ? 'YEARLY' : 'MONTHLY';
+    
+    // Calcular comissão para split
+    const commissionRate = priceInfo.interval === 'yearly' ? ANNUAL_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
+    const commissionAmount = Math.round(finalPriceInCents * commissionRate);
     
     const subscriptionPayload: any = {
       customer: asaasCustomerId,
@@ -186,10 +212,29 @@ serve(async (req) => {
         plan: priceInfo.plan,
         interval: priceInfo.interval,
         referral_id: referralId,
+        referrer_user_id: referrerUserId,
         discount_applied: shouldApplyDiscount,
         original_price: priceInfo.priceInCents,
+        commission_rate: commissionRate,
+        commission_amount: commissionAmount,
       }),
     };
+
+    // Adicionar split automático se o afiliado tem wallet Asaas
+    if (referrerWalletId && referrerUserId) {
+      const commissionInReais = commissionAmount / 100;
+      subscriptionPayload.split = [
+        {
+          walletId: referrerWalletId,
+          fixedValue: commissionInReais, // Valor fixo em reais
+        }
+      ];
+      console.log('[create-asaas-checkout] 💰 Split automático configurado:', {
+        walletId: referrerWalletId,
+        commissionValue: commissionInReais,
+        commissionRate: commissionRate * 100 + '%'
+      });
+    }
 
     // Se desconto aplicado, definir desconto na primeira cobrança
     if (shouldApplyDiscount && priceInfo.interval === 'monthly') {
@@ -245,7 +290,7 @@ serve(async (req) => {
     // Fallback: usar URL genérica do checkout Asaas
     if (!paymentUrl) {
       // Gerar link de pagamento direto
-      const paymentLinkPayload = {
+      const paymentLinkPayload: any = {
         name: priceInfo.name,
         description: priceInfo.name + (shouldApplyDiscount ? ' - 20% desconto indicação' : ''),
         endDate: null,
@@ -260,6 +305,7 @@ serve(async (req) => {
           plan: priceInfo.plan,
           interval: priceInfo.interval,
           subscription_id: subscriptionResult.id,
+          referrer_user_id: referrerUserId,
         }),
       };
 
@@ -292,15 +338,6 @@ serve(async (req) => {
       throw new Error("Falha ao gerar URL de pagamento.");
     }
 
-    // Salvar referência da assinatura Asaas no perfil (temporariamente)
-    await supabaseAdmin
-      .from('profiles')
-      .update({
-        // Usar campo existente para guardar referência temporária do Asaas
-        // O webhook vai atualizar quando o pagamento for confirmado
-      })
-      .eq('user_id', user.id);
-
     console.log("[create-asaas-checkout] ✅ Checkout URL generated:", paymentUrl);
 
     return new Response(JSON.stringify({ 
@@ -310,6 +347,8 @@ serve(async (req) => {
       original_price: priceInfo.priceInCents / 100,
       final_price: finalPriceInCents / 100,
       discount_amount: discountApplied / 100,
+      split_enabled: !!referrerWalletId,
+      commission_amount: referrerWalletId ? commissionAmount / 100 : 0,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
