@@ -63,18 +63,20 @@ async function logReferralAction(data: {
  * =========================================================
  * VERIFICAÇÃO DE IDEMPOTÊNCIA
  * Evita criar comissões duplicadas em retries de webhook
+ * Inclui gateway_event_id para cobertura de retries extremos
  * =========================================================
  */
-async function checkIdempotency(invoiceId: string, paymentType: string): Promise<boolean> {
+async function checkIdempotency(invoiceId: string, eventId: string, paymentType: string): Promise<boolean> {
   const { data: existingPayout } = await supabase
     .from('referral_payouts')
     .select('id')
     .eq('gateway_invoice_id', invoiceId)
+    .eq('gateway_event_id', eventId)
     .eq('payment_type', paymentType)
     .maybeSingle();
   
   if (existingPayout) {
-    console.log(`[stripe-webhook] ⚠️ Idempotency check: Payout already exists for invoice ${invoiceId}, type ${paymentType}`);
+    console.log(`[stripe-webhook] ⚠️ Idempotency check: Payout already exists for invoice ${invoiceId}, event ${eventId}, type ${paymentType}`);
     return true; // Já processado
   }
   return false;
@@ -82,8 +84,12 @@ async function checkIdempotency(invoiceId: string, paymentType: string): Promise
 
 /**
  * =========================================================
- * VERIFICAÇÃO ANTIFRAUDE LEVE
+ * VERIFICAÇÃO ANTIFRAUDE LEVE (ENTERPRISE)
  * Detecta padrões suspeitos entre indicador e indicado
+ * - CPF/telefone iguais
+ * - Fingerprint de cartão compartilhado
+ * - Stripe customer_id compartilhado
+ * - IPs recorrentes
  * =========================================================
  */
 async function checkFraudSignals(referrerId: string, referredId: string, customerId: string): Promise<{
@@ -95,8 +101,8 @@ async function checkFraudSignals(referrerId: string, referredId: string, custome
   try {
     // Buscar dados do referrer e referred
     const [referrerProfile, referredProfile] = await Promise.all([
-      supabase.from('profiles').select('cpf_cnpj, telefone').eq('user_id', referrerId).single(),
-      supabase.from('profiles').select('cpf_cnpj, telefone').eq('user_id', referredId).single()
+      supabase.from('profiles').select('cpf_cnpj, telefone, stripe_customer_id').eq('user_id', referrerId).single(),
+      supabase.from('profiles').select('cpf_cnpj, telefone, stripe_customer_id').eq('user_id', referredId).single()
     ]);
 
     const referrer = referrerProfile.data;
@@ -134,7 +140,21 @@ async function checkFraudSignals(referrerId: string, referredId: string, custome
       }
     }
 
-    // 3. Verificar cartões iguais no Stripe (mesmo fingerprint)
+    // 3. Stripe customer_id compartilhado (mesmo cliente no Stripe)
+    if (referrer?.stripe_customer_id && referred?.stripe_customer_id) {
+      if (referrer.stripe_customer_id === referred.stripe_customer_id) {
+        signals.push('shared_customer_id');
+        await supabase.from('referral_fraud_signals').insert({
+          referrer_user_id: referrerId,
+          referred_user_id: referredId,
+          signal_type: 'shared_customer_id',
+          signal_value: `***${referrer.stripe_customer_id.slice(-8)}`,
+          action_taken: 'blocked'
+        });
+      }
+    }
+
+    // 4. Verificar cartões iguais no Stripe (mesmo fingerprint)
     try {
       const paymentMethods = await stripe.paymentMethods.list({
         customer: customerId,
@@ -142,15 +162,9 @@ async function checkFraudSignals(referrerId: string, referredId: string, custome
       });
 
       // Buscar customer do referrer
-      const { data: referrerStripeProfile } = await supabase
-        .from('profiles')
-        .select('stripe_customer_id')
-        .eq('user_id', referrerId)
-        .single();
-
-      if (referrerStripeProfile?.stripe_customer_id) {
+      if (referrer?.stripe_customer_id) {
         const referrerPaymentMethods = await stripe.paymentMethods.list({
-          customer: referrerStripeProfile.stripe_customer_id,
+          customer: referrer.stripe_customer_id,
           type: 'card'
         });
 
@@ -175,8 +189,39 @@ async function checkFraudSignals(referrerId: string, referredId: string, custome
       console.log('[stripe-webhook] ⚠️ Could not check card fingerprints:', stripeError);
     }
 
-    // Bloquear se houver sinais críticos (mesmo CPF ou mesmo cartão)
-    const blocked = signals.includes('same_cpf') || signals.includes('same_card');
+    // 5. Verificar IPs compartilhados (se tabela de fingerprints tiver dados)
+    try {
+      const { data: referrerIps } = await supabase
+        .from('user_login_fingerprints')
+        .select('ip_address')
+        .eq('user_id', referrerId);
+      
+      const { data: referredIps } = await supabase
+        .from('user_login_fingerprints')
+        .select('ip_address')
+        .eq('user_id', referredId);
+
+      if (referrerIps && referredIps) {
+        const referrerIpSet = new Set(referrerIps.map(r => r.ip_address));
+        const sharedIps = referredIps.filter(r => referrerIpSet.has(r.ip_address));
+        
+        if (sharedIps.length > 0) {
+          signals.push('same_ip');
+          await supabase.from('referral_fraud_signals').insert({
+            referrer_user_id: referrerId,
+            referred_user_id: referredId,
+            signal_type: 'same_ip',
+            signal_value: `${sharedIps.length} shared IPs`,
+            action_taken: 'warning' // IP compartilhado é apenas warning, não bloqueia
+          });
+        }
+      }
+    } catch (ipError) {
+      console.log('[stripe-webhook] ⚠️ Could not check IPs:', ipError);
+    }
+
+    // Bloquear se houver sinais críticos (mesmo CPF, mesmo cartão ou mesmo customer_id)
+    const blocked = signals.includes('same_cpf') || signals.includes('same_card') || signals.includes('shared_customer_id');
     
     if (signals.length > 0) {
       console.log(`[stripe-webhook] 🚨 Fraud signals detected:`, signals, blocked ? '(BLOCKED)' : '(WARNING)');
@@ -252,7 +297,7 @@ serve(async (req) => {
       }
 
       case "invoice.payment_succeeded": {
-        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice, event.id);
         break;
       }
 
@@ -435,7 +480,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
-async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, eventId: string) {
   const customerId = invoice.customer as string;
   const amountInCents = invoice.amount_paid || 0;
   const invoiceId = invoice.id;
@@ -649,7 +694,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     // =========================================================
     
     // IDEMPOTÊNCIA: Verificar se já processou este invoice para annual
-    if (await checkIdempotency(invoiceId, 'annual_installment')) {
+    if (await checkIdempotency(invoiceId, eventId, 'annual_installment')) {
       console.log('[stripe-webhook] ⚠️ Annual commission already processed for invoice:', invoiceId);
       return;
     }
@@ -716,6 +761,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
           payment_method: 'annual_installment',
           // ✅ SNAPSHOT: Dados congelados no momento do cálculo
           gateway_invoice_id: invoiceId,
+          gateway_event_id: eventId,
           gateway_subscription_id: subscriptionId,
           amount_paid: amountInCents,
           net_amount: netAmount,
@@ -778,7 +824,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     paymentType = 'proration';
     
     // IDEMPOTÊNCIA
-    if (await checkIdempotency(invoiceId, paymentType)) {
+    if (await checkIdempotency(invoiceId, eventId, paymentType)) {
       console.log('[stripe-webhook] ⚠️ Proration commission already processed for invoice:', invoiceId);
       return;
     }
@@ -791,7 +837,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     paymentType = isFirstPayment ? 'first_payment' : 'recurring';
     
     // IDEMPOTÊNCIA
-    if (await checkIdempotency(invoiceId, paymentType)) {
+    if (await checkIdempotency(invoiceId, eventId, paymentType)) {
       console.log('[stripe-webhook] ⚠️ Commission already processed for invoice:', invoiceId);
       return;
     }
@@ -840,6 +886,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       referred_plan: planName,
       // ✅ SNAPSHOT: Dados congelados no momento do cálculo
       gateway_invoice_id: invoiceId,
+      gateway_event_id: eventId,
       gateway_subscription_id: subscriptionId,
       amount_paid: amountInCents,
       net_amount: netAmount,
