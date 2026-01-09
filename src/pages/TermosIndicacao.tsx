@@ -90,7 +90,7 @@ const TermosIndicacao = () => {
                   <ul className="list-disc pl-6 space-y-1">
                     <li>Cada pagamento confirmado gera sua própria comissão, conforme o plano vigente no momento do pagamento.</li>
                     <li>Upgrades de plano não anulam comissões já geradas, exceto em caso de estorno, cancelamento dentro do prazo legal ou chargeback.</li>
-                    <li>Créditos concedidos por upgrade proporcional (prorrata) não geram comissão. A comissão incide exclusivamente sobre valores efetivamente pagos.</li>
+                    <li><strong>Prorrata (upgrade proporcional):</strong> Em caso de upgrade com cobrança proporcional, a comissão é de <strong className="text-primary">15%</strong> sobre o valor efetivamente pago (descontado o crédito do plano anterior). O crédito em si não gera comissão.</li>
                   </ul>
                 </div>
               </div>
