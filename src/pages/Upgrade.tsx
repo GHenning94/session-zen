@@ -44,6 +44,14 @@ const getPlanLevel = (planId: string): number => {
   return 0
 }
 
+// Price IDs por gateway
+const STRIPE_PRICES = {
+  pro_monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
+  pro_annual: 'price_1SSMOdCP57sNVd3la4kMOinN',
+  premium_monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
+  premium_annual: 'price_1SSMP7CP57sNVd3lSf4oYINX'
+}
+
 export default function Upgrade() {
   const { user } = useAuth()
   const { currentPlan, billingInterval } = useSubscription()
@@ -73,13 +81,6 @@ export default function Upgrade() {
   }>({ open: false, targetPlan: null })
 
   useEffect(() => { if (!user) navigate('/login') }, [user, navigate])
-
-  const STRIPE_PRICES = {
-    pro_monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
-    pro_annual: 'price_1SSMOdCP57sNVd3la4kMOinN',
-    premium_monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
-    premium_annual: 'price_1SSMP7CP57sNVd3lSf4oYINX'
-  }
 
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
 
@@ -217,10 +218,15 @@ export default function Upgrade() {
       return
     }
     
-    // Upgrade de plano gratuito ou primeiro plano - usa checkout normal
+    // Upgrade de plano gratuito ou primeiro plano - usa checkout com roteamento inteligente
     await processCheckout(plan)
   }
 
+  /**
+   * Processa checkout com roteamento inteligente:
+   * - Usuários indicados → Asaas
+   * - Usuários normais → Stripe
+   */
   const processCheckout = async (plan: typeof plans[0]) => {
     if (!user || !plan.stripePrice) {
       // Para plano básico, usar função de teste
@@ -245,16 +251,43 @@ export default function Upgrade() {
     
     setLoading(true)
     try {
-      const referralCode = localStorage.getItem('referral_code') || sessionStorage.getItem('pending_referral')
-      const { data, error } = await supabase.functions.invoke('create-checkout', { 
-        body: { 
-          priceId: plan.stripePrice, 
-          returnUrl: window.location.origin,
-          referralCode: referralCode || undefined
-        } 
+      // 1. Verificar qual gateway usar (Stripe ou Asaas)
+      const { data: gatewayData, error: gatewayError } = await supabase.functions.invoke('check-payment-gateway', {
+        body: {}
       })
-      if (error) throw error
-      if (data?.url) window.location.href = data.url
+      
+      if (gatewayError) {
+        console.error('Erro ao verificar gateway:', gatewayError)
+        // Fallback para Stripe se falhar
+      }
+      
+      const gateway = gatewayData?.gateway || 'stripe'
+      console.log('[Upgrade] Gateway selecionado:', gateway)
+      
+      // 2. Chamar o checkout apropriado
+      if (gateway === 'asaas') {
+        // Usuário indicado → Asaas
+        const { data, error } = await supabase.functions.invoke('create-asaas-checkout', { 
+          body: { 
+            priceId: plan.stripePrice,
+            planId: plan.id,
+            billingInterval: billingCycle,
+            returnUrl: window.location.origin
+          } 
+        })
+        if (error) throw error
+        if (data?.url) window.location.href = data.url
+      } else {
+        // Usuário normal → Stripe
+        const { data, error } = await supabase.functions.invoke('create-checkout', { 
+          body: { 
+            priceId: plan.stripePrice, 
+            returnUrl: window.location.origin
+          } 
+        })
+        if (error) throw error
+        if (data?.url) window.location.href = data.url
+      }
     } catch (error: any) {
       console.error('Erro ao processar pagamento:', error)
       toast.error(`Erro ao processar plano: ${error.message || 'Verifique os IDs de preço no Stripe Dashboard'}`)
@@ -447,90 +480,74 @@ export default function Upgrade() {
         </div>
       </div>
 
-      {/* Modal de confirmação de upgrade */}
+      {/* Modal de Upgrade (Proration) */}
       <AlertDialog open={upgradeModal.open} onOpenChange={(open) => setUpgradeModal({ ...upgradeModal, open })}>
-        <AlertDialogContent className="max-w-md">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Crown className="h-5 w-5 text-primary" />
-              {upgradeModal.prorationData?.isTierChange ? 'Confirmar Upgrade' : 'Confirmar Alteração de Plano'}
-            </AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-4">
-                {upgradeModal.isLoadingProration ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <span className="ml-3 text-muted-foreground">Calculando valor proporcional...</span>
-                  </div>
-                ) : upgradeModal.prorationData ? (
-                  <>
-                    <p className="text-sm">
-                      Você está alterando de <strong>{upgradeModal.prorationData.currentPlan}</strong> para <strong>{upgradeModal.prorationData.newPlan}</strong>.
+            <AlertDialogTitle>Confirmar Upgrade</AlertDialogTitle>
+            <AlertDialogDescription>
+              {upgradeModal.isLoadingProration ? (
+                <div className="flex flex-col items-center justify-center py-6 gap-3">
+                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <span>Calculando valor proporcional...</span>
+                </div>
+              ) : upgradeModal.prorationData ? (
+                <div className="space-y-4 py-4">
+                  <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Plano atual:</span>
+                      <span className="font-medium">{upgradeModal.prorationData.currentPlan}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Novo plano:</span>
+                      <span className="font-medium text-primary">{upgradeModal.prorationData.newPlan}</span>
+                    </div>
+                    <div className="border-t my-2" />
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Crédito do plano atual:</span>
+                      <span className="text-green-600">-{upgradeModal.prorationData.creditFormatted}</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-semibold">
+                      <span>Valor a pagar agora:</span>
+                      <span className="text-primary">{upgradeModal.prorationData.proratedAmountFormatted}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Você tem {upgradeModal.prorationData.daysRemaining} dias restantes no período atual (até {upgradeModal.prorationData.periodEndDate})
                     </p>
-                    
-                    {/* Detalhes do cálculo */}
-                    <div className="space-y-2 p-4 rounded-lg bg-muted/50 border">
-                      <div className="flex justify-between text-sm">
-                        <span className="text-muted-foreground">Dias restantes no plano atual:</span>
-                        <span className="font-medium">{upgradeModal.prorationData.daysRemaining} dias</span>
-                      </div>
-                      {upgradeModal.prorationData.creditAmount > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Crédito proporcional:</span>
-                          <span className="font-medium text-green-600">- {upgradeModal.prorationData.creditFormatted}</span>
-                        </div>
-                      )}
-                      <div className="border-t pt-2 mt-2">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Valor a pagar agora:</span>
-                          <span className="text-lg font-bold text-primary">{upgradeModal.prorationData.proratedAmountFormatted}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800">
-                      <p className="text-xs text-blue-800 dark:text-blue-200">
-                        Após a alteração, seu próximo ciclo de cobrança será em <strong>{upgradeModal.prorationData.periodEndDate}</strong>.
-                      </p>
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-sm">
-                    Você está alterando para o plano <strong>{upgradeModal.targetPlan?.name}</strong>.
-                  </p>
-                )}
-              </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-yellow-600 py-4">
+                  <AlertTriangle className="h-5 w-5" />
+                  <span>Não foi possível calcular o valor proporcional. Deseja continuar mesmo assim?</span>
+                </div>
+              )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConfirmUpgrade} 
-              disabled={loading || upgradeModal.isLoadingProration}
-            >
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmUpgrade} disabled={loading || upgradeModal.isLoadingProration}>
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processando...
                 </>
-              ) : upgradeModal.prorationData ? (
-                `Pagar ${upgradeModal.prorationData.proratedAmountFormatted}`
               ) : (
-                'Confirmar'
+                'Confirmar Upgrade'
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Modal de retenção para downgrade */}
+      {/* Modal de Downgrade (Retenção) */}
       <DowngradeRetentionFlow
         open={downgradeModal.open}
         onOpenChange={(open) => setDowngradeModal({ ...downgradeModal, open })}
-        onConfirmDowngrade={handleConfirmDowngrade}
-        currentPlanName={currentPlanInfo?.name || ''}
-        targetPlanName={downgradeModal.targetPlan?.name || ''}
+        currentPlanName={currentPlanInfo?.name || currentPlan}
+        targetPlanName={downgradeModal.targetPlan?.name || 'Básico'}
         lostFeatures={getLostFeatures()}
+        onConfirmDowngrade={handleConfirmDowngrade}
       />
     </div>
   )
