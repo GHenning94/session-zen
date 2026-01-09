@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
 
     if (referralsError) throw referralsError
 
-    // Get payouts
+    // Get payouts with full details
     const { data: payouts, error: payoutsError } = await supabaseClient
       .from('referral_payouts')
       .select('*')
@@ -69,10 +69,21 @@ Deno.serve(async (req) => {
 
     if (payoutsError) throw payoutsError
 
+    // Get fraud signals
+    const { data: fraudSignals, error: fraudError } = await supabaseClient
+      .from('referral_fraud_signals')
+      .select('*')
+      .order('detected_at', { ascending: false })
+      .limit(200)
+
+    if (fraudError) {
+      console.log('[Admin Referral Stats] Fraud signals fetch error (table may not exist):', fraudError.message)
+    }
+
     // Get all referral partner profiles (is_referral_partner = true OR left_referral_program_at is not null)
     const { data: partnerProfiles, error: partnersError } = await supabaseClient
       .from('profiles')
-      .select('user_id, nome, is_referral_partner, referral_code, left_referral_program_at, stripe_connect_account_id, stripe_connect_onboarded, created_at')
+      .select('user_id, nome, is_referral_partner, referral_code, left_referral_program_at, created_at, banco, agencia, conta, chave_pix, cpf_cnpj')
       .or('is_referral_partner.eq.true,left_referral_program_at.not.is.null')
       .order('created_at', { ascending: false })
 
@@ -82,13 +93,17 @@ Deno.serve(async (req) => {
     const allUserIds = [
       ...new Set([
         ...(referrals?.map(r => r.referrer_user_id) || []),
-        ...(referrals?.map(r => r.referred_user_id) || [])
+        ...(referrals?.map(r => r.referred_user_id) || []),
+        ...(payouts?.map(p => p.referrer_user_id) || []),
+        ...(payouts?.map(p => p.referred_user_id) || []),
+        ...(fraudSignals?.map(f => f.referrer_user_id) || []),
+        ...(fraudSignals?.map(f => f.referred_user_id) || [])
       ])
-    ]
+    ].filter(Boolean)
 
     const { data: profiles } = await supabaseClient
       .from('profiles')
-      .select('user_id, nome')
+      .select('user_id, nome, subscription_plan, stripe_customer_id')
       .in('user_id', allUserIds)
 
     const profilesMap = (profiles || []).reduce((acc: any, p: any) => {
@@ -100,8 +115,23 @@ Deno.serve(async (req) => {
     const enrichedReferrals = referrals?.map(r => ({
       ...r,
       referrer_name: profilesMap[r.referrer_user_id]?.nome || 'Usuário',
-      referred_name: profilesMap[r.referred_user_id]?.nome || 'Usuário'
+      referred_name: profilesMap[r.referred_user_id]?.nome || 'Usuário',
+      referred_current_plan: profilesMap[r.referred_user_id]?.subscription_plan || 'free'
     })) || []
+
+    // Enrich payouts with full snapshot details
+    const enrichedPayouts = payouts?.map(p => ({
+      ...p,
+      referrer_name: profilesMap[p.referrer_user_id]?.nome || 'Usuário',
+      referred_name: p.referred_user_name || profilesMap[p.referred_user_id]?.nome || 'Usuário'
+    })) || []
+
+    // Enrich fraud signals with names
+    const enrichedFraudSignals = (fraudSignals || []).map(f => ({
+      ...f,
+      referrer_name: profilesMap[f.referrer_user_id]?.nome || 'Usuário',
+      referred_name: profilesMap[f.referred_user_id]?.nome || 'Usuário'
+    }))
 
     // Calculate cooldown status for partners
     const now = new Date()
@@ -130,6 +160,11 @@ Deno.serve(async (req) => {
       const activePartnerReferrals = partnerReferrals.filter(r => r.status === 'active')
       const totalCommissionEarned = partnerReferrals.reduce((sum, r) => sum + (r.commission_amount || 0), 0)
       
+      // Get payout stats for this partner
+      const partnerPayouts = payouts?.filter(pout => pout.referrer_user_id === p.user_id) || []
+      const paidPayouts = partnerPayouts.filter(pout => pout.status === 'paid')
+      const pendingPayouts = partnerPayouts.filter(pout => pout.status === 'pending')
+      
       return {
         ...p,
         status: p.is_referral_partner ? 'active' : (cooldownStatus === 'active' ? 'cooldown' : 'inactive'),
@@ -138,7 +173,11 @@ Deno.serve(async (req) => {
         days_remaining: daysRemaining,
         total_referrals: partnerReferrals.length,
         active_referrals: activePartnerReferrals.length,
-        total_commission_earned: totalCommissionEarned / 100
+        total_commission_earned: totalCommissionEarned / 100,
+        total_paid: paidPayouts.reduce((sum, pout) => sum + (pout.amount_paid || pout.amount || 0), 0) / 100,
+        total_pending: pendingPayouts.reduce((sum, pout) => sum + (pout.amount || 0), 0) / 100,
+        last_payout_at: paidPayouts.length > 0 ? paidPayouts[0].paid_at : null,
+        has_bank_details: !!(p.banco && p.conta) || !!p.chave_pix
       }
     }) || []
 
@@ -164,10 +203,21 @@ Deno.serve(async (req) => {
       }
     })
 
-    // Calculate commissions
-    const totalCommission = referrals?.reduce((sum, r) => sum + (r.commission_amount || 0), 0) || 0
-    const paidCommission = payouts?.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0) || 0
-    const pendingCommission = payouts?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+    // Calculate commissions by status
+    const pendingPayouts = payouts?.filter(p => p.status === 'pending') || []
+    const approvedPayouts = payouts?.filter(p => p.status === 'approved') || []
+    const paidPayoutsArr = payouts?.filter(p => p.status === 'paid') || []
+    const cancelledPayouts = payouts?.filter(p => p.status === 'cancelled') || []
+    
+    const totalCommission = payouts?.reduce((sum, p) => sum + (p.amount || 0), 0) || 0
+    const paidCommission = paidPayoutsArr.reduce((sum, p) => sum + (p.amount_paid || p.amount || 0), 0)
+    const pendingCommission = pendingPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
+    const approvedCommission = approvedPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
+    const cancelledCommission = cancelledPayouts.reduce((sum, p) => sum + (p.amount || 0), 0)
+    
+    // Fraud stats
+    const fraudSignalCount = fraudSignals?.length || 0
+    const unreviewedFraudSignals = (fraudSignals || []).filter(f => !f.reviewed).length
 
     console.log('[Admin Referral Stats] Successfully calculated referral stats')
 
@@ -186,14 +236,16 @@ Deno.serve(async (req) => {
           totalCommission: totalCommission / 100,
           paidCommission: paidCommission / 100,
           pendingCommission: pendingCommission / 100,
-          totalPayouts: payouts?.length || 0
+          approvedCommission: approvedCommission / 100,
+          cancelledCommission: cancelledCommission / 100,
+          totalPayouts: payouts?.length || 0,
+          fraudSignalCount,
+          unreviewedFraudSignals
         },
         referrals: enrichedReferrals,
         partners: enrichedPartners,
-        payouts: payouts?.map(p => ({
-          ...p,
-          partner_name: profilesMap[p.user_id]?.nome || 'Usuário'
-        })) || []
+        payouts: enrichedPayouts,
+        fraudSignals: enrichedFraudSignals
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
