@@ -172,9 +172,22 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       })
 
       try {
-        console.log('[UpgradePlanCard] 📊 Fetching proration preview for:', stripePrice)
-        const { data, error } = await supabase.functions.invoke('preview-proration', {
-          body: { newPriceId: stripePrice }
+        // Check which gateway to use for proration
+        const { data: gatewayData } = await supabase.functions.invoke('check-payment-gateway', {
+          body: {}
+        })
+        
+        const gateway = gatewayData?.gateway || 'stripe'
+        console.log('[UpgradePlanCard] 📊 Fetching proration preview via:', gateway)
+        
+        // Use appropriate proration function based on gateway
+        const prorationFunction = gateway === 'asaas' ? 'preview-proration-asaas' : 'preview-proration'
+        const { data, error } = await supabase.functions.invoke(prorationFunction, {
+          body: { 
+            newPriceId: stripePrice,
+            planId: plan.id,
+            billingInterval: billingCycle
+          }
         })
 
         if (error) throw error
@@ -182,7 +195,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
         console.log('[UpgradePlanCard] ✅ Proration data received:', data)
         setProrationModal(prev => ({
           ...prev,
-          data: data,
+          data: { ...data, gateway },
           isLoading: false
         }))
       } catch (error: any) {
@@ -208,10 +221,18 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       const stripePrice = billingCycle === 'monthly' 
         ? prorationModal.targetPlan.monthlyStripePrice 
         : prorationModal.targetPlan.annualStripePrice
+      
+      // Determine which upgrade function to use based on gateway
+      const gateway = (prorationModal.data as any)?.gateway || 'stripe'
+      const upgradeFunction = gateway === 'asaas' ? 'upgrade-subscription-asaas' : 'upgrade-subscription'
         
-      console.log('[UpgradePlanCard] 🚀 Processing upgrade with proration')
-      const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
-        body: { newPriceId: stripePrice }
+      console.log('[UpgradePlanCard] 🚀 Processing upgrade via:', gateway)
+      const { data, error } = await supabase.functions.invoke(upgradeFunction, {
+        body: { 
+          newPriceId: stripePrice,
+          planId: prorationModal.targetPlan.id,
+          billingInterval: billingCycle
+        }
       })
 
       if (error) throw error
