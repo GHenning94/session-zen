@@ -1314,20 +1314,73 @@ export type Database = {
           },
         ]
       }
+      referral_fraud_signals: {
+        Row: {
+          action_taken: string | null
+          detected_at: string | null
+          id: string
+          notes: string | null
+          referred_user_id: string
+          referrer_user_id: string
+          reviewed: boolean | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          signal_type: string
+          signal_value: string | null
+        }
+        Insert: {
+          action_taken?: string | null
+          detected_at?: string | null
+          id?: string
+          notes?: string | null
+          referred_user_id: string
+          referrer_user_id: string
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          signal_type: string
+          signal_value?: string | null
+        }
+        Update: {
+          action_taken?: string | null
+          detected_at?: string | null
+          id?: string
+          notes?: string | null
+          referred_user_id?: string
+          referrer_user_id?: string
+          reviewed?: boolean | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          signal_type?: string
+          signal_value?: string | null
+        }
+        Relationships: []
+      }
       referral_payouts: {
         Row: {
           amount: number
+          amount_paid: number | null
+          approval_deadline: string | null
+          approved_at: string | null
           asaas_transfer_id: string | null
+          billing_interval: string | null
+          commission_rate: number | null
           created_at: string
           currency: string | null
           failure_reason: string | null
+          gateway_fee: number | null
+          gateway_invoice_id: string | null
+          gateway_subscription_id: string | null
           id: string
+          net_amount: number | null
           paid_at: string | null
           payment_method: string | null
+          payment_type: string | null
           period_end: string | null
           period_start: string | null
           referral_id: string | null
           referred_plan: string | null
+          referred_user_id: string | null
           referred_user_name: string | null
           referrer_user_id: string
           status: string
@@ -1336,17 +1389,28 @@ export type Database = {
         }
         Insert: {
           amount: number
+          amount_paid?: number | null
+          approval_deadline?: string | null
+          approved_at?: string | null
           asaas_transfer_id?: string | null
+          billing_interval?: string | null
+          commission_rate?: number | null
           created_at?: string
           currency?: string | null
           failure_reason?: string | null
+          gateway_fee?: number | null
+          gateway_invoice_id?: string | null
+          gateway_subscription_id?: string | null
           id?: string
+          net_amount?: number | null
           paid_at?: string | null
           payment_method?: string | null
+          payment_type?: string | null
           period_end?: string | null
           period_start?: string | null
           referral_id?: string | null
           referred_plan?: string | null
+          referred_user_id?: string | null
           referred_user_name?: string | null
           referrer_user_id: string
           status?: string
@@ -1355,17 +1419,28 @@ export type Database = {
         }
         Update: {
           amount?: number
+          amount_paid?: number | null
+          approval_deadline?: string | null
+          approved_at?: string | null
           asaas_transfer_id?: string | null
+          billing_interval?: string | null
+          commission_rate?: number | null
           created_at?: string
           currency?: string | null
           failure_reason?: string | null
+          gateway_fee?: number | null
+          gateway_invoice_id?: string | null
+          gateway_subscription_id?: string | null
           id?: string
+          net_amount?: number | null
           paid_at?: string | null
           payment_method?: string | null
+          payment_type?: string | null
           period_end?: string | null
           period_start?: string | null
           referral_id?: string | null
           referred_plan?: string | null
+          referred_user_id?: string | null
           referred_user_name?: string | null
           referrer_user_id?: string
           status?: string
@@ -1849,6 +1924,7 @@ export type Database = {
       }
     }
     Functions: {
+      approve_eligible_payouts: { Args: never; Returns: number }
       can_access_client_safe_view: {
         Args: { client_user_id: string }
         Returns: boolean

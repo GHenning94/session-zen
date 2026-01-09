@@ -60,6 +60,136 @@ async function logReferralAction(data: {
 }
 
 /**
+ * =========================================================
+ * VERIFICAÇÃO DE IDEMPOTÊNCIA
+ * Evita criar comissões duplicadas em retries de webhook
+ * =========================================================
+ */
+async function checkIdempotency(invoiceId: string, paymentType: string): Promise<boolean> {
+  const { data: existingPayout } = await supabase
+    .from('referral_payouts')
+    .select('id')
+    .eq('gateway_invoice_id', invoiceId)
+    .eq('payment_type', paymentType)
+    .maybeSingle();
+  
+  if (existingPayout) {
+    console.log(`[stripe-webhook] ⚠️ Idempotency check: Payout already exists for invoice ${invoiceId}, type ${paymentType}`);
+    return true; // Já processado
+  }
+  return false;
+}
+
+/**
+ * =========================================================
+ * VERIFICAÇÃO ANTIFRAUDE LEVE
+ * Detecta padrões suspeitos entre indicador e indicado
+ * =========================================================
+ */
+async function checkFraudSignals(referrerId: string, referredId: string, customerId: string): Promise<{
+  blocked: boolean;
+  signals: string[];
+}> {
+  const signals: string[] = [];
+  
+  try {
+    // Buscar dados do referrer e referred
+    const [referrerProfile, referredProfile] = await Promise.all([
+      supabase.from('profiles').select('cpf_cnpj, telefone').eq('user_id', referrerId).single(),
+      supabase.from('profiles').select('cpf_cnpj, telefone').eq('user_id', referredId).single()
+    ]);
+
+    const referrer = referrerProfile.data;
+    const referred = referredProfile.data;
+
+    // 1. Mesmo CPF/CNPJ
+    if (referrer?.cpf_cnpj && referred?.cpf_cnpj) {
+      const cleanReferrerCpf = referrer.cpf_cnpj.replace(/\D/g, '');
+      const cleanReferredCpf = referred.cpf_cnpj.replace(/\D/g, '');
+      if (cleanReferrerCpf === cleanReferredCpf) {
+        signals.push('same_cpf');
+        await supabase.from('referral_fraud_signals').insert({
+          referrer_user_id: referrerId,
+          referred_user_id: referredId,
+          signal_type: 'same_cpf',
+          signal_value: `***${cleanReferrerCpf.slice(-4)}`,
+          action_taken: 'blocked'
+        });
+      }
+    }
+
+    // 2. Mesmo telefone
+    if (referrer?.telefone && referred?.telefone) {
+      const cleanReferrerPhone = referrer.telefone.replace(/\D/g, '');
+      const cleanReferredPhone = referred.telefone.replace(/\D/g, '');
+      if (cleanReferrerPhone === cleanReferredPhone) {
+        signals.push('same_phone');
+        await supabase.from('referral_fraud_signals').insert({
+          referrer_user_id: referrerId,
+          referred_user_id: referredId,
+          signal_type: 'same_phone',
+          signal_value: `***${cleanReferrerPhone.slice(-4)}`,
+          action_taken: 'blocked'
+        });
+      }
+    }
+
+    // 3. Verificar cartões iguais no Stripe (mesmo fingerprint)
+    try {
+      const paymentMethods = await stripe.paymentMethods.list({
+        customer: customerId,
+        type: 'card'
+      });
+
+      // Buscar customer do referrer
+      const { data: referrerStripeProfile } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('user_id', referrerId)
+        .single();
+
+      if (referrerStripeProfile?.stripe_customer_id) {
+        const referrerPaymentMethods = await stripe.paymentMethods.list({
+          customer: referrerStripeProfile.stripe_customer_id,
+          type: 'card'
+        });
+
+        // Comparar fingerprints
+        const referredFingerprints = paymentMethods.data.map(pm => pm.card?.fingerprint).filter(Boolean);
+        const referrerFingerprints = referrerPaymentMethods.data.map(pm => pm.card?.fingerprint).filter(Boolean);
+        
+        const sharedFingerprints = referredFingerprints.filter(fp => referrerFingerprints.includes(fp));
+        
+        if (sharedFingerprints.length > 0) {
+          signals.push('same_card');
+          await supabase.from('referral_fraud_signals').insert({
+            referrer_user_id: referrerId,
+            referred_user_id: referredId,
+            signal_type: 'same_card',
+            signal_value: `fingerprint_match`,
+            action_taken: 'blocked'
+          });
+        }
+      }
+    } catch (stripeError) {
+      console.log('[stripe-webhook] ⚠️ Could not check card fingerprints:', stripeError);
+    }
+
+    // Bloquear se houver sinais críticos (mesmo CPF ou mesmo cartão)
+    const blocked = signals.includes('same_cpf') || signals.includes('same_card');
+    
+    if (signals.length > 0) {
+      console.log(`[stripe-webhook] 🚨 Fraud signals detected:`, signals, blocked ? '(BLOCKED)' : '(WARNING)');
+    }
+
+    return { blocked, signals };
+  } catch (error) {
+    console.error('[stripe-webhook] ❌ Error checking fraud signals:', error);
+    return { blocked: false, signals: [] };
+  }
+}
+
+/**
  * Stripe Webhook - Processa pagamentos e calcula comissões
  * 
  * TODOS os usuários pagam via Stripe
@@ -308,6 +438,8 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
   const amountInCents = invoice.amount_paid || 0;
+  const invoiceId = invoice.id;
+  const subscriptionId = invoice.subscription as string;
 
   // Detectar se é pagamento de prorrata (upgrade)
   const isProration = invoice.billing_reason === 'subscription_update' || 
@@ -316,7 +448,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   
   const hasProrationItems = invoice.lines?.data?.some(line => line.proration === true);
 
-  console.log('[stripe-webhook] 💰 Payment succeeded for invoice:', invoice.id, {
+  console.log('[stripe-webhook] 💰 Payment succeeded for invoice:', invoiceId, {
     Amount: amountInCents,
     billing_reason: invoice.billing_reason,
     isProration,
@@ -438,13 +570,36 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       action: 'payment',
       referred_user_id: userId,
       gateway: 'stripe',
-      gateway_payment_id: invoice.id,
+      gateway_payment_id: invoiceId,
       gateway_customer_id: customerId,
       gross_amount: amountInCents,
       new_plan: planName,
       billing_interval: billingInterval,
       status: 'success',
       ineligibility_reason: 'User is not referred'
+    });
+    return;
+  }
+
+  // =========================================================
+  // VERIFICAÇÃO ANTIFRAUDE
+  // =========================================================
+  const fraudCheck = await checkFraudSignals(referralData.referrer_user_id, userId, customerId);
+  
+  if (fraudCheck.blocked) {
+    console.log('[stripe-webhook] 🚫 Commission blocked due to fraud signals:', fraudCheck.signals);
+    await logReferralAction({
+      action: 'commission_blocked_fraud',
+      referrer_user_id: referralData.referrer_user_id,
+      referred_user_id: userId,
+      referral_id: referralData.id,
+      gateway: 'stripe',
+      gateway_payment_id: invoiceId,
+      gross_amount: amountInCents,
+      new_plan: planName,
+      billing_interval: billingInterval,
+      status: 'blocked',
+      ineligibility_reason: `Fraud signals: ${fraudCheck.signals.join(', ')}`
     });
     return;
   }
@@ -464,7 +619,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       referred_user_id: userId,
       referral_id: referralData.id,
       gateway: 'stripe',
-      gateway_payment_id: invoice.id,
+      gateway_payment_id: invoiceId,
       gross_amount: amountInCents,
       new_plan: planName,
       billing_interval: billingInterval,
@@ -483,7 +638,6 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const isAnnual = billingInterval === 'yearly';
 
   // Calcular comissão baseado nas regras
-  // PRORRATA: Usa mesma lógica - 30% primeiro mês, 15% recorrente
   let commissionRate: number;
   let commissionAmount: number;
   let paymentType: string = 'recurring';
@@ -493,10 +647,17 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     // PLANO ANUAL: Comissão de 20% calculada integralmente
     // e distribuída em 12 parcelas mensais para payout
     // =========================================================
+    
+    // IDEMPOTÊNCIA: Verificar se já processou este invoice para annual
+    if (await checkIdempotency(invoiceId, 'annual_installment')) {
+      console.log('[stripe-webhook] ⚠️ Annual commission already processed for invoice:', invoiceId);
+      return;
+    }
+    
     commissionRate = ANNUAL_COMMISSION_RATE;
     const totalAnnualCommission = Math.round(netAmount * commissionRate);
     const monthlyPortion = Math.round(totalAnnualCommission / 12);
-    paymentType = 'annual';
+    paymentType = 'annual_installment';
     
     console.log('[stripe-webhook] 📊 Annual commission:', {
       totalCommission: totalAnnualCommission,
@@ -528,8 +689,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       .eq('user_id', userId)
       .single();
 
-    // CRIAR 12 PAYOUTS PENDENTES (um para cada mês)
-    // Cada parcela tem uma data de período correspondente
+    // CRIAR 12 PAYOUTS PENDENTES COM SNAPSHOT COMPLETO
     const baseDate = new Date();
     const createdPayouts: any[] = [];
     
@@ -545,6 +705,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
         .insert({
           referrer_user_id: referralData.referrer_user_id,
           referral_id: referralData.id,
+          referred_user_id: userId,
           amount: monthlyPortion,
           currency: 'brl',
           status: 'pending',
@@ -552,7 +713,16 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
           period_end: periodEnd.toISOString().split('T')[0],
           referred_user_name: referredProfile?.nome || 'Usuário',
           referred_plan: planName,
-          payment_method: 'annual_installment'
+          payment_method: 'annual_installment',
+          // ✅ SNAPSHOT: Dados congelados no momento do cálculo
+          gateway_invoice_id: invoiceId,
+          gateway_subscription_id: subscriptionId,
+          amount_paid: amountInCents,
+          net_amount: netAmount,
+          gateway_fee: gatewayFee,
+          commission_rate: commissionRate * 100,
+          billing_interval: billingInterval,
+          payment_type: 'annual_installment'
         })
         .select()
         .single();
@@ -572,7 +742,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       referral_id: referralData.id,
       payout_id: createdPayouts[0]?.id,
       gateway: 'stripe',
-      gateway_payment_id: invoice.id,
+      gateway_payment_id: invoiceId,
       gateway_customer_id: customerId,
       gross_amount: amountInCents,
       gateway_fee: gatewayFee,
@@ -586,7 +756,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
         payment_type: 'annual',
         total_commission: totalAnnualCommission,
         monthly_portion: monthlyPortion,
-        installments_created: createdPayouts.length
+        installments_created: createdPayouts.length,
+        fraud_signals: fraudCheck.signals
       }
     });
 
@@ -604,15 +775,29 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   
   if (hasProrationItems) {
     // PRORRATA de upgrade: 15% recorrente (nunca é primeiro pagamento pois já assinou)
+    paymentType = 'proration';
+    
+    // IDEMPOTÊNCIA
+    if (await checkIdempotency(invoiceId, paymentType)) {
+      console.log('[stripe-webhook] ⚠️ Proration commission already processed for invoice:', invoiceId);
+      return;
+    }
+    
     commissionRate = RECURRING_MONTHLY_COMMISSION_RATE; // 15%
     commissionAmount = Math.round(netAmount * commissionRate);
-    paymentType = 'proration';
     console.log('[stripe-webhook] 📊 Proration commission (15%):', commissionAmount);
   } else {
     // Plano mensal: 30% primeiro mês, 15% recorrente
+    paymentType = isFirstPayment ? 'first_payment' : 'recurring';
+    
+    // IDEMPOTÊNCIA
+    if (await checkIdempotency(invoiceId, paymentType)) {
+      console.log('[stripe-webhook] ⚠️ Commission already processed for invoice:', invoiceId);
+      return;
+    }
+    
     commissionRate = isFirstPayment ? FIRST_MONTH_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
     commissionAmount = Math.round(netAmount * commissionRate);
-    paymentType = isFirstPayment ? 'first_payment' : 'recurring';
     console.log('[stripe-webhook] 📊 Monthly commission:', commissionAmount, isFirstPayment ? '(first month)' : '(recurring)');
   }
 
@@ -639,12 +824,13 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     .eq('user_id', userId)
     .single();
 
-  // Criar payout pendente (mensal ou prorrata)
+  // Criar payout pendente COM SNAPSHOT COMPLETO
   const { data: newPayout, error: payoutError } = await supabase
     .from('referral_payouts')
     .insert({
       referrer_user_id: referralData.referrer_user_id,
       referral_id: referralData.id,
+      referred_user_id: userId,
       amount: commissionAmount,
       currency: 'brl',
       status: 'pending',
@@ -652,6 +838,15 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       period_end: new Date().toISOString().split('T')[0],
       referred_user_name: referredProfile?.nome || 'Usuário',
       referred_plan: planName,
+      // ✅ SNAPSHOT: Dados congelados no momento do cálculo
+      gateway_invoice_id: invoiceId,
+      gateway_subscription_id: subscriptionId,
+      amount_paid: amountInCents,
+      net_amount: netAmount,
+      gateway_fee: gatewayFee,
+      commission_rate: commissionRate * 100,
+      billing_interval: billingInterval,
+      payment_type: paymentType
     })
     .select()
     .single();
@@ -674,7 +869,7 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     referral_id: referralData.id,
     payout_id: newPayout?.id,
     gateway: 'stripe',
-    gateway_payment_id: invoice.id,
+    gateway_payment_id: invoiceId,
     gateway_customer_id: customerId,
     gross_amount: amountInCents,
     gateway_fee: gatewayFee,
@@ -686,7 +881,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     status: 'pending',
     metadata: { 
       payment_type: paymentType,
-      is_proration: hasProrationItems
+      is_proration: hasProrationItems,
+      fraud_signals: fraudCheck.signals
     }
   });
 

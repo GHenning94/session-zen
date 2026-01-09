@@ -57,6 +57,95 @@ async function logReferralAction(data: {
   }
 }
 
+/**
+ * =========================================================
+ * VERIFICAÇÃO DE IDEMPOTÊNCIA
+ * Evita criar comissões duplicadas em retries de webhook
+ * =========================================================
+ */
+async function checkIdempotency(paymentId: string, paymentType: string): Promise<boolean> {
+  const { data: existingPayout } = await supabase
+    .from('referral_payouts')
+    .select('id')
+    .eq('gateway_invoice_id', paymentId)
+    .eq('payment_type', paymentType)
+    .maybeSingle();
+  
+  if (existingPayout) {
+    console.log(`[asaas-webhook] ⚠️ Idempotency check: Payout already exists for payment ${paymentId}, type ${paymentType}`);
+    return true; // Já processado
+  }
+  return false;
+}
+
+/**
+ * =========================================================
+ * VERIFICAÇÃO ANTIFRAUDE LEVE
+ * Detecta padrões suspeitos entre indicador e indicado
+ * =========================================================
+ */
+async function checkFraudSignals(referrerId: string, referredId: string): Promise<{
+  blocked: boolean;
+  signals: string[];
+}> {
+  const signals: string[] = [];
+  
+  try {
+    // Buscar dados do referrer e referred
+    const [referrerProfile, referredProfile] = await Promise.all([
+      supabase.from('profiles').select('cpf_cnpj, telefone').eq('user_id', referrerId).single(),
+      supabase.from('profiles').select('cpf_cnpj, telefone').eq('user_id', referredId).single()
+    ]);
+
+    const referrer = referrerProfile.data;
+    const referred = referredProfile.data;
+
+    // 1. Mesmo CPF/CNPJ
+    if (referrer?.cpf_cnpj && referred?.cpf_cnpj) {
+      const cleanReferrerCpf = referrer.cpf_cnpj.replace(/\D/g, '');
+      const cleanReferredCpf = referred.cpf_cnpj.replace(/\D/g, '');
+      if (cleanReferrerCpf === cleanReferredCpf) {
+        signals.push('same_cpf');
+        await supabase.from('referral_fraud_signals').insert({
+          referrer_user_id: referrerId,
+          referred_user_id: referredId,
+          signal_type: 'same_cpf',
+          signal_value: `***${cleanReferrerCpf.slice(-4)}`,
+          action_taken: 'blocked'
+        });
+      }
+    }
+
+    // 2. Mesmo telefone
+    if (referrer?.telefone && referred?.telefone) {
+      const cleanReferrerPhone = referrer.telefone.replace(/\D/g, '');
+      const cleanReferredPhone = referred.telefone.replace(/\D/g, '');
+      if (cleanReferrerPhone === cleanReferredPhone) {
+        signals.push('same_phone');
+        await supabase.from('referral_fraud_signals').insert({
+          referrer_user_id: referrerId,
+          referred_user_id: referredId,
+          signal_type: 'same_phone',
+          signal_value: `***${cleanReferrerPhone.slice(-4)}`,
+          action_taken: 'blocked'
+        });
+      }
+    }
+
+    // Bloquear se houver sinais críticos (mesmo CPF)
+    const blocked = signals.includes('same_cpf');
+    
+    if (signals.length > 0) {
+      console.log(`[asaas-webhook] 🚨 Fraud signals detected:`, signals, blocked ? '(BLOCKED)' : '(WARNING)');
+    }
+
+    return { blocked, signals };
+  } catch (error) {
+    console.error('[asaas-webhook] ❌ Error checking fraud signals:', error);
+    return { blocked: false, signals: [] };
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -262,6 +351,54 @@ async function processPaymentForUser(
     .single();
 
   if (referralData) {
+    // =========================================================
+    // VERIFICAÇÃO ANTIFRAUDE
+    // =========================================================
+    const fraudCheck = await checkFraudSignals(referralData.referrer_user_id, userId);
+    
+    if (fraudCheck.blocked) {
+      console.log('[asaas-webhook] 🚫 Commission blocked due to fraud signals:', fraudCheck.signals);
+      await logReferralAction({
+        action: 'commission_blocked_fraud',
+        referrer_user_id: referralData.referrer_user_id,
+        referred_user_id: userId,
+        referral_id: referralData.id,
+        gateway: 'asaas',
+        gateway_payment_id: payment.id,
+        gross_amount: amountInCents,
+        new_plan: planName,
+        billing_interval: billingInterval,
+        status: 'blocked',
+        ineligibility_reason: `Fraud signals: ${fraudCheck.signals.join(', ')}`
+      });
+      return;
+    }
+
+    // Verificar se afiliado ainda está no programa
+    const { data: referrerProfile } = await supabase
+      .from('profiles')
+      .select('is_referral_partner')
+      .eq('user_id', referralData.referrer_user_id)
+      .single();
+
+    if (!referrerProfile?.is_referral_partner) {
+      console.log('[asaas-webhook] ⚠️ Referrer is no longer a partner, no commission');
+      await logReferralAction({
+        action: 'payment',
+        referrer_user_id: referralData.referrer_user_id,
+        referred_user_id: userId,
+        referral_id: referralData.id,
+        gateway: 'asaas',
+        gateway_payment_id: payment.id,
+        gross_amount: amountInCents,
+        new_plan: planName,
+        billing_interval: billingInterval,
+        status: 'ineligible',
+        ineligibility_reason: 'Referrer is no longer a partner'
+      });
+      return;
+    }
+
     const isFirstPayment = !referralData.first_payment_date;
     const isAnnual = billingInterval === 'yearly' || billingInterval === 'year';
     
@@ -280,6 +417,12 @@ async function processPaymentForUser(
     // e distribuída em 12 parcelas mensais para payout
     // =========================================================
     if (isAnnual && !isUpgrade) {
+      // IDEMPOTÊNCIA
+      if (await checkIdempotency(payment.id, 'annual_installment')) {
+        console.log('[asaas-webhook] ⚠️ Annual commission already processed for payment:', payment.id);
+        return;
+      }
+
       const commissionRate = ANNUAL_COMMISSION_RATE;
       const totalAnnualCommission = Math.round(baseAmountForCommission * commissionRate);
       const monthlyPortion = Math.round(totalAnnualCommission / 12);
@@ -307,7 +450,7 @@ async function processPaymentForUser(
         console.log('[asaas-webhook] ✅ Referral converted to active (annual)');
       }
 
-      // CRIAR 12 PAYOUTS PENDENTES (um para cada mês)
+      // CRIAR 12 PAYOUTS PENDENTES COM SNAPSHOT COMPLETO
       const baseDate = new Date();
       const createdPayouts: any[] = [];
       
@@ -323,6 +466,7 @@ async function processPaymentForUser(
           .insert({
             referrer_user_id: referralData.referrer_user_id,
             referral_id: referralData.id,
+            referred_user_id: userId,
             amount: monthlyPortion,
             currency: 'brl',
             status: 'pending',
@@ -330,7 +474,15 @@ async function processPaymentForUser(
             period_end: periodEnd.toISOString().split('T')[0],
             referred_user_name: referredProfile?.nome || 'Usuário',
             referred_plan: planName,
-            payment_method: 'annual_installment'
+            payment_method: 'annual_installment',
+            // ✅ SNAPSHOT: Dados congelados no momento do cálculo
+            gateway_invoice_id: payment.id,
+            amount_paid: amountInCents,
+            net_amount: baseAmountForCommission,
+            gateway_fee: gatewayFee,
+            commission_rate: commissionRate * 100,
+            billing_interval: billingInterval,
+            payment_type: 'annual_installment'
           })
           .select()
           .single();
