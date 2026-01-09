@@ -16,13 +16,10 @@ import {
 const PUBLIC_ROUTES = ['/', '/login', '/signup']
 
 // Detecta se o usuário está retornando de um checkout externo (Stripe)
+// IMPORTANTE: Só verifica a flag no sessionStorage para evitar loops
+// O referrer pode persistir durante navegações SPA
 const isReturningFromExternalCheckout = (): boolean => {
-  // Stripe deixa referrer vazio ou como domínio stripe.com
-  const referrer = document.referrer
-  if (referrer.includes('stripe.com') || referrer.includes('checkout.stripe.com')) {
-    return true
-  }
-  // Também verifica se há flags no sessionStorage (backup)
+  // Verificar apenas a flag que é definida antes do redirect para Stripe
   return sessionStorage.getItem('stripe_checkout_active') === 'true'
 }
 

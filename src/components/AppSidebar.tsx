@@ -147,7 +147,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className={`h-8 rounded-full ${getNavClasses({ isActive: isActive(settingsItem.url) })}`}>
-              <NavLink to={settingsItem.url} end className="flex items-center w-full" onClick={handleNavClick}>
+              <NavLink to={settingsItem.url} className="flex items-center w-full" onClick={handleNavClick}>
                 <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : ''}`}>
                   <settingsItem.icon className="h-4 w-4 shrink-0" />
                   {!isCollapsed && <span className="text-xs ml-2">{settingsItem.title}</span>}
