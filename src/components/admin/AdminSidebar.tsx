@@ -16,6 +16,7 @@ import {
 const mainMenuItems = [
   { title: "Visão Geral", url: "/admin", icon: Home, end: true },
   { title: "Receita & Assinaturas", url: "/admin/revenue", icon: DollarSign },
+  { title: "Planos & Assinaturas", url: "/admin/subscriptions", icon: CreditCard },
   { title: "Usuários & Contas", url: "/admin/users", icon: Users },
   { title: "Sessões", url: "/admin/sessions", icon: Calendar },
   { title: "Clientes Finais", url: "/admin/clients", icon: UserCheck },
