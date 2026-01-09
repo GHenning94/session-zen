@@ -29,7 +29,9 @@ import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
 import { SubscriptionInvoices } from "@/components/SubscriptionInvoices"
 import { SubscriptionInfo } from "@/components/SubscriptionInfo"
 import { TwoFactorSettings } from "@/components/TwoFactorSettings"
-import { ThemeToggle } from "@/components/ThemeToggle"
+import { useTheme } from "next-themes"
+import { useUserTheme } from "@/hooks/useUserTheme"
+import { Sun, Moon } from "lucide-react"
 import { ColorPicker } from "@/components/ColorPicker"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { ProfileAvatarUpload } from "@/components/ProfileAvatarUpload"
@@ -46,6 +48,44 @@ import { Volume2, VolumeX } from "lucide-react"
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 
 type AllSettings = Record<string, any>;
+
+// Componente de seleção de tema com dois botões separados
+const ThemeSelector = () => {
+  const { theme, setTheme } = useTheme()
+  const { saveThemePreference } = useUserTheme()
+
+  const handleThemeChange = (newTheme: 'light' | 'dark') => {
+    setTheme(newTheme)
+    saveThemePreference(newTheme)
+  }
+
+  return (
+    <div className="space-y-2">
+      <Label>Tema de Cores</Label>
+      <p className="text-sm text-muted-foreground mb-2">
+        Altere o tema da plataforma
+      </p>
+      <div className="flex gap-3">
+        <Button
+          variant={theme === "light" ? "default" : "outline"}
+          className="flex-1 sm:flex-none sm:w-[140px]"
+          onClick={() => handleThemeChange("light")}
+        >
+          <Sun className="h-4 w-4 mr-2" />
+          Claro
+        </Button>
+        <Button
+          variant={theme === "dark" ? "default" : "outline"}
+          className="flex-1 sm:flex-none sm:w-[140px]"
+          onClick={() => handleThemeChange("dark")}
+        >
+          <Moon className="h-4 w-4 mr-2" />
+          Escuro
+        </Button>
+      </div>
+    </div>
+  )
+}
 
 const Configuracoes = () => {
   const { toast } = useToast()
@@ -859,13 +899,7 @@ const Configuracoes = () => {
                 <CardDescription>Personalize a aparência da plataforma</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label>Modo Escuro/Claro</Label>
-                  <p className="text-sm text-muted-foreground mb-2">
-                    Altere o tema da plataforma
-                  </p>
-                  <ThemeToggle />
-                </div>
+                <ThemeSelector />
                 
                 <div className="space-y-2">
                   <Label>Cor da Plataforma</Label>
