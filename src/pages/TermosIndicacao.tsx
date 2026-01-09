@@ -191,11 +191,32 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 11 - DISPOSIÇÕES GERAIS */}
+            {/* Seção 11 - AFILIADO INDICADO */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                11. Disposições Gerais
+                11. Afiliado que foi Indicado
+              </h3>
+              <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+                <p className="text-sm font-medium text-foreground mb-2">📋 Regra de Comissão Única</p>
+                <p className="text-sm text-muted-foreground">
+                  Cada usuário pagante gera comissão exclusivamente para quem o indicou. Não há comissões em cadeia ou multinível.
+                </p>
+              </div>
+              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+                <li><strong>Caso o Afiliado também tenha ingressado na plataforma por meio de um link de indicação</strong>, as comissões serão atribuídas exclusivamente ao Afiliado responsável pela conversão paga original.</li>
+                <li><strong>O fato de um usuário tornar-se Afiliado não gera, em hipótese alguma, comissões adicionais para o seu indicador</strong>, tampouco comissões em múltiplos níveis.</li>
+                <li><strong>O Programa de Indicação não possui caráter multinível</strong>, sendo vedado o pagamento de comissões indiretas, em cadeia ou sobre outros afiliados.</li>
+                <li>O vínculo de indicação (referrer) é <strong>definido no primeiro acesso via link e é imutável</strong>. Mesmo que o usuário indicado se torne afiliado posteriormente, o referrer original permanece inalterado.</li>
+                <li>Um afiliado que foi indicado pode indicar novos usuários e <strong>receber comissão apenas de seus próprios indicados</strong> — seu indicador original não recebe nada sobre essas indicações.</li>
+              </ul>
+            </section>
+
+            {/* Seção 12 - DISPOSIÇÕES GERAIS */}
+            <section>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <CheckCircle className="w-5 h-5 text-primary" />
+                12. Disposições Gerais
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>A participação no Programa de Indicação constitui um <strong>benefício condicional</strong>, não representando direito adquirido ou vitalício.</li>
@@ -205,11 +226,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 12 */}
+            {/* Seção 13 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                12. Modificações
+                13. Modificações
               </h3>
               <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
                 <li>O TherapyPro reserva-se o direito de modificar estes termos a qualquer momento.</li>
@@ -218,11 +239,11 @@ const TermosIndicacao = () => {
               </ul>
             </section>
 
-            {/* Seção 13 */}
+            {/* Seção 14 */}
             <section>
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <CheckCircle className="w-5 h-5 text-primary" />
-                13. Contato
+                14. Contato
               </h3>
               <p className="text-muted-foreground">
                 Para dúvidas sobre o Programa de Indicação, entre em contato através do e-mail{" "}
