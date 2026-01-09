@@ -138,6 +138,8 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       if (error) throw error;
 
       if (data?.url) {
+        // ✅ Marcar que está indo para checkout externo (Stripe)
+        sessionStorage.setItem('stripe_checkout_active', 'true')
         window.location.href = data.url;
       }
     } catch (err) {
@@ -167,6 +169,8 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       if (data?.requiresPayment && data?.paymentUrl) {
         // Store for welcome modal after payment
         sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
+        // ✅ Marcar que está indo para checkout externo (Stripe)
+        sessionStorage.setItem('stripe_checkout_active', 'true')
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
         window.location.href = data.paymentUrl
       } else {

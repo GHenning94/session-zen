@@ -109,6 +109,9 @@ export const CheckoutRedirect = () => {
         sessionStorage.removeItem('pending_billing_backup')
         sessionStorage.removeItem('pending_referral')
         
+        // ✅ Marcar que está indo para checkout externo (Stripe)
+        sessionStorage.setItem('stripe_checkout_active', 'true')
+        
         // Redirecionar para checkout
         window.location.href = checkoutUrl
       } catch (error: any) {
