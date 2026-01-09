@@ -85,25 +85,15 @@ const TermosIndicacao = () => {
                     <li><strong>20% de comissão</strong> - Pago mensalmente (1/12 do valor anual por mês) enquanto o indicado mantiver a assinatura.</li>
                   </ul>
                 </div>
+                <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                  <h4 className="font-semibold text-foreground mb-2">Regra de Cálculo</h4>
+                  <ul className="list-disc pl-6 space-y-1">
+                    <li>Cada pagamento confirmado gera sua própria comissão, conforme o plano vigente no momento do pagamento.</li>
+                    <li>Upgrades de plano não anulam comissões já geradas, exceto em caso de estorno, cancelamento dentro do prazo legal ou chargeback.</li>
+                    <li>Créditos concedidos por upgrade proporcional (prorrata) não geram comissão. A comissão incide exclusivamente sobre valores efetivamente pagos.</li>
+                  </ul>
+                </div>
               </div>
-            </section>
-
-            {/* Seção 4 */}
-            <section>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-primary" />
-                4. Pagamentos
-              </h3>
-              <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
-                <li>As comissões são calculadas sobre o valor líquido efetivamente recebido pelo TherapyPro, já descontadas taxas, impostos, estornos e chargebacks.</li>
-                <li>As comissões passam por um período de validação e ficam com status "pendente" até o encerramento do ciclo de faturamento e do prazo de contestação do pagamento.</li>
-                <li>Os pagamentos são processados mensalmente, até o dia 15 do mês subsequente, referentes às comissões aprovadas no mês anterior.</li>
-                <li>O valor mínimo para saque é de R$ 50,00.</li>
-                <li>É necessário manter dados bancários válidos para receber os pagamentos via PIX ou transferência bancária.</li>
-                <li>O TherapyPro poderá solicitar validação dos dados bancários informados, incluindo documentos, confirmação de titularidade ou outros meios de verificação, como condição para liberação dos pagamentos.</li>
-                <li>O parceiro autoriza expressamente o TherapyPro a realizar os pagamentos de comissões de forma automática, utilizando os dados bancários informados.</li>
-                <li>O TherapyPro reserva-se o direito de reter, suspender ou cancelar pagamentos em caso de suspeita de fraude, irregularidade ou violação destes termos.</li>
-              </ul>
             </section>
 
             {/* Seção 5 */}
@@ -184,6 +174,7 @@ const TermosIndicacao = () => {
                 <li>Se o indicado cancelar a assinatura dentro do período de reembolso, a comissão correspondente será estornada.</li>
                 <li>Comissões pendentes podem ser ajustadas em caso de chargebacks ou disputas de pagamento.</li>
                 <li>O programa pode ser encerrado ou modificado a qualquer momento, com aviso prévio de 30 dias.</li>
+                <li><strong>Em caso de upgrade de plano, as comissões já geradas referentes a períodos pagos permanecem válidas, desde que não haja estorno ou cancelamento do pagamento original.</strong></li>
               </ul>
             </section>
 
@@ -210,6 +201,7 @@ const TermosIndicacao = () => {
                 <li>A participação no Programa de Indicação constitui um <strong>benefício condicional</strong>, não representando direito adquirido ou vitalício.</li>
                 <li>O TherapyPro reserva-se o direito de cancelar, suspender ou ajustar comissões em caso de uso indevido, tentativa de manipulação do sistema ou violação destes termos.</li>
                 <li>As regras do Programa de Indicação podem ser atualizadas a qualquer momento, conforme os termos gerais da plataforma.</li>
+                <li><strong>A comissão está sempre vinculada ao pagamento confirmado e ao período de serviço correspondente, não sendo afetada por alterações futuras de plano, exceto nos casos expressamente previstos nestes termos.</strong></li>
               </ul>
             </section>
 

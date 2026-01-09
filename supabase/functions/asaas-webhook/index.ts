@@ -11,10 +11,51 @@ const FIRST_MONTH_COMMISSION_RATE = 0.30; // 30% primeiro mês mensal
 const RECURRING_MONTHLY_COMMISSION_RATE = 0.15; // 15% meses seguintes mensal
 const ANNUAL_COMMISSION_RATE = 0.20; // 20% anual
 
+// Taxa do gateway Asaas (aproximada para cálculo de comissão líquida)
+const ASAAS_FEE_RATE = 0.0299; // 2.99%
+const ASAAS_FIXED_FEE = 49; // R$0.49 em centavos
+
 const supabase = createClient(
   Deno.env.get("SUPABASE_URL") ?? "",
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
+
+// Helper para log de auditoria de indicação
+async function logReferralAction(data: {
+  action: string;
+  referrer_user_id?: string;
+  referred_user_id?: string;
+  referral_id?: string;
+  payout_id?: string;
+  gateway?: string;
+  gateway_customer_id?: string;
+  gateway_subscription_id?: string;
+  gateway_payment_id?: string;
+  gross_amount?: number;
+  gateway_fee?: number;
+  net_amount?: number;
+  commission_amount?: number;
+  commission_rate?: number;
+  discount_applied?: boolean;
+  discount_amount?: number;
+  previous_plan?: string;
+  new_plan?: string;
+  billing_interval?: string;
+  proration_credit?: number;
+  proration_charge?: number;
+  days_remaining?: number;
+  status?: string;
+  failure_reason?: string;
+  ineligibility_reason?: string;
+  metadata?: any;
+}) {
+  try {
+    await supabase.from('referral_audit_log').insert(data);
+    console.log(`[asaas-webhook] 📝 Logged action: ${data.action}`);
+  } catch (error) {
+    console.error('[asaas-webhook] ❌ Error logging action:', error);
+  }
+}
 
 serve(async (req) => {
   // Handle CORS preflight
@@ -104,6 +145,8 @@ async function handlePaymentConfirmed(payment: any) {
   const referralId = metadata.referral_id;
   const discountApplied = metadata.discount_applied || false;
   const originalPrice = metadata.original_price;
+  const isUpgrade = metadata.type === 'upgrade_proration';
+  const previousPlan = metadata.previous_plan;
 
   if (!userId) {
     // Tentar buscar pelo customer
@@ -117,20 +160,20 @@ async function handlePaymentConfirmed(payment: any) {
           .single();
         
         if (profile) {
-          await processPaymentForUser(profile.user_id, planName, billingInterval, payment, referralId, discountApplied, originalPrice);
+          await processPaymentForUser(profile.user_id, planName, billingInterval, payment, referralId, discountApplied, originalPrice, isUpgrade, previousPlan);
         }
       } else if (customerData?.email) {
         // Buscar por email no auth
         const { data: authUser } = await supabase.auth.admin.getUserByEmail(customerData.email);
         if (authUser) {
-          await processPaymentForUser(authUser.id, planName, billingInterval, payment, referralId, discountApplied, originalPrice);
+          await processPaymentForUser(authUser.id, planName, billingInterval, payment, referralId, discountApplied, originalPrice, isUpgrade, previousPlan);
         }
       }
     }
     return;
   }
 
-  await processPaymentForUser(userId, planName, billingInterval, payment, referralId, discountApplied, originalPrice);
+  await processPaymentForUser(userId, planName, billingInterval, payment, referralId, discountApplied, originalPrice, isUpgrade, previousPlan);
 }
 
 async function processPaymentForUser(
@@ -140,50 +183,77 @@ async function processPaymentForUser(
   payment: any,
   referralId?: string,
   discountApplied?: boolean,
-  originalPrice?: number
+  originalPrice?: number,
+  isUpgrade?: boolean,
+  previousPlan?: string
 ) {
   console.log('[asaas-webhook] 👤 Processing payment for user:', userId);
 
-  // Calcular data de próxima renovação
-  const currentDate = new Date();
-  const nextBillingDate = new Date(currentDate);
-  
-  if (billingInterval === 'yearly' || billingInterval === 'year') {
-    nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
-  } else {
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-  }
-
-  // Atualizar perfil
-  const { error: updateError } = await supabase
-    .from('profiles')
-    .update({ 
-      subscription_plan: planName,
-      billing_interval: billingInterval === 'yearly' ? 'yearly' : 'monthly',
-      subscription_end_date: nextBillingDate.toISOString(),
-      subscription_cancel_at: null
-    })
-    .eq('user_id', userId);
-
-  if (updateError) {
-    console.error('[asaas-webhook] ❌ Error updating profile:', updateError);
-    return;
-  }
-
-  console.log('[asaas-webhook] ✅ Profile updated to plan:', planName);
-
-  // Criar notificação de boas-vindas
-  await supabase
-    .from('notifications')
-    .insert({
-      user_id: userId,
-      titulo: 'Bem-vindo ao TherapyPro!',
-      conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso via Asaas. Aproveite todos os recursos!`
-    });
-
-  // Processar comissão de indicação se houver
   const amountInCents = Math.round((payment.value || 0) * 100);
   
+  // Calcular taxas do gateway (valor líquido)
+  const gatewayFee = Math.round(amountInCents * ASAAS_FEE_RATE) + ASAAS_FIXED_FEE;
+  const netAmount = Math.max(0, amountInCents - gatewayFee);
+
+  // Calcular data de próxima renovação (não para upgrades proration)
+  if (!isUpgrade) {
+    const currentDate = new Date();
+    const nextBillingDate = new Date(currentDate);
+    
+    if (billingInterval === 'yearly' || billingInterval === 'year') {
+      nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+    } else {
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    }
+
+    // Atualizar perfil
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ 
+        subscription_plan: planName,
+        billing_interval: billingInterval === 'yearly' ? 'yearly' : 'monthly',
+        subscription_end_date: nextBillingDate.toISOString(),
+        subscription_cancel_at: null
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('[asaas-webhook] ❌ Error updating profile:', updateError);
+      return;
+    }
+
+    console.log('[asaas-webhook] ✅ Profile updated to plan:', planName);
+
+    // Criar notificação de boas-vindas
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        titulo: 'Bem-vindo ao TherapyPro!',
+        conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso via Asaas. Aproveite todos os recursos!`
+      });
+  } else {
+    // Para upgrade, apenas atualizar o plano
+    await supabase
+      .from('profiles')
+      .update({ 
+        subscription_plan: planName,
+        billing_interval: billingInterval === 'yearly' ? 'yearly' : 'monthly',
+        subscription_cancel_at: null
+      })
+      .eq('user_id', userId);
+
+    console.log('[asaas-webhook] ✅ Plan upgraded to:', planName);
+
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        titulo: 'Upgrade Confirmado! 🎉',
+        conteudo: `Seu upgrade para o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} foi confirmado. Aproveite os novos recursos!`
+      });
+  }
+
   // Verificar se este é o primeiro pagamento (verificar se existe referral pendente)
   const { data: referralData } = await supabase
     .from('referrals')
@@ -195,10 +265,11 @@ async function processPaymentForUser(
     const isFirstPayment = !referralData.first_payment_date;
     const isAnnual = billingInterval === 'yearly' || billingInterval === 'year';
     
-    // Calcular valor base para comissão (usar valor original se houve desconto)
-    const baseAmountForCommission = discountApplied && originalPrice ? originalPrice : amountInCents;
+    // Comissão é calculada sobre o valor LÍQUIDO (após taxas do gateway)
+    // NÃO sobre créditos de prorrata - apenas sobre valor efetivamente pago
+    const baseAmountForCommission = netAmount;
     
-    if (isFirstPayment) {
+    if (isFirstPayment && !isUpgrade) {
       // Primeiro pagamento - 30% mensal ou 20% anual
       const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : FIRST_MONTH_COMMISSION_RATE;
       const commissionAmount = Math.round(baseAmountForCommission * commissionRate);
@@ -209,7 +280,7 @@ async function processPaymentForUser(
         .update({
           status: 'converted',
           subscription_plan: planName,
-          subscription_amount: baseAmountForCommission,
+          subscription_amount: amountInCents,
           commission_rate: commissionRate * 100,
           commission_amount: commissionAmount,
           first_payment_date: new Date().toISOString(),
@@ -224,7 +295,7 @@ async function processPaymentForUser(
         .single();
 
       // Criar payout pendente
-      await supabase
+      const { data: newPayout } = await supabase
         .from('referral_payouts')
         .insert({
           referrer_user_id: referralData.referrer_user_id,
@@ -236,7 +307,31 @@ async function processPaymentForUser(
           period_end: new Date().toISOString().split('T')[0],
           referred_user_name: referredProfile?.nome || 'Novo usuário',
           referred_plan: planName,
-        });
+        })
+        .select()
+        .single();
+
+      // Log da comissão criada
+      await logReferralAction({
+        action: 'commission_created',
+        referrer_user_id: referralData.referrer_user_id,
+        referred_user_id: userId,
+        referral_id: referralData.id,
+        payout_id: newPayout?.id,
+        gateway: 'asaas',
+        gateway_payment_id: payment.id,
+        gross_amount: amountInCents,
+        gateway_fee: gatewayFee,
+        net_amount: netAmount,
+        commission_amount: commissionAmount,
+        commission_rate: commissionRate * 100,
+        discount_applied: discountApplied,
+        discount_amount: discountApplied && originalPrice ? originalPrice - amountInCents : 0,
+        new_plan: planName,
+        billing_interval: billingInterval,
+        status: 'pending',
+        metadata: { payment_type: 'first_payment' }
+      });
 
       // Notificar referrer
       const commissionDisplay = isAnnual ? '20%' : '30%';
@@ -249,10 +344,10 @@ async function processPaymentForUser(
         });
 
       console.log('[asaas-webhook] ✅ First payment referral processed, commission:', commissionAmount);
-    } else if (referralData.status === 'converted') {
-      // Pagamento recorrente - 15% mensal ou 20% anual
+    } else if (referralData.status === 'converted' || isUpgrade) {
+      // Pagamento recorrente ou upgrade - 15% mensal ou 20% anual
       const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
-      const commissionAmount = Math.round(amountInCents * commissionRate);
+      const commissionAmount = Math.round(baseAmountForCommission * commissionRate);
 
       // Buscar nome do indicado
       const { data: referredProfile } = await supabase
@@ -262,7 +357,7 @@ async function processPaymentForUser(
         .single();
 
       // Criar payout pendente
-      await supabase
+      const { data: newPayout } = await supabase
         .from('referral_payouts')
         .insert({
           referrer_user_id: referralData.referrer_user_id,
@@ -274,7 +369,30 @@ async function processPaymentForUser(
           period_end: new Date().toISOString().split('T')[0],
           referred_user_name: referredProfile?.nome || 'Usuário',
           referred_plan: planName,
-        });
+        })
+        .select()
+        .single();
+
+      // Log da comissão
+      await logReferralAction({
+        action: isUpgrade ? 'upgrade' : 'payment',
+        referrer_user_id: referralData.referrer_user_id,
+        referred_user_id: userId,
+        referral_id: referralData.id,
+        payout_id: newPayout?.id,
+        gateway: 'asaas',
+        gateway_payment_id: payment.id,
+        gross_amount: amountInCents,
+        gateway_fee: gatewayFee,
+        net_amount: netAmount,
+        commission_amount: commissionAmount,
+        commission_rate: commissionRate * 100,
+        previous_plan: previousPlan,
+        new_plan: planName,
+        billing_interval: billingInterval,
+        status: 'pending',
+        metadata: { payment_type: isUpgrade ? 'upgrade' : 'recurring' }
+      });
 
       // Notificar referrer
       const rateDisplay = isAnnual ? '20%' : '15%';
@@ -282,12 +400,28 @@ async function processPaymentForUser(
         .from('notifications')
         .insert({
           user_id: referralData.referrer_user_id,
-          titulo: 'Comissão Recorrente! 💰',
-          conteudo: `${referredProfile?.nome || 'Seu indicado'} renovou a assinatura. Você receberá R$ ${(commissionAmount / 100).toFixed(2)} (${rateDisplay}) de comissão.`,
+          titulo: isUpgrade ? 'Comissão de Upgrade! 💰' : 'Comissão Recorrente! 💰',
+          conteudo: `${referredProfile?.nome || 'Seu indicado'} ${isUpgrade ? 'fez upgrade' : 'renovou a assinatura'}. Você receberá R$ ${(commissionAmount / 100).toFixed(2)} (${rateDisplay}) de comissão.`,
         });
 
       console.log('[asaas-webhook] ✅ Recurring commission created:', commissionAmount);
     }
+  } else {
+    // Log de pagamento sem indicação
+    await logReferralAction({
+      action: isUpgrade ? 'upgrade' : 'payment',
+      referred_user_id: userId,
+      gateway: 'asaas',
+      gateway_payment_id: payment.id,
+      gross_amount: amountInCents,
+      gateway_fee: gatewayFee,
+      net_amount: netAmount,
+      previous_plan: previousPlan,
+      new_plan: planName,
+      billing_interval: billingInterval,
+      status: 'success',
+      ineligibility_reason: 'Usuário não é indicado'
+    });
   }
 }
 
@@ -327,6 +461,8 @@ async function handlePaymentRefunded(payment: any) {
   const userId = metadata.user_id;
   if (!userId) return;
 
+  const amountInCents = Math.round((payment.value || 0) * 100);
+
   // Cancelar comissões pendentes relacionadas a este pagamento
   const { data: referral } = await supabase
     .from('referrals')
@@ -336,14 +472,34 @@ async function handlePaymentRefunded(payment: any) {
 
   if (referral) {
     // Cancelar payouts pendentes
-    await supabase
+    const { data: cancelledPayouts } = await supabase
       .from('referral_payouts')
       .update({ 
         status: 'cancelled',
         failure_reason: 'Pagamento reembolsado'
       })
       .eq('referral_id', referral.id)
-      .eq('status', 'pending');
+      .eq('status', 'pending')
+      .select();
+
+    // Log da comissão cancelada
+    if (cancelledPayouts && cancelledPayouts.length > 0) {
+      for (const payout of cancelledPayouts) {
+        await logReferralAction({
+          action: 'commission_cancelled',
+          referrer_user_id: referral.referrer_user_id,
+          referred_user_id: userId,
+          referral_id: referral.id,
+          payout_id: payout.id,
+          gateway: 'asaas',
+          gateway_payment_id: payment.id,
+          gross_amount: amountInCents,
+          commission_amount: payout.amount,
+          status: 'cancelled',
+          failure_reason: 'Pagamento reembolsado'
+        });
+      }
+    }
 
     // Notificar referrer
     await supabase
@@ -400,6 +556,25 @@ async function handleSubscriptionCancelled(payment: any) {
     .from('referrals')
     .update({ status: 'cancelled' })
     .eq('referred_user_id', userId);
+
+  // Log do cancelamento
+  const { data: referral } = await supabase
+    .from('referrals')
+    .select('id, referrer_user_id')
+    .eq('referred_user_id', userId)
+    .single();
+
+  if (referral) {
+    await logReferralAction({
+      action: 'cancel',
+      referrer_user_id: referral.referrer_user_id,
+      referred_user_id: userId,
+      referral_id: referral.id,
+      gateway: 'asaas',
+      status: 'success',
+      metadata: { reason: 'subscription_cancelled' }
+    });
+  }
 
   // Reverter para plano básico
   await supabase
