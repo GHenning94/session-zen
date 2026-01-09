@@ -788,6 +788,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, eventId: s
       const periodEnd = new Date(periodStart);
       periodEnd.setMonth(periodEnd.getMonth() + 1);
       periodEnd.setDate(periodEnd.getDate() - 1);
+      
+      // Deadline de aprovação: 15 dias após o início do período
+      const approvalDeadline = new Date(periodStart);
+      approvalDeadline.setDate(approvalDeadline.getDate() + 15);
 
       const { data: newPayout, error: payoutError } = await supabase
         .from('referral_payouts')
@@ -803,6 +807,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, eventId: s
           referred_user_name: referredProfile?.nome || 'Usuário',
           referred_plan: planName,
           payment_method: 'annual_installment',
+          // ✅ DEADLINE: 15 dias após início do período
+          approval_deadline: approvalDeadline.toISOString().split('T')[0],
           // ✅ SNAPSHOT: Dados congelados no momento do cálculo
           gateway_invoice_id: invoiceId,
           gateway_event_id: eventId,
@@ -915,6 +921,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, eventId: s
     .single();
 
   // Criar payout pendente COM SNAPSHOT COMPLETO
+  // Incluir approval_deadline de 15 dias para aprovação automática
+  const approvalDeadline = new Date();
+  approvalDeadline.setDate(approvalDeadline.getDate() + 15);
+  
   const { data: newPayout, error: payoutError } = await supabase
     .from('referral_payouts')
     .insert({
@@ -928,6 +938,8 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, eventId: s
       period_end: new Date().toISOString().split('T')[0],
       referred_user_name: referredProfile?.nome || 'Usuário',
       referred_plan: planName,
+      // ✅ DEADLINE: 15 dias para aprovação automática
+      approval_deadline: approvalDeadline.toISOString().split('T')[0],
       // ✅ SNAPSHOT: Dados congelados no momento do cálculo
       gateway_invoice_id: invoiceId,
       gateway_event_id: eventId,
