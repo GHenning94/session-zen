@@ -82,7 +82,10 @@ const TermosIndicacao = () => {
                 <div className="p-4 rounded-lg bg-secondary/5 border border-secondary/20">
                   <h4 className="font-semibold text-foreground mb-2">Planos Anuais</h4>
                   <ul className="list-disc pl-6 space-y-1">
-                    <li><strong>20% de comissão</strong> - Pago mensalmente (1/12 do valor anual por mês) enquanto o indicado mantiver a assinatura.</li>
+                    <li><strong>20% de comissão</strong> - Calculado integralmente no momento do pagamento anual sobre o valor líquido recebido.</li>
+                    <li>O valor da comissão é <strong>distribuído internamente em 12 parcelas mensais</strong> para payout.</li>
+                    <li>Em caso de cancelamento da assinatura antes do fim do período anual, <strong>as parcelas futuras não são pagas</strong>.</li>
+                    <li>Não se trata de uma nova comissão a cada ciclo mensal, mas da distribuição da comissão única.</li>
                   </ul>
                 </div>
                 <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
