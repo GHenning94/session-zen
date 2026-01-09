@@ -22,9 +22,6 @@ port = 54322
 [functions.create-checkout]
 verify_jwt = true
 
-[functions.create-asaas-checkout]
-verify_jwt = true
-
 [functions.asaas-webhook]
 verify_jwt = false
 
@@ -239,12 +236,6 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.check-payment-gateway]
-verify_jwt = true
-
-[functions.preview-proration-asaas]
-verify_jwt = true
-
-[functions.upgrade-subscription-asaas]
 verify_jwt = true
 
 [functions.admin-get-referral-logs]

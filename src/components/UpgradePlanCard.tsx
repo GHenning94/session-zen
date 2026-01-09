@@ -172,17 +172,8 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       })
 
       try {
-        // Check which gateway to use for proration
-        const { data: gatewayData } = await supabase.functions.invoke('check-payment-gateway', {
-          body: {}
-        })
-        
-        const gateway = gatewayData?.gateway || 'stripe'
-        console.log('[UpgradePlanCard] 📊 Fetching proration preview via:', gateway)
-        
-        // Use appropriate proration function based on gateway
-        const prorationFunction = gateway === 'asaas' ? 'preview-proration-asaas' : 'preview-proration'
-        const { data, error } = await supabase.functions.invoke(prorationFunction, {
+        // SEMPRE usar Stripe para proration
+        const { data, error } = await supabase.functions.invoke('preview-proration', {
           body: { 
             newPriceId: stripePrice,
             planId: plan.id,
@@ -195,7 +186,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
         console.log('[UpgradePlanCard] ✅ Proration data received:', data)
         setProrationModal(prev => ({
           ...prev,
-          data: { ...data, gateway },
+          data,
           isLoading: false
         }))
       } catch (error: any) {
@@ -222,12 +213,9 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
         ? prorationModal.targetPlan.monthlyStripePrice 
         : prorationModal.targetPlan.annualStripePrice
       
-      // Determine which upgrade function to use based on gateway
-      const gateway = (prorationModal.data as any)?.gateway || 'stripe'
-      const upgradeFunction = gateway === 'asaas' ? 'upgrade-subscription-asaas' : 'upgrade-subscription'
-        
-      console.log('[UpgradePlanCard] 🚀 Processing upgrade via:', gateway)
-      const { data, error } = await supabase.functions.invoke(upgradeFunction, {
+      // SEMPRE usar Stripe para upgrade
+      console.log('[UpgradePlanCard] 🚀 Processing upgrade via Stripe')
+      const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
         body: { 
           newPriceId: stripePrice,
           planId: prorationModal.targetPlan.id,

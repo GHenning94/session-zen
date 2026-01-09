@@ -76,68 +76,30 @@ export const CheckoutRedirect = () => {
         // Usar o ciclo de cobrança selecionado
         const priceId = prices[pendingBilling as 'monthly' | 'yearly' | 'annually']
 
-        console.log('[CheckoutRedirect] Verificando gateway de pagamento...')
+        console.log('[CheckoutRedirect] Criando checkout Stripe...')
 
-        // ✅ Verificar qual gateway usar (Stripe ou Asaas)
-        let gateway = 'stripe'
-        try {
-          const { data: gatewayData, error: gatewayError } = await supabase.functions.invoke('check-payment-gateway', {
-            body: {}
-          })
-          
-          if (!gatewayError && gatewayData?.gateway) {
-            gateway = gatewayData.gateway
+        // ✅ SEMPRE usar Stripe para checkout de assinatura
+        // Usuários indicados recebem desconto via cupom Stripe
+        // Comissões são calculadas no webhook Stripe e pagas via Asaas (payout)
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: {
+            priceId,
+            returnUrl: window.location.origin
           }
-        } catch (e) {
-          console.log('[CheckoutRedirect] Erro ao verificar gateway, usando Stripe:', e)
+        })
+
+        if (error) {
+          console.error('[CheckoutRedirect] Erro ao criar checkout Stripe:', error)
+          throw error
         }
 
-        console.log('[CheckoutRedirect] Gateway selecionado:', gateway)
-
-        // ✅ Chamar o checkout apropriado
-        let checkoutUrl: string | null = null
-
-        if (gateway === 'asaas') {
-          // Usuário indicado → Asaas
-          console.log('[CheckoutRedirect] Criando checkout Asaas...')
-          const { data, error } = await supabase.functions.invoke('create-asaas-checkout', {
-            body: {
-              priceId,
-              planId: pendingPlan,
-              billingInterval: pendingBilling,
-              returnUrl: window.location.origin
-            }
-          })
-
-          if (error) {
-            console.error('[CheckoutRedirect] Erro ao criar checkout Asaas:', error)
-            throw error
-          }
-
-          checkoutUrl = data?.url
-        } else {
-          // Usuário normal → Stripe
-          console.log('[CheckoutRedirect] Criando checkout Stripe...')
-          const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: {
-              priceId,
-              returnUrl: window.location.origin
-            }
-          })
-
-          if (error) {
-            console.error('[CheckoutRedirect] Erro ao criar checkout Stripe:', error)
-            throw error
-          }
-
-          checkoutUrl = data?.url
-        }
+        const checkoutUrl = data?.url
 
         if (!checkoutUrl) {
           throw new Error('URL de checkout não gerada')
         }
 
-        console.log('[CheckoutRedirect] ✅ Redirecionando para checkout', gateway)
+        console.log('[CheckoutRedirect] ✅ Redirecionando para checkout Stripe')
         
         // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')

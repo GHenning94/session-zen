@@ -86,17 +86,8 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       })
 
       try {
-        // Check which gateway to use for proration
-        const { data: gatewayData } = await supabase.functions.invoke('check-payment-gateway', {
-          body: {}
-        })
-        
-        const gateway = gatewayData?.gateway || 'stripe'
-        console.log('[UpgradeModal] 📊 Fetching proration preview via:', gateway)
-        
-        // Use appropriate proration function based on gateway
-        const prorationFunction = gateway === 'asaas' ? 'preview-proration-asaas' : 'preview-proration'
-        const { data, error } = await supabase.functions.invoke(prorationFunction, {
+        // SEMPRE usar Stripe para proration
+        const { data, error } = await supabase.functions.invoke('preview-proration', {
           body: { 
             newPriceId: plan.stripePrice,
             planId: plan.id 
@@ -108,7 +99,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         console.log('[UpgradeModal] ✅ Proration data received:', data)
         setProrationView(prev => ({
           ...prev,
-          data: { ...data, gateway },
+          data,
           isLoading: false
         }))
       } catch (error: any) {
@@ -122,64 +113,32 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       return
     }
 
-    // For free plan users, go directly to checkout with smart routing
+    // For free plan users, go directly to Stripe checkout
     await processCheckout(plan)
   }
 
   /**
-   * Processa checkout com roteamento inteligente:
-   * - Usuários indicados → Asaas
-   * - Usuários normais → Stripe
+   * Processa checkout - SEMPRE via Stripe
+   * Desconto de indicação é aplicado via cupom Stripe
+   * Comissões são calculadas no webhook Stripe e pagas via Asaas (payout)
    */
   const processCheckout = async (plan: typeof plans[0]) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      // 1. Verificar qual gateway usar (Stripe ou Asaas)
-      const { data: gatewayData, error: gatewayError } = await supabase.functions.invoke('check-payment-gateway', {
-        body: {}
-      })
-      
-      if (gatewayError) {
-        console.error('[UpgradeModal] Erro ao verificar gateway:', gatewayError)
-        // Fallback para Stripe se falhar
-      }
-      
-      const gateway = gatewayData?.gateway || 'stripe'
-      console.log('[UpgradeModal] Gateway selecionado:', gateway)
-      
-      // 2. Chamar o checkout apropriado
-      if (gateway === 'asaas') {
-        // Usuário indicado → Asaas
-        const { data, error } = await supabase.functions.invoke('create-asaas-checkout', {
-          body: { 
-            priceId: plan.stripePrice,
-            planId: plan.id,
-            billingInterval: 'monthly',
-            returnUrl: window.location.origin
-          }
-        });
-
-        if (error) throw error;
-
-        if (data?.url) {
-          window.location.href = data.url;
+      // SEMPRE usar Stripe para checkout de assinatura
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { 
+          priceId: plan.stripePrice, 
+          returnUrl: window.location.origin
         }
-      } else {
-        // Usuário normal → Stripe
-        const { data, error } = await supabase.functions.invoke('create-checkout', {
-          body: { 
-            priceId: plan.stripePrice, 
-            returnUrl: window.location.origin
-          }
-        });
+      });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (data?.url) {
-          window.location.href = data.url;
-        }
+      if (data?.url) {
+        window.location.href = data.url;
       }
     } catch (err) {
       console.error('Erro ao processar pagamento:', err);
@@ -194,12 +153,9 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
 
     setLoading(true)
     try {
-      // Determine which upgrade function to use based on gateway
-      const gateway = (prorationView.data as any)?.gateway || 'stripe'
-      const upgradeFunction = gateway === 'asaas' ? 'upgrade-subscription-asaas' : 'upgrade-subscription'
-      
-      console.log('[UpgradeModal] 🚀 Processing upgrade via:', gateway)
-      const { data, error } = await supabase.functions.invoke(upgradeFunction, {
+      // SEMPRE usar Stripe para upgrade
+      console.log('[UpgradeModal] 🚀 Processing upgrade via Stripe')
+      const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
         body: { 
           newPriceId: prorationView.plan.stripePrice,
           planId: prorationView.plan.id
