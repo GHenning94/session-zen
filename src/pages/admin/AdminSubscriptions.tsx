@@ -9,7 +9,7 @@ import { toast } from "sonner"
 import { 
   CreditCard, Loader2, RefreshCcw, Users, DollarSign, TrendingUp, 
   Calendar, Search, X, Download, Eye, Edit, AlertTriangle,
-  CheckCircle, XCircle, Clock, Gift, UserCheck, ShieldAlert
+  CheckCircle, XCircle, Clock, Gift, UserCheck, ShieldAlert, Monitor, Smartphone
 } from "lucide-react"
 import { adminApiCall } from "@/utils/adminApi"
 import { MetricCard } from "@/components/admin/MetricCard"
@@ -22,6 +22,15 @@ import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import * as XLSX from "xlsx"
 import { ScrollArea } from "@/components/ui/scroll-area"
+
+interface LoginFingerprint {
+  ip_address: string
+  user_agent: string
+  device_fingerprint: string
+  first_seen_at: string
+  last_seen_at: string
+  login_count: number
+}
 
 interface User {
   user_id: string
@@ -46,6 +55,7 @@ interface User {
   is_referral_partner: boolean
   referral_code: string | null
   created_at: string
+  login_fingerprints: LoginFingerprint[]
 }
 
 interface Stats {
@@ -560,6 +570,65 @@ const AdminSubscriptions = () => {
                       <p className="font-mono">{selectedUser.referral_code || '-'}</p>
                     </div>
                   </div>
+                </div>
+
+                {/* Fingerprints Section */}
+                <div className="border-t pt-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Monitor className="h-4 w-4" />
+                    Histórico de Logins ({selectedUser.login_fingerprints?.length || 0})
+                  </h4>
+                  {selectedUser.login_fingerprints && selectedUser.login_fingerprints.length > 0 ? (
+                    <ScrollArea className="h-[200px]">
+                      <div className="space-y-3">
+                        {selectedUser.login_fingerprints.map((fp, idx) => {
+                          const isMobile = /Mobile|Android|iPhone|iPad/i.test(fp.user_agent)
+                          return (
+                            <div key={idx} className="border rounded-lg p-3 text-sm bg-muted/30">
+                              <div className="flex items-center gap-2 mb-2">
+                                {isMobile ? (
+                                  <Smartphone className="h-4 w-4 text-blue-500" />
+                                ) : (
+                                  <Monitor className="h-4 w-4 text-gray-500" />
+                                )}
+                                <span className="font-medium">
+                                  {isMobile ? 'Mobile' : 'Desktop'}
+                                </span>
+                                {fp.login_count && (
+                                  <Badge variant="outline" className="ml-auto">
+                                    {fp.login_count}x
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">IP:</span>{' '}
+                                  <span className="font-mono">{fp.ip_address || 'N/A'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Fingerprint:</span>{' '}
+                                  <span className="font-mono">{fp.device_fingerprint || 'N/A'}</span>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Primeiro login:</span>{' '}
+                                  {formatDate(fp.first_seen_at)}
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Último login:</span>{' '}
+                                  {formatDate(fp.last_seen_at)}
+                                </div>
+                              </div>
+                              <div className="mt-2 text-xs text-muted-foreground truncate">
+                                {fp.user_agent}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </ScrollArea>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">Nenhum login registrado ainda.</p>
+                  )}
                 </div>
               </div>
             )}

@@ -135,6 +135,27 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Fetch login fingerprints for all users
+    const { data: fingerprints } = await supabaseClient
+      .from('user_login_fingerprints')
+      .select('user_id, ip_address, user_agent, device_fingerprint, first_seen_at, last_seen_at, login_count')
+      .order('last_seen_at', { ascending: false })
+
+    const fingerprintMap: Record<string, any[]> = {}
+    fingerprints?.forEach(f => {
+      if (!fingerprintMap[f.user_id]) {
+        fingerprintMap[f.user_id] = []
+      }
+      fingerprintMap[f.user_id].push({
+        ip_address: f.ip_address,
+        user_agent: f.user_agent,
+        device_fingerprint: f.device_fingerprint,
+        first_seen_at: f.first_seen_at,
+        last_seen_at: f.last_seen_at,
+        login_count: f.login_count
+      })
+    })
+
     // Enrich profiles with all data
     const enrichedUsers = (profiles || []).map(p => {
       const stripeData = subscriptionDetails[p.user_id]
@@ -191,7 +212,8 @@ Deno.serve(async (req) => {
         referrer_id: referral?.referrer_id || null,
         is_referral_partner: p.is_referral_partner,
         referral_code: p.referral_code,
-        created_at: p.created_at
+        created_at: p.created_at,
+        login_fingerprints: fingerprintMap[p.user_id] || []
       }
     })
 

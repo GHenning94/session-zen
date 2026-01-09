@@ -251,7 +251,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Limpar cache residual antes do login para garantir ambiente limpo
     cleanupResidualCache();
     
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
       options: {
@@ -278,8 +278,54 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       return { error: translatedError }
     }
     
+    // ✅ Registrar fingerprint de login
+    if (data?.user) {
+      try {
+        console.log('[useAuth] 📍 Registrando fingerprint de login...');
+        await supabase.from('user_login_fingerprints').upsert({
+          user_id: data.user.id,
+          user_agent: navigator.userAgent,
+          device_fingerprint: generateDeviceFingerprint(),
+          last_seen_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,user_agent',
+          ignoreDuplicates: false
+        });
+        console.log('[useAuth] ✅ Fingerprint registrado');
+      } catch (fingerprintError) {
+        console.warn('[useAuth] ⚠️ Erro ao registrar fingerprint:', fingerprintError);
+      }
+    }
+    
     console.log('[useAuth] ✅ Login bem-sucedido');
     return { error }
+  }
+  
+  // Gerar fingerprint do dispositivo
+  const generateDeviceFingerprint = () => {
+    const canvas = document.createElement('canvas');
+    const gl = canvas.getContext('webgl');
+    const debugInfo = gl?.getExtension('WEBGL_debug_renderer_info');
+    const renderer = gl?.getParameter(debugInfo?.UNMASKED_RENDERER_WEBGL || 0) || '';
+    
+    const fingerprint = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width,
+      screen.height,
+      screen.colorDepth,
+      new Date().getTimezoneOffset(),
+      renderer
+    ].join('|');
+    
+    // Simple hash
+    let hash = 0;
+    for (let i = 0; i < fingerprint.length; i++) {
+      const char = fingerprint.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash).toString(16);
   }
 
   const signOut = async () => {
