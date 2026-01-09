@@ -223,9 +223,9 @@ export default function Upgrade() {
   }
 
   /**
-   * Processa checkout com roteamento inteligente:
-   * - Usuários indicados → Asaas
-   * - Usuários normais → Stripe
+   * Processa checkout - SEMPRE via Stripe
+   * Desconto de indicação é aplicado via cupom Stripe
+   * Comissões são calculadas no webhook Stripe e pagas via Asaas (payout)
    */
   const processCheckout = async (plan: typeof plans[0]) => {
     if (!user || !plan.stripePrice) {
@@ -251,43 +251,16 @@ export default function Upgrade() {
     
     setLoading(true)
     try {
-      // 1. Verificar qual gateway usar (Stripe ou Asaas)
-      const { data: gatewayData, error: gatewayError } = await supabase.functions.invoke('check-payment-gateway', {
-        body: {}
+      // SEMPRE usar Stripe para checkout de assinatura
+      // Usuários indicados recebem desconto via cupom Stripe
+      const { data, error } = await supabase.functions.invoke('create-checkout', { 
+        body: { 
+          priceId: plan.stripePrice, 
+          returnUrl: window.location.origin
+        } 
       })
-      
-      if (gatewayError) {
-        console.error('Erro ao verificar gateway:', gatewayError)
-        // Fallback para Stripe se falhar
-      }
-      
-      const gateway = gatewayData?.gateway || 'stripe'
-      console.log('[Upgrade] Gateway selecionado:', gateway)
-      
-      // 2. Chamar o checkout apropriado
-      if (gateway === 'asaas') {
-        // Usuário indicado → Asaas
-        const { data, error } = await supabase.functions.invoke('create-asaas-checkout', { 
-          body: { 
-            priceId: plan.stripePrice,
-            planId: plan.id,
-            billingInterval: billingCycle,
-            returnUrl: window.location.origin
-          } 
-        })
-        if (error) throw error
-        if (data?.url) window.location.href = data.url
-      } else {
-        // Usuário normal → Stripe
-        const { data, error } = await supabase.functions.invoke('create-checkout', { 
-          body: { 
-            priceId: plan.stripePrice, 
-            returnUrl: window.location.origin
-          } 
-        })
-        if (error) throw error
-        if (data?.url) window.location.href = data.url
-      }
+      if (error) throw error
+      if (data?.url) window.location.href = data.url
     } catch (error: any) {
       console.error('Erro ao processar pagamento:', error)
       toast.error(`Erro ao processar plano: ${error.message || 'Verifique os IDs de preço no Stripe Dashboard'}`)

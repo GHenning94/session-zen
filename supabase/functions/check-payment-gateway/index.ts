@@ -7,10 +7,24 @@ const corsHeaders = {
 };
 
 /**
- * Payment Gateway Router - TODOS usam Stripe
+ * Check Referral Status - Informational Endpoint
  * 
- * Este endpoint retorna informações sobre o gateway de pagamento
- * e status de indicação do usuário. Agora todos pagam via Stripe.
+ * Este endpoint retorna informações sobre o status de indicação do usuário.
+ * É usado APENAS para exibir informações na UI (ex: "Você tem desconto de indicação!").
+ * 
+ * ⚠️ IMPORTANTE - Arquitetura de Pagamentos:
+ * 
+ * 🔹 STRIPE - SEMPRE usado para checkout de assinatura
+ *    - Todos os usuários pagam via Stripe (indicados ou não)
+ *    - Desconto de indicação → aplicado via cupom Stripe
+ *    - Comissões → calculadas no webhook Stripe
+ * 
+ * 🔹 ASAAS - APENAS para payout de afiliados
+ *    - Stripe cobra o usuário
+ *    - Sistema calcula comissão
+ *    - Asaas faz PIX/TED para o afiliado
+ * 
+ * Este endpoint NÃO deve ser usado para roteamento de checkout!
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -18,7 +32,7 @@ serve(async (req) => {
   }
 
   try {
-    console.log('[check-payment-gateway] 🚀 Verificando gateway...');
+    console.log('[check-payment-gateway] 🚀 Verificando status de indicação...');
     
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -31,7 +45,7 @@ serve(async (req) => {
     if (!user) {
       console.error("[check-payment-gateway] ❌ User not authenticated");
       return new Response(JSON.stringify({ 
-        gateway: 'stripe',
+        gateway: 'stripe', // Sempre Stripe
         isReferred: false,
         canApplyDiscount: false,
         reason: 'not_authenticated'
@@ -70,22 +84,28 @@ serve(async (req) => {
     const hasUsedDiscount = profile?.professional_discount_used === true;
     const canApplyDiscount = isReferred && !hasUsedDiscount;
 
-    console.log('[check-payment-gateway] 💳 Gateway check result:', {
-      gateway: 'stripe',
+    console.log('[check-payment-gateway] 📊 Referral status:', {
+      gateway: 'stripe', // Sempre Stripe para checkout
       isReferred,
       hasUsedDiscount,
       canApplyDiscount
     });
     
-    // TODOS usam Stripe
+    // SEMPRE Stripe para checkout - Asaas é apenas para payout de afiliados
     return new Response(JSON.stringify({ 
-      gateway: 'stripe',
+      gateway: 'stripe', // Sempre Stripe
       isReferred,
       referralId: referralData?.id || null,
       referrerId: referralData?.referrer_user_id || null,
       hasFirstPayment: !!referralData?.first_payment_date,
       canApplyDiscount,
-      reason: isReferred ? 'referred_user' : 'not_referred'
+      reason: isReferred ? 'referred_user' : 'not_referred',
+      // Info adicional para UI
+      discountInfo: canApplyDiscount ? {
+        percent: 20,
+        description: '20% de desconto na primeira cobrança do Plano Profissional',
+        appliedVia: 'stripe_coupon'
+      } : null
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
@@ -94,7 +114,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("[check-payment-gateway] ❌ Error:", error);
     return new Response(JSON.stringify({ 
-      gateway: 'stripe',
+      gateway: 'stripe', // Sempre Stripe
       isReferred: false,
       canApplyDiscount: false,
       reason: 'error',
