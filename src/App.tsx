@@ -75,6 +75,7 @@ import AdminClients from "@/pages/admin/AdminClients";
 import AdminReferrals from "@/pages/admin/AdminReferrals";
 import AdminHealth from "@/pages/admin/AdminHealth";
 import AdminCoupons from "@/pages/admin/AdminCoupons";
+import AdminSubscriptions from "@/pages/admin/AdminSubscriptions";
 import { AdminProtectedRoute } from "@/components/admin/AdminProtectedRoute";
 const BookingPage = lazy(() => import("@/pages/BookingPage"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -385,6 +386,7 @@ const App = () => (
                   <Route path="/admin/referrals" element={<AdminProtectedRoute><AdminReferrals /></AdminProtectedRoute>} />
                   <Route path="/admin/health" element={<AdminProtectedRoute><AdminHealth /></AdminProtectedRoute>} />
                   <Route path="/admin/coupons" element={<AdminProtectedRoute><AdminCoupons /></AdminProtectedRoute>} />
+                  <Route path="/admin/subscriptions" element={<AdminProtectedRoute><AdminSubscriptions /></AdminProtectedRoute>} />
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={

@@ -256,5 +256,11 @@ verify_jwt = false
 [functions.process-referral-payouts]
 verify_jwt = false
 
+[functions.admin-get-subscriptions-stats]
+verify_jwt = false
+
+[functions.admin-manage-subscription]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
