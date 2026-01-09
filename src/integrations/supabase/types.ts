@@ -155,6 +155,36 @@ export type Database = {
         }
         Relationships: []
       }
+      asaas_subaccounts: {
+        Row: {
+          account_status: string
+          asaas_account_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          wallet_id: string
+        }
+        Insert: {
+          account_status?: string
+          asaas_account_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          wallet_id: string
+        }
+        Update: {
+          account_status?: string
+          asaas_account_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          wallet_id?: string
+        }
+        Relationships: []
+      }
       audit_log: {
         Row: {
           action: string
