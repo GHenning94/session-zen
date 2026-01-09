@@ -323,10 +323,15 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     hasProrationItems
   });
 
+  // Verificar se invoice tem desconto de indicação aplicado (downgrade)
+  const hasReferralDiscount = invoice.discount?.coupon?.metadata?.type === 'referral_discount_downgrade' ||
+                              invoice.discount?.coupon?.metadata?.type === 'referral_discount';
+  const discountUserId = invoice.discount?.coupon?.metadata?.user_id;
+
   // Buscar usuário pelo stripe_customer_id
   const { data: profile } = await supabase
     .from('profiles')
-    .select('user_id, subscription_plan, billing_interval')
+    .select('user_id, subscription_plan, billing_interval, professional_discount_used')
     .eq('stripe_customer_id', customerId)
     .single();
 
@@ -336,8 +341,56 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   const userId = profile.user_id;
-  const planName = profile.subscription_plan || 'pro';
+  let planName = profile.subscription_plan || 'pro';
   const billingInterval = profile.billing_interval || 'monthly';
+
+  // Detectar mudança de plano via subscription schedule (downgrade)
+  const isScheduledChange = invoice.billing_reason === 'subscription_cycle' && invoice.subscription;
+  if (isScheduledChange) {
+    // Buscar assinatura para ver o plano atual
+    try {
+      const subscriptionResponse = await fetch(`https://api.stripe.com/v1/subscriptions/${invoice.subscription}`, {
+        headers: {
+          'Authorization': `Bearer ${Deno.env.get("STRIPE_SECRET_KEY")}`,
+        }
+      });
+      const subscriptionData = await subscriptionResponse.json();
+      const currentPriceId = subscriptionData?.items?.data?.[0]?.price?.id;
+      
+      // Mapear price ID para plano
+      const priceToPlans: { [key: string]: string } = {
+        'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',
+        'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',
+        'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium',
+        'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'
+      };
+      
+      if (currentPriceId && priceToPlans[currentPriceId]) {
+        const newPlan = priceToPlans[currentPriceId];
+        if (newPlan !== planName) {
+          console.log(`[stripe-webhook] 📊 Plan changed from ${planName} to ${newPlan} (scheduled)`);
+          planName = newPlan;
+          
+          // Atualizar plano no perfil
+          await supabase
+            .from('profiles')
+            .update({ subscription_plan: newPlan })
+            .eq('user_id', userId);
+        }
+      }
+    } catch (e) {
+      console.error('[stripe-webhook] ⚠️ Error fetching subscription details:', e);
+    }
+  }
+
+  // Marcar desconto como usado se aplicado neste pagamento
+  if (hasReferralDiscount && !profile.professional_discount_used) {
+    console.log('[stripe-webhook] 🎁 Marking referral discount as used for user:', userId);
+    await supabase
+      .from('profiles')
+      .update({ professional_discount_used: true })
+      .eq('user_id', userId);
+  }
 
   // Só atualizar data de renovação para cobranças normais (não prorrata)
   if (!hasProrationItems && invoice.period_end) {
@@ -355,9 +408,10 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   // Notificar usuário
+  const discountNote = hasReferralDiscount ? ' (com 20% de desconto de indicação!)' : '';
   const notificationContent = hasProrationItems
     ? `Seu pagamento de upgrade (prorrata) de R$ ${(amountInCents / 100).toFixed(2)} foi processado com sucesso!`
-    : `Seu pagamento de R$ ${(amountInCents / 100).toFixed(2)} foi processado com sucesso.`;
+    : `Seu pagamento de R$ ${(amountInCents / 100).toFixed(2)}${discountNote} foi processado com sucesso.`;
 
   await supabase
     .from('notifications')
