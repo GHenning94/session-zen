@@ -9,12 +9,13 @@ const corsHeaders = {
 
 const SITE_URL = Deno.env.get("SITE_URL") || "https://therapypro.app.br";
 
-// Desconto de 20% para indicados (apenas primeiro mês do plano Profissional)
+// Desconto de 20% para indicados na primeira cobrança do plano Profissional
 const REFERRAL_DISCOUNT_PERCENT = 20;
 
 /**
  * Stripe Checkout - TODOS os usuários pagam via Stripe
- * Usuários indicados recebem 20% de desconto no primeiro mês do plano Profissional
+ * Usuários indicados recebem 20% de desconto na PRIMEIRA COBRANÇA do plano Profissional
+ * (mensal OU anual) - direito único que persiste mesmo após passar por outros planos
  */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -99,7 +100,8 @@ serve(async (req) => {
     const hasUsedDiscount = profile?.professional_discount_used === true;
     const isProfessionalPlan = priceInfo.plan === 'pro';
 
-    // Desconto: 20% apenas para indicados, plano Pro, primeiro mês, não usado
+    // Desconto: 20% para indicados na PRIMEIRA cobrança do plano Pro (mensal ou anual)
+    // Este desconto persiste mesmo se o usuário passar por Premium antes
     const shouldApplyDiscount = isReferredUser && 
                                 isProfessionalPlan && 
                                 !hasUsedDiscount;
@@ -108,6 +110,7 @@ serve(async (req) => {
       isReferredUser,
       hasUsedDiscount,
       isProfessionalPlan,
+      interval: priceInfo.interval,
       shouldApplyDiscount
     });
 
@@ -156,29 +159,27 @@ serve(async (req) => {
       }
     };
 
-    // Aplicar desconto de 20% apenas no primeiro mês se elegível
+    // Aplicar desconto de 20% na primeira cobrança do plano Profissional se elegível
+    // Aplica tanto para mensal quanto anual
     if (shouldApplyDiscount) {
-      // Criar cupom temporário para 20% off no primeiro mês
-      // Para planos mensais: aplicar desconto na primeira cobrança
-      // Para planos anuais: NÃO aplicar desconto (regra: apenas primeiro MÊS)
-      
-      if (priceInfo.interval === 'monthly') {
-        // Criar coupon para desconto único
-        const coupon = await stripe.coupons.create({
-          percent_off: REFERRAL_DISCOUNT_PERCENT,
-          duration: 'once', // Apenas uma vez
-          name: 'Desconto de Indicação - 20% primeiro mês',
-          metadata: {
-            type: 'referral_discount',
-            referred_user_id: user.id,
-          }
-        });
+      // Criar coupon para desconto único (aplicável mensal ou anual)
+      const discountName = priceInfo.interval === 'monthly' 
+        ? 'Desconto de Indicação - 20% primeiro mês'
+        : 'Desconto de Indicação - 20% primeira anuidade';
+        
+      const coupon = await stripe.coupons.create({
+        percent_off: REFERRAL_DISCOUNT_PERCENT,
+        duration: 'once', // Apenas uma vez (primeira cobrança)
+        name: discountName,
+        metadata: {
+          type: 'referral_discount',
+          referred_user_id: user.id,
+          plan_interval: priceInfo.interval,
+        }
+      });
 
-        checkoutConfig.discounts = [{ coupon: coupon.id }];
-        console.log('[create-checkout] 🎁 Desconto 20% aplicado:', coupon.id);
-      } else {
-        console.log('[create-checkout] ℹ️ Desconto não aplicado em plano anual (apenas mensal)');
-      }
+      checkoutConfig.discounts = [{ coupon: coupon.id }];
+      console.log('[create-checkout] 🎁 Desconto 20% aplicado:', coupon.id, 'Interval:', priceInfo.interval);
     }
 
     // Criar sessão de checkout
@@ -193,7 +194,7 @@ serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       url: session.url,
-      discount_applied: shouldApplyDiscount && priceInfo.interval === 'monthly',
+      discount_applied: shouldApplyDiscount, // Desconto aplica tanto mensal quanto anual
       is_referred: isReferredUser
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -309,7 +309,19 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId = invoice.customer as string;
   const amountInCents = invoice.amount_paid || 0;
 
-  console.log('[stripe-webhook] 💰 Payment succeeded for invoice:', invoice.id, 'Amount:', amountInCents);
+  // Detectar se é pagamento de prorrata (upgrade)
+  const isProration = invoice.billing_reason === 'subscription_update' || 
+                      invoice.billing_reason === 'subscription_cycle' ||
+                      (invoice.lines?.data?.some(line => line.proration === true));
+  
+  const hasProrationItems = invoice.lines?.data?.some(line => line.proration === true);
+
+  console.log('[stripe-webhook] 💰 Payment succeeded for invoice:', invoice.id, {
+    Amount: amountInCents,
+    billing_reason: invoice.billing_reason,
+    isProration,
+    hasProrationItems
+  });
 
   // Buscar usuário pelo stripe_customer_id
   const { data: profile } = await supabase
@@ -327,27 +339,32 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const planName = profile.subscription_plan || 'pro';
   const billingInterval = profile.billing_interval || 'monthly';
 
-  // Calcular próxima data de cobrança
-  const nextBillingDate = new Date(invoice.period_end * 1000);
+  // Só atualizar data de renovação para cobranças normais (não prorrata)
+  if (!hasProrationItems && invoice.period_end) {
+    const nextBillingDate = new Date(invoice.period_end * 1000);
+    
+    await supabase
+      .from('profiles')
+      .update({
+        subscription_end_date: nextBillingDate.toISOString(),
+        subscription_cancel_at: null
+      })
+      .eq('user_id', userId);
 
-  // Atualizar data de renovação
-  await supabase
-    .from('profiles')
-    .update({
-      subscription_end_date: nextBillingDate.toISOString(),
-      subscription_cancel_at: null
-    })
-    .eq('user_id', userId);
-
-  console.log('[stripe-webhook] ✅ Next billing date updated:', nextBillingDate.toISOString());
+    console.log('[stripe-webhook] ✅ Next billing date updated:', nextBillingDate.toISOString());
+  }
 
   // Notificar usuário
+  const notificationContent = hasProrationItems
+    ? `Seu pagamento de upgrade (prorrata) de R$ ${(amountInCents / 100).toFixed(2)} foi processado com sucesso!`
+    : `Seu pagamento de R$ ${(amountInCents / 100).toFixed(2)} foi processado com sucesso.`;
+
   await supabase
     .from('notifications')
     .insert({
       user_id: userId,
-      titulo: 'Pagamento Confirmado',
-      conteudo: `Seu pagamento de R$ ${(amountInCents / 100).toFixed(2)} foi processado com sucesso. Próxima cobrança: ${nextBillingDate.toLocaleDateString('pt-BR')}`
+      titulo: hasProrationItems ? 'Upgrade Confirmado' : 'Pagamento Confirmado',
+      conteudo: notificationContent
     });
 
   // ========================================
@@ -412,20 +429,30 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const isAnnual = billingInterval === 'yearly';
 
   // Calcular comissão baseado nas regras
+  // PRORRATA: Usa mesma lógica - 30% primeiro mês, 15% recorrente
   let commissionRate: number;
   let commissionAmount: number;
+  let paymentType: string = 'recurring';
 
-  if (isAnnual) {
-    // Plano anual: 20% do total, pago mensalmente (1/12 por mês)
+  if (isAnnual && !hasProrationItems) {
+    // Plano anual (não prorrata): 20% do total, pago mensalmente (1/12 por mês)
     commissionRate = ANNUAL_COMMISSION_RATE;
     // Dividir a comissão em 12 parcelas mensais
     const totalAnnualCommission = Math.round(netAmount * commissionRate);
     commissionAmount = Math.round(totalAnnualCommission / 12);
+    paymentType = 'annual';
     console.log('[stripe-webhook] 📊 Annual commission (monthly portion):', commissionAmount);
+  } else if (hasProrationItems) {
+    // PRORRATA de upgrade: 15% recorrente (nunca é primeiro pagamento pois já assinou)
+    commissionRate = RECURRING_MONTHLY_COMMISSION_RATE; // 15%
+    commissionAmount = Math.round(netAmount * commissionRate);
+    paymentType = 'proration';
+    console.log('[stripe-webhook] 📊 Proration commission (15%):', commissionAmount);
   } else {
     // Plano mensal: 30% primeiro mês, 15% recorrente
     commissionRate = isFirstPayment ? FIRST_MONTH_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
     commissionAmount = Math.round(netAmount * commissionRate);
+    paymentType = isFirstPayment ? 'first_payment' : 'recurring';
     console.log('[stripe-webhook] 📊 Monthly commission:', commissionAmount, isFirstPayment ? '(first month)' : '(recurring)');
   }
 
@@ -476,8 +503,12 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   }
 
   // Log da comissão
+  const actionName = hasProrationItems 
+    ? 'proration_commission' 
+    : (isFirstPayment ? 'commission_created' : 'recurring_commission');
+    
   await logReferralAction({
-    action: isFirstPayment ? 'commission_created' : 'recurring_commission',
+    action: actionName,
     referrer_user_id: referralData.referrer_user_id,
     referred_user_id: userId,
     referral_id: referralData.id,
@@ -494,19 +525,26 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
     billing_interval: billingInterval,
     status: 'pending',
     metadata: { 
-      payment_type: isFirstPayment ? 'first_payment' : 'recurring',
-      is_annual: isAnnual
+      payment_type: paymentType,
+      is_annual: isAnnual,
+      is_proration: hasProrationItems
     }
   });
 
   // Notificar afiliado
-  const rateDisplay = isAnnual ? '20%' : (isFirstPayment ? '30%' : '15%');
+  const rateDisplay = paymentType === 'annual' ? '20%' : (paymentType === 'first_payment' ? '30%' : '15%');
+  const actionText = hasProrationItems 
+    ? 'fez upgrade para' 
+    : (isFirstPayment ? 'assinou' : 'renovou');
+    
   await supabase
     .from('notifications')
     .insert({
       user_id: referralData.referrer_user_id,
-      titulo: isFirstPayment ? 'Nova Indicação Convertida! 💰' : 'Comissão Recorrente! 💰',
-      conteudo: `${referredProfile?.nome || 'Seu indicado'} ${isFirstPayment ? 'assinou' : 'renovou'} o plano ${planName === 'premium' ? 'Premium' : 'Profissional'}. Você receberá R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (${rateDisplay}) de comissão.`,
+      titulo: hasProrationItems 
+        ? 'Comissão de Upgrade! 💰' 
+        : (isFirstPayment ? 'Nova Indicação Convertida! 💰' : 'Comissão Recorrente! 💰'),
+      conteudo: `${referredProfile?.nome || 'Seu indicado'} ${actionText} o plano ${planName === 'premium' ? 'Premium' : 'Profissional'}. Você receberá R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (${rateDisplay}) de comissão.`,
     });
 }
 

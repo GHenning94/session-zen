@@ -285,7 +285,7 @@ const ProgramaIndicacao = () => {
       setReferralCode(newReferralCode);
       setCooldownEndDate(null);
 
-      // Verificar dados bancários e criar subconta Asaas automaticamente
+      // Verificar dados bancários
       const { data: profile } = await supabase
         .from('profiles')
         .select('banco, agencia, conta, chave_pix')
@@ -295,19 +295,18 @@ const ProgramaIndicacao = () => {
       const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta) || !!profile?.chave_pix;
       setHasBankDetails(hasBankData);
 
-      // Se tem dados bancários, criar subconta Asaas para split automático
-      if (hasBankData) {
-        try {
-          const { data: asaasResult, error: asaasError } = await supabase.functions.invoke('referral-asaas-onboard');
-          if (asaasError) {
-            console.error('Erro ao criar subconta Asaas:', asaasError);
-            // Não bloquear inscrição se falhar criação da subconta
-          } else {
-            console.log('Subconta Asaas criada:', asaasResult);
-          }
-        } catch (asaasErr) {
-          console.error('Erro ao criar subconta Asaas:', asaasErr);
+      // SEMPRE criar subconta Asaas ao entrar no programa (não depende de dados bancários)
+      // Os dados bancários serão validados apenas no momento do payout
+      try {
+        const { data: asaasResult, error: asaasError } = await supabase.functions.invoke('referral-asaas-onboard');
+        if (asaasError) {
+          console.error('Erro ao criar subconta Asaas:', asaasError);
+          // Não bloquear inscrição se falhar criação da subconta
+        } else {
+          console.log('Subconta Asaas criada:', asaasResult);
         }
+      } catch (asaasErr) {
+        console.error('Erro ao criar subconta Asaas:', asaasErr);
       }
 
       if (!hasBankData) {
