@@ -205,6 +205,16 @@ const Dashboard = () => {
       handlePaymentSuccess()
     }
     
+    // ✅ Também verificar se voltou do checkout Stripe sem completar (ou se URL não tem params)
+    // Isso garante que o plano seja atualizado mesmo se webhook falhar
+    const wasInStripeCheckout = sessionStorage.getItem('stripe_checkout_active') === 'true'
+    if (wasInStripeCheckout && user && !paymentStatus) {
+      console.log('[Dashboard] 🔄 Retorno de checkout Stripe detectado, sincronizando assinatura...')
+      sessionStorage.removeItem('stripe_checkout_active')
+      // Chamar check-subscription para sincronizar o plano
+      handlePaymentSuccess()
+    }
+    
     // Check if returning from direct upgrade (no payment required)
     const upgradeStatus = searchParams.get('upgrade')
     const upgradePlan = searchParams.get('plan')
