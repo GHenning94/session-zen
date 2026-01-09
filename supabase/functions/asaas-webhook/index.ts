@@ -266,12 +266,123 @@ async function processPaymentForUser(
     const isAnnual = billingInterval === 'yearly' || billingInterval === 'year';
     
     // Comissão é calculada sobre o valor LÍQUIDO (após taxas do gateway)
-    // NÃO sobre créditos de prorrata - apenas sobre valor efetivamente pago
     const baseAmountForCommission = netAmount;
-    
-    if (isFirstPayment && !isUpgrade) {
-      // Primeiro pagamento - 30% mensal ou 20% anual
-      const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : FIRST_MONTH_COMMISSION_RATE;
+
+    // Buscar nome do indicado
+    const { data: referredProfile } = await supabase
+      .from('profiles')
+      .select('nome')
+      .eq('user_id', userId)
+      .single();
+
+    // =========================================================
+    // PLANO ANUAL: Comissão de 20% calculada integralmente
+    // e distribuída em 12 parcelas mensais para payout
+    // =========================================================
+    if (isAnnual && !isUpgrade) {
+      const commissionRate = ANNUAL_COMMISSION_RATE;
+      const totalAnnualCommission = Math.round(baseAmountForCommission * commissionRate);
+      const monthlyPortion = Math.round(totalAnnualCommission / 12);
+
+      console.log('[asaas-webhook] 📊 Annual commission:', {
+        totalCommission: totalAnnualCommission,
+        monthlyPortion,
+        netAmount: baseAmountForCommission
+      });
+
+      // Atualizar referral se for primeiro pagamento
+      if (isFirstPayment) {
+        await supabase
+          .from('referrals')
+          .update({
+            status: 'converted',
+            subscription_plan: planName,
+            subscription_amount: amountInCents,
+            commission_rate: commissionRate * 100,
+            commission_amount: totalAnnualCommission,
+            first_payment_date: new Date().toISOString(),
+          })
+          .eq('id', referralData.id);
+
+        console.log('[asaas-webhook] ✅ Referral converted to active (annual)');
+      }
+
+      // CRIAR 12 PAYOUTS PENDENTES (um para cada mês)
+      const baseDate = new Date();
+      const createdPayouts: any[] = [];
+      
+      for (let month = 0; month < 12; month++) {
+        const periodStart = new Date(baseDate);
+        periodStart.setMonth(periodStart.getMonth() + month);
+        const periodEnd = new Date(periodStart);
+        periodEnd.setMonth(periodEnd.getMonth() + 1);
+        periodEnd.setDate(periodEnd.getDate() - 1);
+
+        const { data: newPayout, error: payoutError } = await supabase
+          .from('referral_payouts')
+          .insert({
+            referrer_user_id: referralData.referrer_user_id,
+            referral_id: referralData.id,
+            amount: monthlyPortion,
+            currency: 'brl',
+            status: 'pending',
+            period_start: periodStart.toISOString().split('T')[0],
+            period_end: periodEnd.toISOString().split('T')[0],
+            referred_user_name: referredProfile?.nome || 'Usuário',
+            referred_plan: planName,
+            payment_method: 'annual_installment'
+          })
+          .select()
+          .single();
+
+        if (!payoutError && newPayout) {
+          createdPayouts.push(newPayout);
+        }
+      }
+
+      console.log('[asaas-webhook] ✅ Created', createdPayouts.length, 'annual payout installments');
+
+      // Log da comissão anual
+      await logReferralAction({
+        action: isFirstPayment ? 'annual_commission_created' : 'annual_recurring_commission',
+        referrer_user_id: referralData.referrer_user_id,
+        referred_user_id: userId,
+        referral_id: referralData.id,
+        payout_id: createdPayouts[0]?.id,
+        gateway: 'asaas',
+        gateway_payment_id: payment.id,
+        gross_amount: amountInCents,
+        gateway_fee: gatewayFee,
+        net_amount: baseAmountForCommission,
+        commission_amount: totalAnnualCommission,
+        commission_rate: commissionRate * 100,
+        discount_applied: discountApplied,
+        discount_amount: discountApplied && originalPrice ? originalPrice - amountInCents : 0,
+        new_plan: planName,
+        billing_interval: billingInterval,
+        status: 'pending',
+        metadata: { 
+          payment_type: 'annual',
+          total_commission: totalAnnualCommission,
+          monthly_portion: monthlyPortion,
+          installments_created: createdPayouts.length
+        }
+      });
+
+      // Notificar referrer
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: referralData.referrer_user_id,
+          titulo: isFirstPayment ? 'Nova Indicação Anual! 💰' : 'Renovação Anual! 💰',
+          conteudo: `${referredProfile?.nome || 'Seu indicado'} ${isFirstPayment ? 'assinou' : 'renovou'} o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} Anual. Você receberá R$ ${(totalAnnualCommission / 100).toFixed(2).replace('.', ',')} (20%) de comissão, distribuídos em 12 parcelas mensais de R$ ${(monthlyPortion / 100).toFixed(2).replace('.', ',')}.`,
+        });
+
+    } else if (isFirstPayment && !isUpgrade) {
+      // =========================================================
+      // PRIMEIRO PAGAMENTO MENSAL: 30% de comissão
+      // =========================================================
+      const commissionRate = FIRST_MONTH_COMMISSION_RATE;
       const commissionAmount = Math.round(baseAmountForCommission * commissionRate);
 
       // Atualizar referral para converted
@@ -286,13 +397,6 @@ async function processPaymentForUser(
           first_payment_date: new Date().toISOString(),
         })
         .eq('id', referralData.id);
-
-      // Buscar nome do indicado
-      const { data: referredProfile } = await supabase
-        .from('profiles')
-        .select('nome')
-        .eq('user_id', userId)
-        .single();
 
       // Criar payout pendente
       const { data: newPayout } = await supabase
@@ -322,7 +426,7 @@ async function processPaymentForUser(
         gateway_payment_id: payment.id,
         gross_amount: amountInCents,
         gateway_fee: gatewayFee,
-        net_amount: netAmount,
+        net_amount: baseAmountForCommission,
         commission_amount: commissionAmount,
         commission_rate: commissionRate * 100,
         discount_applied: discountApplied,
@@ -334,27 +438,22 @@ async function processPaymentForUser(
       });
 
       // Notificar referrer
-      const commissionDisplay = isAnnual ? '20%' : '30%';
       await supabase
         .from('notifications')
         .insert({
           user_id: referralData.referrer_user_id,
           titulo: 'Indicação convertida em assinatura! 💰',
-          conteudo: `${referredProfile?.nome || 'Um usuário indicado'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você ganhou R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (${commissionDisplay}) de comissão.`,
+          conteudo: `${referredProfile?.nome || 'Um usuário indicado'} assinou o plano ${planName === 'premium' ? 'Premium' : 'Profissional'} através da sua indicação! Você ganhou R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (30%) de comissão.`,
         });
 
       console.log('[asaas-webhook] ✅ First payment referral processed, commission:', commissionAmount);
-    } else if (referralData.status === 'converted' || isUpgrade) {
-      // Pagamento recorrente ou upgrade - 15% mensal ou 20% anual
-      const commissionRate = isAnnual ? ANNUAL_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
-      const commissionAmount = Math.round(baseAmountForCommission * commissionRate);
 
-      // Buscar nome do indicado
-      const { data: referredProfile } = await supabase
-        .from('profiles')
-        .select('nome')
-        .eq('user_id', userId)
-        .single();
+    } else if (referralData.status === 'converted' || isUpgrade) {
+      // =========================================================
+      // PAGAMENTO RECORRENTE OU UPGRADE: 15% de comissão
+      // =========================================================
+      const commissionRate = RECURRING_MONTHLY_COMMISSION_RATE;
+      const commissionAmount = Math.round(baseAmountForCommission * commissionRate);
 
       // Criar payout pendente
       const { data: newPayout } = await supabase
@@ -375,7 +474,7 @@ async function processPaymentForUser(
 
       // Log da comissão
       await logReferralAction({
-        action: isUpgrade ? 'upgrade' : 'payment',
+        action: isUpgrade ? 'proration_commission' : 'recurring_commission',
         referrer_user_id: referralData.referrer_user_id,
         referred_user_id: userId,
         referral_id: referralData.id,
@@ -384,27 +483,26 @@ async function processPaymentForUser(
         gateway_payment_id: payment.id,
         gross_amount: amountInCents,
         gateway_fee: gatewayFee,
-        net_amount: netAmount,
+        net_amount: baseAmountForCommission,
         commission_amount: commissionAmount,
         commission_rate: commissionRate * 100,
         previous_plan: previousPlan,
         new_plan: planName,
         billing_interval: billingInterval,
         status: 'pending',
-        metadata: { payment_type: isUpgrade ? 'upgrade' : 'recurring' }
+        metadata: { payment_type: isUpgrade ? 'proration' : 'recurring' }
       });
 
       // Notificar referrer
-      const rateDisplay = isAnnual ? '20%' : '15%';
       await supabase
         .from('notifications')
         .insert({
           user_id: referralData.referrer_user_id,
           titulo: isUpgrade ? 'Comissão de Upgrade! 💰' : 'Comissão Recorrente! 💰',
-          conteudo: `${referredProfile?.nome || 'Seu indicado'} ${isUpgrade ? 'fez upgrade' : 'renovou a assinatura'}. Você receberá R$ ${(commissionAmount / 100).toFixed(2)} (${rateDisplay}) de comissão.`,
+          conteudo: `${referredProfile?.nome || 'Seu indicado'} ${isUpgrade ? 'fez upgrade' : 'renovou a assinatura'}. Você receberá R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (15%) de comissão.`,
         });
 
-      console.log('[asaas-webhook] ✅ Recurring commission created:', commissionAmount);
+      console.log('[asaas-webhook] ✅ Recurring/upgrade commission created:', commissionAmount);
     }
   } else {
     // Log de pagamento sem indicação
