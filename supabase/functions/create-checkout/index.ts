@@ -9,13 +9,17 @@ const corsHeaders = {
 
 const SITE_URL = Deno.env.get("SITE_URL") || "https://therapypro.app.br";
 
+/**
+ * Stripe Checkout - Apenas para usuários NORMAIS (não indicados)
+ * Usuários indicados são roteados para Asaas
+ */
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    console.log('[create-checkout] 🚀 Iniciando criação de checkout...');
+    console.log('[create-checkout] 🚀 Iniciando criação de checkout Stripe...');
     
     const supabaseClient = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -38,14 +42,14 @@ serve(async (req) => {
       throw new Error("Email não confirmado. Por favor, confirme seu email antes de assinar.");
     }
 
-    const { priceId, returnUrl, referralCode } = await req.json();
+    const { priceId, returnUrl } = await req.json();
 
     if (!priceId) {
       console.error("[create-checkout] ❌ Missing priceId");
       throw new Error("priceId é obrigatório.");
     }
 
-    console.log("[create-checkout] 💳 Creating checkout for priceId:", priceId, "referralCode:", referralCode);
+    console.log("[create-checkout] 💳 Creating Stripe checkout for priceId:", priceId);
     
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
@@ -83,59 +87,15 @@ serve(async (req) => {
 
     const origin = (typeof returnUrl === 'string' && returnUrl.length > 0) ? returnUrl : SITE_URL;
 
-    // Build metadata including referral code if present
+    // Build metadata - simples, sem indicação
     const sessionMetadata: Record<string, string> = { 
       user_id: user.id,
       plan_name: priceInfo.plan,
       billing_interval: priceInfo.interval
     };
-    
-    if (referralCode) {
-      sessionMetadata.referral_code = referralCode;
-      console.log("[create-checkout] 🎯 Including referral code in metadata:", referralCode);
-    }
 
-    // Admin client para verificar se usuário foi indicado
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
-    );
-    
-    // Verificar se usuário foi indicado (existe como referred_user_id na tabela referrals)
-    let isReferredUser = false;
-    let hasUsedCoupon = false;
-
-    try {
-      const { data: referralData } = await supabaseAdmin
-        .from('referrals')
-        .select('id, status, first_payment_date')
-        .eq('referred_user_id', user.id)
-        .single();
-      
-      if (referralData) {
-        isReferredUser = true;
-        hasUsedCoupon = !!referralData.first_payment_date;
-        console.log('[create-checkout] 🎯 Usuário indicado:', { isReferredUser, hasUsedCoupon });
-      }
-    } catch (e) {
-      console.log('[create-checkout] ℹ️ Usuário não é indicado ou erro ao verificar:', e);
-    }
-
-    // Determinar se habilita códigos promocionais:
-    // - Usuário deve ser indicado
-    // - Plano deve ser PRO (mensal ou anual)
-    // - Usuário não pode ter usado o cupom antes
-    const allowPromoCodes = isReferredUser && 
-                            priceInfo.plan === 'pro' && 
-                            !hasUsedCoupon;
-
-    console.log('[create-checkout] 💳 Allow promo codes:', allowPromoCodes, { 
-      isReferredUser, 
-      plan: priceInfo.plan, 
-      hasUsedCoupon 
-    });
-
-    // Criar sessão de checkout
+    // Criar sessão de checkout - sem códigos promocionais
+    // Stripe é apenas para usuários normais (não indicados)
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
@@ -151,9 +111,7 @@ serve(async (req) => {
       },
       subscription_data: {
         metadata: sessionMetadata
-      },
-      // Só habilitar códigos promocionais para usuários indicados em planos Pro
-      ...(allowPromoCodes ? { allow_promotion_codes: true } : {}),
+      }
     });
 
     if (!session.url) {

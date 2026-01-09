@@ -6,7 +6,11 @@ import { toast } from 'sonner'
 
 /**
  * Componente que verifica se há um plano pendente no sessionStorage
- * e abre automaticamente o Stripe Checkout após o primeiro login
+ * e abre automaticamente o checkout correto após o primeiro login
+ * 
+ * Roteamento inteligente:
+ * - Usuários indicados → Asaas (com desconto INDICACAO20)
+ * - Usuários normais → Stripe
  */
 export const CheckoutRedirect = () => {
   const navigate = useNavigate()
@@ -72,28 +76,68 @@ export const CheckoutRedirect = () => {
         // Usar o ciclo de cobrança selecionado
         const priceId = prices[pendingBilling as 'monthly' | 'yearly' | 'annually']
 
-        console.log('[CheckoutRedirect] Criando checkout para:', { plan: pendingPlan, billing: pendingBilling, priceId })
+        console.log('[CheckoutRedirect] Verificando gateway de pagamento...')
 
-        // Criar sessão de checkout
-        const referralCode = localStorage.getItem('referral_code') || sessionStorage.getItem('pending_referral')
-        const { data, error } = await supabase.functions.invoke('create-checkout', {
-          body: {
-            priceId,
-            returnUrl: window.location.origin,
-            referralCode: referralCode || undefined
+        // ✅ Verificar qual gateway usar (Stripe ou Asaas)
+        let gateway = 'stripe'
+        try {
+          const { data: gatewayData, error: gatewayError } = await supabase.functions.invoke('check-payment-gateway', {
+            body: {}
+          })
+          
+          if (!gatewayError && gatewayData?.gateway) {
+            gateway = gatewayData.gateway
           }
-        })
-
-        if (error) {
-          console.error('[CheckoutRedirect] Erro ao criar checkout:', error)
-          throw error
+        } catch (e) {
+          console.log('[CheckoutRedirect] Erro ao verificar gateway, usando Stripe:', e)
         }
 
-        if (!data?.url) {
+        console.log('[CheckoutRedirect] Gateway selecionado:', gateway)
+
+        // ✅ Chamar o checkout apropriado
+        let checkoutUrl: string | null = null
+
+        if (gateway === 'asaas') {
+          // Usuário indicado → Asaas
+          console.log('[CheckoutRedirect] Criando checkout Asaas...')
+          const { data, error } = await supabase.functions.invoke('create-asaas-checkout', {
+            body: {
+              priceId,
+              planId: pendingPlan,
+              billingInterval: pendingBilling,
+              returnUrl: window.location.origin
+            }
+          })
+
+          if (error) {
+            console.error('[CheckoutRedirect] Erro ao criar checkout Asaas:', error)
+            throw error
+          }
+
+          checkoutUrl = data?.url
+        } else {
+          // Usuário normal → Stripe
+          console.log('[CheckoutRedirect] Criando checkout Stripe...')
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: {
+              priceId,
+              returnUrl: window.location.origin
+            }
+          })
+
+          if (error) {
+            console.error('[CheckoutRedirect] Erro ao criar checkout Stripe:', error)
+            throw error
+          }
+
+          checkoutUrl = data?.url
+        }
+
+        if (!checkoutUrl) {
           throw new Error('URL de checkout não gerada')
         }
 
-        console.log('[CheckoutRedirect] ✅ Redirecionando para checkout Stripe')
+        console.log('[CheckoutRedirect] ✅ Redirecionando para checkout', gateway)
         
         // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')
@@ -103,8 +147,8 @@ export const CheckoutRedirect = () => {
         sessionStorage.removeItem('pending_billing_backup')
         sessionStorage.removeItem('pending_referral')
         
-        // Redirecionar para Stripe
-        window.location.href = data.url
+        // Redirecionar para checkout
+        window.location.href = checkoutUrl
       } catch (error: any) {
         console.error('[CheckoutRedirect] Erro ao processar checkout:', error)
         toast.error('Erro ao processar pagamento. Tente novamente.')

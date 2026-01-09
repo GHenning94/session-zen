@@ -110,28 +110,64 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       return
     }
 
-    // For free plan users, go directly to checkout
+    // For free plan users, go directly to checkout with smart routing
     await processCheckout(plan)
   }
 
+  /**
+   * Processa checkout com roteamento inteligente:
+   * - Usuários indicados → Asaas
+   * - Usuários normais → Stripe
+   */
   const processCheckout = async (plan: typeof plans[0]) => {
     if (!user) return;
     
     setLoading(true);
     try {
-      const referralCode = localStorage.getItem('referral_code') || sessionStorage.getItem('pending_referral')
-      const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { 
-          priceId: plan.stripePrice, 
-          returnUrl: window.location.origin,
-          referralCode: referralCode || undefined
+      // 1. Verificar qual gateway usar (Stripe ou Asaas)
+      const { data: gatewayData, error: gatewayError } = await supabase.functions.invoke('check-payment-gateway', {
+        body: {}
+      })
+      
+      if (gatewayError) {
+        console.error('[UpgradeModal] Erro ao verificar gateway:', gatewayError)
+        // Fallback para Stripe se falhar
+      }
+      
+      const gateway = gatewayData?.gateway || 'stripe'
+      console.log('[UpgradeModal] Gateway selecionado:', gateway)
+      
+      // 2. Chamar o checkout apropriado
+      if (gateway === 'asaas') {
+        // Usuário indicado → Asaas
+        const { data, error } = await supabase.functions.invoke('create-asaas-checkout', {
+          body: { 
+            priceId: plan.stripePrice,
+            planId: plan.id,
+            billingInterval: 'monthly',
+            returnUrl: window.location.origin
+          }
+        });
+
+        if (error) throw error;
+
+        if (data?.url) {
+          window.location.href = data.url;
         }
-      });
+      } else {
+        // Usuário normal → Stripe
+        const { data, error } = await supabase.functions.invoke('create-checkout', {
+          body: { 
+            priceId: plan.stripePrice, 
+            returnUrl: window.location.origin
+          }
+        });
 
-      if (error) throw error;
+        if (error) throw error;
 
-      if (data?.url) {
-        window.location.href = data.url;
+        if (data?.url) {
+          window.location.href = data.url;
+        }
       }
     } catch (err) {
       console.error('Erro ao processar pagamento:', err);
