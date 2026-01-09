@@ -1368,6 +1368,7 @@ export type Database = {
           created_at: string
           currency: string | null
           failure_reason: string | null
+          gateway_event_id: string | null
           gateway_fee: number | null
           gateway_invoice_id: string | null
           gateway_subscription_id: string | null
@@ -1398,6 +1399,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           failure_reason?: string | null
+          gateway_event_id?: string | null
           gateway_fee?: number | null
           gateway_invoice_id?: string | null
           gateway_subscription_id?: string | null
@@ -1428,6 +1430,7 @@ export type Database = {
           created_at?: string
           currency?: string | null
           failure_reason?: string | null
+          gateway_event_id?: string | null
           gateway_fee?: number | null
           gateway_invoice_id?: string | null
           gateway_subscription_id?: string | null
@@ -1874,6 +1877,42 @@ export type Database = {
           is_used?: boolean
           updated_at?: string
           used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_login_fingerprints: {
+        Row: {
+          device_fingerprint: string | null
+          first_seen_at: string | null
+          id: string
+          ip_address: unknown
+          last_seen_at: string | null
+          login_count: number | null
+          stripe_customer_id: string | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          device_fingerprint?: string | null
+          first_seen_at?: string | null
+          id?: string
+          ip_address?: unknown
+          last_seen_at?: string | null
+          login_count?: number | null
+          stripe_customer_id?: string | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          device_fingerprint?: string | null
+          first_seen_at?: string | null
+          id?: string
+          ip_address?: unknown
+          last_seen_at?: string | null
+          login_count?: number | null
+          stripe_customer_id?: string | null
+          user_agent?: string | null
           user_id?: string
         }
         Relationships: []
