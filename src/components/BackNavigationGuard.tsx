@@ -15,6 +15,17 @@ import {
 
 const PUBLIC_ROUTES = ['/', '/login', '/signup']
 
+// Detecta se o usuário está retornando de um checkout externo (Stripe)
+const isReturningFromExternalCheckout = (): boolean => {
+  // Stripe deixa referrer vazio ou como domínio stripe.com
+  const referrer = document.referrer
+  if (referrer.includes('stripe.com') || referrer.includes('checkout.stripe.com')) {
+    return true
+  }
+  // Também verifica se há flags no sessionStorage (backup)
+  return sessionStorage.getItem('stripe_checkout_active') === 'true'
+}
+
 export function BackNavigationGuard() {
   const { user, signOut } = useAuth()
   const navigate = useNavigate()
@@ -39,6 +50,15 @@ export function BackNavigationGuard() {
     if (isNavigatingRef.current) {
       isNavigatingRef.current = false
       previousPathRef.current = currentPath
+      return
+    }
+
+    // ✅ Se voltando de checkout externo (Stripe), redirecionar para dashboard
+    if (isReturningFromExternalCheckout()) {
+      console.log('[BackNavigationGuard] 🔄 Retorno de checkout externo detectado, redirecionando para dashboard')
+      sessionStorage.removeItem('stripe_checkout_active')
+      isNavigatingRef.current = true
+      navigate('/dashboard', { replace: true })
       return
     }
 

@@ -260,7 +260,11 @@ export default function Upgrade() {
         } 
       })
       if (error) throw error
-      if (data?.url) window.location.href = data.url
+      if (data?.url) {
+        // ✅ Marcar que está indo para checkout externo (Stripe)
+        sessionStorage.setItem('stripe_checkout_active', 'true')
+        window.location.href = data.url
+      }
     } catch (error: any) {
       console.error('Erro ao processar pagamento:', error)
       toast.error(`Erro ao processar plano: ${error.message || 'Verifique os IDs de preço no Stripe Dashboard'}`)
@@ -291,6 +295,8 @@ export default function Upgrade() {
         if (isTierChange) {
           sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
         }
+        // ✅ Marcar que está indo para checkout externo (Stripe)
+        sessionStorage.setItem('stripe_checkout_active', 'true')
         // Se precisa pagar valor proporcional, redirecionar para checkout
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
         window.location.href = data.paymentUrl
