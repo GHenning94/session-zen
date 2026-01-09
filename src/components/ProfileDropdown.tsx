@@ -9,7 +9,6 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { 
   User, 
@@ -21,10 +20,7 @@ import {
   Bell,
   Crown,
   Gift,
-  HelpCircle,
-  Ticket,
-  Copy,
-  Check
+  HelpCircle
 } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useNavigate } from "react-router-dom"
@@ -32,7 +28,6 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
-import { toast } from "sonner"
 
 interface Profile {
   nome: string
@@ -42,42 +37,17 @@ interface Profile {
   is_referral_partner?: boolean
 }
 
-interface UserCoupon {
-  id: string
-  code: string
-  discount: string
-  description: string
-  coupon_type: string
-  is_used: boolean
-  used_at: string | null
-  expires_at: string | null
-  created_at: string
-}
-
 export const ProfileDropdown = () => {
   const { signOut, user } = useAuth()
   const navigate = useNavigate()
   const isMobile = useIsMobile()
   const [open, setOpen] = useState(false)
-  const [showCouponsTab, setShowCouponsTab] = useState(false)
   const [profile, setProfile] = useState<Profile>({ nome: '', profissao: '', avatar_url: '', subscription_plan: 'basico', is_referral_partner: false })
   const { avatarUrl } = useAvatarUrl(profile.avatar_url)
-  
-  // Coupon states
-  const [coupons, setCoupons] = useState<UserCoupon[]>([])
-  const [hasNewCoupon, setHasNewCoupon] = useState(false)
-  const [copiedCode, setCopiedCode] = useState<string | null>(null)
-  const [seenCoupons, setSeenCoupons] = useState<string[]>([])
 
   useEffect(() => {
     if (user) {
-      // Load seen coupons from localStorage
-      const seenCouponsKey = `seen_coupons_${user.id}`
-      const savedSeenCoupons = JSON.parse(localStorage.getItem(seenCouponsKey) || '[]')
-      setSeenCoupons(savedSeenCoupons)
-      
       fetchProfile()
-      loadCoupons(savedSeenCoupons)
       
       // Subscribe to profile changes
       const profileChannel = supabase
@@ -97,27 +67,8 @@ export const ProfileDropdown = () => {
         )
         .subscribe()
 
-      // Subscribe to coupon changes
-      const couponChannel = supabase
-        .channel('coupon-changes')
-        .on(
-          'postgres_changes',
-          {
-            event: '*',
-            schema: 'public',
-            table: 'user_coupons',
-            filter: `user_id=eq.${user.id}`
-          },
-          () => {
-            console.log('Coupons updated')
-            loadCoupons(seenCoupons)
-          }
-        )
-        .subscribe()
-
       return () => {
         supabase.removeChannel(profileChannel)
-        supabase.removeChannel(couponChannel)
       }
     }
   }, [user])
@@ -150,81 +101,6 @@ export const ProfileDropdown = () => {
       }
     } catch (error) {
       console.error('Erro ao carregar perfil:', error)
-    }
-  }
-
-  const loadCoupons = async (currentSeenCoupons: string[]) => {
-    if (!user) return
-
-    try {
-      // Filtrar cupons expirados automaticamente (Fix Item 2)
-      const now = new Date().toISOString()
-      const { data, error } = await supabase
-        .from('user_coupons')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_used', false)
-        .or(`expires_at.is.null,expires_at.gt.${now}`)
-        .order('created_at', { ascending: false })
-
-      // Também buscar cupons usados para mostrar histórico
-      const { data: usedData } = await supabase
-        .from('user_coupons')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('is_used', true)
-        .order('created_at', { ascending: false })
-        .limit(5)
-
-      if (error) {
-        console.error('[ProfileDropdown] Error loading coupons:', error)
-        return
-      }
-
-      const allCoupons = [...(data || []), ...(usedData || [])]
-      console.log('[ProfileDropdown] Coupons loaded:', allCoupons.length)
-      setCoupons(allCoupons)
-
-      // Check if there are any new unseen coupons (not used and not seen)
-      const hasNew = (data || []).some(coupon => 
-        !coupon.is_used && !currentSeenCoupons.includes(coupon.code)
-      )
-      setHasNewCoupon(hasNew)
-    } catch (err) {
-      console.error('[ProfileDropdown] Exception loading coupons:', err)
-    }
-  }
-
-  const handleCouponHover = (couponCode: string) => {
-    if (!user) return
-    
-    const seenCouponsKey = `seen_coupons_${user.id}`
-    
-    // Usar functional update para evitar stale closure
-    setSeenCoupons(prev => {
-      if (prev.includes(couponCode)) return prev
-      
-      const updated = [...prev, couponCode]
-      localStorage.setItem(seenCouponsKey, JSON.stringify(updated))
-      
-      // Recalcular hasNewCoupon imediatamente com valores atualizados
-      const stillHasNew = coupons.some(coupon => 
-        !coupon.is_used && !updated.includes(coupon.code)
-      )
-      setHasNewCoupon(stillHasNew)
-      
-      return updated
-    })
-  }
-
-  const handleCopyCode = async (code: string) => {
-    try {
-      await navigator.clipboard.writeText(code)
-      setCopiedCode(code)
-      toast.success("Código copiado!")
-      setTimeout(() => setCopiedCode(null), 2000)
-    } catch (err) {
-      toast.error("Erro ao copiar código")
     }
   }
 
@@ -279,140 +155,8 @@ export const ProfileDropdown = () => {
 
   const handleMenuAction = (action: () => void) => {
     setOpen(false)
-    setShowCouponsTab(false)
     action()
   }
-
-  const handleOpenCouponsTab = () => {
-    setShowCouponsTab(true)
-  }
-
-  const handleBackFromCoupons = () => {
-    setShowCouponsTab(false)
-  }
-
-  // Componente de notificação (bolinha vermelha pulsante)
-  const NotificationDot = ({ className }: { className?: string }) => (
-    <span className={cn(
-      "absolute h-2.5 w-2.5 rounded-full bg-destructive ring-2 ring-background animate-pulse",
-      className
-    )} />
-  )
-
-  // Check if a coupon is new (not seen and not used)
-  const isCouponNew = (coupon: UserCoupon) => {
-    return !coupon.is_used && !seenCoupons.includes(coupon.code)
-  }
-
-  // Conteúdo da aba de cupons
-  const CouponsTabContent = () => (
-    <div className="p-3">
-      <div className="flex items-center gap-2 mb-4">
-        <button 
-          onClick={handleBackFromCoupons}
-          className="p-1 rounded-lg hover:bg-accent"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <path d="m15 18-6-6 6-6"/>
-          </svg>
-        </button>
-        <h3 className="font-semibold text-sm">Meus Cupons</h3>
-        {coupons.filter(c => !c.is_used).length > 0 && (
-          <Badge variant="secondary" className="text-[10px]">
-            {coupons.filter(c => !c.is_used).length} disponível(is)
-          </Badge>
-        )}
-      </div>
-
-      {coupons.length > 0 ? (
-        <div className="space-y-3 max-h-[400px] overflow-y-auto">
-          {coupons.map((coupon) => (
-            <div 
-              key={coupon.id}
-              className={cn(
-                "relative rounded-xl border p-4 transition-all",
-                coupon.is_used 
-                  ? "bg-muted/50 border-border" 
-                  : "bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 border-emerald-200 dark:border-emerald-800"
-              )}
-              onMouseEnter={() => handleCouponHover(coupon.code)}
-            >
-              {/* Badge de status */}
-              <div className="absolute top-2 right-2 flex items-center gap-1">
-                {isCouponNew(coupon) && (
-                  <NotificationDot className="relative top-0 right-0" />
-                )}
-                <Badge 
-                  variant={coupon.is_used ? "secondary" : "default"}
-                  className={cn(
-                    "text-[10px]",
-                    !coupon.is_used && "bg-emerald-500 hover:bg-emerald-600"
-                  )}
-                >
-                  {coupon.is_used ? "Utilizado" : "Disponível"}
-                </Badge>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center rounded-full",
-                  coupon.is_used 
-                    ? "bg-muted" 
-                    : "bg-emerald-100 dark:bg-emerald-900/50"
-                )}>
-                  <Ticket className={cn(
-                    "h-5 w-5",
-                    coupon.is_used 
-                      ? "text-muted-foreground" 
-                      : "text-emerald-600 dark:text-emerald-400"
-                  )} />
-                </div>
-                
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={cn(
-                      "text-lg font-bold",
-                      coupon.is_used 
-                        ? "text-muted-foreground" 
-                        : "text-emerald-600 dark:text-emerald-400"
-                    )}>
-                      {coupon.discount} OFF
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {coupon.description}
-                  </p>
-                  
-                  {!coupon.is_used && (
-                    <button
-                      onClick={() => handleCopyCode(coupon.code)}
-                      className="mt-3 flex items-center gap-2 rounded-lg bg-emerald-500 px-3 py-1.5 text-xs font-semibold text-white transition-all hover:bg-emerald-600 active:scale-95"
-                    >
-                      <span className="font-mono">{coupon.code}</span>
-                      {copiedCode === coupon.code ? (
-                        <Check className="h-3.5 w-3.5" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5" />
-                      )}
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted mb-3">
-            <Ticket className="h-6 w-6 text-muted-foreground" />
-          </div>
-          <p className="text-sm text-muted-foreground">
-            Você ainda não possui cupons disponíveis
-          </p>
-        </div>
-      )}
-    </div>
-  )
 
   // Conteúdo do menu principal (reutilizado entre mobile e desktop)
   const MenuContent = ({ onAction }: { onAction: (action: () => void) => void }) => (
@@ -505,23 +249,6 @@ export const ProfileDropdown = () => {
         </button>
       ))}
 
-      {/* Coupons Tab - After Referral Program */}
-      <button 
-        className="w-full flex items-center justify-between p-3 rounded-lg hover:bg-accent text-left"
-        onClick={handleOpenCouponsTab}
-      >
-        <span className="flex items-center gap-2 font-medium text-sm relative">
-          <Ticket className="h-5 w-5 text-muted-foreground" />
-          Cupons
-          {hasNewCoupon && (
-            <NotificationDot className="-top-0.5 -right-3" />
-          )}
-        </span>
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-          <path d="m9 18 6-6-6-6"/>
-        </svg>
-      </button>
-
       {/* Support */}
       {menuItems.support.map((item, index) => (
         <button 
@@ -559,23 +286,16 @@ export const ProfileDropdown = () => {
               {profile.nome ? getInitials(profile.nome) : <User className="h-3 w-3 text-primary" />}
             </AvatarFallback>
           </Avatar>
-          {hasNewCoupon && (
-            <NotificationDot className="-top-0.5 -right-0.5" />
-          )}
         </button>
         
-        <Sheet open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) setShowCouponsTab(false) }}>
+        <Sheet open={open} onOpenChange={setOpen}>
           <SheetContent side="bottom" className="h-[85vh] rounded-t-3xl p-0">
             <SheetHeader className="p-4 border-b">
-              <SheetTitle>{showCouponsTab ? 'Meus Cupons' : 'Minha Conta'}</SheetTitle>
+              <SheetTitle>Minha Conta</SheetTitle>
             </SheetHeader>
             <ScrollArea className="h-[calc(85vh-60px)]">
               <div className="p-2">
-                {showCouponsTab ? (
-                  <CouponsTabContent />
-                ) : (
-                  <MenuContent onAction={handleMenuAction} />
-                )}
+                <MenuContent onAction={handleMenuAction} />
               </div>
             </ScrollArea>
           </SheetContent>
@@ -586,7 +306,7 @@ export const ProfileDropdown = () => {
 
   // Desktop: usa DropdownMenu
   return (
-    <DropdownMenu open={open} onOpenChange={(isOpen) => { setOpen(isOpen); if (!isOpen) setShowCouponsTab(false) }}>
+    <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>
         <button className="relative flex items-center gap-2 rounded-full focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all hover:opacity-80">
           <Avatar className="h-10 w-10 cursor-pointer border border-border">
@@ -595,9 +315,6 @@ export const ProfileDropdown = () => {
               {profile.nome ? getInitials(profile.nome) : <User className="h-4 w-4 text-primary" />}
             </AvatarFallback>
           </Avatar>
-          {hasNewCoupon && (
-            <NotificationDot className="-top-0.5 -right-0.5" />
-          )}
         </button>
       </DropdownMenuTrigger>
       
@@ -607,162 +324,134 @@ export const ProfileDropdown = () => {
       >
         {/* Main Section */}
         <section className="bg-background backdrop-blur-lg rounded-2xl p-1 shadow border border-border">
-          {showCouponsTab ? (
-            <CouponsTabContent />
-          ) : (
-            <>
-              {/* User Info Header */}
-              <div className="flex items-center p-3">
-                <div className="flex-1 flex items-center gap-3">
-                  <Avatar className="h-10 w-10 border border-border">
-                    <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
-                    <AvatarFallback className="bg-primary/10">
-                      {profile.nome ? getInitials(profile.nome) : <User className="h-4 w-4 text-primary" />}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-sm text-foreground truncate">{profile.nome || 'Usuário'}</h3>
-                    <p className="text-muted-foreground text-xs truncate">{user?.email}</p>
-                    {profile.profissao && (
-                      <p className="text-muted-foreground text-xs truncate">{profile.profissao}</p>
-                    )}
-                  </div>
-                </div>
+          {/* User Info Header */}
+          <div className="flex items-center p-3">
+            <div className="flex-1 flex items-center gap-3">
+              <Avatar className="h-10 w-10 border border-border">
+                <AvatarImage src={avatarUrl || undefined} alt={profile.nome} />
+                <AvatarFallback className="bg-primary/10">
+                  {profile.nome ? getInitials(profile.nome) : <User className="h-4 w-4 text-primary" />}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-semibold text-sm text-foreground truncate">{profile.nome || 'Usuário'}</h3>
+                <p className="text-muted-foreground text-xs truncate">{user?.email}</p>
+                {profile.profissao && (
+                  <p className="text-muted-foreground text-xs truncate">{profile.profissao}</p>
+                )}
               </div>
+            </div>
+          </div>
 
-              {/* Premium Upgrade Item - Above Profile */}
-              {menuItems.premium.length > 0 && (
-                <>
-                  <DropdownMenuGroup>
-                    {menuItems.premium.map((item, index) => (
-                      <DropdownMenuItem 
-                        key={index}
-                        className={cn(
-                          "p-2 rounded-full cursor-pointer justify-between",
-                          item.isPremiumItem && "animated-premium-no-shadow hover:opacity-90"
-                        )}
-                        onClick={item.action}
-                      >
-                        <span className="flex items-center gap-2 font-medium text-white">
-                          <item.icon className="h-5 w-5 text-white" />
-                          {item.label}
-                        </span>
-                        {item.badge && (
-                          <Badge className="animated-premium-no-shadow text-white text-[10px] border-white/30 border">
-                            {item.badge}
-                          </Badge>
-                        )}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuGroup>
-                </>
-              )}
-
-              {/* Profile Menu Items */}
+          {/* Premium Upgrade Item - Above Profile */}
+          {menuItems.premium.length > 0 && (
+            <>
               <DropdownMenuGroup>
-                {menuItems.profile.map((item, index) => (
+                {menuItems.premium.map((item, index) => (
                   <DropdownMenuItem 
                     key={index}
-                    className="p-2 rounded-lg cursor-pointer"
+                    className={cn(
+                      "p-2 rounded-full cursor-pointer justify-between",
+                      item.isPremiumItem && "animated-premium-no-shadow hover:opacity-90"
+                    )}
                     onClick={item.action}
                   >
-                    <span className="flex items-center gap-2 font-medium">
-                      <item.icon className="h-5 w-5 text-muted-foreground" />
+                    <span className="flex items-center gap-2 font-medium text-white">
+                      <item.icon className="h-5 w-5 text-white" />
                       {item.label}
                     </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-
-              {/* Payment Menu Items */}
-              <DropdownMenuGroup>
-                {menuItems.payments.map((item, index) => (
-                  <DropdownMenuItem 
-                    key={index}
-                    className="p-2 rounded-lg cursor-pointer"
-                    onClick={item.action}
-                  >
-                    <span className="flex items-center gap-2 font-medium">
-                      <item.icon className="h-5 w-5 text-muted-foreground" />
-                      {item.label}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-
-              {/* Referral Program */}
-              <DropdownMenuGroup>
-                {menuItems.referral.map((item, index) => (
-                  <DropdownMenuItem 
-                    key={index}
-                    className="p-2 rounded-lg cursor-pointer justify-between"
-                    onClick={item.action}
-                  >
-                    <span className="flex items-center gap-2 font-medium">
-                      <item.icon className="h-5 w-5 text-muted-foreground" />
-                      {item.label}
-                    </span>
-                    {profile.is_referral_partner && (
-                      <Badge className="bg-green-500 text-white text-[10px] border-0">
-                        Ativo
+                    {item.badge && (
+                      <Badge className="animated-premium-no-shadow text-white text-[10px] border-white/30 border">
+                        {item.badge}
                       </Badge>
                     )}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuGroup>
-
-              {/* Coupons Tab - After Referral Program */}
-              <DropdownMenuGroup>
-                <DropdownMenuItem 
-                  className="p-2 rounded-lg cursor-pointer justify-between"
-                  onSelect={(e) => {
-                    e.preventDefault()
-                    handleOpenCouponsTab()
-                  }}
-                >
-                  <span className="flex items-center gap-2 font-medium relative">
-                    <Ticket className="h-5 w-5 text-muted-foreground" />
-                    Cupons
-                    {hasNewCoupon && (
-                      <NotificationDot className="-top-0.5 -right-3" />
-                    )}
-                  </span>
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-muted-foreground">
-                    <path d="m9 18 6-6-6-6"/>
-                  </svg>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
-
-              {/* Support */}
-              <DropdownMenuGroup>
-                {menuItems.support.map((item, index) => (
-                  <DropdownMenuItem 
-                    key={index}
-                    className="p-2 rounded-lg cursor-pointer"
-                    onClick={item.action}
-                  >
-                    <span className="flex items-center gap-2 font-medium">
-                      <item.icon className="h-5 w-5 text-muted-foreground" />
-                      {item.label}
-                    </span>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuGroup>
-
-              {/* Logout */}
-              <DropdownMenuGroup>
-                <DropdownMenuItem 
-                  onClick={handleSignOut} 
-                  className="p-2 rounded-lg cursor-pointer text-destructive focus:text-destructive"
-                >
-                  <span className="flex items-center gap-2 font-medium">
-                    <LogOut className="h-5 w-5" />
-                    Sair
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuGroup>
             </>
           )}
+
+          {/* Profile Menu Items */}
+          <DropdownMenuGroup>
+            {menuItems.profile.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          {/* Payment Menu Items */}
+          <DropdownMenuGroup>
+            {menuItems.payments.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          {/* Referral Program */}
+          <DropdownMenuGroup>
+            {menuItems.referral.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer justify-between"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+                {profile.is_referral_partner && (
+                  <Badge className="bg-green-500 text-white text-[10px] border-0">
+                    Ativo
+                  </Badge>
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          {/* Support */}
+          <DropdownMenuGroup>
+            {menuItems.support.map((item, index) => (
+              <DropdownMenuItem 
+                key={index}
+                className="p-2 rounded-lg cursor-pointer"
+                onClick={item.action}
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <item.icon className="h-5 w-5 text-muted-foreground" />
+                  {item.label}
+                </span>
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuGroup>
+
+          {/* Logout */}
+          <DropdownMenuGroup>
+            <DropdownMenuItem 
+              onClick={handleSignOut} 
+              className="p-2 rounded-lg cursor-pointer text-destructive focus:text-destructive"
+            >
+              <span className="flex items-center gap-2 font-medium">
+                <LogOut className="h-5 w-5" />
+                Sair
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuGroup>
         </section>
       </DropdownMenuContent>
     </DropdownMenu>

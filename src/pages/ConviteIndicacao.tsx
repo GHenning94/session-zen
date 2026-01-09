@@ -4,13 +4,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Gift, CheckCircle, Users, Star, ArrowRight, AlertCircle, Copy } from 'lucide-react';
+import { Gift, CheckCircle, Users, Star, ArrowRight, AlertCircle, Sparkles } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { toast } from 'sonner';
-import confetti from 'canvas-confetti';
-
-// Código de cupom fixo para indicações - 20% off apenas no primeiro mês do plano Profissional
-const REFERRAL_DISCOUNT_CODE = 'INDICACAO20';
 
 // Mapeamento de profissões sem acento para com acento
 const PROFESSION_MAP: Record<string, string> = {
@@ -46,7 +41,6 @@ const ConviteIndicacao = () => {
   const [avatarSignedUrl, setAvatarSignedUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [isValidCode, setIsValidCode] = useState(false);
-  const [codeCopied, setCodeCopied] = useState(false);
 
   useEffect(() => {
     const validateAndFetchReferrer = async () => {
@@ -60,7 +54,6 @@ const ConviteIndicacao = () => {
         localStorage.setItem('referral_code', code);
 
         // Use secure RPC function to get referrer info (doesn't require auth)
-        // The function now returns a table, so we get an array
         const { data: referrerData, error } = await supabase
           .rpc('get_referrer_public_info', { referral_code: code });
 
@@ -117,22 +110,6 @@ const ConviteIndicacao = () => {
     navigate('/signup');
   };
 
-  const copyDiscountCode = () => {
-    navigator.clipboard.writeText(REFERRAL_DISCOUNT_CODE);
-    setCodeCopied(true);
-    
-    // Trigger confetti animation
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      origin: { y: 0.6 }
-    });
-    
-    toast.success('Código copiado!', {
-      description: 'Cole o código no checkout para obter seu desconto.',
-    });
-  };
-
   const benefits = [
     {
       icon: <CheckCircle className="h-5 w-5 text-primary" />,
@@ -160,11 +137,9 @@ const ConviteIndicacao = () => {
   const formatProfession = (profissao: string | null) => {
     if (!profissao) return null;
     const normalized = profissao.toLowerCase().trim();
-    // Check if we have a mapped version with proper accents
     if (PROFESSION_MAP[normalized]) {
       return PROFESSION_MAP[normalized];
     }
-    // Otherwise just capitalize first letter
     return profissao.charAt(0).toUpperCase() + profissao.slice(1);
   };
 
@@ -182,7 +157,6 @@ const ConviteIndicacao = () => {
   if (loading) {
     return (
       <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
-        {/* Blue blob background */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
         <Card className="w-full max-w-lg relative z-10" style={{ backgroundColor: '#ffffff' }}>
@@ -205,7 +179,6 @@ const ConviteIndicacao = () => {
   if (!isValidCode) {
     return (
       <div className="min-h-screen relative overflow-hidden flex items-center justify-center p-4" style={lightThemeStyles}>
-        {/* Blue blob background */}
         <div className="absolute top-0 right-0 w-[600px] h-[600px] rounded-full blur-3xl -translate-y-1/2 translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.2)' }} />
         <div className="absolute bottom-0 left-0 w-[400px] h-[400px] rounded-full blur-3xl translate-y-1/2 -translate-x-1/3" style={{ backgroundColor: 'rgba(59, 130, 246, 0.1)' }} />
         <Card className="w-full max-w-lg border-orange-200 shadow-xl relative z-10" style={{ backgroundColor: '#ffffff' }}>
@@ -263,7 +236,6 @@ const ConviteIndicacao = () => {
                       alt={referrerInfo.nome}
                       className="h-full w-full object-cover"
                       onError={(e) => {
-                        // Hide img and show fallback
                         e.currentTarget.style.display = 'none';
                       }}
                     />
@@ -296,33 +268,23 @@ const ConviteIndicacao = () => {
           </CardHeader>
           
           <CardContent className="space-y-6 pt-4">
-            {/* Discount Banner */}
+            {/* Discount Banner - Automatic Discount Notice */}
             <div className="p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200">
               <div className="flex items-center justify-center gap-2 text-green-700 mb-2">
-                <Gift className="h-5 w-5" />
-                <span className="font-bold text-lg">20% OFF no primeiro mês</span>
+                <Sparkles className="h-5 w-5" />
+                <span className="font-bold text-lg">20% OFF Automático!</span>
               </div>
               
-              <p className="text-sm text-green-600 text-center mb-3">
-                Copie o código abaixo para usar no checkout:
+              <p className="text-sm text-green-600 text-center">
+                Ao fazer upgrade para o <strong>Plano Profissional</strong>, seu desconto de 20% será aplicado automaticamente no primeiro mês.
               </p>
               
-              <div 
-                onClick={copyDiscountCode}
-                className="flex items-center justify-center gap-2 bg-white border-2 border-dashed border-green-300 rounded-lg py-2 px-4 cursor-pointer hover:bg-green-50 transition-colors active:scale-95"
-              >
-                <code className="text-lg font-mono font-bold text-green-700">
-                  {REFERRAL_DISCOUNT_CODE}
-                </code>
-                <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 hover:bg-green-200 flex items-center gap-1">
-                  <Copy className="h-3 w-3" />
-                  {codeCopied ? 'Copiado!' : 'Copiar'}
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <Badge className="bg-green-500 text-white border-0 text-xs">
+                  <CheckCircle className="h-3 w-3 mr-1" />
+                  Desconto garantido
                 </Badge>
               </div>
-              
-              <p className="text-xs text-green-600 text-center mt-2">
-                * Válido apenas para o Plano Profissional. Desconto aplicado somente no 1º mês.
-              </p>
             </div>
 
             {/* Benefits */}
