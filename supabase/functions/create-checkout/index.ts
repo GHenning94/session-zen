@@ -163,9 +163,10 @@ serve(async (req) => {
     // Aplica tanto para mensal quanto anual
     if (shouldApplyDiscount) {
       // Criar coupon para desconto único (aplicável mensal ou anual)
+      // IMPORTANTE: O nome do cupom deve ter no máximo 40 caracteres
       const discountName = priceInfo.interval === 'monthly' 
-        ? 'Desconto de Indicação - 20% primeiro mês'
-        : 'Desconto de Indicação - 20% primeira anuidade';
+        ? 'Indicacao 20% - 1o mes'        // 23 caracteres
+        : 'Indicacao 20% - 1a anuidade';  // 29 caracteres
         
       const coupon = await stripe.coupons.create({
         percent_off: REFERRAL_DISCOUNT_PERCENT,
