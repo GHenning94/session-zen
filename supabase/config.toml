@@ -223,9 +223,6 @@ verify_jwt = true
 [functions.upgrade-subscription]
 verify_jwt = true
 
-[functions.admin-manage-coupons]
-verify_jwt = false
-
 [functions.get-public-avatar]
 verify_jwt = false
 

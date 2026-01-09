@@ -25,7 +25,6 @@ const mainMenuItems = [
 ]
 
 const existingMenuItems = [
-  { title: "Cupons", url: "/admin/coupons", icon: CreditCard },
   { title: "Criptografia e Segurança", url: "/admin/security", icon: Shield },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
   { title: "Conteúdo", url: "/admin/content", icon: FileText },
