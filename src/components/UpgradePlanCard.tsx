@@ -315,18 +315,21 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
     
     // Para downgrade, chamamos a função de cancelamento/downgrade
     // O usuário permanece no plano atual até o fim do período
+    // Após o período, é automaticamente movido para o novo plano
     setLoading(true)
     try {
       const { data, error } = await supabase.functions.invoke('cancel-subscription', {
         body: { 
           action: 'downgrade',
-          targetPlan: plan.id
+          targetPlan: plan.id,
+          targetInterval: billingCycle === 'annual' ? 'yearly' : 'monthly'
         }
       })
 
       if (error) throw error
       
-      toast.success(`Downgrade agendado! Você permanecerá no plano atual até o fim do período de assinatura.`)
+      const message = data?.message || 'Downgrade agendado! Você permanecerá no plano atual até o fim do período de assinatura.'
+      toast.success(message)
       window.location.reload()
     } catch (error) {
       console.error('Erro ao processar downgrade:', error)
