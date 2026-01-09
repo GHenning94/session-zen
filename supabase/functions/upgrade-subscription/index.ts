@@ -175,7 +175,7 @@ serve(async (req) => {
                   price_data: {
                     currency: 'brl',
                     product_data: {
-                      name: `Upgrade para ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'} (${newPriceInfo.interval === 'monthly' ? 'Mensal' : 'Anual'})`,
+                  name: `Upgrade para ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'} (${newPriceInfo.interval === 'monthly' ? 'Mensal' : 'Anual'})`,
                       description: 'Valor proporcional do upgrade',
                     },
                     unit_amount: proratedAmount,
@@ -188,6 +188,7 @@ serve(async (req) => {
               metadata: {
                 user_id: user.id,
                 type: 'proration_payment',
+                is_proration: 'true', // Flag para webhook identificar prorrata
                 subscription_id: subscription.id,
                 plan_name: newPriceInfo.plan,
                 billing_interval: newPriceInfo.interval,

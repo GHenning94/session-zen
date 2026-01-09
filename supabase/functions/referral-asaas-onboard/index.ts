@@ -78,17 +78,17 @@ serve(async (req) => {
       throw new Error("Profile not found");
     }
 
-    // Verificar se tem dados bancários para receber
-    if (!profile.chave_pix && (!profile.banco || !profile.agencia || !profile.conta)) {
-      throw new Error("Dados bancários incompletos. Configure sua chave PIX ou dados bancários antes de continuar.");
-    }
+    // Verificar se tem dados bancários (apenas para log - não bloqueia criação)
+    const hasBankData = !!(profile.chave_pix || (profile.banco && profile.agencia && profile.conta));
+    logStep("Bank data check", { hasBankData });
 
-    // Criar subconta no Asaas
+    // Criar subconta no Asaas mesmo sem dados bancários completos
+    // Os dados bancários serão validados no momento do payout
     const subaccountPayload: any = {
       name: profile.nome || 'Parceiro TherapyPro',
       email: user.email,
-      cpfCnpj: profile.cpf_cnpj?.replace(/\D/g, ''),
-      mobilePhone: profile.telefone?.replace(/\D/g, ''),
+      cpfCnpj: profile.cpf_cnpj?.replace(/\D/g, '') || null,
+      mobilePhone: profile.telefone?.replace(/\D/g, '') || null,
       companyType: 'MEI', // Assume MEI por padrão
       incomeValue: 5000, // Valor estimado
       address: 'Não informado',
@@ -137,7 +137,10 @@ serve(async (req) => {
       already_onboarded: false,
       asaas_account_id: asaasAccountId,
       wallet_id: asaasWalletId,
-      message: 'Subconta Asaas criada com sucesso! Você já pode receber comissões automaticamente.',
+      has_bank_data: hasBankData,
+      message: hasBankData 
+        ? 'Subconta Asaas criada com sucesso! Você já pode receber comissões automaticamente.'
+        : 'Subconta Asaas criada! Complete seus dados bancários para receber comissões.',
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
