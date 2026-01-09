@@ -1167,6 +1167,120 @@ export type Database = {
           },
         ]
       }
+      referral_audit_log: {
+        Row: {
+          action: string
+          billing_interval: string | null
+          commission_amount: number | null
+          commission_rate: number | null
+          created_at: string
+          days_remaining: number | null
+          discount_amount: number | null
+          discount_applied: boolean | null
+          failure_reason: string | null
+          gateway: string | null
+          gateway_customer_id: string | null
+          gateway_fee: number | null
+          gateway_payment_id: string | null
+          gateway_subscription_id: string | null
+          gross_amount: number | null
+          id: string
+          ineligibility_reason: string | null
+          ip_address: unknown
+          metadata: Json | null
+          net_amount: number | null
+          new_plan: string | null
+          payout_id: string | null
+          previous_plan: string | null
+          proration_charge: number | null
+          proration_credit: number | null
+          referral_id: string | null
+          referred_user_id: string | null
+          referrer_user_id: string | null
+          status: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          billing_interval?: string | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          days_remaining?: number | null
+          discount_amount?: number | null
+          discount_applied?: boolean | null
+          failure_reason?: string | null
+          gateway?: string | null
+          gateway_customer_id?: string | null
+          gateway_fee?: number | null
+          gateway_payment_id?: string | null
+          gateway_subscription_id?: string | null
+          gross_amount?: number | null
+          id?: string
+          ineligibility_reason?: string | null
+          ip_address?: unknown
+          metadata?: Json | null
+          net_amount?: number | null
+          new_plan?: string | null
+          payout_id?: string | null
+          previous_plan?: string | null
+          proration_charge?: number | null
+          proration_credit?: number | null
+          referral_id?: string | null
+          referred_user_id?: string | null
+          referrer_user_id?: string | null
+          status?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          billing_interval?: string | null
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          days_remaining?: number | null
+          discount_amount?: number | null
+          discount_applied?: boolean | null
+          failure_reason?: string | null
+          gateway?: string | null
+          gateway_customer_id?: string | null
+          gateway_fee?: number | null
+          gateway_payment_id?: string | null
+          gateway_subscription_id?: string | null
+          gross_amount?: number | null
+          id?: string
+          ineligibility_reason?: string | null
+          ip_address?: unknown
+          metadata?: Json | null
+          net_amount?: number | null
+          new_plan?: string | null
+          payout_id?: string | null
+          previous_plan?: string | null
+          proration_charge?: number | null
+          proration_credit?: number | null
+          referral_id?: string | null
+          referred_user_id?: string | null
+          referrer_user_id?: string | null
+          status?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_audit_log_payout_id_fkey"
+            columns: ["payout_id"]
+            isOneToOne: false
+            referencedRelation: "referral_payouts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referral_audit_log_referral_id_fkey"
+            columns: ["referral_id"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       referral_payouts: {
         Row: {
           amount: number
