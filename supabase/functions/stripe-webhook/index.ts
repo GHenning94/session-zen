@@ -11,11 +11,59 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
+// ==========================================
+// TAXAS DE COMISSÃO DO PROGRAMA DE INDICAÇÃO
+// ==========================================
+const FIRST_MONTH_COMMISSION_RATE = 0.30;      // 30% primeiro mês mensal
+const RECURRING_MONTHLY_COMMISSION_RATE = 0.15; // 15% meses seguintes mensal  
+const ANNUAL_COMMISSION_RATE = 0.20;           // 20% anual (pago 1/12 por mês)
+
+// Taxa do Stripe (aproximada para cálculo de comissão líquida)
+const STRIPE_FEE_RATE = 0.0399; // 3.99% + R$0.39
+const STRIPE_FIXED_FEE = 39;    // R$0.39 em centavos
+
+// Helper para log de auditoria de indicação
+async function logReferralAction(data: {
+  action: string;
+  referrer_user_id?: string;
+  referred_user_id?: string;
+  referral_id?: string;
+  payout_id?: string;
+  gateway?: string;
+  gateway_customer_id?: string;
+  gateway_subscription_id?: string;
+  gateway_payment_id?: string;
+  gross_amount?: number;
+  gateway_fee?: number;
+  net_amount?: number;
+  commission_amount?: number;
+  commission_rate?: number;
+  discount_applied?: boolean;
+  discount_amount?: number;
+  previous_plan?: string;
+  new_plan?: string;
+  billing_interval?: string;
+  proration_credit?: number;
+  proration_charge?: number;
+  days_remaining?: number;
+  status?: string;
+  failure_reason?: string;
+  ineligibility_reason?: string;
+  metadata?: any;
+}) {
+  try {
+    await supabase.from('referral_audit_log').insert(data);
+    console.log(`[stripe-webhook] 📝 Logged action: ${data.action}`);
+  } catch (error) {
+    console.error('[stripe-webhook] ❌ Error logging action:', error);
+  }
+}
+
 /**
- * Stripe Webhook - Apenas para usuários NORMAIS (não indicados)
- * Usuários indicados são processados pelo asaas-webhook
+ * Stripe Webhook - Processa pagamentos e calcula comissões
  * 
- * Este webhook NÃO processa comissões de indicação, apenas gestão de assinaturas
+ * TODOS os usuários pagam via Stripe
+ * Comissões são calculadas aqui e pagas via Asaas (payout automático)
  */
 serve(async (req) => {
   if (req.method !== 'POST') {
@@ -31,404 +79,80 @@ serve(async (req) => {
 
     // ✅ MODO 1: Verificação com webhook secret (mais seguro)
     if (signature && webhookSecret) {
-      console.log('[webhook] 🔐 Using signature verification');
+      console.log('[stripe-webhook] 🔐 Using signature verification');
       try {
         event = stripe.webhooks.constructEvent(body, signature, webhookSecret);
       } catch (err) {
-        console.error('[webhook] ❌ Signature verification failed:', err);
+        console.error('[stripe-webhook] ❌ Signature verification failed:', err);
         return new Response("Webhook signature verification failed", { status: 400 });
       }
     } 
     // ✅ MODO 2: Fallback - Verificar evento diretamente na API do Stripe
     else {
-      console.log('[webhook] ⚠️ No webhook secret configured, using API verification');
+      console.log('[stripe-webhook] ⚠️ No webhook secret configured, using API verification');
       
       let parsedBody;
       try {
         parsedBody = JSON.parse(body);
       } catch {
-        console.error('[webhook] ❌ Failed to parse request body');
+        console.error('[stripe-webhook] ❌ Failed to parse request body');
         return new Response("Invalid JSON body", { status: 400 });
       }
 
-      // Verificar se o evento existe no Stripe (anti-spoofing)
       if (!parsedBody.id || !parsedBody.type) {
-        console.error('[webhook] ❌ Missing event id or type');
+        console.error('[stripe-webhook] ❌ Missing event id or type');
         return new Response("Invalid event format", { status: 400 });
       }
 
       try {
-        // Buscar o evento diretamente na API do Stripe para verificar autenticidade
         event = await stripe.events.retrieve(parsedBody.id);
-        console.log('[webhook] ✅ Event verified via API:', event.id);
+        console.log('[stripe-webhook] ✅ Event verified via API:', event.id);
       } catch (err) {
-        console.error('[webhook] ❌ Event not found in Stripe:', parsedBody.id);
+        console.error('[stripe-webhook] ❌ Event not found in Stripe:', parsedBody.id);
         return new Response("Event not found in Stripe", { status: 404 });
       }
     }
 
-    console.log(`[webhook] 📨 Processing event: ${event.type}`);
+    console.log(`[stripe-webhook] 📨 Processing event: ${event.type}`);
 
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
-        const customerId = session.customer as string;
-        const subscriptionId = session.subscription as string;
-        
-        // Buscar metadata do checkout
-        let userId = session.metadata?.user_id;
-        let planName = session.metadata?.plan_name || 'pro';
-        let billingInterval = session.metadata?.billing_interval || 'monthly';
-
-        // Se não encontrar userId nos metadados da sessão, buscar do customer
-        if (!userId) {
-          console.log('[webhook] Buscando user_id pelo customer_id:', customerId)
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('user_id')
-            .eq('stripe_customer_id', customerId)
-            .single();
-          
-          if (profile) {
-            userId = profile.user_id;
-            console.log('[webhook] User_id encontrado no perfil:', userId)
-          }
-        }
-
-        if (!userId) {
-          console.error('[webhook] ❌ No user_id found in session or customer');
-          break;
-        }
-
-        console.log('[webhook] 💳 Checkout completed:', {
-          user: userId,
-          plan: planName,
-          interval: billingInterval,
-          customer: customerId,
-          subscription: subscriptionId,
-        });
-        
-        // Calcular data de próxima renovação
-        const currentDate = new Date();
-        const nextBillingDate = new Date(currentDate);
-        
-        if (billingInterval === 'yearly') {
-          nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
-        } else {
-          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
-        }
-
-        // Atualizar perfil com informações completas da assinatura
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({ 
-            subscription_plan: planName,
-            billing_interval: billingInterval,
-            stripe_customer_id: customerId,
-            stripe_subscription_id: subscriptionId,
-            subscription_end_date: nextBillingDate.toISOString(),
-            subscription_cancel_at: null
-          })
-          .eq('user_id', userId);
-
-        if (updateError) {
-          console.error('[webhook] ❌ Error updating profile:', updateError);
-        } else {
-          console.log('[webhook] ✅ Profile updated successfully to plan:', planName);
-          
-          // Criar notificação de boas-vindas
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: userId,
-              titulo: 'Bem-vindo ao TherapyPro!',
-              conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso. Aproveite todos os recursos!`
-            });
-
-          // Enviar email de upgrade com recibo
-          try {
-            // Buscar invoice mais recente do cliente
-            const invoices = await stripe.invoices.list({
-              customer: customerId,
-              limit: 1
-            });
-            
-            const invoice = invoices.data[0];
-            
-            // Chamar edge function de envio de email
-            const emailPayload = {
-              userId,
-              planName,
-              billingInterval,
-              invoiceUrl: invoice?.hosted_invoice_url || null,
-              invoicePdf: invoice?.invoice_pdf || null,
-              amount: invoice?.amount_paid || session.amount_total
-            };
-            
-            console.log('[webhook] 📧 Sending upgrade email with payload:', emailPayload);
-            
-            // Fazer chamada interna para send-upgrade-email
-            const emailResponse = await fetch(
-              `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-upgrade-email`,
-              {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
-                },
-                body: JSON.stringify(emailPayload)
-              }
-            );
-            
-            if (emailResponse.ok) {
-              console.log('[webhook] ✅ Upgrade email sent successfully');
-            } else {
-              const emailError = await emailResponse.text();
-              console.error('[webhook] ⚠️ Failed to send upgrade email:', emailError);
-            }
-          } catch (emailErr) {
-            console.error('[webhook] ⚠️ Error sending upgrade email:', emailErr);
-            // Não falhar o webhook por causa do email
-          }
-        }
-        break;
-      }
-
-      case "customer.subscription.created": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
-
-        console.log('[webhook] 🆕 Subscription created:', {
-          subscription: subscription.id,
-          customer: customerId,
-          status: subscription.status,
-          metadata: subscription.metadata
-        });
-
-        // Buscar usuário pelo customer_id
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('stripe_customer_id', customerId)
-          .single();
-
-        if (!profile) {
-          console.error('[webhook] ❌ Profile not found for customer:', customerId);
-          break;
-        }
-
-        // Determinar plano baseado no price ID
-        const priceId = subscription.items.data[0]?.price.id;
-        const priceToPlans: { [key: string]: string } = {
-          'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',
-          'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',
-          'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium',
-          'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'
-        };
-        
-        const planName = priceId && priceToPlans[priceId] ? priceToPlans[priceId] : 'pro';
-        const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
-
-        // Atualizar profile
-        const { error: updateError } = await supabase
-          .from('profiles')
-          .update({
-            subscription_plan: planName,
-            billing_interval: billingInterval === 'year' ? 'yearly' : 'monthly',
-            stripe_subscription_id: subscription.id,
-            subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
-          })
-          .eq('user_id', profile.user_id);
-
-        if (updateError) {
-          console.error('[webhook] ❌ Error updating subscription:', updateError);
-        } else {
-          console.log('[webhook] ✅ Subscription created and profile updated:', planName);
-        }
+        await handleCheckoutCompleted(event.data.object as Stripe.Checkout.Session);
         break;
       }
 
       case "invoice.payment_succeeded": {
-        const invoice = event.data.object as Stripe.Invoice;
-        const customerId = invoice.customer as string;
+        await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
+        break;
+      }
 
-        console.log('[webhook] 💰 Payment succeeded for invoice:', invoice.id);
-
-        // Buscar usuário pelo stripe_customer_id
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id, subscription_plan, billing_interval')
-          .eq('stripe_customer_id', customerId)
-          .single();
-
-        if (profile) {
-          // Calcular próxima data de cobrança
-          const nextBillingDate = new Date(invoice.period_end * 1000);
-
-          // Atualizar data de renovação
-          await supabase
-            .from('profiles')
-            .update({
-              subscription_end_date: nextBillingDate.toISOString(),
-              subscription_cancel_at: null
-            })
-            .eq('user_id', profile.user_id);
-
-          console.log('[webhook] ✅ Next billing date updated:', nextBillingDate.toISOString());
-
-          // Notificar usuário
-          await supabase
-            .from('notifications')
-            .insert({
-              user_id: profile.user_id,
-              titulo: 'Pagamento Confirmado',
-              conteudo: `Seu pagamento de R$ ${(invoice.amount_paid / 100).toFixed(2)} foi processado com sucesso. Próxima cobrança: ${nextBillingDate.toLocaleDateString('pt-BR')}`
-            });
-        }
+      case "customer.subscription.created": {
+        await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
         break;
       }
 
       case "customer.subscription.updated": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
-
-        console.log('[webhook] 🔄 Subscription updated:', {
-          subscription: subscription.id,
-          status: subscription.status,
-          cancel_at_period_end: subscription.cancel_at_period_end,
-          items: subscription.items.data.map(item => ({
-            price: item.price.id,
-            product: item.price.product
-          }))
-        });
-
-        // Buscar usuário
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id, subscription_plan')
-          .eq('stripe_customer_id', customerId)
-          .single();
-
-        if (profile) {
-          const isActive = subscription.status === 'active';
-          
-          // Buscar os metadados do preço para descobrir o plano
-          const priceId = subscription.items.data[0]?.price.id;
-          let newPlanName = profile.subscription_plan;
-          
-          // Mapear price IDs para planos
-          const priceToPlans: { [key: string]: string } = {
-            'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',  // Profissional Mensal
-            'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',  // Profissional Anual
-            'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium', // Premium Mensal
-            'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'  // Premium Anual
-          };
-          
-          if (priceId && priceToPlans[priceId]) {
-            newPlanName = priceToPlans[priceId];
-          }
-          
-          const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
-
-          const updateData: any = {
-            subscription_plan: isActive ? newPlanName : 'basico',
-            billing_interval: isActive ? (billingInterval === 'year' ? 'yearly' : 'monthly') : null,
-          };
-
-          // ✅ PERÍODO DE CARÊNCIA: Se cancelado, manter acesso até o fim do período
-          if (subscription.cancel_at_period_end || subscription.cancel_at) {
-            updateData.subscription_cancel_at = subscription.cancel_at 
-              ? new Date(subscription.cancel_at * 1000).toISOString()
-              : new Date(subscription.current_period_end * 1000).toISOString();
-            
-            console.log('[webhook] ⚠️ Subscription will cancel at:', updateData.subscription_cancel_at);
-          } else {
-            updateData.subscription_cancel_at = null;
-          }
-
-          console.log('[webhook] 📝 Updating profile with:', updateData);
-
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update(updateData)
-            .eq('user_id', profile.user_id);
-
-          if (updateError) {
-            console.error('[webhook] ❌ Error updating subscription:', updateError);
-          } else {
-            console.log('[webhook] ✅ Subscription updated successfully - New plan:', newPlanName);
-
-            // Notificar sobre cancelamento agendado
-            if (subscription.cancel_at_period_end) {
-              await supabase
-                .from('notifications')
-                .insert({
-                  user_id: profile.user_id,
-                  titulo: 'Assinatura Cancelada',
-                  conteudo: `Sua assinatura foi cancelada mas você terá acesso até ${new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')}`
-                });
-            } else if (isActive && newPlanName !== profile.subscription_plan) {
-              // Notificar sobre mudança de plano
-              await supabase
-                .from('notifications')
-                .insert({
-                  user_id: profile.user_id,
-                  titulo: 'Plano Atualizado',
-                  conteudo: `Seu plano foi alterado para ${newPlanName === 'premium' ? 'Premium' : 'Profissional'} com sucesso!`
-                });
-            }
-          }
-        } else {
-          console.error('[webhook] ❌ Profile not found for customer:', customerId);
-        }
+        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
         break;
       }
 
       case "customer.subscription.deleted": {
-        const subscription = event.data.object as Stripe.Subscription;
-        const customerId = subscription.customer as string;
+        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
+        break;
+      }
 
-        console.log('[webhook] 🗑️ Subscription deleted:', subscription.id);
+      case "charge.refunded": {
+        await handleChargeRefunded(event.data.object as Stripe.Charge);
+        break;
+      }
 
-        // Buscar usuário
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('user_id')
-          .eq('stripe_customer_id', customerId)
-          .single();
-
-        if (profile) {
-          // ✅ Reverter para plano gratuito
-          const { error: updateError } = await supabase
-            .from('profiles')
-            .update({ 
-              subscription_plan: 'basico',
-              billing_interval: null,
-              subscription_cancel_at: null,
-              subscription_end_date: null,
-              stripe_subscription_id: null
-            })
-            .eq('user_id', profile.user_id);
-
-          if (updateError) {
-            console.error('[webhook] ❌ Error deleting subscription:', updateError);
-          } else {
-            console.log('[webhook] ✅ User reverted to basic plan');
-            
-            await supabase
-              .from('notifications')
-              .insert({
-                user_id: profile.user_id,
-                titulo: 'Assinatura Encerrada',
-                conteudo: 'Sua assinatura foi encerrada. Você agora está no plano gratuito com funcionalidades limitadas.'
-              });
-          }
-        }
+      case "invoice.payment_failed": {
+        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
         break;
       }
 
       default:
-        console.log(`[webhook] ℹ️ Unhandled event type: ${event.type}`);
+        console.log(`[stripe-webhook] ℹ️ Unhandled event type: ${event.type}`);
     }
 
     return new Response(JSON.stringify({ received: true }), {
@@ -436,7 +160,7 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error) {
-    console.error("[webhook] ❌ Error:", error);
+    console.error("[stripe-webhook] ❌ Error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : String(error) }),
       { 
@@ -446,3 +170,612 @@ serve(async (req) => {
     );
   }
 });
+
+async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  const customerId = session.customer as string;
+  const subscriptionId = session.subscription as string;
+  
+  // Buscar metadata do checkout
+  let userId = session.metadata?.user_id;
+  let planName = session.metadata?.plan_name || 'pro';
+  let billingInterval = session.metadata?.billing_interval || 'monthly';
+  const isReferred = session.metadata?.is_referred === 'true';
+  const referralId = session.metadata?.referral_id;
+  const referrerUserId = session.metadata?.referrer_user_id;
+  const discountApplied = session.metadata?.discount_applied === 'true';
+
+  // Se não encontrar userId nos metadados da sessão, buscar do customer
+  if (!userId) {
+    console.log('[stripe-webhook] Buscando user_id pelo customer_id:', customerId)
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('user_id')
+      .eq('stripe_customer_id', customerId)
+      .single();
+    
+    if (profile) {
+      userId = profile.user_id;
+      console.log('[stripe-webhook] User_id encontrado no perfil:', userId)
+    }
+  }
+
+  if (!userId) {
+    console.error('[stripe-webhook] ❌ No user_id found in session or customer');
+    return;
+  }
+
+  console.log('[stripe-webhook] 💳 Checkout completed:', {
+    user: userId,
+    plan: planName,
+    interval: billingInterval,
+    customer: customerId,
+    subscription: subscriptionId,
+    isReferred,
+    referralId,
+    discountApplied,
+  });
+  
+  // Calcular data de próxima renovação
+  const currentDate = new Date();
+  const nextBillingDate = new Date(currentDate);
+  
+  if (billingInterval === 'yearly') {
+    nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+  } else {
+    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+  }
+
+  // Atualizar perfil com informações completas da assinatura
+  const profileUpdate: any = { 
+    subscription_plan: planName,
+    billing_interval: billingInterval,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    subscription_end_date: nextBillingDate.toISOString(),
+    subscription_cancel_at: null
+  };
+
+  // Marcar desconto como usado se aplicado
+  if (discountApplied) {
+    profileUpdate.professional_discount_used = true;
+    console.log('[stripe-webhook] ✅ Marking discount as used for user:', userId);
+  }
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update(profileUpdate)
+    .eq('user_id', userId);
+
+  if (updateError) {
+    console.error('[stripe-webhook] ❌ Error updating profile:', updateError);
+    return;
+  }
+
+  console.log('[stripe-webhook] ✅ Profile updated successfully to plan:', planName);
+  
+  // Criar notificação de boas-vindas
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: userId,
+      titulo: 'Bem-vindo ao TherapyPro!',
+      conteudo: `Sua assinatura ${planName === 'premium' ? 'Premium' : 'Profissional'} foi ativada com sucesso. Aproveite todos os recursos!`
+    });
+
+  // Enviar email de upgrade com recibo
+  try {
+    const invoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 1
+    });
+    
+    const invoice = invoices.data[0];
+    
+    const emailPayload = {
+      userId,
+      planName,
+      billingInterval,
+      invoiceUrl: invoice?.hosted_invoice_url || null,
+      invoicePdf: invoice?.invoice_pdf || null,
+      amount: invoice?.amount_paid || session.amount_total
+    };
+    
+    console.log('[stripe-webhook] 📧 Sending upgrade email with payload:', emailPayload);
+    
+    const emailResponse = await fetch(
+      `${Deno.env.get("SUPABASE_URL")}/functions/v1/send-upgrade-email`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+        },
+        body: JSON.stringify(emailPayload)
+      }
+    );
+    
+    if (emailResponse.ok) {
+      console.log('[stripe-webhook] ✅ Upgrade email sent successfully');
+    } else {
+      const emailError = await emailResponse.text();
+      console.error('[stripe-webhook] ⚠️ Failed to send upgrade email:', emailError);
+    }
+  } catch (emailErr) {
+    console.error('[stripe-webhook] ⚠️ Error sending upgrade email:', emailErr);
+  }
+}
+
+async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
+  const customerId = invoice.customer as string;
+  const amountInCents = invoice.amount_paid || 0;
+
+  console.log('[stripe-webhook] 💰 Payment succeeded for invoice:', invoice.id, 'Amount:', amountInCents);
+
+  // Buscar usuário pelo stripe_customer_id
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id, subscription_plan, billing_interval')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (!profile) {
+    console.error('[stripe-webhook] ❌ Profile not found for customer:', customerId);
+    return;
+  }
+
+  const userId = profile.user_id;
+  const planName = profile.subscription_plan || 'pro';
+  const billingInterval = profile.billing_interval || 'monthly';
+
+  // Calcular próxima data de cobrança
+  const nextBillingDate = new Date(invoice.period_end * 1000);
+
+  // Atualizar data de renovação
+  await supabase
+    .from('profiles')
+    .update({
+      subscription_end_date: nextBillingDate.toISOString(),
+      subscription_cancel_at: null
+    })
+    .eq('user_id', userId);
+
+  console.log('[stripe-webhook] ✅ Next billing date updated:', nextBillingDate.toISOString());
+
+  // Notificar usuário
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: userId,
+      titulo: 'Pagamento Confirmado',
+      conteudo: `Seu pagamento de R$ ${(amountInCents / 100).toFixed(2)} foi processado com sucesso. Próxima cobrança: ${nextBillingDate.toLocaleDateString('pt-BR')}`
+    });
+
+  // ========================================
+  // PROCESSAR COMISSÃO DE INDICAÇÃO
+  // ========================================
+  
+  // Verificar se usuário foi indicado
+  const { data: referralData } = await supabase
+    .from('referrals')
+    .select('*')
+    .eq('referred_user_id', userId)
+    .single();
+
+  if (!referralData) {
+    console.log('[stripe-webhook] ℹ️ User is not referred, no commission to process');
+    await logReferralAction({
+      action: 'payment',
+      referred_user_id: userId,
+      gateway: 'stripe',
+      gateway_payment_id: invoice.id,
+      gateway_customer_id: customerId,
+      gross_amount: amountInCents,
+      new_plan: planName,
+      billing_interval: billingInterval,
+      status: 'success',
+      ineligibility_reason: 'User is not referred'
+    });
+    return;
+  }
+
+  // Verificar se afiliado ainda está ativo no programa
+  const { data: referrerProfile } = await supabase
+    .from('profiles')
+    .select('is_referral_partner, nome, bank_details_validated')
+    .eq('user_id', referralData.referrer_user_id)
+    .single();
+
+  if (!referrerProfile?.is_referral_partner) {
+    console.log('[stripe-webhook] ⚠️ Referrer is no longer a partner, no commission');
+    await logReferralAction({
+      action: 'payment',
+      referrer_user_id: referralData.referrer_user_id,
+      referred_user_id: userId,
+      referral_id: referralData.id,
+      gateway: 'stripe',
+      gateway_payment_id: invoice.id,
+      gross_amount: amountInCents,
+      new_plan: planName,
+      billing_interval: billingInterval,
+      status: 'ineligible',
+      ineligibility_reason: 'Referrer is no longer a partner'
+    });
+    return;
+  }
+
+  // Calcular taxas do gateway (valor líquido)
+  const gatewayFee = Math.round(amountInCents * STRIPE_FEE_RATE) + STRIPE_FIXED_FEE;
+  const netAmount = Math.max(0, amountInCents - gatewayFee);
+
+  // Determinar se é primeiro pagamento
+  const isFirstPayment = !referralData.first_payment_date;
+  const isAnnual = billingInterval === 'yearly';
+
+  // Calcular comissão baseado nas regras
+  let commissionRate: number;
+  let commissionAmount: number;
+
+  if (isAnnual) {
+    // Plano anual: 20% do total, pago mensalmente (1/12 por mês)
+    commissionRate = ANNUAL_COMMISSION_RATE;
+    // Dividir a comissão em 12 parcelas mensais
+    const totalAnnualCommission = Math.round(netAmount * commissionRate);
+    commissionAmount = Math.round(totalAnnualCommission / 12);
+    console.log('[stripe-webhook] 📊 Annual commission (monthly portion):', commissionAmount);
+  } else {
+    // Plano mensal: 30% primeiro mês, 15% recorrente
+    commissionRate = isFirstPayment ? FIRST_MONTH_COMMISSION_RATE : RECURRING_MONTHLY_COMMISSION_RATE;
+    commissionAmount = Math.round(netAmount * commissionRate);
+    console.log('[stripe-webhook] 📊 Monthly commission:', commissionAmount, isFirstPayment ? '(first month)' : '(recurring)');
+  }
+
+  // Atualizar referral se for primeiro pagamento
+  if (isFirstPayment) {
+    await supabase
+      .from('referrals')
+      .update({
+        status: 'converted',
+        subscription_plan: planName,
+        subscription_amount: amountInCents,
+        commission_rate: commissionRate * 100,
+        first_payment_date: new Date().toISOString(),
+      })
+      .eq('id', referralData.id);
+    
+    console.log('[stripe-webhook] ✅ Referral converted to active');
+  }
+
+  // Buscar nome do indicado
+  const { data: referredProfile } = await supabase
+    .from('profiles')
+    .select('nome')
+    .eq('user_id', userId)
+    .single();
+
+  // Criar payout pendente
+  const { data: newPayout, error: payoutError } = await supabase
+    .from('referral_payouts')
+    .insert({
+      referrer_user_id: referralData.referrer_user_id,
+      referral_id: referralData.id,
+      amount: commissionAmount,
+      currency: 'brl',
+      status: 'pending',
+      period_start: new Date().toISOString().split('T')[0],
+      period_end: new Date().toISOString().split('T')[0],
+      referred_user_name: referredProfile?.nome || 'Usuário',
+      referred_plan: planName,
+    })
+    .select()
+    .single();
+
+  if (payoutError) {
+    console.error('[stripe-webhook] ❌ Error creating payout:', payoutError);
+  } else {
+    console.log('[stripe-webhook] ✅ Payout created:', newPayout.id, 'Amount:', commissionAmount);
+  }
+
+  // Log da comissão
+  await logReferralAction({
+    action: isFirstPayment ? 'commission_created' : 'recurring_commission',
+    referrer_user_id: referralData.referrer_user_id,
+    referred_user_id: userId,
+    referral_id: referralData.id,
+    payout_id: newPayout?.id,
+    gateway: 'stripe',
+    gateway_payment_id: invoice.id,
+    gateway_customer_id: customerId,
+    gross_amount: amountInCents,
+    gateway_fee: gatewayFee,
+    net_amount: netAmount,
+    commission_amount: commissionAmount,
+    commission_rate: commissionRate * 100,
+    new_plan: planName,
+    billing_interval: billingInterval,
+    status: 'pending',
+    metadata: { 
+      payment_type: isFirstPayment ? 'first_payment' : 'recurring',
+      is_annual: isAnnual
+    }
+  });
+
+  // Notificar afiliado
+  const rateDisplay = isAnnual ? '20%' : (isFirstPayment ? '30%' : '15%');
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: referralData.referrer_user_id,
+      titulo: isFirstPayment ? 'Nova Indicação Convertida! 💰' : 'Comissão Recorrente! 💰',
+      conteudo: `${referredProfile?.nome || 'Seu indicado'} ${isFirstPayment ? 'assinou' : 'renovou'} o plano ${planName === 'premium' ? 'Premium' : 'Profissional'}. Você receberá R$ ${(commissionAmount / 100).toFixed(2).replace('.', ',')} (${rateDisplay}) de comissão.`,
+    });
+}
+
+async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+
+  console.log('[stripe-webhook] 🆕 Subscription created:', {
+    subscription: subscription.id,
+    customer: customerId,
+    status: subscription.status,
+    metadata: subscription.metadata
+  });
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (!profile) {
+    console.error('[stripe-webhook] ❌ Profile not found for customer:', customerId);
+    return;
+  }
+
+  // Determinar plano baseado no price ID
+  const priceId = subscription.items.data[0]?.price.id;
+  const priceToPlans: { [key: string]: string } = {
+    'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',
+    'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',
+    'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium',
+    'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'
+  };
+  
+  const planName = priceId && priceToPlans[priceId] ? priceToPlans[priceId] : 'pro';
+  const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      subscription_plan: planName,
+      billing_interval: billingInterval === 'year' ? 'yearly' : 'monthly',
+      stripe_subscription_id: subscription.id,
+      subscription_end_date: new Date(subscription.current_period_end * 1000).toISOString()
+    })
+    .eq('user_id', profile.user_id);
+
+  if (updateError) {
+    console.error('[stripe-webhook] ❌ Error updating subscription:', updateError);
+  } else {
+    console.log('[stripe-webhook] ✅ Subscription created and profile updated:', planName);
+  }
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+
+  console.log('[stripe-webhook] 🔄 Subscription updated:', {
+    subscription: subscription.id,
+    status: subscription.status,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+  });
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id, subscription_plan')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (!profile) {
+    console.error('[stripe-webhook] ❌ Profile not found for customer:', customerId);
+    return;
+  }
+
+  const isActive = subscription.status === 'active';
+  const priceId = subscription.items.data[0]?.price.id;
+  
+  const priceToPlans: { [key: string]: string } = {
+    'price_1SSMNgCP57sNVd3laEmlQOcb': 'pro',
+    'price_1SSMOdCP57sNVd3la4kMOinN': 'pro',
+    'price_1SSMOBCP57sNVd3lqjfLY6Du': 'premium',
+    'price_1SSMP7CP57sNVd3lSf4oYINX': 'premium'
+  };
+  
+  let newPlanName = priceId && priceToPlans[priceId] ? priceToPlans[priceId] : profile.subscription_plan;
+  const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
+
+  const updateData: any = {
+    subscription_plan: isActive ? newPlanName : 'basico',
+    billing_interval: isActive ? (billingInterval === 'year' ? 'yearly' : 'monthly') : null,
+  };
+
+  // ✅ PERÍODO DE CARÊNCIA: Se cancelado, manter acesso até o fim do período
+  if (subscription.cancel_at_period_end || subscription.cancel_at) {
+    updateData.subscription_cancel_at = subscription.cancel_at 
+      ? new Date(subscription.cancel_at * 1000).toISOString()
+      : new Date(subscription.current_period_end * 1000).toISOString();
+    
+    console.log('[stripe-webhook] ⚠️ Subscription will cancel at:', updateData.subscription_cancel_at);
+  } else {
+    updateData.subscription_cancel_at = null;
+  }
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('user_id', profile.user_id);
+
+  if (updateError) {
+    console.error('[stripe-webhook] ❌ Error updating subscription:', updateError);
+    return;
+  }
+
+  console.log('[stripe-webhook] ✅ Subscription updated successfully - New plan:', newPlanName);
+
+  // Notificar sobre cancelamento agendado
+  if (subscription.cancel_at_period_end) {
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: profile.user_id,
+        titulo: 'Assinatura Cancelada',
+        conteudo: `Sua assinatura foi cancelada mas você terá acesso até ${new Date(subscription.current_period_end * 1000).toLocaleDateString('pt-BR')}`
+      });
+  } else if (isActive && newPlanName !== profile.subscription_plan) {
+    // Notificar sobre mudança de plano
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: profile.user_id,
+        titulo: 'Plano Atualizado',
+        conteudo: `Seu plano foi alterado para ${newPlanName === 'premium' ? 'Premium' : 'Profissional'} com sucesso!`
+      });
+  }
+}
+
+async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const customerId = subscription.customer as string;
+
+  console.log('[stripe-webhook] 🗑️ Subscription deleted:', subscription.id);
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (!profile) return;
+
+  // ✅ Reverter para plano gratuito
+  await supabase
+    .from('profiles')
+    .update({ 
+      subscription_plan: 'basico',
+      billing_interval: null,
+      subscription_cancel_at: null,
+      subscription_end_date: null,
+      stripe_subscription_id: null
+    })
+    .eq('user_id', profile.user_id);
+
+  console.log('[stripe-webhook] ✅ User reverted to basic plan');
+  
+  await supabase
+    .from('notifications')
+    .insert({
+      user_id: profile.user_id,
+      titulo: 'Assinatura Encerrada',
+      conteudo: 'Sua assinatura foi encerrada. Você agora está no plano gratuito com funcionalidades limitadas.'
+    });
+
+  // Cancelar comissões pendentes do afiliado
+  const { data: referral } = await supabase
+    .from('referrals')
+    .select('id, referrer_user_id')
+    .eq('referred_user_id', profile.user_id)
+    .single();
+
+  if (referral) {
+    await supabase
+      .from('referral_payouts')
+      .update({ 
+        status: 'cancelled',
+        failure_reason: 'Assinatura cancelada'
+      })
+      .eq('referral_id', referral.id)
+      .eq('status', 'pending');
+
+    await logReferralAction({
+      action: 'subscription_cancelled',
+      referrer_user_id: referral.referrer_user_id,
+      referred_user_id: profile.user_id,
+      referral_id: referral.id,
+      gateway: 'stripe',
+      status: 'cancelled',
+      failure_reason: 'Subscription deleted'
+    });
+  }
+}
+
+async function handleChargeRefunded(charge: Stripe.Charge) {
+  console.log('[stripe-webhook] 💸 Charge refunded:', charge.id);
+
+  const customerId = charge.customer as string;
+  if (!customerId) return;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (!profile) return;
+
+  // Cancelar comissões pendentes relacionadas
+  const { data: referral } = await supabase
+    .from('referrals')
+    .select('id, referrer_user_id')
+    .eq('referred_user_id', profile.user_id)
+    .single();
+
+  if (referral) {
+    const { data: cancelledPayouts } = await supabase
+      .from('referral_payouts')
+      .update({ 
+        status: 'cancelled',
+        failure_reason: 'Pagamento reembolsado'
+      })
+      .eq('referral_id', referral.id)
+      .eq('status', 'pending')
+      .select();
+
+    if (cancelledPayouts && cancelledPayouts.length > 0) {
+      for (const payout of cancelledPayouts) {
+        await logReferralAction({
+          action: 'commission_cancelled',
+          referrer_user_id: referral.referrer_user_id,
+          referred_user_id: profile.user_id,
+          referral_id: referral.id,
+          payout_id: payout.id,
+          gateway: 'stripe',
+          gateway_payment_id: charge.id,
+          commission_amount: payout.amount,
+          status: 'cancelled',
+          failure_reason: 'Charge refunded'
+        });
+      }
+    }
+  }
+}
+
+async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
+  console.log('[stripe-webhook] ❌ Payment failed for invoice:', invoice.id);
+
+  const customerId = invoice.customer as string;
+  if (!customerId) return;
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('user_id')
+    .eq('stripe_customer_id', customerId)
+    .single();
+
+  if (profile) {
+    await supabase
+      .from('notifications')
+      .insert({
+        user_id: profile.user_id,
+        titulo: 'Pagamento Falhou',
+        conteudo: 'Houve um problema com seu pagamento. Por favor, atualize suas informações de pagamento para manter seu acesso.'
+      });
+  }
+}

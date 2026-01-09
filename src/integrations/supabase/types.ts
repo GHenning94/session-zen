@@ -963,6 +963,7 @@ export type Database = {
           nome: string
           nome_titular: string | null
           pending_new_email: string | null
+          professional_discount_used: boolean | null
           profissao: string | null
           public_avatar_url: string | null
           referral_code: string | null
@@ -1003,6 +1004,7 @@ export type Database = {
           nome: string
           nome_titular?: string | null
           pending_new_email?: string | null
+          professional_discount_used?: boolean | null
           profissao?: string | null
           public_avatar_url?: string | null
           referral_code?: string | null
@@ -1043,6 +1045,7 @@ export type Database = {
           nome?: string
           nome_titular?: string | null
           pending_new_email?: string | null
+          professional_discount_used?: boolean | null
           profissao?: string | null
           public_avatar_url?: string | null
           referral_code?: string | null
