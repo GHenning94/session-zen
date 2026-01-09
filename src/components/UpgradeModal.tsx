@@ -86,9 +86,21 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       })
 
       try {
-        console.log('[UpgradeModal] 📊 Fetching proration preview for:', plan.stripePrice)
-        const { data, error } = await supabase.functions.invoke('preview-proration', {
-          body: { newPriceId: plan.stripePrice }
+        // Check which gateway to use for proration
+        const { data: gatewayData } = await supabase.functions.invoke('check-payment-gateway', {
+          body: {}
+        })
+        
+        const gateway = gatewayData?.gateway || 'stripe'
+        console.log('[UpgradeModal] 📊 Fetching proration preview via:', gateway)
+        
+        // Use appropriate proration function based on gateway
+        const prorationFunction = gateway === 'asaas' ? 'preview-proration-asaas' : 'preview-proration'
+        const { data, error } = await supabase.functions.invoke(prorationFunction, {
+          body: { 
+            newPriceId: plan.stripePrice,
+            planId: plan.id 
+          }
         })
 
         if (error) throw error
@@ -96,7 +108,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         console.log('[UpgradeModal] ✅ Proration data received:', data)
         setProrationView(prev => ({
           ...prev,
-          data: data,
+          data: { ...data, gateway },
           isLoading: false
         }))
       } catch (error: any) {
@@ -182,9 +194,16 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
 
     setLoading(true)
     try {
-      console.log('[UpgradeModal] 🚀 Processing upgrade with proration')
-      const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
-        body: { newPriceId: prorationView.plan.stripePrice }
+      // Determine which upgrade function to use based on gateway
+      const gateway = (prorationView.data as any)?.gateway || 'stripe'
+      const upgradeFunction = gateway === 'asaas' ? 'upgrade-subscription-asaas' : 'upgrade-subscription'
+      
+      console.log('[UpgradeModal] 🚀 Processing upgrade via:', gateway)
+      const { data, error } = await supabase.functions.invoke(upgradeFunction, {
+        body: { 
+          newPriceId: prorationView.plan.stripePrice,
+          planId: prorationView.plan.id
+        }
       })
 
       if (error) throw error

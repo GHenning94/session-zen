@@ -54,6 +54,17 @@ interface RecentPayout {
   referred_plan: string;
   paid_at: string | null;
   created_at: string;
+  failure_reason?: string | null;
+  ineligibility_reason?: string | null;
+}
+
+interface CommissionSummary {
+  pending: number;
+  approved: number;
+  cancelled: number;
+  pendingCount: number;
+  approvedCount: number;
+  cancelledCount: number;
 }
 
 
@@ -66,6 +77,14 @@ const ProgramaIndicacao = () => {
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [monthlyHistory, setMonthlyHistory] = useState<MonthlyHistory[]>([]);
   const [recentPayouts, setRecentPayouts] = useState<RecentPayout[]>([]);
+  const [commissionSummary, setCommissionSummary] = useState<CommissionSummary>({
+    pending: 0,
+    approved: 0,
+    cancelled: 0,
+    pendingCount: 0,
+    approvedCount: 0,
+    cancelledCount: 0,
+  });
   const [hasBankDetails, setHasBankDetails] = useState(false);
   const [bankDetailsValidated, setBankDetailsValidated] = useState(false);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
@@ -188,6 +207,32 @@ const ProgramaIndicacao = () => {
         setStats(data.stats);
         setMonthlyHistory(data.monthly_history || []);
         setRecentPayouts(data.recent_payouts || []);
+        
+        // Calculate commission summary from payouts
+        const payouts = data.recent_payouts || [];
+        const summary: CommissionSummary = {
+          pending: 0,
+          approved: 0,
+          cancelled: 0,
+          pendingCount: 0,
+          approvedCount: 0,
+          cancelledCount: 0,
+        };
+        
+        payouts.forEach((p: RecentPayout) => {
+          if (p.status === 'pending') {
+            summary.pending += p.amount;
+            summary.pendingCount++;
+          } else if (p.status === 'paid') {
+            summary.approved += p.amount;
+            summary.approvedCount++;
+          } else if (p.status === 'cancelled' || p.status === 'failed') {
+            summary.cancelled += p.amount;
+            summary.cancelledCount++;
+          }
+        });
+        
+        setCommissionSummary(summary);
       }
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
@@ -432,6 +477,8 @@ const ProgramaIndicacao = () => {
         return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Processando</Badge>;
       case 'failed':
         return <Badge variant="destructive">Falhou</Badge>;
+      case 'cancelled':
+        return <Badge className="bg-red-500/20 text-red-500 border-red-500/30">Cancelado</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -991,6 +1038,57 @@ const ProgramaIndicacao = () => {
           </CardContent>
         </Card>
 
+        {/* Detalhamento de Comissões por Status */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="w-5 h-5" />
+              Status das Comissões
+            </CardTitle>
+            <CardDescription>Visão detalhada por status de aprovação</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-amber-600">Pendentes</p>
+                  <Badge variant="secondary">{commissionSummary.pendingCount}</Badge>
+                </div>
+                <p className="text-2xl font-bold text-amber-500">
+                  {formatCurrency(commissionSummary.pending)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Aguardando confirmação de pagamento e fim do ciclo
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-green-600">Aprovadas</p>
+                  <Badge className="bg-green-500/20 text-green-600">{commissionSummary.approvedCount}</Badge>
+                </div>
+                <p className="text-2xl font-bold text-green-500">
+                  {formatCurrency(commissionSummary.approved)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Pagas ou prontas para pagamento
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-red-600">Canceladas</p>
+                  <Badge variant="destructive">{commissionSummary.cancelledCount}</Badge>
+                </div>
+                <p className="text-2xl font-bold text-red-500">
+                  {formatCurrency(commissionSummary.cancelled)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Estorno, chargeback ou cancelamento
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Histórico Mensal */}
         {monthlyHistory.length > 0 && (
           <Card>
@@ -1039,26 +1137,55 @@ const ProgramaIndicacao = () => {
                 {recentPayouts.map((payout) => (
                   <div 
                     key={payout.id} 
-                    className="flex items-center justify-between p-4 rounded-lg border"
+                    className={`p-4 rounded-lg border ${
+                      payout.status === 'cancelled' || payout.status === 'failed' 
+                        ? 'border-red-500/30 bg-red-500/5' 
+                        : payout.status === 'pending'
+                        ? 'border-amber-500/30 bg-amber-500/5'
+                        : ''
+                    }`}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{payout.referred_user_name}</span>
-                        <Badge variant="outline" className="text-xs">
-                          {payout.referred_plan === 'premium' ? 'Premium' : 'Profissional'}
-                        </Badge>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{payout.referred_user_name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {payout.referred_plan === 'premium' ? 'Premium' : 'Profissional'}
+                          </Badge>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {payout.paid_at 
+                            ? `Pago em ${new Date(payout.paid_at).toLocaleDateString('pt-BR')}`
+                            : `Criado em ${new Date(payout.created_at).toLocaleDateString('pt-BR')}`
+                          }
+                        </p>
                       </div>
-                      <p className="text-sm text-muted-foreground">
-                        {payout.paid_at 
-                          ? `Pago em ${new Date(payout.paid_at).toLocaleDateString('pt-BR')}`
-                          : `Criado em ${new Date(payout.created_at).toLocaleDateString('pt-BR')}`
-                        }
-                      </p>
+                      <div className="flex items-center gap-3">
+                        <span className="font-bold">{formatCurrency(payout.amount)}</span>
+                        {getStatusBadge(payout.status)}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-bold">{formatCurrency(payout.amount)}</span>
-                      {getStatusBadge(payout.status)}
-                    </div>
+                    
+                    {/* Mostrar motivos de não elegibilidade ou falha */}
+                    {(payout.failure_reason || payout.ineligibility_reason) && (
+                      <div className="mt-3 pt-3 border-t border-red-500/20">
+                        <div className="flex items-start gap-2">
+                          <AlertCircle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm">
+                            {payout.failure_reason && (
+                              <p className="text-red-600">
+                                <strong>Motivo:</strong> {payout.failure_reason}
+                              </p>
+                            )}
+                            {payout.ineligibility_reason && (
+                              <p className="text-orange-600">
+                                <strong>Inelegibilidade:</strong> {payout.ineligibility_reason}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
