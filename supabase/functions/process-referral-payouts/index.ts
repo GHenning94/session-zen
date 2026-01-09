@@ -48,7 +48,10 @@ serve(async (req) => {
       ? "https://api.asaas.com/v3"
       : "https://sandbox.asaas.com/api/v3";
 
-    // Buscar todos os afiliados com payouts pendentes
+    // =========================================================
+    // DELAY TÉCNICO: Buscar apenas payouts APROVADOS
+    // (que passaram do approval_deadline de 15 dias)
+    // =========================================================
     const { data: pendingPayouts, error: payoutsError } = await supabase
       .from('referral_payouts')
       .select(`
@@ -58,9 +61,11 @@ serve(async (req) => {
         amount,
         referred_user_name,
         referred_plan,
-        created_at
+        created_at,
+        approval_deadline
       `)
-      .eq('status', 'pending')
+      .in('status', ['pending', 'approved'])
+      .lte('approval_deadline', new Date().toISOString().split('T')[0]) // Só após deadline
       .order('created_at', { ascending: true });
 
     if (payoutsError) {
