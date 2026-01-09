@@ -3,7 +3,7 @@ import { AdminLayout } from "@/components/admin/AdminLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { adminApiCall } from "@/utils/adminApi";
 import { toast } from "sonner";
-import { Shield, AlertTriangle, Activity, Clock, FileDown, Filter } from "lucide-react";
+import { Shield, AlertTriangle, Activity, Clock, FileDown, Filter, Building2, CreditCard } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,11 +12,37 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAdminReportExport } from "@/hooks/useAdminReportExport";
 
+interface BankAuditLog {
+  id: string;
+  user_id: string;
+  user_name: string;
+  action: string;
+  old_values: Record<string, any>;
+  new_values: Record<string, any>;
+  changed_fields: string[];
+  ip_address: string;
+  created_at: string;
+}
+
+const FIELD_LABELS: Record<string, string> = {
+  tipo_pessoa: 'Tipo de Pessoa',
+  cpf_cnpj: 'CPF/CNPJ',
+  nome_titular: 'Nome do Titular',
+  banco: 'Banco',
+  agencia: 'Agência',
+  conta: 'Conta',
+  tipo_conta: 'Tipo de Conta',
+  chave_pix: 'Chave PIX',
+  bank_details_validated: 'Validação'
+};
+
 export default function AdminLogs() {
   const [loading, setLoading] = useState(true);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [medicalLogs, setMedicalLogs] = useState<any[]>([]);
   const [adminSessions, setAdminSessions] = useState<any[]>([]);
+  const [bankAuditLogs, setBankAuditLogs] = useState<BankAuditLog[]>([]);
+  const [bankStats, setBankStats] = useState<any>({});
   const [stats, setStats] = useState<any>({});
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -25,6 +51,7 @@ export default function AdminLogs() {
 
   useEffect(() => {
     loadLogs();
+    loadBankAuditLogs();
   }, []);
 
   const loadLogs = async () => {
@@ -45,6 +72,19 @@ export default function AdminLogs() {
     }
   };
 
+  const loadBankAuditLogs = async () => {
+    try {
+      const { data, error } = await adminApiCall('admin-get-bank-audit-logs');
+
+      if (error) throw error;
+
+      setBankAuditLogs(data.logs || []);
+      setBankStats(data.stats || {});
+    } catch (error: any) {
+      console.error('Error loading bank audit logs:', error);
+    }
+  };
+
   const handleExport = () => {
     generateLogsReport(
       { auditLogs, medicalLogs, adminSessions },
@@ -55,6 +95,13 @@ export default function AdminLogs() {
         category: categoryFilter !== "all" ? categoryFilter : undefined
       }
     );
+  };
+
+  const formatFieldChange = (field: string, oldVal: any, newVal: any) => {
+    const label = FIELD_LABELS[field] || field;
+    const oldDisplay = oldVal ?? '(vazio)';
+    const newDisplay = newVal ?? '(vazio)';
+    return { label, oldDisplay, newDisplay };
   };
 
   if (loading) {
@@ -117,6 +164,7 @@ export default function AdminLogs() {
                     <SelectItem value="audit">Auditoria</SelectItem>
                     <SelectItem value="medical">Médico</SelectItem>
                     <SelectItem value="sessions">Sessões Admin</SelectItem>
+                    <SelectItem value="bank">Dados Bancários</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -124,7 +172,7 @@ export default function AdminLogs() {
           </CardContent>
         </Card>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Logs de Auditoria</CardTitle>
@@ -160,6 +208,17 @@ export default function AdminLogs() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Dados Bancários</CardTitle>
+              <CreditCard className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{bankStats.total_changes || 0}</div>
+              <p className="text-xs text-muted-foreground">Alterações registradas</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Tentativas Não Autorizadas</CardTitle>
               <AlertTriangle className="h-4 w-4 text-destructive" />
             </CardHeader>
@@ -174,6 +233,7 @@ export default function AdminLogs() {
           <TabsList>
             <TabsTrigger value="audit">Logs de Auditoria</TabsTrigger>
             <TabsTrigger value="medical">Acessos Médicos</TabsTrigger>
+            <TabsTrigger value="bank">Dados Bancários</TabsTrigger>
             <TabsTrigger value="sessions">Sessões Admin</TabsTrigger>
           </TabsList>
 
@@ -257,6 +317,108 @@ export default function AdminLogs() {
                 </Table>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="bank" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Histórico de Alterações de Dados Bancários
+                </CardTitle>
+                <CardDescription>
+                  Auditoria de mudanças em dados bancários dos usuários ({bankStats.total_changes || 0} alterações)
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {bankAuditLogs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Nenhuma alteração de dados bancários registrada ainda.
+                  </div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Usuário</TableHead>
+                        <TableHead>Campos Alterados</TableHead>
+                        <TableHead>Valor Anterior</TableHead>
+                        <TableHead>Novo Valor</TableHead>
+                        <TableHead>IP</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {bankAuditLogs.slice(0, 50).map((log) => (
+                        <TableRow key={log.id}>
+                          <TableCell className="whitespace-nowrap">
+                            {new Date(log.created_at).toLocaleString('pt-BR')}
+                          </TableCell>
+                          <TableCell>
+                            <div className="font-medium">{log.user_name}</div>
+                            <div className="text-xs text-muted-foreground font-mono">
+                              {log.user_id.slice(0, 8)}...
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {log.changed_fields?.map((field) => (
+                                <Badge key={field} variant="outline" className="text-xs">
+                                  {FIELD_LABELS[field] || field}
+                                </Badge>
+                              ))}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {log.changed_fields?.map((field) => {
+                              const { label, oldDisplay } = formatFieldChange(
+                                field, 
+                                log.old_values?.[field], 
+                                log.new_values?.[field]
+                              );
+                              return (
+                                <div key={field} className="text-muted-foreground">
+                                  <span className="font-medium">{label}:</span> {oldDisplay}
+                                </div>
+                              );
+                            })}
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {log.changed_fields?.map((field) => {
+                              const { label, newDisplay } = formatFieldChange(
+                                field, 
+                                log.old_values?.[field], 
+                                log.new_values?.[field]
+                              );
+                              return (
+                                <div key={field} className="text-foreground">
+                                  <span className="font-medium">{label}:</span> {newDisplay}
+                                </div>
+                              );
+                            })}
+                          </TableCell>
+                          <TableCell className="font-mono text-xs">
+                            {log.ip_address || 'N/A'}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+
+            {bankStats.changes_last_24h > 0 && (
+              <Card className="border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-900/20">
+                <CardContent className="pt-4">
+                  <div className="flex items-center gap-2 text-amber-700 dark:text-amber-400">
+                    <AlertTriangle className="h-4 w-4" />
+                    <span className="font-medium">
+                      {bankStats.changes_last_24h} alteração(ões) nas últimas 24 horas
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="sessions" className="space-y-4">
