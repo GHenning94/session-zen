@@ -47,6 +47,26 @@ serve(async (req) => {
   }
 
   try {
+    // =========================================================
+    // VALIDAÇÃO DO WEBHOOK - TOKEN ASAAS
+    // O Asaas envia um access_token no header para validação
+    // =========================================================
+    const asaasWebhookToken = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
+    const receivedToken = req.headers.get("asaas-access-token");
+    
+    if (asaasWebhookToken && asaasWebhookToken.length > 0) {
+      if (!receivedToken || receivedToken !== asaasWebhookToken) {
+        console.error('[asaas-webhook] ❌ Invalid or missing webhook token');
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" }
+        });
+      }
+      console.log('[asaas-webhook] ✅ Webhook token validated');
+    } else {
+      console.log('[asaas-webhook] ⚠️ ASAAS_WEBHOOK_TOKEN not configured - skipping validation');
+    }
+
     const body = await req.json();
     const event = body.event;
     const transfer = body.transfer;

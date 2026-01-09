@@ -264,6 +264,7 @@ serve(async (req) => {
 
       // 7. Criar transferência no Asaas
       try {
+        const requestTimestamp = new Date().toISOString();
         const transferResponse = await fetch(`${asaasBaseUrl}/transfers`, {
           method: 'POST',
           headers: {
@@ -274,6 +275,37 @@ serve(async (req) => {
         });
 
         const transferResult = await transferResponse.json();
+
+        // ✅ LOG COMPLETO: Request + Response do Asaas para auditoria
+        await supabase.from('referral_audit_log').insert({
+          action: 'asaas_transfer_request',
+          referrer_user_id: referrerUserId,
+          gateway: 'asaas',
+          status: transferResult.errors ? 'failed' : 'success',
+          commission_amount: validAmount,
+          failure_reason: transferResult.errors?.[0]?.description,
+          metadata: {
+            request: {
+              timestamp: requestTimestamp,
+              endpoint: `${asaasBaseUrl}/transfers`,
+              payload: {
+                ...transferPayload,
+                // Mascarar dados sensíveis
+                pixAddressKey: transferPayload.pixAddressKey ? '***' + transferPayload.pixAddressKey.slice(-4) : undefined,
+                bankAccount: transferPayload.bankAccount ? {
+                  ...transferPayload.bankAccount,
+                  cpfCnpj: '***' + (transferPayload.bankAccount.cpfCnpj?.slice(-4) || ''),
+                  account: '***' + (transferPayload.bankAccount.account?.slice(-4) || ''),
+                } : undefined
+              }
+            },
+            response: {
+              timestamp: new Date().toISOString(),
+              status: transferResponse.status,
+              body: transferResult
+            }
+          }
+        });
 
         if (transferResult.errors) {
           console.error('[process-referral-payouts] ❌ Transfer error:', transferResult);
