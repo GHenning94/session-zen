@@ -16,9 +16,16 @@ import {
 const PUBLIC_ROUTES = ['/', '/login', '/signup']
 
 // Detecta se o usuário está retornando de um checkout externo (Stripe)
-// IMPORTANTE: Só verifica a flag no sessionStorage para evitar loops
-// O referrer pode persistir durante navegações SPA
+// IMPORTANTE: Não interceptar quando há parâmetros de pagamento na URL
+// O Dashboard precisa processar esses parâmetros para atualizar o plano
 const isReturningFromExternalCheckout = (): boolean => {
+  // Se tem parâmetros de pagamento na URL, deixar o Dashboard processar
+  const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('payment') === 'success') {
+    console.log('[BackNavigationGuard] 🎯 Parâmetros de pagamento detectados, deixando Dashboard processar')
+    return false // Não interceptar - deixar Dashboard processar
+  }
+  
   // Verificar apenas a flag que é definida antes do redirect para Stripe
   return sessionStorage.getItem('stripe_checkout_active') === 'true'
 }
@@ -50,10 +57,10 @@ export function BackNavigationGuard() {
       return
     }
 
-    // ✅ Se voltando de checkout externo (Stripe), redirecionar para dashboard
+    // ✅ Se voltando de checkout externo (Stripe) sem params de pagamento, redirecionar para dashboard
+    // IMPORTANTE: NÃO remover a flag aqui - deixar o Dashboard remover após processar
     if (isReturningFromExternalCheckout()) {
-      console.log('[BackNavigationGuard] 🔄 Retorno de checkout externo detectado, redirecionando para dashboard')
-      sessionStorage.removeItem('stripe_checkout_active')
+      console.log('[BackNavigationGuard] 🔄 Retorno de checkout externo detectado, redirecionando para dashboard (preservando flag)')
       isNavigatingRef.current = true
       navigate('/dashboard', { replace: true })
       return
