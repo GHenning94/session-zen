@@ -997,10 +997,10 @@ const ProgramaIndicacao = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Premium</p>
-                  <p className="text-2xl font-bold">{stats?.premium_referrals || 0}</p>
+                  <p className="text-sm text-muted-foreground">Profissional</p>
+                  <p className="text-2xl font-bold">{stats?.pro_referrals || 0}</p>
                 </div>
-                <Crown className="w-8 h-8 text-yellow-500" />
+                <Briefcase className="w-8 h-8 text-blue-500" />
               </div>
             </CardContent>
           </Card>
@@ -1009,10 +1009,10 @@ const ProgramaIndicacao = () => {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Profissional</p>
-                  <p className="text-2xl font-bold">{stats?.pro_referrals || 0}</p>
+                  <p className="text-sm text-muted-foreground">Premium</p>
+                  <p className="text-2xl font-bold">{stats?.premium_referrals || 0}</p>
                 </div>
-                <Briefcase className="w-8 h-8 text-blue-500" />
+                <Crown className="w-8 h-8 text-yellow-500" />
               </div>
             </CardContent>
           </Card>
@@ -1034,10 +1034,13 @@ const ProgramaIndicacao = () => {
                   {formatCurrency(stats?.total_earned || 0)}
                 </p>
               </div>
-              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <p className="text-sm text-muted-foreground">A Receber</p>
-                <p className="text-3xl font-bold text-blue-500">
-                  {formatCurrency(stats?.pending_earnings || 0)}
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <p className="text-sm text-muted-foreground">Indicados Ativos</p>
+                <p className="text-3xl font-bold text-primary">
+                  {stats?.active_referrals || 0}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Gerando comissões recorrentes
                 </p>
               </div>
             </div>
