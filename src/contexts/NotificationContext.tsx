@@ -52,6 +52,30 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const initialLoadDoneRef = useRef(false)
   const pendingNotificationsShownRef = useRef(false)
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
+  
+  // Get IDs of notifications that already had their toast shown in this session
+  const getToastShownIds = (): Set<string> => {
+    try {
+      const stored = sessionStorage.getItem('notification_toast_shown_ids')
+      if (stored) {
+        return new Set(JSON.parse(stored))
+      }
+    } catch (e) {
+      console.warn('[NotificationContext] Error reading toast shown IDs:', e)
+    }
+    return new Set()
+  }
+  
+  // Mark a notification as having its toast shown in this session
+  const markToastShown = (id: string) => {
+    try {
+      const current = getToastShownIds()
+      current.add(id)
+      sessionStorage.setItem('notification_toast_shown_ids', JSON.stringify([...current]))
+    } catch (e) {
+      console.warn('[NotificationContext] Error saving toast shown ID:', e)
+    }
+  }
 
   // External pages where notifications should NOT appear (public pages)
   // Note: '/' is NOT included as it's the dashboard when logged in
@@ -120,7 +144,17 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
 
   // Add notification to queue and start processing if not already
   const enqueueNotification = useCallback((notification: Notification, playSoundWithDisplay = true) => {
+    // Check if toast was already shown in this session
+    const toastShownIds = getToastShownIds()
+    if (toastShownIds.has(notification.id)) {
+      console.log('[NotificationContext] Toast already shown for this notification, skipping:', notification.id)
+      return
+    }
+    
     console.log('[NotificationContext] Enqueueing notification:', notification.id, notification.titulo)
+    
+    // Mark this notification as having its toast shown
+    markToastShown(notification.id)
     
     // Store whether this notification should play sound when displayed
     const notificationWithSound = { ...notification, _playSound: playSoundWithDisplay }
@@ -390,11 +424,16 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
 
             // Find notifications that arrived while tab was hidden
             // These are notifications we haven't seen AND haven't shown yet
+            // IMPORTANT: Only show notifications that are BOTH:
+            // 1. Not in seenNotificationIds (not yet processed for toast)
+            // 2. Newer than our last known timestamp (arrived while hidden)
+            // 3. Still unread
             const newNotifications = (data || []).filter((n: Notification) => {
               const isNew = !seenNotificationIds.current.has(n.id)
               const isNewer = lastKnownNotificationTimestampRef.current 
                 ? new Date(n.data).getTime() > new Date(lastKnownNotificationTimestampRef.current).getTime()
                 : false
+              // Only consider truly NEW notifications that arrived while tab was hidden
               return isNew && !n.lida && isNewer
             })
             
@@ -411,6 +450,10 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
                   seenNotificationIds.current.add(notification.id)
                   enqueueNotification(notification, false) // Don't play sound again
                 })
+            } else {
+              // Even if no new notifications to show, mark ALL notifications as seen
+              // to prevent showing them again when tab visibility changes
+              (data || []).forEach((n: Notification) => seenNotificationIds.current.add(n.id))
             }
 
             // Update seen IDs only for READ notifications (unread ones can still trigger toast via Realtime)

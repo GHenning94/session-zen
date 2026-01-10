@@ -422,7 +422,7 @@ const NotificationDropdown = () => {
                         className="w-full"
                         onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
                       >
-                        {extractRedirect(selectedNotification.conteudo)?.includes('financeiro') 
+                        {extractRedirect(selectedNotification.conteudo)?.includes('bank-details') || extractRedirect(selectedNotification.conteudo)?.includes('financeiro')
                           ? 'Ir para Dados Bancários' 
                           : 'Ir para Pacotes'}
                       </Button>
@@ -528,7 +528,7 @@ const NotificationDropdown = () => {
                   <Button 
                     onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
                   >
-                    {extractRedirect(selectedNotification.conteudo)?.includes('financeiro') 
+                    {extractRedirect(selectedNotification.conteudo)?.includes('bank-details') || extractRedirect(selectedNotification.conteudo)?.includes('financeiro')
                       ? 'Ir para Dados Bancários' 
                       : 'Ir para Pacotes'}
                   </Button>
@@ -663,7 +663,9 @@ const NotificationDropdown = () => {
                           size="sm"
                           onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
                         >
-                          Ir para Pacotes
+                          {extractRedirect(selectedNotification.conteudo)?.includes('bank-details') || extractRedirect(selectedNotification.conteudo)?.includes('financeiro')
+                            ? 'Ir para Dados Bancários' 
+                            : 'Ir para Pacotes'}
                         </Button>
                       )}
                       {extractPackageEditId(selectedNotification.conteudo) && (

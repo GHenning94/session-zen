@@ -318,17 +318,9 @@ const ProgramaIndicacao = () => {
             titulo: 'Complete seus dados bancários',
             conteudo: 'Para receber suas comissões do programa de indicação automaticamente, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
           });
-
-        toast({
-          title: "Parabéns!",
-          description: "Você foi inscrito no programa. Complete seus dados bancários para receber comissões automaticamente.",
-        });
-      } else {
-        toast({
-          title: "Parabéns!",
-          description: "Você foi inscrito no programa de indicação! Suas comissões serão creditadas automaticamente.",
-        });
+        // Não mostrar toast aqui - a notificação já aparecerá via NotificationContext
       }
+      // Não mostrar toast - a experiência com confetti e notificação é suficiente
 
       // Carregar dados
       await loadStats();
@@ -1042,9 +1034,9 @@ const ProgramaIndicacao = () => {
                   {formatCurrency(stats?.total_earned || 0)}
                 </p>
               </div>
-              <div className="p-4 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                <p className="text-sm text-muted-foreground">Pendente</p>
-                <p className="text-3xl font-bold text-yellow-500">
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-sm text-muted-foreground">A Receber</p>
+                <p className="text-3xl font-bold text-blue-500">
                   {formatCurrency(stats?.pending_earnings || 0)}
                 </p>
               </div>
