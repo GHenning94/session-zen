@@ -229,8 +229,12 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   }, [user])
 
   // Show pending unread notifications when user comes online (only once per session)
+  // This function now relies entirely on getToastShownIds() to prevent duplicates
   const showPendingNotifications = useCallback(async () => {
     if (!user || pendingNotificationsShownRef.current) return
+    
+    // Mark as shown for this app session (ref-based)
+    pendingNotificationsShownRef.current = true
     
     try {
       const { data, error } = await supabase
@@ -248,9 +252,9 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
 
       if (data && data.length > 0) {
         console.log('[NotificationContext] Found pending unread notifications:', data.length)
-        pendingNotificationsShownRef.current = true
         
-        // Add all pending notifications to the queue (they will be processed one at a time)
+        // The enqueueNotification function already checks localStorage for toast_shown_ids
+        // So we just need to try to enqueue - duplicates will be filtered automatically
         data.forEach((notification: Notification) => {
           if (!seenNotificationIds.current.has(notification.id)) {
             seenNotificationIds.current.add(notification.id)
