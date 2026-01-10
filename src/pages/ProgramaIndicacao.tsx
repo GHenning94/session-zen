@@ -60,11 +60,28 @@ interface RecentPayout {
 
 interface CommissionSummary {
   pending: number;
-  approved: number;
-  cancelled: number;
+  available: number;
+  requested: number;
+  paid: number;
+  failed: number;
   pendingCount: number;
-  approvedCount: number;
-  cancelledCount: number;
+  availableCount: number;
+  requestedCount: number;
+  paidCount: number;
+  failedCount: number;
+}
+
+interface Balances {
+  pending: number;
+  pending_count: number;
+  available: number;
+  available_count: number;
+  requested: number;
+  requested_count: number;
+  paid: number;
+  paid_count: number;
+  failed: number;
+  failed_count: number;
 }
 
 
@@ -77,16 +94,28 @@ const ProgramaIndicacao = () => {
   const [stats, setStats] = useState<ReferralStats | null>(null);
   const [monthlyHistory, setMonthlyHistory] = useState<MonthlyHistory[]>([]);
   const [recentPayouts, setRecentPayouts] = useState<RecentPayout[]>([]);
+  const [balances, setBalances] = useState<Balances>({
+    pending: 0, pending_count: 0,
+    available: 0, available_count: 0,
+    requested: 0, requested_count: 0,
+    paid: 0, paid_count: 0,
+    failed: 0, failed_count: 0,
+  });
   const [commissionSummary, setCommissionSummary] = useState<CommissionSummary>({
     pending: 0,
-    approved: 0,
-    cancelled: 0,
+    available: 0,
+    requested: 0,
+    paid: 0,
+    failed: 0,
     pendingCount: 0,
-    approvedCount: 0,
-    cancelledCount: 0,
+    availableCount: 0,
+    requestedCount: 0,
+    paidCount: 0,
+    failedCount: 0,
   });
   const [hasBankDetails, setHasBankDetails] = useState(false);
   const [bankDetailsValidated, setBankDetailsValidated] = useState(false);
+  const [isRequestingPayout, setIsRequestingPayout] = useState(false);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
   const [shareModalOpen, setShareModalOpen] = useState(false);
   const [referralCode, setReferralCode] = useState<string>('');
@@ -208,34 +237,56 @@ const ProgramaIndicacao = () => {
         setMonthlyHistory(data.monthly_history || []);
         setRecentPayouts(data.recent_payouts || []);
         
-        // Calculate commission summary from payouts
-        const payouts = data.recent_payouts || [];
-        const summary: CommissionSummary = {
-          pending: 0,
-          approved: 0,
-          cancelled: 0,
-          pendingCount: 0,
-          approvedCount: 0,
-          cancelledCount: 0,
-        };
-        
-        payouts.forEach((p: RecentPayout) => {
-          if (p.status === 'pending') {
-            summary.pending += p.amount;
-            summary.pendingCount++;
-          } else if (p.status === 'paid') {
-            summary.approved += p.amount;
-            summary.approvedCount++;
-          } else if (p.status === 'cancelled' || p.status === 'failed') {
-            summary.cancelled += p.amount;
-            summary.cancelledCount++;
-          }
-        });
-        
-        setCommissionSummary(summary);
+        // Usar balances da API (novos campos)
+        if (data.balances) {
+          setBalances(data.balances);
+          setCommissionSummary({
+            pending: data.balances.pending || 0,
+            available: data.balances.available || 0,
+            requested: data.balances.requested || 0,
+            paid: data.balances.paid || 0,
+            failed: data.balances.failed || 0,
+            pendingCount: data.balances.pending_count || 0,
+            availableCount: data.balances.available_count || 0,
+            requestedCount: data.balances.requested_count || 0,
+            paidCount: data.balances.paid_count || 0,
+            failedCount: data.balances.failed_count || 0,
+          });
+        }
       }
     } catch (error) {
       console.error('Erro ao carregar estatísticas:', error);
+    }
+  };
+
+  const handleRequestPayout = async () => {
+    if (!user || isRequestingPayout) return;
+    
+    setIsRequestingPayout(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('request-referral-payout');
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        toast({
+          title: 'Saque solicitado!',
+          description: data.message,
+        });
+        // Recarregar stats para atualizar saldos
+        await loadStats();
+      } else {
+        throw new Error(data?.error || 'Erro ao solicitar saque');
+      }
+    } catch (error: any) {
+      console.error('Erro ao solicitar saque:', error);
+      toast({
+        title: 'Erro ao solicitar saque',
+        description: error.message || 'Tente novamente mais tarde.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsRequestingPayout(false);
     }
   };
 
@@ -478,7 +529,11 @@ const ProgramaIndicacao = () => {
       case 'paid':
         return <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Pago</Badge>;
       case 'pending':
-        return <Badge variant="secondary">Pendente</Badge>;
+        return <Badge variant="secondary">Pendente (15 dias)</Badge>;
+      case 'available':
+        return <Badge className="bg-primary/20 text-primary border-primary/30">Disponível</Badge>;
+      case 'requested':
+        return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Saque Solicitado</Badge>;
       case 'processing':
         return <Badge className="bg-blue-500/20 text-blue-500 border-blue-500/30">Processando</Badge>;
       case 'failed':
@@ -1018,83 +1073,118 @@ const ProgramaIndicacao = () => {
           </Card>
         </div>
 
-        {/* Resumo de Ganhos */}
+        {/* Resumo de Saldos - Novo layout SaaS */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <DollarSign className="w-5 h-5" />
-              Resumo de Ganhos
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 md:grid-cols-2">
-              <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
-                <p className="text-sm text-muted-foreground">Total Recebido</p>
-                <p className="text-3xl font-bold text-green-500">
-                  {formatCurrency(stats?.total_earned || 0)}
-                </p>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="w-5 h-5" />
+                  Seus Saldos
+                </CardTitle>
+                <CardDescription className="mt-1">
+                  Pagamentos ficam disponíveis para saque após 15 dias da confirmação, por segurança e prevenção a fraudes.
+                </CardDescription>
               </div>
-              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                <p className="text-sm text-muted-foreground">Ganhos do Mês</p>
-                <p className="text-3xl font-bold text-blue-500">
-                  {formatCurrency(commissionSummary.approved)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Comissões aprovadas este mês
-                </p>
-              </div>
+              {/* Botão Solicitar Saque */}
+              {balances.available >= 5000 && bankDetailsValidated && (
+                <Button 
+                  onClick={handleRequestPayout}
+                  disabled={isRequestingPayout}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isRequestingPayout ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <DollarSign className="w-4 h-4 mr-2" />
+                  )}
+                  Solicitar Saque
+                </Button>
+              )}
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Detalhamento de Comissões por Status */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Status das Comissões
-            </CardTitle>
-            <CardDescription>Visão detalhada por status de aprovação</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
+              {/* Saldo Pendente */}
               <div className="p-4 rounded-lg bg-amber-500/10 border border-amber-500/20">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-amber-600">Pendentes</p>
+                  <p className="text-sm font-medium text-amber-600 dark:text-amber-400">Pendente</p>
                   <Badge variant="secondary">{commissionSummary.pendingCount}</Badge>
                 </div>
                 <p className="text-2xl font-bold text-amber-500">
                   {formatCurrency(commissionSummary.pending)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Aguardando confirmação de pagamento e fim do ciclo
+                  Em validação (aguardando 15 dias)
                 </p>
               </div>
+              
+              {/* Saldo Disponível */}
+              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-primary">Disponível</p>
+                  <Badge className="bg-primary/20 text-primary">{commissionSummary.availableCount}</Badge>
+                </div>
+                <p className="text-2xl font-bold text-primary">
+                  {formatCurrency(commissionSummary.available)}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {balances.available >= 5000 ? 'Pronto para sacar!' : 'Mínimo R$ 50 para saque'}
+                </p>
+              </div>
+              
+              {/* Total Sacado */}
               <div className="p-4 rounded-lg bg-green-500/10 border border-green-500/20">
                 <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-green-600">Aprovadas</p>
-                  <Badge className="bg-green-500/20 text-green-600">{commissionSummary.approvedCount}</Badge>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">Sacado</p>
+                  <Badge className="bg-green-500/20 text-green-600">{commissionSummary.paidCount}</Badge>
                 </div>
                 <p className="text-2xl font-bold text-green-500">
-                  {formatCurrency(commissionSummary.approved)}
+                  {formatCurrency(commissionSummary.paid)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Pagas ou prontas para pagamento
-                </p>
-              </div>
-              <div className="p-4 rounded-lg bg-red-500/10 border border-red-500/20">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium text-red-600">Canceladas</p>
-                  <Badge variant="destructive">{commissionSummary.cancelledCount}</Badge>
-                </div>
-                <p className="text-2xl font-bold text-red-500">
-                  {formatCurrency(commissionSummary.cancelled)}
-                </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Estorno, chargeback ou cancelamento
+                  Total já recebido
                 </p>
               </div>
             </div>
+            
+            {/* Linha adicional: Solicitado/Processando e Falhas */}
+            {(commissionSummary.requested > 0 || commissionSummary.failed > 0) && (
+              <div className="grid gap-4 md:grid-cols-2 mt-4">
+                {commissionSummary.requested > 0 && (
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-blue-600 dark:text-blue-400">Em Processamento</p>
+                        <p className="text-lg font-bold text-blue-500">{formatCurrency(commissionSummary.requested)}</p>
+                      </div>
+                      <Badge className="bg-blue-500/20 text-blue-600">{commissionSummary.requestedCount}</Badge>
+                    </div>
+                  </div>
+                )}
+                {commissionSummary.failed > 0 && (
+                  <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-medium text-red-600 dark:text-red-400">Falhas/Canceladas</p>
+                        <p className="text-lg font-bold text-red-500">{formatCurrency(commissionSummary.failed)}</p>
+                      </div>
+                      <Badge variant="destructive">{commissionSummary.failedCount}</Badge>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Alerta se saldo disponível mas sem dados bancários */}
+            {balances.available >= 5000 && !bankDetailsValidated && (
+              <Alert className="mt-4 border-amber-500/50 bg-amber-500/10">
+                <AlertCircle className="h-4 w-4 text-amber-500" />
+                <AlertDescription>
+                  Você tem saldo disponível para saque! Complete e valide seus dados bancários para solicitar.
+                </AlertDescription>
+              </Alert>
+            )}
           </CardContent>
         </Card>
 
