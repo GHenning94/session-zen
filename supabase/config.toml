@@ -250,5 +250,8 @@ verify_jwt = false
 [functions.admin-manage-subscription]
 verify_jwt = false
 
+[functions.request-referral-payout]
+verify_jwt = true
+
 [edge_runtime]
 enabled = true

@@ -53,9 +53,38 @@ serve(async (req) => {
     const pendingReferrals = referrals?.filter(r => r.status === 'pending').length || 0;
     const convertedReferrals = referrals?.filter(r => r.status === 'converted').length || 0;
 
-    // Calcular ganhos
+    // =========================================================
+    // CALCULAR SALDOS POR STATUS (Fluxo SaaS padrão)
+    // =========================================================
+    // pending = aguardando aprovação (15 dias)
+    // available = liberado para saque (passou 15 dias)
+    // requested = saque solicitado pelo usuário
+    // processing = Asaas processando
+    // paid = pago com sucesso
+    // failed/cancelled = falhou ou cancelado
+    
+    // Saldo Pendente (em validação - 15 dias)
+    const pendingBalance = payouts?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    const pendingCount = payouts?.filter(p => p.status === 'pending').length || 0;
+    
+    // Saldo Disponível (pode sacar)
+    const availableBalance = payouts?.filter(p => p.status === 'available').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    const availableCount = payouts?.filter(p => p.status === 'available').length || 0;
+    
+    // Saldo Solicitado (aguardando processamento)
+    const requestedBalance = payouts?.filter(p => p.status === 'requested' || p.status === 'processing').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    const requestedCount = payouts?.filter(p => p.status === 'requested' || p.status === 'processing').length || 0;
+    
+    // Total Sacado (já recebeu)
     const totalEarned = payouts?.filter(p => p.status === 'paid').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
-    const pendingEarnings = payouts?.filter(p => p.status === 'pending').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    const paidCount = payouts?.filter(p => p.status === 'paid').length || 0;
+    
+    // Falhas/Cancelamentos
+    const failedBalance = payouts?.filter(p => p.status === 'failed' || p.status === 'cancelled').reduce((sum, p) => sum + (p.amount || 0), 0) || 0;
+    const failedCount = payouts?.filter(p => p.status === 'failed' || p.status === 'cancelled').length || 0;
+    
+    // Legacy: pending_earnings para compatibilidade
+    const pendingEarnings = pendingBalance;
 
     // Agrupar payouts por mês para histórico
     const payoutsByMonth: Record<string, { amount: number; count: number }> = {};
@@ -76,7 +105,7 @@ serve(async (req) => {
       .slice(0, 12); // Últimos 12 meses
 
     // Buscar detalhes dos payouts recentes com informações do indicado
-    const recentPayouts = payouts?.slice(0, 10).map(p => ({
+    const recentPayouts = payouts?.slice(0, 20).map(p => ({
       id: p.id,
       amount: p.amount,
       status: p.status,
@@ -86,12 +115,16 @@ serve(async (req) => {
       period_end: p.period_end,
       paid_at: p.paid_at,
       created_at: p.created_at,
+      approval_deadline: p.approval_deadline,
+      failure_reason: p.failure_reason,
     })) || [];
 
     logStep("Computed stats", {
       totalReferrals,
       activeReferrals,
       totalEarned,
+      pendingBalance,
+      availableBalance,
     });
 
     return new Response(JSON.stringify({
@@ -104,8 +137,21 @@ serve(async (req) => {
         premium_referrals: premiumReferrals,
         pro_referrals: proReferrals,
         basic_referrals: basicReferrals,
-        total_earned: totalEarned, // em centavos
-        pending_earnings: pendingEarnings, // em centavos
+        total_earned: totalEarned, // em centavos - total já sacado/pago
+        pending_earnings: pendingEarnings, // em centavos - legacy
+      },
+      // Novo: Saldos detalhados por status
+      balances: {
+        pending: pendingBalance,         // Em validação (15 dias)
+        pending_count: pendingCount,
+        available: availableBalance,     // Disponível para saque
+        available_count: availableCount,
+        requested: requestedBalance,     // Saque solicitado/processando
+        requested_count: requestedCount,
+        paid: totalEarned,               // Já sacado
+        paid_count: paidCount,
+        failed: failedBalance,           // Falhou/Cancelado
+        failed_count: failedCount,
       },
       monthly_history: monthlyHistory,
       recent_payouts: recentPayouts,

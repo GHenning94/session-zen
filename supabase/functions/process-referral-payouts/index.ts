@@ -49,8 +49,37 @@ serve(async (req) => {
       : "https://sandbox.asaas.com/api/v3";
 
     // =========================================================
-    // DELAY TÉCNICO: Buscar apenas payouts APROVADOS
-    // (que passaram do approval_deadline de 15 dias)
+    // ETAPA 1: Marcar payouts como 'available' após passar o deadline de 15 dias
+    // Transição: pending → available (liberado para saque)
+    // =========================================================
+    const today = new Date().toISOString().split('T')[0];
+    
+    const { data: payoutsToApprove, error: approveQueryError } = await supabase
+      .from('referral_payouts')
+      .select('id')
+      .eq('status', 'pending')
+      .lte('approval_deadline', today);
+    
+    if (!approveQueryError && payoutsToApprove && payoutsToApprove.length > 0) {
+      const payoutIds = payoutsToApprove.map(p => p.id);
+      const { error: approveError } = await supabase
+        .from('referral_payouts')
+        .update({ 
+          status: 'available',
+          updated_at: new Date().toISOString()
+        })
+        .in('id', payoutIds);
+      
+      if (!approveError) {
+        console.log(`[process-referral-payouts] ✅ Marked ${payoutIds.length} payouts as 'available' (passed 15-day approval period)`);
+      } else {
+        console.error('[process-referral-payouts] ⚠️ Error marking payouts as available:', approveError);
+      }
+    }
+
+    // =========================================================
+    // ETAPA 2: Buscar payouts DISPONÍVEIS para processamento
+    // Status: 'available' (liberado) ou 'requested' (solicitado pelo usuário)
     // =========================================================
     const { data: pendingPayouts, error: payoutsError } = await supabase
       .from('referral_payouts')
@@ -64,8 +93,7 @@ serve(async (req) => {
         created_at,
         approval_deadline
       `)
-      .in('status', ['pending', 'approved'])
-      .lte('approval_deadline', new Date().toISOString().split('T')[0]) // Só após deadline
+      .in('status', ['available', 'requested'])
       .order('created_at', { ascending: true });
 
     if (payoutsError) {
