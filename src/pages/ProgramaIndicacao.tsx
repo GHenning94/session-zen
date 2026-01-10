@@ -1034,13 +1034,13 @@ const ProgramaIndicacao = () => {
                   {formatCurrency(stats?.total_earned || 0)}
                 </p>
               </div>
-              <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
-                <p className="text-sm text-muted-foreground">Indicados Ativos</p>
-                <p className="text-3xl font-bold text-primary">
-                  {stats?.active_referrals || 0}
+              <div className="p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                <p className="text-sm text-muted-foreground">Ganhos do Mês</p>
+                <p className="text-3xl font-bold text-blue-500">
+                  {formatCurrency(commissionSummary.approved)}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Gerando comissões recorrentes
+                  Comissões aprovadas este mês
                 </p>
               </div>
             </div>

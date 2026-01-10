@@ -53,12 +53,19 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
   const pendingNotificationsShownRef = useRef(false)
   const lastKnownNotificationTimestampRef = useRef<string | null>(null)
   
-  // Get IDs of notifications that already had their toast shown in this session
+  // Get IDs of notifications that already had their toast shown (persists across sessions)
   const getToastShownIds = (): Set<string> => {
     try {
-      const stored = sessionStorage.getItem('notification_toast_shown_ids')
+      const stored = localStorage.getItem('notification_toast_shown_ids')
       if (stored) {
-        return new Set(JSON.parse(stored))
+        const parsed = JSON.parse(stored)
+        // Clean up old entries (keep only last 200 to prevent bloat)
+        if (Array.isArray(parsed) && parsed.length > 200) {
+          const trimmed = parsed.slice(-200)
+          localStorage.setItem('notification_toast_shown_ids', JSON.stringify(trimmed))
+          return new Set(trimmed)
+        }
+        return new Set(parsed)
       }
     } catch (e) {
       console.warn('[NotificationContext] Error reading toast shown IDs:', e)
@@ -66,12 +73,12 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
     return new Set()
   }
   
-  // Mark a notification as having its toast shown in this session
+  // Mark a notification as having its toast shown (persists across sessions)
   const markToastShown = (id: string) => {
     try {
       const current = getToastShownIds()
       current.add(id)
-      sessionStorage.setItem('notification_toast_shown_ids', JSON.stringify([...current]))
+      localStorage.setItem('notification_toast_shown_ids', JSON.stringify([...current]))
     } catch (e) {
       console.warn('[NotificationContext] Error saving toast shown ID:', e)
     }
