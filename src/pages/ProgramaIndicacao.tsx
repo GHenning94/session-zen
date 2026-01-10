@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -21,7 +23,7 @@ import {
   Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, 
   Users, Crown, Briefcase, Circle, LogOut, 
   CheckCircle2, AlertCircle, Loader2, DollarSign, TrendingUp,
-  Calendar, CreditCard, Building2, Share2
+  Calendar, CreditCard, Building2, Share2, Settings
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
@@ -121,6 +123,8 @@ const ProgramaIndicacao = () => {
   const [referralCode, setReferralCode] = useState<string>('');
   const [cooldownEndDate, setCooldownEndDate] = useState<Date | null>(null);
   const [userEmail, setUserEmail] = useState<string>('');
+  const [payoutMode, setPayoutMode] = useState<'manual' | 'automatic'>('manual');
+  const [isSavingPayoutMode, setIsSavingPayoutMode] = useState(false);
   
   const inviteLink = referralCode ? `${window.location.origin}/convite/${referralCode}` : '';
 
@@ -139,7 +143,7 @@ const ProgramaIndicacao = () => {
         // Carregar status de parceiro, código de indicação, dados bancários e data de saída
         const { data: profile, error } = await supabase
           .from('profiles')
-          .select('is_referral_partner, referral_code, banco, agencia, conta, bank_details_validated, left_referral_program_at, nome')
+          .select('is_referral_partner, referral_code, banco, agencia, conta, bank_details_validated, left_referral_program_at, nome, payout_mode')
           .eq('user_id', user.id)
           .single();
         
@@ -149,6 +153,7 @@ const ProgramaIndicacao = () => {
         const hasBankData = !!(profile?.banco && profile?.agencia && profile?.conta);
         setHasBankDetails(hasBankData);
         setBankDetailsValidated(profile?.bank_details_validated || false);
+        setPayoutMode((profile?.payout_mode as 'manual' | 'automatic') || 'manual');
 
         // Verificar cooldown de 30 dias
         if (profile?.left_referral_program_at && !profile?.is_referral_partner) {
@@ -287,6 +292,39 @@ const ProgramaIndicacao = () => {
       });
     } finally {
       setIsRequestingPayout(false);
+    }
+  };
+
+  const handlePayoutModeChange = async (automatic: boolean) => {
+    if (!user || isSavingPayoutMode) return;
+    
+    const newMode = automatic ? 'automatic' : 'manual';
+    setIsSavingPayoutMode(true);
+    
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({ payout_mode: newMode })
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      setPayoutMode(newMode);
+      toast({
+        title: 'Preferência salva',
+        description: automatic 
+          ? 'Saques serão processados automaticamente no dia 15 de cada mês quando atingir R$ 50.'
+          : 'Você precisará solicitar manualmente seus saques.',
+      });
+    } catch (error) {
+      console.error('Erro ao salvar preferência:', error);
+      toast({
+        title: 'Erro ao salvar',
+        description: 'Não foi possível salvar sua preferência.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSavingPayoutMode(false);
     }
   };
 
@@ -1086,8 +1124,8 @@ const ProgramaIndicacao = () => {
                   Pagamentos ficam disponíveis para saque após 15 dias da confirmação, por segurança e prevenção a fraudes.
                 </CardDescription>
               </div>
-              {/* Botão Solicitar Saque */}
-              {balances.available >= 5000 && bankDetailsValidated && (
+              {/* Botão Solicitar Saque - só aparece no modo manual */}
+              {payoutMode === 'manual' && balances.available >= 5000 && bankDetailsValidated && (
                 <Button 
                   onClick={handleRequestPayout}
                   disabled={isRequestingPayout}
@@ -1100,6 +1138,13 @@ const ProgramaIndicacao = () => {
                   )}
                   Solicitar Saque
                 </Button>
+              )}
+              {/* Badge de modo automático */}
+              {payoutMode === 'automatic' && bankDetailsValidated && (
+                <Badge variant="secondary" className="bg-primary/10 text-primary">
+                  <CheckCircle2 className="w-3 h-3 mr-1" />
+                  Saque automático ativo
+                </Badge>
               )}
             </div>
           </CardHeader>
@@ -1184,6 +1229,44 @@ const ProgramaIndicacao = () => {
                   Você tem saldo disponível para saque! Complete e valide seus dados bancários para solicitar.
                 </AlertDescription>
               </Alert>
+            )}
+
+            {/* Configuração de Modo de Saque */}
+            <Separator className="my-4" />
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 rounded-lg bg-muted/50">
+              <div className="flex items-start gap-3">
+                <Settings className="w-5 h-5 text-muted-foreground mt-0.5" />
+                <div className="space-y-1">
+                  <Label htmlFor="payout-mode" className="text-base font-medium">
+                    Modo de Saque
+                  </Label>
+                  <p className="text-sm text-muted-foreground">
+                    {payoutMode === 'automatic' 
+                      ? 'Saques automáticos no dia 15 de cada mês quando atingir R$ 50.'
+                      : 'Você solicita o saque manualmente quando quiser.'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className={`text-sm ${payoutMode === 'manual' ? 'font-medium' : 'text-muted-foreground'}`}>
+                  Manual
+                </span>
+                <Switch
+                  id="payout-mode"
+                  checked={payoutMode === 'automatic'}
+                  onCheckedChange={handlePayoutModeChange}
+                  disabled={isSavingPayoutMode || !bankDetailsValidated}
+                />
+                <span className={`text-sm ${payoutMode === 'automatic' ? 'font-medium' : 'text-muted-foreground'}`}>
+                  Automático
+                </span>
+              </div>
+            </div>
+            {!bankDetailsValidated && (
+              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                Valide seus dados bancários para alterar o modo de saque.
+              </p>
             )}
           </CardContent>
         </Card>

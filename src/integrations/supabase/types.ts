@@ -962,6 +962,7 @@ export type Database = {
           left_referral_program_at: string | null
           nome: string
           nome_titular: string | null
+          payout_mode: string | null
           pending_new_email: string | null
           professional_discount_used: boolean | null
           profissao: string | null
@@ -1003,6 +1004,7 @@ export type Database = {
           left_referral_program_at?: string | null
           nome: string
           nome_titular?: string | null
+          payout_mode?: string | null
           pending_new_email?: string | null
           professional_discount_used?: boolean | null
           profissao?: string | null
@@ -1044,6 +1046,7 @@ export type Database = {
           left_referral_program_at?: string | null
           nome?: string
           nome_titular?: string | null
+          payout_mode?: string | null
           pending_new_email?: string | null
           professional_discount_used?: boolean | null
           profissao?: string | null

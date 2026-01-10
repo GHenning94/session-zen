@@ -79,9 +79,12 @@ serve(async (req) => {
 
     // =========================================================
     // ETAPA 2: Buscar payouts DISPONÍVEIS para processamento
-    // Status: 'available' (liberado) ou 'requested' (solicitado pelo usuário)
+    // Status: 'requested' (solicitado pelo usuário) - sempre processa
+    // Status: 'available' - só processa se o usuário tem payout_mode = 'automatic'
     // =========================================================
-    const { data: pendingPayouts, error: payoutsError } = await supabase
+    
+    // Primeiro, buscar todos os payouts 'requested' (esses sempre processamos)
+    const { data: requestedPayouts, error: requestedError } = await supabase
       .from('referral_payouts')
       .select(`
         id,
@@ -93,13 +96,63 @@ serve(async (req) => {
         created_at,
         approval_deadline
       `)
-      .in('status', ['available', 'requested'])
+      .eq('status', 'requested')
       .order('created_at', { ascending: true });
 
-    if (payoutsError) {
-      console.error('[process-referral-payouts] ❌ Error fetching payouts:', payoutsError);
-      throw new Error("Erro ao buscar payouts pendentes");
+    if (requestedError) {
+      console.error('[process-referral-payouts] ❌ Error fetching requested payouts:', requestedError);
     }
+
+    // Buscar payouts 'available' que pertencem a usuários com payout_mode = 'automatic'
+    const { data: availablePayouts, error: availableError } = await supabase
+      .from('referral_payouts')
+      .select(`
+        id,
+        referrer_user_id,
+        referral_id,
+        amount,
+        referred_user_name,
+        referred_plan,
+        created_at,
+        approval_deadline
+      `)
+      .eq('status', 'available')
+      .order('created_at', { ascending: true });
+
+    if (availableError) {
+      console.error('[process-referral-payouts] ❌ Error fetching available payouts:', availableError);
+    }
+
+    // Filtrar payouts 'available' apenas para usuários com modo automático
+    let filteredAvailablePayouts: typeof availablePayouts = [];
+    
+    if (availablePayouts && availablePayouts.length > 0) {
+      // Obter lista única de referrer_user_ids
+      const referrerIds = [...new Set(availablePayouts.map(p => p.referrer_user_id))];
+      
+      // Buscar preferências de payout_mode para esses usuários
+      const { data: userPreferences } = await supabase
+        .from('profiles')
+        .select('user_id, payout_mode')
+        .in('user_id', referrerIds);
+      
+      const automaticUsers = new Set(
+        (userPreferences || [])
+          .filter(p => p.payout_mode === 'automatic')
+          .map(p => p.user_id)
+      );
+      
+      // Filtrar apenas payouts de usuários com modo automático
+      filteredAvailablePayouts = availablePayouts.filter(p => automaticUsers.has(p.referrer_user_id));
+      
+      console.log(`[process-referral-payouts] 📊 Available payouts: ${availablePayouts.length} total, ${filteredAvailablePayouts.length} from automatic users`);
+    }
+
+    // Combinar payouts para processamento
+    const pendingPayouts = [
+      ...(requestedPayouts || []),
+      ...(filteredAvailablePayouts || [])
+    ];
 
     if (!pendingPayouts || pendingPayouts.length === 0) {
       console.log('[process-referral-payouts] ℹ️ No pending payouts found');
