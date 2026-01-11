@@ -18,7 +18,7 @@ export const SENSITIVE_FIELDS = {
   sessions: ['anotacoes'],
   session_notes: ['notes'],
   evolucoes: ['evolucao'],
-  profiles: ['bio', 'banco', 'agencia', 'conta', 'cpf_cnpj'],
+  profiles: ['bio', 'banco', 'agencia', 'conta', 'cpf_cnpj', 'chave_pix', 'nome_titular'],
   configuracoes: ['chave_pix', 'dados_bancarios'],
   packages: ['observacoes'],
   payments: ['observacoes']

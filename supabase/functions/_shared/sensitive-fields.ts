@@ -45,7 +45,9 @@ export const SENSITIVE_FIELDS = {
     'banco',
     'agencia',
     'conta',
-    'cpf_cnpj'
+    'cpf_cnpj',
+    'chave_pix',
+    'nome_titular'
   ],
   
   // Configuration sensitive data

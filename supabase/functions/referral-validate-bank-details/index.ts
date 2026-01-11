@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encrypt } from "../_shared/encryption.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Sensitive fields for profiles that need encryption
+const SENSITIVE_PROFILE_FIELDS = ['banco', 'agencia', 'conta', 'cpf_cnpj', 'chave_pix', 'nome_titular'];
 
 // Validate CPF
 function validateCPF(cpf: string): boolean {
@@ -179,21 +183,38 @@ serve(async (req) => {
       );
     }
 
-    // Update profile with validated data
+    // Prepare data for encryption
+    const bankData = {
+      tipo_pessoa: normalizedTipoPessoa,
+      cpf_cnpj: cpf_cnpj.replace(/[^\d]/g, ''),
+      nome_titular: nome_titular.trim(),
+      banco: banco.trim(),
+      agencia: agencia.trim(),
+      conta: conta.trim(),
+      tipo_conta,
+      chave_pix: chave_pix?.trim() || null,
+      bank_details_validated: true,
+      bank_details_updated_at: new Date().toISOString(),
+    };
+
+    // Encrypt sensitive fields before saving
+    const encryptedData: Record<string, any> = { ...bankData };
+    for (const field of SENSITIVE_PROFILE_FIELDS) {
+      if (encryptedData[field] && typeof encryptedData[field] === 'string') {
+        try {
+          encryptedData[field] = await encrypt(encryptedData[field]);
+          console.log(`[referral-validate-bank-details] Encrypted field: ${field}`);
+        } catch (encryptError) {
+          console.error(`[referral-validate-bank-details] Failed to encrypt ${field}:`, encryptError);
+          // Continue with unencrypted data if encryption fails
+        }
+      }
+    }
+
+    // Update profile with encrypted data
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({
-        tipo_pessoa: normalizedTipoPessoa,
-        cpf_cnpj: cpf_cnpj.replace(/[^\d]/g, ''),
-        nome_titular: nome_titular.trim(),
-        banco: banco.trim(),
-        agencia: agencia.trim(),
-        conta: conta.trim(),
-        tipo_conta,
-        chave_pix: chave_pix?.trim() || null,
-        bank_details_validated: true,
-        bank_details_updated_at: new Date().toISOString(),
-      })
+      .update(encryptedData)
       .eq("user_id", user.id);
 
     if (updateError) {
@@ -204,7 +225,7 @@ serve(async (req) => {
       );
     }
 
-    console.log('[referral-validate-bank-details] Bank details validated and saved for user:', user.id);
+    console.log('[referral-validate-bank-details] Bank details validated, encrypted and saved for user:', user.id);
 
     return new Response(
       JSON.stringify({ success: true, valid: true, message: "Dados bancários validados e salvos com sucesso" }),
