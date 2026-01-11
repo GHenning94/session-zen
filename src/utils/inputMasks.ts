@@ -186,7 +186,6 @@ export const detectPixKeyType = (value: string): PixKeyType => {
 // Detecta o tipo de chave PIX e aplica formatação automática
 // IMPORTANTE: Esta função NÃO deve bloquear entrada de texto
 export const formatPixKey = (value: string): string => {
-  // Sempre preservar o valor original para permitir colar
   if (!value) return '';
   
   const trimmed = value.trim();
@@ -201,6 +200,27 @@ export const formatPixKey = (value: string): string => {
   // Preservar EXATAMENTE como foi digitado/colado
   if (/[a-zA-Z]/.test(trimmed)) {
     return value.slice(0, 36);
+  }
+  
+  // TELEFONE EXPLÍCITO: começa com +
+  // Só formata como telefone se o usuário explicitamente começou com +
+  if (trimmed.startsWith('+')) {
+    const digits = trimmed.replace(/\D/g, '').slice(0, 13);
+    
+    if (digits.length <= 2) {
+      return '+' + digits;
+    } else if (digits.length <= 4) {
+      return '+' + digits.slice(0, 2) + ' (' + digits.slice(2);
+    } else if (digits.length <= 9) {
+      return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + digits.slice(4);
+    } else {
+      const phoneDigits = digits.slice(4);
+      if (phoneDigits.length <= 4) {
+        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits;
+      } else {
+        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits.slice(0, 5) + '-' + phoneDigits.slice(5, 9);
+      }
+    }
   }
   
   // A partir daqui só temos números e possíveis caracteres de formatação
@@ -221,41 +241,8 @@ export const formatPixKey = (value: string): string => {
     return formatCNPJ(onlyNumbers);
   }
   
-  // TELEFONE: começa com + OU tem 10-13 dígitos (mas não é CPF válido)
-  if (trimmed.startsWith('+') || onlyNumbers.length >= 10) {
-    let digits = onlyNumbers;
-    
-    // Se tem 10-11 dígitos (telefone sem código país), adicionar 55
-    if (digits.length >= 10 && digits.length <= 11 && !digits.startsWith('55')) {
-      digits = '55' + digits;
-    }
-    
-    // Limitar a 13 dígitos
-    digits = digits.slice(0, 13);
-    
-    // Formatar como telefone: +55 (XX) XXXXX-XXXX
-    if (digits.length <= 2) {
-      return '+' + digits;
-    } else if (digits.length <= 4) {
-      return '+' + digits.slice(0, 2) + ' (' + digits.slice(2);
-    } else if (digits.length <= 9) {
-      return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + digits.slice(4);
-    } else {
-      const phoneDigits = digits.slice(4);
-      if (phoneDigits.length <= 4) {
-        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits;
-      } else {
-        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits.slice(0, 5) + '-' + phoneDigits.slice(5, 9);
-      }
-    }
-  }
-  
-  // DURANTE DIGITAÇÃO: menos de 10 dígitos, só retorna os números
-  // Isso permite digitar CPF sem formatação prematura
-  if (onlyNumbers.length < 10) {
-    return onlyNumbers;
-  }
-  
-  // Fallback
-  return value.slice(0, 36);
+  // DURANTE DIGITAÇÃO: NÃO assumir que é telefone
+  // Apenas retornar os números limpos, sem formatação prematura
+  // Isso permite que o usuário digite CPF (11 dígitos) sem ser formatado como telefone
+  return onlyNumbers.slice(0, 14);
 };

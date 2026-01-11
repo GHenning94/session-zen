@@ -103,8 +103,13 @@ serve(async (req) => {
 
     const errors: string[] = [];
 
+    // Normalizar tipo_pessoa (aceitar ambos os formatos)
+    let normalizedTipoPessoa = tipo_pessoa;
+    if (tipo_pessoa === 'fisica') normalizedTipoPessoa = 'PF';
+    if (tipo_pessoa === 'juridica') normalizedTipoPessoa = 'PJ';
+
     // Validate tipo_pessoa
-    if (!tipo_pessoa || !['PF', 'PJ'].includes(tipo_pessoa)) {
+    if (!normalizedTipoPessoa || !['PF', 'PJ'].includes(normalizedTipoPessoa)) {
       errors.push("Tipo de pessoa inválido");
     }
 
@@ -113,11 +118,11 @@ serve(async (req) => {
       errors.push("CPF/CNPJ é obrigatório");
     } else {
       const cleanDoc = cpf_cnpj.replace(/[^\d]/g, '');
-      if (tipo_pessoa === 'PF') {
+      if (normalizedTipoPessoa === 'PF') {
         if (!validateCPF(cleanDoc)) {
           errors.push("CPF inválido");
         }
-      } else if (tipo_pessoa === 'PJ') {
+      } else if (normalizedTipoPessoa === 'PJ') {
         if (!validateCNPJ(cleanDoc)) {
           errors.push("CNPJ inválido");
         }
@@ -153,12 +158,16 @@ serve(async (req) => {
     if (chave_pix && chave_pix.trim()) {
       const cleanPix = chave_pix.trim();
       const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanPix);
-      const isPhone = /^\+?55?\d{10,11}$/.test(cleanPix.replace(/[\s()-]/g, ''));
-      const isCPF = validateCPF(cleanPix);
-      const isCNPJ = validateCNPJ(cleanPix);
+      // Aceitar telefone formatado ou não formatado
+      const cleanPhone = cleanPix.replace(/[\s()\-+]/g, '');
+      const isPhone = /^(55)?\d{10,11}$/.test(cleanPhone);
+      const isCPF = validateCPF(cleanPix.replace(/\D/g, ''));
+      const isCNPJ = validateCNPJ(cleanPix.replace(/\D/g, ''));
       const isRandom = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(cleanPix);
+      // Aceitar qualquer chave aleatória com letras
+      const isRandomGeneric = /[a-zA-Z]/.test(cleanPix) && !cleanPix.includes('@');
 
-      if (!isEmail && !isPhone && !isCPF && !isCNPJ && !isRandom) {
+      if (!isEmail && !isPhone && !isCPF && !isCNPJ && !isRandom && !isRandomGeneric) {
         errors.push("Formato de chave PIX inválido");
       }
     }
@@ -174,7 +183,7 @@ serve(async (req) => {
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
-        tipo_pessoa,
+        tipo_pessoa: normalizedTipoPessoa,
         cpf_cnpj: cpf_cnpj.replace(/[^\d]/g, ''),
         nome_titular: nome_titular.trim(),
         banco: banco.trim(),
@@ -198,7 +207,7 @@ serve(async (req) => {
     console.log('[referral-validate-bank-details] Bank details validated and saved for user:', user.id);
 
     return new Response(
-      JSON.stringify({ valid: true, message: "Dados bancários validados e salvos com sucesso" }),
+      JSON.stringify({ success: true, valid: true, message: "Dados bancários validados e salvos com sucesso" }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
