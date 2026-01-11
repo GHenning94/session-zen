@@ -200,26 +200,38 @@ const ProgramaIndicacao = () => {
           await loadStats();
           
           // Se o usuário é parceiro mas não tem dados bancários, criar notificação
+          // Verificar localStorage para evitar criar notificações repetidas
           if (!hasBankData) {
-            // Verificar se já existe uma notificação não lida sobre dados bancários
-            const { data: existingNotification } = await supabase
-              .from('notifications')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('lida', false)
-              .ilike('titulo', '%dados bancários%')
-              .single();
-
-            // Se não existe notificação pendente, criar uma nova
-            if (!existingNotification) {
-              await supabase
+            const notificationKey = `bank_details_notification_sent_${user.id}`;
+            const alreadySent = localStorage.getItem(notificationKey);
+            
+            if (!alreadySent) {
+              // Verificar se já existe qualquer notificação sobre dados bancários (lida ou não)
+              const { data: existingNotification } = await supabase
                 .from('notifications')
-                .insert({
-                  user_id: user.id,
-                  titulo: 'Complete seus dados bancários',
-                  conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
-                });
+                .select('id')
+                .eq('user_id', user.id)
+                .ilike('titulo', '%dados bancários%')
+                .limit(1)
+                .maybeSingle();
+
+              // Se nunca foi enviada, criar uma nova
+              if (!existingNotification) {
+                await supabase
+                  .from('notifications')
+                  .insert({
+                    user_id: user.id,
+                    titulo: 'Complete seus dados bancários',
+                    conteudo: 'Para receber suas comissões do programa de indicação, complete seus dados bancários nas configurações. [REDIRECT:/configuracoes?tab=bank-details]',
+                  });
+              }
+              
+              // Marcar como enviada no localStorage para evitar verificações futuras
+              localStorage.setItem(notificationKey, 'true');
             }
+          } else {
+            // Se tem dados bancários, limpar o flag do localStorage
+            localStorage.removeItem(`bank_details_notification_sent_${user.id}`);
           }
         }
       } catch (error) {
