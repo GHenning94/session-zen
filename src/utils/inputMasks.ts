@@ -123,70 +123,6 @@ export const validatePassword = (password: string): boolean => {
   return requirements.every(req => req.test(password));
 };
 
-// Detecta o tipo de chave PIX e aplica formatação automática
-export const formatPixKey = (value: string): string => {
-  // Remove espaços extras
-  const trimmed = value.trim();
-  
-  // Se está vazio, retorna vazio
-  if (!trimmed) return '';
-  
-  // Verifica se é um email (contém @)
-  if (trimmed.includes('@')) {
-    // Email: não formata, apenas limita tamanho
-    return trimmed.slice(0, 77).toLowerCase();
-  }
-  
-  // Remove todos os caracteres não numéricos para verificar se é número
-  const onlyNumbers = trimmed.replace(/\D/g, '');
-  
-  // Se só tem números
-  if (onlyNumbers.length > 0 && trimmed.replace(/[\d\s\-().+/]/g, '').length === 0) {
-    // Telefone: começa com +55 ou tem 10-11 dígitos
-    if (trimmed.startsWith('+') || (onlyNumbers.length >= 10 && onlyNumbers.length <= 13)) {
-      // Formato telefone: +55 (XX) XXXXX-XXXX
-      let digits = onlyNumbers;
-      
-      // Se não começou com 55, adiciona
-      if (!digits.startsWith('55') && digits.length <= 11) {
-        digits = '55' + digits;
-      }
-      
-      // Limita a 13 dígitos (55 + DDD + 9 dígitos)
-      digits = digits.slice(0, 13);
-      
-      if (digits.length <= 2) {
-        return '+' + digits;
-      } else if (digits.length <= 4) {
-        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2);
-      } else if (digits.length <= 9) {
-        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + digits.slice(4);
-      } else {
-        const phoneDigits = digits.slice(4);
-        if (phoneDigits.length <= 4) {
-          return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits;
-        } else {
-          return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits.slice(0, 5) + '-' + phoneDigits.slice(5, 9);
-        }
-      }
-    }
-    
-    // CPF: 11 dígitos
-    if (onlyNumbers.length <= 11) {
-      return formatCPF(onlyNumbers);
-    }
-    
-    // CNPJ: 14 dígitos
-    if (onlyNumbers.length <= 14) {
-      return formatCNPJ(onlyNumbers);
-    }
-  }
-  
-  // Chave aleatória ou formato não reconhecido
-  // Limita a 36 caracteres (tamanho padrão de UUID)
-  return trimmed.slice(0, 36);
-};
-
 // Detecta o tipo de chave PIX
 export type PixKeyType = 'email' | 'phone' | 'cpf' | 'cnpj' | 'random' | 'unknown';
 
@@ -200,32 +136,112 @@ export const detectPixKeyType = (value: string): PixKeyType => {
     return 'email';
   }
   
-  // Telefone (começa com + ou tem formato de telefone)
-  if (trimmed.startsWith('+')) {
-    return 'phone';
-  }
-  
-  const onlyNumbers = trimmed.replace(/\D/g, '');
-  
-  // Telefone com 10-13 dígitos
-  if (onlyNumbers.length >= 10 && onlyNumbers.length <= 13 && !trimmed.includes('.')) {
-    return 'phone';
-  }
-  
-  // CPF: 11 dígitos
-  if (onlyNumbers.length === 11 && validateCPF(onlyNumbers)) {
-    return 'cpf';
-  }
-  
-  // CNPJ: 14 dígitos
-  if (onlyNumbers.length === 14 && validateCNPJ(onlyNumbers)) {
-    return 'cnpj';
-  }
-  
-  // Chave aleatória (UUID format)
+  // Chave aleatória (UUID format ou similar com letras e números)
   if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(trimmed)) {
     return 'random';
   }
   
+  // Se contém letras (exceto formatação), é chave aleatória
+  if (/[a-zA-Z]/.test(trimmed) && !trimmed.includes('@')) {
+    return 'random';
+  }
+  
+  const onlyNumbers = trimmed.replace(/\D/g, '');
+  
+  // CPF: exatamente 11 dígitos - verificar ANTES do telefone
+  if (onlyNumbers.length === 11 && validateCPF(onlyNumbers)) {
+    return 'cpf';
+  }
+  
+  // CNPJ: exatamente 14 dígitos
+  if (onlyNumbers.length === 14 && validateCNPJ(onlyNumbers)) {
+    return 'cnpj';
+  }
+  
+  // Telefone: começa com + ou tem 12-13 dígitos (com código país)
+  // Telefone brasileiro: 55 + DDD(2) + número(8-9) = 12-13 dígitos
+  if (trimmed.startsWith('+') || (onlyNumbers.length >= 12 && onlyNumbers.length <= 13)) {
+    return 'phone';
+  }
+  
+  // Se tem 10-11 dígitos mas não é CPF válido, pode ser telefone sem código país
+  if (onlyNumbers.length >= 10 && onlyNumbers.length <= 11) {
+    return 'phone';
+  }
+  
   return 'unknown';
+};
+
+// Detecta o tipo de chave PIX e aplica formatação automática
+export const formatPixKey = (value: string): string => {
+  // Não formatar se estiver vazio
+  if (!value) return '';
+  
+  // Preservar o valor original para chaves aleatórias e emails
+  const trimmed = value.trim();
+  
+  // Se está vazio, retorna vazio
+  if (!trimmed) return '';
+  
+  // Verifica se é um email (contém @)
+  if (trimmed.includes('@')) {
+    // Email: não formata, apenas limita tamanho e lowercase
+    return trimmed.slice(0, 77).toLowerCase();
+  }
+  
+  // Se contém letras (pode ser chave aleatória), preservar exatamente como está
+  if (/[a-zA-Z]/.test(trimmed)) {
+    // Chave aleatória: preservar formatação original, limitar a 36 caracteres
+    return trimmed.slice(0, 36);
+  }
+  
+  // A partir daqui, só temos números e caracteres de formatação
+  const onlyNumbers = trimmed.replace(/\D/g, '');
+  
+  // Se não tem números suficientes, retorna como está
+  if (onlyNumbers.length === 0) {
+    return trimmed.slice(0, 36);
+  }
+  
+  // CPF: exatamente 11 dígitos e válido - verificar ANTES do telefone
+  if (onlyNumbers.length === 11 && validateCPF(onlyNumbers)) {
+    return formatCPF(onlyNumbers);
+  }
+  
+  // CNPJ: exatamente 14 dígitos
+  if (onlyNumbers.length === 14) {
+    return formatCNPJ(onlyNumbers);
+  }
+  
+  // Telefone: começa com + ou tem formato de telefone
+  if (trimmed.startsWith('+') || (onlyNumbers.length >= 10 && onlyNumbers.length <= 13)) {
+    // Formato telefone: +55 (XX) XXXXX-XXXX
+    let digits = onlyNumbers;
+    
+    // Se não começou com 55, adiciona para telefones com 10-11 dígitos
+    if (!digits.startsWith('55') && digits.length <= 11) {
+      digits = '55' + digits;
+    }
+    
+    // Limita a 13 dígitos (55 + DDD + 9 dígitos)
+    digits = digits.slice(0, 13);
+    
+    if (digits.length <= 2) {
+      return '+' + digits;
+    } else if (digits.length <= 4) {
+      return '+' + digits.slice(0, 2) + ' (' + digits.slice(2);
+    } else if (digits.length <= 9) {
+      return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + digits.slice(4);
+    } else {
+      const phoneDigits = digits.slice(4);
+      if (phoneDigits.length <= 4) {
+        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits;
+      } else {
+        return '+' + digits.slice(0, 2) + ' (' + digits.slice(2, 4) + ') ' + phoneDigits.slice(0, 5) + '-' + phoneDigits.slice(5, 9);
+      }
+    }
+  }
+  
+  // Fallback: retorna o valor original limitado
+  return trimmed.slice(0, 36);
 };
