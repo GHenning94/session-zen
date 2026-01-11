@@ -125,7 +125,7 @@ export const validatePassword = (password: string): boolean => {
 
 // Detecta o tipo de chave PIX e aplica formatação automática
 export const formatPixKey = (value: string): string => {
-  // Remove espaços extras no início e fim
+  // Remove espaços extras
   const trimmed = value.trim();
   
   // Se está vazio, retorna vazio
@@ -133,24 +133,14 @@ export const formatPixKey = (value: string): string => {
   
   // Verifica se é um email (contém @)
   if (trimmed.includes('@')) {
-    // Email: não formata, apenas limita tamanho e lowercase
+    // Email: não formata, apenas limita tamanho
     return trimmed.slice(0, 77).toLowerCase();
   }
   
   // Remove todos os caracteres não numéricos para verificar se é número
   const onlyNumbers = trimmed.replace(/\D/g, '');
   
-  // Se parece ser chave aleatória (contém letras e números, possivelmente com hífens)
-  // Chaves aleatórias PIX podem ter até 36 caracteres (UUID) ou 32 (sem hífens)
-  const isAlphanumeric = /^[a-zA-Z0-9-]+$/.test(trimmed);
-  const hasLetters = /[a-zA-Z]/.test(trimmed);
-  
-  if (isAlphanumeric && hasLetters && !trimmed.includes('@')) {
-    // Parece ser chave aleatória - aceita como está, limitando a 36 caracteres
-    return trimmed.slice(0, 36);
-  }
-  
-  // Se só tem números e caracteres de formatação
+  // Se só tem números
   if (onlyNumbers.length > 0 && trimmed.replace(/[\d\s\-().+/]/g, '').length === 0) {
     // Telefone: começa com +55 ou tem 10-11 dígitos
     if (trimmed.startsWith('+') || (onlyNumbers.length >= 10 && onlyNumbers.length <= 13)) {
@@ -192,7 +182,7 @@ export const formatPixKey = (value: string): string => {
     }
   }
   
-  // Aceita qualquer outro formato como chave aleatória
+  // Chave aleatória ou formato não reconhecido
   // Limita a 36 caracteres (tamanho padrão de UUID)
   return trimmed.slice(0, 36);
 };
@@ -210,14 +200,14 @@ export const detectPixKeyType = (value: string): PixKeyType => {
     return 'email';
   }
   
-  // Telefone (começa com + ou tem formato de telefone brasileiro)
+  // Telefone (começa com + ou tem formato de telefone)
   if (trimmed.startsWith('+')) {
     return 'phone';
   }
   
   const onlyNumbers = trimmed.replace(/\D/g, '');
   
-  // Telefone com 10-13 dígitos (sem pontos que indicariam CPF/CNPJ)
+  // Telefone com 10-13 dígitos
   if (onlyNumbers.length >= 10 && onlyNumbers.length <= 13 && !trimmed.includes('.')) {
     return 'phone';
   }
@@ -232,24 +222,8 @@ export const detectPixKeyType = (value: string): PixKeyType => {
     return 'cnpj';
   }
   
-  // Chave aleatória - aceita formatos mais flexíveis:
-  // - UUID padrão com hífens: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
-  // - UUID sem hífens: 32 caracteres alfanuméricos
-  // - Qualquer string alfanumérica com pelo menos 20 caracteres que contenha letras
-  const isAlphanumeric = /^[a-zA-Z0-9-]+$/.test(trimmed);
-  const hasLetters = /[a-zA-Z]/.test(trimmed);
-  
-  if (isAlphanumeric && hasLetters && trimmed.length >= 20) {
-    return 'random';
-  }
-  
-  // UUID format exato
+  // Chave aleatória (UUID format)
   if (/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i.test(trimmed)) {
-    return 'random';
-  }
-  
-  // Se tem letras e números misturados, provavelmente é chave aleatória
-  if (hasLetters && onlyNumbers.length > 0 && trimmed.length >= 10) {
     return 'random';
   }
   

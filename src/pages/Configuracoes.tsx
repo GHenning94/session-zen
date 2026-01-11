@@ -1030,15 +1030,10 @@ const Configuracoes = () => {
                       handleSettingsChange('bank_data_confirmed', false);
                       
                       const cleaned = formatted.replace(/\D/g, '');
-                      // Validar baseado no tamanho do número, independente do tipo selecionado
-                      // Isso permite que a validação funcione mesmo se tipo_pessoa não foi selecionado
-                      if (cleaned.length === 11) {
+                      if (settings.tipo_pessoa === 'fisica' && cleaned.length === 11) {
                         setCpfCnpjValid(validateCPFCNPJ(formatted));
-                      } else if (cleaned.length === 14) {
+                      } else if (settings.tipo_pessoa === 'juridica' && cleaned.length === 14) {
                         setCpfCnpjValid(validateCPFCNPJ(formatted));
-                      } else if (cleaned.length > 0) {
-                        // Durante digitação, não mostrar erro
-                        setCpfCnpjValid(null);
                       } else {
                         setCpfCnpjValid(null);
                       }
