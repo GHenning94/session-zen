@@ -6,7 +6,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { SimpleRichTextEditor } from "./SimpleRichTextEditor"
-import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
+import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface SessionNoteModalProps {
   session: any
@@ -29,11 +29,16 @@ export const SessionNoteModal = ({
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!open) {
-      setNotes('')
-    } else if (editingNote) {
-      setNotes(editingNote.notes || '')
+    const loadExistingNote = async () => {
+      if (!open) {
+        setNotes('')
+      } else if (editingNote) {
+        // CORREÇÃO: Descriptografar nota existente
+        const decrypted = await decryptSensitiveData('session_notes', editingNote)
+        setNotes(decrypted.notes || '')
+      }
     }
+    loadExistingNote()
   }, [open, editingNote])
 
   const handleSave = async () => {

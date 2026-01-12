@@ -37,6 +37,7 @@ import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 import { BatchSelectionBar, SelectableItemCheckbox } from '@/components/BatchSelectionBar'
 import { BatchEditByTypeModal, BatchEditChanges } from '@/components/BatchEditByTypeModal'
 import { recalculateMultiplePackages } from '@/utils/packageUtils'
+import { decryptSensitiveData } from '@/utils/encryptionMiddleware'
 
 interface Session {
   id: string
@@ -196,6 +197,11 @@ export default function Sessoes() {
         throw sessionsError
       }
 
+      // CORREÇÃO: Descriptografar anotações das sessões
+      const decryptedSessions = await Promise.all(
+        (sessionsData || []).map(session => decryptSensitiveData('sessions', session))
+      )
+
       // Carregar anotações (campos otimizados)
       const { data: notesData, error: notesError } = await supabase
         .from('session_notes')
@@ -207,6 +213,11 @@ export default function Sessoes() {
         .order('created_at', { ascending: false })
 
       if (notesError) throw notesError
+
+      // CORREÇÃO: Descriptografar notas de sessão
+      const decryptedNotes = await Promise.all(
+        (notesData || []).map(note => decryptSensitiveData('session_notes', note))
+      )
 
       // Carregar evoluções (apenas session_id para verificar linkagem)
       const { data: evolucoesData, error: evolucoesError } = await supabase
@@ -231,9 +242,9 @@ export default function Sessoes() {
 
       if (packagesError) throw packagesError
 
-      // Não atualizar status automaticamente - manter como está
-      setSessions(sessionsData || [])
-      setSessionNotes(notesData || [])
+      // Usar dados descriptografados com type assertions
+      setSessions(decryptedSessions as Session[])
+      setSessionNotes(decryptedNotes as SessionNote[])
       setEvolucoes(evolucoesData || [])
       setClients(clientsData || [])
       setPackages(packagesData || [])

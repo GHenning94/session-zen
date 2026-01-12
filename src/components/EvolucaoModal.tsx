@@ -14,7 +14,7 @@ import { ptBR } from "date-fns/locale"
 import { getSessionStatusColor, getSessionStatusLabel, calculateSessionStatus } from "@/utils/sessionStatusUtils"
 import { formatDateBR, formatTimeBR } from "@/utils/formatters"
 import { Badge } from "@/components/ui/badge"
-import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
+import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 import { AlertTriangle } from "lucide-react"
 
 interface EvolucaoModalProps {
@@ -58,32 +58,37 @@ export const EvolucaoModal = ({
   })
 
   useEffect(() => {
-    if (existingEvolucao) {
-      setEvolucao({
-        data_sessao: existingEvolucao.data_sessao,
-        horario_sessao: '',
-        session_id: existingEvolucao.session_id || '',
-        evolucao: existingEvolucao.evolucao
-      })
-      setInputMode(existingEvolucao.session_id ? 'session' : 'manual')
-    } else if (sessionData) {
-      setEvolucao({
-        data_sessao: sessionData.data,
-        horario_sessao: sessionData.horario,
-        session_id: sessionData.id,
-        evolucao: initialContent || ''
-      })
-      setInputMode('session')
-    } else {
-      const today = new Date().toISOString().split('T')[0]
-      setEvolucao({
-        data_sessao: today,
-        horario_sessao: '',
-        session_id: '',
-        evolucao: initialContent || ''
-      })
-      setInputMode('manual')
+    const loadExistingData = async () => {
+      if (existingEvolucao) {
+        // CORREÇÃO: Descriptografar dados da evolução existente
+        const decrypted = await decryptSensitiveData('evolucoes', existingEvolucao)
+        setEvolucao({
+          data_sessao: decrypted.data_sessao,
+          horario_sessao: '',
+          session_id: decrypted.session_id || '',
+          evolucao: decrypted.evolucao
+        })
+        setInputMode(decrypted.session_id ? 'session' : 'manual')
+      } else if (sessionData) {
+        setEvolucao({
+          data_sessao: sessionData.data,
+          horario_sessao: sessionData.horario,
+          session_id: sessionData.id,
+          evolucao: initialContent || ''
+        })
+        setInputMode('session')
+      } else {
+        const today = new Date().toISOString().split('T')[0]
+        setEvolucao({
+          data_sessao: today,
+          horario_sessao: '',
+          session_id: '',
+          evolucao: initialContent || ''
+        })
+        setInputMode('manual')
+      }
     }
+    loadExistingData()
   }, [existingEvolucao, sessionData, initialContent, open])
 
   // Carregar sessões do cliente quando o modal abre

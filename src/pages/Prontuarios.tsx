@@ -26,6 +26,7 @@ import DOMPurify from 'dompurify'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { decryptSensitiveData } from '@/utils/encryptionMiddleware'
 
 interface Client {
   id: string
@@ -156,6 +157,11 @@ export default function Prontuarios() {
 
       if (anamnesisError) throw anamnesisError
 
+      // CORREÇÃO: Descriptografar anamneses
+      const decryptedAnamneses = await Promise.all(
+        (anamnesesData || []).map(anamnese => decryptSensitiveData('anamneses', anamnese))
+      )
+
       // Carregar evoluções
       const { data: evolucoesData, error: evolucoesError } = await supabase
         .from('evolucoes')
@@ -164,6 +170,11 @@ export default function Prontuarios() {
         .order('data_sessao', { ascending: false })
 
       if (evolucoesError) throw evolucoesError
+
+      // CORREÇÃO: Descriptografar evoluções
+      const decryptedEvolucoes = await Promise.all(
+        (evolucoesData || []).map(evolucao => decryptSensitiveData('evolucoes', evolucao))
+      )
 
       // Carregar sessões para associar com as evoluções
       const sessionIds = evolucoesData?.filter(e => e.session_id).map(e => e.session_id) || []
@@ -180,14 +191,14 @@ export default function Prontuarios() {
         }
       }
 
-      // Combinar evoluções com dados das sessões
-      const evolucoesWithSessions = evolucoesData?.map(evolucao => ({
+      // Combinar evoluções descriptografadas com dados das sessões
+      const evolucoesWithSessions = decryptedEvolucoes.map(evolucao => ({
         ...evolucao,
         session: evolucao.session_id ? sessionsData.find(s => s.id === evolucao.session_id) : null
-      })) || []
+      })) as Evolucao[]
 
       setClients(clientsData || [])
-      setAnamneses(anamnesesData || [])
+      setAnamneses(decryptedAnamneses as Anamnese[])
       setEvolucoes(evolucoesWithSessions)
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
