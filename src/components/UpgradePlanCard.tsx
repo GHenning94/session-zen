@@ -441,8 +441,11 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     Mais Popular
                   </Badge>
                 )}
-                {isAnnual && plan.id !== 'basico' && (
-                  <Badge variant="secondary" className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs">Economize 2 meses</Badge>
+                {isAnnual && plan.id !== 'basico' && !isCurrentPlanAndCycle && !isPro && (
+                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
+                )}
+                {isAnnual && isPro && !isCurrentPlanAndCycle && (
+                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform translate-x-12 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
                 )}
                 <CardHeader className="pb-3 pt-5">
                   <div className="flex items-center gap-3">
