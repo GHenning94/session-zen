@@ -519,9 +519,9 @@ const LandingPage = () => {
   ];
 
   const plans = [
-    { name: "Básico", price: { monthly: "R$ 0", annually: "R$ 0" }, period: { monthly: "/mês", annually: "/ano" }, description: "Ideal para começar", features: ["Até 4 sessões por cliente", "Agendamento básico", "Suporte por email"], highlighted: false, cta: "Acessar", planId: "basico" },
-    { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 24,90" }, period: { monthly: "/mês", annually: "/mês" }, subtext: "12x R$ 24,90 = R$ 298,80/ano", description: "Para profissionais em crescimento", features: ["Até 20 clientes", "Sessões ilimitadas", "Histórico básico", "Agendamento online", "Suporte prioritário"], highlighted: false, cta: "Assinar Profissional", planId: "pro" },
-    { name: "Premium", price: { monthly: "R$ 49,90", annually: "R$ 41,58" }, period: { monthly: "/mês", annually: "/mês" }, subtext: "12x R$ 41,58 = R$ 498,96/ano", description: "Máximo poder e recursos", features: ["Clientes ilimitados", "Histórico completo", "Relatórios em PDF", "Integração WhatsApp", "Backup automático"], highlighted: true, cta: "Assinar Premium", planId: "premium" }
+    { name: "Básico", price: { monthly: "R$ 0", annually: "R$ 0" }, period: { monthly: "/mês", annually: "/ano" }, annualTotal: 0, description: "Ideal para começar", features: ["Até 4 sessões por cliente", "Agendamento básico", "Suporte por email", "Sem cartão de crédito"], highlighted: false, cta: "Acessar", planId: "basico" },
+    { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 24,90" }, period: { monthly: "/mês", annually: "/mês" }, annualTotal: 298.80, description: "Para profissionais em crescimento", features: ["Até 20 clientes", "Sessões ilimitadas", "Histórico básico", "Agendamento online", "Suporte prioritário"], highlighted: true, cta: "Assinar Profissional", planId: "pro" },
+    { name: "Premium", price: { monthly: "R$ 49,90", annually: "R$ 41,58" }, period: { monthly: "/mês", annually: "/mês" }, annualTotal: 498.96, description: "Máximo poder e recursos", features: ["Clientes ilimitados", "Histórico completo", "Relatórios em PDF", "Integração WhatsApp", "Backup automático"], highlighted: false, cta: "Assinar Premium", planId: "premium" }
   ];
 
   const systemInActionFeatures = [
@@ -806,32 +806,45 @@ const LandingPage = () => {
               <div className="text-center mb-16">
                 <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">Planos que se adaptam ao seu momento</h2>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">Comece grátis e evolua conforme sua prática cresce.</p>
-                <div className="flex items-center justify-center space-x-4 mt-8">
-                  <Label htmlFor="billing-cycle" className={`${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'} transition-colors`}>Mensal</Label>
-                  <Switch id="billing-cycle" checked={billingCycle === 'annually'} onCheckedChange={(checked) => setBillingCycle(checked ? 'annually' : 'monthly')} />
-                  <Label htmlFor="billing-cycle" className={`${billingCycle === 'annually' ? 'text-foreground' : 'text-muted-foreground'} transition-colors`}>Anual</Label>
-                  <Badge variant="secondary" className="bg-green-100 text-green-700 transition-colors hover:bg-green-700 hover:text-white">Economize 2 meses</Badge>
+                <div className="flex items-center justify-center gap-3 mt-8">
+                  <Label htmlFor="billing-cycle" className={`${billingCycle === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'} transition-colors cursor-pointer`}>Mensal</Label>
+                  <div 
+                    className="relative w-14 h-7 bg-primary rounded-full cursor-pointer flex items-center px-1"
+                    onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annually' : 'monthly')}
+                  >
+                    <div 
+                      className={`w-5 h-5 bg-white rounded-full shadow-md transition-transform duration-200 ${billingCycle === 'annually' ? 'translate-x-7' : 'translate-x-0'}`}
+                    />
+                  </div>
+                  <Label htmlFor="billing-cycle" className={`${billingCycle === 'annually' ? 'text-foreground font-medium' : 'text-muted-foreground'} transition-colors cursor-pointer`}>Anual</Label>
+                  {billingCycle === 'annually' && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 transition-colors hover:bg-green-700 hover:text-white">Economize 2 meses</Badge>
+                  )}
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {plans.map((plan) => (
                   <div key={plan.planId} className="fade-in-item">
-                    <Card className={`flex flex-col h-full relative shadow-soft transition-all duration-300 ${plan.highlighted ? 'ring-2 ring-primary scale-105 shadow-primary hover:scale-110' : 'hover:-translate-y-2'}`}>
-                      {plan.highlighted && <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-white">Mais Popular</Badge>}
+                    <Card className={`flex flex-col h-full relative shadow-soft transition-all duration-300 ${plan.planId === 'pro' ? 'ring-2 ring-primary scale-105 shadow-primary hover:scale-110' : 'hover:-translate-y-2'}`}>
+                      {plan.planId === 'pro' && <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-white">Mais Popular</Badge>}
                       <CardHeader className="text-center pt-8">
                         <CardTitle className="text-2xl">{plan.name}</CardTitle>
                         <div className="flex items-center justify-center my-4 h-16">
                           <div>
                             <span className="text-4xl font-bold">{plan.price[billingCycle]}</span>
                             <span className="text-muted-foreground ml-1">{plan.period[billingCycle]}</span>
-                            {billingCycle === 'annually' && plan.subtext && <p className="text-xs text-muted-foreground mt-1">{plan.subtext}</p>}
+                            {billingCycle === 'annually' && plan.annualTotal > 0 && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Cobrado R$ {plan.annualTotal.toFixed(2).replace('.', ',')} uma vez por ano
+                              </p>
+                            )}
                           </div>
                         </div>
                         <CardDescription>{plan.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="flex flex-col flex-grow p-6">
                         <ul className="space-y-3 mb-8 flex-grow">{plan.features.map((feature, i) => (<li key={i} className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" /><span className="text-sm text-muted-foreground">{feature}</span></li>))}</ul>
-                        <Button className={`w-full text-base py-6 ${plan.highlighted ? 'bg-gradient-primary text-white shadow-primary' : 'bg-muted hover:bg-muted/80 text-foreground'}`} onClick={() => handleGetStarted(plan.planId)}>{plan.cta}</Button>
+                        <Button className={`w-full text-base py-6 ${plan.planId === 'pro' ? 'bg-gradient-primary text-white shadow-primary' : 'bg-muted hover:bg-muted/80 text-foreground'}`} onClick={() => handleGetStarted(plan.planId)}>{plan.cta}</Button>
                       </CardContent>
                     </Card>
                   </div>
