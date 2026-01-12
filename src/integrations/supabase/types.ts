@@ -409,11 +409,19 @@ export type Database = {
           pre_booking_notes: string | null
           relatorio_semanal: boolean | null
           require_policy_confirmation: boolean | null
+          show_bank_details: boolean | null
+          show_bio: boolean | null
           show_duration: boolean | null
+          show_first_consultation_value: boolean | null
+          show_page_description: boolean | null
+          show_page_title: boolean | null
           show_payment_methods: boolean | null
           show_photo: boolean | null
+          show_pix_key: boolean | null
           show_pre_booking_notes: boolean | null
           show_price: boolean | null
+          show_session_value: boolean | null
+          show_specialty: boolean | null
           show_starting_from_value: boolean | null
           show_values_after_selection: boolean | null
           slug: string | null
@@ -476,11 +484,19 @@ export type Database = {
           pre_booking_notes?: string | null
           relatorio_semanal?: boolean | null
           require_policy_confirmation?: boolean | null
+          show_bank_details?: boolean | null
+          show_bio?: boolean | null
           show_duration?: boolean | null
+          show_first_consultation_value?: boolean | null
+          show_page_description?: boolean | null
+          show_page_title?: boolean | null
           show_payment_methods?: boolean | null
           show_photo?: boolean | null
+          show_pix_key?: boolean | null
           show_pre_booking_notes?: boolean | null
           show_price?: boolean | null
+          show_session_value?: boolean | null
+          show_specialty?: boolean | null
           show_starting_from_value?: boolean | null
           show_values_after_selection?: boolean | null
           slug?: string | null
@@ -543,11 +559,19 @@ export type Database = {
           pre_booking_notes?: string | null
           relatorio_semanal?: boolean | null
           require_policy_confirmation?: boolean | null
+          show_bank_details?: boolean | null
+          show_bio?: boolean | null
           show_duration?: boolean | null
+          show_first_consultation_value?: boolean | null
+          show_page_description?: boolean | null
+          show_page_title?: boolean | null
           show_payment_methods?: boolean | null
           show_photo?: boolean | null
+          show_pix_key?: boolean | null
           show_pre_booking_notes?: boolean | null
           show_price?: boolean | null
+          show_session_value?: boolean | null
+          show_specialty?: boolean | null
           show_starting_from_value?: boolean | null
           show_values_after_selection?: boolean | null
           slug?: string | null
