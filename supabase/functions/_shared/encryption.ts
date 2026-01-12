@@ -33,19 +33,29 @@ async function getKey(): Promise<CryptoKey> {
     throw new Error('ENCRYPTION_KEY not configured');
   }
   
-  // Support both hex and base64 encoded keys
   let keyBytes: Uint8Array;
   
-  try {
-    // Try hex first
+  // Detect format correctly:
+  // - Hex: exactly 64 characters, only 0-9 and a-f (32 bytes = 64 hex chars)
+  // - Base64: ~44 characters, may contain +, /, =
+  const isHex = /^[0-9a-fA-F]{64}$/.test(ENCRYPTION_KEY);
+  
+  if (isHex) {
+    // It's hex (64 characters = 32 bytes)
     keyBytes = hexToBytes(ENCRYPTION_KEY);
-  } catch {
-    // Fallback to base64
-    keyBytes = Uint8Array.from(atob(ENCRYPTION_KEY), c => c.charCodeAt(0));
+    console.log('[Encryption] Key detected as HEX format');
+  } else {
+    // Assume base64
+    try {
+      keyBytes = Uint8Array.from(atob(ENCRYPTION_KEY), c => c.charCodeAt(0));
+      console.log('[Encryption] Key detected as BASE64 format, decoded length:', keyBytes.length);
+    } catch (e) {
+      throw new Error('ENCRYPTION_KEY is not valid hex or base64 format');
+    }
   }
   
   if (keyBytes.length !== 32) {
-    throw new Error('ENCRYPTION_KEY must be 32 bytes (256 bits)');
+    throw new Error(`ENCRYPTION_KEY must be 32 bytes (256 bits), got ${keyBytes.length} bytes. For base64: use 'openssl rand -base64 32'. For hex: use 'openssl rand -hex 32'.`);
   }
   
   return await crypto.subtle.importKey(
