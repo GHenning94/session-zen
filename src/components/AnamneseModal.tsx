@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { sanitizeMedicalTextClientSide, validateMedicalDataInput } from "@/utils/secureClientData"
 import { Shield, AlertTriangle } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
+import { encryptSensitiveData, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 interface AnamneseModalProps {
   open: boolean
@@ -44,27 +44,32 @@ export const AnamneseModal = ({
   })
 
   useEffect(() => {
-    if (existingAnamnese) {
-      setAnamnese({
-        motivo_consulta: existingAnamnese.motivo_consulta || '',
-        queixa_principal: existingAnamnese.queixa_principal || '',
-        historico_familiar: existingAnamnese.historico_familiar || '',
-        historico_medico: existingAnamnese.historico_medico || '',
-        antecedentes_relevantes: existingAnamnese.antecedentes_relevantes || '',
-        diagnostico_inicial: existingAnamnese.diagnostico_inicial || '',
-        observacoes_adicionais: existingAnamnese.observacoes_adicionais || ''
-      })
-    } else {
-      setAnamnese({
-        motivo_consulta: '',
-        queixa_principal: '',
-        historico_familiar: '',
-        historico_medico: '',
-        antecedentes_relevantes: '',
-        diagnostico_inicial: '',
-        observacoes_adicionais: ''
-      })
+    const loadExistingAnamnese = async () => {
+      if (existingAnamnese) {
+        // CORREÇÃO: Descriptografar dados da anamnese existente
+        const decrypted = await decryptSensitiveData('anamneses', existingAnamnese)
+        setAnamnese({
+          motivo_consulta: decrypted.motivo_consulta || '',
+          queixa_principal: decrypted.queixa_principal || '',
+          historico_familiar: decrypted.historico_familiar || '',
+          historico_medico: decrypted.historico_medico || '',
+          antecedentes_relevantes: decrypted.antecedentes_relevantes || '',
+          diagnostico_inicial: decrypted.diagnostico_inicial || '',
+          observacoes_adicionais: decrypted.observacoes_adicionais || ''
+        })
+      } else {
+        setAnamnese({
+          motivo_consulta: '',
+          queixa_principal: '',
+          historico_familiar: '',
+          historico_medico: '',
+          antecedentes_relevantes: '',
+          diagnostico_inicial: '',
+          observacoes_adicionais: ''
+        })
+      }
     }
+    loadExistingAnamnese()
   }, [existingAnamnese, open])
 
   const handleSave = async () => {

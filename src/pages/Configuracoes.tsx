@@ -176,10 +176,18 @@ const Configuracoes = () => {
       
       if (profileError) throw profileError;
 
+      // CORREÇÃO: Descriptografar dados sensíveis do perfil
+      const decryptedProfileData = await decryptSensitiveData('profiles', profileData);
+
       const { data: configData, error: configError } = await supabase.from('configuracoes').select('*').eq('user_id', user.id).single();
       if (configError && configError.code !== 'PGRST116') throw configError;
       
-      const allSettings = { ...profileData, ...(configData || {}), email: user.email || '' };
+      // CORREÇÃO: Descriptografar dados de configuração se existirem
+      const decryptedConfigData = configData 
+        ? await decryptSensitiveData('configuracoes', configData) 
+        : {};
+      
+      const allSettings = { ...decryptedProfileData, ...decryptedConfigData, email: user.email || '' };
       setSettings(allSettings);
 
     } catch (error) {
