@@ -382,19 +382,24 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
             <span className={`text-xs md:text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
               Mensal
             </span>
-            <Button
-              variant="outline"
-              size="sm"
+            <button
+              type="button"
+              role="switch"
+              aria-checked={billingCycle === 'annual'}
               onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative w-12 h-6 rounded-full p-0 shrink-0"
+              className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
             >
-              <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-primary transition-transform ${billingCycle === 'annual' ? 'translate-x-6' : ''}`} />
-            </Button>
+              <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
+            </button>
             <div className="flex items-center gap-1">
               <span className={`text-xs md:text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Anual
               </span>
-              <Badge variant="secondary" className="text-[10px] md:text-xs">-17%</Badge>
+              {billingCycle === 'annual' && (
+                <Badge variant="secondary" className="text-[10px] md:text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  Economize 2 meses
+                </Badge>
+              )}
             </div>
           </div>
 
@@ -412,9 +417,9 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
               (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
             )
             
-            // Premium sempre com destaque quando não é o plano atual no ciclo
-            const isPremium = plan.id === 'premium'
-            const showHighlight = isPremium && !isCurrentPlanAndCycle
+            // Profissional sempre com destaque "Mais Popular"
+            const isPro = plan.id === 'pro'
+            const isUpgrade = plan.planLevel > currentPlanLevel && plan.id !== 'basico'
             
             return (
               <Card 
@@ -428,6 +433,12 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                 {isCurrentPlanAndCycle && (
                   <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 hover:bg-green-500 text-white px-3 py-1 text-xs font-medium">
                     Plano Atual
+                  </Badge>
+                )}
+                {isPro && !isCurrentPlanAndCycle && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 text-xs font-medium flex items-center gap-1">
+                    <Star className="h-3 w-3" />
+                    Mais Popular
                   </Badge>
                 )}
                 <CardHeader className="pb-3 pt-5">
@@ -448,7 +459,10 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
                     {isAnnual && plan.annualSubtext && (
-                      <p className="text-xs text-muted-foreground mt-1">{plan.annualSubtext}</p>
+                      <p className="text-xs text-muted-foreground mt-1">Cobrado {plan.id === 'pro' ? 'R$ 298,80' : 'R$ 498,96'} uma vez por ano</p>
+                    )}
+                    {plan.id === 'basico' && (
+                      <p className="text-xs text-muted-foreground mt-1">Sem cartão de crédito</p>
                     )}
                   </div>
                   <ul className="space-y-2">
@@ -464,10 +478,10 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     size="sm"
                     onClick={() => !isCurrentPlanAndCycle && handleChangePlan(plan)}
                     disabled={loading || isCurrentPlanAndCycle}
-                    variant={isCurrentPlanAndCycle ? "secondary" : showHighlight ? "default" : "outline"}
+                    variant={isCurrentPlanAndCycle ? "secondary" : isUpgrade ? "default" : "outline"}
                     style={isCurrentPlanAndCycle ? { pointerEvents: 'none', opacity: 0.6, cursor: 'not-allowed' } : undefined}
                   >
-                    {loading ? 'Processando...' : isCurrentPlanAndCycle ? 'Plano Atual' : `Escolher ${plan.name}`}
+                    {loading ? 'Processando...' : isCurrentPlanAndCycle ? 'Plano Atual' : plan.planLevel < currentPlanLevel ? 'Fazer Downgrade' : `Escolher ${plan.name}`}
                   </Button>
                 </CardContent>
               </Card>

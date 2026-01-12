@@ -2,7 +2,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Check, Loader2, AlertTriangle } from "lucide-react"
+import { Check, Loader2, AlertTriangle, Star } from "lucide-react"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
@@ -41,7 +41,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
 
   const plans = [
     {
-      name: 'Pro',
+      name: 'Profissional',
       id: 'pro',
       price: 'R$ 29,90',
       period: '/mês',
@@ -51,13 +51,13 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Histórico básico',
         'Suporte por email'
       ],
-      recommended: currentPlan === 'basico',
+      recommended: true, // Sempre mais popular
       stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb'
     },
     {
       name: 'Premium',
       id: 'premium',
-      price: 'R$ 59,90',
+      price: 'R$ 49,90',
       period: '/mês',
       features: [
         'Clientes ilimitados',
@@ -67,7 +67,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Integração WhatsApp',
         'Suporte prioritário'
       ],
-      recommended: currentPlan === 'pro',
+      recommended: false,
       stripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du'
     }
   ]
@@ -296,11 +296,12 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
 
         <div className="grid md:grid-cols-2 gap-6">
           {plans.map((plan) => (
-            <Card key={plan.name} className={`relative ${plan.recommended ? 'border-primary shadow-lg' : ''}`}>
-              {plan.recommended && (
+            <Card key={plan.name} className={`relative ${plan.id === 'pro' ? 'border-primary shadow-lg' : ''}`}>
+              {plan.id === 'pro' && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium">
-                    Recomendado
+                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
+                    <Star className="h-3 w-3" />
+                    Mais Popular
                   </span>
                 </div>
               )}
