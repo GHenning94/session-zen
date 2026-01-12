@@ -328,7 +328,7 @@ export const SubscriptionInvoices = () => {
                     <div className="text-sm text-muted-foreground ml-6 sm:ml-7">
                       <p>Data: {format(new Date(invoice.created * 1000), "dd/MM/yyyy", { locale: ptBR })}</p>
                       {invoice.description && (
-                        <p className="text-xs truncate max-w-[200px]">{invoice.description}</p>
+                        <p className="text-xs text-muted-foreground">{invoice.description}</p>
                       )}
                       <p className="font-semibold text-foreground mt-1">
                         Valor: {formatCurrency(invoice.amount_paid, invoice.currency)}
