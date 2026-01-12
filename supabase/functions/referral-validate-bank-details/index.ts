@@ -197,18 +197,32 @@ serve(async (req) => {
       bank_details_updated_at: new Date().toISOString(),
     };
 
-    // Encrypt sensitive fields before saving
+    // Encrypt sensitive fields before saving - CRITICAL: encryption is mandatory
     const encryptedData: Record<string, any> = { ...bankData };
+    const encryptionErrors: string[] = [];
+    
     for (const field of SENSITIVE_PROFILE_FIELDS) {
       if (encryptedData[field] && typeof encryptedData[field] === 'string') {
         try {
           encryptedData[field] = await encrypt(encryptedData[field]);
           console.log(`[referral-validate-bank-details] Encrypted field: ${field}`);
         } catch (encryptError) {
-          console.error(`[referral-validate-bank-details] Failed to encrypt ${field}:`, encryptError);
-          // Continue with unencrypted data if encryption fails
+          console.error(`[referral-validate-bank-details] CRITICAL: Failed to encrypt ${field}:`, encryptError);
+          encryptionErrors.push(field);
         }
       }
+    }
+
+    // If ANY encryption failed, do NOT save unencrypted data - this is a security requirement
+    if (encryptionErrors.length > 0) {
+      console.error(`[referral-validate-bank-details] SECURITY: Refusing to save unencrypted sensitive data. Failed fields: ${encryptionErrors.join(', ')}`);
+      return new Response(
+        JSON.stringify({ 
+          error: "Erro de segurança: não foi possível criptografar os dados bancários. Entre em contato com o suporte.",
+          details: "Encryption system unavailable"
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
     // Update profile with encrypted data
