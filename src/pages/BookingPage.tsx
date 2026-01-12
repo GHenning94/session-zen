@@ -10,7 +10,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle, Calendar, Shield, Sparkles, Star } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle, Calendar, Shield, Sparkles, Star, AlertTriangle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
@@ -30,6 +31,7 @@ const BookingPage = () => {
   const [availableSlots, setAvailableSlots] = useState<string[]>([])
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
   const [clientData, setClientData] = useState({ nome: "", email: "", telefone: "", observacoes: "" })
+  const [policyConfirmed, setPolicyConfirmed] = useState(false)
   const { avatarUrl } = useAvatarUrl(profile?.public_avatar_url)
 
   // Store and restore user's theme - only change for this page visit
@@ -146,6 +148,14 @@ const BookingPage = () => {
       
       const bookedTimes = bookedSessions?.map(s => s.horario) || []
       
+      // Verificar limite diário de agendamentos (Premium)
+      const maxDailyAppointments = config.max_daily_appointments
+      if (maxDailyAppointments && bookedSessions && bookedSessions.length >= maxDailyAppointments) {
+        setAvailableSlots([])
+        setBookedSlots([])
+        return
+      }
+      
       // Usar horários específicos por dia se disponível
       const horariosPorDia = config.horarios_por_dia || {};
       const horarioDoDia = horariosPorDia[dayName];
@@ -196,11 +206,34 @@ const BookingPage = () => {
         })
       })
       
-      // Filtrar slots disponíveis
-      const availableSlots = allSlots.filter(slot => !blockedSlots.has(slot))
+      // Aplicar regra de antecedência mínima (Premium)
+      const minAdvanceHours = config.min_advance_hours || 0
+      if (minAdvanceHours > 0) {
+        const now = new Date()
+        const minAdvanceMs = minAdvanceHours * 60 * 60 * 1000
+        
+        allSlots.forEach(slot => {
+          const [slotHour, slotMinute] = slot.split(':').map(Number)
+          const slotDate = new Date(selectedDate + 'T00:00:00')
+          slotDate.setHours(slotHour, slotMinute, 0, 0)
+          
+          if (slotDate.getTime() - now.getTime() < minAdvanceMs) {
+            blockedSlots.add(slot)
+          }
+        })
+      }
       
-      setAvailableSlots(allSlots) // Mostra todos os slots
-      setBookedSlots(Array.from(blockedSlots)) // Lista de horários bloqueados
+      // Filtrar slots disponíveis
+      const filteredSlots = allSlots.filter(slot => !blockedSlots.has(slot))
+      
+      // Se ocultar horários preenchidos está ativo, mostrar apenas disponíveis
+      if (config.hide_filled_slots) {
+        setAvailableSlots(filteredSlots)
+        setBookedSlots([])
+      } else {
+        setAvailableSlots(allSlots)
+        setBookedSlots(Array.from(blockedSlots))
+      }
     }
     loadAvailableSlots()
   }, [selectedDate, config, profile])
@@ -210,6 +243,13 @@ const BookingPage = () => {
       toast({ title: "Campos obrigatórios", description: "Preencha nome, email, data e horário.", variant: "destructive" })
       return
     }
+    
+    // Verificar confirmação de política (Premium)
+    if (config.require_policy_confirmation && !policyConfirmed) {
+      toast({ title: "Confirmação necessária", description: "Por favor, confirme que leu a política de cancelamento.", variant: "destructive" })
+      return
+    }
+    
     setIsBooking(true)
     try {
       // Usar edge function segura ao invés de inserção direta
@@ -233,10 +273,20 @@ const BookingPage = () => {
         throw new Error(data?.error || 'Erro ao processar agendamento')
       }
 
-      toast({ title: "Agendamento realizado!", description: "Sua sessão foi agendada com sucesso." })
+      // Mensagem pós-agendamento personalizada ou padrão
+      const successMessage = config.post_booking_message || "Sua sessão foi agendada com sucesso."
+      toast({ title: "Agendamento realizado!", description: successMessage })
+      
+      // Redirecionamento pós-agendamento (Premium)
+      if (config.post_booking_redirect === 'external' && config.post_booking_url) {
+        window.location.href = config.post_booking_url
+        return
+      }
+      
       setClientData({ nome: "", email: "", telefone: "", observacoes: "" })
       setSelectedDate("")
       setSelectedTime("")
+      setPolicyConfirmed(false)
     } catch (error) {
       console.error('Erro ao agendar:', error)
       const errorMessage = error instanceof Error ? error.message : "Não foi possível realizar o agendamento."
@@ -251,7 +301,11 @@ const BookingPage = () => {
     const dates = []
     const today = new Date()
     const dayMap: { [key: string]: number } = { 'domingo': 0, 'segunda': 1, 'terca': 2, 'quarta': 3, 'quinta': 4, 'sexta': 5, 'sabado': 6 }
-    for (let i = 0; i < 30; i++) {
+    
+    // Aplicar regra de dias máximos futuros (Premium)
+    const maxFutureDays = config.max_future_days || 30
+    
+    for (let i = 0; i < maxFutureDays; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
       const dayName = Object.keys(dayMap).find(key => dayMap[key] === date.getDay())
@@ -280,6 +334,8 @@ const BookingPage = () => {
 
   console.log("Config:", config);
   console.log("Profile:", profile);
+  console.log("Visual Theme:", config.visual_theme);
+  console.log("Theme Styles:", theme);
 
   const paymentMethods = [{ key: 'aceita_pix', label: 'PIX' }, { key: 'aceita_cartao', label: 'Cartão' }, { key: 'aceita_transferencia', label: 'Transferência' }, { key: 'aceita_dinheiro', label: 'Dinheiro' }].filter(method => config[method.key])
 
@@ -358,6 +414,9 @@ const BookingPage = () => {
     return filteredRules.join('\n');
   };
 
+  // Determinar texto do botão de agendamento
+  const ctaButtonText = config.cta_button_text || "Confirmar Agendamento"
+
   return (
     <div className="min-h-screen" style={{
       backgroundColor: hasCustomColors ? (config.background_color || undefined) : theme.background,
@@ -385,7 +444,8 @@ const BookingPage = () => {
           {/* Informações do Terapeuta */}
           <Card className="shadow-lg" style={{ 
             backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
-            borderColor: hasCustomColors ? undefined : theme.border
+            borderColor: hasCustomColors ? undefined : theme.border,
+            color: hasCustomColors ? undefined : theme.text
           }}>
             <CardHeader className="text-center p-4 sm:p-6">
               {config.logo_url && (
@@ -478,11 +538,12 @@ const BookingPage = () => {
                 {/* Primeira Consulta com destaque (Premium) */}
                 {!config.show_values_after_selection && (config.show_first_consultation_value !== false) && config.valor_primeira_consulta && (
                   <div 
-                    className={`p-3 sm:p-4 rounded-lg border ${config.highlight_first_consultation || config.emphasize_first_consultation ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                    className={`p-3 sm:p-4 rounded-lg border ${config.highlight_first_consultation || config.emphasize_first_consultation ? 'ring-2 ring-offset-2' : ''}`}
                     style={{ 
                       backgroundColor: `${theme.accent}05`,
-                      borderColor: `${theme.accent}30`
-                    }}
+                      borderColor: `${theme.accent}30`,
+                      '--tw-ring-color': theme.accent
+                    } as React.CSSProperties}
                   >
                     <div className="flex items-center gap-2">
                       {(config.highlight_first_consultation || config.emphasize_first_consultation) && (
@@ -514,16 +575,23 @@ const BookingPage = () => {
                 )}
                 
                 {(config.show_bank_details !== false) && config?.dados_bancarios && (
-                  <div className="p-3 sm:p-4 bg-blue-50 rounded-lg border border-blue-200">
-                    <h3 className="font-semibold text-blue-800 mb-2 text-sm sm:text-base">Dados Bancários</h3>
-                    <p className="text-xs sm:text-sm text-blue-700 whitespace-pre-line">{config.dados_bancarios}</p>
+                  <div className="p-3 sm:p-4 rounded-lg border" style={{ 
+                    backgroundColor: `${theme.accent}08`,
+                    borderColor: `${theme.accent}20`
+                  }}>
+                    <h3 className="font-semibold mb-2 text-sm sm:text-base" style={{ color: theme.accent }}>Dados Bancários</h3>
+                    <p className="text-xs sm:text-sm whitespace-pre-line" style={{ color: theme.textMuted }}>{config.dados_bancarios}</p>
                   </div>
                 )}
 
                 {(config.show_payment_methods !== false) && paymentMethods.length > 0 && (
                   <div className="flex flex-wrap gap-2">
                     {paymentMethods.map(method => (
-                      <span key={method.key} className="px-2 sm:px-3 py-1 bg-primary/10 text-primary rounded-full text-xs sm:text-sm">
+                      <span 
+                        key={method.key} 
+                        className="px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm"
+                        style={{ backgroundColor: `${theme.accent}10`, color: theme.accent }}
+                      >
                         {method.label}
                       </span>
                     ))}
@@ -533,16 +601,16 @@ const BookingPage = () => {
 
               {/* Contato */}
               <div className="space-y-3">
-                <h3 className="font-semibold text-sm sm:text-base">Contato</h3>
+                <h3 className="font-semibold text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.text }}>Contato</h3>
                 <div className="space-y-2">
                   {config.email_contato_pacientes && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>
                       <Mail className="w-4 h-4" />
                       <span className="break-all">{config.email_contato_pacientes}</span>
                     </div>
                   )}
                   {config.whatsapp_contato_pacientes && (
-                    <div className="flex items-center gap-2 text-xs sm:text-sm">
+                    <div className="flex items-center gap-2 text-xs sm:text-sm" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>
                       <Phone className="w-4 h-4" />
                       <span>{config.whatsapp_contato_pacientes}</span>
                     </div>
@@ -553,42 +621,114 @@ const BookingPage = () => {
           </Card>
 
           {/* Formulário de Agendamento */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg" style={{ 
+            backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+            borderColor: hasCustomColors ? undefined : theme.border,
+            color: hasCustomColors ? undefined : theme.text
+          }}>
             <CardHeader className="p-4 sm:p-6">
-              <CardTitle className="text-lg sm:text-xl">Agendar Consulta</CardTitle>
-              <CardDescription className="text-sm sm:text-base">
+              <CardTitle className="text-lg sm:text-xl" style={{ color: hasCustomColors ? config.brand_color : theme.text }}>
+                Agendar Consulta
+              </CardTitle>
+              <CardDescription className="text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>
                 Preencha seus dados para agendar uma sessão
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
+              {/* Observações Antes do Agendamento (Premium) */}
+              {config.show_pre_booking_notes && config.pre_booking_notes && (
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: `${theme.accent}05`,
+                  borderColor: `${theme.accent}20`
+                }}>
+                  <p className="text-xs sm:text-sm" style={{ color: theme.textMuted }}>
+                    {config.pre_booking_notes}
+                  </p>
+                </div>
+              )}
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="nome" className="text-sm">Nome completo</Label>
-                  <Input id="nome" value={clientData.nome} onChange={(e) => setClientData({ ...clientData, nome: e.target.value })} placeholder="Seu nome" className="text-sm" />
+                  <Label htmlFor="nome" className="text-sm" style={{ color: hasCustomColors ? undefined : theme.text }}>Nome completo</Label>
+                  <Input 
+                    id="nome" 
+                    value={clientData.nome} 
+                    onChange={(e) => setClientData({ ...clientData, nome: e.target.value })} 
+                    placeholder="Seu nome" 
+                    className="text-sm"
+                    style={{ 
+                      backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+                      borderColor: hasCustomColors ? undefined : theme.border,
+                      color: hasCustomColors ? undefined : theme.text
+                    }}
+                  />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm">Email</Label>
-                  <Input id="email" type="email" value={clientData.email} onChange={(e) => setClientData({ ...clientData, email: e.target.value })} placeholder="seu@email.com" className="text-sm" />
+                  <Label htmlFor="email" className="text-sm" style={{ color: hasCustomColors ? undefined : theme.text }}>Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={clientData.email} 
+                    onChange={(e) => setClientData({ ...clientData, email: e.target.value })} 
+                    placeholder="seu@email.com" 
+                    className="text-sm"
+                    style={{ 
+                      backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+                      borderColor: hasCustomColors ? undefined : theme.border,
+                      color: hasCustomColors ? undefined : theme.text
+                    }}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="telefone" className="text-sm">Telefone (opcional)</Label>
-                <Input id="telefone" value={clientData.telefone} onChange={(e) => setClientData({ ...clientData, telefone: e.target.value })} placeholder="(11) 99999-9999" className="text-sm" />
+                <Label htmlFor="telefone" className="text-sm" style={{ color: hasCustomColors ? undefined : theme.text }}>Telefone (opcional)</Label>
+                <Input 
+                  id="telefone" 
+                  value={clientData.telefone} 
+                  onChange={(e) => setClientData({ ...clientData, telefone: e.target.value })} 
+                  placeholder="(11) 99999-9999" 
+                  className="text-sm"
+                  style={{ 
+                    backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+                    borderColor: hasCustomColors ? undefined : theme.border,
+                    color: hasCustomColors ? undefined : theme.text
+                  }}
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="observacoes" className="text-sm">Observações (opcional)</Label>
-                <Textarea id="observacoes" value={clientData.observacoes} onChange={(e) => setClientData({ ...clientData, observacoes: e.target.value })} placeholder="Informações adicionais..." className="resize-none text-sm" />
+                <Label htmlFor="observacoes" className="text-sm" style={{ color: hasCustomColors ? undefined : theme.text }}>Observações (opcional)</Label>
+                <Textarea 
+                  id="observacoes" 
+                  value={clientData.observacoes} 
+                  onChange={(e) => setClientData({ ...clientData, observacoes: e.target.value })} 
+                  placeholder="Informações adicionais..." 
+                  className="resize-none text-sm"
+                  style={{ 
+                    backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+                    borderColor: hasCustomColors ? undefined : theme.border,
+                    color: hasCustomColors ? undefined : theme.text
+                  }}
+                />
               </div>
               <div className="space-y-4">
-                <h3 className="font-semibold text-sm sm:text-base">Escolha a Data</h3>
+                <h3 className="font-semibold text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.text }}>Escolha a Data</h3>
                 <Select value={selectedDate} onValueChange={setSelectedDate}>
-                  <SelectTrigger className="text-sm">
+                  <SelectTrigger className="text-sm" style={{ 
+                    backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+                    borderColor: hasCustomColors ? undefined : theme.border,
+                    color: hasCustomColors ? undefined : theme.text
+                  }}>
                     <SelectValue placeholder="Selecione uma data" />
                   </SelectTrigger>
                   <SelectContent>
                     {getAvailableDates().length > 0 ? (
                       getAvailableDates().map(date => (
-                        <SelectItem key={date.value} value={date.value} className="text-sm">{date.label}</SelectItem>
+                        <SelectItem key={date.value} value={date.value} className="text-sm">
+                          {date.label}
+                          {date.value === today && config.highlight_available_today && (
+                            <Badge variant="secondary" className="ml-2 text-xs">Hoje</Badge>
+                          )}
+                        </SelectItem>
                       ))
                     ) : (
                       <SelectItem value="" disabled>Não há datas disponíveis</SelectItem>
@@ -598,11 +738,18 @@ const BookingPage = () => {
               </div>
               {selectedDate && (
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-sm sm:text-base">Escolha o Horário</h3>
+                  <h3 className="font-semibold text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.text }}>Escolha o Horário</h3>
                   {availableSlots.length > 0 ? (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="outline" className="w-full flex items-center gap-2">
+                        <Button 
+                          variant="outline" 
+                          className="w-full flex items-center gap-2"
+                          style={{ 
+                            borderColor: hasCustomColors ? undefined : theme.border,
+                            color: hasCustomColors ? undefined : theme.text
+                          }}
+                        >
                           <Calendar className="w-4 h-4" />
                           {selectedTime ? `Horário selecionado: ${selectedTime}` : "Ver horários disponíveis"}
                         </Button>
@@ -622,6 +769,10 @@ const BookingPage = () => {
                                   onClick={() => !isBooked && setSelectedTime(time)}
                                   disabled={isBooked}
                                   className={`text-sm h-10 ${isBooked ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                  style={selectedTime === time ? { 
+                                    backgroundColor: theme.buttonBg,
+                                    color: theme.buttonText
+                                  } : undefined}
                                 >
                                   {time}
                                   {isBooked && <span className="block text-xs text-muted-foreground">(Ocupado)</span>}
@@ -633,18 +784,57 @@ const BookingPage = () => {
                       </DialogContent>
                     </Dialog>
                   ) : (
-                    <p className="text-muted-foreground text-center text-sm">Não há horários disponíveis para esta data.</p>
+                    <p className="text-center text-sm" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>
+                      Não há horários disponíveis para esta data.
+                    </p>
                   )}
                 </div>
               )}
+              
+              {/* Política de Cancelamento (Premium) */}
+              {config.cancellation_policy && selectedDate && selectedTime && (
+                <div className="p-3 rounded-lg border" style={{ 
+                  backgroundColor: `${theme.accent}05`,
+                  borderColor: `${theme.accent}20`
+                }}>
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" style={{ color: theme.accent }} />
+                    <div>
+                      <p className="text-xs sm:text-sm font-medium" style={{ color: theme.text }}>
+                        Política de Cancelamento
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: theme.textMuted }}>
+                        {config.cancellation_policy}
+                      </p>
+                    </div>
+                  </div>
+                  {config.require_policy_confirmation && (
+                    <div className="flex items-center gap-2 mt-3">
+                      <Checkbox 
+                        id="policy-confirm"
+                        checked={policyConfirmed}
+                        onCheckedChange={(checked) => setPolicyConfirmed(checked === true)}
+                      />
+                      <Label htmlFor="policy-confirm" className="text-xs cursor-pointer" style={{ color: theme.textMuted }}>
+                        Li e concordo com a política de cancelamento
+                      </Label>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               {selectedDate && selectedTime && (
-                <div className="space-y-4 pt-4 border-t">
+                <div className="space-y-4 pt-4 border-t" style={{ borderColor: hasCustomColors ? undefined : theme.border }}>
                   <Button 
                     onClick={handleBooking} 
-                    disabled={isBooking} 
-                    className="w-full bg-gradient-primary hover:opacity-90 h-10 sm:h-12 text-sm sm:text-base"
+                    disabled={isBooking || (config.require_policy_confirmation && !policyConfirmed)} 
+                    className="w-full h-10 sm:h-12 text-sm sm:text-base"
+                    style={{ 
+                      backgroundColor: theme.buttonBg,
+                      color: theme.buttonText
+                    }}
                   >
-                    {isBooking ? "Agendando..." : "Confirmar Agendamento"}
+                    {isBooking ? "Agendando..." : ctaButtonText}
                   </Button>
                 </div>
               )}
@@ -656,14 +846,14 @@ const BookingPage = () => {
         <footer 
           className="mt-8 border-t"
           style={{ 
-            backgroundColor: config.footer_bg_color || '#f9fafb',
-            borderTopColor: `${config.footer_bg_color || '#f9fafb'}20`
+            backgroundColor: config.footer_bg_color || theme.cardBackground,
+            borderTopColor: config.footer_bg_color ? `${config.footer_bg_color}20` : theme.border
           }}
         >
           <div className="container mx-auto px-4 py-4 text-center">
             <p 
               className="text-xs sm:text-sm"
-              style={{ color: config.footer_text_color || '#6b7280' }}
+              style={{ color: config.footer_text_color || theme.textMuted }}
             >
               {config.custom_footer}
             </p>
