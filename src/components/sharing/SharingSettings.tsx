@@ -7,9 +7,10 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
-import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X, RotateCcw, Sparkles } from "lucide-react"
+import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X, RotateCcw, Clock, FileText, Calendar, Heart } from "lucide-react"
 import { useToast } from "@/hooks/use-toast" 
 import { ImageCropper } from "@/components/ImageCropper"
 import { ImageUpload } from "@/components/sharing/ImageUpload"
@@ -109,12 +110,9 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
         </CardContent>
       </Card>
       <Tabs defaultValue="basic" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic">Básico</TabsTrigger>
           <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>Design{!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
-          <TabsTrigger value="premium" className="flex items-center gap-1">
-            <Sparkles className="w-3 h-3" />Premium
-          </TabsTrigger>
           <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>Avançado{!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
         </TabsList>
         <TabsContent value="basic" className="space-y-4">
@@ -311,40 +309,204 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                 </div>
               </CardContent>
             </Card>
+            
+            {/* Premium Design Settings integrado */}
+            <PremiumDesignSettings 
+              settings={settings} 
+              onSettingsChange={onSettingsChange} 
+            />
+            
+            <div className="pt-2">
+              <Button onClick={onSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
+                {isLoading ? "Salvando..." : "Salvar Configurações de Design"}
+              </Button>
+            </div>
           </PlanProtection>
-        </TabsContent>
-
-        <TabsContent value="premium" className="space-y-4">
-          <PremiumDesignSettings 
-            settings={settings} 
-            onSettingsChange={onSettingsChange} 
-          />
-          <div className="pt-2">
-            <Button onClick={onSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
-              {isLoading ? "Salvando..." : "Salvar Configurações Premium"}
-            </Button>
-          </div>
         </TabsContent>
         
         <TabsContent value="advanced" className="space-y-4">
           <PlanProtection feature="hasAdvancedSettings">
+            {/* Rodapé Personalizado */}
             <Card className="shadow-soft">
-              <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5 text-primary" />Configurações Avançadas</CardTitle></CardHeader>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="w-5 h-5 text-primary" />Rodapé Personalizado</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Domínio Personalizado</Label>
-                  <Input value={settings.custom_domain || ''} onChange={(e) => onSettingsChange('custom_domain', e.target.value)} placeholder="meusite.com.br" />
-                </div>
-                <div className="space-y-2">
-                  <Label>Rodapé Personalizado</Label>
+                  <Label>Texto do Rodapé</Label>
                   <Textarea value={settings.custom_footer || ''} onChange={(e) => onSettingsChange('custom_footer', e.target.value)} placeholder="© 2024 Minha Clínica. Todos os direitos reservados." rows={3} />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div><Label>Modo Manutenção</Label><p className="text-sm text-muted-foreground">Desabilita temporariamente o agendamento</p></div>
-                  <Switch checked={!settings.booking_enabled} onCheckedChange={(checked) => onSettingsChange('booking_enabled', !checked)} />
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Cor do Texto do Rodapé</Label>
+                    <Input type="color" value={settings.footer_text_color || '#6b7280'} onChange={(e) => onSettingsChange('footer_text_color', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Cor de Fundo do Rodapé</Label>
+                    <Input type="color" value={settings.footer_bg_color || '#f9fafb'} onChange={(e) => onSettingsChange('footer_bg_color', e.target.value)} />
+                  </div>
                 </div>
               </CardContent>
             </Card>
+
+            {/* Regras de Agendamento */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  Regras de Agendamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Antecedência mínima para agendamento</Label>
+                  <Select value={settings.min_advance_hours || '1'} onValueChange={(value) => onSettingsChange('min_advance_hours', value)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 hora</SelectItem>
+                      <SelectItem value="2">2 horas</SelectItem>
+                      <SelectItem value="4">4 horas</SelectItem>
+                      <SelectItem value="12">12 horas</SelectItem>
+                      <SelectItem value="24">24 horas</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Evita agendamentos de última hora sem conversa prévia</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Limite máximo de dias para agendamento futuro</Label>
+                  <Select value={settings.max_future_days || '30'} onValueChange={(value) => onSettingsChange('max_future_days', value)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="7">Até 7 dias</SelectItem>
+                      <SelectItem value="14">Até 14 dias</SelectItem>
+                      <SelectItem value="30">Até 30 dias</SelectItem>
+                      <SelectItem value="60">Até 60 dias</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Ajuda profissionais que trabalham com agenda "curta"</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Limite de atendimentos por dia</Label>
+                  <Select value={settings.max_daily_appointments || 'unlimited'} onValueChange={(value) => onSettingsChange('max_daily_appointments', value)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unlimited">Sem limite</SelectItem>
+                      <SelectItem value="1">1 atendimento</SelectItem>
+                      <SelectItem value="2">2 atendimentos</SelectItem>
+                      <SelectItem value="3">3 atendimentos</SelectItem>
+                      <SelectItem value="4">4 atendimentos</SelectItem>
+                      <SelectItem value="5">5 atendimentos</SelectItem>
+                      <SelectItem value="6">6 atendimentos</SelectItem>
+                      <SelectItem value="8">8 atendimentos</SelectItem>
+                      <SelectItem value="10">10 atendimentos</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-muted-foreground">Previne sobrecarga de agenda</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Política de Cancelamento */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="w-5 h-5 text-primary" />
+                  Política de Cancelamento
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Texto da Política de Cancelamento</Label>
+                  <Textarea 
+                    value={settings.cancellation_policy || ''} 
+                    onChange={(e) => onSettingsChange('cancellation_policy', e.target.value)} 
+                    placeholder="Cancelamentos devem ser feitos com pelo menos 24h de antecedência."
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">Exibido antes da confirmação do agendamento</p>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-medium">Confirmação obrigatória do paciente</Label>
+                    <p className="text-xs text-muted-foreground">Paciente deve confirmar que leu a política</p>
+                  </div>
+                  <Switch 
+                    checked={settings.require_policy_confirmation ?? false}
+                    onCheckedChange={(checked) => onSettingsChange('require_policy_confirmation', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Comportamento da Agenda */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Calendar className="w-5 h-5 text-primary" />
+                  Comportamento da Agenda
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label className="font-medium">Ocultar horários já preenchidos</Label>
+                    <p className="text-xs text-muted-foreground">Evita poluição visual mostrando apenas horários disponíveis</p>
+                  </div>
+                  <Switch 
+                    checked={settings.hide_filled_slots ?? true}
+                    onCheckedChange={(checked) => onSettingsChange('hide_filled_slots', checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Experiência do Paciente */}
+            <Card className="shadow-soft">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Heart className="w-5 h-5 text-primary" />
+                  Experiência do Paciente
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Mensagem pós-agendamento</Label>
+                  <Textarea 
+                    value={settings.post_booking_message || ''} 
+                    onChange={(e) => onSettingsChange('post_booking_message', e.target.value)} 
+                    placeholder="Obrigado pelo agendamento. Em breve entrarei em contato."
+                    rows={3}
+                  />
+                  <p className="text-xs text-muted-foreground">Exibida após confirmação do agendamento</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Redirecionamento após agendar</Label>
+                  <Select value={settings.post_booking_redirect || 'default'} onValueChange={(value) => onSettingsChange('post_booking_redirect', value)}>
+                    <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="default">Página padrão do sistema</SelectItem>
+                      <SelectItem value="message">Mensagem personalizada</SelectItem>
+                      <SelectItem value="external">Link externo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {settings.post_booking_redirect === 'external' && (
+                  <div className="space-y-2">
+                    <Label>URL de Redirecionamento</Label>
+                    <Input 
+                      value={settings.post_booking_url || ''} 
+                      onChange={(e) => onSettingsChange('post_booking_url', e.target.value)} 
+                      placeholder="https://wa.me/5511999999999"
+                    />
+                    <p className="text-xs text-muted-foreground">Ex: Link do WhatsApp ou página de confirmação externa</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <div className="pt-2">
+              <Button onClick={onSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
+                {isLoading ? "Salvando..." : "Salvar Configurações Avançadas"}
+              </Button>
+            </div>
           </PlanProtection>
         </TabsContent>
       </Tabs>

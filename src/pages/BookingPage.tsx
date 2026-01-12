@@ -653,9 +653,20 @@ const BookingPage = () => {
         </div>
       </div>
       {config.custom_footer && (
-        <footer className="bg-background/80 backdrop-blur-sm border-t mt-8">
+        <footer 
+          className="mt-8 border-t"
+          style={{ 
+            backgroundColor: config.footer_bg_color || '#f9fafb',
+            borderTopColor: `${config.footer_bg_color || '#f9fafb'}20`
+          }}
+        >
           <div className="container mx-auto px-4 py-4 text-center">
-            <p className="text-xs sm:text-sm text-muted-foreground">{config.custom_footer}</p>
+            <p 
+              className="text-xs sm:text-sm"
+              style={{ color: config.footer_text_color || '#6b7280' }}
+            >
+              {config.custom_footer}
+            </p>
           </div>
         </footer>
       )}
