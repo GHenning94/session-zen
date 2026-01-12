@@ -398,8 +398,11 @@ export default function Upgrade() {
                     style={isCurrent ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
                 {isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
                 {plan.id === 'pro' && !isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
-                {billingCycle === 'annual' && plan.id !== 'basico' && (
-                  <Badge variant="secondary" className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs">Economize 2 meses</Badge>
+                {billingCycle === 'annual' && plan.id !== 'basico' && !isCurrent && plan.id !== 'pro' && (
+                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
+                )}
+                {billingCycle === 'annual' && plan.id === 'pro' && !isCurrent && (
+                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform translate-x-12 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
                 )}
                  <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
