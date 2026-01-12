@@ -37,6 +37,10 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
   }
 
   const copyLink = () => {
+    if (!settings.slug?.trim()) {
+      toast({ title: "Slug obrigatório", description: "Preencha o seu slug personalizado antes de copiar o link.", variant: "destructive" })
+      return
+    }
     navigator.clipboard.writeText(bookingLink)
     setLinkCopied(true)
     setTimeout(() => setLinkCopied(false), 2000)
@@ -44,6 +48,10 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
   }
 
   const previewLink = () => {
+    if (!settings.slug?.trim()) {
+      toast({ title: "Slug obrigatório", description: "Preencha o seu slug personalizado antes de visualizar a página.", variant: "destructive" })
+      return
+    }
     window.open(bookingLink, '_blank')
   }
 
@@ -221,6 +229,13 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                       onCheckedChange={(checked) => onSettingsChange('show_bank_details', checked)} 
                     />
                     <Label>Mostrar Dados Bancários</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch 
+                      checked={settings.show_payment_methods ?? true} 
+                      onCheckedChange={(checked) => onSettingsChange('show_payment_methods', checked)} 
+                    />
+                    <Label>Mostrar Métodos Aceitos</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <Switch 

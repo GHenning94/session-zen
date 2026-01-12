@@ -441,13 +441,15 @@ const BookingPage = () => {
                   </div>
                 )}
 
-                <div className="flex flex-wrap gap-2">
-                  {paymentMethods.map(method => (
-                    <span key={method.key} className="px-2 sm:px-3 py-1 bg-primary/10 text-primary rounded-full text-xs sm:text-sm">
-                      {method.label}
-                    </span>
-                  ))}
-                </div>
+                {(config.show_payment_methods !== false) && paymentMethods.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {paymentMethods.map(method => (
+                      <span key={method.key} className="px-2 sm:px-3 py-1 bg-primary/10 text-primary rounded-full text-xs sm:text-sm">
+                        {method.label}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Contato */}
