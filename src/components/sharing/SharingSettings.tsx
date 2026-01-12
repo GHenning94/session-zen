@@ -341,7 +341,24 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
                   </div>
                   <div className="space-y-2">
                     <Label>Cor de Fundo do Rodapé</Label>
-                    <Input type="color" value={settings.footer_bg_color || '#f9fafb'} onChange={(e) => onSettingsChange('footer_bg_color', e.target.value)} />
+                    <div className="flex items-center gap-3">
+                      <Input 
+                        type="color" 
+                        value={settings.footer_bg_color === 'transparent' ? '#f9fafb' : (settings.footer_bg_color || '#f9fafb')} 
+                        onChange={(e) => onSettingsChange('footer_bg_color', e.target.value)} 
+                        disabled={settings.footer_bg_color === 'transparent'}
+                        className={settings.footer_bg_color === 'transparent' ? 'opacity-50' : ''}
+                      />
+                      <label className="flex items-center gap-2 text-sm cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={settings.footer_bg_color === 'transparent'} 
+                          onChange={(e) => onSettingsChange('footer_bg_color', e.target.checked ? 'transparent' : '#f9fafb')}
+                          className="rounded border-border"
+                        />
+                        Transparente
+                      </label>
+                    </div>
                   </div>
                 </div>
               </CardContent>
