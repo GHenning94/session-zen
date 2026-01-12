@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Loader2, Sparkles } from 'lucide-react'
+import { Loader2, Sparkles, Star } from 'lucide-react'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { toast } from 'sonner'
@@ -101,6 +101,7 @@ const Welcome = () => {
                 <li>• Até 4 sessões por cliente</li>
                 <li>• Agenda básica</li>
                 <li>• Suporte por email</li>
+                <li>• Sem cartão de crédito</li>
               </ul>
 
               <Button
@@ -122,11 +123,12 @@ const Welcome = () => {
           </Card>
 
           {/* Planos Premium - Redireciona para Stripe */}
-          <Card className="border-primary shadow-lg">
+          <Card className="border-primary shadow-lg relative">
             <CardHeader className="text-center pb-4">
               <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                <span className="bg-primary text-primary-foreground text-sm font-semibold px-4 py-1 rounded-full">
-                  Recomendado
+                <span className="bg-primary text-primary-foreground text-sm font-semibold px-4 py-1 rounded-full flex items-center gap-1">
+                  <Star className="h-3 w-3" />
+                  Mais Popular
                 </span>
               </div>
               <div className="mx-auto mb-4 w-16 h-16 rounded-full bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center text-white">

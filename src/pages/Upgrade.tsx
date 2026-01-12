@@ -372,18 +372,18 @@ export default function Upgrade() {
           {/* Seletor de Ciclo de Cobrança */}
           <div className="flex items-center justify-center gap-3 mt-8">
             <span className={`text-sm ${billingCycle === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Mensal</span>
-            <label className="relative inline-flex items-center cursor-pointer">
-              <input
-                type="checkbox"
-                checked={billingCycle === 'annual'}
-                onChange={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-                className="sr-only peer"
-              />
-              <div className="w-11 h-6 bg-muted peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary peer-focus:ring-offset-2 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
-            </label>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={billingCycle === 'annual'}
+              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+              className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform translate-x-0.5 data-[checked=true]:translate-x-[22px]" data-checked={billingCycle === 'annual'} style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
+            </button>
             <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
             {billingCycle === 'annual' && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700 transition-colors hover:bg-green-700 hover:text-white">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
                 Economize 2 meses
               </Badge>
             )}
@@ -397,8 +397,7 @@ export default function Upgrade() {
               <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${isCurrent ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
                     style={isCurrent ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
                 {isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
-                {plan.recommended && !isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
-                {plan.annualDiscount && !isCurrent && (<Badge variant="secondary" className="absolute -top-3 right-3">{plan.annualDiscount}</Badge>)}
+                {plan.id === 'pro' && !isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
                  <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
                   <div>
@@ -412,7 +411,12 @@ export default function Upgrade() {
                     </div>
                     {billingCycle === 'annual' && plan.annualPrice && (
                       <p className="text-sm text-muted-foreground mt-2">
-                        Cobrança anual de {plan.annualPrice}
+                        Cobrado {plan.annualPrice} uma vez por ano
+                      </p>
+                    )}
+                    {plan.id === 'basico' && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Sem cartão de crédito
                       </p>
                     )}
                   </div>
@@ -428,10 +432,10 @@ export default function Upgrade() {
                   </ul>
                   <Button 
                     size="lg" 
-                    className={`w-full ${plan.recommended && !isCurrent ? 'bg-primary hover:bg-primary/90' : ''}`}
+                    className="w-full"
                     onClick={() => handlePlanClick(plan)}
                     disabled={loading || isCurrent}
-                    variant={isCurrent ? "secondary" : plan.recommended ? "default" : "outline"}
+                    variant={isCurrent ? "secondary" : (plan.planLevel > currentPlanLevel && plan.id !== 'basico') ? "default" : "outline"}
                     style={isCurrent ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                   >
                     {loading ? (
