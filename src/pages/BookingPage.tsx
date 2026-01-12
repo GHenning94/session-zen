@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useParams } from "react-router-dom"
 import { useTheme } from "next-themes"
 import { useColorTheme } from "@/hooks/useColorTheme"
@@ -10,10 +10,11 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle, Calendar } from "lucide-react"
+import { Clock, User, Info, CreditCard, DollarSign, Mail, Phone, CheckCircle, Calendar, Shield, Sparkles, Star } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { getThemeStyles, TRUST_BADGES_CONFIG, DEFAULT_BLOCK_ORDER } from "@/utils/bookingThemes"
 
 const BookingPage = () => {
   const { slug } = useParams<{ slug?: string }>()
@@ -264,6 +265,19 @@ const BookingPage = () => {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p>Carregando...</p></div>
   if (!profile || !config) return <div className="min-h-screen flex items-center justify-center"><p>Perfil não encontrado.</p></div>
 
+  // Obter estilos do tema
+  const theme = getThemeStyles(config.visual_theme)
+  const hasCustomColors = config.background_color || config.brand_color
+  
+  // Determinar valores mínimos para "a partir de"
+  const minValue = config.valor_primeira_consulta && config.valor_primeira_consulta < config.valor_padrao 
+    ? config.valor_primeira_consulta 
+    : config.valor_padrao
+
+  // Verificar se é hoje para destacar
+  const today = new Date().toISOString().split('T')[0]
+  const isTodaySelected = selectedDate === today
+
   console.log("Config:", config);
   console.log("Profile:", profile);
 
@@ -345,18 +359,34 @@ const BookingPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-muted/40" style={{
-      backgroundColor: config.background_color || undefined,
+    <div className="min-h-screen" style={{
+      backgroundColor: hasCustomColors ? (config.background_color || undefined) : theme.background,
       backgroundImage: config.background_image ? `url(${config.background_image})` : undefined,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      color: config.brand_color || undefined
+      color: hasCustomColors ? (config.brand_color || undefined) : theme.text
     }}>
       {config.custom_css && <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(config.custom_css) }} />}
       <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-4xl">
+        
+        {/* Mensagem de Acolhimento (Premium) */}
+        {config.welcome_message && (
+          <div className="mb-6 p-4 rounded-lg text-center" style={{ 
+            backgroundColor: hasCustomColors ? 'rgba(255,255,255,0.1)' : `${theme.accent}10`,
+            borderColor: hasCustomColors ? undefined : theme.border 
+          }}>
+            <p className="text-sm sm:text-base italic" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>
+              "{config.welcome_message}"
+            </p>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Informações do Terapeuta */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg" style={{ 
+            backgroundColor: hasCustomColors ? undefined : theme.cardBackground,
+            borderColor: hasCustomColors ? undefined : theme.border
+          }}>
             <CardHeader className="text-center p-4 sm:p-6">
               {config.logo_url && (
                 <img src={config.logo_url} alt="Logo" className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 rounded-full object-cover" />
@@ -372,52 +402,101 @@ const BookingPage = () => {
                 />
               )}
               {(config.show_page_title !== false) && (
-                <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: config.brand_color }}>
+                <CardTitle className="text-lg sm:text-xl lg:text-2xl" style={{ color: hasCustomColors ? config.brand_color : theme.text }}>
                   {config.page_title || `${profile.nome}`}
                 </CardTitle>
               )}
               {(config.show_page_description !== false) && (
-                <CardDescription className="text-sm sm:text-base">
+                <CardDescription className="text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>
                   {config.page_description || profile.bio || `${profile.profissao}`}
                 </CardDescription>
               )}
             </CardHeader>
             <CardContent className="space-y-4 sm:space-y-6 p-4 sm:p-6">
               {profile.bio && (config.show_bio !== false) && (
-                <div className="p-3 sm:p-4 bg-muted/50 rounded-lg">
-                  <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: hasCustomColors ? 'rgba(0,0,0,0.05)' : `${theme.accent}08` }}>
+                  <h3 className="font-semibold mb-2 flex items-center gap-2 text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.text }}>
                     <Info className="w-4 h-4" />
                     Sobre
                   </h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">{profile.bio}</p>
+                  <p className="text-xs sm:text-sm" style={{ color: hasCustomColors ? undefined : theme.textMuted }}>{profile.bio}</p>
                 </div>
               )}
 
               {profile.especialidade && (config.show_specialty !== false) && (
                 <div>
-                  <h3 className="font-semibold mb-2 text-sm sm:text-base">Especialidade</h3>
-                  <Badge variant="secondary" className="text-xs sm:text-sm">{profile.especialidade}</Badge>
+                  <h3 className="font-semibold mb-2 text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.text }}>Especialidade</h3>
+                  <Badge variant="secondary" className="text-xs sm:text-sm" style={{ backgroundColor: `${theme.accent}15`, color: theme.accent }}>{profile.especialidade}</Badge>
+                </div>
+              )}
+
+              {/* Selos de Confiança (Premium) */}
+              {config.trust_badges && config.trust_badges.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {config.trust_badges.map((badgeId: string) => {
+                    const badge = TRUST_BADGES_CONFIG[badgeId]
+                    if (!badge) return null
+                    return (
+                      <div 
+                        key={badgeId} 
+                        className="flex items-center gap-1 px-2 py-1 rounded-full text-xs"
+                        style={{ backgroundColor: `${theme.accent}10`, color: theme.accent }}
+                      >
+                        <span>{badge.icon}</span>
+                        <span>{badge.label}</span>
+                      </div>
+                    )
+                  })}
                 </div>
               )}
 
               <div className="space-y-3">
-                <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base">
+                <h3 className="font-semibold flex items-center gap-2 text-sm sm:text-base" style={{ color: hasCustomColors ? undefined : theme.text }}>
                   <CreditCard className="w-4 h-4" />
                   Formas de Pagamento
                 </h3>
                 
-                {(config.show_price !== false) && (config.show_session_value !== false) && config.valor_padrao && (
-                  <div className="p-3 sm:p-4 bg-primary/10 rounded-lg">
-                    <p className="font-semibold text-primary text-sm sm:text-base">Valor da Sessão: R$ {config.valor_padrao.toFixed(2)}</p>
+                {/* Exibição "A partir de" (Premium) */}
+                {config.show_starting_from_value && minValue && !config.show_values_after_selection && (
+                  <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: `${theme.accent}10` }}>
+                    <p className="font-semibold text-sm sm:text-base" style={{ color: theme.accent }}>
+                      A partir de R$ {minValue.toFixed(2)}
+                    </p>
+                  </div>
+                )}
+                
+                {/* Valor normal da sessão */}
+                {!config.show_values_after_selection && !config.show_starting_from_value && (config.show_price !== false) && (config.show_session_value !== false) && config.valor_padrao && (
+                  <div className="p-3 sm:p-4 rounded-lg" style={{ backgroundColor: `${theme.accent}10` }}>
+                    <p className="font-semibold text-sm sm:text-base" style={{ color: theme.accent }}>Valor da Sessão: R$ {config.valor_padrao.toFixed(2)}</p>
                     {config.show_duration && config.duracao_sessao && (
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-1">Duração: {config.duracao_sessao} minutos</p>
+                      <p className="text-xs sm:text-sm mt-1" style={{ color: theme.textMuted }}>Duração: {config.duracao_sessao} minutos</p>
                     )}
                   </div>
                 )}
 
-                {(config.show_first_consultation_value !== false) && config.valor_primeira_consulta && (
-                  <div className="p-3 sm:p-4 bg-primary/5 rounded-lg border border-primary/20">
-                    <p className="font-semibold text-primary text-sm sm:text-base">Valor da 1ª Consulta: R$ {config.valor_primeira_consulta.toFixed(2)}</p>
+                {/* Primeira Consulta com destaque (Premium) */}
+                {!config.show_values_after_selection && (config.show_first_consultation_value !== false) && config.valor_primeira_consulta && (
+                  <div 
+                    className={`p-3 sm:p-4 rounded-lg border ${config.highlight_first_consultation || config.emphasize_first_consultation ? 'ring-2 ring-offset-2 ring-primary' : ''}`}
+                    style={{ 
+                      backgroundColor: `${theme.accent}05`,
+                      borderColor: `${theme.accent}30`
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      {(config.highlight_first_consultation || config.emphasize_first_consultation) && (
+                        <Sparkles className="w-4 h-4" style={{ color: theme.accent }} />
+                      )}
+                      <p className="font-semibold text-sm sm:text-base" style={{ color: theme.accent }}>
+                        Valor da 1ª Consulta: R$ {config.valor_primeira_consulta.toFixed(2)}
+                      </p>
+                    </div>
+                    {(config.highlight_first_consultation || config.emphasize_first_consultation) && (
+                      <Badge variant="outline" className="mt-2 text-xs" style={{ borderColor: theme.accent, color: theme.accent }}>
+                        <Star className="w-3 h-3 mr-1" /> Oferta especial
+                      </Badge>
+                    )}
                   </div>
                 )}
 

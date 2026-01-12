@@ -9,11 +9,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useSubscription } from "@/hooks/useSubscription"
 import { PlanProtection } from "@/components/PlanProtection"
-import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X, RotateCcw } from "lucide-react"
+import { Link, Copy, Eye, Palette, Settings, Crown, Camera, User, X, RotateCcw, Sparkles } from "lucide-react"
 import { useToast } from "@/hooks/use-toast" 
 import { ImageCropper } from "@/components/ImageCropper"
 import { ImageUpload } from "@/components/sharing/ImageUpload"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import PremiumDesignSettings from "./PremiumDesignSettings"
 
 interface SharingSettingsProps {
   settings: Record<string, any>;
@@ -108,9 +109,12 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
         </CardContent>
       </Card>
       <Tabs defaultValue="basic" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="basic">Básico</TabsTrigger>
           <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>Design{!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
+          <TabsTrigger value="premium" className="flex items-center gap-1">
+            <Sparkles className="w-3 h-3" />Premium
+          </TabsTrigger>
           <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>Avançado{!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
         </TabsList>
         <TabsContent value="basic" className="space-y-4">
@@ -308,6 +312,18 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
               </CardContent>
             </Card>
           </PlanProtection>
+        </TabsContent>
+
+        <TabsContent value="premium" className="space-y-4">
+          <PremiumDesignSettings 
+            settings={settings} 
+            onSettingsChange={onSettingsChange} 
+          />
+          <div className="pt-2">
+            <Button onClick={onSave} disabled={isLoading} size="sm" className="bg-gradient-primary hover:opacity-90">
+              {isLoading ? "Salvando..." : "Salvar Configurações Premium"}
+            </Button>
+          </div>
         </TabsContent>
         
         <TabsContent value="advanced" className="space-y-4">

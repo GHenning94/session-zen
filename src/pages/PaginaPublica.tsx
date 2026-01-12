@@ -97,7 +97,7 @@ const PaginaPublica = () => {
         if (value.fim > horarioFimGlobal) horarioFimGlobal = value.fim;
       });
 
-      const configFields = ['duracao_sessao', 'intervalo_sessoes', 'valor_padrao', 'valor_primeira_consulta', 'aceita_pix', 'aceita_cartao', 'aceita_transferencia', 'aceita_dinheiro', 'chave_pix', 'dados_bancarios', 'email_contato_pacientes', 'whatsapp_contato_pacientes', 'slug', 'page_title', 'page_description', 'brand_color', 'background_color', 'logo_url', 'background_image', 'custom_css', 'custom_domain', 'custom_footer', 'booking_enabled', 'show_price', 'show_duration', 'show_photo'];
+      const configFields = ['duracao_sessao', 'intervalo_sessoes', 'valor_padrao', 'valor_primeira_consulta', 'aceita_pix', 'aceita_cartao', 'aceita_transferencia', 'aceita_dinheiro', 'chave_pix', 'dados_bancarios', 'email_contato_pacientes', 'whatsapp_contato_pacientes', 'slug', 'page_title', 'page_description', 'brand_color', 'background_color', 'logo_url', 'background_image', 'custom_css', 'custom_domain', 'custom_footer', 'booking_enabled', 'show_price', 'show_duration', 'show_photo', 'show_specialty', 'show_bio', 'show_session_value', 'show_first_consultation_value', 'show_pix_key', 'show_bank_details', 'show_payment_methods', 'show_page_title', 'show_page_description', 'visual_theme', 'block_order', 'highlight_first_consultation', 'highlight_today_slots', 'highlight_promotional_value', 'welcome_message', 'show_pre_booking_notes', 'pre_booking_notes', 'cta_text', 'trust_badges', 'show_values_after_selection', 'show_starting_from_value', 'emphasize_first_consultation'];
       
       const configData: Record<string, any> = { 
         dias_atendimento_array: diasAtendimentoArray,
