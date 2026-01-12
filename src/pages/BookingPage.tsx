@@ -319,9 +319,13 @@ const BookingPage = () => {
   if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p>Carregando...</p></div>
   if (!profile || !config) return <div className="min-h-screen flex items-center justify-center"><p>Perfil não encontrado.</p></div>
 
-  // Obter estilos do tema
-  const theme = getThemeStyles(config.visual_theme)
-  const hasCustomColors = config.background_color || config.brand_color
+  // Obter estilos do tema - prioridade: tema visual > cores customizadas > padrão
+  const hasVisualTheme = config.visual_theme && config.visual_theme !== 'minimal_clean'
+  const hasCustomColors = !hasVisualTheme && (
+    (config.background_color && config.background_color !== '#ffffff' && config.background_color !== '#f8fafc') ||
+    (config.brand_color && config.brand_color !== '#0f172a')
+  )
+  const theme = getThemeStyles(hasVisualTheme ? config.visual_theme : (hasCustomColors ? undefined : 'minimal_clean'))
   
   // Determinar valores mínimos para "a partir de"
   const minValue = config.valor_primeira_consulta && config.valor_primeira_consulta < config.valor_padrao 
@@ -419,11 +423,15 @@ const BookingPage = () => {
 
   return (
     <div className="min-h-screen" style={{
-      backgroundColor: hasCustomColors ? (config.background_color || undefined) : theme.background,
+      backgroundColor: hasVisualTheme 
+        ? theme.background 
+        : (hasCustomColors && config.background_color ? config.background_color : theme.background),
       backgroundImage: config.background_image ? `url(${config.background_image})` : undefined,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
-      color: hasCustomColors ? (config.brand_color || undefined) : theme.text
+      color: hasVisualTheme 
+        ? theme.text 
+        : (hasCustomColors && config.brand_color ? config.brand_color : theme.text)
     }}>
       {config.custom_css && <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(config.custom_css) }} />}
       <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-4xl">
