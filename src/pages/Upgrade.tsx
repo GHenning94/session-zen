@@ -398,6 +398,9 @@ export default function Upgrade() {
                     style={isCurrent ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
                 {isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
                 {plan.id === 'pro' && !isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
+                {billingCycle === 'annual' && plan.id !== 'basico' && (
+                  <Badge variant="secondary" className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs">Economize 2 meses</Badge>
+                )}
                  <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
                   <div>
@@ -432,10 +435,10 @@ export default function Upgrade() {
                   </ul>
                   <Button 
                     size="lg" 
-                    className="w-full"
+                    className={`w-full ${plan.planLevel > currentPlanLevel && plan.id !== 'basico' ? 'bg-gradient-primary text-white hover:opacity-90' : ''}`}
                     onClick={() => handlePlanClick(plan)}
                     disabled={loading || isCurrent}
-                    variant={isCurrent ? "secondary" : (plan.planLevel > currentPlanLevel && plan.id !== 'basico') ? "default" : "outline"}
+                    variant={isCurrent ? "secondary" : plan.planLevel < currentPlanLevel ? "outline" : plan.id === 'basico' ? "outline" : "default"}
                     style={isCurrent ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                   >
                     {loading ? (
