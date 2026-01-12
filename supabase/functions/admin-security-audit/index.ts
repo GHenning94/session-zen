@@ -175,12 +175,12 @@ Deno.serve(async (req) => {
       .from('evolucoes')
       .select('id, evolucao')
 
-    // Tabela: profiles (bio, banco, agencia, conta, cpf_cnpj)
+    // Tabela: profiles (bio, banco, agencia, conta, cpf_cnpj, chave_pix, nome_titular, tipo_pessoa, tipo_conta)
     const { data: profilesData } = await supabase
       .from('profiles')
-      .select('id, bio, banco, agencia, conta, cpf_cnpj')
+      .select('id, bio, banco, agencia, conta, cpf_cnpj, chave_pix, nome_titular, tipo_pessoa, tipo_conta')
 
-    // Tabela: configuracoes (chave_pix, dados_bancarios)
+    // Tabela: configuracoes (chave_pix, dados_bancarios) - legado, dados bancários agora ficam em profiles
     const { data: configData } = await supabase
       .from('configuracoes')
       .select('id, chave_pix, dados_bancarios')
@@ -242,6 +242,10 @@ Deno.serve(async (req) => {
           agencia: profilesData?.filter(p => hasData(p.agencia)).length || 0,
           conta: profilesData?.filter(p => hasData(p.conta)).length || 0,
           cpf_cnpj: profilesData?.filter(p => hasData(p.cpf_cnpj)).length || 0,
+          chave_pix: profilesData?.filter(p => hasData(p.chave_pix)).length || 0,
+          nome_titular: profilesData?.filter(p => hasData(p.nome_titular)).length || 0,
+          tipo_pessoa: profilesData?.filter(p => hasData(p.tipo_pessoa)).length || 0,
+          tipo_conta: profilesData?.filter(p => hasData(p.tipo_conta)).length || 0,
         },
         configuracoes: {
           total: configData?.length || 0,
@@ -265,7 +269,7 @@ Deno.serve(async (req) => {
         (sessionsData?.filter(s => hasData(s.anotacoes)).length || 0) +
         (sessionNotesData?.filter(s => hasData(s.notes)).length || 0) +
         (evolucoesData?.filter(e => hasData(e.evolucao)).length || 0) +
-        (profilesData?.filter(p => hasData(p.bio) || hasData(p.banco) || hasData(p.agencia) || hasData(p.conta) || hasData(p.cpf_cnpj)).length || 0) +
+        (profilesData?.filter(p => hasData(p.bio) || hasData(p.banco) || hasData(p.agencia) || hasData(p.conta) || hasData(p.cpf_cnpj) || hasData(p.chave_pix) || hasData(p.nome_titular)).length || 0) +
         (configData?.filter(c => hasData(c.chave_pix) || hasData(c.dados_bancarios)).length || 0) +
         (packagesData?.filter(p => hasData(p.observacoes)).length || 0) +
         (paymentsData?.filter(p => hasData(p.observacoes)).length || 0),

@@ -307,31 +307,48 @@ const AdminSecurity = () => {
                 </div>
               </div>
 
-              {/* Profiles */}
+              {/* Profiles - Dados Bancários */}
               <div className="p-4 rounded-lg border bg-card">
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <Badge variant="outline">profiles</Badge>
+                  <Badge variant="outline">profiles (dados bancários)</Badge>
+                  <span className="text-xs text-muted-foreground">({report?.sensitive_data.tables?.profiles?.total || 0} total)</span>
                 </h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">bio:</span>
-                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.bio || 0}</span>
+                    <span className="text-muted-foreground">nome_titular:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.nome_titular || 0}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">cpf_cnpj:</span>
                     <span className="font-medium">{report?.sensitive_data.tables?.profiles?.cpf_cnpj || 0}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">dados bancários:</span>
-                    <span className="font-medium">{(report?.sensitive_data.tables?.profiles?.banco || 0) + (report?.sensitive_data.tables?.profiles?.agencia || 0) + (report?.sensitive_data.tables?.profiles?.conta || 0)}</span>
+                    <span className="text-muted-foreground">banco:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.banco || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">agencia:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.agencia || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">conta:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.conta || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">chave_pix:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.chave_pix || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">bio:</span>
+                    <span className="font-medium">{report?.sensitive_data.tables?.profiles?.bio || 0}</span>
                   </div>
                 </div>
               </div>
 
-              {/* Configuracoes */}
-              <div className="p-4 rounded-lg border bg-card">
+              {/* Configuracoes - Legado */}
+              <div className="p-4 rounded-lg border bg-card opacity-60">
                 <h4 className="font-semibold mb-2 flex items-center gap-2">
-                  <Badge variant="outline">configuracoes</Badge>
+                  <Badge variant="secondary">configuracoes (legado)</Badge>
                 </h4>
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
@@ -342,6 +359,9 @@ const AdminSecurity = () => {
                     <span className="text-muted-foreground">dados_bancarios:</span>
                     <span className="font-medium">{report?.sensitive_data.tables?.configuracoes?.dados_bancarios || 0}</span>
                   </div>
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    Dados bancários agora ficam em profiles
+                  </p>
                 </div>
               </div>
 
