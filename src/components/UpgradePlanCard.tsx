@@ -441,6 +441,9 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     Mais Popular
                   </Badge>
                 )}
+                {isAnnual && plan.id !== 'basico' && (
+                  <Badge variant="secondary" className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs">Economize 2 meses</Badge>
+                )}
                 <CardHeader className="pb-3 pt-5">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -474,11 +477,11 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     ))}
                   </ul>
                   <Button 
-                    className="w-full" 
+                    className={`w-full ${isUpgrade ? 'bg-gradient-primary text-white hover:opacity-90' : ''}`}
                     size="sm"
                     onClick={() => !isCurrentPlanAndCycle && handleChangePlan(plan)}
                     disabled={loading || isCurrentPlanAndCycle}
-                    variant={isCurrentPlanAndCycle ? "secondary" : isUpgrade ? "default" : "outline"}
+                    variant={isCurrentPlanAndCycle ? "secondary" : plan.planLevel < currentPlanLevel ? "outline" : plan.id === 'basico' ? "outline" : "default"}
                     style={isCurrentPlanAndCycle ? { pointerEvents: 'none', opacity: 0.6, cursor: 'not-allowed' } : undefined}
                   >
                     {loading ? 'Processando...' : isCurrentPlanAndCycle ? 'Plano Atual' : plan.planLevel < currentPlanLevel ? 'Fazer Downgrade' : `Escolher ${plan.name}`}

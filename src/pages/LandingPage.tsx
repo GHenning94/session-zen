@@ -827,6 +827,9 @@ const LandingPage = () => {
                   <div key={plan.planId} className="fade-in-item">
                     <Card className={`flex flex-col h-full relative shadow-soft transition-all duration-300 ${plan.planId === 'pro' ? 'ring-2 ring-primary scale-105 shadow-primary hover:scale-110' : 'hover:-translate-y-2'}`}>
                       {plan.planId === 'pro' && <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-white">Mais Popular</Badge>}
+                      {billingCycle === 'annually' && plan.planId !== 'basico' && (
+                        <Badge variant="secondary" className="absolute top-3 right-3 bg-green-100 text-green-700 text-xs">Economize 2 meses</Badge>
+                      )}
                       <CardHeader className="text-center pt-8">
                         <CardTitle className="text-2xl">{plan.name}</CardTitle>
                         <div className="flex items-center justify-center my-4 h-16">
@@ -836,6 +839,11 @@ const LandingPage = () => {
                             {billingCycle === 'annually' && plan.annualTotal > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
                                 Cobrado R$ {plan.annualTotal.toFixed(2).replace('.', ',')} uma vez por ano
+                              </p>
+                            )}
+                            {plan.planId === 'basico' && (
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Sem cartão de crédito
                               </p>
                             )}
                           </div>
