@@ -255,8 +255,8 @@ const PremiumDesignSettings = ({ settings, onSettingsChange }: PremiumDesignSett
                   <p className="text-xs text-muted-foreground">Enfatiza horários disponíveis para o dia atual</p>
                 </div>
                 <Switch 
-                  checked={settings.highlight_today_slots ?? false}
-                  onCheckedChange={(checked) => onSettingsChange('highlight_today_slots', checked)}
+                  checked={settings.highlight_available_today ?? false}
+                  onCheckedChange={(checked) => onSettingsChange('highlight_available_today', checked)}
                 />
               </div>
               <div className="flex items-center justify-between">
@@ -265,8 +265,8 @@ const PremiumDesignSettings = ({ settings, onSettingsChange }: PremiumDesignSett
                   <p className="text-xs text-muted-foreground">Adiciona destaque visual a preços especiais</p>
                 </div>
                 <Switch 
-                  checked={settings.highlight_promotional_value ?? false}
-                  onCheckedChange={(checked) => onSettingsChange('highlight_promotional_value', checked)}
+                  checked={settings.highlight_promo_value ?? false}
+                  onCheckedChange={(checked) => onSettingsChange('highlight_promo_value', checked)}
                 />
               </div>
             </div>
@@ -327,8 +327,8 @@ const PremiumDesignSettings = ({ settings, onSettingsChange }: PremiumDesignSett
               <div className="space-y-2">
                 <Label className="font-medium">Texto do Botão de Agendamento (CTA)</Label>
                 <Input 
-                  value={settings.cta_text || ''}
-                  onChange={(e) => onSettingsChange('cta_text', e.target.value.replace(/<[^>]*>/g, ''))}
+                  value={settings.cta_button_text || ''}
+                  onChange={(e) => onSettingsChange('cta_button_text', e.target.value.replace(/<[^>]*>/g, ''))}
                   placeholder="Confirmar Agendamento"
                   maxLength={50}
                 />
