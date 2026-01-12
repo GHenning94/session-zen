@@ -34,6 +34,15 @@ const AdminSecurity = () => {
 
   useEffect(() => {
     fetchSecurityReport()
+    
+    // Auto-refresh a cada 30 segundos quando a página está visível
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && !isRunningAudit) {
+        fetchSecurityReport()
+      }
+    }, 30000)
+    
+    return () => clearInterval(interval)
   }, [])
 
   const downloadReport = () => {
@@ -85,27 +94,33 @@ const AdminSecurity = () => {
             <p className="text-muted-foreground mt-1">
               Auditoria completa AES-256-GCM e verificação de segurança
             </p>
+            {report && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Última verificação: {new Date().toLocaleString('pt-BR')}
+              </p>
+            )}
           </div>
           <div className="flex gap-2">
             <Button
-              variant="outline"
+              variant="default"
               onClick={fetchSecurityReport}
               disabled={isRunningAudit}
-              className="gap-2"
+              className="gap-2 bg-primary"
             >
               {isRunningAudit ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Executando...
+                  Atualizando...
                 </>
               ) : (
                 <>
                   <RefreshCw className="h-4 w-4" />
-                  Executar Testes
+                  Atualizar Dados
                 </>
               )}
             </Button>
             <Button
+              variant="outline"
               onClick={downloadReport}
               disabled={!report}
               className="gap-2"

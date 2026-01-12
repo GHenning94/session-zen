@@ -1260,7 +1260,8 @@ const Configuracoes = () => {
                       if (error) throw error;
                       if (!data?.success) throw new Error(data?.error || 'Erro ao validar dados');
                       
-                      handleSettingsChange('bank_details_validated', true);
+                      // Recarregar os dados para atualizar o estado com os dados descriptografados
+                      await loadData();
                       toast({ title: "Dados bancários validados e salvos com sucesso!" });
                     } catch (error: any) {
                       console.error('Erro ao salvar dados bancários:', error);
