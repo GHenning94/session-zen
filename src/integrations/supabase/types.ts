@@ -367,10 +367,13 @@ export type Database = {
           aceita_transferencia: boolean | null
           background_color: string | null
           background_image: string | null
+          block_order: string[] | null
           booking_enabled: boolean | null
           brand_color: string | null
+          cancellation_policy: string | null
           chave_pix: string | null
           created_at: string
+          cta_button_text: string | null
           custom_css: string | null
           custom_domain: string | null
           custom_footer: string | null
@@ -378,6 +381,13 @@ export type Database = {
           dias_atendimento_array: string[] | null
           duracao_sessao: number | null
           email_contato_pacientes: string | null
+          emphasize_first_consultation: boolean | null
+          footer_bg_color: string | null
+          footer_text_color: string | null
+          hide_filled_slots: boolean | null
+          highlight_available_today: boolean | null
+          highlight_first_consultation: boolean | null
+          highlight_promo_value: boolean | null
           horario_fim: string | null
           horario_inicio: string | null
           horarios_por_dia: Json | null
@@ -386,20 +396,35 @@ export type Database = {
           lembrete_24h: boolean | null
           link_agendamento: string | null
           logo_url: string | null
+          max_daily_appointments: number | null
+          max_future_days: number | null
+          min_advance_hours: number | null
           notificacao_email: boolean | null
           notificacao_whatsapp: boolean | null
           page_description: string | null
           page_title: string | null
+          post_booking_message: string | null
+          post_booking_redirect: string | null
+          post_booking_url: string | null
+          pre_booking_notes: string | null
           relatorio_semanal: boolean | null
+          require_policy_confirmation: boolean | null
           show_duration: boolean | null
+          show_payment_methods: boolean | null
           show_photo: boolean | null
+          show_pre_booking_notes: boolean | null
           show_price: boolean | null
+          show_starting_from_value: boolean | null
+          show_values_after_selection: boolean | null
           slug: string | null
           theme_preference: string | null
+          trust_badges: string[] | null
           updated_at: string
           user_id: string
           valor_padrao: number | null
           valor_primeira_consulta: number | null
+          visual_theme: string | null
+          welcome_message: string | null
           whatsapp_contato_pacientes: string | null
         }
         Insert: {
@@ -409,10 +434,13 @@ export type Database = {
           aceita_transferencia?: boolean | null
           background_color?: string | null
           background_image?: string | null
+          block_order?: string[] | null
           booking_enabled?: boolean | null
           brand_color?: string | null
+          cancellation_policy?: string | null
           chave_pix?: string | null
           created_at?: string
+          cta_button_text?: string | null
           custom_css?: string | null
           custom_domain?: string | null
           custom_footer?: string | null
@@ -420,6 +448,13 @@ export type Database = {
           dias_atendimento_array?: string[] | null
           duracao_sessao?: number | null
           email_contato_pacientes?: string | null
+          emphasize_first_consultation?: boolean | null
+          footer_bg_color?: string | null
+          footer_text_color?: string | null
+          hide_filled_slots?: boolean | null
+          highlight_available_today?: boolean | null
+          highlight_first_consultation?: boolean | null
+          highlight_promo_value?: boolean | null
           horario_fim?: string | null
           horario_inicio?: string | null
           horarios_por_dia?: Json | null
@@ -428,20 +463,35 @@ export type Database = {
           lembrete_24h?: boolean | null
           link_agendamento?: string | null
           logo_url?: string | null
+          max_daily_appointments?: number | null
+          max_future_days?: number | null
+          min_advance_hours?: number | null
           notificacao_email?: boolean | null
           notificacao_whatsapp?: boolean | null
           page_description?: string | null
           page_title?: string | null
+          post_booking_message?: string | null
+          post_booking_redirect?: string | null
+          post_booking_url?: string | null
+          pre_booking_notes?: string | null
           relatorio_semanal?: boolean | null
+          require_policy_confirmation?: boolean | null
           show_duration?: boolean | null
+          show_payment_methods?: boolean | null
           show_photo?: boolean | null
+          show_pre_booking_notes?: boolean | null
           show_price?: boolean | null
+          show_starting_from_value?: boolean | null
+          show_values_after_selection?: boolean | null
           slug?: string | null
           theme_preference?: string | null
+          trust_badges?: string[] | null
           updated_at?: string
           user_id: string
           valor_padrao?: number | null
           valor_primeira_consulta?: number | null
+          visual_theme?: string | null
+          welcome_message?: string | null
           whatsapp_contato_pacientes?: string | null
         }
         Update: {
@@ -451,10 +501,13 @@ export type Database = {
           aceita_transferencia?: boolean | null
           background_color?: string | null
           background_image?: string | null
+          block_order?: string[] | null
           booking_enabled?: boolean | null
           brand_color?: string | null
+          cancellation_policy?: string | null
           chave_pix?: string | null
           created_at?: string
+          cta_button_text?: string | null
           custom_css?: string | null
           custom_domain?: string | null
           custom_footer?: string | null
@@ -462,6 +515,13 @@ export type Database = {
           dias_atendimento_array?: string[] | null
           duracao_sessao?: number | null
           email_contato_pacientes?: string | null
+          emphasize_first_consultation?: boolean | null
+          footer_bg_color?: string | null
+          footer_text_color?: string | null
+          hide_filled_slots?: boolean | null
+          highlight_available_today?: boolean | null
+          highlight_first_consultation?: boolean | null
+          highlight_promo_value?: boolean | null
           horario_fim?: string | null
           horario_inicio?: string | null
           horarios_por_dia?: Json | null
@@ -470,20 +530,35 @@ export type Database = {
           lembrete_24h?: boolean | null
           link_agendamento?: string | null
           logo_url?: string | null
+          max_daily_appointments?: number | null
+          max_future_days?: number | null
+          min_advance_hours?: number | null
           notificacao_email?: boolean | null
           notificacao_whatsapp?: boolean | null
           page_description?: string | null
           page_title?: string | null
+          post_booking_message?: string | null
+          post_booking_redirect?: string | null
+          post_booking_url?: string | null
+          pre_booking_notes?: string | null
           relatorio_semanal?: boolean | null
+          require_policy_confirmation?: boolean | null
           show_duration?: boolean | null
+          show_payment_methods?: boolean | null
           show_photo?: boolean | null
+          show_pre_booking_notes?: boolean | null
           show_price?: boolean | null
+          show_starting_from_value?: boolean | null
+          show_values_after_selection?: boolean | null
           slug?: string | null
           theme_preference?: string | null
+          trust_badges?: string[] | null
           updated_at?: string
           user_id?: string
           valor_padrao?: number | null
           valor_primeira_consulta?: number | null
+          visual_theme?: string | null
+          welcome_message?: string | null
           whatsapp_contato_pacientes?: string | null
         }
         Relationships: []
