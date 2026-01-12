@@ -1,9 +1,36 @@
 import { createClient } from "npm:@supabase/supabase-js@2.45.0";
-import { encrypt, decrypt } from '../_shared/encryption.ts'
+import { encrypt, decrypt, isEncrypted } from '../_shared/encryption.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session',
+}
+
+// Helper function to count encryption status for records
+function countEncryptionStatus(records: any[], fields: string[]): { total: number; encrypted: number; plaintext: number; null_values: number } {
+  let encrypted = 0
+  let plaintext = 0
+  let nullCount = 0
+
+  for (const record of records) {
+    for (const field of fields) {
+      const value = record[field]
+      if (!value) {
+        nullCount++
+      } else if (typeof value === 'string' && isEncrypted(value)) {
+        encrypted++
+      } else {
+        plaintext++
+      }
+    }
+  }
+
+  return {
+    total: records.length * fields.length,
+    encrypted,
+    plaintext,
+    null_values: nullCount
+  }
 }
 
 Deno.serve(async (req) => {
@@ -89,7 +116,7 @@ Deno.serve(async (req) => {
     }
 
     if (operation === 'encrypt' && table && data) {
-      // Encrypt data
+      // Encrypt data - using shared sensitive fields config
       const sensitiveFields: Record<string, string[]> = {
         clients: ['dados_clinicos', 'historico', 'tratamento', 'cpf'],
         anamneses: [
@@ -98,7 +125,11 @@ Deno.serve(async (req) => {
           'observacoes_adicionais'
         ],
         evolucoes: ['evolucao'],
-        session_notes: ['notes']
+        session_notes: ['notes'],
+        profiles: ['bio', 'banco', 'agencia', 'conta', 'cpf_cnpj', 'chave_pix', 'nome_titular'],
+        configuracoes: ['chave_pix', 'dados_bancarios'],
+        packages: ['observacoes'],
+        payments: ['observacoes']
       }
 
       const fields = sensitiveFields[table] || []
@@ -117,7 +148,7 @@ Deno.serve(async (req) => {
     }
 
     if (operation === 'decrypt' && table && data) {
-      // Decrypt data
+      // Decrypt data - using shared sensitive fields config
       const sensitiveFields: Record<string, string[]> = {
         clients: ['dados_clinicos', 'historico', 'tratamento', 'cpf'],
         anamneses: [
@@ -126,7 +157,11 @@ Deno.serve(async (req) => {
           'observacoes_adicionais'
         ],
         evolucoes: ['evolucao'],
-        session_notes: ['notes']
+        session_notes: ['notes'],
+        profiles: ['bio', 'banco', 'agencia', 'conta', 'cpf_cnpj', 'chave_pix', 'nome_titular'],
+        configuracoes: ['chave_pix', 'dados_bancarios'],
+        packages: ['observacoes'],
+        payments: ['observacoes']
       }
 
       const fields = sensitiveFields[table] || []
@@ -149,41 +184,72 @@ Deno.serve(async (req) => {
     }
 
     if (operation === 'get-stats') {
-      // Get encryption statistics
-      const { data: clients, error: clientsError } = await supabaseClient
+      // Get encryption statistics for ALL tables with sensitive data
+      const stats: Record<string, { total: number; encrypted: number; plaintext: number; null_values: number }> = {}
+      
+      // Check clients table
+      const { data: clients } = await supabaseClient
         .from('clients')
         .select('dados_clinicos, historico, tratamento')
         .limit(1000)
+      
+      stats.clients = countEncryptionStatus(clients || [], ['dados_clinicos', 'historico', 'tratamento'])
 
-      if (clientsError) throw clientsError
+      // Check profiles table (bank details)
+      const { data: profiles } = await supabaseClient
+        .from('profiles')
+        .select('bio, banco, agencia, conta, cpf_cnpj, chave_pix, nome_titular')
+        .limit(1000)
+      
+      stats.profiles = countEncryptionStatus(profiles || [], ['bio', 'banco', 'agencia', 'conta', 'cpf_cnpj', 'chave_pix', 'nome_titular'])
 
-      let encryptedCount = 0
-      let plaintextCount = 0
-      let nullCount = 0
+      // Check anamneses table
+      const { data: anamneses } = await supabaseClient
+        .from('anamneses')
+        .select('queixa_principal, motivo_consulta, historico_medico, historico_familiar, antecedentes_relevantes, diagnostico_inicial, observacoes_adicionais')
+        .limit(1000)
+      
+      stats.anamneses = countEncryptionStatus(anamneses || [], ['queixa_principal', 'motivo_consulta', 'historico_medico', 'historico_familiar', 'antecedentes_relevantes', 'diagnostico_inicial', 'observacoes_adicionais'])
 
-      for (const client of clients || []) {
-        for (const field of ['dados_clinicos', 'historico', 'tratamento']) {
-          const value = client[field as keyof typeof client]
-          if (!value) {
-            nullCount++
-          } else if (typeof value === 'string' && value.length > 50 && value.includes('=')) {
-            // Likely encrypted (base64)
-            encryptedCount++
-          } else {
-            plaintextCount++
-          }
-        }
+      // Check evolucoes table
+      const { data: evolucoes } = await supabaseClient
+        .from('evolucoes')
+        .select('evolucao')
+        .limit(1000)
+      
+      stats.evolucoes = countEncryptionStatus(evolucoes || [], ['evolucao'])
+
+      // Check session_notes table
+      const { data: sessionNotes } = await supabaseClient
+        .from('session_notes')
+        .select('notes')
+        .limit(1000)
+      
+      stats.session_notes = countEncryptionStatus(sessionNotes || [], ['notes'])
+
+      // Calculate totals
+      let totalFields = 0
+      let totalEncrypted = 0
+      let totalPlaintext = 0
+      let totalNull = 0
+
+      for (const tableStat of Object.values(stats)) {
+        totalFields += tableStat.total
+        totalEncrypted += tableStat.encrypted
+        totalPlaintext += tableStat.plaintext
+        totalNull += tableStat.null_values
       }
 
       return new Response(
         JSON.stringify({ 
           success: true,
           stats: {
-            total_fields: (clients?.length || 0) * 3,
-            encrypted: encryptedCount,
-            plaintext: plaintextCount,
-            null_values: nullCount
-          }
+            total_fields: totalFields,
+            encrypted: totalEncrypted,
+            plaintext: totalPlaintext,
+            null_values: totalNull
+          },
+          byTable: stats
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )
