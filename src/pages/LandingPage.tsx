@@ -826,9 +826,9 @@ const LandingPage = () => {
                 {plans.map((plan) => (
                   <div key={plan.planId} className="fade-in-item">
                     <Card className={`flex flex-col h-full relative shadow-soft transition-all duration-300 ${plan.planId === 'pro' ? 'ring-2 ring-primary scale-105 shadow-primary hover:scale-110' : 'hover:-translate-y-2'}`}>
-                      {/* Badge central - Mais Popular */}
+                      {/* Badge esquerda - Mais Popular (ajustado para não sobrepor com Economize) */}
                       {plan.planId === 'pro' && (
-                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-[10px] px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap"><Star className="h-2.5 w-2.5" />Mais Popular</Badge>
+                        <Badge className={`absolute -top-3 ${billingCycle === 'annually' ? 'left-2' : 'left-1/2 transform -translate-x-1/2'} bg-primary text-[10px] px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap`}><Star className="h-2.5 w-2.5" />Mais Popular</Badge>
                       )}
                       {/* Badge direita - Economize */}
                       {billingCycle === 'annually' && plan.planId !== 'basico' && (
