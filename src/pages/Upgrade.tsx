@@ -392,6 +392,13 @@ export default function Upgrade() {
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {plans.map((plan) => {
             const isCurrent = plan.current
+            // Verificar se usuário já está no maior plano (Premium) - não deve mostrar upgrade para si mesmo
+            const isCurrentPlanPremium = currentPlan === 'premium'
+            const isCurrentPlanAnnual = currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'
+            // Se está no Premium Anual e o card é Premium (mensal), não é upgrade - é o mesmo plano
+            const isSamePlanDifferentCycle = plan.id === currentPlan && !isCurrent
+            // Não mostrar como upgrade se é o mesmo plano em ciclo diferente ou se está no plano máximo
+            const shouldShowAsUpgrade = plan.planLevel > currentPlanLevel && plan.id !== 'basico' && !isSamePlanDifferentCycle
             
             return (
               <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${isCurrent ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
@@ -441,11 +448,11 @@ export default function Upgrade() {
                   </ul>
                   <Button 
                     size="lg" 
-                    className={`w-full ${plan.planLevel > currentPlanLevel && plan.id !== 'basico' ? 'bg-gradient-primary text-white hover:opacity-90' : ''}`}
+                    className={`w-full ${shouldShowAsUpgrade ? 'bg-gradient-primary text-white hover:opacity-90' : ''}`}
                     onClick={() => handlePlanClick(plan)}
-                    disabled={loading || isCurrent}
-                    variant={isCurrent ? "secondary" : plan.planLevel < currentPlanLevel ? "outline" : plan.id === 'basico' ? "outline" : "default"}
-                    style={isCurrent ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
+                    disabled={loading || isCurrent || isSamePlanDifferentCycle}
+                    variant={isCurrent || isSamePlanDifferentCycle ? "secondary" : plan.planLevel < currentPlanLevel ? "outline" : plan.id === 'basico' ? "outline" : "default"}
+                    style={isCurrent || isSamePlanDifferentCycle ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                   >
                     {loading ? (
                       <>
@@ -454,6 +461,8 @@ export default function Upgrade() {
                       </>
                     ) : isCurrent ? (
                       'Plano Atual'
+                    ) : isSamePlanDifferentCycle ? (
+                      'Seu Plano'
                     ) : plan.planLevel < currentPlanLevel ? (
                       'Fazer Downgrade'
                     ) : plan.id === 'basico' ? (
