@@ -383,7 +383,7 @@ export default function Upgrade() {
             </button>
             <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
             {billingCycle === 'annual' && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">
+              <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">
                 Economize 2 meses
               </Badge>
             )}
@@ -405,7 +405,7 @@ export default function Upgrade() {
                 )}
                 {/* Badge direita - Economize */}
                 {billingCycle === 'annual' && plan.id !== 'basico' && (
-                  <Badge variant="secondary" className="absolute -top-3 right-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
+                  <Badge className="absolute -top-3 right-2 bg-green-500 text-white text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
                 )}
                  <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
