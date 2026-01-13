@@ -153,6 +153,100 @@ export async function decryptSensitiveData(
 }
 
 /**
+ * Decrypt multiple items in a single batch call - MUCH more efficient
+ */
+export async function decryptSensitiveDataBatch<T extends Record<string, any>>(
+  table: string,
+  dataArray: T[]
+): Promise<T[]> {
+  if (!dataArray || dataArray.length === 0) {
+    return dataArray;
+  }
+
+  try {
+    // Get current session to ensure we have auth
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session?.access_token) {
+      console.error('[Encryption] No active session for batch decryption');
+      return dataArray.map(item => handleDecryptionFallback(table, item) as T);
+    }
+
+    const { data: result, error } = await supabase.functions.invoke('encrypt-data', {
+      body: {
+        table,
+        batch: dataArray,
+        operation: 'decrypt'
+      },
+      headers: {
+        Authorization: `Bearer ${sessionData.session.access_token}`
+      }
+    });
+
+    if (error) {
+      console.error('[Encryption] Failed to batch decrypt data:', error);
+      return dataArray.map(item => handleDecryptionFallback(table, item) as T);
+    }
+
+    if (!result?.data || !Array.isArray(result.data)) {
+      console.error('[Encryption] Invalid response from batch decrypt function');
+      return dataArray.map(item => handleDecryptionFallback(table, item) as T);
+    }
+
+    return result.data as T[];
+  } catch (error) {
+    console.error('[Encryption] Error calling batch decrypt function:', error);
+    return dataArray.map(item => handleDecryptionFallback(table, item) as T);
+  }
+}
+
+/**
+ * Encrypt multiple items in a single batch call
+ */
+export async function encryptSensitiveDataBatch<T extends Record<string, any>>(
+  table: string,
+  dataArray: T[]
+): Promise<T[]> {
+  if (!dataArray || dataArray.length === 0) {
+    return dataArray;
+  }
+
+  try {
+    // Get current session to ensure we have auth
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData?.session?.access_token) {
+      console.error('[Encryption] No active session for batch encryption');
+      return dataArray;
+    }
+
+    const { data: result, error } = await supabase.functions.invoke('encrypt-data', {
+      body: {
+        table,
+        batch: dataArray,
+        operation: 'encrypt'
+      },
+      headers: {
+        Authorization: `Bearer ${sessionData.session.access_token}`
+      }
+    });
+
+    if (error) {
+      console.error('[Encryption] Failed to batch encrypt data:', error);
+      return dataArray;
+    }
+
+    if (!result?.data || !Array.isArray(result.data)) {
+      console.error('[Encryption] Invalid response from batch encrypt function');
+      return dataArray;
+    }
+
+    return result.data as T[];
+  } catch (error) {
+    console.error('[Encryption] Error calling batch encrypt function:', error);
+    return dataArray;
+  }
+}
+
+/**
  * Sanitize logs by masking sensitive fields
  */
 export function safeLog(
