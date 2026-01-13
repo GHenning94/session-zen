@@ -26,7 +26,7 @@ import DOMPurify from 'dompurify'
 import { getSessionStatusColor, getSessionStatusLabel } from '@/utils/sessionStatusUtils'
 import { cn } from '@/lib/utils'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
-import { decryptSensitiveData } from '@/utils/encryptionMiddleware'
+import { decryptSensitiveDataBatch } from '@/utils/encryptionMiddleware'
 
 interface Client {
   id: string
@@ -138,46 +138,43 @@ export default function Prontuarios() {
     try {
       setLoading(true)
       
-      // Carregar clientes ativos
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('id, nome, email, telefone, avatar_url, ativo, created_at')
-        .eq('user_id', user.id)
-        .eq('ativo', true)
-        .order('nome')
+      // Execute all queries in parallel for faster loading
+      const [clientsResult, anamnesesResult, evolucoesResult] = await Promise.all([
+        // Carregar clientes ativos
+        supabase
+          .from('clients')
+          .select('id, nome, email, telefone, avatar_url, ativo, created_at')
+          .eq('user_id', user.id)
+          .eq('ativo', true)
+          .order('nome'),
+        
+        // Carregar anamneses
+        supabase
+          .from('anamneses')
+          .select('id, client_id, queixa_principal, motivo_consulta, historico_medico, historico_familiar, antecedentes_relevantes, diagnostico_inicial, observacoes_adicionais, created_at, updated_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        
+        // Carregar evoluções
+        supabase
+          .from('evolucoes')
+          .select('id, client_id, session_id, data_sessao, evolucao, created_at, updated_at')
+          .eq('user_id', user.id)
+          .order('data_sessao', { ascending: false })
+      ])
 
-      if (clientsError) throw clientsError
+      if (clientsResult.error) throw clientsResult.error
+      if (anamnesesResult.error) throw anamnesesResult.error
+      if (evolucoesResult.error) throw evolucoesResult.error
 
-      // Carregar anamneses
-      const { data: anamnesesData, error: anamnesisError } = await supabase
-        .from('anamneses')
-        .select('id, client_id, queixa_principal, motivo_consulta, historico_medico, historico_familiar, antecedentes_relevantes, diagnostico_inicial, observacoes_adicionais, created_at, updated_at')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-
-      if (anamnesisError) throw anamnesisError
-
-      // CORREÇÃO: Descriptografar anamneses
-      const decryptedAnamneses = await Promise.all(
-        (anamnesesData || []).map(anamnese => decryptSensitiveData('anamneses', anamnese))
-      )
-
-      // Carregar evoluções
-      const { data: evolucoesData, error: evolucoesError } = await supabase
-        .from('evolucoes')
-        .select('id, client_id, session_id, data_sessao, evolucao, created_at, updated_at')
-        .eq('user_id', user.id)
-        .order('data_sessao', { ascending: false })
-
-      if (evolucoesError) throw evolucoesError
-
-      // CORREÇÃO: Descriptografar evoluções
-      const decryptedEvolucoes = await Promise.all(
-        (evolucoesData || []).map(evolucao => decryptSensitiveData('evolucoes', evolucao))
-      )
+      // Batch decrypt anamneses and evolucoes in parallel (single API call each)
+      const [decryptedAnamneses, decryptedEvolucoes] = await Promise.all([
+        decryptSensitiveDataBatch('anamneses', anamnesesResult.data || []),
+        decryptSensitiveDataBatch('evolucoes', evolucoesResult.data || [])
+      ])
 
       // Carregar sessões para associar com as evoluções
-      const sessionIds = evolucoesData?.filter(e => e.session_id).map(e => e.session_id) || []
+      const sessionIds = evolucoesResult.data?.filter(e => e.session_id).map(e => e.session_id) || []
       let sessionsData: any[] = []
       
       if (sessionIds.length > 0) {
@@ -197,7 +194,7 @@ export default function Prontuarios() {
         session: evolucao.session_id ? sessionsData.find(s => s.id === evolucao.session_id) : null
       })) as Evolucao[]
 
-      setClients(clientsData || [])
+      setClients(clientsResult.data || [])
       setAnamneses(decryptedAnamneses as Anamnese[])
       setEvolucoes(evolucoesWithSessions)
     } catch (error) {

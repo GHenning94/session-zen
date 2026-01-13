@@ -14,6 +14,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPaymentMethod } from '@/utils/formatters';
+import { decryptSensitiveDataBatch } from '@/utils/encryptionMiddleware';
 
 export default function Pacotes() {
   const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
@@ -102,7 +103,10 @@ export default function Pacotes() {
         
       if (refreshError) throw refreshError;
       
-      return refreshedData as (Package & { clients: { id: string; nome: string } })[];
+      // Batch decrypt packages (observacoes field)
+      const decryptedPackages = await decryptSensitiveDataBatch('packages', refreshedData || []);
+      
+      return decryptedPackages as (Package & { clients: { id: string; nome: string } })[];
     },
     staleTime: 0,
     refetchOnMount: 'always'
