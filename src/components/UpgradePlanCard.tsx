@@ -432,19 +432,19 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
               >
                 {/* Badge central - Plano Atual ou Mais Popular */}
                 {isCurrentPlanAndCycle && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 hover:bg-green-500 text-white text-xs px-2 py-0.5 whitespace-nowrap">
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 hover:bg-green-500 text-white text-[10px] px-1.5 py-0.5 whitespace-nowrap">
                     Plano Atual
                   </Badge>
                 )}
                 {isPro && !isCurrentPlanAndCycle && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-xs px-2 py-0.5 flex items-center gap-1 whitespace-nowrap">
-                    <Star className="h-3 w-3" />
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap">
+                    <Star className="h-2.5 w-2.5" />
                     Mais Popular
                   </Badge>
                 )}
                 {/* Badge direita - Economize */}
                 {isAnnual && plan.id !== 'basico' && (
-                  <Badge variant="secondary" className="absolute -top-3 right-3 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
+                  <Badge variant="secondary" className="absolute -top-3 right-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
                 )}
                 <CardHeader className="pb-3 pt-5">
                   <div className="flex items-center gap-3">
