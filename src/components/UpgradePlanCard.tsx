@@ -73,7 +73,12 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
   const navigate = useNavigate()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly')
+  
+  // Se o plano atual é anual (pro ou premium), força o ciclo para anual
+  const isCurrentPlanAnnual = currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'
+  const shouldHideSwitch = isCurrentPlanAnnual && (currentPlan === 'pro' || currentPlan === 'premium')
+  
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>(shouldHideSwitch ? 'annual' : 'monthly')
   const [downgradeModal, setDowngradeModal] = useState<{
     open: boolean
     targetPlan: Plan | null
@@ -377,31 +382,33 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Seletor de Ciclo de Cobrança */}
-          <div className="flex items-center justify-center gap-2 md:gap-3 py-2 flex-wrap">
-            <span className={`text-xs md:text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
-              Mensal
-            </span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={billingCycle === 'annual'}
-              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
-            </button>
-            <div className="flex items-center gap-1">
-              <span className={`text-xs md:text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                Anual
+          {/* Seletor de Ciclo de Cobrança - esconder se plano atual é anual (pro ou premium) */}
+          {!shouldHideSwitch && (
+            <div className="flex items-center justify-center gap-2 md:gap-3 py-2 flex-wrap">
+              <span className={`text-xs md:text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                Mensal
               </span>
-              {billingCycle === 'annual' && (
-                <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">
-                  Economize 2 meses
-                </Badge>
-              )}
+              <button
+                type="button"
+                role="switch"
+                aria-checked={billingCycle === 'annual'}
+                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+                className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
+              </button>
+              <div className="flex items-center gap-1">
+                <span className={`text-xs md:text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                  Anual
+                </span>
+                {billingCycle === 'annual' && (
+                  <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">
+                    Economize 2 meses
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {displayedPlans.map((plan) => {
             const price = billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice
