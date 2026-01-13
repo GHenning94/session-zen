@@ -826,13 +826,13 @@ const LandingPage = () => {
                 {plans.map((plan) => (
                   <div key={plan.planId} className="fade-in-item">
                     <Card className={`flex flex-col h-full relative shadow-soft transition-all duration-300 ${plan.planId === 'pro' ? 'ring-2 ring-primary scale-105 shadow-primary hover:scale-110' : 'hover:-translate-y-2'}`}>
-                      {/* Badge esquerda - Mais Popular (ajustado para não sobrepor com Economize) */}
+                      {/* Badge central - Mais Popular */}
                       {plan.planId === 'pro' && (
-                        <Badge className={`absolute -top-3 ${billingCycle === 'annually' ? 'left-2' : 'left-1/2 transform -translate-x-1/2'} bg-primary text-[10px] px-1.5 py-0.5 flex items-center gap-1 whitespace-nowrap`}><Star className="h-2.5 w-2.5" />Mais Popular</Badge>
+                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-[9px] px-1 py-0.5 flex items-center gap-0.5 whitespace-nowrap"><Star className="h-2 w-2" />Mais Popular</Badge>
                       )}
                       {/* Badge direita - Economize */}
                       {billingCycle === 'annually' && plan.planId !== 'basico' && (
-                        <Badge className="absolute -top-3 right-2 bg-green-500 text-white text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
+                        <Badge className="absolute -top-3 right-2 bg-green-500 text-white text-[9px] px-1 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
                       )}
                       <CardHeader className="text-center pt-8">
                         <CardTitle className="text-2xl">{plan.name}</CardTitle>
