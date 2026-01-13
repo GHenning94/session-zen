@@ -383,7 +383,7 @@ export default function Upgrade() {
             </button>
             <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
             {billingCycle === 'annual' && (
-              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+              <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">
                 Economize 2 meses
               </Badge>
             )}
@@ -396,14 +396,18 @@ export default function Upgrade() {
             return (
               <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${isCurrent ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
                     style={isCurrent ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
-                {isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>)}
-                {plan.id === 'pro' && !isCurrent && (<Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary"><Star className="h-3 w-3 mr-1" />Mais Popular</Badge>)}
-                {billingCycle === 'annual' && plan.id !== 'basico' && !isCurrent && plan.id !== 'pro' && (
-                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
-                )}
-                {billingCycle === 'annual' && plan.id === 'pro' && !isCurrent && (
-                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform translate-x-12 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
-                )}
+                {/* Badges container */}
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 flex items-center gap-1">
+                  {isCurrent && (
+                    <Badge className="text-white text-xs px-2 py-0.5" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>
+                  )}
+                  {plan.id === 'pro' && !isCurrent && (
+                    <Badge className="bg-primary text-xs px-2 py-0.5 flex items-center gap-1"><Star className="h-3 w-3" />Mais Popular</Badge>
+                  )}
+                  {billingCycle === 'annual' && plan.id !== 'basico' && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">Economize 2 meses</Badge>
+                  )}
+                </div>
                  <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
                   <div>

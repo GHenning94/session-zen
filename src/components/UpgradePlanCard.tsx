@@ -396,7 +396,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                 Anual
               </span>
               {billingCycle === 'annual' && (
-                <Badge variant="secondary" className="text-[10px] md:text-xs bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">
                   Economize 2 meses
                 </Badge>
               )}
@@ -430,23 +430,23 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     : 'border-border hover:border-primary/50'
                 }`}
               >
-                {isCurrentPlanAndCycle && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-500 hover:bg-green-500 text-white px-3 py-1 text-xs font-medium">
-                    Plano Atual
-                  </Badge>
-                )}
-                {isPro && !isCurrentPlanAndCycle && (
-                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground px-3 py-1 text-xs font-medium flex items-center gap-1">
-                    <Star className="h-3 w-3" />
-                    Mais Popular
-                  </Badge>
-                )}
-                {isAnnual && plan.id !== 'basico' && !isCurrentPlanAndCycle && !isPro && (
-                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
-                )}
-                {isAnnual && isPro && !isCurrentPlanAndCycle && (
-                  <Badge variant="secondary" className="absolute -top-3 left-1/2 transform translate-x-12 bg-green-100 text-green-700 text-xs px-2 py-0.5">Economize 2 meses</Badge>
-                )}
+                {/* Badges container */}
+                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 flex items-center gap-1">
+                  {isCurrentPlanAndCycle && (
+                    <Badge className="bg-green-500 hover:bg-green-500 text-white text-xs px-2 py-0.5">
+                      Plano Atual
+                    </Badge>
+                  )}
+                  {isPro && !isCurrentPlanAndCycle && (
+                    <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5 flex items-center gap-1">
+                      <Star className="h-3 w-3" />
+                      Mais Popular
+                    </Badge>
+                  )}
+                  {isAnnual && plan.id !== 'basico' && (
+                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">Economize 2 meses</Badge>
+                  )}
+                </div>
                 <CardHeader className="pb-3 pt-5">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-primary/10 text-primary">
