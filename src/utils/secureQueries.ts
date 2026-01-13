@@ -1,9 +1,10 @@
 import { supabase } from '@/integrations/supabase/client';
-import { decryptSensitiveData } from './encryptionMiddleware';
+import { decryptSensitiveData, decryptSensitiveDataBatch } from './encryptionMiddleware';
 
 /**
  * Utilitário para buscar e descriptografar dados de forma segura
  * Centraliza a lógica de descriptografia para evitar dados criptografados sendo exibidos
+ * Usa batch decryption para arrays (muito mais rápido)
  */
 
 /**
@@ -55,7 +56,7 @@ export async function fetchDecryptedClient(clientId: string) {
 }
 
 /**
- * Busca e descriptografa lista de clientes
+ * Busca e descriptografa lista de clientes (usando batch)
  */
 export async function fetchDecryptedClients(userId: string) {
   const { data, error } = await supabase
@@ -65,18 +66,14 @@ export async function fetchDecryptedClients(userId: string) {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada cliente
-  const decryptedClients = await Promise.all(
-    data.map(client => decryptSensitiveData('clients', client))
-  );
-  
-  return decryptedClients;
+  // Usar batch decryption - uma única chamada para todos os clientes
+  return await decryptSensitiveDataBatch('clients', data);
 }
 
 /**
- * Busca e descriptografa anamneses
+ * Busca e descriptografa anamneses (usando batch)
  */
 export async function fetchDecryptedAnamneses(userId: string) {
   const { data, error } = await supabase
@@ -86,14 +83,10 @@ export async function fetchDecryptedAnamneses(userId: string) {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada anamnese
-  const decryptedAnamneses = await Promise.all(
-    data.map(anamnese => decryptSensitiveData('anamneses', anamnese))
-  );
-  
-  return decryptedAnamneses;
+  // Usar batch decryption
+  return await decryptSensitiveDataBatch('anamneses', data);
 }
 
 /**
@@ -113,7 +106,7 @@ export async function fetchDecryptedAnamnese(anamneseId: string) {
 }
 
 /**
- * Busca e descriptografa evoluções
+ * Busca e descriptografa evoluções (usando batch)
  */
 export async function fetchDecryptedEvolucoes(userId: string) {
   const { data, error } = await supabase
@@ -123,14 +116,10 @@ export async function fetchDecryptedEvolucoes(userId: string) {
     .order('data_sessao', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada evolução
-  const decryptedEvolucoes = await Promise.all(
-    data.map(evolucao => decryptSensitiveData('evolucoes', evolucao))
-  );
-  
-  return decryptedEvolucoes;
+  // Usar batch decryption
+  return await decryptSensitiveDataBatch('evolucoes', data);
 }
 
 /**
@@ -150,7 +139,7 @@ export async function fetchDecryptedEvolucao(evolucaoId: string) {
 }
 
 /**
- * Busca e descriptografa notas de sessão
+ * Busca e descriptografa notas de sessão (usando batch)
  */
 export async function fetchDecryptedSessionNotes(userId: string) {
   const { data, error } = await supabase
@@ -164,18 +153,14 @@ export async function fetchDecryptedSessionNotes(userId: string) {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada nota
-  const decryptedNotes = await Promise.all(
-    data.map(note => decryptSensitiveData('session_notes', note))
-  );
-  
-  return decryptedNotes;
+  // Usar batch decryption
+  return await decryptSensitiveDataBatch('session_notes', data);
 }
 
 /**
- * Busca e descriptografa sessões com anotações
+ * Busca e descriptografa sessões com anotações (usando batch)
  */
 export async function fetchDecryptedSessions(userId: string) {
   const { data, error } = await supabase
@@ -192,18 +177,14 @@ export async function fetchDecryptedSessions(userId: string) {
     .order('horario', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada sessão
-  const decryptedSessions = await Promise.all(
-    data.map(session => decryptSensitiveData('sessions', session))
-  );
-  
-  return decryptedSessions;
+  // Usar batch decryption
+  return await decryptSensitiveDataBatch('sessions', data);
 }
 
 /**
- * Busca e descriptografa pacotes
+ * Busca e descriptografa pacotes (usando batch)
  */
 export async function fetchDecryptedPackages(userId: string) {
   const { data, error } = await supabase
@@ -213,18 +194,14 @@ export async function fetchDecryptedPackages(userId: string) {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada pacote
-  const decryptedPackages = await Promise.all(
-    data.map(pkg => decryptSensitiveData('packages', pkg))
-  );
-  
-  return decryptedPackages;
+  // Usar batch decryption
+  return await decryptSensitiveDataBatch('packages', data);
 }
 
 /**
- * Busca e descriptografa pagamentos
+ * Busca e descriptografa pagamentos (usando batch)
  */
 export async function fetchDecryptedPayments(userId: string) {
   const { data, error } = await supabase
@@ -234,18 +211,14 @@ export async function fetchDecryptedPayments(userId: string) {
     .order('created_at', { ascending: false });
   
   if (error) throw error;
-  if (!data) return [];
+  if (!data || data.length === 0) return [];
   
-  // Descriptografar cada pagamento
-  const decryptedPayments = await Promise.all(
-    data.map(payment => decryptSensitiveData('payments', payment))
-  );
-  
-  return decryptedPayments;
+  // Usar batch decryption
+  return await decryptSensitiveDataBatch('payments', data);
 }
 
 /**
- * Descriptografa um array de dados de uma tabela específica
+ * Descriptografa um array de dados de uma tabela específica (usando batch)
  */
 export async function decryptDataArray<T extends Record<string, any>>(
   table: string,
@@ -253,7 +226,5 @@ export async function decryptDataArray<T extends Record<string, any>>(
 ): Promise<T[]> {
   if (!data || data.length === 0) return [];
   
-  return Promise.all(
-    data.map(item => decryptSensitiveData(table, item) as Promise<T>)
-  );
+  return await decryptSensitiveDataBatch(table, data);
 }

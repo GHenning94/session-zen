@@ -37,7 +37,7 @@ import { GoogleSyncBadge } from '@/components/google/GoogleSyncBadge'
 import { BatchSelectionBar, SelectableItemCheckbox } from '@/components/BatchSelectionBar'
 import { BatchEditByTypeModal, BatchEditChanges } from '@/components/BatchEditByTypeModal'
 import { recalculateMultiplePackages } from '@/utils/packageUtils'
-import { decryptSensitiveData } from '@/utils/encryptionMiddleware'
+import { decryptSensitiveDataBatch } from '@/utils/encryptionMiddleware'
 
 interface Session {
   id: string
@@ -179,75 +179,70 @@ export default function Sessoes() {
     try {
       setLoading(true)
       
-      // Carregar sessões (campos otimizados)
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select(`
-          id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
-          metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
-          clients (nome, ativo, avatar_url),
-          packages:package_id (nome, metodo_pagamento),
-          recurring_sessions:recurring_session_id (metodo_pagamento)
-        `)
-        .order('data', { ascending: false })
-        .order('horario', { ascending: false })
+      // Execute all queries in parallel for faster loading
+      const [sessionsResult, notesResult, evolucoesResult, clientsResult, packagesResult] = await Promise.all([
+        // Carregar sessões (campos otimizados)
+        supabase
+          .from('sessions')
+          .select(`
+            id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
+            metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
+            clients (nome, ativo, avatar_url),
+            packages:package_id (nome, metodo_pagamento),
+            recurring_sessions:recurring_session_id (metodo_pagamento)
+          `)
+          .order('data', { ascending: false })
+          .order('horario', { ascending: false }),
+        
+        // Carregar anotações (campos otimizados)
+        supabase
+          .from('session_notes')
+          .select(`
+            id, notes, created_at, session_id, client_id, is_private,
+            clients (nome, avatar_url),
+            sessions (data, horario, status)
+          `)
+          .order('created_at', { ascending: false }),
+        
+        // Carregar evoluções (apenas session_id para verificar linkagem)
+        supabase
+          .from('evolucoes')
+          .select('id, session_id')
+          .not('session_id', 'is', null),
+        
+        // Carregar clientes (apenas campos necessários)
+        supabase
+          .from('clients')
+          .select('id, nome, ativo, avatar_url')
+          .order('nome'),
+        
+        // Carregar pacotes para obter valor_por_sessao
+        supabase
+          .from('packages')
+          .select('id, valor_por_sessao, valor_total, total_sessoes')
+      ])
 
-      if (sessionsError) {
-        console.error('Erro ao carregar sessões:', sessionsError)
-        throw sessionsError
+      if (sessionsResult.error) {
+        console.error('Erro ao carregar sessões:', sessionsResult.error)
+        throw sessionsResult.error
       }
+      if (notesResult.error) throw notesResult.error
+      if (evolucoesResult.error) throw evolucoesResult.error
+      if (clientsResult.error) throw clientsResult.error
+      if (packagesResult.error) throw packagesResult.error
 
-      // CORREÇÃO: Descriptografar anotações das sessões
-      const decryptedSessions = await Promise.all(
-        (sessionsData || []).map(session => decryptSensitiveData('sessions', session))
-      )
+      // Batch decrypt sessions and notes in parallel (single API call each instead of N calls)
+      const [decryptedSessions, decryptedNotes] = await Promise.all([
+        decryptSensitiveDataBatch('sessions', sessionsResult.data || []),
+        decryptSensitiveDataBatch('session_notes', notesResult.data || [])
+      ])
 
-      // Carregar anotações (campos otimizados)
-      const { data: notesData, error: notesError } = await supabase
-        .from('session_notes')
-        .select(`
-          id, notes, created_at, session_id, client_id, is_private,
-          clients (nome, avatar_url),
-          sessions (data, horario, status)
-        `)
-        .order('created_at', { ascending: false })
-
-      if (notesError) throw notesError
-
-      // CORREÇÃO: Descriptografar notas de sessão
-      const decryptedNotes = await Promise.all(
-        (notesData || []).map(note => decryptSensitiveData('session_notes', note))
-      )
-
-      // Carregar evoluções (apenas session_id para verificar linkagem)
-      const { data: evolucoesData, error: evolucoesError } = await supabase
-        .from('evolucoes')
-        .select('id, session_id')
-        .not('session_id', 'is', null)
-
-      if (evolucoesError) throw evolucoesError
-
-      // Carregar clientes (apenas campos necessários)
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('id, nome, ativo, avatar_url')
-        .order('nome')
-
-      if (clientsError) throw clientsError
-
-      // Carregar pacotes para obter valor_por_sessao
-      const { data: packagesData, error: packagesError } = await supabase
-        .from('packages')
-        .select('id, valor_por_sessao, valor_total, total_sessoes')
-
-      if (packagesError) throw packagesError
-
-      // Usar dados descriptografados com type assertions
+      // Set all state at once
       setSessions(decryptedSessions as Session[])
       setSessionNotes(decryptedNotes as SessionNote[])
-      setEvolucoes(evolucoesData || [])
-      setClients(clientsData || [])
-      setPackages(packagesData || [])
+      setEvolucoes(evolucoesResult.data || [])
+      setClients(clientsResult.data || [])
+      setPackages(packagesResult.data || [])
     } catch (error) {
       console.error('Erro ao carregar dados:', error)
       toast({

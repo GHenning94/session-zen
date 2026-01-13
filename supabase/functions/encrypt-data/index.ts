@@ -38,11 +38,11 @@ serve(async (req) => {
       );
     }
 
-    const { table, data, operation } = await req.json();
+    const { table, data, operation, batch } = await req.json();
 
-    if (!table || !data || !operation) {
+    if (!table || !operation) {
       return new Response(
-        JSON.stringify({ error: 'Missing required fields: table, data, operation' }),
+        JSON.stringify({ error: 'Missing required fields: table, operation' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -64,7 +64,34 @@ serve(async (req) => {
       );
     }
 
-    // Process data
+    // Handle batch processing
+    if (batch && Array.isArray(batch)) {
+      const results = await Promise.all(
+        batch.map(async (item: Record<string, any>) => {
+          if (operation === 'encrypt') {
+            return await encryptFields(item, sensitiveFields);
+          } else {
+            return await decryptFields(item, sensitiveFields);
+          }
+        })
+      );
+      
+      console.log(`[${operation === 'encrypt' ? 'Encrypt' : 'Decrypt'}] Batch processed ${batch.length} items for table ${table}`);
+      
+      return new Response(
+        JSON.stringify({ success: true, data: results }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Handle single item processing (backward compatibility)
+    if (!data) {
+      return new Response(
+        JSON.stringify({ error: 'Missing required field: data or batch' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     let result;
     if (operation === 'encrypt') {
       result = await encryptFields(data, sensitiveFields);
