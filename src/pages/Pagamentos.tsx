@@ -40,6 +40,7 @@ import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
 import { BatchSelectionBar, SelectableItemCheckbox } from "@/components/BatchSelectionBar"
 import { ClientAvatar } from "@/components/ClientAvatar"
+import { decryptSensitiveDataBatch, decryptSensitiveData } from "@/utils/encryptionMiddleware"
 
 const Pagamentos = () => {
   const { toast } = useToast()
@@ -86,71 +87,80 @@ const [isLoading, setIsLoading] = useState(false)
     
     setIsLoading(true)
     try {
-      // Carregar sessões (apenas campos necessários + google_sync_type)
-      const { data: sessionsData, error: sessionsError } = await supabase
-        .from('sessions')
-        .select('id, data, horario, status, valor, metodo_pagamento, client_id, package_id, google_sync_type')
-        .eq('user_id', user.id)
-        .order('data', { ascending: false })
-        .order('horario', { ascending: false })
-      
-      // Carregar pagamentos com relacionamentos (campos otimizados)
-      // Inclui recurring_sessions nested para obter método de pagamento correto
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('payments')
-        .select(`
-          id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
-          observacoes, created_at, package_id, session_id, client_id,
-          packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio, metodo_pagamento),
-          sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type, recurring_sessions:recurring_session_id (metodo_pagamento))
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false })
-      
-      // Carregar sessões recorrentes para obter método de pagamento
-      const { data: recurringSessionsData } = await supabase
-        .from('recurring_sessions')
-        .select('id, metodo_pagamento')
-        .eq('user_id', user.id)
-      
-      if (paymentsError) {
-        console.error('Erro ao carregar pagamentos:', paymentsError)
-      } else {
-        setPayments(paymentsData || [])
-      }
-      
-      // Carregar clientes (apenas campos necessários)
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('id, nome, avatar_url, user_id')
-        .eq('user_id', user.id)
+      // Execute all queries in parallel for faster loading
+      const [sessionsResult, paymentsResult, recurringSessionsResult, clientsResult, profileResult] = await Promise.all([
+        // Carregar sessões (apenas campos necessários + google_sync_type)
+        supabase
+          .from('sessions')
+          .select('id, data, horario, status, valor, metodo_pagamento, client_id, package_id, google_sync_type')
+          .eq('user_id', user.id)
+          .order('data', { ascending: false })
+          .order('horario', { ascending: false }),
+        
+        // Carregar pagamentos com relacionamentos (campos otimizados)
+        supabase
+          .from('payments')
+          .select(`
+            id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
+            observacoes, created_at, package_id, session_id, client_id,
+            packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio, metodo_pagamento),
+            sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type, recurring_sessions:recurring_session_id (metodo_pagamento))
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        
+        // Carregar sessões recorrentes para obter método de pagamento
+        supabase
+          .from('recurring_sessions')
+          .select('id, metodo_pagamento')
+          .eq('user_id', user.id),
+        
+        // Carregar clientes (apenas campos necessários)
+        supabase
+          .from('clients')
+          .select('id, nome, avatar_url, user_id')
+          .eq('user_id', user.id),
+        
+        // Carregar perfil do profissional (apenas campos para recibo)
+        supabase
+          .from('profiles')
+          .select('nome, profissao, crp, telefone, cpf_cnpj, user_id')
+          .eq('user_id', user.id)
+          .maybeSingle()
+      ])
 
-      // Carregar perfil do profissional (apenas campos para recibo)
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('nome, profissao, crp, telefone, cpf_cnpj, user_id')
-        .eq('user_id', user.id)
-
-      if (sessionsError) {
-        console.error('Erro ao carregar sessões:', sessionsError)
+      if (sessionsResult.error) {
+        console.error('Erro ao carregar sessões:', sessionsResult.error)
       } else {
-        setSessions(sessionsData || [])
+        setSessions(sessionsResult.data || [])
       }
 
-      if (clientsError) {
-        console.error('Erro ao carregar clientes:', clientsError)
+      if (paymentsResult.error) {
+        console.error('Erro ao carregar pagamentos:', paymentsResult.error)
       } else {
-        setClients(clientsData || [])
+        // Batch decrypt payments (observacoes field)
+        const decryptedPayments = await decryptSensitiveDataBatch('payments', paymentsResult.data || [])
+        setPayments(decryptedPayments)
       }
 
-      if (profileError) {
-        console.error('Erro ao carregar perfil:', profileError)
+      if (clientsResult.error) {
+        console.error('Erro ao carregar clientes:', clientsResult.error)
       } else {
-        setProfiles(profileData || [])
+        setClients(clientsResult.data || [])
+      }
+
+      if (profileResult.error) {
+        console.error('Erro ao carregar perfil:', profileResult.error)
+      } else if (profileResult.data) {
+        // Decrypt single profile
+        const decryptedProfile = await decryptSensitiveData('profiles', profileResult.data)
+        setProfiles([decryptedProfile])
+      } else {
+        setProfiles([])
       }
       
       // Armazenar sessões recorrentes para referência de método de pagamento
-      setRecurringSessions(recurringSessionsData || [])
+      setRecurringSessions(recurringSessionsResult.data || [])
     } catch (error) {
       console.error('Erro:', error)
     } finally {
