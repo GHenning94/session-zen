@@ -818,7 +818,7 @@ const LandingPage = () => {
                   </div>
                   <Label htmlFor="billing-cycle" className={`${billingCycle === 'annually' ? 'text-foreground font-medium' : 'text-muted-foreground'} transition-colors cursor-pointer`}>Anual</Label>
                   {billingCycle === 'annually' && (
-                    <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">Economize 2 meses</Badge>
+                    <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">Economize 2 meses</Badge>
                   )}
                 </div>
               </div>

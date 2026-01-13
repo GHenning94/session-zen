@@ -396,7 +396,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                 Anual
               </span>
               {billingCycle === 'annual' && (
-                <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">
+                <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">
                   Economize 2 meses
                 </Badge>
               )}
@@ -442,8 +442,8 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                     Mais Popular
                   </Badge>
                 )}
-                {/* Badge direita - Economize */}
-                {isAnnual && plan.id !== 'basico' && (
+                {/* Badge direita - Economize (apenas para planos não atuais) */}
+                {isAnnual && plan.id !== 'basico' && !isCurrentPlanAndCycle && (
                   <Badge className="absolute -top-3 right-2 bg-green-500 text-white text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
                 )}
                 <CardHeader className="pb-3 pt-5">
