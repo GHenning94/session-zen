@@ -818,7 +818,7 @@ const LandingPage = () => {
                   </div>
                   <Label htmlFor="billing-cycle" className={`${billingCycle === 'annually' ? 'text-foreground font-medium' : 'text-muted-foreground'} transition-colors cursor-pointer`}>Anual</Label>
                   {billingCycle === 'annually' && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">Economize 2 meses</Badge>
+                    <Badge className="bg-green-500 text-white text-xs px-2 py-0.5">Economize 2 meses</Badge>
                   )}
                 </div>
               </div>
@@ -832,7 +832,7 @@ const LandingPage = () => {
                       )}
                       {/* Badge direita - Economize */}
                       {billingCycle === 'annually' && plan.planId !== 'basico' && (
-                        <Badge variant="secondary" className="absolute -top-3 right-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
+                        <Badge className="absolute -top-3 right-2 bg-green-500 text-white text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
                       )}
                       <CardHeader className="text-center pt-8">
                         <CardTitle className="text-2xl">{plan.name}</CardTitle>
