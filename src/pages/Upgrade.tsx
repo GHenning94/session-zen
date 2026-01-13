@@ -396,18 +396,17 @@ export default function Upgrade() {
             return (
               <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${isCurrent ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
                     style={isCurrent ? { borderColor: 'hsl(142 71% 45%)' } : {}}>
-                {/* Badges container */}
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 flex items-center gap-1">
-                  {isCurrent && (
-                    <Badge className="text-white text-xs px-2 py-0.5" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>
-                  )}
-                  {plan.id === 'pro' && !isCurrent && (
-                    <Badge className="bg-primary text-xs px-2 py-0.5 flex items-center gap-1"><Star className="h-3 w-3" />Mais Popular</Badge>
-                  )}
-                  {billingCycle === 'annual' && plan.id !== 'basico' && (
-                    <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5">Economize 2 meses</Badge>
-                  )}
-                </div>
+                {/* Badge central - Plano Atual ou Mais Popular */}
+                {isCurrent && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 text-white text-xs px-2 py-0.5 whitespace-nowrap" style={{ backgroundColor: 'hsl(142 71% 45%)' }}>Plano Atual</Badge>
+                )}
+                {plan.id === 'pro' && !isCurrent && (
+                  <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-xs px-2 py-0.5 flex items-center gap-1 whitespace-nowrap"><Star className="h-3 w-3" />Mais Popular</Badge>
+                )}
+                {/* Badge direita - Economize */}
+                {billingCycle === 'annual' && plan.id !== 'basico' && (
+                  <Badge variant="secondary" className="absolute -top-3 right-3 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
+                )}
                  <CardHeader className="text-center space-y-4">
                   <div className="flex justify-center"><div className="p-3 rounded-full bg-primary/10 text-primary">{plan.icon}</div></div>
                   <div>
