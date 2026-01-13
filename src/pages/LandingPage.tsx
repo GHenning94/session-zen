@@ -828,11 +828,11 @@ const LandingPage = () => {
                     <Card className={`flex flex-col h-full relative shadow-soft transition-all duration-300 ${plan.planId === 'pro' ? 'ring-2 ring-primary scale-105 shadow-primary hover:scale-110' : 'hover:-translate-y-2'}`}>
                       {/* Badge central - Mais Popular */}
                       {plan.planId === 'pro' && (
-                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-white text-xs px-2 py-0.5 whitespace-nowrap">Mais Popular</Badge>
+                        <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-primary text-white text-[10px] px-1.5 py-0.5 whitespace-nowrap">Mais Popular</Badge>
                       )}
                       {/* Badge direita - Economize */}
                       {billingCycle === 'annually' && plan.planId !== 'basico' && (
-                        <Badge variant="secondary" className="absolute -top-3 right-3 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs px-2 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
+                        <Badge variant="secondary" className="absolute -top-3 right-2 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-[10px] px-1.5 py-0.5 whitespace-nowrap">Economize 2 meses</Badge>
                       )}
                       <CardHeader className="text-center pt-8">
                         <CardTitle className="text-2xl">{plan.name}</CardTitle>
