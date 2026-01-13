@@ -392,13 +392,33 @@ export default function Upgrade() {
         <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {plans.map((plan) => {
             const isCurrent = plan.current
-            // Verificar se usuário já está no maior plano (Premium) - não deve mostrar upgrade para si mesmo
-            const isCurrentPlanPremium = currentPlan === 'premium'
             const isCurrentPlanAnnual = currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'
-            // Se está no Premium Anual e o card é Premium (mensal), não é upgrade - é o mesmo plano
-            const isSamePlanDifferentCycle = plan.id === currentPlan && !isCurrent
-            // Não mostrar como upgrade se é o mesmo plano em ciclo diferente ou se está no plano máximo
-            const shouldShowAsUpgrade = plan.planLevel > currentPlanLevel && plan.id !== 'basico' && !isSamePlanDifferentCycle
+            const isPlanAnnual = billingCycle === 'annual'
+            
+            // Lógica de upgrade correta:
+            // - Premium Mensal atual → Premium Anual é upgrade
+            // - Profissional Mensal atual → Profissional Anual, Premium Anual, Premium Mensal são upgrade
+            // - Profissional Anual atual → Premium Anual e Premium Mensal são upgrade
+            // - Premium Anual atual → Nenhum é upgrade (todos são downgrade)
+            
+            let shouldShowAsUpgrade = false
+            
+            if (currentPlan === 'premium' && isCurrentPlanAnnual) {
+              // Premium Anual: nenhum plano é upgrade
+              shouldShowAsUpgrade = false
+            } else if (currentPlan === 'premium' && !isCurrentPlanAnnual) {
+              // Premium Mensal: apenas Premium Anual é upgrade
+              shouldShowAsUpgrade = plan.id === 'premium' && isPlanAnnual
+            } else if (currentPlan === 'pro' && isCurrentPlanAnnual) {
+              // Profissional Anual: Premium Anual e Premium Mensal são upgrade
+              shouldShowAsUpgrade = plan.id === 'premium'
+            } else if (currentPlan === 'pro' && !isCurrentPlanAnnual) {
+              // Profissional Mensal: Profissional Anual, Premium Anual, Premium Mensal são upgrade
+              shouldShowAsUpgrade = (plan.id === 'pro' && isPlanAnnual) || plan.id === 'premium'
+            } else if (currentPlan === 'basico' || !currentPlan) {
+              // Básico ou sem plano: todos os planos pagos são upgrade
+              shouldShowAsUpgrade = plan.id !== 'basico'
+            }
             
             return (
               <Card key={plan.id} className={`flex flex-col relative transition-all duration-300 hover:shadow-lg ${isCurrent ? 'border-2' : plan.recommended ? 'border-primary shadow-lg' : ''} ${selectedPlan === plan.id ? 'ring-2 ring-primary' : ''}`} 
@@ -450,9 +470,9 @@ export default function Upgrade() {
                     size="lg" 
                     className={`w-full ${shouldShowAsUpgrade ? 'bg-gradient-primary text-white hover:opacity-90' : ''}`}
                     onClick={() => handlePlanClick(plan)}
-                    disabled={loading || isCurrent || isSamePlanDifferentCycle}
-                    variant={isCurrent || isSamePlanDifferentCycle ? "secondary" : plan.planLevel < currentPlanLevel ? "outline" : plan.id === 'basico' ? "outline" : "default"}
-                    style={isCurrent || isSamePlanDifferentCycle ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
+                    disabled={loading || isCurrent}
+                    variant={isCurrent ? "secondary" : !shouldShowAsUpgrade && plan.id !== 'basico' ? "outline" : plan.id === 'basico' ? "outline" : "default"}
+                    style={isCurrent ? { pointerEvents: 'none', opacity: 0.6 } : undefined}
                   >
                     {loading ? (
                       <>
@@ -461,9 +481,7 @@ export default function Upgrade() {
                       </>
                     ) : isCurrent ? (
                       'Plano Atual'
-                    ) : isSamePlanDifferentCycle ? (
-                      'Seu Plano'
-                    ) : plan.planLevel < currentPlanLevel ? (
+                    ) : !shouldShowAsUpgrade && plan.id !== 'basico' ? (
                       'Fazer Downgrade'
                     ) : plan.id === 'basico' ? (
                       'Acessar'
