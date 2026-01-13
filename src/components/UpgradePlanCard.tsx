@@ -381,7 +381,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-2">
           {/* Seletor de Ciclo de Cobrança - esconder se plano atual é anual (pro ou premium) */}
           {!shouldHideSwitch && (
             <div className="flex items-center justify-center gap-2 md:gap-3 py-2 flex-wrap">
