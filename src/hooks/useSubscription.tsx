@@ -17,8 +17,8 @@ interface PlanLimits {
 
 const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   basico: {
-    maxClients: 3,
-    maxSessionsPerClient: 4,
+    maxClients: 10,
+    maxSessionsPerClient: 10,
     hasHistory: false,
     hasPDFReports: false,
     hasWhatsAppIntegration: false,
@@ -26,7 +26,7 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
     hasAdvancedSettings: false
   },
   pro: {
-    maxClients: 20,
+    maxClients: 50,
     maxSessionsPerClient: Infinity,
     hasHistory: true,
     hasPDFReports: false,
