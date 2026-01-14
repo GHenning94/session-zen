@@ -1,10 +1,50 @@
-import { createContext, useContext, ReactNode, useState, useEffect } from 'react'
+import { createContext, useContext, ReactNode, useState, useEffect, useCallback } from 'react'
 import { useAuth } from './useAuth'
 import { supabase } from '@/integrations/supabase/client'
 
 export type SubscriptionPlan = 'basico' | 'pro' | 'premium'
 
-// ... (Interface PlanLimits e const PLAN_LIMITS continuam EXATAMENTE IGUAIS) ...
+export type Feature = 
+  | 'whatsapp_notifications'
+  | 'google_calendar'
+  | 'reports'
+  | 'advanced_reports'
+  | 'referral_program'
+  | 'referral_history'
+  | 'goals'
+  | 'public_page'
+  | 'public_page_design'
+  | 'public_page_advanced'
+  | 'color_customization'
+  | 'dashboard_advanced_cards'
+  | 'unlimited_clients'
+  | 'unlimited_sessions'
+
+// Feature to minimum plan mapping
+const FEATURE_TO_PLAN: Record<Feature, SubscriptionPlan> = {
+  whatsapp_notifications: 'premium',
+  google_calendar: 'premium',
+  reports: 'pro',
+  advanced_reports: 'premium',
+  referral_program: 'pro',
+  referral_history: 'premium',
+  goals: 'pro',
+  public_page: 'pro',
+  public_page_design: 'premium',
+  public_page_advanced: 'premium',
+  color_customization: 'premium',
+  dashboard_advanced_cards: 'pro',
+  unlimited_clients: 'premium',
+  unlimited_sessions: 'pro',
+}
+
+// Plan hierarchy for comparison
+const PLAN_HIERARCHY: Record<SubscriptionPlan, number> = {
+  basico: 0,
+  pro: 1,
+  premium: 2
+}
+
 interface PlanLimits {
   maxClients: number
   maxSessionsPerClient: number
@@ -45,7 +85,6 @@ const PLAN_LIMITS: Record<SubscriptionPlan, PlanLimits> = {
   }
 }
 
-
 interface SubscriptionContextType {
   currentPlan: SubscriptionPlan
   billingInterval: string | null
@@ -53,9 +92,13 @@ interface SubscriptionContextType {
   canAddClient: (currentClientCount: number) => boolean
   canAddSession: (currentSessionCount: number) => boolean
   hasFeature: (feature: keyof PlanLimits) => boolean
+  hasAccessToFeature: (feature: Feature) => boolean
+  getRequiredPlanForFeature: (feature: Feature) => SubscriptionPlan
   showUpgradeModal: () => void
   checkSubscription: () => Promise<void>
   isLoading: boolean
+  // Helper to mark features as recently unlocked (for "New" badge)
+  markFeaturesAsUnlocked: (features: Feature[]) => void
 }
 
 const SubscriptionContext = createContext<SubscriptionContextType | undefined>(undefined)
@@ -75,8 +118,8 @@ interface SubscriptionProviderProps {
 export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) => {
   const { user } = useAuth()
   const [currentPlan, setCurrentPlan] = useState<SubscriptionPlan>('basico')
+  const [previousPlan, setPreviousPlan] = useState<SubscriptionPlan>('basico')
   const [billingInterval, setBillingInterval] = useState<string | null>(null)
-  // Começa como 'true' para esperar a verificação inicial
   const [isLoading, setIsLoading] = useState(true)
 
   // Check subscription status (DB-first, Edge fallback)
@@ -90,7 +133,6 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
 
     setIsLoading(true)
     try {
-      // 1) Fast path: read from profiles.subscription_plan
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
         .select('subscription_plan, billing_interval')
@@ -98,12 +140,22 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         .single()
 
       if (!profileError && profile?.subscription_plan) {
-        setCurrentPlan(profile.subscription_plan as SubscriptionPlan)
+        const newPlan = profile.subscription_plan as SubscriptionPlan
+        
+        // Detect plan upgrade and mark newly unlocked features
+        if (PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[previousPlan]) {
+          const newlyUnlocked = getNewlyUnlockedFeatures(previousPlan, newPlan)
+          if (newlyUnlocked.length > 0) {
+            markFeaturesAsUnlocked(newlyUnlocked)
+          }
+        }
+        
+        setPreviousPlan(currentPlan)
+        setCurrentPlan(newPlan)
         setBillingInterval(profile.billing_interval)
         return
       }
 
-      // 2) Fallback: call Stripe checker (may be slow)
       console.log('🔄 Fallback: invoking check-subscription edge function...')
       const { data, error } = await supabase.functions.invoke('check-subscription')
       if (error) throw error
@@ -121,9 +173,29 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     }
   }
 
-  // Check subscription when user ID changes (not on every user object change)
+  // Get features that were unlocked by upgrading from one plan to another
+  const getNewlyUnlockedFeatures = (fromPlan: SubscriptionPlan, toPlan: SubscriptionPlan): Feature[] => {
+    const fromLevel = PLAN_HIERARCHY[fromPlan]
+    const toLevel = PLAN_HIERARCHY[toPlan]
+    
+    return (Object.entries(FEATURE_TO_PLAN) as [Feature, SubscriptionPlan][])
+      .filter(([_, requiredPlan]) => {
+        const requiredLevel = PLAN_HIERARCHY[requiredPlan]
+        return requiredLevel > fromLevel && requiredLevel <= toLevel
+      })
+      .map(([feature]) => feature)
+  }
+
+  // Mark features as recently unlocked (stored in sessionStorage)
+  const markFeaturesAsUnlocked = useCallback((features: Feature[]) => {
+    const existing = sessionStorage.getItem('recently_unlocked_features')
+    const current = existing ? JSON.parse(existing) as string[] : []
+    const updated = [...new Set([...current, ...features])]
+    sessionStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
+  }, [])
+
   useEffect(() => {
-    console.log('useSubscription: user ID changed, checking subscription.');
+    console.log('useSubscription: user ID changed, checking subscription.')
     checkSubscription()
   }, [user?.id])
 
@@ -144,7 +216,18 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         (payload: any) => {
           console.log('🔔 Profile subscription updated:', payload.new.subscription_plan, payload.new.billing_interval)
           if (payload.new.subscription_plan) {
-            setCurrentPlan(payload.new.subscription_plan as SubscriptionPlan)
+            const newPlan = payload.new.subscription_plan as SubscriptionPlan
+            
+            // Detect upgrade
+            if (PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[currentPlan]) {
+              const newlyUnlocked = getNewlyUnlockedFeatures(currentPlan, newPlan)
+              if (newlyUnlocked.length > 0) {
+                markFeaturesAsUnlocked(newlyUnlocked)
+              }
+            }
+            
+            setPreviousPlan(currentPlan)
+            setCurrentPlan(newPlan)
           }
           setBillingInterval(payload.new.billing_interval || null)
         }
@@ -154,7 +237,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [user?.id])
+  }, [user?.id, currentPlan, markFeaturesAsUnlocked])
 
   const planLimits = PLAN_LIMITS[currentPlan]
 
@@ -170,8 +253,20 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
     return planLimits[feature] === true
   }
 
+  // Check if user has access to a specific feature
+  const hasAccessToFeature = useCallback((feature: Feature): boolean => {
+    const requiredPlan = FEATURE_TO_PLAN[feature]
+    const currentLevel = PLAN_HIERARCHY[currentPlan]
+    const requiredLevel = PLAN_HIERARCHY[requiredPlan]
+    return currentLevel >= requiredLevel
+  }, [currentPlan])
+
+  // Get the minimum plan required for a feature
+  const getRequiredPlanForFeature = useCallback((feature: Feature): SubscriptionPlan => {
+    return FEATURE_TO_PLAN[feature]
+  }, [])
+
   const showUpgradeModal = () => {
-    // Implementar modal de upgrade
     window.open('/upgrade', '_blank')
   }
 
@@ -183,9 +278,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       canAddClient,
       canAddSession,
       hasFeature,
+      hasAccessToFeature,
+      getRequiredPlanForFeature,
       showUpgradeModal,
       checkSubscription,
-      isLoading
+      isLoading,
+      markFeaturesAsUnlocked
     }}>
       {children}
     </SubscriptionContext.Provider>
