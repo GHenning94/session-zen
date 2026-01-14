@@ -25,7 +25,7 @@ interface SharingSettingsProps {
 }
 
 const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: SharingSettingsProps) => {
-  const { hasFeature } = useSubscription()
+  const { hasAccessToFeature } = useSubscription()
   const { toast } = useToast()
   const [linkCopied, setLinkCopied] = useState(false)
   const [showImageCropper, setShowImageCropper] = useState(false)
@@ -112,8 +112,8 @@ const SharingSettings = ({ settings, onSettingsChange, onSave, isLoading }: Shar
       <Tabs defaultValue="basic" className="space-y-4">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="basic">Básico</TabsTrigger>
-          <TabsTrigger value="design" disabled={!hasFeature('hasDesignCustomization')}>Design{!hasFeature('hasDesignCustomization') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
-          <TabsTrigger value="advanced" disabled={!hasFeature('hasAdvancedSettings')}>Avançado{!hasFeature('hasAdvancedSettings') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
+          <TabsTrigger value="design" disabled={!hasAccessToFeature('public_page_design')}>Design{!hasAccessToFeature('public_page_design') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
+          <TabsTrigger value="advanced" disabled={!hasAccessToFeature('public_page_advanced')}>Avançado{!hasAccessToFeature('public_page_advanced') && <Crown className="w-3 h-3 ml-1 text-warning" />}</TabsTrigger>
         </TabsList>
         <TabsContent value="basic" className="space-y-4">
           <Card className="shadow-soft">

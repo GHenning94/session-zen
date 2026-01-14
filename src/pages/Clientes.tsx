@@ -35,6 +35,8 @@ import { NewClientModal } from "@/components/NewClientModal"
 import { GenerateRegistrationLinkModal } from "@/components/GenerateRegistrationLinkModal"
 import { ClientCard } from "@/components/ClientCard"
 import { BatchSelectionBar, SelectableItemCheckbox } from "@/components/BatchSelectionBar"
+import { ClientLimitBanner, LockedClientOverlay } from "@/components/ClientLimitBanner"
+import { UpgradeModal } from "@/components/UpgradeModal"
 import { supabase } from "@/integrations/supabase/client"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
@@ -65,7 +67,7 @@ const Clientes = () => {
   const [selectedClients, setSelectedClients] = useState<Set<string>>(new Set())
   const [isSelectionMode, setIsSelectionMode] = useState(false)
   const [batchDeleteDialogOpen, setBatchDeleteDialogOpen] = useState(false)
-
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   // Calculate active filters count
   const activeFiltersCount = useMemo(() => {
     let count = 0
@@ -634,6 +636,9 @@ const Clientes = () => {
           </div>
         </div>
 
+        {/* Client Limit Banner - shows when limit is reached */}
+        <ClientLimitBanner currentCount={activeClients.length} />
+
         {/* Stats Cards - Grid 2x2 no mobile */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 md:gap-6">
           <Card className="shadow-soft">
@@ -809,33 +814,53 @@ const Clientes = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredClients.map((client) => (
-                  <div
-                    key={client.id}
-                    className={cn(
-                      "flex items-center gap-3",
-                      isSelectionMode && "cursor-pointer"
-                    )}
-                    onClick={() => isSelectionMode && toggleClientSelection(client.id)}
-                  >
-                    {isSelectionMode && (
-                      <SelectableItemCheckbox
-                        isSelected={selectedClients.has(client.id)}
-                        onSelect={() => toggleClientSelection(client.id)}
-                      />
-                    )}
-                    <div className="flex-1">
-                      <ClientCard
-                        client={client}
-                        onClick={() => !isSelectionMode && handleClientClick(client)}
-                        onWhatsAppClick={(phone) => {
-                          const whatsappUrl = `https://wa.me/55${phone}`
-                          window.open(whatsappUrl, '_blank')
-                        }}
-                      />
+                {filteredClients.map((client, index) => {
+                  // Check if this client is over the limit (only for active clients in non-filtered views)
+                  const isOverLimit = !canAddMore && 
+                    statusFilter !== 'inativo' && 
+                    client.ativo !== false && 
+                    index >= (planLimits.maxClients || Infinity)
+                  
+                  return (
+                    <div
+                      key={client.id}
+                      className={cn(
+                        "flex items-center gap-3 relative",
+                        isSelectionMode && "cursor-pointer",
+                        isOverLimit && "opacity-60"
+                      )}
+                      onClick={() => isSelectionMode && toggleClientSelection(client.id)}
+                    >
+                      {isSelectionMode && (
+                        <SelectableItemCheckbox
+                          isSelected={selectedClients.has(client.id)}
+                          onSelect={() => toggleClientSelection(client.id)}
+                        />
+                      )}
+                      <div className="flex-1 relative">
+                        {isOverLimit && (
+                          <LockedClientOverlay
+                            clientIndex={index}
+                            maxClients={planLimits.maxClients || 10}
+                            onUpgradeClick={() => setShowUpgradeModal(true)}
+                          />
+                        )}
+                        <ClientCard
+                          client={client}
+                          onClick={() => !isSelectionMode && !isOverLimit && handleClientClick(client)}
+                          onWhatsAppClick={(phone) => {
+                            if (isOverLimit) {
+                              setShowUpgradeModal(true)
+                              return
+                            }
+                            const whatsappUrl = `https://wa.me/55${phone}`
+                            window.open(whatsappUrl, '_blank')
+                          }}
+                        />
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>
@@ -921,6 +946,13 @@ const Clientes = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Upgrade Modal for client limit */}
+        <UpgradeModal
+          open={showUpgradeModal}
+          onOpenChange={setShowUpgradeModal}
+          feature="Pacientes Ilimitados"
+        />
       </div>
     </Layout>
   )

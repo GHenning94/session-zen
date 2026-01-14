@@ -12,6 +12,7 @@ import { SmartNotificationCard } from "@/components/SmartNotificationCard"
 import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { DashboardFooter } from "@/components/DashboardFooter"
 import { ScrollAnimation } from "@/hooks/useScrollAnimation"
+import { FeatureGate } from "@/components/FeatureGate"
 
 import { UpgradeWelcomeModal } from "@/components/UpgradeWelcomeModal"
 import { 
@@ -32,7 +33,9 @@ import {
   Repeat,
   PenLine,
   FileText,
-  Cake
+  Cake,
+  Lock,
+  Target
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend, PolarAngleAxis } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -53,13 +56,15 @@ import { getPaymentEffectiveDate, isOverdue } from "@/utils/sessionStatusUtils"
 import { toast } from "sonner"
 import { useGlobalRealtime } from "@/hooks/useGlobalRealtime"
 import { GoogleSyncBadge } from "@/components/google/GoogleSyncBadge"
+import { UpgradeModal } from "@/components/UpgradeModal"
 import confetti from "canvas-confetti"
 
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { currentPlan, billingInterval } = useSubscription()
+  const { currentPlan, billingInterval, hasAccessToFeature } = useSubscription()
   const { clientTerm, clientTermPlural } = useTerminology()
+  const [showGoalsUpgradeModal, setShowGoalsUpgradeModal] = useState(false)
   const { subscribe } = useGlobalRealtime()
   const [searchParams, setSearchParams] = useSearchParams()
   const [isProcessingPayment, setIsProcessingPayment] = useState(false)
@@ -1325,11 +1330,49 @@ const Dashboard = () => {
                 <PackageStatusCard stats={packageStats} />
               </div>
               <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '225ms' }}>
-                <BusinessOrbitalView 
-                  dashboardData={dashboardData}
-                  packageStats={packageStats}
-                  upcomingSessionsCount={upcomingSessions.length}
-                />
+                {/* BusinessOrbitalView - Metas - bloqueado para plano básico */}
+                {hasAccessToFeature('goals') ? (
+                  <BusinessOrbitalView 
+                    dashboardData={dashboardData}
+                    packageStats={packageStats}
+                    upcomingSessionsCount={upcomingSessions.length}
+                  />
+                ) : (
+                  <Card 
+                    className="shadow-soft h-full cursor-pointer relative overflow-hidden"
+                    onClick={() => setShowGoalsUpgradeModal(true)}
+                  >
+                    {/* Locked overlay */}
+                    <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-center p-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+                          <Target className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="font-semibold">Metas e Progresso</h3>
+                        <Badge variant="default" className="text-xs">
+                          Desbloqueie no plano Profissional
+                        </Badge>
+                        <p className="text-xs text-muted-foreground max-w-[200px]">
+                          Defina metas de sessões, receita e pacientes
+                        </p>
+                      </div>
+                    </div>
+                    {/* Placeholder content */}
+                    <CardHeader className="opacity-30">
+                      <CardTitle className="flex items-center gap-2">
+                        <Target className="w-5 h-5" />
+                        Metas e Progresso
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="opacity-30">
+                      <div className="space-y-4">
+                        <div className="h-20 bg-muted rounded-lg" />
+                        <div className="h-20 bg-muted rounded-lg" />
+                        <div className="h-20 bg-muted rounded-lg" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
                 <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '300ms' }}>
                   <SmartNotificationCard 
@@ -2691,6 +2734,11 @@ const Dashboard = () => {
         open={upgradeWelcomeModal.open}
         onOpenChange={(open) => setUpgradeWelcomeModal({ ...upgradeWelcomeModal, open })}
         newPlan={upgradeWelcomeModal.newPlan}
+      />
+      <UpgradeModal
+        open={showGoalsUpgradeModal}
+        onOpenChange={setShowGoalsUpgradeModal}
+        feature="Metas e Progresso"
       />
     </Layout>
   )
