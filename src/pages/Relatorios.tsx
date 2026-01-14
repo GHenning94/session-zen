@@ -2,13 +2,16 @@ import { useState } from 'react'
 import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { FileText, Users, Calendar, DollarSign, Download, BarChart3 } from 'lucide-react'
+import { FileText, Users, Calendar, DollarSign, Download, BarChart3, Lock } from 'lucide-react'
 import { ReportsModal } from '@/components/ReportsModal'
 import { useSmartData } from '@/hooks/useSmartData'
+import { useSubscription } from '@/hooks/useSubscription'
+import { FeatureGate } from '@/components/FeatureGate'
 
 export default function Relatorios() {
   const [showReportsModal, setShowReportsModal] = useState(false)
   const { data: clients } = useSmartData({ type: 'clients' })
+  const { hasAccessToFeature, currentPlan } = useSubscription()
   const { data: sessions } = useSmartData({ type: 'sessions' })
 
   const realizadas = sessions.filter(s => s.status === 'realizada')
@@ -77,6 +80,46 @@ export default function Relatorios() {
       color: 'hsl(var(--success))'
     }
   ]
+
+  // Feature Gate - block entire page for basic plan
+  if (!hasAccessToFeature('reports')) {
+    return (
+      <Layout>
+        <div className="space-y-4 md:space-y-6">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
+            <p className="text-sm text-muted-foreground">
+              Exporte relatórios em PDF ou Excel
+            </p>
+          </div>
+          
+          <FeatureGate feature="reports" showLocked={true}>
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Gerador de Relatórios
+                </CardTitle>
+                <CardDescription>
+                  Gere relatórios completos sobre sessões, pagamentos e clientes
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {['Clientes', 'Sessões', 'Financeiro', 'Completo'].map((tipo) => (
+                    <Card key={tipo} className="p-4">
+                      <div className="h-4 bg-muted rounded w-24 mb-2" />
+                      <div className="h-6 bg-muted rounded w-16" />
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FeatureGate>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>

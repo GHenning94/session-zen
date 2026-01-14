@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Lock, Crown } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
 import {
@@ -23,6 +24,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
+import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { PaymentMethodCard } from "@/components/PaymentMethodCard"
 import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
@@ -46,6 +48,7 @@ import { useNotificationSound, playNotificationSound } from "@/hooks/useNotifica
 import { useNotifications } from "@/hooks/useNotifications"
 import { Volume2, VolumeX } from "lucide-react"
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
+import { UpgradeModal } from "@/components/UpgradeModal"
 
 type AllSettings = Record<string, any>;
 
@@ -90,6 +93,7 @@ const ThemeSelector = () => {
 const Configuracoes = () => {
   const { toast } = useToast()
   const { user } = useAuth()
+  const { hasAccessToFeature, currentPlan } = useSubscription()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
@@ -107,6 +111,7 @@ const Configuracoes = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState('')
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
+  const [showColorUpgradeModal, setShowColorUpgradeModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -910,14 +915,35 @@ const Configuracoes = () => {
                 <ThemeSelector />
                 
                 <div className="space-y-2">
-                  <Label>Cor da Plataforma</Label>
+                  <div className="flex items-center gap-2">
+                    <Label>Cor da Plataforma</Label>
+                    {!hasAccessToFeature('color_customization') && (
+                      <Badge variant="warning" className="text-[10px] gap-1">
+                        <Crown className="w-3 h-3" />
+                        Premium
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-sm text-muted-foreground mb-2">
                     Personalize a cor principal da plataforma
                   </p>
                   <div>
-                    <Button variant="outline" onClick={() => setShowColorPicker(true)} className="w-full sm:w-[200px] h-10 justify-start gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        if (hasAccessToFeature('color_customization')) {
+                          setShowColorPicker(true)
+                        } else {
+                          setShowColorUpgradeModal(true)
+                        }
+                      }} 
+                      className="w-full sm:w-[200px] h-10 justify-start gap-2"
+                    >
                       <Palette className="w-4 h-4" />
                       Personalizar Cores
+                      {!hasAccessToFeature('color_customization') && (
+                        <Lock className="w-3 h-3 ml-auto" />
+                      )}
                     </Button>
                   </div>
                 </div>
@@ -1599,6 +1625,13 @@ const Configuracoes = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Modal de upgrade para cores */}
+      <UpgradeModal 
+        open={showColorUpgradeModal} 
+        onOpenChange={setShowColorUpgradeModal}
+        feature="Personalização de Cores"
+      />
     </Layout>
   )
 }

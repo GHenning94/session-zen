@@ -9,7 +9,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useMetas, MetaTipo, MetaPeriodo } from '@/hooks/useMetas';
 import { useTerminology } from '@/hooks/useTerminology';
-import { CheckCircle2, Target, Pencil, Trash2, History, Calendar, Info, AlertTriangle } from 'lucide-react';
+import { useSubscription } from '@/hooks/useSubscription';
+import { FeatureGate } from '@/components/FeatureGate';
+import { CheckCircle2, Target, Pencil, Trash2, History, Calendar, Info, AlertTriangle, Lock } from 'lucide-react';
 import { formatCurrencyBR } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,6 +40,7 @@ import {
 } from "@/components/ui/collapsible";
 
 export default function Metas() {
+  const { hasAccessToFeature } = useSubscription();
   const { user } = useAuth();
   const { metas, isLoading, createMeta, updateMeta, updateMetaPeriodo, deleteMeta, getTipoLabel, getPeriodoLabel } = useMetas();
   const { clientTermPlural } = useTerminology();
@@ -257,6 +260,46 @@ export default function Metas() {
         </div>
       </Layout>
     );
+  }
+
+  // Feature Gate - block entire page for basic plan
+  if (!hasAccessToFeature('goals')) {
+    return (
+      <Layout>
+        <div className="space-y-4 md:space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
+            <p className="text-muted-foreground mt-1">
+              Defina e acompanhe suas metas de crescimento profissional
+            </p>
+          </div>
+          
+          <FeatureGate feature="goals" showLocked={true}>
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="h-5 w-5" />
+                  Sistema de Metas
+                </CardTitle>
+                <CardDescription>
+                  Defina metas de sessões, receita, pacientes e acompanhe seu progresso
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  {['Sessões', 'Clientes', 'Receita', 'Pacotes'].map((tipo) => (
+                    <Card key={tipo} className="p-4">
+                      <div className="h-4 bg-muted rounded w-24 mb-2" />
+                      <div className="h-6 bg-muted rounded w-16" />
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FeatureGate>
+        </div>
+      </Layout>
+    )
   }
 
   return (
