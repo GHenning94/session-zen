@@ -4,14 +4,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
-import { Clock, CreditCard, Share2, Save } from "lucide-react"
+import { Clock, CreditCard, Share2, Save, Lock, Crown } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
+import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import SharingSettings from "@/components/sharing/SharingSettings"
+import { FeatureGate } from "@/components/FeatureGate"
 
 type AllSettings = Record<string, any>;
 type ScheduleUI = Record<string, { ativo: boolean, inicio: string, fim: string }>;
@@ -19,6 +22,7 @@ type ScheduleUI = Record<string, { ativo: boolean, inicio: string, fim: string }
 const PaginaPublica = () => {
   const { toast } = useToast()
   const { user } = useAuth()
+  const { hasAccessToFeature, currentPlan } = useSubscription()
   const [settings, setSettings] = useState<AllSettings>({})
   const [isLoading, setIsLoading] = useState(true)
   const [activeTab, setActiveTab] = useState("schedule")
@@ -135,6 +139,44 @@ const PaginaPublica = () => {
     { key: 'quinta', label: 'Quinta' }, { key: 'sexta', label: 'Sexta' }, { key: 'sabado', label: 'Sábado' },
     { key: 'domingo', label: 'Domingo' }
   ];
+
+  // Feature Gate - block entire page for basic plan
+  if (!hasAccessToFeature('public_page')) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Página Pública</h1>
+            <p className="text-muted-foreground">Configure como sua página de agendamentos será exibida aos pacientes</p>
+          </div>
+          
+          <FeatureGate feature="public_page" showLocked={true}>
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Share2 className="h-5 w-5" />
+                  Página Pública de Agendamento
+                </CardTitle>
+                <CardDescription>
+                  Tenha uma página profissional onde pacientes podem agendar sessões diretamente
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-3 gap-4">
+                  {['Horários', 'Pagamentos', 'Compartilhamento'].map((item) => (
+                    <Card key={item} className="p-4">
+                      <div className="h-4 bg-muted rounded w-24 mb-2" />
+                      <div className="h-6 bg-muted rounded w-16" />
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FeatureGate>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>

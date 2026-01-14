@@ -23,10 +23,12 @@ import {
   Gift, Star, Copy, Facebook, Twitter, Linkedin, Instagram, 
   Users, Crown, Briefcase, Circle, LogOut, 
   CheckCircle2, AlertCircle, Loader2, DollarSign, TrendingUp,
-  Calendar, CreditCard, Building2, Share2, Settings
+  Calendar, CreditCard, Building2, Share2, Settings, Lock
 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubscription } from "@/hooks/useSubscription";
+import { FeatureGate } from "@/components/FeatureGate";
 import { supabase } from "@/integrations/supabase/client";
 import AnimatedGiftImage from "@/components/AnimatedGiftImage";
 import ShareReferralModal from "@/components/ShareReferralModal";
@@ -89,6 +91,7 @@ interface Balances {
 
 const ProgramaIndicacao = () => {
   const { user } = useAuth();
+  const { hasAccessToFeature } = useSubscription();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [isEnrolled, setIsEnrolled] = useState(false);
@@ -603,6 +606,47 @@ const ProgramaIndicacao = () => {
         </div>
       </Layout>
     );
+  }
+
+  // Feature Gate - block entire page for basic plan
+  if (!hasAccessToFeature('referral_program')) {
+    return (
+      <Layout>
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <Gift className="w-8 h-8 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Programa de Indicação</h1>
+              <p className="text-muted-foreground">Indique amigos e ganhe recompensas</p>
+            </div>
+          </div>
+          
+          <FeatureGate feature="referral_program" showLocked={true}>
+            <Card className="min-h-[400px]">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Gift className="h-5 w-5" />
+                  Programa de Indicação
+                </CardTitle>
+                <CardDescription>
+                  Ganhe comissões indicando colegas para a plataforma
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  {['Indicações', 'Comissões', 'Pendentes', 'Total'].map((item) => (
+                    <Card key={item} className="p-4">
+                      <div className="h-4 bg-muted rounded w-24 mb-2" />
+                      <div className="h-6 bg-muted rounded w-16" />
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </FeatureGate>
+        </div>
+      </Layout>
+    )
   }
 
   if (!isEnrolled) {
