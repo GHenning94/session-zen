@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { 
   Stethoscope, Calendar, Users, DollarSign, TrendingUp,
-  CheckCircle, ArrowRight, Brain, Heart, Shield, Clock,
+  CheckCircle, Check, ArrowRight, Brain, Heart, Shield, Clock,
   GraduationCap, Target, BookOpen, Activity, BarChart3,
   MessageCircle, ChevronDown, Lock, Mail, Globe, BarChart,
   Gift, ChevronsLeftRight, Instagram, Linkedin, Twitter,
@@ -855,7 +855,7 @@ const LandingPage = () => {
                         <CardDescription>{plan.description}</CardDescription>
                       </CardHeader>
                       <CardContent className="flex flex-col flex-grow p-6">
-                        <ul className="space-y-3 mb-8 flex-grow">{plan.features.map((feature, i) => (<li key={i} className="flex items-start gap-3"><CheckCircle className="w-5 h-5 text-green-500 mt-1 flex-shrink-0" /><span className="text-sm text-muted-foreground">{feature}</span></li>))}</ul>
+                        <ul className="space-y-3 mb-8 flex-grow">{plan.features.map((feature, i) => (<li key={i} className="flex items-center gap-3"><div className="flex-shrink-0"><Check className="h-4 w-4" style={{ color: 'hsl(142 71% 45%)' }} /></div><span className="text-sm">{feature}</span></li>))}</ul>
                         <Button className={`w-full text-base py-6 ${plan.planId === 'pro' ? 'bg-gradient-primary text-white shadow-primary' : 'bg-muted hover:bg-muted/80 text-foreground'}`} onClick={() => handleGetStarted(plan.planId)}>{plan.cta}</Button>
                       </CardContent>
                     </Card>
