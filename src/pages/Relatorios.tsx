@@ -7,6 +7,7 @@ import { ReportsModal } from '@/components/ReportsModal'
 import { useSmartData } from '@/hooks/useSmartData'
 import { useSubscription } from '@/hooks/useSubscription'
 import { FeatureGate } from '@/components/FeatureGate'
+import { NewFeatureBadge } from '@/components/NewFeatureBadge'
 
 export default function Relatorios() {
   const [showReportsModal, setShowReportsModal] = useState(false)
@@ -124,11 +125,14 @@ export default function Relatorios() {
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
-          <p className="text-sm text-muted-foreground">
-            Exporte relatórios em PDF ou Excel
-          </p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
+            <p className="text-sm text-muted-foreground">
+              Exporte relatórios em PDF ou Excel
+            </p>
+          </div>
+          <NewFeatureBadge featureKey="reports" />
         </div>
 
         {/* Estatísticas - Grid 2x2 no mobile */}

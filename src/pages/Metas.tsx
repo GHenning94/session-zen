@@ -11,6 +11,7 @@ import { useMetas, MetaTipo, MetaPeriodo } from '@/hooks/useMetas';
 import { useTerminology } from '@/hooks/useTerminology';
 import { useSubscription } from '@/hooks/useSubscription';
 import { FeatureGate } from '@/components/FeatureGate';
+import { NewFeatureBadge } from '@/components/NewFeatureBadge';
 import { CheckCircle2, Target, Pencil, Trash2, History, Calendar, Info, AlertTriangle, Lock } from 'lucide-react';
 import { formatCurrencyBR } from '@/utils/formatters';
 import { supabase } from '@/integrations/supabase/client';
@@ -305,11 +306,14 @@ export default function Metas() {
   return (
     <Layout>
       <div className="space-y-4 md:space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
-          <p className="text-muted-foreground mt-1">
-            Defina e acompanhe suas metas de crescimento profissional
-          </p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
+            <p className="text-muted-foreground mt-1">
+              Defina e acompanhe suas metas de crescimento profissional
+            </p>
+          </div>
+          <NewFeatureBadge featureKey="goals" />
         </div>
         
         <Tabs defaultValue="gerenciar" className="w-full">

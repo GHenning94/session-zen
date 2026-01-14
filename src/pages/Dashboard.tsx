@@ -13,6 +13,7 @@ import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { DashboardFooter } from "@/components/DashboardFooter"
 import { ScrollAnimation } from "@/hooks/useScrollAnimation"
 import { FeatureGate } from "@/components/FeatureGate"
+import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 
 import { UpgradeWelcomeModal } from "@/components/UpgradeWelcomeModal"
 import { 
@@ -1332,11 +1333,14 @@ const Dashboard = () => {
               <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '225ms' }}>
                 {/* BusinessOrbitalView - Metas - bloqueado para plano básico */}
                 {hasAccessToFeature('goals') ? (
-                  <BusinessOrbitalView 
-                    dashboardData={dashboardData}
-                    packageStats={packageStats}
-                    upcomingSessionsCount={upcomingSessions.length}
-                  />
+                  <div className="relative h-full">
+                    <NewFeatureBadge featureKey="goals" className="absolute top-2 right-2 z-10" />
+                    <BusinessOrbitalView 
+                      dashboardData={dashboardData}
+                      packageStats={packageStats}
+                      upcomingSessionsCount={upcomingSessions.length}
+                    />
+                  </div>
                 ) : (
                   <Card 
                     className="shadow-soft h-full cursor-pointer relative overflow-hidden"
