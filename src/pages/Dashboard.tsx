@@ -1981,321 +1981,363 @@ const Dashboard = () => {
 
                 {/* Gráfico de Ticket Médio - Moderno */}
                 <ScrollAnimation animation="fade-up" delay={150} className="col-span-full">
-                  <Card className="shadow-soft overflow-hidden">
-                    <CardHeader className="pb-4">
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        {/* Título e descrição */}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <TrendingUp className="w-5 h-5 text-success" />
-                            <CardTitle>Ticket Médio</CardTitle>
-                          </div>
-                          <CardDescription className="mt-1">
-                            Evolução do valor médio por sessão
-                          </CardDescription>
-                        </div>
-                        {/* Botões de período - abaixo no mobile, ao lado no desktop */}
-                        <div className="flex gap-1 flex-wrap">
-                          {(['1', '3', '6', '12'] as const).map((period) => (
-                            <button
-                              key={period}
-                              data-no-min-height
-                              onClick={() => handleTicketPeriodChange(period)}
-                              className={cn(
-                                "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
-                                ticketPeriod === period
-                                  ? "bg-success text-success-foreground shadow-sm"
-                                  : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                              )}
-                            >
-                              {period === '12' ? '1 ano' : `${period}m`}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {/* Métricas resumidas com min/max reais */}
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                        <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
-                          <p className="text-xs text-muted-foreground mb-1">Média</p>
-                          <p className="text-lg font-bold text-success">{formatCurrencyBR(ticketMedioAverage)}</p>
-                        </div>
-                        <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
-                          <p className="text-xs text-muted-foreground mb-1">Maior Pgto</p>
-                          <p className="text-lg font-bold text-primary">
-                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.max(...filteredTicketChart.map(i => i.maxPagamento || 0)) : 0)}
-                          </p>
-                        </div>
-                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Menor Pgto</p>
-                          <p className="text-lg font-bold text-muted-foreground">
-                            {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.min(...filteredTicketChart.filter(i => (i.minPagamento || 0) > 0).map(i => i.minPagamento)) || 0 : 0)}
-                          </p>
-                        </div>
-                        <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                          <p className="text-xs text-muted-foreground mb-1">Sessões</p>
-                          <p className="text-lg font-bold text-foreground">
-                            {filteredTicketChart.reduce((sum, item) => sum + item.sessoes, 0)}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Gráfico de Barras com 3 barras: Maior, Ticket Médio, Menor */}
-                      <div className="h-72 -mx-2">
-                        <ResponsiveContainer key={`ticket-chart-${ticketPeriod}`} width="100%" height="100%">
-                          <BarChart
-                            data={filteredTicketChart}
-                            margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                            barGap={2}
-                            barCategoryGap="15%"
-                          >
-                            <defs>
-                              <linearGradient id="ticketBarGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={1}/>
-                                <stop offset="100%" stopColor="hsl(142 76% 36%)" stopOpacity={0.6}/>
-                              </linearGradient>
-                              <linearGradient id="maxBarGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9}/>
-                                <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
-                              </linearGradient>
-                              <linearGradient id="minBarGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.7}/>
-                                <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.3}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid 
-                              strokeDasharray="3 3" 
-                              vertical={false}
-                              stroke="hsl(var(--border))"
-                              strokeOpacity={0.5}
-                            />
-                            <XAxis 
-                              dataKey="mes" 
-                              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
-                              tickLine={false}
-                              axisLine={false}
-                              dy={8}
-                            />
-                            <YAxis 
-                              tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                              tickLine={false}
-                              axisLine={false}
-                              tickFormatter={(value) => `R$${(value/1).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
-                              width={60}
-                            />
-                            {/* Linha de referência para média - controlada por legenda */}
-                            {showTicketAverage && filteredTicketChart.length > 0 && (
-                              <ReferenceLine 
-                                y={ticketMedioAverage} 
-                                stroke="hsl(142 76% 36%)" 
-                                strokeDasharray="5 5"
-                                strokeOpacity={0.7}
-                              />
-                            )}
-                            <RechartsTooltip 
-                              cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
-                              content={({ active, payload, label }) => {
-                                if (active && payload && payload.length) {
-                                  const data = payload[0].payload;
-                                  return (
-                                    <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[180px]">
-                                      <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
-                                      <div className="space-y-1.5">
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-sm bg-primary" />
-                                            Maior Pgto
-                                          </span>
-                                          <span className="text-sm font-medium text-primary">{formatCurrencyBR(data.maxPagamento || 0)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-sm bg-success" />
-                                            Ticket Médio
-                                          </span>
-                                          <span className="text-sm font-bold text-success">{formatCurrencyBR(data.ticketMedio)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            <div className="w-2 h-2 rounded-sm bg-muted-foreground" />
-                                            Menor Pgto
-                                          </span>
-                                          <span className="text-sm font-medium text-muted-foreground">{formatCurrencyBR(data.minPagamento || 0)}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center">
-                                          <span className="text-xs text-muted-foreground">Sessões</span>
-                                          <span className="text-sm font-medium text-foreground">{data.sessoes}</span>
-                                        </div>
-                                        <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
-                                          <span className="text-xs text-muted-foreground">Total</span>
-                                          <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.totalValor || 0)}</span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                }
-                                return null;
-                              }}
-                            />
-                            <Bar 
-                              dataKey="maxPagamento" 
-                              fill="url(#maxBarGradient)"
-                              radius={[4, 4, 0, 0]}
-                              maxBarSize={50}
-                              animationBegin={0}
-                              animationDuration={800}
-                              animationEasing="ease-out"
-                            />
-                            <Bar 
-                              dataKey="ticketMedio" 
-                              fill="url(#ticketBarGradient)"
-                              radius={[4, 4, 0, 0]}
-                              maxBarSize={50}
-                              animationBegin={200}
-                              animationDuration={800}
-                              animationEasing="ease-out"
-                            />
-                            <Bar 
-                              dataKey="minPagamento" 
-                              fill="url(#minBarGradient)"
-                              radius={[4, 4, 0, 0]}
-                              maxBarSize={50}
-                              animationBegin={400}
-                              animationDuration={800}
-                              animationEasing="ease-out"
-                            />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </div>
-                      
-                      {/* Legenda interativa + Variação do período */}
-                      <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
-                        {/* Legendas das barras */}
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
-                            <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
-                            Maior Pgto
-                          </div>
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
-                            <div className="w-2.5 h-2.5 rounded-sm bg-success" />
-                            Ticket Médio
-                          </div>
-                          <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium">
-                            <div className="w-2.5 h-2.5 rounded-sm bg-muted-foreground" />
-                            Menor Pgto
-                          </div>
-                          {/* Toggle para média */}
-                          <button
-                            onClick={() => setShowTicketAverage(!showTicketAverage)}
-                            className={cn(
-                              "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border",
-                              showTicketAverage 
-                                ? "bg-success/10 text-success border-success/30" 
-                                : "bg-muted/50 text-muted-foreground border-border/50 opacity-60"
-                            )}
-                          >
-                            <div className={cn(
-                              "w-3 h-0.5 border-t-2 border-dashed transition-colors",
-                              showTicketAverage ? "border-success" : "border-muted-foreground"
-                            )} />
-                            Média
-                          </button>
-                        </div>
-                        
-                        {/* Variação do período */}
-                        {filteredTicketChart.length >= 2 && (() => {
-                          const first = filteredTicketChart.find(i => i.ticketMedio > 0)?.ticketMedio || 0;
-                          const last = filteredTicketChart[filteredTicketChart.length - 1]?.ticketMedio || 0;
-                          const variation = first > 0 ? ((last - first) / first) * 100 : 0;
-                          const isPositive = variation >= 0;
-                          
-                          return (
+                  {hasAccessToFeature('goals') ? (
+                    <Card className="shadow-soft overflow-hidden">
+                      <CardHeader className="pb-4">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          {/* Título e descrição */}
+                          <div>
                             <div className="flex items-center gap-2">
-                              <span className="text-sm text-muted-foreground">Variação:</span>
-                              <Badge 
-                                variant={isPositive ? "default" : "destructive"}
+                              <TrendingUp className="w-5 h-5 text-success" />
+                              <CardTitle>Ticket Médio</CardTitle>
+                            </div>
+                            <CardDescription className="mt-1">
+                              Evolução do valor médio por sessão
+                            </CardDescription>
+                          </div>
+                          {/* Botões de período - abaixo no mobile, ao lado no desktop */}
+                          <div className="flex gap-1 flex-wrap">
+                            {(['1', '3', '6', '12'] as const).map((period) => (
+                              <button
+                                key={period}
+                                data-no-min-height
+                                onClick={() => handleTicketPeriodChange(period)}
                                 className={cn(
-                                  "font-semibold",
-                                  isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
+                                  "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
+                                  ticketPeriod === period
+                                    ? "bg-success text-success-foreground shadow-sm"
+                                    : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 )}
                               >
-                                {isPositive ? '+' : ''}{variation.toFixed(1)}%
-                              </Badge>
+                                {period === '12' ? '1 ano' : `${period}m`}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {/* Métricas resumidas com min/max reais */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
+                            <p className="text-xs text-muted-foreground mb-1">Média</p>
+                            <p className="text-lg font-bold text-success">{formatCurrencyBR(ticketMedioAverage)}</p>
+                          </div>
+                          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
+                            <p className="text-xs text-muted-foreground mb-1">Maior Pgto</p>
+                            <p className="text-lg font-bold text-primary">
+                              {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.max(...filteredTicketChart.map(i => i.maxPagamento || 0)) : 0)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Menor Pgto</p>
+                            <p className="text-lg font-bold text-muted-foreground">
+                              {formatCurrencyBR(filteredTicketChart.length > 0 ? Math.min(...filteredTicketChart.filter(i => (i.minPagamento || 0) > 0).map(i => i.minPagamento)) || 0 : 0)}
+                            </p>
+                          </div>
+                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                            <p className="text-xs text-muted-foreground mb-1">Sessões</p>
+                            <p className="text-lg font-bold text-foreground">
+                              {filteredTicketChart.reduce((sum, item) => sum + item.sessoes, 0)}
+                            </p>
+                          </div>
+                        </div>
+                        
+                        {/* Gráfico de Barras com 3 barras: Maior, Ticket Médio, Menor */}
+                        <div className="h-72 -mx-2">
+                          <ResponsiveContainer key={`ticket-chart-${ticketPeriod}`} width="100%" height="100%">
+                            <BarChart
+                              data={filteredTicketChart}
+                              margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                              barGap={2}
+                              barCategoryGap="15%"
+                            >
+                              <defs>
+                                <linearGradient id="ticketBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="hsl(142 76% 36%)" stopOpacity={1}/>
+                                  <stop offset="100%" stopColor="hsl(142 76% 36%)" stopOpacity={0.6}/>
+                                </linearGradient>
+                                <linearGradient id="maxBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9}/>
+                                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.5}/>
+                                </linearGradient>
+                                <linearGradient id="minBarGradient" x1="0" y1="0" x2="0" y2="1">
+                                  <stop offset="0%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.7}/>
+                                  <stop offset="100%" stopColor="hsl(var(--muted-foreground))" stopOpacity={0.3}/>
+                                </linearGradient>
+                              </defs>
+                              <CartesianGrid 
+                                strokeDasharray="3 3" 
+                                vertical={false}
+                                stroke="hsl(var(--border))"
+                                strokeOpacity={0.5}
+                              />
+                              <XAxis 
+                                dataKey="mes" 
+                                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} 
+                                tickLine={false}
+                                axisLine={false}
+                                dy={8}
+                              />
+                              <YAxis 
+                                tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                                tickLine={false}
+                                axisLine={false}
+                                tickFormatter={(value) => `R$${(value/1).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`}
+                                width={60}
+                              />
+                              {/* Linha de referência para média - controlada por legenda */}
+                              {showTicketAverage && filteredTicketChart.length > 0 && (
+                                <ReferenceLine 
+                                  y={ticketMedioAverage} 
+                                  stroke="hsl(142 76% 36%)" 
+                                  strokeDasharray="5 5"
+                                  strokeOpacity={0.7}
+                                />
+                              )}
+                              <RechartsTooltip 
+                                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.3 }}
+                                content={({ active, payload, label }) => {
+                                  if (active && payload && payload.length) {
+                                    const data = payload[0].payload;
+                                    return (
+                                      <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[180px]">
+                                        <p className="text-sm font-semibold text-foreground mb-2">{data.fullMonth}</p>
+                                        <div className="space-y-1.5">
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                              <div className="w-2 h-2 rounded-sm bg-primary" />
+                                              Maior Pgto
+                                            </span>
+                                            <span className="text-sm font-medium text-primary">{formatCurrencyBR(data.maxPagamento || 0)}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                              <div className="w-2 h-2 rounded-sm bg-success" />
+                                              Ticket Médio
+                                            </span>
+                                            <span className="text-sm font-bold text-success">{formatCurrencyBR(data.ticketMedio)}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                              <div className="w-2 h-2 rounded-sm bg-muted-foreground" />
+                                              Menor Pgto
+                                            </span>
+                                            <span className="text-sm font-medium text-muted-foreground">{formatCurrencyBR(data.minPagamento || 0)}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-xs text-muted-foreground">Sessões</span>
+                                            <span className="text-sm font-medium text-foreground">{data.sessoes}</span>
+                                          </div>
+                                          <div className="flex justify-between items-center pt-1.5 border-t border-border/50">
+                                            <span className="text-xs text-muted-foreground">Total</span>
+                                            <span className="text-sm font-medium text-foreground">{formatCurrencyBR(data.totalValor || 0)}</span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    );
+                                  }
+                                  return null;
+                                }}
+                              />
+                              <Bar 
+                                dataKey="maxPagamento" 
+                                fill="url(#maxBarGradient)"
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={50}
+                                animationBegin={0}
+                                animationDuration={800}
+                                animationEasing="ease-out"
+                              />
+                              <Bar 
+                                dataKey="ticketMedio" 
+                                fill="url(#ticketBarGradient)"
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={50}
+                                animationBegin={200}
+                                animationDuration={800}
+                                animationEasing="ease-out"
+                              />
+                              <Bar 
+                                dataKey="minPagamento" 
+                                fill="url(#minBarGradient)"
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={50}
+                                animationBegin={400}
+                                animationDuration={800}
+                                animationEasing="ease-out"
+                              />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        
+                        {/* Legenda interativa + Variação do período */}
+                        <div className="mt-4 pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-3">
+                          {/* Legendas das barras */}
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                              <div className="w-2.5 h-2.5 rounded-sm bg-primary" />
+                              Maior Pgto
                             </div>
-                          );
-                        })()}
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-success/10 text-success text-xs font-medium">
+                              <div className="w-2.5 h-2.5 rounded-sm bg-success" />
+                              Ticket Médio
+                            </div>
+                            <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-muted text-muted-foreground text-xs font-medium">
+                              <div className="w-2.5 h-2.5 rounded-sm bg-muted-foreground" />
+                              Menor Pgto
+                            </div>
+                            {/* Toggle para média */}
+                            <button
+                              onClick={() => setShowTicketAverage(!showTicketAverage)}
+                              className={cn(
+                                "flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium transition-all duration-200 border",
+                                showTicketAverage 
+                                  ? "bg-success/10 text-success border-success/30" 
+                                  : "bg-muted/50 text-muted-foreground border-border/50 opacity-60"
+                              )}
+                            >
+                              <div className={cn(
+                                "w-3 h-0.5 border-t-2 border-dashed transition-colors",
+                                showTicketAverage ? "border-success" : "border-muted-foreground"
+                              )} />
+                              Média
+                            </button>
+                          </div>
+                          
+                          {/* Variação do período */}
+                          {filteredTicketChart.length >= 2 && (() => {
+                            const first = filteredTicketChart.find(i => i.ticketMedio > 0)?.ticketMedio || 0;
+                            const last = filteredTicketChart[filteredTicketChart.length - 1]?.ticketMedio || 0;
+                            const variation = first > 0 ? ((last - first) / first) * 100 : 0;
+                            const isPositive = variation >= 0;
+                            
+                            return (
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm text-muted-foreground">Variação:</span>
+                                <Badge 
+                                  variant={isPositive ? "default" : "destructive"}
+                                  className={cn(
+                                    "font-semibold",
+                                    isPositive && "bg-success/10 text-success hover:bg-success/20 border-success/20"
+                                  )}
+                                >
+                                  {isPositive ? '+' : ''}{variation.toFixed(1)}%
+                                </Badge>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card 
+                      className="shadow-soft overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => setShowGoalsUpgradeModal(true)}
+                    >
+                      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                        <div className="text-center">
+                          <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Desbloqueie no plano Profissional
+                          </Badge>
+                          <p className="text-sm text-muted-foreground">
+                            Acompanhe a evolução do valor médio por sessão
+                          </p>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <CardHeader className="opacity-30 pb-4">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="w-5 h-5 text-success" />
+                          <CardTitle>Ticket Médio</CardTitle>
+                        </div>
+                        <CardDescription className="mt-1">
+                          Evolução do valor médio por sessão
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="opacity-30 pt-0">
+                        <div className="grid grid-cols-4 gap-3 mb-6">
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                        </div>
+                        <div className="h-72 bg-muted rounded-lg" />
+                      </CardContent>
+                    </Card>
+                  )}
                 </ScrollAnimation>
 
                 {/* Ticket Médio por Cliente - Modernizado */}
                 <ScrollAnimation animation="fade-up" delay={200} className="col-span-full">
-                  <Card className="shadow-soft overflow-hidden">
-                    <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-2">
-                          <BarChart3 className="w-5 h-5 text-success" />
-                          <CardTitle>Ticket Médio por {clientTerm}</CardTitle>
-                          <CardDescription className="hidden sm:block sm:ml-2">
-                            | Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                  {hasAccessToFeature('goals') ? (
+                    <Card className="shadow-soft overflow-hidden">
+                      <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-4">
+                          <div className="flex items-center gap-2">
+                            <BarChart3 className="w-5 h-5 text-success" />
+                            <CardTitle>Ticket Médio por {clientTerm}</CardTitle>
+                            <CardDescription className="hidden sm:block sm:ml-2">
+                              | Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                            </CardDescription>
+                          </div>
+                          <CardDescription className="sm:hidden">
+                            Valor médio por sessão de cada {clientTerm.toLowerCase()}
                           </CardDescription>
                         </div>
-                        <CardDescription className="sm:hidden">
-                          Valor médio por sessão de cada {clientTerm.toLowerCase()}
-                        </CardDescription>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {/* Métricas resumidas */}
-                      {clientTicketMedio.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                          <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
-                            <p className="text-xs text-muted-foreground mb-1">Maior Ticket</p>
-                            <p className="text-lg font-bold text-success">
-                              {formatCurrencyBR(Math.max(...clientTicketMedio.map(c => c.ticketMedio)))}
-                            </p>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {/* Métricas resumidas */}
+                        {clientTicketMedio.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                            <div className="bg-gradient-to-br from-success/10 to-success/5 rounded-xl p-3 border border-success/20">
+                              <p className="text-xs text-muted-foreground mb-1">Maior Ticket</p>
+                              <p className="text-lg font-bold text-success">
+                                {formatCurrencyBR(Math.max(...clientTicketMedio.map(c => c.ticketMedio)))}
+                              </p>
+                            </div>
+                            <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">Menor Ticket</p>
+                              <p className="text-lg font-bold text-foreground">
+                                {formatCurrencyBR(Math.min(...clientTicketMedio.map(c => c.ticketMedio)))}
+                              </p>
+                            </div>
+                            <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">Média Geral</p>
+                              <p className="text-lg font-bold text-foreground">
+                                {formatCurrencyBR(clientTicketMedio.reduce((sum, c) => sum + c.ticketMedio, 0) / clientTicketMedio.length)}
+                              </p>
+                            </div>
+                            <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">{clientTermPlural}</p>
+                              <p className="text-lg font-bold text-foreground">
+                                {clientTicketMedio.length}
+                              </p>
+                            </div>
                           </div>
-                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">Menor Ticket</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {formatCurrencyBR(Math.min(...clientTicketMedio.map(c => c.ticketMedio)))}
-                            </p>
-                          </div>
-                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">Média Geral</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {formatCurrencyBR(clientTicketMedio.reduce((sum, c) => sum + c.ticketMedio, 0) / clientTicketMedio.length)}
-                            </p>
-                          </div>
-                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">{clientTermPlural}</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {clientTicketMedio.length}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                      
-                      <div className="h-auto">
-                        <div className="space-y-3 pr-2">
+                        )}
+                        
+                        {/* Lista de clientes com ticket médio */}
+                        <div className="space-y-3 max-h-96 overflow-y-auto scrollbar-thin">
                           {clientTicketMedio.length > 0 ? clientTicketMedio.map((client, index) => {
-                            const maxTicket = Math.max(...clientTicketMedio.map(c => c.ticketMedio))
-                            const widthPercent = maxTicket > 0 ? (client.ticketMedio / maxTicket) * 100 : 0
+                            const maxValue = Math.max(...clientTicketMedio.map(c => c.ticketMedio))
+                            const widthPercent = (client.ticketMedio / maxValue) * 100
                             
                             return (
-                              <div key={client.clientId} className="space-y-2 p-2 rounded-lg hover:bg-muted/30 transition-colors">
-                                <div className="flex justify-between items-center">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs font-medium text-muted-foreground w-5">#{index + 1}</span>
-                                    <p className="text-sm font-medium truncate flex-1">
-                                      {client.nome}
-                                    </p>
+                              <div 
+                                key={client.clientId} 
+                                className="p-3 rounded-xl bg-accent/30 hover:bg-accent/50 transition-all"
+                              >
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-xs text-muted-foreground font-medium w-5">{index + 1}º</span>
+                                    <ClientAvatar 
+                                      avatarPath={client.avatarUrl}
+                                      clientName={client.nome}
+                                      size="sm"
+                                    />
+                                    <span className="font-medium text-sm">{client.nome}</span>
                                   </div>
-                                  <p className="text-sm font-bold text-success whitespace-nowrap">
-                                    {formatCurrencyBR(client.ticketMedio)}
-                                  </p>
+                                  <span className="font-bold text-success">{formatCurrencyBR(client.ticketMedio)}</span>
                                 </div>
                                 <div className="relative ml-7">
                                   <div className="w-full bg-muted rounded-full h-2.5 overflow-hidden">
@@ -2317,280 +2359,364 @@ const Dashboard = () => {
                             </div>
                           )}
                         </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card 
+                      className="shadow-soft overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => setShowGoalsUpgradeModal(true)}
+                    >
+                      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                        <div className="text-center">
+                          <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Desbloqueie no plano Profissional
+                          </Badge>
+                          <p className="text-sm text-muted-foreground">
+                            Veja o valor médio por sessão de cada {clientTerm.toLowerCase()}
+                          </p>
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <CardHeader className="opacity-30 pb-4">
+                        <div className="flex items-center gap-2">
+                          <BarChart3 className="w-5 h-5 text-success" />
+                          <CardTitle>Ticket Médio por {clientTerm}</CardTitle>
+                        </div>
+                        <CardDescription className="mt-1">
+                          Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="opacity-30 pt-0">
+                        <div className="grid grid-cols-4 gap-3 mb-6">
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                        </div>
+                        <div className="space-y-3">
+                          <div className="h-16 bg-muted rounded-xl" />
+                          <div className="h-16 bg-muted rounded-xl" />
+                          <div className="h-16 bg-muted rounded-xl" />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
                 </ScrollAnimation>
 
                 {/* Gráfico de Pizza - Receita por Canal de Pagamento - Modernizado */}
                 <ScrollAnimation animation="fade-up" delay={250} className="col-span-full">
-                  <Card className="shadow-soft min-h-[600px] overflow-visible">
-                    <CardHeader className="pb-4">
-                      <div className="flex flex-col gap-3">
-                        {/* Título */}
+                  {hasAccessToFeature('goals') ? (
+                    <Card className="shadow-soft min-h-[600px] overflow-visible">
+                      <CardHeader className="pb-4">
+                        <div className="flex flex-col gap-3">
+                          {/* Título */}
+                          <div className="flex items-center gap-2">
+                            <DollarSign className="w-5 h-5 text-primary" />
+                            <CardTitle>Receita por Canal</CardTitle>
+                          </div>
+                          {/* Descrição */}
+                          <CardDescription>
+                            Distribuição da receita por método de pagamento
+                          </CardDescription>
+                          {/* Botões de período - abaixo no mobile, ao lado no desktop */}
+                          <div className="flex gap-1 flex-wrap sm:self-end sm:-mt-12">
+                            {(['1', '3', '6', '12'] as const).map((period) => {
+                              // Calcular range de datas para tooltip
+                              const monthsToInclude = parseInt(period)
+                              const now = new Date()
+                              const currentYear = now.getFullYear()
+                              const currentMonth = now.getMonth()
+                              const startMonth = currentMonth - (monthsToInclude - 1)
+                              const startDate = new Date(currentYear, startMonth, 1)
+                              const endDate = new Date(currentYear, currentMonth + 1, 0)
+                              
+                              const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+                              const rangeLabel = monthsToInclude === 1 
+                                ? `${monthNames[startDate.getMonth()]}/${startDate.getFullYear()}`
+                                : `${monthNames[startDate.getMonth()]}/${startDate.getFullYear()} - ${monthNames[endDate.getMonth()]}/${endDate.getFullYear()}`
+                              
+                              return (
+                                <Tooltip key={period}>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      data-no-min-height
+                                      onClick={() => handleCanalPeriodChange(period)}
+                                      className={cn(
+                                        "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
+                                        canalPeriod === period
+                                          ? "bg-primary text-primary-foreground shadow-sm"
+                                          : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                      )}
+                                    >
+                                      {period === '12' ? '1 ano' : `${period}m`}
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent side="bottom" className="text-xs">
+                                    <p>{rangeLabel}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        {/* Métricas resumidas */}
+                        {receitaPorCanal.length > 0 && (
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+                            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
+                              <p className="text-xs text-muted-foreground mb-1">Total Receita</p>
+                              <p className="text-lg font-bold text-primary">
+                                {formatCurrencyBR(receitaPorCanal.reduce((sum, item) => sum + item.valor, 0))}
+                              </p>
+                            </div>
+                            <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">Maior Canal</p>
+                              <p className="text-lg font-bold text-foreground">
+                                {receitaPorCanal.length > 0 ? receitaPorCanal.reduce((max, item) => item.valor > max.valor ? item : max, receitaPorCanal[0]).canal : '-'}
+                              </p>
+                            </div>
+                            <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">Total Pagamentos</p>
+                              <p className="text-lg font-bold text-foreground">
+                                {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
+                              </p>
+                            </div>
+                            <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
+                              <p className="text-xs text-muted-foreground mb-1">Canais Ativos</p>
+                              <p className="text-lg font-bold text-foreground">
+                                {receitaPorCanal.length}
+                              </p>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 min-h-[380px] overflow-visible">
+                          {/* Gráfico RadialBar moderno - altura fixa para consistência visual */}
+                          <div className="h-[400px] min-h-[400px] flex items-center justify-center relative">
+                            {receitaPorCanal.length > 0 ? (
+                              <>
+                                <ResponsiveContainer key={`canal-${renderedCanalPeriod}`} width="100%" height="100%">
+                                  <RadialBarChart 
+                                    cx="50%" 
+                                    cy="50%" 
+                                    innerRadius="30%" 
+                                    outerRadius="85%" 
+                                    barSize={18}
+                                    data={(() => {
+                                      // NÃO reverter - barra maior fica mais próxima do centro
+                                      const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
+                                      const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
+                                      // Limitar a 85% quando há múltiplos canais para a barra não fechar
+                                      const maxPercentage = activeChannels === 1 ? 100 : 85;
+                                      
+                                      return receitaPorCanal.map((item, index) => {
+                                        // Calcular porcentagem proporcional ao valor máximo (0-maxPercentage)
+                                        let normalizedValue = 0;
+                                        if (maxValue > 0) {
+                                          normalizedValue = (item.valor / maxValue) * maxPercentage;
+                                        }
+                                        return {
+                                          ...item,
+                                          displayValue: normalizedValue,
+                                          fill: item.color,
+                                          name: item.canal,
+                                          originalIndex: index,
+                                          opacity: hoveredCanalIndex === null || hoveredCanalIndex === index ? 1 : 0.3
+                                        };
+                                      });
+                                    })()}
+                                    startAngle={0}
+                                    endAngle={360}
+                                  >
+                                    <PolarAngleAxis
+                                      type="number"
+                                      domain={[0, 100]}
+                                      angleAxisId={0}
+                                      tick={false}
+                                    />
+                                    <RadialBar
+                                      background={{ fill: 'hsl(var(--muted))' }}
+                                      dataKey="displayValue"
+                                      cornerRadius={10}
+                                      angleAxisId={0}
+                                      isAnimationActive={true}
+                                      animationBegin={0}
+                                      animationDuration={800}
+                                      animationEasing="ease-out"
+                                      onMouseEnter={(data: any) => setHoveredCanalIndex(data.originalIndex)}
+                                      onMouseLeave={() => setHoveredCanalIndex(null)}
+                                    />
+                                    <RechartsTooltip
+                                      cursor={false}
+                                      wrapperStyle={{ zIndex: 9999 }}
+                                      content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                          const data = payload[0].payload;
+                                          const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0);
+                                          const percentage = total > 0 ? ((data.valor / total) * 100).toFixed(1) : '0';
+                                          return (
+                                            <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[160px]">
+                                              <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.fill }} />
+                                                <p className="text-sm font-semibold text-foreground">{data.canal}</p>
+                                              </div>
+                                              <div className="space-y-1">
+                                                <div className="flex justify-between items-center">
+                                                  <span className="text-xs text-muted-foreground">Valor</span>
+                                                  <span className="text-sm font-bold" style={{ color: data.fill }}>{formatCurrencyBR(data.valor)}</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                  <span className="text-xs text-muted-foreground">Participação</span>
+                                                  <span className="text-sm font-medium text-foreground">{percentage}%</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                  <span className="text-xs text-muted-foreground">Pagamentos</span>
+                                                  <span className="text-sm font-medium text-foreground">{data.count || 0}</span>
+                                                </div>
+                                              </div>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      }}
+                                    />
+                                  </RadialBarChart>
+                                </ResponsiveContainer>
+                                {/* Centro do gráfico - mostrar quantidade de sessões */}
+                                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                  <div className="text-center transition-all duration-300 w-20 h-20 flex flex-col items-center justify-center">
+                                    {hoveredCanalIndex !== null && receitaPorCanal[hoveredCanalIndex] ? (
+                                      <>
+                                        <p className="text-3xl font-bold transition-all duration-300" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
+                                          {receitaPorCanal[hoveredCanalIndex].count || 0}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground leading-tight">pagamentos</p>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <p className="text-3xl font-bold text-foreground">
+                                          {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
+                                        </p>
+                                        <p className="text-[10px] text-muted-foreground leading-tight">pagamentos</p>
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="flex flex-col items-center justify-center text-center py-8">
+                                <DollarSign className="w-12 h-12 text-muted-foreground mb-4" />
+                                <p className="text-muted-foreground">Nenhum dado no período</p>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* Lista de Canais com animação e hover sincronizado */}
+                          <div className="flex flex-col gap-2 lg:justify-center overflow-visible p-2">
+                            {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
+                              const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
+                              const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
+                              const isHovered = hoveredCanalIndex === index
+                              
+                              return (
+                                <div 
+                                  key={canal.canal} 
+                                  className={cn(
+                                    "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer",
+                                    isHovered 
+                                      ? "bg-accent/80 shadow-lg scale-[1.02] border-2" 
+                                      : "bg-accent/30 hover:bg-accent/50 border border-border/50",
+                                    hoveredCanalIndex !== null && !isHovered && "opacity-50"
+                                  )}
+                                  style={{
+                                    borderColor: isHovered ? canal.color : undefined
+                                  }}
+                                  onMouseEnter={() => setHoveredCanalIndex(index)}
+                                  onMouseLeave={() => setHoveredCanalIndex(null)}
+                                >
+                                  <div className="flex items-center gap-3">
+                                    <div 
+                                      className={cn(
+                                        "w-4 h-4 rounded-full flex-shrink-0 transition-all duration-300",
+                                        isHovered && "scale-125"
+                                      )}
+                                      style={{ 
+                                        backgroundColor: canal.color,
+                                        boxShadow: isHovered ? `0 0 12px ${canal.color}` : 'none'
+                                      }}
+                                    />
+                                    <div>
+                                      <span className={cn(
+                                        "font-medium text-sm transition-all duration-300",
+                                        isHovered && "font-semibold"
+                                      )}>{canal.canal}</span>
+                                      <p className="text-xs text-muted-foreground">{canal.count || 0} pagamentos</p>
+                                    </div>
+                                  </div>
+                                  <div className="text-right">
+                                    <p className={cn(
+                                      "font-bold text-sm transition-all duration-300",
+                                      isHovered ? "text-lg" : "text-primary"
+                                    )} style={{ color: isHovered ? canal.color : undefined }}>{formatCurrencyBR(canal.valor)}</p>
+                                    <p className="text-xs text-muted-foreground">{percentage}%</p>
+                                  </div>
+                                </div>
+                              )
+                            }) : (
+                              <div className="text-center py-8">
+                                <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                                <p className="text-muted-foreground">Nenhum pagamento registrado no período</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <Card 
+                      className="shadow-soft min-h-[400px] overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+                      onClick={() => setShowGoalsUpgradeModal(true)}
+                    >
+                      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
+                        <div className="text-center">
+                          <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
+                            <Lock className="w-3 h-3 mr-1" />
+                            Desbloqueie no plano Profissional
+                          </Badge>
+                          <p className="text-sm text-muted-foreground">
+                            Veja a distribuição da receita por método de pagamento
+                          </p>
+                        </div>
+                      </div>
+                      <CardHeader className="opacity-30 pb-4">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
                         </div>
-                        {/* Descrição */}
-                        <CardDescription>
+                        <CardDescription className="mt-1">
                           Distribuição da receita por método de pagamento
                         </CardDescription>
-                        {/* Botões de período - abaixo no mobile, ao lado no desktop */}
-                        <div className="flex gap-1 flex-wrap sm:self-end sm:-mt-12">
-                          {(['1', '3', '6', '12'] as const).map((period) => {
-                            // Calcular range de datas para tooltip
-                            const monthsToInclude = parseInt(period)
-                            const now = new Date()
-                            const currentYear = now.getFullYear()
-                            const currentMonth = now.getMonth()
-                            const startMonth = currentMonth - (monthsToInclude - 1)
-                            const startDate = new Date(currentYear, startMonth, 1)
-                            const endDate = new Date(currentYear, currentMonth + 1, 0)
-                            
-                            const monthNames = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-                            const rangeLabel = monthsToInclude === 1 
-                              ? `${monthNames[startDate.getMonth()]}/${startDate.getFullYear()}`
-                              : `${monthNames[startDate.getMonth()]}/${startDate.getFullYear()} - ${monthNames[endDate.getMonth()]}/${endDate.getFullYear()}`
-                            
-                            return (
-                              <Tooltip key={period}>
-                                <TooltipTrigger asChild>
-                                  <button
-                                    data-no-min-height
-                                    onClick={() => handleCanalPeriodChange(period)}
-                                    className={cn(
-                                      "px-2.5 py-1 text-xs font-medium rounded-full transition-all duration-200 min-h-0",
-                                      canalPeriod === period
-                                        ? "bg-primary text-primary-foreground shadow-sm"
-                                        : "bg-muted/50 text-muted-foreground hover:bg-muted hover:text-foreground"
-                                    )}
-                                  >
-                                    {period === '12' ? '1 ano' : `${period}m`}
-                                  </button>
-                                </TooltipTrigger>
-                                <TooltipContent side="bottom" className="text-xs">
-                                  <p>{rangeLabel}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )
-                          })}
+                      </CardHeader>
+                      <CardContent className="opacity-30 pt-0">
+                        <div className="grid grid-cols-4 gap-3 mb-6">
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
+                          <div className="bg-muted rounded-xl p-3 h-16" />
                         </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      {/* Métricas resumidas */}
-                      {receitaPorCanal.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-                          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-3 border border-primary/20">
-                            <p className="text-xs text-muted-foreground mb-1">Total Receita</p>
-                            <p className="text-lg font-bold text-primary">
-                              {formatCurrencyBR(receitaPorCanal.reduce((sum, item) => sum + item.valor, 0))}
-                            </p>
-                          </div>
-                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">Maior Canal</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {receitaPorCanal.length > 0 ? receitaPorCanal.reduce((max, item) => item.valor > max.valor ? item : max, receitaPorCanal[0]).canal : '-'}
-                            </p>
-                          </div>
-                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">Total Pagamentos</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
-                            </p>
-                          </div>
-                          <div className="bg-muted/30 rounded-xl p-3 border border-border/50">
-                            <p className="text-xs text-muted-foreground mb-1">Canais Ativos</p>
-                            <p className="text-lg font-bold text-foreground">
-                              {receitaPorCanal.length}
-                            </p>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="h-64 bg-muted rounded-xl" />
+                          <div className="space-y-2">
+                            <div className="h-12 bg-muted rounded-xl" />
+                            <div className="h-12 bg-muted rounded-xl" />
+                            <div className="h-12 bg-muted rounded-xl" />
+                            <div className="h-12 bg-muted rounded-xl" />
                           </div>
                         </div>
-                      )}
-                      
-                      <div className="flex flex-col lg:grid lg:grid-cols-2 gap-6 lg:gap-4 min-h-[380px] overflow-visible">
-                        {/* Gráfico RadialBar moderno - altura fixa para consistência visual */}
-                        <div className="h-[400px] min-h-[400px] flex items-center justify-center relative">
-                          {receitaPorCanal.length > 0 ? (
-                            <>
-                              <ResponsiveContainer key={`canal-${renderedCanalPeriod}`} width="100%" height="100%">
-                                <RadialBarChart 
-                                  cx="50%" 
-                                  cy="50%" 
-                                  innerRadius="30%" 
-                                  outerRadius="85%" 
-                                  barSize={18}
-                                  data={(() => {
-                                    // NÃO reverter - barra maior fica mais próxima do centro
-                                    const maxValue = Math.max(...receitaPorCanal.map(item => item.valor));
-                                    const activeChannels = receitaPorCanal.filter(item => item.valor > 0).length;
-                                    // Limitar a 85% quando há múltiplos canais para a barra não fechar
-                                    const maxPercentage = activeChannels === 1 ? 100 : 85;
-                                    
-                                    return receitaPorCanal.map((item, index) => {
-                                      // Calcular porcentagem proporcional ao valor máximo (0-maxPercentage)
-                                      let normalizedValue = 0;
-                                      if (maxValue > 0) {
-                                        normalizedValue = (item.valor / maxValue) * maxPercentage;
-                                      }
-                                      return {
-                                        ...item,
-                                        displayValue: normalizedValue,
-                                        fill: item.color,
-                                        name: item.canal,
-                                        originalIndex: index,
-                                        opacity: hoveredCanalIndex === null || hoveredCanalIndex === index ? 1 : 0.3
-                                      };
-                                    });
-                                  })()}
-                                  startAngle={0}
-                                  endAngle={360}
-                                >
-                                  <PolarAngleAxis
-                                    type="number"
-                                    domain={[0, 100]}
-                                    angleAxisId={0}
-                                    tick={false}
-                                  />
-                                  <RadialBar
-                                    background={{ fill: 'hsl(var(--muted))' }}
-                                    dataKey="displayValue"
-                                    cornerRadius={10}
-                                    angleAxisId={0}
-                                    isAnimationActive={true}
-                                    animationBegin={0}
-                                    animationDuration={800}
-                                    animationEasing="ease-out"
-                                    onMouseEnter={(data: any) => setHoveredCanalIndex(data.originalIndex)}
-                                    onMouseLeave={() => setHoveredCanalIndex(null)}
-                                  />
-                                  <RechartsTooltip
-                                    cursor={false}
-                                    wrapperStyle={{ zIndex: 9999 }}
-                                    content={({ active, payload }) => {
-                                      if (active && payload && payload.length) {
-                                        const data = payload[0].payload;
-                                        const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0);
-                                        const percentage = total > 0 ? ((data.valor / total) * 100).toFixed(1) : '0';
-                                        return (
-                                          <div className="bg-popover border border-border shadow-lg rounded-lg p-3 min-w-[160px]">
-                                            <div className="flex items-center gap-2 mb-2">
-                                              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: data.fill }} />
-                                              <p className="text-sm font-semibold text-foreground">{data.canal}</p>
-                                            </div>
-                                            <div className="space-y-1">
-                                              <div className="flex justify-between items-center">
-                                                <span className="text-xs text-muted-foreground">Valor</span>
-                                                <span className="text-sm font-bold" style={{ color: data.fill }}>{formatCurrencyBR(data.valor)}</span>
-                                              </div>
-                                              <div className="flex justify-between items-center">
-                                                <span className="text-xs text-muted-foreground">Participação</span>
-                                                <span className="text-sm font-medium text-foreground">{percentage}%</span>
-                                              </div>
-                                              <div className="flex justify-between items-center">
-                                                <span className="text-xs text-muted-foreground">Pagamentos</span>
-                                                <span className="text-sm font-medium text-foreground">{data.count || 0}</span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        );
-                                      }
-                                      return null;
-                                    }}
-                                  />
-                                </RadialBarChart>
-                              </ResponsiveContainer>
-                              {/* Centro do gráfico - mostrar quantidade de sessões */}
-                              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                                <div className="text-center transition-all duration-300 w-20 h-20 flex flex-col items-center justify-center">
-                                  {hoveredCanalIndex !== null && receitaPorCanal[hoveredCanalIndex] ? (
-                                    <>
-                                      <p className="text-3xl font-bold transition-all duration-300" style={{ color: receitaPorCanal[hoveredCanalIndex].color }}>
-                                        {receitaPorCanal[hoveredCanalIndex].count || 0}
-                                      </p>
-                                      <p className="text-[10px] text-muted-foreground leading-tight">pagamentos</p>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <p className="text-3xl font-bold text-foreground">
-                                        {receitaPorCanal.reduce((sum, item) => sum + (item.count || 0), 0)}
-                                      </p>
-                                      <p className="text-[10px] text-muted-foreground leading-tight">pagamentos</p>
-                                    </>
-                                  )}
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center text-center py-8">
-                              <DollarSign className="w-12 h-12 text-muted-foreground mb-4" />
-                              <p className="text-muted-foreground">Nenhum dado no período</p>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Lista de Canais com animação e hover sincronizado */}
-                        <div className="flex flex-col gap-2 lg:justify-center overflow-visible p-2">
-                          {receitaPorCanal.length > 0 ? receitaPorCanal.map((canal, index) => {
-                            const total = receitaPorCanal.reduce((sum, item) => sum + item.valor, 0)
-                            const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
-                            const isHovered = hoveredCanalIndex === index
-                            
-                            return (
-                              <div 
-                                key={canal.canal} 
-                                className={cn(
-                                  "flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-300 cursor-pointer",
-                                  isHovered 
-                                    ? "bg-accent/80 shadow-lg scale-[1.02] border-2" 
-                                    : "bg-accent/30 hover:bg-accent/50 border border-border/50",
-                                  hoveredCanalIndex !== null && !isHovered && "opacity-50"
-                                )}
-                                style={{
-                                  borderColor: isHovered ? canal.color : undefined
-                                }}
-                                onMouseEnter={() => setHoveredCanalIndex(index)}
-                                onMouseLeave={() => setHoveredCanalIndex(null)}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div 
-                                    className={cn(
-                                      "w-4 h-4 rounded-full flex-shrink-0 transition-all duration-300",
-                                      isHovered && "scale-125"
-                                    )}
-                                    style={{ 
-                                      backgroundColor: canal.color,
-                                      boxShadow: isHovered ? `0 0 12px ${canal.color}` : 'none'
-                                    }}
-                                  />
-                                  <div>
-                                    <span className={cn(
-                                      "font-medium text-sm transition-all duration-300",
-                                      isHovered && "font-semibold"
-                                    )}>{canal.canal}</span>
-                                    <p className="text-xs text-muted-foreground">{canal.count || 0} pagamentos</p>
-                                  </div>
-                                </div>
-                                <div className="text-right">
-                                  <p className={cn(
-                                    "font-bold text-sm transition-all duration-300",
-                                    isHovered ? "text-lg" : "text-primary"
-                                  )} style={{ color: isHovered ? canal.color : undefined }}>{formatCurrencyBR(canal.valor)}</p>
-                                  <p className="text-xs text-muted-foreground">{percentage}%</p>
-                                </div>
-                              </div>
-                            )
-                          }) : (
-                            <div className="text-center py-8">
-                              <DollarSign className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                              <p className="text-muted-foreground">Nenhum pagamento registrado no período</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                      </CardContent>
+                    </Card>
+                  )}
                 </ScrollAnimation>
               </div>
             </CardContent>
