@@ -51,8 +51,8 @@ const getMenuItems = (clientTermPlural: 'Pacientes' | 'Clientes') => [
     { title: "Agenda" as const, url: "/agenda", icon: Calendar },
     { title: clientTermPlural, url: "/clientes", icon: Users },
     { title: "Sessões" as const, url: "/sessoes", icon: NotebookPen },
-    { title: "Sessões Recorrentes" as const, url: "/sessoes-recorrentes", icon: Repeat },
-    { title: "Pacotes" as const, url: "/pacotes", icon: Package },
+    { title: "Sessões Recorrentes" as const, url: "/sessoes-recorrentes", icon: Repeat, requiredFeature: 'goals' as Feature },
+    { title: "Pacotes" as const, url: "/pacotes", icon: Package, requiredFeature: 'goals' as Feature },
     { title: "Pagamentos" as const, url: "/pagamentos", icon: CreditCard },
     { title: "Relatórios" as const, url: "/relatorios", icon: FileBarChart, requiredFeature: 'reports' as Feature },
     { title: "Prontuários" as const, url: "/prontuarios", icon: FileText },
@@ -195,7 +195,7 @@ export function AppSidebar() {
                           {isLocked && (
                             <Badge 
                               variant={isPremiumFeature ? 'warning' : 'secondary'}
-                              className="text-[8px] px-1.5 py-0 whitespace-nowrap gap-0.5"
+                              className="text-[8px] px-1.5 py-0 whitespace-nowrap gap-0.5 min-w-[52px] justify-center"
                             >
                               {isPremiumFeature ? (
                                 <Crown className="w-2.5 h-2.5" />
@@ -208,7 +208,7 @@ export function AppSidebar() {
                           
                           {/* Coming soon badge */}
                           {!isLocked && isComingSoon && (
-                            <Badge variant="warning" className="text-[8px] px-1.5 py-0 whitespace-nowrap">
+                            <Badge variant="warning" className="text-[8px] px-1.5 py-0 whitespace-nowrap min-w-[52px] justify-center">
                               Em breve
                             </Badge>
                           )}

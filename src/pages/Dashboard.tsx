@@ -1328,7 +1328,47 @@ const Dashboard = () => {
           ) : (
             <>
               <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '150ms' }}>
-                <PackageStatusCard stats={packageStats} />
+                {/* PackageStatusCard - bloqueado para plano básico */}
+                {hasAccessToFeature('goals') ? (
+                  <div className="relative h-full">
+                    <NewFeatureBadge featureKey="goals" className="absolute top-2 right-2 z-10" />
+                    <PackageStatusCard stats={packageStats} />
+                  </div>
+                ) : (
+                  <Card 
+                    className="shadow-soft h-full cursor-pointer relative overflow-hidden"
+                    onClick={() => setShowGoalsUpgradeModal(true)}
+                  >
+                    {/* Locked overlay */}
+                    <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-center p-4">
+                        <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+                          <Package className="w-6 h-6 text-white" />
+                        </div>
+                        <h3 className="font-semibold">Pacotes</h3>
+                        <Badge variant="default" className="text-xs">
+                          Desbloqueie no plano Profissional
+                        </Badge>
+                        <p className="text-xs text-muted-foreground max-w-[200px]">
+                          Gerencie pacotes de sessões
+                        </p>
+                      </div>
+                    </div>
+                    {/* Placeholder content */}
+                    <CardHeader className="opacity-30">
+                      <CardTitle className="flex items-center gap-2">
+                        <Package className="w-5 h-5" />
+                        Pacotes
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="opacity-30">
+                      <div className="space-y-4">
+                        <div className="h-16 bg-muted rounded-lg" />
+                        <div className="h-16 bg-muted rounded-lg" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
               <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '225ms' }}>
                 {/* BusinessOrbitalView - Metas - bloqueado para plano básico */}

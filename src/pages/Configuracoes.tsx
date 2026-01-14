@@ -937,12 +937,12 @@ const Configuracoes = () => {
                           setShowColorUpgradeModal(true)
                         }
                       }} 
-                      className="w-full sm:w-[200px] h-10 justify-start gap-2"
+                      className="w-full sm:w-[240px] h-10 justify-start gap-2"
                     >
                       <Palette className="w-4 h-4" />
                       Personalizar Cores
                       {!hasAccessToFeature('color_customization') && (
-                        <Lock className="w-3 h-3 ml-auto" />
+                        <Lock className="w-4 h-4 ml-auto" />
                       )}
                     </Button>
                   </div>
@@ -1385,15 +1385,30 @@ const Configuracoes = () => {
                   
                   <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                      <Label>Notificações por WhatsApp</Label>
+                      <Label className="flex items-center gap-2">
+                        Notificações por WhatsApp
+                        {!hasAccessToFeature('whatsapp_notifications') && (
+                          <Badge variant="warning" className="text-[10px] gap-1">
+                            <Crown className="w-3 h-3" />
+                            Premium
+                          </Badge>
+                        )}
+                      </Label>
                       <p className="text-sm text-muted-foreground">
                         Receba notificações sobre sessões e lembretes por WhatsApp
                       </p>
                     </div>
-                    <Switch
-                      checked={settings.notificacao_whatsapp || false}
-                      onCheckedChange={(checked) => handleSettingsChange('notificacao_whatsapp', checked)}
-                    />
+                    {hasAccessToFeature('whatsapp_notifications') ? (
+                      <Switch
+                        checked={settings.notificacao_whatsapp || false}
+                        onCheckedChange={(checked) => handleSettingsChange('notificacao_whatsapp', checked)}
+                      />
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                        <Switch disabled checked={false} />
+                      </div>
+                    )}
                   </div>
                   
                   <div className="flex items-center justify-between">
@@ -1429,19 +1444,32 @@ const Configuracoes = () => {
                         <Label className="flex items-center gap-2">
                           <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                           Sincronização Google Calendar
+                          {!hasAccessToFeature('google_calendar') && (
+                            <Badge variant="warning" className="text-[10px] gap-1">
+                              <Crown className="w-3 h-3" />
+                              Premium
+                            </Badge>
+                          )}
                         </Label>
                         <p className="text-sm text-muted-foreground">
                           Verifica conflitos e eventos cancelados a cada 15 minutos
                         </p>
                       </div>
-                      <Switch
-                        checked={isAutoSyncEnabled}
-                        onCheckedChange={toggleAutoSync}
-                        disabled={!localStorage.getItem('google_access_token')}
-                      />
+                      {hasAccessToFeature('google_calendar') ? (
+                        <Switch
+                          checked={isAutoSyncEnabled}
+                          onCheckedChange={toggleAutoSync}
+                          disabled={!localStorage.getItem('google_access_token')}
+                        />
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          <Lock className="w-4 h-4 text-muted-foreground" />
+                          <Switch disabled checked={false} />
+                        </div>
+                      )}
                     </div>
 
-                    {!localStorage.getItem('google_access_token') && (
+                    {hasAccessToFeature('google_calendar') && !localStorage.getItem('google_access_token') && (
                       <p className="text-sm text-muted-foreground italic mt-2">
                         Conecte-se ao Google Calendar na página de Integrações para ativar esta funcionalidade.
                       </p>
