@@ -48,17 +48,26 @@ interface UpgradePlanCardProps {
 // Mapeia plano para features que serão perdidas em downgrade
 const planFeatures: Record<string, string[]> = {
   premium: [
-    'Clientes ilimitados',
-    'Histórico completo de atendimentos',
-    'Relatórios em PDF',
+    'Pacientes ilimitados',
+    'Programa de indicação completo',
+    'Relatórios avançados (PDF, filtros, períodos)',
+    'Integração com Google Agenda',
     'Integração com WhatsApp',
+    'Personalização total da plataforma (cores)',
+    'Página pública com personalização completa',
+    'Backup automático',
     'Suporte prioritário'
   ],
   pro: [
-    'Até 20 clientes ativos',
-    'Sessões ilimitadas por cliente',
-    'Histórico básico de atendimentos',
-    'Agendamento online'
+    'Dashboard completo',
+    'Até 50 pacientes',
+    'Sessões ilimitadas',
+    'Sessões recorrentes e pacotes',
+    'Metas e relatórios padrão',
+    'Prontuários completos (anamnese + evolução)',
+    'Página pública de agendamento',
+    'Programa de indicação',
+    'Modo claro e escuro'
   ]
 }
 
@@ -100,7 +109,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       period: '/mês',
       icon: <Star className="h-5 w-5" />,
       description: 'Ideal para começar',
-      features: ['Até 3 clientes', 'Até 4 sessões por cliente', 'Agendamento básico'],
+      features: ['Dashboard (versão limitada)', 'Até 10 pacientes', 'Até 10 sessões por paciente', 'Prontuários básicos'],
       monthlyStripePrice: '',
       annualStripePrice: '',
       currentPlan: currentPlan === 'basico',
@@ -114,7 +123,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       period: '/mês',
       icon: <Zap className="h-5 w-5" />,
       description: 'Para profissionais em crescimento',
-      features: ['Até 20 clientes', 'Sessões ilimitadas', 'Histórico básico', 'Agendamento online'],
+      features: ['Dashboard completo', 'Até 50 pacientes', 'Sessões ilimitadas', 'Página pública', 'Programa de indicação'],
       recommended: true,
       monthlyStripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb',
       annualStripePrice: 'price_1SSMOdCP57sNVd3la4kMOinN',
@@ -130,7 +139,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       period: '/mês',
       icon: <Crown className="h-5 w-5" />,
       description: 'Máximo poder e recursos',
-      features: ['Clientes ilimitados', 'Histórico completo', 'Relatórios PDF', 'Integração WhatsApp'],
+      features: ['Tudo do Profissional', 'Pacientes ilimitados', 'Relatórios PDF', 'Integração Google/WhatsApp', 'Suporte prioritário'],
       monthlyStripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
       annualStripePrice: 'price_1SSMP7CP57sNVd3lSf4oYINX',
       currentPlan: currentPlan === 'premium',

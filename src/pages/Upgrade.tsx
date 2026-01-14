@@ -23,17 +23,26 @@ import {
 // Mapeia plano para features que serão perdidas em downgrade
 const planFeatures: Record<string, string[]> = {
   premium: [
-    'Clientes ilimitados',
-    'Histórico completo de atendimentos',
-    'Relatórios em PDF',
+    'Pacientes ilimitados',
+    'Programa de indicação completo',
+    'Relatórios avançados (PDF, filtros, períodos)',
+    'Integração com Google Agenda',
     'Integração com WhatsApp',
+    'Personalização total da plataforma (cores)',
+    'Página pública com personalização completa',
+    'Backup automático',
     'Suporte prioritário'
   ],
   pro: [
-    'Até 20 clientes ativos',
-    'Sessões ilimitadas por cliente',
-    'Histórico básico de atendimentos',
-    'Agendamento online'
+    'Dashboard completo',
+    'Até 50 pacientes',
+    'Sessões ilimitadas',
+    'Sessões recorrentes e pacotes',
+    'Metas e relatórios padrão',
+    'Prontuários completos (anamnese + evolução)',
+    'Página pública de agendamento',
+    'Programa de indicação',
+    'Modo claro e escuro'
   ]
 }
 
@@ -96,12 +105,14 @@ export default function Upgrade() {
       price: 'Grátis', 
       period: '', 
       icon: <Star className="h-6 w-6" />, 
-      description: 'Para começar sua jornada', 
+      description: 'Ideal para começar', 
       features: [ 
-        'Até 3 clientes', 
-        'Até 4 sessões por cliente', 
-        'Agenda básica', 
-        'Suporte por email' 
+        'Dashboard (versão limitada)', 
+        'Agenda completa', 
+        'Até 10 pacientes',
+        'Até 10 sessões por paciente', 
+        'Prontuários (anamnese + anotações)',
+        'Gerenciamento de pagamentos' 
       ], 
       recommended: false, 
       stripePrice: null, 
@@ -118,12 +129,15 @@ export default function Upgrade() {
       icon: <Zap className="h-6 w-6" />, 
       description: 'Para profissionais em crescimento', 
       features: [ 
-        'Até 20 clientes', 
+        'Dashboard completo', 
+        'Até 50 pacientes',
         'Sessões ilimitadas', 
-        'Histórico completo', 
-        'Agendamento online',
-        'Personalização de design',
-        'Suporte prioritário' 
+        'Sessões recorrentes e pacotes',
+        'Metas e relatórios padrão',
+        'Prontuários completos',
+        'Página pública de agendamento',
+        'Programa de indicação',
+        'Modo claro e escuro'
       ], 
       recommended: true, 
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.pro_monthly : STRIPE_PRICES.pro_annual, 
@@ -146,14 +160,16 @@ export default function Upgrade() {
       icon: <Crown className="h-6 w-6" />, 
       description: 'Máximo poder e recursos', 
       features: [ 
-        'Clientes ilimitados', 
-        'Sessões ilimitadas',
-        'Histórico completo', 
-        'Relatórios em PDF',
-        'Integração WhatsApp', 
-        'Personalização total',
+        'Tudo do Profissional', 
+        'Pacientes ilimitados',
+        'Programa de indicação completo', 
+        'Relatórios avançados (PDF, filtros)',
+        'Integração Google Agenda', 
+        'Integração WhatsApp',
+        'Personalização total (cores)',
+        'Página pública personalizada',
         'Backup automático',
-        'Suporte VIP 24/7' 
+        'Suporte prioritário' 
       ], 
       recommended: false, 
       stripePrice: billingCycle === 'monthly' ? STRIPE_PRICES.premium_monthly : STRIPE_PRICES.premium_annual, 

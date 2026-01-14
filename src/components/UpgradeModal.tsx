@@ -46,10 +46,13 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       price: 'R$ 29,90',
       period: '/mês',
       features: [
-        'Até 20 clientes',
+        'Dashboard completo',
+        'Até 50 pacientes',
         'Sessões ilimitadas',
-        'Histórico básico',
-        'Suporte por email'
+        'Sessões recorrentes e pacotes',
+        'Metas e relatórios padrão',
+        'Página pública de agendamento',
+        'Programa de indicação'
       ],
       recommended: true, // Sempre mais popular
       stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb'
@@ -60,11 +63,12 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       price: 'R$ 49,90',
       period: '/mês',
       features: [
-        'Clientes ilimitados',
-        'Sessões ilimitadas',
-        'Histórico completo',
-        'Relatórios em PDF',
+        'Tudo do Profissional',
+        'Pacientes ilimitados',
+        'Relatórios avançados (PDF, filtros)',
+        'Integração Google Agenda',
         'Integração WhatsApp',
+        'Personalização total (cores)',
         'Suporte prioritário'
       ],
       recommended: false,
