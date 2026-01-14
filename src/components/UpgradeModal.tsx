@@ -7,6 +7,7 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface UpgradeModalProps {
   open: boolean
@@ -27,10 +28,22 @@ interface ProrationData {
   newPlanPriceFormatted: string
 }
 
+const STRIPE_PRICES = {
+  pro: {
+    monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
+    yearly: 'price_1SSMpFCP57sNVd3l1O9xfE9u'
+  },
+  premium: {
+    monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
+    yearly: 'price_1SSMpwCP57sNVd3lAY2Oy39b'
+  }
+}
+
 export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps) => {
   const { currentPlan } = useSubscription()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [prorationView, setProrationView] = useState<{
     show: boolean
     plan: typeof plans[0] | null
@@ -43,8 +56,10 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
     {
       name: 'Profissional',
       id: 'pro',
-      price: 'R$ 29,90',
-      period: '/mês',
+      monthlyPrice: 'R$ 29,90',
+      yearlyPrice: 'R$ 299,00',
+      yearlyMonthlyEquivalent: 'R$ 24,92',
+      period: billingInterval === 'monthly' ? '/mês' : '/ano',
       features: [
         'Dashboard completo',
         'Até 50 pacientes',
@@ -54,14 +69,18 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Página pública padrão',
         'Programa de indicação'
       ],
-      recommended: true, // Sempre mais popular
-      stripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb'
+      recommended: true,
+      stripePrice: billingInterval === 'monthly' 
+        ? STRIPE_PRICES.pro.monthly 
+        : STRIPE_PRICES.pro.yearly
     },
     {
       name: 'Premium',
       id: 'premium',
-      price: 'R$ 49,90',
-      period: '/mês',
+      monthlyPrice: 'R$ 49,90',
+      yearlyPrice: 'R$ 499,00',
+      yearlyMonthlyEquivalent: 'R$ 41,58',
+      period: billingInterval === 'monthly' ? '/mês' : '/ano',
       features: [
         'Tudo do Profissional',
         'Pacientes ilimitados',
@@ -72,7 +91,9 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Suporte prioritário'
       ],
       recommended: false,
-      stripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du'
+      stripePrice: billingInterval === 'monthly' 
+        ? STRIPE_PRICES.premium.monthly 
+        : STRIPE_PRICES.premium.yearly
     }
   ]
 
@@ -287,15 +308,51 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
   // Default plan selection view
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Upgrade Necessário</DialogTitle>
         </DialogHeader>
         
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <p className="text-muted-foreground">
             Para usar <span className="font-semibold">{feature}</span>, você precisa fazer upgrade do seu plano.
           </p>
+        </div>
+
+        {/* Billing interval toggle */}
+        <div className="flex justify-center mb-6">
+          <div className="inline-flex items-center bg-muted/50 rounded-full p-1">
+            <button
+              onClick={() => setBillingInterval('monthly')}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
+                billingInterval === 'monthly'
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Mensal
+            </button>
+            <button
+              onClick={() => setBillingInterval('yearly')}
+              className={cn(
+                "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
+                billingInterval === 'yearly'
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              Anual
+              <span className={cn(
+                "text-[10px] px-1.5 py-0.5 rounded-full",
+                billingInterval === 'yearly'
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-success/20 text-success"
+              )}>
+                -17%
+              </span>
+            </button>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
@@ -313,8 +370,15 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
                 <CardDescription>
-                  <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+                  <span className="text-3xl font-bold text-foreground">
+                    {billingInterval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
+                  </span>
                   <span className="text-muted-foreground">{plan.period}</span>
+                  {billingInterval === 'yearly' && (
+                    <div className="text-sm text-success mt-1">
+                      equivale a {plan.yearlyMonthlyEquivalent}/mês
+                    </div>
+                  )}
                 </CardDescription>
               </CardHeader>
               
