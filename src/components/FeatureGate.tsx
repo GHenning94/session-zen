@@ -2,7 +2,7 @@ import { useState, cloneElement, isValidElement, ReactNode, ReactElement } from 
 import { useSubscription, SubscriptionPlan } from '@/hooks/useSubscription'
 import { UpgradeModal } from './UpgradeModal'
 import { Badge } from '@/components/ui/badge'
-import { Lock, Crown, Sparkles } from 'lucide-react'
+import { Lock, Crown } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export type Feature = 
@@ -241,51 +241,5 @@ export const LockedFeatureBadge = ({
   )
 }
 
-// Badge that shows "Novo" after upgrade - tracks via sessionStorage
-interface NewFeatureBadgeProps {
-  featureKey: string
-  className?: string
-}
-
-export const NewFeatureBadge = ({ featureKey, className }: NewFeatureBadgeProps) => {
-  const [isVisible, setIsVisible] = useState(() => {
-    // Check if this feature was recently unlocked
-    const unlockedFeatures = sessionStorage.getItem('recently_unlocked_features')
-    if (!unlockedFeatures) return false
-    const features = JSON.parse(unlockedFeatures) as string[]
-    return features.includes(featureKey)
-  })
-  
-  const handleMouseEnter = () => {
-    if (isVisible) {
-      // Remove from recently unlocked
-      const unlockedFeatures = sessionStorage.getItem('recently_unlocked_features')
-      if (unlockedFeatures) {
-        const features = JSON.parse(unlockedFeatures) as string[]
-        const updated = features.filter(f => f !== featureKey)
-        if (updated.length > 0) {
-          sessionStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
-        } else {
-          sessionStorage.removeItem('recently_unlocked_features')
-        }
-      }
-      setIsVisible(false)
-    }
-  }
-  
-  if (!isVisible) return null
-  
-  return (
-    <Badge 
-      variant="default"
-      className={cn(
-        "bg-blue-500 text-white text-[10px] animate-pulse",
-        className
-      )}
-      onMouseEnter={handleMouseEnter}
-    >
-      <Sparkles className="w-3 h-3 mr-1" />
-      Novo
-    </Badge>
-  )
-}
+// Re-export NewFeatureBadge from dedicated file for backwards compatibility
+export { NewFeatureBadge } from './NewFeatureBadge'

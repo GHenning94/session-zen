@@ -29,6 +29,7 @@ import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/useAuth";
 import { useSubscription } from "@/hooks/useSubscription";
 import { FeatureGate } from "@/components/FeatureGate";
+import { NewFeatureBadge } from "@/components/NewFeatureBadge";
 import { supabase } from "@/integrations/supabase/client";
 import AnimatedGiftImage from "@/components/AnimatedGiftImage";
 import ShareReferralModal from "@/components/ShareReferralModal";
@@ -919,6 +920,7 @@ const ProgramaIndicacao = () => {
               <h1 className="text-2xl font-bold">Programa de Indicação</h1>
               <p className="text-muted-foreground">Painel do programa de indicações</p>
             </div>
+            <NewFeatureBadge featureKey="referral_program" />
           </div>
           <Button 
             variant="outline" 

@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import GoogleCalendarIntegrationNew from "@/components/google/GoogleCalendarIntegrationNew"
 import { Badge } from "@/components/ui/badge"
+import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 
 type AllSettings = Record<string, any>;
 
@@ -101,9 +102,12 @@ const Integracoes = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Integrações</h1>
-          <p className="text-muted-foreground">Conecte sua conta com serviços externos para aumentar sua produtividade</p>
+        <div className="flex items-center gap-2">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Integrações</h1>
+            <p className="text-muted-foreground">Conecte sua conta com serviços externos para aumentar sua produtividade</p>
+          </div>
+          <NewFeatureBadge featureKey="google_calendar" />
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

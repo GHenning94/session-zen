@@ -1,14 +1,18 @@
 import { useState, useEffect } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
-import { Feature } from '@/hooks/useSubscription'
 
 interface NewFeatureBadgeProps {
-  feature: Feature
+  /** The feature key to check in sessionStorage */
+  featureKey: string
   className?: string
 }
 
-export const NewFeatureBadge = ({ feature, className }: NewFeatureBadgeProps) => {
+/**
+ * Badge that shows "Novo" for recently unlocked features.
+ * Disappears when user hovers over it.
+ */
+export const NewFeatureBadge = ({ featureKey, className }: NewFeatureBadgeProps) => {
   const [isVisible, setIsVisible] = useState(false)
   const [hasBeenSeen, setHasBeenSeen] = useState(false)
 
@@ -16,12 +20,16 @@ export const NewFeatureBadge = ({ feature, className }: NewFeatureBadgeProps) =>
     // Check if this feature was recently unlocked
     const storedFeatures = sessionStorage.getItem('recently_unlocked_features')
     if (storedFeatures) {
-      const features = JSON.parse(storedFeatures) as string[]
-      if (features.includes(feature)) {
-        setIsVisible(true)
+      try {
+        const features = JSON.parse(storedFeatures) as string[]
+        if (features.includes(featureKey)) {
+          setIsVisible(true)
+        }
+      } catch {
+        // Invalid JSON, ignore
       }
     }
-  }, [feature])
+  }, [featureKey])
 
   const handleMouseEnter = () => {
     if (isVisible && !hasBeenSeen) {
@@ -30,11 +38,16 @@ export const NewFeatureBadge = ({ feature, className }: NewFeatureBadgeProps) =>
       // Remove this feature from the session storage
       const storedFeatures = sessionStorage.getItem('recently_unlocked_features')
       if (storedFeatures) {
-        const features = JSON.parse(storedFeatures) as string[]
-        const updated = features.filter(f => f !== feature)
-        if (updated.length > 0) {
-          sessionStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
-        } else {
+        try {
+          const features = JSON.parse(storedFeatures) as string[]
+          const updated = features.filter(f => f !== featureKey)
+          if (updated.length > 0) {
+            sessionStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
+          } else {
+            sessionStorage.removeItem('recently_unlocked_features')
+          }
+        } catch {
+          // Invalid JSON, clear it
           sessionStorage.removeItem('recently_unlocked_features')
         }
       }
