@@ -50,10 +50,10 @@ const planFeatures: Record<string, string[]> = {
   premium: [
     'Pacientes ilimitados',
     'Programa de indicação completo',
-    'Relatórios avançados (PDF, filtros, períodos)',
+    'Relatórios avançados (PDF, Excel, filtros)',
     'Integração com Google Agenda',
     'Integração com WhatsApp',
-    'Personalização total da plataforma (cores)',
+    'Personalização total (tema + cores)',
     'Página pública com personalização completa',
     'Backup automático',
     'Suporte prioritário'
@@ -63,11 +63,11 @@ const planFeatures: Record<string, string[]> = {
     'Até 50 pacientes',
     'Sessões ilimitadas',
     'Sessões recorrentes e pacotes',
-    'Metas e relatórios padrão',
+    'Metas e relatórios simples',
     'Prontuários completos (anamnese + evolução)',
-    'Página pública de agendamento',
+    'Página pública padrão',
     'Programa de indicação',
-    'Modo claro e escuro'
+    'Tema claro e escuro'
   ]
 }
 
@@ -109,7 +109,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       period: '/mês',
       icon: <Star className="h-5 w-5" />,
       description: 'Ideal para começar',
-      features: ['Dashboard (versão limitada)', 'Até 10 pacientes', 'Até 10 sessões por paciente', 'Prontuários básicos'],
+      features: ['Dashboard limitado', 'Até 10 pacientes', 'Até 10 sessões por paciente', 'Prontuários Completos'],
       monthlyStripePrice: '',
       annualStripePrice: '',
       currentPlan: currentPlan === 'basico',

@@ -50,8 +50,8 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         'Até 50 pacientes',
         'Sessões ilimitadas',
         'Sessões recorrentes e pacotes',
-        'Metas e relatórios padrão',
-        'Página pública de agendamento',
+        'Metas e relatórios simples',
+        'Página pública padrão',
         'Programa de indicação'
       ],
       recommended: true, // Sempre mais popular
@@ -65,10 +65,10 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
       features: [
         'Tudo do Profissional',
         'Pacientes ilimitados',
-        'Relatórios avançados (PDF, filtros)',
+        'Relatórios avançados (PDF, Excel, filtros)',
         'Integração Google Agenda',
         'Integração WhatsApp',
-        'Personalização total (cores)',
+        'Personalização total (tema + cores)',
         'Suporte prioritário'
       ],
       recommended: false,
