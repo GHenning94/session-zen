@@ -131,8 +131,7 @@ export const ProfileDropdown = () => {
         icon: Crown, 
         label: "Desbloquear Premium", 
         action: () => navigate('/upgrade'),
-        isPremiumItem: true,
-        badge: "-17%"
+        isPremiumItem: true
       }
     ] : [],
     profile: [
@@ -196,11 +195,6 @@ export const ProfileDropdown = () => {
                 <item.icon className="h-5 w-5 text-white" />
                 {item.label}
               </span>
-              {item.badge && (
-                <Badge className="animated-premium-no-shadow text-white text-[10px] border-white/30 border">
-                  {item.badge}
-                </Badge>
-              )}
             </button>
           ))}
         </>
@@ -360,11 +354,6 @@ export const ProfileDropdown = () => {
                       <item.icon className="h-5 w-5 text-white" />
                       {item.label}
                     </span>
-                    {item.badge && (
-                      <Badge className="animated-premium-no-shadow text-white text-[10px] border-white/30 border">
-                        {item.badge}
-                      </Badge>
-                    )}
                   </DropdownMenuItem>
                 ))}
               </DropdownMenuGroup>
