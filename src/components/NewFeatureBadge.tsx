@@ -110,7 +110,7 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
         handleDismiss()
       }}
       className={cn(
-        "bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 h-5 whitespace-nowrap w-[66px] justify-center animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite] cursor-pointer",
+        "bg-primary text-primary-foreground text-[9px] px-1 py-0 h-4 whitespace-nowrap justify-center animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite] cursor-pointer",
         className
       )}
     >
