@@ -201,7 +201,7 @@ export function AppSidebar() {
                           {isLocked && (
                             <Badge 
                               variant={isPremiumFeature ? 'warning' : 'secondary'}
-                              className="text-[9px] px-1 py-0 h-4 whitespace-nowrap gap-0.5 justify-center"
+                              className="text-[9px] px-1 py-0 h-4 whitespace-nowrap gap-0.5 w-[52px] justify-center"
                             >
                               {!isPremiumFeature && <Lock className="w-2 h-2" />}
                               {isPremiumFeature ? 'Premium' : 'Pro'}
@@ -210,7 +210,7 @@ export function AppSidebar() {
                           
                           {/* Coming soon badge */}
                           {!isLocked && isComingSoon && (
-                            <Badge variant="warning" className="text-[9px] px-1 py-0 h-4 whitespace-nowrap justify-center">
+                            <Badge variant="warning" className="text-[9px] px-1 py-0 h-4 whitespace-nowrap w-[52px] justify-center">
                               Em breve
                             </Badge>
                           )}
