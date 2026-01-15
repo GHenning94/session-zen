@@ -2683,7 +2683,7 @@ const Dashboard = () => {
                     </Card>
                   ) : (
                     <Card 
-                      className="shadow-soft min-h-[400px] cursor-pointer relative overflow-hidden"
+                      className="shadow-soft min-h-[400px] cursor-pointer relative overflow-hidden flex flex-col"
                       onClick={() => setShowGoalsUpgradeModal(true)}
                     >
                       {/* Locked overlay */}
@@ -2711,20 +2711,20 @@ const Dashboard = () => {
                           Distribuição da receita por método de pagamento
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="opacity-30 pt-0">
+                      <CardContent className="opacity-30 pt-0 flex-1 flex flex-col">
                         <div className="grid grid-cols-4 gap-3 mb-6">
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="h-64 bg-muted rounded-xl" />
-                          <div className="space-y-2">
-                            <div className="h-12 bg-muted rounded-xl" />
-                            <div className="h-12 bg-muted rounded-xl" />
-                            <div className="h-12 bg-muted rounded-xl" />
-                            <div className="h-12 bg-muted rounded-xl" />
+                        <div className="grid grid-cols-2 gap-4 flex-1">
+                          <div className="bg-muted rounded-xl" />
+                          <div className="flex flex-col gap-2">
+                            <div className="flex-1 bg-muted rounded-xl" />
+                            <div className="flex-1 bg-muted rounded-xl" />
+                            <div className="flex-1 bg-muted rounded-xl" />
+                            <div className="flex-1 bg-muted rounded-xl" />
                           </div>
                         </div>
                       </CardContent>
