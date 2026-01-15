@@ -115,20 +115,46 @@ export const NotificationSettings = ({
       if (config.patient_reminder_1h) events.push('patient_reminder_1h')
       if (config.patient_confirmation) events.push('patient_confirmation')
 
-      const { error } = await supabase
+      // Verificar se já existe um registro
+      const { data: existing } = await supabase
         .from('notification_settings')
-        .upsert({
-          user_id: user.id,
-          type,
-          enabled: config.enabled,
-          events,
-          time: config.daily_reminder_time,
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id,type'
-        })
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('type', type)
+        .maybeSingle()
+
+      let error
+      if (existing) {
+        // Atualizar registro existente
+        const result = await supabase
+          .from('notification_settings')
+          .update({
+            enabled: config.enabled,
+            events,
+            time: config.daily_reminder_time,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+        error = result.error
+      } else {
+        // Inserir novo registro
+        const result = await supabase
+          .from('notification_settings')
+          .insert({
+            user_id: user.id,
+            type,
+            enabled: config.enabled,
+            events,
+            time: config.daily_reminder_time
+          })
+        error = result.error
+      }
 
       if (error) throw error
+
+      // Atualizar o config inicial para refletir o estado salvo
+      setInitialConfig(config)
+      setHasChanges(false)
 
       // Notificar o componente pai sobre a mudança no enabled
       if (onEnabledChange) {
