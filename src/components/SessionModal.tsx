@@ -248,6 +248,16 @@ export const SessionModal = ({
       return
     }
 
+    // Verificar limite de sessões por cliente (apenas para sessões individuais na criação)
+    if (!session && sessionType === 'individual' && remainingSessions !== null && remainingSessions <= 0) {
+      toast({
+        variant: "destructive",
+        title: "Limite por paciente atingido",
+        description: `Este paciente já atingiu o limite de ${planLimits.maxSessionsPerClient} sessões do seu plano. Faça upgrade para adicionar mais.`,
+      })
+      return
+    }
+
     setIsLoading(true)
     
     try {
