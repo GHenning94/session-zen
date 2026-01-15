@@ -7,6 +7,60 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+/**
+ * REGRAS DE PRORRATA PARA UPGRADE - TherapyPro
+ * 
+ * Fórmula obrigatória:
+ * Crédito do plano atual = (valor do plano atual ÷ total de dias do ciclo) × dias restantes
+ * Valor final a pagar = preço do novo plano − crédito do plano atual
+ * 
+ * - A prorrata é calculada EXCLUSIVAMENTE com base no plano atual
+ * - Não usar valor do plano novo para cálculo de crédito
+ * - Valores arredondados para centavos (2 casas decimais)
+ */
+
+// Price map com valores em centavos
+const PRICE_MAP: Record<string, { plan: string; interval: string; price: number; displayName: string }> = {
+  'price_1SSMNgCP57sNVd3laEmlQOcb': { plan: 'pro', interval: 'monthly', price: 2990, displayName: 'Profissional Mensal' },
+  'price_1SSMOdCP57sNVd3la4kMOinN': { plan: 'pro', interval: 'yearly', price: 29900, displayName: 'Profissional Anual' },
+  'price_1SSMOBCP57sNVd3lqjfLY6Du': { plan: 'premium', interval: 'monthly', price: 4990, displayName: 'Premium Mensal' },
+  'price_1SSMP7CP57sNVd3lSf4oYINX': { plan: 'premium', interval: 'yearly', price: 49900, displayName: 'Premium Anual' }
+};
+
+/**
+ * Calcula o crédito proporcional do plano atual
+ */
+function calculateProration(
+  currentPlanPrice: number,
+  totalCycleDays: number,
+  daysRemaining: number
+): number {
+  const dailyRate = currentPlanPrice / totalCycleDays;
+  const credit = dailyRate * daysRemaining;
+  return Math.round(credit);
+}
+
+/**
+ * Calcula os dias restantes no ciclo atual
+ */
+function calculateDaysRemaining(currentPeriodEnd: number): number {
+  const now = new Date();
+  const periodEnd = new Date(currentPeriodEnd * 1000);
+  const diffTime = periodEnd.getTime() - now.getTime();
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  return Math.max(0, diffDays);
+}
+
+/**
+ * Calcula o total de dias do ciclo atual
+ */
+function calculateTotalCycleDays(currentPeriodStart: number, currentPeriodEnd: number): number {
+  const start = new Date(currentPeriodStart * 1000);
+  const end = new Date(currentPeriodEnd * 1000);
+  const diffTime = end.getTime() - start.getTime();
+  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -42,15 +96,7 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    // Price map para validação
-    const priceMap: Record<string, { plan: string; interval: string; price: number }> = {
-      'price_1SSMNgCP57sNVd3laEmlQOcb': { plan: 'pro', interval: 'monthly', price: 2990 },
-      'price_1SSMOdCP57sNVd3la4kMOinN': { plan: 'pro', interval: 'yearly', price: 29880 },
-      'price_1SSMOBCP57sNVd3lqjfLY6Du': { plan: 'premium', interval: 'monthly', price: 4990 },
-      'price_1SSMP7CP57sNVd3lSf4oYINX': { plan: 'premium', interval: 'yearly', price: 49896 }
-    };
-
-    const newPriceInfo = priceMap[newPriceId];
+    const newPriceInfo = PRICE_MAP[newPriceId];
     if (!newPriceInfo) {
       throw new Error(`Price ID inválido: ${newPriceId}`);
     }
@@ -84,9 +130,9 @@ serve(async (req) => {
     const subscription = subscriptions.data[0];
     console.log("[upgrade-subscription] 📋 Subscription found:", subscription.id);
 
-    // Obter o item da assinatura (subscription item)
     const subscriptionItemId = subscription.items.data[0].id;
     const currentPriceId = subscription.items.data[0].price.id;
+    const currentPriceInfo = PRICE_MAP[currentPriceId];
 
     console.log("[upgrade-subscription] 📊 Current price:", currentPriceId, "New price:", newPriceId);
 
@@ -94,31 +140,59 @@ serve(async (req) => {
       throw new Error("Você já está neste plano.");
     }
 
-    // Calcular o valor proporcional usando proration preview
-    const prorationDate = Math.floor(Date.now() / 1000);
+    if (!currentPriceInfo) {
+      throw new Error("Plano atual não reconhecido no sistema.");
+    }
+
+    // ============================================
+    // CÁLCULO DE PRORRATA MANUAL - REGRAS PADRONIZADAS
+    // ============================================
     
-    const upcomingInvoice = await stripe.invoices.retrieveUpcoming({
-      customer: customer.id,
-      subscription: subscription.id,
-      subscription_items: [
-        {
-          id: subscriptionItemId,
-          price: newPriceId,
-        },
-      ],
-      subscription_proration_date: prorationDate,
+    const daysRemaining = calculateDaysRemaining(subscription.current_period_end);
+    const totalCycleDays = calculateTotalCycleDays(
+      subscription.current_period_start,
+      subscription.current_period_end
+    );
+
+    // Crédito baseado APENAS no plano atual
+    const currentPlanPrice = currentPriceInfo.price;
+    const creditAmount = calculateProration(currentPlanPrice, totalCycleDays, daysRemaining);
+    
+    // Valor final = novo plano - crédito do plano atual
+    const newPlanPrice = newPriceInfo.price;
+    let finalAmount = newPlanPrice - creditAmount;
+    if (finalAmount < 0) finalAmount = 0;
+
+    console.log("[upgrade-subscription] 💰 Proration calculation:", {
+      currentPlanPrice: currentPlanPrice / 100,
+      newPlanPrice: newPlanPrice / 100,
+      creditAmount: creditAmount / 100,
+      finalAmount: finalAmount / 100,
+      daysRemaining,
+      totalCycleDays
     });
 
-    // Calcular valor proporcional (positivo = a cobrar, negativo = crédito)
-    const proratedAmount = upcomingInvoice.amount_due;
-    const proratedAmountFormatted = (proratedAmount / 100).toLocaleString('pt-BR', {
+    const formatBRL = (cents: number) => (cents / 100).toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     });
 
-    console.log("[upgrade-subscription] 💰 Prorated amount:", proratedAmountFormatted);
+    // ============================================
+    // EXECUTAR UPGRADE NO STRIPE
+    // ============================================
+    
+    // Cancelar qualquer schedule existente antes do upgrade
+    if (subscription.schedule) {
+      try {
+        await stripe.subscriptionSchedules.cancel(subscription.schedule as string);
+        console.log("[upgrade-subscription] 📅 Cancelled existing schedule");
+      } catch (e) {
+        console.log("[upgrade-subscription] ⚠️ Could not cancel schedule:", e);
+      }
+    }
 
-    // Atualizar a assinatura com proration - always_invoice cobra imediatamente
+    // Usar proration_behavior: 'none' para evitar cálculo automático do Stripe
+    // Em vez disso, vamos criar uma invoice separada com o valor exato
     const updatedSubscription = await stripe.subscriptions.update(subscription.id, {
       items: [
         {
@@ -126,88 +200,81 @@ serve(async (req) => {
           price: newPriceId,
         },
       ],
-      proration_behavior: 'always_invoice', // Cobra o proration imediatamente
-      payment_behavior: 'default_incomplete', // Permite criar invoice mesmo se pagamento falhar
-      expand: ['latest_invoice.payment_intent'],
+      proration_behavior: 'none', // Não usar prorrata automática do Stripe
+      cancel_at_period_end: false,
     });
+
+    console.log("[upgrade-subscription] ✅ Subscription updated to new plan");
+
+    // ============================================
+    // COBRAR VALOR PROPORCIONAL (SE HOUVER)
+    // ============================================
     
-    console.log("[upgrade-subscription] 📄 Latest invoice status:", (updatedSubscription.latest_invoice as Stripe.Invoice)?.status);
-
-    console.log("[upgrade-subscription] ✅ Subscription updated:", updatedSubscription.id);
-
-    // Verificar se precisa de pagamento adicional
-    const latestInvoice = updatedSubscription.latest_invoice as Stripe.Invoice;
     let paymentUrl: string | null = null;
     let requiresPayment = false;
     let invoicePaid = false;
+    let invoiceId: string | null = null;
 
-    console.log("[upgrade-subscription] 📄 Invoice details:", {
-      id: latestInvoice?.id,
-      status: latestInvoice?.status,
-      amount_due: latestInvoice?.amount_due,
-      amount_paid: latestInvoice?.amount_paid,
-    });
+    if (finalAmount > 0) {
+      // Criar invoice separada com o valor exato calculado
+      try {
+        // Criar um invoice item para cobrar o valor proporcional
+        await stripe.invoiceItems.create({
+          customer: customer.id,
+          amount: finalAmount,
+          currency: 'brl',
+          description: `Upgrade para ${newPriceInfo.displayName} - Crédito de ${formatBRL(creditAmount)} aplicado`,
+        });
 
-    if (latestInvoice) {
-      if (latestInvoice.status === 'paid') {
-        // Fatura já foi paga (cobrada automaticamente do cartão em arquivo)
-        invoicePaid = true;
-        console.log("[upgrade-subscription] ✅ Invoice already paid:", latestInvoice.id);
-      } else if (latestInvoice.status === 'open') {
-        // Há uma fatura pendente que precisa ser paga
-        const paymentIntent = latestInvoice.payment_intent as Stripe.PaymentIntent;
-        
-        console.log("[upgrade-subscription] 💳 Payment intent status:", paymentIntent?.status);
-        
-        if (paymentIntent && (paymentIntent.status === 'requires_payment_method' || paymentIntent.status === 'requires_action')) {
-          // Usar hosted_invoice_url para pagar a fatura diretamente
-          if (latestInvoice.hosted_invoice_url) {
-            paymentUrl = latestInvoice.hosted_invoice_url;
-            requiresPayment = true;
-            console.log("[upgrade-subscription] 💳 Payment required, using hosted invoice URL:", latestInvoice.id);
-          } else {
-            // Fallback: Criar um checkout session para pagar a fatura pendente
-            const session = await stripe.checkout.sessions.create({
-              customer: customer.id,
-              mode: 'payment',
-              line_items: [
-                {
-                  price_data: {
-                    currency: 'brl',
-                    product_data: {
-                  name: `Upgrade para ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'} (${newPriceInfo.interval === 'monthly' ? 'Mensal' : 'Anual'})`,
-                      description: 'Valor proporcional do upgrade',
-                    },
-                    unit_amount: proratedAmount,
-                  },
-                  quantity: 1,
-                },
-              ],
-              success_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/dashboard?payment=success&upgrade_plan=${newPriceInfo.plan}`,
-              cancel_url: `${Deno.env.get("SITE_URL") || "https://therapypro.app.br"}/upgrade?upgrade=cancelled`,
-              metadata: {
-                user_id: user.id,
-                type: 'proration_payment',
-                is_proration: 'true', // Flag para webhook identificar prorrata
-                subscription_id: subscription.id,
-                plan_name: newPriceInfo.plan,
-                billing_interval: newPriceInfo.interval,
-              },
-              locale: 'pt-BR',
-            });
-            
-            paymentUrl = session.url;
-            requiresPayment = true;
-            console.log("[upgrade-subscription] 💳 Payment required, created checkout session:", session.id);
-          }
-        } else if (paymentIntent && paymentIntent.status === 'succeeded') {
+        // Criar e finalizar a invoice
+        const invoice = await stripe.invoices.create({
+          customer: customer.id,
+          auto_advance: true, // Tenta cobrar automaticamente
+          collection_method: 'charge_automatically',
+          metadata: {
+            user_id: user.id,
+            type: 'proration_upgrade',
+            from_plan: currentPriceInfo.plan,
+            to_plan: newPriceInfo.plan,
+            credit_amount: String(creditAmount),
+            final_amount: String(finalAmount),
+          },
+        });
+
+        // Finalizar a invoice para tentar cobrar
+        const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
+        invoiceId = finalizedInvoice.id;
+
+        console.log("[upgrade-subscription] 📄 Invoice created:", {
+          id: finalizedInvoice.id,
+          status: finalizedInvoice.status,
+          amount_due: finalizedInvoice.amount_due
+        });
+
+        // Verificar se foi paga automaticamente
+        if (finalizedInvoice.status === 'paid') {
           invoicePaid = true;
-          console.log("[upgrade-subscription] ✅ Payment already succeeded");
+          console.log("[upgrade-subscription] ✅ Invoice paid automatically");
+        } else if (finalizedInvoice.status === 'open') {
+          // Precisa de pagamento manual
+          paymentUrl = finalizedInvoice.hosted_invoice_url || null;
+          requiresPayment = true;
+          console.log("[upgrade-subscription] 💳 Payment required:", paymentUrl);
         }
+      } catch (invoiceError) {
+        console.error("[upgrade-subscription] ⚠️ Invoice creation failed:", invoiceError);
+        // Continuar mesmo se a invoice falhar - o upgrade já foi feito
       }
+    } else {
+      // Não há valor a pagar (crédito cobre todo o upgrade)
+      invoicePaid = true;
+      console.log("[upgrade-subscription] ✅ No payment required - credit covers upgrade");
     }
 
-    // Atualizar o perfil com o novo plano
+    // ============================================
+    // ATUALIZAR PERFIL NO SUPABASE
+    // ============================================
+    
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -218,29 +285,47 @@ serve(async (req) => {
       .update({
         subscription_plan: newPriceInfo.plan,
         billing_interval: newPriceInfo.interval === 'yearly' ? 'yearly' : 'monthly',
-        subscription_cancel_at: null, // Remove qualquer cancelamento pendente
+        subscription_cancel_at: null,
       })
       .eq('user_id', user.id);
 
     console.log("[upgrade-subscription] ✅ Profile updated with new plan");
 
+    // ============================================
+    // RESPOSTA FINAL
+    // ============================================
+    
+    const response = {
+      success: true,
+      // Valores calculados
+      currentPlanPrice: currentPlanPrice / 100,
+      newPlanPrice: newPlanPrice / 100,
+      creditAmount: creditAmount / 100,
+      creditFormatted: formatBRL(creditAmount),
+      proratedAmount: finalAmount / 100,
+      proratedAmountFormatted: formatBRL(finalAmount),
+      // Novo plano
+      newPlan: newPriceInfo.plan,
+      newInterval: newPriceInfo.interval,
+      // Status do pagamento
+      requiresPayment,
+      paymentUrl,
+      invoicePaid,
+      invoiceId,
+      // Informações adicionais
+      daysRemaining,
+      totalCycleDays,
+      message: requiresPayment 
+        ? `Upgrade realizado! Complete o pagamento de ${formatBRL(finalAmount)} para ativar seu novo plano.`
+        : invoicePaid && finalAmount > 0
+          ? `Upgrade realizado com sucesso! O valor de ${formatBRL(finalAmount)} foi cobrado automaticamente. Crédito aplicado: ${formatBRL(creditAmount)}.`
+          : finalAmount === 0
+            ? `Upgrade realizado com sucesso! Seu crédito de ${formatBRL(creditAmount)} cobriu todo o valor do upgrade.`
+            : `Upgrade realizado com sucesso para o plano ${newPriceInfo.displayName}!`
+    };
+
     return new Response(
-      JSON.stringify({
-        success: true,
-        proratedAmount: proratedAmount / 100,
-        proratedAmountFormatted,
-        newPlan: newPriceInfo.plan,
-        newInterval: newPriceInfo.interval,
-        requiresPayment,
-        paymentUrl,
-        invoicePaid,
-        invoiceId: latestInvoice?.id,
-        message: requiresPayment 
-          ? `Upgrade realizado! Você será redirecionado para pagar o valor proporcional de ${proratedAmountFormatted}.`
-          : invoicePaid
-            ? `Upgrade realizado com sucesso! O valor de ${proratedAmountFormatted} foi cobrado automaticamente.`
-            : `Upgrade realizado com sucesso para o plano ${newPriceInfo.plan === 'premium' ? 'Premium' : 'Profissional'}!`
-      }),
+      JSON.stringify(response),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,

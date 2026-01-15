@@ -23,11 +23,18 @@ interface ProrationData {
   creditAmount: number
   creditFormatted: string
   daysRemaining: number
+  totalCycleDays: number
   periodEndDate: string
   currentPlan: string
+  currentPlanPrice: number
+  currentPlanPriceFormatted: string
   newPlan: string
-  isTierChange: boolean
+  newPlanPrice: number
   newPlanPriceFormatted: string
+  isTierChange: boolean
+  isUpgrade: boolean
+  isDowngrade: boolean
+  explanation: string
 }
 
 const STRIPE_PRICES = {
@@ -254,6 +261,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
           ) : prorationView.data ? (
             <div className="space-y-6">
               <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                {/* Planos */}
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Plano atual:</span>
                   <span className="font-medium">{prorationView.data.currentPlan}</span>
@@ -262,22 +270,38 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
                   <span className="text-muted-foreground">Novo plano:</span>
                   <span className="font-medium text-primary">{prorationView.data.newPlan}</span>
                 </div>
+                
                 <div className="border-t border-border my-2" />
+                
+                {/* Cálculo de prorrata */}
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Crédito do plano atual:</span>
-                  <span className="text-green-600">-{prorationView.data.creditFormatted}</span>
+                  <span className="text-muted-foreground">Valor do plano atual:</span>
+                  <span>{prorationView.data.currentPlanPriceFormatted}</span>
                 </div>
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>Dias restantes no ciclo:</span>
+                  <span>{prorationView.data.daysRemaining} de {prorationView.data.totalCycleDays} dias</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Crédito proporcional:</span>
+                  <span className="text-green-600 font-medium">-{prorationView.data.creditFormatted}</span>
+                </div>
+                
+                <div className="border-t border-border my-2" />
+                
+                {/* Novo plano e valor final */}
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Preço do novo plano:</span>
                   <span>{prorationView.data.newPlanPriceFormatted}</span>
                 </div>
-                <div className="border-t border-border my-2" />
                 <div className="flex justify-between items-center text-lg font-semibold">
                   <span>Valor a pagar agora:</span>
                   <span className="text-primary">{prorationView.data.proratedAmountFormatted}</span>
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  Você tem {prorationView.data.daysRemaining} dias restantes no período atual (até {prorationView.data.periodEndDate})
+                
+                {/* Explicação */}
+                <p className="text-xs text-muted-foreground bg-background/50 p-2 rounded">
+                  {prorationView.data.explanation}
                 </p>
               </div>
 
