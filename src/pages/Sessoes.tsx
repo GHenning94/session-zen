@@ -1184,11 +1184,7 @@ export default function Sessoes() {
                                     {session.anotacoes && (
                                       <div className="mt-2 text-sm text-muted-foreground bg-muted/50 rounded p-2">
                                         <strong>Observações Iniciais:</strong>
-                                        <TextPreview 
-                                          content={session.anotacoes}
-                                          title={`Observações - ${session.clients?.nome} - ${formatDateBR(session.data)}`}
-                                          className="mt-1"
-                                        />
+                                        <p className="mt-1 line-clamp-2">{session.anotacoes}</p>
                                       </div>
                                     )}
                                   </div>
@@ -1280,11 +1276,7 @@ export default function Sessoes() {
                               {session.anotacoes && (
                                 <div className="mt-2 text-sm text-muted-foreground bg-muted/50 rounded p-2">
                                   <strong>Observações Iniciais:</strong>
-                                  <TextPreview 
-                                    content={session.anotacoes}
-                                    title={`Observações - ${session.clients?.nome} - ${formatDateBR(session.data)}`}
-                                    className="mt-1"
-                                  />
+                                  <p className="mt-1 line-clamp-2">{session.anotacoes}</p>
                                 </div>
                               )}
                             </div>
