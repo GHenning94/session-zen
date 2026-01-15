@@ -90,7 +90,7 @@ export function AppSidebar() {
   const { currentPlan, isLoading, hasAccessToFeature, getRequiredPlanForFeature } = useSubscription()
   const { clientTermPlural } = useTerminology()
   const currentPath = location.pathname
-  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; feature: string }>({ open: false, feature: '' })
+  const [upgradeModal, setUpgradeModal] = useState<{ open: boolean; feature: string; premiumOnly: boolean }>({ open: false, feature: '', premiumOnly: false })
   
   // PROTEÇÃO: Garantir que clientTermPlural é um valor válido
   const safeClientTermPlural: 'Pacientes' | 'Clientes' = 
@@ -112,9 +112,11 @@ export function AppSidebar() {
     if (item.requiredFeature && !hasAccessToFeature(item.requiredFeature)) {
       e.preventDefault()
       e.stopPropagation()
+      const requiredPlan = getRequiredPlanForFeature(item.requiredFeature)
       setUpgradeModal({ 
         open: true, 
-        feature: FEATURE_NAMES[item.requiredFeature] || item.title 
+        feature: FEATURE_NAMES[item.requiredFeature] || item.title,
+        premiumOnly: requiredPlan === 'premium'
       })
       return
     }
@@ -248,6 +250,7 @@ export function AppSidebar() {
         open={upgradeModal.open} 
         onOpenChange={(open) => setUpgradeModal({ ...upgradeModal, open })}
         feature={upgradeModal.feature}
+        premiumOnly={upgradeModal.premiumOnly}
       />
     </>
   )
