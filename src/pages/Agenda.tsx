@@ -468,16 +468,19 @@ const Agenda = () => {
                   </Button>
                 </div>
               ) : hasAccessToFeature('google_calendar') ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 text-xs"
-                  onClick={connectToGoogle}
-                  disabled={isLoading}
-                >
-                  <Link className="h-3 w-3 mr-1" />
-                  Google
-                </Button>
+                <div className="flex items-center gap-1.5 shrink-0 group/googlebtn">
+                  <NewFeatureBadge featureKey="google_calendar" className="group-hover/googlebtn:hidden" />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs"
+                    onClick={connectToGoogle}
+                    disabled={isLoading}
+                  >
+                    <Link className="h-3 w-3 mr-1" />
+                    Google
+                  </Button>
+                </div>
               ) : (
                 <Button
                   variant="outline"
