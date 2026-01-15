@@ -15,7 +15,6 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import SharingSettings from "@/components/sharing/SharingSettings"
 import { FeatureGate } from "@/components/FeatureGate"
-import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 
 type AllSettings = Record<string, any>;
 type ScheduleUI = Record<string, { ativo: boolean, inicio: string, fim: string }>;
@@ -182,12 +181,9 @@ const PaginaPublica = () => {
   return (
     <Layout>
       <div className="space-y-6">
-        <div className="flex items-center gap-2">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Página Pública</h1>
-            <p className="text-muted-foreground">Configure como sua página de agendamentos será exibida aos pacientes</p>
-          </div>
-          <NewFeatureBadge featureKey="public_page" />
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Página Pública</h1>
+          <p className="text-muted-foreground">Configure como sua página de agendamentos será exibida aos pacientes</p>
         </div>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

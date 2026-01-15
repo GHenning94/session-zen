@@ -1330,10 +1330,7 @@ const Dashboard = () => {
               <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '150ms' }}>
                 {/* PackageStatusCard - bloqueado para plano básico */}
                 {hasAccessToFeature('goals') ? (
-                  <div className="relative h-full">
-                    <NewFeatureBadge featureKey="goals" className="absolute top-2 right-2 z-10" />
-                    <PackageStatusCard stats={packageStats} />
-                  </div>
+                  <PackageStatusCard stats={packageStats} showNewBadge={true} />
                 ) : (
                   <Card 
                     className="shadow-soft h-full cursor-pointer relative overflow-hidden"
@@ -1373,14 +1370,12 @@ const Dashboard = () => {
               <div className="opacity-0 animate-scale-fade-in h-full" style={{ animationDelay: '225ms' }}>
                 {/* BusinessOrbitalView - Metas - bloqueado para plano básico */}
                 {hasAccessToFeature('goals') ? (
-                  <div className="relative h-full">
-                    <NewFeatureBadge featureKey="goals" className="absolute top-2 right-2 z-10" />
-                    <BusinessOrbitalView 
-                      dashboardData={dashboardData}
-                      packageStats={packageStats}
-                      upcomingSessionsCount={upcomingSessions.length}
-                    />
-                  </div>
+                  <BusinessOrbitalView 
+                    dashboardData={dashboardData}
+                    packageStats={packageStats}
+                    upcomingSessionsCount={upcomingSessions.length}
+                    showNewBadge={true}
+                  />
                 ) : (
                   <Card 
                     className="shadow-soft h-full cursor-pointer relative overflow-hidden"
