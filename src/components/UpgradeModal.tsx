@@ -33,11 +33,11 @@ interface ProrationData {
 const STRIPE_PRICES = {
   pro: {
     monthly: 'price_1SSMNgCP57sNVd3laEmlQOcb',
-    yearly: 'price_1SSMpFCP57sNVd3l1O9xfE9u'
+    yearly: 'price_1SSMOdCP57sNVd3la4kMOinN'
   },
   premium: {
     monthly: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
-    yearly: 'price_1SSMpwCP57sNVd3lAY2Oy39b'
+    yearly: 'price_1SSMP7CP57sNVd3lSf4oYINX'
   }
 }
 
