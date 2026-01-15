@@ -82,6 +82,7 @@ const FEATURE_NAMES: Record<Feature, string> = {
   dashboard_advanced_cards: 'Cards Avançados',
   unlimited_clients: 'Pacientes Ilimitados',
   unlimited_sessions: 'Sessões Ilimitadas',
+  packages: 'Pacotes de Sessões',
 }
 
 export function AppSidebar() {

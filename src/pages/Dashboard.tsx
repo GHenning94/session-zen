@@ -46,7 +46,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useTerminology } from "@/hooks/useTerminology"
 import { NewClientModal } from "@/components/NewClientModal"
-import { NewSessionModal } from "@/components/NewSessionModal"
+import { SessionModal } from "@/components/SessionModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
 import { ActionableNotificationsBanner } from "@/components/ActionableNotificationsBanner"
 import { TutorialButton } from "@/components/TutorialButton"
@@ -2904,10 +2904,13 @@ const Dashboard = () => {
         onOpenChange={setIsNewClientOpen}
         onClientAdded={loadDashboardData}
       />
-      <NewSessionModal
+      <SessionModal
         open={isNewSessionOpen}
         onOpenChange={setIsNewSessionOpen}
-        onSessionCreated={loadDashboardData}
+        onSuccess={() => {
+          loadDashboardData()
+          window.dispatchEvent(new CustomEvent('sessionAdded'))
+        }}
       />
       <TutorialModal
         open={isTutorialOpen}

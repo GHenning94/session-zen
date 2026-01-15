@@ -14,9 +14,11 @@ import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { formatTimeForDatabase } from "@/lib/utils"
-import { CalendarIcon, Package, Repeat, User, DollarSign, Clock, FileText, Info } from "lucide-react"
+import { CalendarIcon, Package, Repeat, User, DollarSign, Clock, FileText, Info, Lock, Crown } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { encryptSensitiveData } from "@/utils/encryptionMiddleware"
+import { UpgradeModal } from "@/components/UpgradeModal"
+import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 
 interface SessionModalProps {
   open: boolean
@@ -37,11 +39,15 @@ export const SessionModal = ({
 }: SessionModalProps) => {
   const { toast } = useToast()
   const { user } = useAuth()
-  const { canAddSession, planLimits } = useSubscription()
+  const { canAddSession, planLimits, hasAccessToFeature } = useSubscription()
   
   const [isLoading, setIsLoading] = useState(false)
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [sessionType, setSessionType] = useState<'individual' | 'pacote' | 'recorrente'>('individual')
+  
+  // Check if user has access to packages feature
+  const hasPackagesAccess = hasAccessToFeature('packages')
   
   const [formData, setFormData] = useState({
     client_id: "",
@@ -424,15 +430,39 @@ export const SessionModal = ({
         <div className="space-y-4">
           {/* Tipo de Sessão (apenas na criação) */}
           {!session && (
-            <Tabs value={sessionType} onValueChange={(v: any) => setSessionType(v)}>
+            <Tabs value={sessionType} onValueChange={(v: any) => {
+              // If trying to select 'pacote' and user doesn't have access, show upgrade modal
+              if (v === 'pacote' && !hasPackagesAccess) {
+                setShowUpgradeModal(true)
+                return
+              }
+              setSessionType(v)
+            }}>
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="individual">
                   <User className="h-4 w-4 mr-2" />
                   Individual
                 </TabsTrigger>
-                <TabsTrigger value="pacote">
-                  <Package className="h-4 w-4 mr-2" />
-                  Pacote
+                <TabsTrigger 
+                  value="pacote" 
+                  className="relative flex items-center gap-2"
+                  onMouseEnter={() => {
+                    if (hasPackagesAccess) {
+                      const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                      dismissFeatureBadge('packages')
+                    }
+                  }}
+                >
+                  <Package className="h-4 w-4" />
+                  <span>Pacote</span>
+                  {!hasPackagesAccess ? (
+                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 gap-0.5 ml-1">
+                      <Lock className="w-2.5 h-2.5" />
+                      Pro
+                    </Badge>
+                  ) : (
+                    <NewFeatureBadge featureKey="packages" className="ml-1" />
+                  )}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -673,6 +703,12 @@ export const SessionModal = ({
           </div>
         </div>
       </DialogContent>
+      
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        feature="Pacotes de Sessões"
+      />
     </Dialog>
   )
 }
