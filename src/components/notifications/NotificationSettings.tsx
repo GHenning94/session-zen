@@ -26,9 +26,8 @@ interface NotificationConfig {
   // Para o profissional
   new_booking: boolean
   booking_cancelled: boolean
-  payment_received: boolean
-  session_reminder_24h: boolean
-  session_reminder_1h: boolean
+  daily_reminder: boolean
+  daily_reminder_time: string
   // Para os pacientes (apenas WhatsApp)
   patient_reminder_24h: boolean
   patient_reminder_1h: boolean
@@ -50,9 +49,8 @@ export const NotificationSettings = ({
     enabled: initialEnabled,
     new_booking: true,
     booking_cancelled: true,
-    payment_received: true,
-    session_reminder_24h: true,
-    session_reminder_1h: false,
+    daily_reminder: true,
+    daily_reminder_time: '07:00',
     patient_reminder_24h: true,
     patient_reminder_1h: false,
     patient_confirmation: true
@@ -79,15 +77,14 @@ export const NotificationSettings = ({
         .eq('type', type)
         .single()
 
-      if (data && data.events) {
-        const events = data.events as string[]
+      if (data) {
+        const events = data.events as string[] || []
         setConfig({
           enabled: data.enabled || false,
           new_booking: events.includes('new_booking'),
           booking_cancelled: events.includes('booking_cancelled'),
-          payment_received: events.includes('payment_received'),
-          session_reminder_24h: events.includes('session_reminder_24h'),
-          session_reminder_1h: events.includes('session_reminder_1h'),
+          daily_reminder: events.includes('daily_reminder'),
+          daily_reminder_time: data.time || '07:00',
           patient_reminder_24h: events.includes('patient_reminder_24h'),
           patient_reminder_1h: events.includes('patient_reminder_1h'),
           patient_confirmation: events.includes('patient_confirmation')
@@ -107,9 +104,7 @@ export const NotificationSettings = ({
       const events: string[] = []
       if (config.new_booking) events.push('new_booking')
       if (config.booking_cancelled) events.push('booking_cancelled')
-      if (config.payment_received) events.push('payment_received')
-      if (config.session_reminder_24h) events.push('session_reminder_24h')
-      if (config.session_reminder_1h) events.push('session_reminder_1h')
+      if (config.daily_reminder) events.push('daily_reminder')
       if (config.patient_reminder_24h) events.push('patient_reminder_24h')
       if (config.patient_reminder_1h) events.push('patient_reminder_1h')
       if (config.patient_confirmation) events.push('patient_confirmation')
@@ -120,7 +115,8 @@ export const NotificationSettings = ({
           user_id: user.id,
           type,
           enabled: config.enabled,
-          events
+          events,
+          time: config.daily_reminder_time
         })
 
       if (error) throw error
@@ -212,30 +208,6 @@ export const NotificationSettings = ({
                   onChange={(checked) => handleToggle('booking_cancelled', checked)}
                   disabled={!config.enabled}
                 />
-                <NotificationOption
-                  id="payment_received_whatsapp"
-                  label="Pagamentos recebidos"
-                  description="Receber aviso quando um pagamento for registrado"
-                  checked={config.payment_received}
-                  onChange={(checked) => handleToggle('payment_received', checked)}
-                  disabled={!config.enabled}
-                />
-                <NotificationOption
-                  id="session_reminder_24h_whatsapp"
-                  label="Lembrete 24h antes"
-                  description="Receber lembrete 24 horas antes das sessões"
-                  checked={config.session_reminder_24h}
-                  onChange={(checked) => handleToggle('session_reminder_24h', checked)}
-                  disabled={!config.enabled}
-                />
-                <NotificationOption
-                  id="session_reminder_1h_whatsapp"
-                  label="Lembrete 1h antes"
-                  description="Receber lembrete 1 hora antes das sessões"
-                  checked={config.session_reminder_1h}
-                  onChange={(checked) => handleToggle('session_reminder_1h', checked)}
-                  disabled={!config.enabled}
-                />
               </TabsContent>
               
               <TabsContent value="patients" className="mt-4 space-y-3">
@@ -297,30 +269,55 @@ export const NotificationSettings = ({
                 onChange={(checked) => handleToggle('booking_cancelled', checked)}
                 disabled={!config.enabled}
               />
-              <NotificationOption
-                id="payment_received_email"
-                label="Pagamentos recebidos"
-                description="Receber e-mail quando um pagamento for registrado"
-                checked={config.payment_received}
-                onChange={(checked) => handleToggle('payment_received', checked)}
-                disabled={!config.enabled}
-              />
-              <NotificationOption
-                id="session_reminder_24h_email"
-                label="Lembrete 24h antes"
-                description="Receber lembrete 24 horas antes das sessões"
-                checked={config.session_reminder_24h}
-                onChange={(checked) => handleToggle('session_reminder_24h', checked)}
-                disabled={!config.enabled}
-              />
-              <NotificationOption
-                id="session_reminder_1h_email"
-                label="Lembrete 1h antes"
-                description="Receber lembrete 1 hora antes das sessões"
-                checked={config.session_reminder_1h}
-                onChange={(checked) => handleToggle('session_reminder_1h', checked)}
-                disabled={!config.enabled}
-              />
+              
+              {/* Lembrete diário com seleção de horário */}
+              <div className={`p-3 rounded-lg border ${!config.enabled ? 'opacity-50' : 'hover:bg-muted/50'}`}>
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="daily_reminder_email" className="text-sm font-medium cursor-pointer">
+                      Lembrete diário
+                    </Label>
+                    <p className="text-xs text-muted-foreground">
+                      Receber e-mail com todas as sessões do dia
+                    </p>
+                  </div>
+                  <Switch
+                    id="daily_reminder_email"
+                    checked={config.daily_reminder}
+                    onCheckedChange={(checked) => handleToggle('daily_reminder', checked)}
+                    disabled={!config.enabled}
+                  />
+                </div>
+                
+                {config.daily_reminder && config.enabled && (
+                  <div className="mt-3 pt-3 border-t">
+                    <div className="flex items-center gap-3">
+                      <Clock className="w-4 h-4 text-muted-foreground" />
+                      <Label htmlFor="daily_time" className="text-sm text-muted-foreground">
+                        Horário de envio:
+                      </Label>
+                      <Select
+                        value={config.daily_reminder_time}
+                        onValueChange={(value) => setConfig(prev => ({ ...prev, daily_reminder_time: value }))}
+                      >
+                        <SelectTrigger className="w-[120px]">
+                          <SelectValue placeholder="Horário" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Array.from({ length: 24 }, (_, i) => {
+                            const hour = i.toString().padStart(2, '0')
+                            return (
+                              <SelectItem key={hour} value={`${hour}:00`}>
+                                {hour}:00
+                              </SelectItem>
+                            )
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
