@@ -599,6 +599,7 @@ const Agenda = () => {
         open={showGoogleUpgradeModal}
         onOpenChange={setShowGoogleUpgradeModal}
         feature="Integração Google Calendar"
+        premiumOnly
       />
     </Layout>
   )

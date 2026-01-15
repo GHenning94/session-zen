@@ -2237,14 +2237,16 @@ const Dashboard = () => {
                       {/* Locked overlay */}
                       <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
                         <div className="flex flex-col items-center gap-2 text-center p-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
                             <TrendingUp className="w-6 h-6 text-white" />
                           </div>
                           <h3 className="font-semibold">Ticket Médio</h3>
-                          <p className="text-sm text-muted-foreground">Evolução do valor médio por sessão</p>
                           <Badge variant="default" className="text-xs">
                             Desbloqueie no plano Profissional
                           </Badge>
+                          <p className="text-xs text-muted-foreground max-w-[200px]">
+                            Evolução do valor médio por sessão
+                          </p>
                         </div>
                       </div>
                       {/* Blurred content placeholder */}
@@ -2372,14 +2374,16 @@ const Dashboard = () => {
                       {/* Locked overlay */}
                       <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
                         <div className="flex flex-col items-center gap-2 text-center p-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
                             <BarChart3 className="w-6 h-6 text-white" />
                           </div>
                           <h3 className="font-semibold">Ticket Médio por {clientTerm}</h3>
-                          <p className="text-sm text-muted-foreground">Valor médio por sessão de cada {clientTerm.toLowerCase()}</p>
                           <Badge variant="default" className="text-xs">
                             Desbloqueie no plano Profissional
                           </Badge>
+                          <p className="text-xs text-muted-foreground max-w-[200px]">
+                            Valor médio por sessão de cada {clientTerm.toLowerCase()}
+                          </p>
                         </div>
                       </div>
                       {/* Blurred content placeholder */}
@@ -2687,14 +2691,16 @@ const Dashboard = () => {
                       {/* Locked overlay */}
                       <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
                         <div className="flex flex-col items-center gap-2 text-center p-4">
-                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center">
+                          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
                             <DollarSign className="w-6 h-6 text-white" />
                           </div>
                           <h3 className="font-semibold">Receita por Canal</h3>
-                          <p className="text-sm text-muted-foreground">Distribuição da receita por método de pagamento</p>
                           <Badge variant="default" className="text-xs">
                             Desbloqueie no plano Profissional
                           </Badge>
+                          <p className="text-xs text-muted-foreground max-w-[200px]">
+                            Distribuição da receita por método de pagamento
+                          </p>
                         </div>
                       </div>
                       {/* Blurred content placeholder */}

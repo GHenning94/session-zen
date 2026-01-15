@@ -14,6 +14,7 @@ interface UpgradeModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   feature: string
+  premiumOnly?: boolean
 }
 
 interface ProrationData {
@@ -40,20 +41,20 @@ const STRIPE_PRICES = {
   }
 }
 
-export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps) => {
+export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false }: UpgradeModalProps) => {
   const { currentPlan } = useSubscription()
   const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [prorationView, setProrationView] = useState<{
     show: boolean
-    plan: typeof plans[0] | null
+    plan: typeof allPlans[0] | null
     data: ProrationData | null
     isLoading: boolean
     error: string | null
   }>({ show: false, plan: null, data: null, isLoading: false, error: null })
 
-  const plans = [
+  const allPlans = [
     {
       name: 'Profissional',
       id: 'pro',
@@ -97,6 +98,11 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
         : STRIPE_PRICES.premium.yearly
     }
   ]
+  
+  // Filter plans based on premiumOnly prop
+  const plans = premiumOnly 
+    ? allPlans.filter(plan => plan.id === 'premium')
+    : allPlans
 
   const handlePlanSelect = async (plan: typeof plans[0]) => {
     if (!user) return;
@@ -309,7 +315,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
   // Default plan selection view
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className={cn("max-h-[90vh] overflow-y-auto", premiumOnly ? "max-w-lg" : "max-w-4xl")}>
         <DialogHeader>
           <DialogTitle>Upgrade Necessário</DialogTitle>
         </DialogHeader>
@@ -340,17 +346,19 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
           )}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className={cn("grid gap-8", premiumOnly ? "grid-cols-1" : "md:grid-cols-2")}>
           {plans.map((plan) => (
             <Card 
               key={plan.name} 
               className={cn(
                 "relative transition-all duration-300",
-                plan.id === 'pro' ? 'border-2 border-primary shadow-lg' : 'border border-border'
+                premiumOnly 
+                  ? 'border-2 border-primary shadow-lg'
+                  : plan.id === 'pro' ? 'border-2 border-primary shadow-lg' : 'border border-border'
               )}
             >
-              {/* Badge Mais Popular - padronizado */}
-              {plan.id === 'pro' && (
+              {/* Badge Mais Popular - only show when showing all plans */}
+              {!premiumOnly && plan.id === 'pro' && (
                 <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 flex items-center gap-1 whitespace-nowrap">
                   <Star className="h-3 w-3" />
                   Mais Popular
