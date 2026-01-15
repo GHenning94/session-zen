@@ -375,19 +375,21 @@ const Agenda = () => {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 gap-2"
-                  onClick={() => setShowGoogleUpgradeModal(true)}
-                >
+                <div className="flex items-center gap-2 shrink-0">
                   <Badge variant="warning" className="text-[9px] px-1.5 py-0.5 flex items-center gap-0.5">
                     <Crown className="w-2.5 h-2.5" />
                     Premium
                   </Badge>
-                  <Lock className="h-3.5 w-3.5" />
-                  Google Calendar
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => setShowGoogleUpgradeModal(true)}
+                  >
+                    <Lock className="h-3.5 w-3.5" />
+                    Google Calendar
+                  </Button>
+                </div>
               )}
 
               {/* View Selector */}
@@ -489,19 +491,21 @@ const Agenda = () => {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0 text-xs gap-1"
-                  onClick={() => setShowGoogleUpgradeModal(true)}
-                >
+                <div className="flex items-center gap-1.5 shrink-0">
                   <Badge variant="warning" className="text-[8px] px-1 py-0 flex items-center gap-0.5">
                     <Crown className="w-2 h-2" />
                     Premium
                   </Badge>
-                  <Lock className="h-3 w-3" />
-                  Google
-                </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-xs gap-1"
+                    onClick={() => setShowGoogleUpgradeModal(true)}
+                  >
+                    <Lock className="h-3 w-3" />
+                    Google
+                  </Button>
+                </div>
               )}
 
               {/* View Selector */}
