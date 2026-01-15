@@ -368,15 +368,15 @@ const Agenda = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0 relative"
+                  className="shrink-0 gap-2"
                   onClick={() => setShowGoogleUpgradeModal(true)}
                 >
-                  <Lock className="h-3 w-3 mr-1" />
-                  Google Calendar
-                  <Badge variant="warning" className="absolute -top-2 -right-2 text-[8px] px-1 py-0">
-                    <Crown className="w-2 h-2 mr-0.5" />
+                  <Badge variant="warning" className="text-[9px] px-1.5 py-0.5 flex items-center gap-0.5">
+                    <Crown className="w-2.5 h-2.5" />
                     Premium
                   </Badge>
+                  <Lock className="h-3.5 w-3.5" />
+                  Google Calendar
                 </Button>
               )}
 
@@ -479,14 +479,15 @@ const Agenda = () => {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="shrink-0 text-xs relative"
+                  className="shrink-0 text-xs gap-1"
                   onClick={() => setShowGoogleUpgradeModal(true)}
                 >
-                  <Lock className="h-3 w-3 mr-1" />
-                  Google
-                  <Badge variant="warning" className="absolute -top-2 -right-2 text-[8px] px-1 py-0">
+                  <Badge variant="warning" className="text-[8px] px-1 py-0 flex items-center gap-0.5">
+                    <Crown className="w-2 h-2" />
                     Premium
                   </Badge>
+                  <Lock className="h-3 w-3" />
+                  Google
                 </Button>
               )}
 
