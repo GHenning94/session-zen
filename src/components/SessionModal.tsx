@@ -100,19 +100,22 @@ export const SessionModal = ({
 
   // Carregar sessões do cliente para calcular limite
   const { data: clientSessions = [] } = useQuery({
-    queryKey: ['client-sessions', formData.client_id],
+    queryKey: ['client-sessions', formData.client_id, user?.id],
     queryFn: async () => {
-      if (!formData.client_id) return []
+      if (!formData.client_id || !user) return []
       
       const { data, error } = await supabase
         .from('sessions')
         .select('id')
         .eq('client_id', formData.client_id)
+        .eq('user_id', user.id)
       
       if (error) throw error
       return data || []
     },
-    enabled: !!formData.client_id && open
+    enabled: !!formData.client_id && !!user && open,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: 'always'
   })
 
   // Calcular sessões restantes para o cliente
