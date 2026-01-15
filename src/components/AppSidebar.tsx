@@ -41,7 +41,7 @@ import { useSubscription, Feature } from "@/hooks/useSubscription"
 import { useTerminology } from "@/hooks/useTerminology"
 import { Badge } from "@/components/ui/badge"
 import { UpgradeModal } from "@/components/UpgradeModal"
-import { NewFeatureBadge } from "@/components/NewFeatureBadge"
+import { NewFeatureBadge, dismissFeatureBadge } from "@/components/NewFeatureBadge"
 import { cn } from "@/lib/utils"
 
 // Menu items - TODOS os títulos são strings literais fixas para evitar textos incorretos
@@ -165,11 +165,17 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     className={cn(
-                      "h-8 rounded-full group/menuitem",
+                      "h-8 rounded-full",
                       isLocked 
                         ? "opacity-60 hover:opacity-80" 
                         : getNavClasses({ isActive: isActive(item.url) })
                     )}
+                    onMouseEnter={() => {
+                      // Dismiss the new feature badge when hovering over the menu item
+                      if (item.requiredFeature && !isLocked) {
+                        dismissFeatureBadge(item.requiredFeature)
+                      }
+                    }}
                   >
                     <NavLink 
                       to={isLocked ? "#" : item.url} 
