@@ -459,7 +459,7 @@ export const SessionModal = ({
                   <Package className="h-4 w-4" />
                   <span>Pacote</span>
                   {!hasPackagesAccess ? (
-                    <Badge variant="default" className="text-[10px] px-1.5 py-0 h-4 gap-0.5 ml-1">
+                    <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 gap-0.5 ml-1">
                       <Lock className="w-2.5 h-2.5" />
                       Pro
                     </Badge>
