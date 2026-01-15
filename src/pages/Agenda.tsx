@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
 import { SessionModal } from "@/components/SessionModal"
 import { UpgradeModal } from "@/components/UpgradeModal"
+import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { 
   Plus, 
   ChevronLeft, 
@@ -354,16 +355,18 @@ const Agenda = () => {
                   </Button>
                 </div>
               ) : hasAccessToFeature('google_calendar') ? (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="shrink-0"
-                  onClick={connectToGoogle}
-                  disabled={isLoading}
-                >
-                  <Link className="h-4 w-4 mr-1" />
-                  Conectar Google Calendar
-                </Button>
+                <div className="flex items-center gap-2 shrink-0 group/googlebtn">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={connectToGoogle}
+                    disabled={isLoading}
+                  >
+                    <Link className="h-4 w-4 mr-1" />
+                    Conectar Google Calendar
+                  </Button>
+                  <NewFeatureBadge featureKey="google_calendar" className="group-hover/googlebtn:hidden" />
+                </div>
               ) : (
                 <Button
                   variant="outline"

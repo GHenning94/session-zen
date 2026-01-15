@@ -165,7 +165,7 @@ export function AppSidebar() {
                   <SidebarMenuButton 
                     asChild 
                     className={cn(
-                      "h-8 rounded-full",
+                      "h-8 rounded-full group/menuitem",
                       isLocked 
                         ? "opacity-60 hover:opacity-80" 
                         : getNavClasses({ isActive: isActive(item.url) })
@@ -186,9 +186,9 @@ export function AppSidebar() {
                       </div>
                       {!isCollapsed && (
                         <div className="flex items-center gap-1">
-                          {/* New feature badge */}
-                          {item.requiredFeature && (
-                            <NewFeatureBadge featureKey={item.requiredFeature} />
+                          {/* New feature badge - shows when unlocked */}
+                          {item.requiredFeature && !isLocked && (
+                            <NewFeatureBadge featureKey={item.requiredFeature} className="group-hover/menuitem:hidden" />
                           )}
                           
                           {/* Locked badge */}

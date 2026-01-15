@@ -49,6 +49,7 @@ import { useNotifications } from "@/hooks/useNotifications"
 import { Volume2, VolumeX } from "lucide-react"
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { UpgradeModal } from "@/components/UpgradeModal"
+import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 
 type AllSettings = Record<string, any>;
 
@@ -1383,15 +1384,17 @@ const Configuracoes = () => {
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between group/whatsapp">
                     <div className="space-y-0.5">
                       <Label className="flex items-center gap-2">
                         Notificações por WhatsApp
-                        {!hasAccessToFeature('whatsapp_notifications') && (
+                        {!hasAccessToFeature('whatsapp_notifications') ? (
                           <Badge variant="warning" className="text-[10px] gap-1">
                             <Crown className="w-3 h-3" />
                             Premium
                           </Badge>
+                        ) : (
+                          <NewFeatureBadge featureKey="whatsapp_notifications" className="group-hover/whatsapp:hidden" />
                         )}
                       </Label>
                       <p className="text-sm text-muted-foreground">
@@ -1439,16 +1442,18 @@ const Configuracoes = () => {
 
                   {/* Google Calendar Sync - dentro do card de notificações */}
                   <div className="border-t pt-4 mt-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between group/googlesync">
                       <div className="space-y-0.5">
                         <Label className="flex items-center gap-2">
                           <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
                           Sincronização Google Calendar
-                          {!hasAccessToFeature('google_calendar') && (
+                          {!hasAccessToFeature('google_calendar') ? (
                             <Badge variant="warning" className="text-[10px] gap-1">
                               <Crown className="w-3 h-3" />
                               Premium
                             </Badge>
+                          ) : (
+                            <NewFeatureBadge featureKey="google_calendar" className="group-hover/googlesync:hidden" />
                           )}
                         </Label>
                         <p className="text-sm text-muted-foreground">
