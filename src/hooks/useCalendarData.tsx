@@ -149,10 +149,10 @@ export const useCalendarData = () => {
       if (error) throw error
 
       // Criar evento no Google Calendar se conectado
+      const client = clients.find(c => c.id === sessionData.client_id)
+      const clientName = client?.nome || 'Cliente'
+
       if (isGoogleConnected && createdSession) {
-        const client = clients.find(c => c.id === sessionData.client_id)
-        const clientName = client?.nome || 'Cliente'
-        
         const [year, month, day] = sessionData.data!.split('-')
         const [hours, minutes] = sessionData.horario!.split(':')
         
@@ -177,6 +177,18 @@ export const useCalendarData = () => {
           // Não falhar a operação se o Google falhar
         }
       }
+
+      // Enviar email de notificação de novo agendamento (não bloqueia)
+      supabase.functions.invoke('send-new-booking-email', {
+        body: {
+          userId: user.id,
+          sessionId: createdSession.id,
+          clientId: sessionData.client_id,
+          clientName: clientName,
+          sessionDate: sessionData.data,
+          sessionTime: sessionData.horario
+        }
+      }).catch(err => console.error('Erro ao enviar email de novo agendamento:', err))
 
       toast({
         title: "Sessão criada!",

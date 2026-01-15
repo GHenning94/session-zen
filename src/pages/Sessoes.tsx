@@ -272,6 +272,20 @@ export default function Sessoes() {
         await recalculateMultiplePackages([sessionToUpdate.package_id])
       }
 
+      // Enviar email de notificação de cancelamento (não bloqueia)
+      if (user && sessionToUpdate) {
+        supabase.functions.invoke('send-booking-cancelled-email', {
+          body: {
+            userId: user.id,
+            sessionId: sessionId,
+            clientId: sessionToUpdate.client_id,
+            clientName: sessionToUpdate.clients?.nome,
+            sessionDate: sessionToUpdate.data,
+            sessionTime: sessionToUpdate.horario
+          }
+        }).catch(err => console.error('Erro ao enviar email de cancelamento:', err))
+      }
+
       toast({
         title: "Sessão cancelada",
         description: "A sessão foi cancelada com sucesso.",
