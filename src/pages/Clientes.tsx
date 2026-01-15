@@ -627,15 +627,18 @@ const Clientes = () => {
                 if (!canAddMore) {
                   toast({
                     title: "Limite de pacientes atingido",
-                    description: `Seu plano ${currentPlan === 'basico' ? 'Básico' : currentPlan === 'pro' ? 'Pro' : 'Premium'} permite até ${planLimits.maxClients} ${clientTermPlural.toLowerCase()} ativos. Faça upgrade para adicionar mais.`,
-                    action: (
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        onClick={() => setShowUpgradeModal(true)}
-                      >
-                        Fazer Upgrade
-                      </Button>
+                    description: (
+                      <div className="space-y-3">
+                        <p>Seu plano {currentPlan === 'basico' ? 'Básico' : currentPlan === 'pro' ? 'Pro' : 'Premium'} permite até {planLimits.maxClients} {clientTermPlural.toLowerCase()} ativos. Faça upgrade para adicionar mais.</p>
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => setShowUpgradeModal(true)}
+                        >
+                          Fazer Upgrade
+                        </Button>
+                      </div>
                     )
                   })
                   return
