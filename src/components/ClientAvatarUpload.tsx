@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { ImageCropper } from "@/components/ImageCropper";
 import { compressImageWithProgress, getOptimalCompressionSettings } from "@/utils/imageCompression";
 import { getSignedUrl } from "@/utils/storageUtils";
-
+import { useAvatarCache } from "@/contexts/AvatarCacheContext";
 interface ClientAvatarUploadProps {
   clientName?: string;
   currentAvatarUrl?: string;
@@ -31,6 +31,7 @@ export const ClientAvatarUpload = ({
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { invalidateAvatar } = useAvatarCache();
   const [displayUrl, setDisplayUrl] = useState<string>("");
 
   const sizeClasses = {
@@ -94,6 +95,14 @@ export const ClientAvatarUpload = ({
   const handleCropComplete = async (uploadedPath: string) => {
     // ImageCropper returns the storage path, not a URL
     // For private storage, we store the path and use signed URLs when displaying
+    
+    // Invalidar cache do avatar anterior se existir
+    if (currentAvatarUrl) {
+      invalidateAvatar(currentAvatarUrl);
+    }
+    // Invalidar também o novo path para garantir que será gerada uma nova signed URL
+    invalidateAvatar(uploadedPath);
+    
     onAvatarChange(uploadedPath);
     setShowCropper(false);
     

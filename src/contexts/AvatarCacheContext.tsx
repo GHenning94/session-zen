@@ -15,6 +15,7 @@ interface CachedAvatar {
 interface AvatarCacheContextType {
   getCachedAvatar: (path: string | null | undefined, size?: 'sm' | 'md' | 'lg') => Promise<string | null>
   clearCache: () => void
+  invalidateAvatar: (path: string) => void
   preloadAvatars: (paths: string[], size?: 'sm' | 'md' | 'lg') => Promise<void>
 }
 
@@ -103,6 +104,24 @@ export const AvatarCacheProvider = ({ children }: AvatarCacheProviderProps) => {
   }, [])
 
   /**
+   * Invalida o cache de um avatar específico
+   * Útil quando um avatar é atualizado e precisamos forçar a regeneração da URL
+   */
+  const invalidateAvatar = useCallback((path: string) => {
+    if (!path) return
+    
+    // Remover todas as variantes de tamanho deste path
+    const sizes: Array<'sm' | 'md' | 'lg'> = ['sm', 'md', 'lg']
+    sizes.forEach(size => {
+      const cacheKey = `${path}_${size}`
+      if (avatarCache.has(cacheKey)) {
+        avatarCache.delete(cacheKey)
+        console.log('[AvatarCache] 🗑️ Invalidated:', cacheKey.substring(0, 50))
+      }
+    })
+  }, [])
+
+  /**
    * Pré-carrega múltiplos avatares em paralelo
    * Útil para otimizar listas com muitos avatares
    */
@@ -144,6 +163,7 @@ export const AvatarCacheProvider = ({ children }: AvatarCacheProviderProps) => {
     <AvatarCacheContext.Provider value={{
       getCachedAvatar,
       clearCache,
+      invalidateAvatar,
       preloadAvatars
     }}>
       {children}

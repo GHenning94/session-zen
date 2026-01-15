@@ -57,10 +57,45 @@ type AllSettings = Record<string, any>;
 const ThemeSelector = () => {
   const { theme, setTheme } = useTheme()
   const { saveThemePreference } = useUserTheme()
+  const { user } = useAuth()
+  const [isChanging, setIsChanging] = useState(false)
 
   const handleThemeChange = (newTheme: 'light' | 'dark') => {
-    setTheme(newTheme)
-    saveThemePreference(newTheme)
+    if (theme === newTheme || isChanging) return // Não fazer nada se já está no tema ou está mudando
+    
+    const root = document.documentElement
+    
+    // Captura as cores computadas atuais antes de qualquer mudança
+    const bodyStyle = window.getComputedStyle(document.body)
+    const bgColor = bodyStyle.backgroundColor
+    const fgColor = bodyStyle.color
+    
+    // Congela as cores do overlay para evitar piscada durante a transição
+    root.style.setProperty('--transition-bg', bgColor)
+    root.style.setProperty('--transition-fg', fgColor)
+    
+    // Ativa o overlay ANTES de trocar o tema
+    root.classList.add('theme-transitioning')
+    setIsChanging(true)
+
+    // Troca o tema no próximo frame, garantindo que o overlay já está ativo
+    requestAnimationFrame(() => {
+      setTheme(newTheme)
+      saveThemePreference(newTheme)
+      
+      // Atualizar cache local imediatamente para evitar flash ao recarregar
+      if (user) {
+        localStorage.setItem(`user-theme-cache_${user.id}`, newTheme)
+      }
+      
+      // Remove o overlay depois que o novo tema foi aplicado
+      setTimeout(() => {
+        root.classList.remove('theme-transitioning')
+        root.style.removeProperty('--transition-bg')
+        root.style.removeProperty('--transition-fg')
+        setIsChanging(false)
+      }, 300)
+    })
   }
 
   return (
@@ -72,16 +107,20 @@ const ThemeSelector = () => {
       <div className="flex gap-3">
         <Button
           variant={theme === "light" ? "default" : "outline"}
-          className="flex-1 sm:flex-none sm:w-[140px]"
+          size="default"
+          className="h-10 w-[140px]"
           onClick={() => handleThemeChange("light")}
+          disabled={isChanging}
         >
           <Sun className="h-4 w-4 mr-2" />
           Claro
         </Button>
         <Button
           variant={theme === "dark" ? "default" : "outline"}
-          className="flex-1 sm:flex-none sm:w-[140px]"
+          size="default"
+          className="h-10 w-[140px]"
           onClick={() => handleThemeChange("dark")}
+          disabled={isChanging}
         >
           <Moon className="h-4 w-4 mr-2" />
           Escuro
