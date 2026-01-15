@@ -623,8 +623,23 @@ const Clientes = () => {
             <Button 
               size="sm"
               className="bg-gradient-primary hover:opacity-90 flex-1 md:flex-none"
-              disabled={!canAddMore}
               onClick={() => {
+                if (!canAddMore) {
+                  toast({
+                    title: "Limite de pacientes atingido",
+                    description: `Seu plano ${currentPlan === 'basico' ? 'Básico' : currentPlan === 'pro' ? 'Pro' : 'Premium'} permite até ${planLimits.maxClients} ${clientTermPlural.toLowerCase()} ativos. Faça upgrade para adicionar mais.`,
+                    action: (
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => setShowUpgradeModal(true)}
+                      >
+                        Fazer Upgrade
+                      </Button>
+                    )
+                  })
+                  return
+                }
                 setEditingClient(null)
                 setIsNewClientOpen(true)
               }}
