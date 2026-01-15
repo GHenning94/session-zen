@@ -1687,6 +1687,7 @@ const Configuracoes = () => {
         open={showColorUpgradeModal} 
         onOpenChange={setShowColorUpgradeModal}
         feature="Personalização de Cores"
+        premiumOnly
       />
 
       {/* Modal de upgrade para funcionalidades Premium */}
