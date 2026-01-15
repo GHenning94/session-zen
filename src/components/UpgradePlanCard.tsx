@@ -17,11 +17,18 @@ interface ProrationData {
   creditAmount: number
   creditFormatted: string
   daysRemaining: number
+  totalCycleDays: number
   periodEndDate: string
   currentPlan: string
+  currentPlanPrice: number
+  currentPlanPriceFormatted: string
   newPlan: string
-  isTierChange: boolean
+  newPlanPrice: number
   newPlanPriceFormatted: string
+  isTierChange: boolean
+  isUpgrade: boolean
+  isDowngrade: boolean
+  explanation: string
 }
 
 interface Plan {
@@ -575,24 +582,37 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
               </p>
 
               <div className="bg-muted/50 rounded-lg p-4 space-y-3 border">
+                {/* Valor do plano atual */}
                 <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Dias restantes no plano atual:</span>
-                  <span className="font-medium">{prorationModal.data.daysRemaining} dias</span>
+                  <span className="text-muted-foreground">Valor do plano atual:</span>
+                  <span className="font-medium">{prorationModal.data.currentPlanPriceFormatted}</span>
                 </div>
+                {/* Dias restantes */}
+                <div className="flex justify-between items-center text-sm">
+                  <span className="text-muted-foreground">Dias restantes no ciclo:</span>
+                  <span>{prorationModal.data.daysRemaining} de {prorationModal.data.totalCycleDays} dias</span>
+                </div>
+                {/* Crédito calculado */}
                 <div className="flex justify-between items-center">
                   <span className="text-muted-foreground">Crédito proporcional:</span>
-                  <span className="text-green-600 font-medium">- {prorationModal.data.creditFormatted}</span>
+                  <span className="text-green-600 font-medium">-{prorationModal.data.creditFormatted}</span>
                 </div>
                 <div className="border-t border-border my-2" />
+                {/* Preço do novo plano */}
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground">Preço do novo plano:</span>
+                  <span className="font-medium">{prorationModal.data.newPlanPriceFormatted}</span>
+                </div>
                 <div className="flex justify-between items-center text-lg font-semibold">
                   <span>Valor a pagar agora:</span>
                   <span className="text-primary">{prorationModal.data.proratedAmountFormatted}</span>
                 </div>
               </div>
 
+              {/* Explicação do cálculo */}
               <div className="bg-blue-50 dark:bg-blue-950/30 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                 <p className="text-sm text-blue-700 dark:text-blue-300">
-                  Após a alteração, seu próximo ciclo de cobrança será em <span className="font-semibold">{prorationModal.data.periodEndDate}</span>.
+                  {prorationModal.data.explanation}
                 </p>
               </div>
 
