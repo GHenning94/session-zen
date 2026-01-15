@@ -121,6 +121,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
   const [previousPlan, setPreviousPlan] = useState<SubscriptionPlan>('basico')
   const [billingInterval, setBillingInterval] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isInitialized, setIsInitialized] = useState(false)
 
   // Check subscription status (DB-first, Edge fallback)
   const checkSubscription = async () => {
@@ -128,6 +129,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       setCurrentPlan('basico')
       setBillingInterval(null)
       setIsLoading(false)
+      setIsInitialized(true)
       return
     }
 
@@ -142,13 +144,23 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       if (!profileError && profile?.subscription_plan) {
         const newPlan = profile.subscription_plan as SubscriptionPlan
         
-        // ✅ Só detectar upgrade se o plano REALMENTE mudou (não apenas sincronização)
-        if (newPlan !== currentPlan && PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[previousPlan]) {
-          const newlyUnlocked = getNewlyUnlockedFeatures(previousPlan, newPlan)
+        // Get the last known plan from localStorage to detect real upgrades
+        const lastKnownPlanKey = `last_known_plan_${user.id}`
+        const lastKnownPlan = localStorage.getItem(lastKnownPlanKey) as SubscriptionPlan | null
+        
+        // ✅ Só detectar upgrade se:
+        // 1. Temos um plano anterior conhecido E
+        // 2. O novo plano é superior ao anterior conhecido
+        // Isso evita marcar features como "novas" em login normal
+        if (lastKnownPlan && newPlan !== lastKnownPlan && PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[lastKnownPlan]) {
+          const newlyUnlocked = getNewlyUnlockedFeatures(lastKnownPlan, newPlan)
           if (newlyUnlocked.length > 0) {
             markFeaturesAsUnlocked(newlyUnlocked)
           }
         }
+        
+        // Salvar o plano atual como último plano conhecido
+        localStorage.setItem(lastKnownPlanKey, newPlan)
         
         // ✅ Só atualizar previousPlan se realmente houve mudança
         if (newPlan !== currentPlan) {
@@ -156,6 +168,7 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
         }
         setCurrentPlan(newPlan)
         setBillingInterval(profile.billing_interval)
+        setIsInitialized(true)
         return
       }
 
@@ -189,13 +202,15 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       .map(([feature]) => feature)
   }
 
-  // Mark features as recently unlocked (stored in localStorage for persistence)
+  // Mark features as recently unlocked (stored in localStorage with user-specific key)
   const markFeaturesAsUnlocked = useCallback((features: Feature[]) => {
-    const existing = localStorage.getItem('recently_unlocked_features')
+    if (!user?.id) return
+    const key = `recently_unlocked_features_${user.id}`
+    const existing = localStorage.getItem(key)
     const current = existing ? JSON.parse(existing) as string[] : []
     const updated = [...new Set([...current, ...features])]
-    localStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
-  }, [])
+    localStorage.setItem(key, JSON.stringify(updated))
+  }, [user?.id])
 
   useEffect(() => {
     console.log('useSubscription: user ID changed, checking subscription.')
@@ -221,13 +236,20 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
           if (payload.new.subscription_plan) {
             const newPlan = payload.new.subscription_plan as SubscriptionPlan
             
-            // Detect upgrade
-            if (PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[currentPlan]) {
-              const newlyUnlocked = getNewlyUnlockedFeatures(currentPlan, newPlan)
+            // Get last known plan to detect real upgrade
+            const lastKnownPlanKey = `last_known_plan_${user.id}`
+            const lastKnownPlan = localStorage.getItem(lastKnownPlanKey) as SubscriptionPlan | null
+            
+            // Detect upgrade - só marca se realmente mudou de tier
+            if (lastKnownPlan && PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[lastKnownPlan]) {
+              const newlyUnlocked = getNewlyUnlockedFeatures(lastKnownPlan, newPlan)
               if (newlyUnlocked.length > 0) {
                 markFeaturesAsUnlocked(newlyUnlocked)
               }
             }
+            
+            // Atualizar o último plano conhecido
+            localStorage.setItem(lastKnownPlanKey, newPlan)
             
             setPreviousPlan(currentPlan)
             setCurrentPlan(newPlan)
