@@ -920,7 +920,6 @@ const ProgramaIndicacao = () => {
               <h1 className="text-2xl font-bold">Programa de Indicação</h1>
               <p className="text-muted-foreground">Painel do programa de indicações</p>
             </div>
-            <NewFeatureBadge featureKey="referral_program" />
           </div>
           <Button 
             variant="outline" 

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { NewFeatureBadge, dismissFeatureBadge } from '@/components/NewFeatureBadge'
 
 interface PackageWithSessions {
   id: string
@@ -34,9 +35,10 @@ interface PackageStats {
 
 interface PackageStatusCardProps {
   stats: PackageStats
+  showNewBadge?: boolean
 }
 
-export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
+export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatusCardProps) => {
   const navigate = useNavigate()
   const { user } = useAuth()
   const [currentIndex, setCurrentIndex] = useState(0)
@@ -337,9 +339,17 @@ export const PackageStatusCard = ({ stats }: PackageStatusCardProps) => {
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      onMouseEnter={() => {
+        if (showNewBadge) {
+          dismissFeatureBadge('goals')
+        }
+      }}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
+        <div className="flex items-center gap-2">
+          <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
+          {showNewBadge && <NewFeatureBadge featureKey="goals" />}
+        </div>
         <Package className="h-4 w-4 text-primary" />
       </CardHeader>
       <CardContent className="flex flex-col min-h-[340px]">

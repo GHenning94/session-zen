@@ -1442,7 +1442,15 @@ const Configuracoes = () => {
 
                   {/* Google Calendar Sync - dentro do card de notificações */}
                   <div className="border-t pt-4 mt-4">
-                    <div className="flex items-center justify-between group/googlesync">
+                    <div 
+                      className="flex items-center justify-between"
+                      onMouseEnter={() => {
+                        if (hasAccessToFeature('google_calendar')) {
+                          const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                          dismissFeatureBadge('google_calendar')
+                        }
+                      }}
+                    >
                       <div className="space-y-0.5">
                         <Label className="flex items-center gap-2">
                           <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
@@ -1453,7 +1461,7 @@ const Configuracoes = () => {
                               Premium
                             </Badge>
                           ) : (
-                            <NewFeatureBadge featureKey="google_calendar" className="group-hover/googlesync:hidden" />
+                            <NewFeatureBadge featureKey="google_calendar" />
                           )}
                         </Label>
                         <p className="text-sm text-muted-foreground">

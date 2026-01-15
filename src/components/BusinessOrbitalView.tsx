@@ -8,6 +8,7 @@ import React, { useEffect, useState, useRef } from "react"
 import { startOfWeek, endOfWeek, startOfMonth, endOfMonth, startOfDay, isWithinInterval } from "date-fns"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
+import { NewFeatureBadge, dismissFeatureBadge } from "@/components/NewFeatureBadge"
 
 interface BusinessOrbitalViewProps {
   dashboardData: {
@@ -22,12 +23,14 @@ interface BusinessOrbitalViewProps {
     totalRevenue: number
   }
   upcomingSessionsCount: number
+  showNewBadge?: boolean
 }
 
 export const BusinessOrbitalView = ({ 
   dashboardData, 
   packageStats,
-  upcomingSessionsCount
+  upcomingSessionsCount,
+  showNewBadge = false
 }: BusinessOrbitalViewProps) => {
   const { user } = useAuth()
   const { metas, getMetaAtivaPorTipo, verificarEMarcarMetasConcluidas, getPeriodoLabel } = useMetas()
@@ -318,8 +321,18 @@ export const BusinessOrbitalView = ({
   ]
 
   return (
-    <Card className="p-4">
-      <h2 className="text-sm font-medium mb-2">Progresso de Metas</h2>
+    <Card 
+      className="p-4"
+      onMouseEnter={() => {
+        if (showNewBadge) {
+          dismissFeatureBadge('goals')
+        }
+      }}
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <h2 className="text-sm font-medium">Progresso de Metas</h2>
+        {showNewBadge && <NewFeatureBadge featureKey="goals" />}
+      </div>
       <RadialOrbitalTimeline timelineData={timelineData} />
     </Card>
   )

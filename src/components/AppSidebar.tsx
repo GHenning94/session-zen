@@ -188,7 +188,7 @@ export function AppSidebar() {
                         <div className="flex items-center gap-1">
                           {/* New feature badge - shows when unlocked */}
                           {item.requiredFeature && !isLocked && (
-                            <NewFeatureBadge featureKey={item.requiredFeature} className="group-hover/menuitem:hidden" />
+                            <NewFeatureBadge featureKey={item.requiredFeature} />
                           )}
                           
                           {/* Locked badge */}
