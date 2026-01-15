@@ -9,6 +9,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import { DowngradeRetentionFlow } from "./DowngradeRetentionFlow"
 import { toast } from "sonner"
+import { cn } from "@/lib/utils"
 
 interface ProrationData {
   proratedAmount: number
@@ -440,11 +441,14 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
             return (
               <Card 
                 key={plan.id} 
-                className={`relative border-2 transition-colors ${
+                className={cn(
+                  "relative border-2 transition-colors mb-4",
                   isCurrentPlanAndCycle 
                     ? 'border-green-500 ring-2 ring-green-500/20' 
-                    : 'border-border hover:border-primary/50'
-                }`}
+                    : isPro && !isCurrentPlanAndCycle
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-border hover:border-primary/50'
+                )}
               >
                 {/* Badge central - Plano Atual ou Mais Popular */}
                 {isCurrentPlanAndCycle && (

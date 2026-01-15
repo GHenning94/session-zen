@@ -2231,20 +2231,22 @@ const Dashboard = () => {
                     </Card>
                   ) : (
                     <Card 
-                      className="shadow-soft overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+                      className="shadow-soft h-full cursor-pointer relative overflow-hidden"
                       onClick={() => setShowGoalsUpgradeModal(true)}
                     >
-                      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                        <div className="text-center">
-                          <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
-                            <Lock className="w-3 h-3 mr-1" />
+                      {/* Locked overlay */}
+                      <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-center p-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-success to-success/70 flex items-center justify-center">
+                            <TrendingUp className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="font-semibold">Ticket Médio</h3>
+                          <Badge variant="default" className="text-xs">
                             Desbloqueie no plano Profissional
                           </Badge>
-                          <p className="text-sm text-muted-foreground">
-                            Acompanhe a evolução do valor médio por sessão
-                          </p>
                         </div>
                       </div>
+                      {/* Blurred content placeholder */}
                       <CardHeader className="opacity-30 pb-4">
                         <div className="flex items-center gap-2">
                           <TrendingUp className="w-5 h-5 text-success" />
@@ -2261,7 +2263,7 @@ const Dashboard = () => {
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                         </div>
-                        <div className="h-72 bg-muted rounded-lg" />
+                        <div className="h-72 bg-muted rounded-xl" />
                       </CardContent>
                     </Card>
                   )}
@@ -2363,20 +2365,22 @@ const Dashboard = () => {
                     </Card>
                   ) : (
                     <Card 
-                      className="shadow-soft overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+                      className="shadow-soft h-full cursor-pointer relative overflow-hidden"
                       onClick={() => setShowGoalsUpgradeModal(true)}
                     >
-                      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                        <div className="text-center">
-                          <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
-                            <Lock className="w-3 h-3 mr-1" />
+                      {/* Locked overlay */}
+                      <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-center p-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-success to-success/70 flex items-center justify-center">
+                            <BarChart3 className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="font-semibold">Ticket Médio por {clientTerm}</h3>
+                          <Badge variant="default" className="text-xs">
                             Desbloqueie no plano Profissional
                           </Badge>
-                          <p className="text-sm text-muted-foreground">
-                            Veja o valor médio por sessão de cada {clientTerm.toLowerCase()}
-                          </p>
                         </div>
                       </div>
+                      {/* Blurred content placeholder */}
                       <CardHeader className="opacity-30 pb-4">
                         <div className="flex items-center gap-2">
                           <BarChart3 className="w-5 h-5 text-success" />
@@ -2675,20 +2679,22 @@ const Dashboard = () => {
                     </Card>
                   ) : (
                     <Card 
-                      className="shadow-soft min-h-[400px] overflow-hidden relative cursor-pointer hover:shadow-lg transition-shadow"
+                      className="shadow-soft min-h-[400px] cursor-pointer relative overflow-hidden"
                       onClick={() => setShowGoalsUpgradeModal(true)}
                     >
-                      <div className="absolute inset-0 bg-background/60 backdrop-blur-sm z-10 flex items-center justify-center">
-                        <div className="text-center">
-                          <Badge className="bg-primary/10 text-primary border-primary/20 mb-2">
-                            <Lock className="w-3 h-3 mr-1" />
+                      {/* Locked overlay */}
+                      <div className="absolute inset-0 z-10 bg-background/60 backdrop-blur-[1px] rounded-lg flex items-center justify-center">
+                        <div className="flex flex-col items-center gap-2 text-center p-4">
+                          <div className="w-12 h-12 rounded-full bg-gradient-primary flex items-center justify-center">
+                            <DollarSign className="w-6 h-6 text-white" />
+                          </div>
+                          <h3 className="font-semibold">Receita por Canal</h3>
+                          <Badge variant="default" className="text-xs">
                             Desbloqueie no plano Profissional
                           </Badge>
-                          <p className="text-sm text-muted-foreground">
-                            Veja a distribuição da receita por método de pagamento
-                          </p>
                         </div>
                       </div>
+                      {/* Blurred content placeholder */}
                       <CardHeader className="opacity-30 pb-4">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />

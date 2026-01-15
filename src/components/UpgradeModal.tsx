@@ -2,6 +2,7 @@ import { useState } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Check, Loader2, AlertTriangle, Star } from "lucide-react"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
@@ -319,64 +320,53 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
           </p>
         </div>
 
-        {/* Billing interval toggle */}
-        <div className="flex justify-center mb-6">
-          <div className="inline-flex items-center bg-muted/50 rounded-full p-1">
-            <button
-              onClick={() => setBillingInterval('monthly')}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200",
-                billingInterval === 'monthly'
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Mensal
-            </button>
-            <button
-              onClick={() => setBillingInterval('yearly')}
-              className={cn(
-                "px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 flex items-center gap-1.5",
-                billingInterval === 'yearly'
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground"
-              )}
-            >
-              Anual
-              <span className={cn(
-                "text-[10px] px-1.5 py-0.5 rounded-full",
-                billingInterval === 'yearly'
-                  ? "bg-primary-foreground/20 text-primary-foreground"
-                  : "bg-success/20 text-success"
-              )}>
-                -17%
-              </span>
-            </button>
-          </div>
+        {/* Billing interval toggle - padronizado com Upgrade.tsx */}
+        <div className="flex items-center justify-center gap-3 mb-6">
+          <span className={`text-sm ${billingInterval === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Mensal</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={billingInterval === 'yearly'}
+            onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+            className="relative inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingInterval === 'yearly' ? 'translateX(22px)' : 'translateX(2px)' }} />
+          </button>
+          <span className={`text-sm ${billingInterval === 'yearly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
+          {billingInterval === 'yearly' && (
+            <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">
+              -17%
+            </Badge>
+          )}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
+        <div className="grid md:grid-cols-2 gap-8">
           {plans.map((plan) => (
-            <Card key={plan.name} className={`relative ${plan.id === 'pro' ? 'border-primary shadow-lg' : ''}`}>
+            <Card 
+              key={plan.name} 
+              className={cn(
+                "relative transition-all duration-300",
+                plan.id === 'pro' ? 'border-2 border-primary shadow-lg' : 'border border-border'
+              )}
+            >
+              {/* Badge Mais Popular - padronizado */}
               {plan.id === 'pro' && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <span className="bg-primary text-primary-foreground px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1">
-                    <Star className="h-3 w-3" />
-                    Mais Popular
-                  </span>
-                </div>
+                <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 flex items-center gap-1 whitespace-nowrap">
+                  <Star className="h-3 w-3" />
+                  Mais Popular
+                </Badge>
               )}
               
-              <CardHeader className="text-center">
+              <CardHeader className="text-center pt-6">
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                <CardDescription>
+                <CardDescription className="mt-2">
                   <span className="text-3xl font-bold text-foreground">
                     {billingInterval === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice}
                   </span>
                   <span className="text-muted-foreground">{plan.period}</span>
                   {billingInterval === 'yearly' && (
-                    <div className="text-sm text-success mt-1">
-                      equivale a {plan.yearlyMonthlyEquivalent}/mês
+                    <div className="text-sm text-muted-foreground mt-1">
+                      Cobrado {plan.id === 'pro' ? 'R$ 299,00' : 'R$ 499,00'} uma vez por ano
                     </div>
                   )}
                 </CardDescription>
@@ -386,7 +376,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
                 <ul className="space-y-3 mb-6">
                   {plan.features.map((feat, index) => (
                     <li key={index} className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-success" />
+                      <Check className="h-4 w-4 text-green-500 flex-shrink-0" />
                       <span className="text-sm">{feat}</span>
                     </li>
                   ))}
@@ -394,7 +384,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
                 
                 <Button 
                   className="w-full" 
-                  variant={plan.recommended ? "default" : "outline"}
+                  variant={plan.id === 'pro' ? "default" : "outline"}
                   onClick={() => handlePlanSelect(plan)}
                   disabled={loading}
                 >
