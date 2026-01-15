@@ -19,6 +19,7 @@ export type Feature =
   | 'dashboard_advanced_cards'
   | 'unlimited_clients'
   | 'unlimited_sessions'
+  | 'packages'
 
 // Feature to minimum plan mapping
 const FEATURE_TO_PLAN: Record<Feature, SubscriptionPlan> = {
@@ -36,6 +37,7 @@ const FEATURE_TO_PLAN: Record<Feature, SubscriptionPlan> = {
   dashboard_advanced_cards: 'pro',
   unlimited_clients: 'premium',
   unlimited_sessions: 'pro',
+  packages: 'pro',
 }
 
 // Plan hierarchy for comparison
