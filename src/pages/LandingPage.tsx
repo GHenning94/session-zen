@@ -520,8 +520,8 @@ const LandingPage = () => {
 
   const plans = [
     { name: "Básico", price: { monthly: "R$ 0", annually: "R$ 0" }, period: { monthly: "/mês", annually: "/ano" }, annualTotal: 0, description: "Ideal para começar", features: ["Dashboard limitado", "Agenda completa", "Até 10 pacientes", "Até 10 sessões por paciente", "Prontuários Completos", "Gerenciamento de pagamentos"], highlighted: false, cta: "Acessar", planId: "basico" },
-    { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 24,90" }, period: { monthly: "/mês", annually: "/mês" }, annualTotal: 298.80, description: "Para profissionais em crescimento", features: ["Dashboard completo", "Até 50 pacientes", "Sessões ilimitadas", "Sessões recorrentes e pacotes", "Metas e relatórios simples", "Prontuários completos", "Página pública padrão", "Programa de indicação", "Tema claro e escuro"], highlighted: true, cta: "Assinar Profissional", planId: "pro" },
-    { name: "Premium", price: { monthly: "R$ 49,90", annually: "R$ 41,58" }, period: { monthly: "/mês", annually: "/mês" }, annualTotal: 498.96, description: "Máximo poder e recursos", features: ["Tudo do Profissional", "Pacientes ilimitados", "Programa de indicação completo", "Relatórios avançados (PDF, Excel, filtros)", "Integração Google Agenda", "Integração WhatsApp", "Personalização total (tema + cores)", "Página pública personalizada", "Backup automático", "Suporte prioritário"], highlighted: false, cta: "Assinar Premium", planId: "premium" }
+    { name: "Profissional", price: { monthly: "R$ 29,90", annually: "R$ 299,00" }, period: { monthly: "/mês", annually: "/ano" }, annualTotal: 299.00, description: "Para profissionais em crescimento", features: ["Dashboard completo", "Até 50 pacientes", "Sessões ilimitadas", "Sessões recorrentes e pacotes", "Metas e relatórios simples", "Prontuários completos", "Página pública padrão", "Programa de indicação", "Tema claro e escuro"], highlighted: true, cta: "Assinar Profissional", planId: "pro" },
+    { name: "Premium", price: { monthly: "R$ 49,90", annually: "R$ 499,00" }, period: { monthly: "/mês", annually: "/ano" }, annualTotal: 499.00, description: "Máximo poder e recursos", features: ["Tudo do Profissional", "Pacientes ilimitados", "Programa de indicação completo", "Relatórios avançados (PDF, Excel, filtros)", "Integração Google Agenda", "Integração WhatsApp", "Personalização total (tema + cores)", "Página pública personalizada", "Backup automático", "Suporte prioritário"], highlighted: false, cta: "Assinar Premium", planId: "premium" }
   ];
 
   const systemInActionFeatures = [
@@ -842,7 +842,7 @@ const LandingPage = () => {
                             <span className="text-muted-foreground ml-1">{plan.period[billingCycle]}</span>
                             {billingCycle === 'annually' && plan.annualTotal > 0 && (
                               <p className="text-xs text-muted-foreground mt-1">
-                                Cobrado R$ {plan.annualTotal.toFixed(2).replace('.', ',')} uma vez por ano
+                                {plan.planId === 'pro' ? 'De R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'De R$ 598,80 por R$ 499,00 (2 meses grátis)'}
                               </p>
                             )}
                             {plan.planId === 'basico' && (

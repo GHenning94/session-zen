@@ -124,8 +124,8 @@ export default function Upgrade() {
     { 
       id: 'pro', 
       name: 'Profissional', 
-      price: billingCycle === 'monthly' ? 'R$ 29,90' : 'R$ 24,90', 
-      period: '/mês', 
+      price: billingCycle === 'monthly' ? 'R$ 29,90' : 'R$ 299,00', 
+      period: billingCycle === 'monthly' ? '/mês' : '/ano', 
       icon: <Zap className="h-6 w-6" />, 
       description: 'Para profissionais em crescimento', 
       features: [ 
@@ -146,17 +146,17 @@ export default function Upgrade() {
         (billingCycle === 'monthly' && currentBillingInterval === 'monthly') ||
         (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
       ),
-      annualPrice: 'R$ 298,80',
+      annualPrice: 'R$ 299,00',
       annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null,
       planLevel: 2,
       monthlyValue: 29.90,
-      annualValue: 298.80
+      annualValue: 299.00
     },
     { 
       id: 'premium', 
       name: 'Premium', 
-      price: billingCycle === 'monthly' ? 'R$ 49,90' : 'R$ 41,58', 
-      period: '/mês', 
+      price: billingCycle === 'monthly' ? 'R$ 49,90' : 'R$ 499,00', 
+      period: billingCycle === 'monthly' ? '/mês' : '/ano', 
       icon: <Crown className="h-6 w-6" />, 
       description: 'Máximo poder e recursos', 
       features: [ 
@@ -178,11 +178,11 @@ export default function Upgrade() {
         (billingCycle === 'monthly' && currentBillingInterval === 'monthly') ||
         (billingCycle === 'annual' && (currentBillingInterval === 'yearly' || currentBillingInterval === 'annual'))
       ),
-      annualPrice: 'R$ 498,96',
+      annualPrice: 'R$ 499,00',
       annualDiscount: billingCycle === 'annual' ? 'Economize 2 meses' : null,
       planLevel: 3,
       monthlyValue: 49.90,
-      annualValue: 498.96
+      annualValue: 499.00
     }
   ]
 
@@ -463,7 +463,7 @@ export default function Upgrade() {
                     </div>
                     {billingCycle === 'annual' && plan.annualPrice && (
                       <p className="text-sm text-muted-foreground mt-2">
-                        {plan.id === 'pro' ? 'R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'R$ 598,80 por R$ 499,00 (2 meses grátis)'}
+                        {plan.id === 'pro' ? 'De R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'De R$ 598,80 por R$ 499,00 (2 meses grátis)'}
                       </p>
                     )}
                     {plan.id === 'basico' && (
