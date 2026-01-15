@@ -1169,8 +1169,8 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     .from('notifications')
     .insert({
       user_id: profile.user_id,
-      titulo: 'Assinatura Encerrada',
-      conteudo: 'Sua assinatura foi encerrada. Você agora está no plano gratuito com funcionalidades limitadas.'
+      titulo: 'Seu plano foi alterado',
+      conteudo: 'Seu plano foi migrado para o plano Básico. Não se preocupe: todos os seus dados continuam salvos na plataforma! Caso faça upgrade novamente, suas informações estarão exatamente onde você deixou.'
     });
 
   // Cancelar comissões pendentes do afiliado
