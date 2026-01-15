@@ -120,7 +120,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       id: 'pro',
       name: 'Profissional',
       monthlyPrice: 'R$ 29,90',
-      annualPrice: 'R$ 24,90',
+      annualPrice: 'R$ 299,00',
       period: '/mês',
       icon: <Zap className="h-5 w-5" />,
       description: 'Para profissionais em crescimento',
@@ -129,14 +129,14 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       monthlyStripePrice: 'price_1SSMNgCP57sNVd3laEmlQOcb',
       annualStripePrice: 'price_1SSMOdCP57sNVd3la4kMOinN',
       currentPlan: currentPlan === 'pro',
-      annualSubtext: '12x R$ 24,90 = R$ 298,80/ano',
+      annualSubtext: 'De R$ 358,80 por R$ 299,00 (2 meses grátis)',
       planLevel: 2
     },
     {
       id: 'premium',
       name: 'Premium',
       monthlyPrice: 'R$ 49,90',
-      annualPrice: 'R$ 41,58',
+      annualPrice: 'R$ 499,00',
       period: '/mês',
       icon: <Crown className="h-5 w-5" />,
       description: 'Máximo poder e recursos',
@@ -144,7 +144,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       monthlyStripePrice: 'price_1SSMOBCP57sNVd3lqjfLY6Du',
       annualStripePrice: 'price_1SSMP7CP57sNVd3lSf4oYINX',
       currentPlan: currentPlan === 'premium',
-      annualSubtext: '12x R$ 41,58 = R$ 498,96/ano',
+      annualSubtext: 'De R$ 598,80 por R$ 499,00 (2 meses grátis)',
       planLevel: 3
     }
   ]
@@ -484,7 +484,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
                     {isAnnual && plan.annualSubtext && (
-                      <p className="text-xs text-muted-foreground mt-1">{plan.id === 'pro' ? 'R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'R$ 598,80 por R$ 499,00 (2 meses grátis)'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{plan.id === 'pro' ? 'De R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'De R$ 598,80 por R$ 499,00 (2 meses grátis)'}</p>
                     )}
                     {plan.id === 'basico' && (
                       <p className="text-xs text-muted-foreground mt-1">Sem cartão de crédito</p>
