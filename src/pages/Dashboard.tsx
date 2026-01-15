@@ -63,7 +63,7 @@ import confetti from "canvas-confetti"
 const Dashboard = () => {
   const navigate = useNavigate()
   const { user } = useAuth()
-  const { currentPlan, billingInterval, hasAccessToFeature } = useSubscription()
+  const { currentPlan, billingInterval, hasAccessToFeature, isLoading: isSubscriptionLoading } = useSubscription()
   const { clientTerm, clientTermPlural } = useTerminology()
   const [showGoalsUpgradeModal, setShowGoalsUpgradeModal] = useState(false)
   const { subscribe } = useGlobalRealtime()
@@ -1241,6 +1241,9 @@ const Dashboard = () => {
     }
   ]
 
+  // Keep loading state while subscription data is still loading (prevents flash after upgrade)
+  const isFullyLoaded = !isLoading && !isSubscriptionLoading && !isProcessingPayment
+
   return (
     <Layout>
       <div className="space-y-4 md:space-y-8 pb-0">
@@ -1261,7 +1264,7 @@ const Dashboard = () => {
 
         {/* Stats Cards - 2x2 grid on mobile, 5 cols on desktop */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
-        {isLoading ? (
+        {!isFullyLoaded ? (
           Array.from({ length: 5 }).map((_, index) => (
             <Card key={index} className="shadow-soft">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
@@ -1312,7 +1315,7 @@ const Dashboard = () => {
 
         {/* Visão Geral do Negócio - Vertical on mobile */}
         <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
-          {isLoading ? (
+          {!isFullyLoaded ? (
             <>
               {Array.from({ length: 3 }).map((_, index) => (
                 <Card key={index} className="shadow-soft">
@@ -1447,7 +1450,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="p-3 pt-0 md:p-6 md:pt-0">
               <div className="space-y-3 md:space-y-4">
-                {isLoading ? (
+                {!isFullyLoaded ? (
                   Array.from({ length: 3 }).map((_, index) => (
                     <div key={index} className="flex items-center justify-between p-3 md:p-4 border border-border rounded-lg">
                       <div className="flex items-center gap-2 md:gap-4">
@@ -1612,7 +1615,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
                 <div className="space-y-3">
-                  {isLoading ? (
+                  {!isFullyLoaded ? (
                     // Skeleton for recent payments
                     Array.from({ length: 4 }).map((_, index) => (
                       <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">

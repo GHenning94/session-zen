@@ -341,14 +341,14 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
       onTouchEnd={onTouchEnd}
       onMouseEnter={() => {
         if (showNewBadge) {
-          dismissFeatureBadge('goals')
+          dismissFeatureBadge('packages')
         }
       }}
     >
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
-          {showNewBadge && <NewFeatureBadge featureKey="goals" />}
+          {showNewBadge && <NewFeatureBadge featureKey="packages" />}
         </div>
         <Package className="h-4 w-4 text-primary" />
       </CardHeader>
