@@ -1435,7 +1435,7 @@ const Dashboard = () => {
                     Próximas Sessões
                   </CardTitle>
                   <CardDescription className="text-xs md:text-sm hidden sm:block">
-                    | Consultas agendadas para hoje
+                    | Próximas sessões agendadas
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate("/agenda")} className="shrink-0 text-xs md:text-sm px-2 md:px-4">
@@ -2683,7 +2683,7 @@ const Dashboard = () => {
                     </Card>
                   ) : (
                     <Card 
-                      className="shadow-soft min-h-[400px] cursor-pointer relative overflow-hidden flex flex-col"
+                      className="shadow-soft min-h-[600px] cursor-pointer relative overflow-hidden flex flex-col"
                       onClick={() => setShowGoalsUpgradeModal(true)}
                     >
                       {/* Locked overlay */}
@@ -2702,7 +2702,7 @@ const Dashboard = () => {
                         </div>
                       </div>
                       {/* Blurred content placeholder */}
-                      <CardHeader className="opacity-30 pb-4">
+                      <CardHeader className="opacity-30 pb-4 flex-shrink-0">
                         <div className="flex items-center gap-2">
                           <DollarSign className="w-5 h-5 text-primary" />
                           <CardTitle>Receita por Canal</CardTitle>
@@ -2711,20 +2711,20 @@ const Dashboard = () => {
                           Distribuição da receita por método de pagamento
                         </CardDescription>
                       </CardHeader>
-                      <CardContent className="opacity-30 pt-0 flex-1 flex flex-col">
-                        <div className="grid grid-cols-4 gap-3 mb-6">
+                      <CardContent className="opacity-30 pt-0 flex-1 flex flex-col pb-6">
+                        <div className="grid grid-cols-4 gap-3 mb-6 flex-shrink-0">
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                           <div className="bg-muted rounded-xl p-3 h-16" />
                         </div>
-                        <div className="grid grid-cols-2 gap-4 flex-1">
-                          <div className="bg-muted rounded-xl" />
-                          <div className="flex flex-col gap-2">
-                            <div className="flex-1 bg-muted rounded-xl" />
-                            <div className="flex-1 bg-muted rounded-xl" />
-                            <div className="flex-1 bg-muted rounded-xl" />
-                            <div className="flex-1 bg-muted rounded-xl" />
+                        <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
+                          <div className="bg-muted rounded-xl h-full min-h-[300px]" />
+                          <div className="flex flex-col gap-3 h-full">
+                            <div className="flex-1 bg-muted rounded-xl min-h-[60px]" />
+                            <div className="flex-1 bg-muted rounded-xl min-h-[60px]" />
+                            <div className="flex-1 bg-muted rounded-xl min-h-[60px]" />
+                            <div className="flex-1 bg-muted rounded-xl min-h-[60px]" />
                           </div>
                         </div>
                       </CardContent>
