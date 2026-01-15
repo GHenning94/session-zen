@@ -70,21 +70,36 @@ export const NotificationSettings = ({
 
   const loadSettings = async () => {
     try {
+      // Buscar o registro mais recente (ordenar por updated_at DESC)
       const { data, error } = await supabase
         .from('notification_settings')
         .select('id, type, enabled, frequency, time, events, user_id, created_at, updated_at')
         .eq('user_id', user?.id)
         .eq('type', type)
-        .single()
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (error) {
+        console.error('Erro ao carregar configurações:', error)
+        setInitialConfig(config)
+        return
+      }
 
       if (data) {
         const events = data.events as string[] || []
+        // O campo time vem como "HH:MM:SS", precisamos converter para "HH:MM"
+        let timeValue = data.time || '07:00'
+        if (timeValue && timeValue.length > 5) {
+          timeValue = timeValue.substring(0, 5)
+        }
+        
         const loadedConfig = {
           enabled: data.enabled || false,
           new_booking: events.includes('new_booking'),
           booking_cancelled: events.includes('booking_cancelled'),
           daily_reminder: events.includes('daily_reminder'),
-          daily_reminder_time: data.time || '07:00',
+          daily_reminder_time: timeValue,
           patient_reminder_24h: events.includes('patient_reminder_24h'),
           patient_reminder_1h: events.includes('patient_reminder_1h'),
           patient_confirmation: events.includes('patient_confirmation')
