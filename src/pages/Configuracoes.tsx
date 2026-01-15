@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Layout } from "@/components/Layout"
 import { Badge } from "@/components/ui/badge"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Lock, Crown } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Lock, Crown, MessageSquare } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
 import {
@@ -762,7 +762,10 @@ const Configuracoes = () => {
                     </p>
                   </div>
                   <div className="space-y-2">
-                    <Label>Telefone</Label>
+                    <Label className="flex items-center gap-2">
+                      <MessageSquare className="w-4 h-4 text-green-500" />
+                      Telefone (WhatsApp)
+                    </Label>
                     <Input 
                       type="tel" 
                       value={settings.telefone || ''} 
