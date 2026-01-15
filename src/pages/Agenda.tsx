@@ -11,12 +11,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
 import { SessionModal } from "@/components/SessionModal"
+import { UpgradeModal } from "@/components/UpgradeModal"
 import { 
   Plus, 
   ChevronLeft, 
   ChevronRight,
   RefreshCw,
-  Link
+  Link,
+  Lock,
+  Crown
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -31,7 +34,8 @@ import { supabase } from "@/integrations/supabase/client"
 
 const Agenda = () => {
   const { toast } = useToast()
-  const { canAddSession, planLimits } = useSubscription()
+  const { canAddSession, planLimits, hasAccessToFeature } = useSubscription()
+  const [showGoogleUpgradeModal, setShowGoogleUpgradeModal] = useState(false)
   
   // Usar o novo hook centralizado para dados do calendário
   const {
@@ -349,7 +353,7 @@ const Agenda = () => {
                     Desconectar
                   </Button>
                 </div>
-              ) : (
+              ) : hasAccessToFeature('google_calendar') ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -359,6 +363,20 @@ const Agenda = () => {
                 >
                   <Link className="h-4 w-4 mr-1" />
                   Conectar Google Calendar
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 relative"
+                  onClick={() => setShowGoogleUpgradeModal(true)}
+                >
+                  <Lock className="h-3 w-3 mr-1" />
+                  Google Calendar
+                  <Badge variant="warning" className="absolute -top-2 -right-2 text-[8px] px-1 py-0">
+                    <Crown className="w-2 h-2 mr-0.5" />
+                    Premium
+                  </Badge>
                 </Button>
               )}
 
@@ -446,7 +464,7 @@ const Agenda = () => {
                     X
                   </Button>
                 </div>
-              ) : (
+              ) : hasAccessToFeature('google_calendar') ? (
                 <Button
                   variant="outline"
                   size="sm"
@@ -456,6 +474,19 @@ const Agenda = () => {
                 >
                   <Link className="h-3 w-3 mr-1" />
                   Google
+                </Button>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 text-xs relative"
+                  onClick={() => setShowGoogleUpgradeModal(true)}
+                >
+                  <Lock className="h-3 w-3 mr-1" />
+                  Google
+                  <Badge variant="warning" className="absolute -top-2 -right-2 text-[8px] px-1 py-0">
+                    Premium
+                  </Badge>
                 </Button>
               )}
 
@@ -561,6 +592,13 @@ const Agenda = () => {
           </Card>
         </div>
       </div>
+
+      {/* Modal de Upgrade para Google Calendar */}
+      <UpgradeModal
+        open={showGoogleUpgradeModal}
+        onOpenChange={setShowGoogleUpgradeModal}
+        feature="Integração Google Calendar"
+      />
     </Layout>
   )
 }
