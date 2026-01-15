@@ -186,12 +186,12 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       .map(([feature]) => feature)
   }
 
-  // Mark features as recently unlocked (stored in sessionStorage)
+  // Mark features as recently unlocked (stored in localStorage for persistence)
   const markFeaturesAsUnlocked = useCallback((features: Feature[]) => {
-    const existing = sessionStorage.getItem('recently_unlocked_features')
+    const existing = localStorage.getItem('recently_unlocked_features')
     const current = existing ? JSON.parse(existing) as string[] : []
     const updated = [...new Set([...current, ...features])]
-    sessionStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
+    localStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
   }, [])
 
   useEffect(() => {

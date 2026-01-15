@@ -3,21 +3,22 @@ import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 
 interface NewFeatureBadgeProps {
-  /** The feature key to check in sessionStorage */
+  /** The feature key to check in localStorage */
   featureKey: string
   className?: string
 }
 
 /**
  * Badge that shows "Novo" for recently unlocked features.
- * Disappears when user hovers over the parent container.
+ * Uses localStorage so it persists across sessions.
+ * Disappears permanently when user hovers over it.
  */
 export const NewFeatureBadge = ({ featureKey, className }: NewFeatureBadgeProps) => {
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
-    // Check if this feature was recently unlocked
-    const storedFeatures = sessionStorage.getItem('recently_unlocked_features')
+    // Check if this feature was recently unlocked (use localStorage for persistence)
+    const storedFeatures = localStorage.getItem('recently_unlocked_features')
     if (storedFeatures) {
       try {
         const features = JSON.parse(storedFeatures) as string[]
@@ -33,20 +34,20 @@ export const NewFeatureBadge = ({ featureKey, className }: NewFeatureBadgeProps)
   const dismissBadge = () => {
     if (!isVisible) return
     
-    // Remove this feature from the session storage
-    const storedFeatures = sessionStorage.getItem('recently_unlocked_features')
+    // Remove this feature from localStorage permanently
+    const storedFeatures = localStorage.getItem('recently_unlocked_features')
     if (storedFeatures) {
       try {
         const features = JSON.parse(storedFeatures) as string[]
         const updated = features.filter(f => f !== featureKey)
         if (updated.length > 0) {
-          sessionStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
+          localStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
         } else {
-          sessionStorage.removeItem('recently_unlocked_features')
+          localStorage.removeItem('recently_unlocked_features')
         }
       } catch {
         // Invalid JSON, clear it
-        sessionStorage.removeItem('recently_unlocked_features')
+        localStorage.removeItem('recently_unlocked_features')
       }
     }
     
@@ -60,7 +61,7 @@ export const NewFeatureBadge = ({ featureKey, className }: NewFeatureBadgeProps)
       onMouseEnter={dismissBadge}
       onClick={dismissBadge}
       className={cn(
-        "bg-primary text-primary-foreground text-[8px] px-1.5 py-0 whitespace-nowrap w-[52px] justify-center animate-[pulse_3s_cubic-bezier(0.4,0,0.6,1)_infinite]",
+        "bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 h-5 whitespace-nowrap min-w-[42px] justify-center animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite] cursor-pointer",
         className
       )}
     >

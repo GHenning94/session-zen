@@ -1433,13 +1433,13 @@ const Dashboard = () => {
           <Card className="lg:col-span-2 shadow-soft opacity-0 animate-fade-in-up" style={{ animationDelay: '350ms' }}>
             <CardHeader className="p-3 md:p-6">
               <div className="flex items-center justify-between gap-2">
-                <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-                  <CardTitle className="flex items-center gap-2 text-sm md:text-base">
+                <div className="min-w-0 flex-1 flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-sm md:text-base shrink-0">
                     <Clock className="w-4 h-4 md:w-5 md:h-5 text-primary shrink-0" />
                     Próximas Sessões
                   </CardTitle>
-                  <CardDescription className="text-xs md:text-sm">
-                    <span className="hidden sm:inline">| </span>Consultas agendadas para hoje
+                  <CardDescription className="text-xs md:text-sm hidden sm:block">
+                    | Consultas agendadas para hoje
                   </CardDescription>
                 </div>
                 <Button variant="outline" size="sm" onClick={() => navigate("/agenda")} className="shrink-0 text-xs md:text-sm px-2 md:px-4">
@@ -1760,13 +1760,11 @@ const Dashboard = () => {
                     <CardHeader className="pb-4">
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         {/* Título e descrição */}
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5 text-primary" />
-                            <CardTitle>Receita Financeira</CardTitle>
-                          </div>
-                          <CardDescription className="mt-1">
-                            Acompanhe sua evolução financeira
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <BarChart3 className="w-5 h-5 text-primary shrink-0" />
+                          <CardTitle>Receita Financeira</CardTitle>
+                          <CardDescription className="hidden sm:block">
+                            | Acompanhe sua evolução financeira
                           </CardDescription>
                         </div>
                         {/* Botões de período - abaixo no mobile, ao lado no desktop */}
@@ -1979,21 +1977,19 @@ const Dashboard = () => {
                   </Card>
                 </ScrollAnimation>
 
-                {/* Gráfico de Ticket Médio - Moderno */}
                 <ScrollAnimation animation="fade-up" delay={150} className="col-span-full">
                   {hasAccessToFeature('goals') ? (
-                    <Card className="shadow-soft overflow-hidden">
+                    <Card className="shadow-soft overflow-hidden group/ticket">
                       <CardHeader className="pb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           {/* Título e descrição */}
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <TrendingUp className="w-5 h-5 text-success" />
-                              <CardTitle>Ticket Médio</CardTitle>
-                            </div>
-                            <CardDescription className="mt-1">
-                              Evolução do valor médio por sessão
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <TrendingUp className="w-5 h-5 text-success shrink-0" />
+                            <CardTitle>Ticket Médio</CardTitle>
+                            <CardDescription className="hidden sm:block">
+                              | Evolução do valor médio por sessão
                             </CardDescription>
+                            <NewFeatureBadge featureKey="goals" className="group-hover/ticket:hidden" />
                           </div>
                           {/* Botões de período - abaixo no mobile, ao lado no desktop */}
                           <div className="flex gap-1 flex-wrap">
@@ -2276,18 +2272,17 @@ const Dashboard = () => {
                 <ScrollAnimation animation="fade-up" delay={200} className="col-span-full">
                   {hasAccessToFeature('goals') ? (
                     <Card className="shadow-soft overflow-hidden">
-                      <CardHeader className="pb-4">
-                        <div className="flex flex-col gap-4">
-                          <div className="flex items-center gap-2">
-                            <BarChart3 className="w-5 h-5 text-success" />
+                      <CardHeader className="pb-4 group/ticketclient">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          {/* Título e descrição */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <BarChart3 className="w-5 h-5 text-success shrink-0" />
                             <CardTitle>Ticket Médio por {clientTerm}</CardTitle>
-                            <CardDescription className="hidden sm:block sm:ml-2">
+                            <CardDescription className="hidden sm:block">
                               | Valor médio por sessão de cada {clientTerm.toLowerCase()}
                             </CardDescription>
+                            <NewFeatureBadge featureKey="goals" className="group-hover/ticketclient:hidden" />
                           </div>
-                          <CardDescription className="sm:hidden">
-                            Valor médio por sessão de cada {clientTerm.toLowerCase()}
-                          </CardDescription>
                         </div>
                       </CardHeader>
                       <CardContent className="pt-0">
@@ -2413,23 +2408,22 @@ const Dashboard = () => {
                   )}
                 </ScrollAnimation>
 
-                {/* Gráfico de Pizza - Receita por Canal de Pagamento - Modernizado */}
                 <ScrollAnimation animation="fade-up" delay={250} className="col-span-full">
                   {hasAccessToFeature('goals') ? (
-                    <Card className="shadow-soft min-h-[600px] overflow-visible">
+                    <Card className="shadow-soft min-h-[600px] overflow-visible group/canal">
                       <CardHeader className="pb-4">
-                        <div className="flex flex-col gap-3">
-                          {/* Título */}
-                          <div className="flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-primary" />
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                          {/* Título e descrição */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <DollarSign className="w-5 h-5 text-primary shrink-0" />
                             <CardTitle>Receita por Canal</CardTitle>
+                            <CardDescription className="hidden sm:block">
+                              | Distribuição da receita por método de pagamento
+                            </CardDescription>
+                            <NewFeatureBadge featureKey="goals" className="group-hover/canal:hidden" />
                           </div>
-                          {/* Descrição */}
-                          <CardDescription>
-                            Distribuição da receita por método de pagamento
-                          </CardDescription>
-                          {/* Botões de período - abaixo no mobile, ao lado no desktop */}
-                          <div className="flex gap-1 flex-wrap sm:self-end sm:-mt-12">
+                          {/* Botões de período */}
+                          <div className="flex gap-1 flex-wrap shrink-0">
                             {(['1', '3', '6', '12'] as const).map((period) => {
                               // Calcular range de datas para tooltip
                               const monthsToInclude = parseInt(period)
