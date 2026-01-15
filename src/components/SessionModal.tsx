@@ -713,7 +713,7 @@ export const SessionModal = ({
               >
                 Cancelar
               </Button>
-              <Button onClick={handleSave} disabled={isLoading}>
+              <Button onClick={handleSave} disabled={isLoading || isClientLimitReached}>
                 {isLoading ? 'Salvando...' : session ? 'Atualizar' : 'Criar Sessão'}
               </Button>
             </div>
