@@ -63,28 +63,21 @@ serve(async (req) => {
       throw new Error('Profile not found');
     }
 
-    // Se não tem customer_id, buscar por email
-    let customerId = profile.stripe_customer_id;
+    // Usar apenas o stripe_customer_id do perfil
+    // NÃO buscar por email para evitar mostrar faturas de contas antigas deletadas
+    const customerId = profile.stripe_customer_id;
     
     if (!customerId) {
-      const customers = await stripe.customers.list({
-        email: user.email,
-        limit: 1
+      // Nova conta ainda não tem customer no Stripe - retornar lista vazia
+      console.log('[get-subscription-invoices] ℹ️ No stripe_customer_id - new account has no invoices');
+      return new Response(JSON.stringify({ 
+        invoices: [],
+        subscription: null,
+        currentPlan: profile.subscription_plan || 'basico'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
       });
-
-      if (customers.data.length === 0) {
-        console.log('[get-subscription-invoices] ℹ️ No Stripe customer found');
-        return new Response(JSON.stringify({ 
-          invoices: [],
-          subscription: null,
-          currentPlan: profile.subscription_plan || 'basico'
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 200,
-        });
-      }
-      
-      customerId = customers.data[0].id;
     }
 
     console.log('[get-subscription-invoices] 👤 Customer ID:', customerId);
