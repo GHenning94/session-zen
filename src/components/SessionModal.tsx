@@ -122,6 +122,9 @@ export const SessionModal = ({
   const remainingSessions = planLimits.maxSessionsPerClient === Infinity 
     ? null 
     : Math.max(0, planLimits.maxSessionsPerClient - clientSessions.length)
+  
+  // Verificar se o limite de sessões por cliente foi atingido (apenas para criação de sessões individuais)
+  const isClientLimitReached = !session && sessionType === 'individual' && remainingSessions !== null && remainingSessions <= 0
 
   // Carregar sessões recorrentes ativas do cliente
   const { data: recurringSessionsList = [] } = useQuery({
@@ -248,13 +251,9 @@ export const SessionModal = ({
       return
     }
 
-    // Verificar limite de sessões por cliente (apenas para sessões individuais na criação)
-    if (!session && sessionType === 'individual' && remainingSessions !== null && remainingSessions <= 0) {
-      toast({
-        variant: "destructive",
-        title: "Limite por paciente atingido",
-        description: `Este paciente já atingiu o limite de ${planLimits.maxSessionsPerClient} sessões do seu plano. Faça upgrade para adicionar mais.`,
-      })
+    // Verificar limite de sessões por cliente (apenas para sessões individuais na criação) - mostrar modal de upgrade
+    if (isClientLimitReached) {
+      setShowUpgradeModal(true)
       return
     }
 
@@ -593,31 +592,33 @@ export const SessionModal = ({
 
 
                 {/* Data */}
-                <div>
+                <div className={isClientLimitReached ? 'opacity-50' : ''}>
                   <Label htmlFor="data">Data{!session && ' *'}</Label>
                   <Input
                     id="data"
                     type="date"
                     value={formData.data}
                     onChange={(e) => setFormData({ ...formData, data: e.target.value })}
+                    disabled={isClientLimitReached}
                   />
                 </div>
 
                 {/* Horário */}
-                <div>
+                <div className={isClientLimitReached ? 'opacity-50' : ''}>
                   <Label htmlFor="horario">Horário{!session && ' *'}</Label>
                   <Input
                     id="horario"
                     type="time"
                     value={formData.horario}
                     onChange={(e) => setFormData({ ...formData, horario: e.target.value })}
+                    disabled={isClientLimitReached}
                   />
                 </div>
 
                 {/* Valor e Método de Pagamento (apenas se não for de pacote) */}
                 {sessionType !== 'pacote' && (
                   <>
-                    <div>
+                    <div className={isClientLimitReached ? 'opacity-50' : ''}>
                       <Label htmlFor="valor">Valor (R$){!session && ' *'}</Label>
                       <Input
                         id="valor"
@@ -626,13 +627,15 @@ export const SessionModal = ({
                         placeholder="0,00"
                         value={formData.valor}
                         onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                        disabled={isClientLimitReached}
                       />
                     </div>
-                    <div>
+                    <div className={isClientLimitReached ? 'opacity-50' : ''}>
                       <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
                       <Select
                         value={formData.metodo_pagamento}
                         onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+                        disabled={isClientLimitReached}
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um método" />
@@ -671,7 +674,7 @@ export const SessionModal = ({
                 )}
 
                 {/* Observações */}
-                <div className="col-span-2">
+                <div className={`col-span-2 ${isClientLimitReached ? 'opacity-50' : ''}`}>
                   <Label htmlFor="anotacoes">Observações</Label>
                   <Textarea
                     id="anotacoes"
@@ -679,6 +682,7 @@ export const SessionModal = ({
                     value={formData.anotacoes}
                     onChange={(e) => setFormData({ ...formData, anotacoes: e.target.value })}
                     rows={3}
+                    disabled={isClientLimitReached}
                   />
                 </div>
               </>
@@ -720,7 +724,7 @@ export const SessionModal = ({
       <UpgradeModal 
         open={showUpgradeModal} 
         onOpenChange={setShowUpgradeModal}
-        feature="Pacotes de Sessões"
+        feature={isClientLimitReached ? "Sessões por Paciente" : "Pacotes de Sessões"}
       />
     </Dialog>
   )
