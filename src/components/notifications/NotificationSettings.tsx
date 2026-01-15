@@ -79,7 +79,7 @@ export const NotificationSettings = ({
 
       if (data) {
         const events = data.events as string[] || []
-        setConfig({
+        const loadedConfig = {
           enabled: data.enabled || false,
           new_booking: events.includes('new_booking'),
           booking_cancelled: events.includes('booking_cancelled'),
@@ -88,14 +88,20 @@ export const NotificationSettings = ({
           patient_reminder_24h: events.includes('patient_reminder_24h'),
           patient_reminder_1h: events.includes('patient_reminder_1h'),
           patient_confirmation: events.includes('patient_confirmation')
-        })
+        }
+        setConfig(loadedConfig)
+        setInitialConfig(loadedConfig)
+      } else {
+        // Se não há dados, definir o config inicial
+        setInitialConfig(config)
       }
     } catch (error) {
       console.error('Erro ao carregar configurações:', error)
+      setInitialConfig(config)
     }
   }
 
-  const saveSettings = async () => {
+  const saveSettings = async (showToast = true) => {
     if (!user) return
 
     setLoading(true)
@@ -116,7 +122,10 @@ export const NotificationSettings = ({
           type,
           enabled: config.enabled,
           events,
-          time: config.daily_reminder_time
+          time: config.daily_reminder_time,
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id,type'
         })
 
       if (error) throw error
@@ -126,30 +135,51 @@ export const NotificationSettings = ({
         onEnabledChange(config.enabled)
       }
 
-      toast({
-        title: "Configurações salvas",
-        description: "As configurações de notificação foram atualizadas.",
-      })
-
-      onOpenChange(false)
+      if (showToast) {
+        toast({
+          title: "Configurações salvas",
+          description: "As configurações de notificação foram atualizadas.",
+        })
+      }
     } catch (error) {
       console.error('Erro ao salvar configurações:', error)
-      toast({
-        title: "Erro",
-        description: "Não foi possível salvar as configurações.",
-        variant: "destructive",
-      })
+      if (showToast) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível salvar as configurações.",
+          variant: "destructive",
+        })
+      }
     } finally {
       setLoading(false)
     }
   }
 
+  // Auto-save quando qualquer configuração mudar
+  const [hasChanges, setHasChanges] = useState(false)
+  const [initialConfig, setInitialConfig] = useState<NotificationConfig | null>(null)
+  
+  useEffect(() => {
+    if (initialConfig) {
+      const changed = JSON.stringify(config) !== JSON.stringify(initialConfig)
+      setHasChanges(changed)
+    }
+  }, [config, initialConfig])
+
   const handleToggle = (key: keyof NotificationConfig, value: boolean) => {
     setConfig(prev => ({ ...prev, [key]: value }))
   }
 
+  // Salvar automaticamente ao fechar o modal se houver mudanças
+  const handleOpenChange = async (isOpen: boolean) => {
+    if (!isOpen && hasChanges) {
+      await saveSettings(true)
+    }
+    onOpenChange(isOpen)
+  }
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-[550px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -321,16 +351,15 @@ export const NotificationSettings = ({
             </div>
           )}
 
-          <div className="flex gap-2 justify-end pt-4 border-t">
-            <Button
-              variant="outline"
-              onClick={() => onOpenChange(false)}
+          <div className="flex items-center justify-between pt-4 border-t">
+            <p className="text-xs text-muted-foreground">
+              {hasChanges ? 'Alterações serão salvas ao fechar' : 'Nenhuma alteração pendente'}
+            </p>
+            <Button 
+              onClick={() => handleOpenChange(false)} 
               disabled={loading}
             >
-              Cancelar
-            </Button>
-            <Button onClick={saveSettings} disabled={loading}>
-              {loading ? 'Salvando...' : 'Salvar'}
+              {loading ? 'Salvando...' : 'Fechar'}
             </Button>
           </div>
         </div>
