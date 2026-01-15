@@ -686,6 +686,14 @@ const NotificationDropdown = () => {
                           {extractMarkdownLink(selectedNotification.conteudo)!.text}
                         </Button>
                       )}
+                      <Button 
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDelete(selectedNotification.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Excluir
+                      </Button>
                     </div>
                   </div>
                 </ScrollArea>
