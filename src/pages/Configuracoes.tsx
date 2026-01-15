@@ -107,8 +107,8 @@ const ThemeSelector = () => {
       <div className="flex gap-3">
         <Button
           variant={theme === "light" ? "default" : "outline"}
-          size="default"
-          className="h-10 w-[140px]"
+          size="sm"
+          className="w-[120px]"
           onClick={() => handleThemeChange("light")}
           disabled={isChanging}
         >
@@ -117,8 +117,8 @@ const ThemeSelector = () => {
         </Button>
         <Button
           variant={theme === "dark" ? "default" : "outline"}
-          size="default"
-          className="h-10 w-[140px]"
+          size="sm"
+          className="w-[120px]"
           onClick={() => handleThemeChange("dark")}
           disabled={isChanging}
         >
