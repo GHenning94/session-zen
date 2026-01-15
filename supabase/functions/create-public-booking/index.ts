@@ -211,6 +211,30 @@ serve(async (req) => {
       }
     }
 
+    // Send email notification to professional about new booking (non-blocking)
+    try {
+      const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? ''
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      
+      await fetch(`${supabaseUrl}/functions/v1/send-new-booking-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({
+          userId: config.user_id,
+          sessionId: newSession.id,
+          clientId: newClient.id,
+          clientName: sanitizedClientData.nome,
+          sessionDate: sessionData.data,
+          sessionTime: sessionData.horario
+        }),
+      })
+    } catch (emailError) {
+      console.log('[CREATE-BOOKING] Email notification failed (non-critical)')
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

@@ -253,5 +253,14 @@ verify_jwt = false
 [functions.request-referral-payout]
 verify_jwt = true
 
+[functions.send-daily-reminder]
+verify_jwt = false
+
+[functions.send-new-booking-email]
+verify_jwt = false
+
+[functions.send-booking-cancelled-email]
+verify_jwt = false
+
 [edge_runtime]
 enabled = true
