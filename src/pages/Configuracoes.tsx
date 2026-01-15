@@ -1053,10 +1053,40 @@ const Configuracoes = () => {
           </TabsContent>
 
           <TabsContent value="bank-details" className="space-y-6">
+            {currentPlan === 'basico' ? (
+              <Card className="shadow-soft">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building /> Dados Bancários
+                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+                      <Crown className="w-3 h-3 mr-1" />
+                      PRO
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Estes dados são usados exclusivamente para pagamentos do programa de indicação
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <Lock className="w-16 h-16 text-muted-foreground/50 mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Recurso exclusivo dos planos pagos</h3>
+                    <p className="text-muted-foreground mb-6 max-w-md">
+                      Faça upgrade para o plano Pro ou Premium para configurar seus dados bancários e participar do programa de indicação.
+                    </p>
+                    <Button onClick={() => navigate('/upgrade')}>
+                      <Crown className="w-4 h-4 mr-2" />
+                      Fazer Upgrade
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ) : (
             <Card className="shadow-soft">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building /> Dados Bancários
+                  <NewFeatureBadge featureKey="bank-details" />
                   {settings.bank_details_validated && (
                     <span className="flex items-center gap-1 text-sm font-normal text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
                       <CheckCircle2 className="w-4 h-4" />
@@ -1359,6 +1389,7 @@ const Configuracoes = () => {
                 </Button>
               </CardContent>
             </Card>
+            )}
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-6">
