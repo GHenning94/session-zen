@@ -335,7 +335,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
           <span className={`text-sm ${billingInterval === 'yearly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
           {billingInterval === 'yearly' && (
             <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">
-              -17%
+              Economize 2 meses
             </Badge>
           )}
         </div>
@@ -354,6 +354,13 @@ export const UpgradeModal = ({ open, onOpenChange, feature }: UpgradeModalProps)
                 <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 flex items-center gap-1 whitespace-nowrap">
                   <Star className="h-3 w-3" />
                   Mais Popular
+                </Badge>
+              )}
+              
+              {/* Badge Economize 2 meses para plano anual */}
+              {billingInterval === 'yearly' && (
+                <Badge className="absolute -top-3 right-4 bg-green-500 text-white text-[10px] px-1.5 py-0.5">
+                  Economize 2 meses
                 </Badge>
               )}
               
