@@ -88,6 +88,12 @@ export default function Upgrade() {
       isTierChange: boolean
       isUpgrade: boolean
       explanation: string
+      // Novas propriedades para desconto
+      prorationApplied: boolean
+      noProrationReason: string | null
+      hasActiveDiscount: boolean
+      discountType: string | null
+      discountDetails: string | null
     } | null
     isLoadingProration: boolean
   }>({ open: false, targetPlan: null, prorationData: null, isLoadingProration: false })
@@ -547,19 +553,38 @@ export default function Upgrade() {
                     </div>
                     <div className="border-t my-2" />
                     
+                    {/* Aviso de desconto ativo */}
+                    {upgradeModal.prorationData.hasActiveDiscount && (
+                      <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded p-2 mb-2">
+                        <p className="text-xs text-amber-700 dark:text-amber-300">
+                          ⚠️ {upgradeModal.prorationData.discountDetails || 'Desconto ativo'} - Crédito não aplicável
+                        </p>
+                      </div>
+                    )}
+                    
                     {/* Cálculo de prorrata */}
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Valor do plano atual:</span>
-                      <span>{upgradeModal.prorationData.currentPlanPriceFormatted}</span>
-                    </div>
-                    <div className="flex justify-between text-xs">
-                      <span className="text-muted-foreground">Dias restantes no ciclo:</span>
-                      <span>{upgradeModal.prorationData.daysRemaining} de {upgradeModal.prorationData.totalCycleDays} dias</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">Crédito proporcional:</span>
-                      <span className="text-green-600 font-medium">-{upgradeModal.prorationData.creditFormatted}</span>
-                    </div>
+                    {upgradeModal.prorationData.prorationApplied ? (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Valor do plano atual:</span>
+                          <span>{upgradeModal.prorationData.currentPlanPriceFormatted}</span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Dias restantes no ciclo:</span>
+                          <span>{upgradeModal.prorationData.daysRemaining} de {upgradeModal.prorationData.totalCycleDays} dias</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Crédito proporcional:</span>
+                          <span className="text-green-600 font-medium">-{upgradeModal.prorationData.creditFormatted}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Crédito proporcional:</span>
+                        <span className="text-muted-foreground">R$ 0,00</span>
+                      </div>
+                    )}
+                    
                     <div className="border-t my-2" />
                     
                     {/* Novo plano e valor final */}
