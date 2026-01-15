@@ -10,7 +10,8 @@ import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Bell, Users, Clock, Mail, MessageSquare } from "lucide-react"
+import { Bell, Users, Clock, Mail, MessageSquare, AlertCircle, User } from "lucide-react"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 interface NotificationSettingsProps {
   open: boolean
@@ -56,13 +57,29 @@ export const NotificationSettings = ({
     patient_confirmation: true
   })
   const [loading, setLoading] = useState(false)
+  const [hasPhone, setHasPhone] = useState(true)
   const [activeTab, setActiveTab] = useState<'professional' | 'patients'>('professional')
 
   useEffect(() => {
     if (open && user) {
       loadSettings()
+      if (type === 'whatsapp') {
+        checkPhoneNumber()
+      }
     }
   }, [open, user, type])
+
+  const checkPhoneNumber = async () => {
+    if (!user) return
+    
+    const { data } = await supabase
+      .from('profiles')
+      .select('telefone')
+      .eq('user_id', user.id)
+      .single()
+    
+    setHasPhone(!!data?.telefone && data.telefone.length > 0)
+  }
 
   useEffect(() => {
     setConfig(prev => ({ ...prev, enabled: initialEnabled }))
@@ -248,6 +265,18 @@ export const NotificationSettings = ({
               onCheckedChange={(checked) => handleToggle('enabled', checked)}
             />
           </div>
+
+          {/* Aviso para WhatsApp sem telefone cadastrado */}
+          {type === 'whatsapp' && !hasPhone && (
+            <Alert variant="default" className="border-amber-500/50 bg-amber-50 dark:bg-amber-950/20">
+              <AlertCircle className="h-4 w-4 text-amber-600" />
+              <AlertDescription className="text-amber-700 dark:text-amber-400">
+                <strong>Telefone não cadastrado!</strong> Para receber notificações por WhatsApp, 
+                é necessário preencher o campo <span className="font-medium">"Telefone (WhatsApp)"</span> na 
+                aba <span className="font-medium">"Perfil e Dados Pessoais"</span> das configurações.
+              </AlertDescription>
+            </Alert>
+          )}
 
           {type === 'whatsapp' ? (
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'professional' | 'patients')}>
