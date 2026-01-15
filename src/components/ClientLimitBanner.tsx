@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { Alert } from '@/components/ui/alert'
 import { Button } from '@/components/ui/button'
-import { AlertTriangle, Crown, Users } from 'lucide-react'
+import { AlertTriangle, Crown } from 'lucide-react'
 import { useSubscription } from '@/hooks/useSubscription'
 import { UpgradeModal } from './UpgradeModal'
 
@@ -24,17 +24,15 @@ export const ClientLimitBanner = ({ currentCount, className }: ClientLimitBanner
   
   return (
     <>
-      <Alert variant="destructive" className={className}>
-        <AlertTriangle className="h-4 w-4" />
-        <AlertTitle className="flex items-center gap-2">
-          <Users className="h-4 w-4" />
-          Limite de Pacientes Atingido
-        </AlertTitle>
-        <AlertDescription className="mt-2 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <span>
-            Você atingiu o limite de <strong>{maxClients} pacientes</strong> do plano {planName}. 
-            Atualize para gerenciar mais pacientes.
-          </span>
+      <Alert variant="destructive" className={`py-3 ${className}`}>
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" />
+            <span className="text-sm">
+              Você atingiu o limite de <strong>{maxClients} pacientes</strong> do plano {planName}. 
+              Atualize para gerenciar mais pacientes.
+            </span>
+          </div>
           <Button 
             size="sm" 
             className="shrink-0"
@@ -43,7 +41,7 @@ export const ClientLimitBanner = ({ currentCount, className }: ClientLimitBanner
             <Crown className="w-4 h-4 mr-2" />
             Fazer Upgrade
           </Button>
-        </AlertDescription>
+        </div>
       </Alert>
       
       <UpgradeModal 
