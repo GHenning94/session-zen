@@ -29,6 +29,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
   const [sessions, setSessions] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
+  const [remainingSessions, setRemainingSessions] = useState<number | null>(null)
   const [newSession, setNewSession] = useState({
     client_id: "",
     data: "",
@@ -115,6 +116,15 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
     // Verificar se o cliente selecionado está inativo
     const selectedClient = clients.find(c => c.id === value)
     setShowReactivationMessage(selectedClient && !selectedClient.ativo)
+    
+    // Calcular sessões restantes para este cliente
+    const clientSessionCount = sessions.filter(s => s.client_id === value).length
+    const maxSessions = planLimits.maxSessionsPerClient
+    if (maxSessions === Infinity) {
+      setRemainingSessions(null) // Não mostrar limite para planos ilimitados
+    } else {
+      setRemainingSessions(Math.max(0, maxSessions - clientSessionCount))
+    }
   }
 
   const handleSaveSession = async () => {
@@ -254,6 +264,20 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
             {showReactivationMessage && (
               <div className="text-sm p-2 bg-warning/10 border border-warning/20 rounded-md text-warning">
                 Ao agendar, este cliente será reativado automaticamente.
+              </div>
+            )}
+            {remainingSessions !== null && newSession.client_id && (
+              <div className={`text-sm p-2 rounded-md border ${
+                remainingSessions === 0 
+                  ? 'bg-destructive/10 border-destructive/20 text-destructive' 
+                  : remainingSessions <= 3 
+                    ? 'bg-warning/10 border-warning/20 text-warning'
+                    : 'bg-muted border-border text-muted-foreground'
+              }`}>
+                {remainingSessions === 0 
+                  ? `Limite de ${planLimits.maxSessionsPerClient} sessões atingido para este paciente.`
+                  : `${remainingSessions} sessão(ões) restante(s) para este paciente (limite: ${planLimits.maxSessionsPerClient})`
+                }
               </div>
             )}
           </div>

@@ -92,6 +92,28 @@ export const SessionModal = ({
     enabled: !!formData.client_id && open && sessionType === 'pacote'
   })
 
+  // Carregar sessões do cliente para calcular limite
+  const { data: clientSessions = [] } = useQuery({
+    queryKey: ['client-sessions', formData.client_id],
+    queryFn: async () => {
+      if (!formData.client_id) return []
+      
+      const { data, error } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('client_id', formData.client_id)
+      
+      if (error) throw error
+      return data || []
+    },
+    enabled: !!formData.client_id && open
+  })
+
+  // Calcular sessões restantes para o cliente
+  const remainingSessions = planLimits.maxSessionsPerClient === Infinity 
+    ? null 
+    : Math.max(0, planLimits.maxSessionsPerClient - clientSessions.length)
+
   // Carregar sessões recorrentes ativas do cliente
   const { data: recurringSessionsList = [] } = useQuery({
     queryKey: ['recurring-sessions', formData.client_id],
@@ -486,6 +508,21 @@ export const SessionModal = ({
                     <p className="text-sm text-yellow-600 mt-1">
                       ⚠️ Este cliente está inativo e será reativado automaticamente.
                     </p>
+                  )}
+                  {/* Contador de sessões restantes */}
+                  {remainingSessions !== null && formData.client_id && !session && (
+                    <div className={`text-sm p-2 mt-2 rounded-md border ${
+                      remainingSessions === 0 
+                        ? 'bg-destructive/10 border-destructive/20 text-destructive' 
+                        : remainingSessions <= 3 
+                          ? 'bg-warning/10 border-warning/20 text-warning'
+                          : 'bg-muted border-border text-muted-foreground'
+                    }`}>
+                      {remainingSessions === 0 
+                        ? `Limite de ${planLimits.maxSessionsPerClient} sessões atingido para este paciente.`
+                        : `${remainingSessions} sessão(ões) restante(s) para este paciente (limite: ${planLimits.maxSessionsPerClient})`
+                      }
+                    </div>
                   )}
                 </div>
 
