@@ -1384,7 +1384,15 @@ const Configuracoes = () => {
                     />
                   </div>
                   
-                  <div className="flex items-center justify-between group/whatsapp">
+                  <div 
+                    className="flex items-center justify-between"
+                    onMouseEnter={() => {
+                      if (hasAccessToFeature('whatsapp_notifications')) {
+                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                        dismissFeatureBadge('whatsapp_notifications')
+                      }
+                    }}
+                  >
                     <div className="space-y-0.5">
                       <Label className="flex items-center gap-2">
                         Notificações por WhatsApp
@@ -1394,7 +1402,7 @@ const Configuracoes = () => {
                             Premium
                           </Badge>
                         ) : (
-                          <NewFeatureBadge featureKey="whatsapp_notifications" className="group-hover/whatsapp:hidden" />
+                          <NewFeatureBadge featureKey="whatsapp_notifications" />
                         )}
                       </Label>
                       <p className="text-sm text-muted-foreground">

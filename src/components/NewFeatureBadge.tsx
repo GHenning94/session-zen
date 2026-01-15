@@ -10,10 +10,45 @@ interface NewFeatureBadgeProps {
   onDismiss?: () => void
 }
 
+// Custom event name for global dismissal synchronization
+const DISMISS_EVENT = 'feature-badge-dismissed'
+
+/**
+ * Dismiss a feature badge programmatically and globally.
+ * This function updates localStorage AND dispatches a global event
+ * so all NewFeatureBadge components with the same featureKey will hide immediately.
+ */
+export const dismissFeatureBadge = (featureKey: string) => {
+  // Remove from recently_unlocked_features
+  const storedFeatures = localStorage.getItem('recently_unlocked_features')
+  if (storedFeatures) {
+    try {
+      const features = JSON.parse(storedFeatures) as string[]
+      const updated = features.filter(f => f !== featureKey)
+      if (updated.length > 0) {
+        localStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
+      } else {
+        localStorage.removeItem('recently_unlocked_features')
+      }
+    } catch {
+      localStorage.removeItem('recently_unlocked_features')
+    }
+  }
+  
+  // Add to dismissed_feature_badges to ensure permanent dismissal
+  const dismissedFeatures = localStorage.getItem('dismissed_feature_badges')
+  const dismissed = dismissedFeatures ? JSON.parse(dismissedFeatures) as string[] : []
+  const updatedDismissed = [...new Set([...dismissed, featureKey])]
+  localStorage.setItem('dismissed_feature_badges', JSON.stringify(updatedDismissed))
+  
+  // Dispatch global event to notify all NewFeatureBadge components
+  window.dispatchEvent(new CustomEvent(DISMISS_EVENT, { detail: featureKey }))
+}
+
 /**
  * Badge that shows "Novo" for recently unlocked features.
  * Uses localStorage so it persists across sessions.
- * Disappears permanently when user hovers over it or any parent with onMouseEnter calling dismissBadge.
+ * Disappears permanently when user hovers over it or when dismissFeatureBadge is called.
  */
 export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeatureBadgeProps) => {
   const [isVisible, setIsVisible] = useState(false)
@@ -46,33 +81,22 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
     }
   }, [featureKey])
 
-  const dismissBadge = useCallback(() => {
-    if (!isVisible) return
-    
-    // Remove from recently_unlocked_features
-    const storedFeatures = localStorage.getItem('recently_unlocked_features')
-    if (storedFeatures) {
-      try {
-        const features = JSON.parse(storedFeatures) as string[]
-        const updated = features.filter(f => f !== featureKey)
-        if (updated.length > 0) {
-          localStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
-        } else {
-          localStorage.removeItem('recently_unlocked_features')
-        }
-      } catch {
-        // Invalid JSON, clear it
-        localStorage.removeItem('recently_unlocked_features')
+  // Listen for global dismiss events
+  useEffect(() => {
+    const handleDismissEvent = (e: CustomEvent) => {
+      if (e.detail === featureKey && isVisible) {
+        setIsVisible(false)
+        onDismiss?.()
       }
     }
     
-    // Add to dismissed_feature_badges to ensure it never shows again
-    const dismissedFeatures = localStorage.getItem('dismissed_feature_badges')
-    const dismissed = dismissedFeatures ? JSON.parse(dismissedFeatures) as string[] : []
-    const updatedDismissed = [...new Set([...dismissed, featureKey])]
-    localStorage.setItem('dismissed_feature_badges', JSON.stringify(updatedDismissed))
-    
-    setIsVisible(false)
+    window.addEventListener(DISMISS_EVENT, handleDismissEvent as EventListener)
+    return () => window.removeEventListener(DISMISS_EVENT, handleDismissEvent as EventListener)
+  }, [featureKey, isVisible, onDismiss])
+
+  const handleDismiss = useCallback(() => {
+    if (!isVisible) return
+    dismissFeatureBadge(featureKey)
     onDismiss?.()
   }, [featureKey, isVisible, onDismiss])
 
@@ -80,10 +104,10 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
 
   return (
     <Badge 
-      onMouseEnter={dismissBadge}
+      onMouseEnter={handleDismiss}
       onClick={(e) => {
         e.stopPropagation()
-        dismissBadge()
+        handleDismiss()
       }}
       className={cn(
         "bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 h-5 whitespace-nowrap min-w-[42px] justify-center animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite] cursor-pointer",
@@ -93,34 +117,6 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
       Novo
     </Badge>
   )
-}
-
-/**
- * Utility function to dismiss a feature badge programmatically.
- * Can be called from parent components when hovering over the container.
- */
-export const dismissFeatureBadge = (featureKey: string) => {
-  // Remove from recently_unlocked_features
-  const storedFeatures = localStorage.getItem('recently_unlocked_features')
-  if (storedFeatures) {
-    try {
-      const features = JSON.parse(storedFeatures) as string[]
-      const updated = features.filter(f => f !== featureKey)
-      if (updated.length > 0) {
-        localStorage.setItem('recently_unlocked_features', JSON.stringify(updated))
-      } else {
-        localStorage.removeItem('recently_unlocked_features')
-      }
-    } catch {
-      localStorage.removeItem('recently_unlocked_features')
-    }
-  }
-  
-  // Add to dismissed_feature_badges
-  const dismissedFeatures = localStorage.getItem('dismissed_feature_badges')
-  const dismissed = dismissedFeatures ? JSON.parse(dismissedFeatures) as string[] : []
-  const updatedDismissed = [...new Set([...dismissed, featureKey])]
-  localStorage.setItem('dismissed_feature_badges', JSON.stringify(updatedDismissed))
 }
 
 export default NewFeatureBadge

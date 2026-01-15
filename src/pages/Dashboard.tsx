@@ -2266,8 +2266,14 @@ const Dashboard = () => {
                 {/* Ticket Médio por Cliente - Modernizado */}
                 <ScrollAnimation animation="fade-up" delay={200} className="col-span-full">
                   {hasAccessToFeature('goals') ? (
-                    <Card className="shadow-soft overflow-hidden">
-                      <CardHeader className="pb-4 group/ticketclient">
+                    <Card 
+                      className="shadow-soft overflow-hidden"
+                      onMouseEnter={() => {
+                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                        dismissFeatureBadge('goals')
+                      }}
+                    >
+                      <CardHeader className="pb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           {/* Título e descrição */}
                           <div className="flex items-center gap-2 flex-wrap">
@@ -2276,7 +2282,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Valor médio por sessão de cada {clientTerm.toLowerCase()}
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals" className="group-hover/ticketclient:hidden" />
+                            <NewFeatureBadge featureKey="goals" />
                           </div>
                         </div>
                       </CardHeader>
@@ -2405,7 +2411,13 @@ const Dashboard = () => {
 
                 <ScrollAnimation animation="fade-up" delay={250} className="col-span-full">
                   {hasAccessToFeature('goals') ? (
-                    <Card className="shadow-soft min-h-[600px] overflow-visible group/canal">
+                    <Card 
+                      className="shadow-soft min-h-[600px] overflow-visible"
+                      onMouseEnter={() => {
+                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                        dismissFeatureBadge('goals')
+                      }}
+                    >
                       <CardHeader className="pb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           {/* Título e descrição */}
@@ -2415,7 +2427,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Distribuição da receita por método de pagamento
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals" className="group-hover/canal:hidden" />
+                            <NewFeatureBadge featureKey="goals" />
                           </div>
                           {/* Botões de período */}
                           <div className="flex gap-1 flex-wrap shrink-0">
