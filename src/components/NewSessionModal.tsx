@@ -35,6 +35,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
     data: "",
     horario: "",
     valor: "",
+    metodo_pagamento: "",
     anotacoes: ""
   })
 
@@ -182,7 +183,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
         valor: newSession.valor ? parseFloat(newSession.valor) : null,
         anotacoes: newSession.anotacoes,
         status: 'agendada',
-        metodo_pagamento: 'A definir'
+        metodo_pagamento: newSession.metodo_pagamento || 'A definir'
       }
 
       const { error } = await supabase
@@ -196,6 +197,7 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
         data: "",
         horario: "",
         valor: "",
+        metodo_pagamento: "",
         anotacoes: ""
       })
       
@@ -305,15 +307,33 @@ export const NewSessionModal = ({ open, onOpenChange, selectedDate, selectedClie
               </Select>
             </div>
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="value">Valor *</Label>
-            <Input 
-              type="number" 
-              id="value" 
-              placeholder="200.00"
-              value={newSession.valor}
-              onChange={(e) => setNewSession({...newSession, valor: e.target.value})}
-            />
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="value">Valor *</Label>
+              <Input 
+                type="number" 
+                id="value" 
+                placeholder="200.00"
+                value={newSession.valor}
+                onChange={(e) => setNewSession({...newSession, valor: e.target.value})}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="payment_method">Método de Pagamento</Label>
+              <Select value={newSession.metodo_pagamento} onValueChange={(value) => setNewSession({...newSession, metodo_pagamento: value})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="A definir">A definir</SelectItem>
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                  <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                  <SelectItem value="Transferência">Transferência</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
           <div className="grid gap-2">
             <Label htmlFor="notes">Observações (opcional)</Label>
