@@ -50,6 +50,7 @@ import { Volume2, VolumeX } from "lucide-react"
 import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { NewFeatureBadge } from "@/components/NewFeatureBadge"
+import { NotificationSettings } from "@/components/notifications/NotificationSettings"
 
 type AllSettings = Record<string, any>;
 
@@ -172,6 +173,8 @@ const Configuracoes = () => {
   const emailCaptchaRef = useRef<TurnstileInstance>(null)
   const [cpfCnpjValid, setCpfCnpjValid] = useState<boolean | null>(null)
   const [savingBankDetails, setSavingBankDetails] = useState(false)
+  const [showEmailSettingsModal, setShowEmailSettingsModal] = useState(false)
+  const [showWhatsAppSettingsModal, setShowWhatsAppSettingsModal] = useState(false)
   
   // Ler tab da URL
   useEffect(() => {
@@ -1422,19 +1425,6 @@ const Configuracoes = () => {
                       >
                         Testar Som
                       </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          await createNotification(
-                            'Teste de Notificação',
-                            'Esta é uma notificação de teste para verificar a animação.'
-                          )
-                        }}
-                        className="text-xs"
-                      >
-                        Testar Animação
-                      </Button>
                       <Switch
                         checked={soundEnabled}
                         onCheckedChange={setSoundEnabled}
@@ -1449,10 +1439,20 @@ const Configuracoes = () => {
                         Receba notificações sobre sessões e lembretes por e-mail
                       </p>
                     </div>
-                    <Switch
-                      checked={settings.notificacao_email || false}
-                      onCheckedChange={(checked) => handleSettingsChange('notificacao_email', checked)}
-                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowEmailSettingsModal(true)}
+                        className="text-xs"
+                      >
+                        Configurar
+                      </Button>
+                      <Switch
+                        checked={settings.notificacao_email || false}
+                        onCheckedChange={(checked) => handleSettingsChange('notificacao_email', checked)}
+                      />
+                    </div>
                   </div>
                   
                   <div 
@@ -1481,10 +1481,20 @@ const Configuracoes = () => {
                       </p>
                     </div>
                     {hasAccessToFeature('whatsapp_notifications') ? (
-                      <Switch
-                        checked={settings.notificacao_whatsapp || false}
-                        onCheckedChange={(checked) => handleSettingsChange('notificacao_whatsapp', checked)}
-                      />
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowWhatsAppSettingsModal(true)}
+                          className="text-xs"
+                        >
+                          Configurar
+                        </Button>
+                        <Switch
+                          checked={settings.notificacao_whatsapp || false}
+                          onCheckedChange={(checked) => handleSettingsChange('notificacao_whatsapp', checked)}
+                        />
+                      </div>
                     ) : (
                       <div 
                         className="flex items-center gap-2 cursor-pointer"
@@ -1494,32 +1504,6 @@ const Configuracoes = () => {
                         <Switch disabled checked={false} />
                       </div>
                     )}
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Lembrete 24h antes</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Enviar lembrete automático 24h antes das sessões
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.lembrete_24h || false}
-                      onCheckedChange={(checked) => handleSettingsChange('lembrete_24h', checked)}
-                    />
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label>Relatório Semanal</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Receber resumo semanal de suas atividades
-                      </p>
-                    </div>
-                    <Switch
-                      checked={settings.relatorio_semanal || false}
-                      onCheckedChange={(checked) => handleSettingsChange('relatorio_semanal', checked)}
-                    />
                   </div>
 
                   {/* Google Calendar Sync - dentro do card de notificações */}
@@ -1766,6 +1750,26 @@ const Configuracoes = () => {
         onOpenChange={setShowPremiumUpgradeModal}
         feature="esta funcionalidade"
         premiumOnly
+      />
+
+      {/* Modal de configuração de notificações por E-mail */}
+      <NotificationSettings
+        open={showEmailSettingsModal}
+        onOpenChange={setShowEmailSettingsModal}
+        type="email"
+        title="Notificações por E-mail"
+        initialEnabled={settings.notificacao_email || false}
+        onEnabledChange={(enabled) => handleSettingsChange('notificacao_email', enabled)}
+      />
+
+      {/* Modal de configuração de notificações por WhatsApp */}
+      <NotificationSettings
+        open={showWhatsAppSettingsModal}
+        onOpenChange={setShowWhatsAppSettingsModal}
+        type="whatsapp"
+        title="Notificações por WhatsApp"
+        initialEnabled={settings.notificacao_whatsapp || false}
+        onEnabledChange={(enabled) => handleSettingsChange('notificacao_whatsapp', enabled)}
       />
     </Layout>
   )
