@@ -142,15 +142,18 @@ export const SubscriptionProvider = ({ children }: SubscriptionProviderProps) =>
       if (!profileError && profile?.subscription_plan) {
         const newPlan = profile.subscription_plan as SubscriptionPlan
         
-        // Detect plan upgrade and mark newly unlocked features
-        if (PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[previousPlan]) {
+        // ✅ Só detectar upgrade se o plano REALMENTE mudou (não apenas sincronização)
+        if (newPlan !== currentPlan && PLAN_HIERARCHY[newPlan] > PLAN_HIERARCHY[previousPlan]) {
           const newlyUnlocked = getNewlyUnlockedFeatures(previousPlan, newPlan)
           if (newlyUnlocked.length > 0) {
             markFeaturesAsUnlocked(newlyUnlocked)
           }
         }
         
-        setPreviousPlan(currentPlan)
+        // ✅ Só atualizar previousPlan se realmente houve mudança
+        if (newPlan !== currentPlan) {
+          setPreviousPlan(currentPlan)
+        }
         setCurrentPlan(newPlan)
         setBillingInterval(profile.billing_interval)
         return

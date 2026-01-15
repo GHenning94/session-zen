@@ -209,16 +209,21 @@ const Dashboard = () => {
         sessionStorage.setItem('pending_tier_upgrade', upgradePlanFromPayment)
       }
       handlePaymentSuccess()
+    } else if (paymentStatus === 'cancelled') {
+      // ✅ Usuário cancelou o checkout - apenas limpar flags, não sincronizar
+      console.log('[Dashboard] ❌ Checkout cancelado pelo usuário, limpando flags...')
+      sessionStorage.removeItem('stripe_checkout_active')
+      searchParams.delete('payment')
+      setSearchParams(searchParams, { replace: true })
     }
     
-    // ✅ Também verificar se voltou do checkout Stripe sem completar (ou se URL não tem params)
-    // Isso garante que o plano seja atualizado mesmo se webhook falhar
+    // ✅ Se voltou do checkout Stripe sem parâmetro de pagamento, apenas limpar o flag
+    // NÃO sincronizar, pois isso pode alterar o plano indevidamente
     const wasInStripeCheckout = sessionStorage.getItem('stripe_checkout_active') === 'true'
     if (wasInStripeCheckout && user && !paymentStatus) {
-      console.log('[Dashboard] 🔄 Retorno de checkout Stripe detectado, sincronizando assinatura...')
+      console.log('[Dashboard] 🔄 Retorno de checkout Stripe sem pagamento, apenas limpando flag...')
       sessionStorage.removeItem('stripe_checkout_active')
-      // Chamar check-subscription para sincronizar o plano
-      handlePaymentSuccess()
+      // Não chamar handlePaymentSuccess() para não alterar o plano
     }
     
     // Check if returning from direct upgrade (no payment required)
