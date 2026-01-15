@@ -46,7 +46,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useTerminology } from "@/hooks/useTerminology"
 import { NewClientModal } from "@/components/NewClientModal"
-import { NewPaymentModal } from "@/components/NewPaymentModal"
+import { NewSessionModal } from "@/components/NewSessionModal"
 import { UpgradePlanCard } from "@/components/UpgradePlanCard"
 import { ActionableNotificationsBanner } from "@/components/ActionableNotificationsBanner"
 import { TutorialButton } from "@/components/TutorialButton"
@@ -80,7 +80,7 @@ const Dashboard = () => {
   const [upcomingSessions, setUpcomingSessions] = useState<any[]>([])
   const [recentPayments, setRecentPayments] = useState<any[]>([])
   const [isNewClientOpen, setIsNewClientOpen] = useState(false)
-  const [isNewPaymentOpen, setIsNewPaymentOpen] = useState(false)
+  const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [isTutorialOpen, setIsTutorialOpen] = useState(false)
   const [recentClients, setRecentClients] = useState<any[]>([])
   const [monthlyChart, setMonthlyChart] = useState<any[]>([])
@@ -1126,15 +1126,11 @@ const Dashboard = () => {
   }, [loadCanalData])
 
   const handleNewSession = () => {
-    navigate('/sessoes')
+    setIsNewSessionOpen(true)
   }
 
   const handleNewClient = () => {
     setIsNewClientOpen(true)
-  }
-
-  const handleNewPayment = () => {
-    setIsNewPaymentOpen(true)
   }
 
   const handleOpenTutorial = () => {
@@ -1735,7 +1731,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewSession}>
                     <Calendar className="w-6 h-6 text-primary" />
                     <span>Agendar Sessão</span>
@@ -1743,10 +1739,6 @@ const Dashboard = () => {
                   <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewClient}>
                     <Users className="w-6 h-6 text-success" />
                     <span>Adicionar {clientTerm}</span>
-                  </Button>
-                  <Button variant="outline" className="h-16 flex flex-col gap-2" onClick={handleNewPayment}>
-                    <DollarSign className="w-6 h-6 text-success" />
-                    <span>Registrar Pagamento</span>
                   </Button>
                 </div>
 
@@ -2907,10 +2899,10 @@ const Dashboard = () => {
         onOpenChange={setIsNewClientOpen}
         onClientAdded={loadDashboardData}
       />
-      <NewPaymentModal
-        open={isNewPaymentOpen}
-        onOpenChange={setIsNewPaymentOpen}
-        onPaymentAdded={loadDashboardData}
+      <NewSessionModal
+        open={isNewSessionOpen}
+        onOpenChange={setIsNewSessionOpen}
+        onSessionCreated={loadDashboardData}
       />
       <TutorialModal
         open={isTutorialOpen}
