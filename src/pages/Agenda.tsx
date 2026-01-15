@@ -53,7 +53,8 @@ const Agenda = () => {
     updateSession,
     deleteSession,
     moveSession,
-    getClientName
+    getClientName,
+    refreshData
   } = useCalendarData()
 
   const [selectedDate, setSelectedDate] = useState(new Date())
@@ -63,6 +64,7 @@ const Agenda = () => {
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
+  const [prefilledTime, setPrefilledTime] = useState<string>("")
 
   // Formulário para nova sessão
   const [newSession, setNewSession] = useState({
@@ -185,6 +187,8 @@ const Agenda = () => {
 
   const handleCreateSession = (date: Date, time?: string) => {
     setEditingSession(null)
+    setSelectedDate(date)
+    setPrefilledTime(time || "")
     setNewSession({
       client_id: "",
       data: date.toISOString().split('T')[0],
@@ -274,9 +278,12 @@ const Agenda = () => {
           onOpenChange={setIsNewSessionOpen}
           session={editingSession}
           selectedDate={selectedDate}
+          prefilledTime={prefilledTime}
           onSuccess={() => {
             setIsNewSessionOpen(false)
             setEditingSession(null)
+            setPrefilledTime("")
+            refreshData() // Reload data to show the new session immediately
           }}
         />
 

@@ -26,6 +26,7 @@ interface SessionModalProps {
   session?: any | null
   selectedDate?: Date | null
   selectedClientId?: string | null
+  prefilledTime?: string
   onSuccess?: () => void
 }
 
@@ -34,7 +35,8 @@ export const SessionModal = ({
   onOpenChange, 
   session,
   selectedDate, 
-  selectedClientId, 
+  selectedClientId,
+  prefilledTime,
   onSuccess 
 }: SessionModalProps) => {
   const { toast } = useToast()
@@ -178,7 +180,7 @@ export const SessionModal = ({
         setFormData({
           client_id: selectedClientId || "",
           data: initialData,
-          horario: "",
+          horario: prefilledTime || "",
           valor: "",
           metodo_pagamento: "",
           status: "agendada",
@@ -190,7 +192,7 @@ export const SessionModal = ({
       }
       setShowReactivationMessage(false)
     }
-  }, [open, session, selectedDate, selectedClientId])
+  }, [open, session, selectedDate, selectedClientId, prefilledTime])
 
   // Verificar cliente inativo
   useEffect(() => {

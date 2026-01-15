@@ -1497,7 +1497,7 @@ const Dashboard = () => {
                                   {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <Pill className="w-3 h-3 md:w-4 md:h-4 text-blue-500 shrink-0" />
+                                        <Pill className="w-3 h-3 md:w-4 md:h-4 text-pink-500 shrink-0" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Faz uso de medicamentos</p>
@@ -1507,7 +1507,7 @@ const Dashboard = () => {
                                   {session.clients?.eh_crianca_adolescente && (
                                     <Tooltip>
                                       <TooltipTrigger>
-                                        <Baby className="w-3 h-3 md:w-4 md:h-4 text-pink-500 shrink-0" />
+                                        <Baby className="w-3 h-3 md:w-4 md:h-4 text-blue-500 shrink-0" />
                                       </TooltipTrigger>
                                       <TooltipContent>
                                         <p>Criança/Adolescente</p>
@@ -1671,7 +1671,7 @@ const Dashboard = () => {
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Package className="w-3.5 h-3.5 text-primary dark:text-primary-foreground" />
+                                      <Package className="w-3.5 h-3.5 text-primary" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Pacote</p>
@@ -1683,7 +1683,7 @@ const Dashboard = () => {
                                 <TooltipProvider>
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Repeat className="w-3.5 h-3.5 text-primary dark:text-primary-foreground" />
+                                      <Repeat className="w-3.5 h-3.5 text-primary" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Sessão Recorrente</p>
@@ -2788,7 +2788,7 @@ const Dashboard = () => {
                             {client.medicamentos && client.medicamentos.length > 0 && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <Pill className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                  <Pill className="w-4 h-4 text-pink-500 flex-shrink-0" />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Faz uso de medicamentos</p>
@@ -2798,7 +2798,7 @@ const Dashboard = () => {
                             {client.eh_crianca_adolescente && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <Baby className="w-4 h-4 text-pink-500 flex-shrink-0" />
+                                  <Baby className="w-4 h-4 text-blue-500 flex-shrink-0" />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Criança/Adolescente</p>
@@ -2855,7 +2855,7 @@ const Dashboard = () => {
                             {client.medicamentos && client.medicamentos.length > 0 && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <Pill className="w-4 h-4 text-blue-500 flex-shrink-0" />
+                                  <Pill className="w-4 h-4 text-pink-500 flex-shrink-0" />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Faz uso de medicamentos</p>
@@ -2865,7 +2865,7 @@ const Dashboard = () => {
                             {client.eh_crianca_adolescente && (
                               <Tooltip>
                                 <TooltipTrigger>
-                                  <Baby className="w-4 h-4 text-pink-500 flex-shrink-0" />
+                                  <Baby className="w-4 h-4 text-blue-500 flex-shrink-0" />
                                 </TooltipTrigger>
                                 <TooltipContent>
                                   <p>Criança/Adolescente</p>
