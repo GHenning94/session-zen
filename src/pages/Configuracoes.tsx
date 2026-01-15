@@ -113,6 +113,7 @@ const Configuracoes = () => {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [showColorPicker, setShowColorPicker] = useState(false)
   const [showColorUpgradeModal, setShowColorUpgradeModal] = useState(false)
+  const [showPremiumUpgradeModal, setShowPremiumUpgradeModal] = useState(false)
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -1415,7 +1416,10 @@ const Configuracoes = () => {
                         onCheckedChange={(checked) => handleSettingsChange('notificacao_whatsapp', checked)}
                       />
                     ) : (
-                      <div className="flex items-center gap-2">
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setShowPremiumUpgradeModal(true)}
+                      >
                         <Lock className="w-4 h-4 text-muted-foreground" />
                         <Switch disabled checked={false} />
                       </div>
@@ -1483,11 +1487,14 @@ const Configuracoes = () => {
                           disabled={!localStorage.getItem('google_access_token')}
                         />
                       ) : (
-                        <div className="flex items-center gap-2">
-                          <Lock className="w-4 h-4 text-muted-foreground" />
-                          <Switch disabled checked={false} />
-                        </div>
-                      )}
+                      <div 
+                        className="flex items-center gap-2 cursor-pointer"
+                        onClick={() => setShowPremiumUpgradeModal(true)}
+                      >
+                        <Lock className="w-4 h-4 text-muted-foreground" />
+                        <Switch disabled checked={false} />
+                      </div>
+                    )}
                     </div>
 
                     {hasAccessToFeature('google_calendar') && !localStorage.getItem('google_access_token') && (
@@ -1680,6 +1687,14 @@ const Configuracoes = () => {
         open={showColorUpgradeModal} 
         onOpenChange={setShowColorUpgradeModal}
         feature="Personalização de Cores"
+      />
+
+      {/* Modal de upgrade para funcionalidades Premium */}
+      <UpgradeModal 
+        open={showPremiumUpgradeModal} 
+        onOpenChange={setShowPremiumUpgradeModal}
+        feature="esta funcionalidade"
+        premiumOnly
       />
     </Layout>
   )
