@@ -381,7 +381,7 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
                   <span className="text-muted-foreground">{plan.period}</span>
                   {billingInterval === 'yearly' && (
                     <div className="text-sm text-muted-foreground mt-1">
-                      Cobrado {plan.id === 'pro' ? 'R$ 299,00' : 'R$ 499,00'} uma vez por ano
+                      {plan.id === 'pro' ? 'R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'R$ 598,80 por R$ 499,00 (2 meses grátis)'}
                     </div>
                   )}
                 </CardDescription>

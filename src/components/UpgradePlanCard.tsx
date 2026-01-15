@@ -484,7 +484,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
                       <span className="text-muted-foreground text-sm">{plan.period}</span>
                     </div>
                     {isAnnual && plan.annualSubtext && (
-                      <p className="text-xs text-muted-foreground mt-1">Cobrado {plan.id === 'pro' ? 'R$ 298,80' : 'R$ 498,96'} uma vez por ano</p>
+                      <p className="text-xs text-muted-foreground mt-1">{plan.id === 'pro' ? 'R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'R$ 598,80 por R$ 499,00 (2 meses grátis)'}</p>
                     )}
                     {plan.id === 'basico' && (
                       <p className="text-xs text-muted-foreground mt-1">Sem cartão de crédito</p>

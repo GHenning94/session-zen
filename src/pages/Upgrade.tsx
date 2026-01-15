@@ -463,7 +463,7 @@ export default function Upgrade() {
                     </div>
                     {billingCycle === 'annual' && plan.annualPrice && (
                       <p className="text-sm text-muted-foreground mt-2">
-                        Cobrado {plan.annualPrice} uma vez por ano
+                        {plan.id === 'pro' ? 'R$ 358,80 por R$ 299,00 (2 meses grátis)' : 'R$ 598,80 por R$ 499,00 (2 meses grátis)'}
                       </p>
                     )}
                     {plan.id === 'basico' && (
