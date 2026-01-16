@@ -173,13 +173,19 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Check if user has new_booking notification enabled
-    const { data: settings } = await supabase
+    // Check if user has new_booking notification enabled (handle duplicates by getting most recent)
+    const { data: settings, error: settingsError } = await supabase
       .from('notification_settings')
       .select('enabled, events')
       .eq('user_id', userId)
       .eq('type', 'email')
-      .single();
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.log("[send-new-booking-email] Error fetching settings:", settingsError);
+    }
 
     const events = settings?.events as string[] || [];
     if (!settings?.enabled || !events.includes('new_booking')) {
