@@ -24,7 +24,7 @@ export const RecurringEditConfirmModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px]">
+      <DialogContent className="sm:max-w-[420px] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Repeat className="h-5 w-5 text-primary" />
