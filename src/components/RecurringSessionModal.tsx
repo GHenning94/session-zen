@@ -3,14 +3,17 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Switch } from '@/components/ui/switch';
 import { useState, useEffect } from 'react';
 import { useRecurringSessions, RecurringSession } from '@/hooks/useRecurringSessions';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Repeat } from 'lucide-react';
+import { CalendarIcon, Repeat, CreditCard, CalendarDays } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface RecurringSessionModalProps {
   open: boolean;
@@ -57,7 +60,14 @@ export const RecurringSessionModal = ({
     metodo_pagamento: 'A definir',
     recurrence_end_date: undefined as Date | undefined,
     recurrence_count: undefined as number | undefined,
-    end_type: 'never' as 'never' | 'date' | 'count'
+    end_type: 'never' as 'never' | 'date' | 'count',
+    // Campos para tipo de cobrança
+    billing_type: 'per_session' as 'per_session' | 'monthly_plan',
+    // Campos para plano mensal
+    monthly_value: 0,
+    billing_day: 1,
+    start_date: new Date(),
+    auto_renewal: true
   });
 
   useEffect(() => {
@@ -66,7 +76,7 @@ export const RecurringSessionModal = ({
         recurrence_type: recurringSession.recurrence_type,
         recurrence_interval: recurringSession.recurrence_interval,
         dia_da_semana: recurringSession.dia_da_semana || 1,
-        horario: recurringSession.horario,
+        horario: recurringSession.horario?.slice(0, 5) || '10:00',
         valor: recurringSession.valor || 0,
         metodo_pagamento: recurringSession.metodo_pagamento || 'A definir',
         recurrence_end_date: recurringSession.recurrence_end_date 
@@ -77,10 +87,33 @@ export const RecurringSessionModal = ({
           ? 'date' 
           : recurringSession.recurrence_count 
             ? 'count' 
-            : 'never'
+            : 'never',
+        billing_type: (recurringSession as any).billing_type || 'per_session',
+        monthly_value: 0,
+        billing_day: 1,
+        start_date: new Date(),
+        auto_renewal: true
+      });
+    } else {
+      // Reset form for new session
+      setFormData({
+        recurrence_type: 'semanal',
+        recurrence_interval: 1,
+        dia_da_semana: 1,
+        horario: '10:00',
+        valor: 0,
+        metodo_pagamento: 'A definir',
+        recurrence_end_date: undefined,
+        recurrence_count: undefined,
+        end_type: 'never',
+        billing_type: 'per_session',
+        monthly_value: 0,
+        billing_day: 1,
+        start_date: new Date(),
+        auto_renewal: true
       });
     }
-  }, [recurringSession]);
+  }, [recurringSession, open]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -90,20 +123,31 @@ export const RecurringSessionModal = ({
     }
 
     try {
-      const data = {
+      const data: any = {
         client_id: clientId || recurringSession?.client_id || '',
         recurrence_type: formData.recurrence_type,
         recurrence_interval: formData.recurrence_interval,
         dia_da_semana: formData.dia_da_semana,
         horario: formData.horario,
-        valor: formData.valor,
+        valor: formData.billing_type === 'per_session' ? formData.valor : 0,
         metodo_pagamento: formData.metodo_pagamento,
         recurrence_end_date: formData.end_type === 'date' && formData.recurrence_end_date
           ? formData.recurrence_end_date.toISOString().split('T')[0]
           : undefined,
         recurrence_count: formData.end_type === 'count' ? formData.recurrence_count : undefined,
-        google_calendar_sync: false
+        google_calendar_sync: false,
+        billing_type: formData.billing_type
       };
+
+      // Adicionar dados do plano mensal se for esse tipo
+      if (formData.billing_type === 'monthly_plan') {
+        data.monthly_plan_data = {
+          valor_mensal: formData.monthly_value,
+          dia_cobranca: formData.billing_day,
+          data_inicio: formData.start_date.toISOString().split('T')[0],
+          renovacao_automatica: formData.auto_renewal
+        };
+      }
 
       if (recurringSession) {
         await updateRecurring(recurringSession.id, data);
@@ -117,18 +161,6 @@ export const RecurringSessionModal = ({
       // Dispatch event to notify other pages
       window.dispatchEvent(new Event('recurringSessionUpdated'));
       
-      // Reset form
-      setFormData({
-        recurrence_type: 'semanal',
-        recurrence_interval: 1,
-        dia_da_semana: 1,
-        horario: '10:00',
-        valor: 0,
-        metodo_pagamento: 'A definir',
-        recurrence_end_date: undefined,
-        recurrence_count: undefined,
-        end_type: 'never'
-      });
     } catch (error) {
       console.error('Error saving recurring session:', error);
     }
@@ -144,7 +176,66 @@ export const RecurringSessionModal = ({
           </DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Tipo de Cobrança - apenas na criação */}
+          {!recurringSession && (
+            <div className="space-y-3">
+              <Label>Tipo de Cobrança</Label>
+              <RadioGroup
+                value={formData.billing_type}
+                onValueChange={(value: 'per_session' | 'monthly_plan') => 
+                  setFormData({ ...formData, billing_type: value })
+                }
+                className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+              >
+                <Card className={cn(
+                  "cursor-pointer transition-all",
+                  formData.billing_type === 'per_session' && "border-primary ring-2 ring-primary/20"
+                )}>
+                  <CardContent className="p-4" onClick={() => setFormData({ ...formData, billing_type: 'per_session' })}>
+                    <div className="flex items-start gap-3">
+                      <RadioGroupItem value="per_session" id="per_session" className="mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-muted-foreground" />
+                          <Label htmlFor="per_session" className="font-medium cursor-pointer">
+                            Cobrança por Sessão
+                          </Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Cada sessão gera um pagamento individual
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className={cn(
+                  "cursor-pointer transition-all",
+                  formData.billing_type === 'monthly_plan' && "border-primary ring-2 ring-primary/20"
+                )}>
+                  <CardContent className="p-4" onClick={() => setFormData({ ...formData, billing_type: 'monthly_plan' })}>
+                    <div className="flex items-start gap-3">
+                      <RadioGroupItem value="monthly_plan" id="monthly_plan" className="mt-1" />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                          <Label htmlFor="monthly_plan" className="font-medium cursor-pointer">
+                            Plano Mensal
+                          </Label>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          Valor fixo mensal independente do número de sessões
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </RadioGroup>
+            </div>
+          )}
+
+          {/* Configurações da Recorrência */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="recurrence_type">Tipo de Recorrência</Label>
@@ -172,7 +263,7 @@ export const RecurringSessionModal = ({
                   type="number"
                   min="1"
                   value={formData.recurrence_interval}
-                  onChange={(e) => setFormData({ ...formData, recurrence_interval: parseInt(e.target.value) })}
+                  onChange={(e) => setFormData({ ...formData, recurrence_interval: parseInt(e.target.value) || 1 })}
                   className="w-20"
                 />
                 <span className="text-sm text-muted-foreground">
@@ -216,110 +307,202 @@ export const RecurringSessionModal = ({
               />
             </div>
 
-            <div>
-              <Label htmlFor="valor">Valor (R$)</Label>
-              <Input
-                id="valor"
-                type="number"
-                step="0.01"
-                min="0"
-                value={formData.valor}
-                onChange={(e) => setFormData({ ...formData, valor: parseFloat(e.target.value) })}
-              />
-            </div>
-
-            <div className="col-span-2">
-              <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
-              <Select
-                value={formData.metodo_pagamento}
-                onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {PAYMENT_METHODS.map((method) => (
-                    <SelectItem key={method.value} value={method.value}>
-                      {method.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="col-span-2 space-y-3">
-              <Label>Término da Recorrência</Label>
-              
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  type="button"
-                  variant={formData.end_type === 'never' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFormData({ ...formData, end_type: 'never' })}
-                >
-                  Nunca
-                </Button>
-                <Button
-                  type="button"
-                  variant={formData.end_type === 'date' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFormData({ ...formData, end_type: 'date' })}
-                >
-                  Em uma data
-                </Button>
-                <Button
-                  type="button"
-                  variant={formData.end_type === 'count' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setFormData({ ...formData, end_type: 'count' })}
-                >
-                  Após X ocorrências
-                </Button>
-              </div>
-
-              {formData.end_type === 'date' && (
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        'w-full justify-start text-left font-normal',
-                        !formData.recurrence_end_date && 'text-muted-foreground'
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {formData.recurrence_end_date ? (
-                        format(formData.recurrence_end_date, 'PPP', { locale: ptBR })
-                      ) : (
-                        'Selecionar data de término'
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={formData.recurrence_end_date}
-                      onSelect={(date) => setFormData({ ...formData, recurrence_end_date: date })}
-                      initialFocus
-                      locale={ptBR}
-                    />
-                  </PopoverContent>
-                </Popover>
-              )}
-
-              {formData.end_type === 'count' && (
+            {/* Valor - apenas para cobrança por sessão */}
+            {formData.billing_type === 'per_session' && (
+              <div>
+                <Label htmlFor="valor">Valor por Sessão (R$)</Label>
                 <Input
+                  id="valor"
                   type="number"
-                  min="1"
-                  placeholder="Número de ocorrências"
-                  value={formData.recurrence_count || ''}
-                  onChange={(e) => setFormData({ 
-                    ...formData, 
-                    recurrence_count: e.target.value ? parseInt(e.target.value) : undefined 
-                  })}
+                  step="0.01"
+                  min="0"
+                  value={formData.valor}
+                  onChange={(e) => setFormData({ ...formData, valor: parseFloat(e.target.value) || 0 })}
                 />
-              )}
+              </div>
+            )}
+
+            {formData.billing_type === 'per_session' && (
+              <div className="col-span-2">
+                <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                <Select
+                  value={formData.metodo_pagamento}
+                  onValueChange={(value) => setFormData({ ...formData, metodo_pagamento: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PAYMENT_METHODS.map((method) => (
+                      <SelectItem key={method.value} value={method.value}>
+                        {method.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+          </div>
+
+          {/* Configurações do Plano Mensal */}
+          {formData.billing_type === 'monthly_plan' && !recurringSession && (
+            <div className="space-y-4 p-4 bg-muted/50 rounded-lg border">
+              <h3 className="font-medium flex items-center gap-2">
+                <CalendarDays className="h-4 w-4" />
+                Configurações do Plano Mensal
+              </h3>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="monthly_value">Valor Mensal (R$)</Label>
+                  <Input
+                    id="monthly_value"
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.monthly_value}
+                    onChange={(e) => setFormData({ ...formData, monthly_value: parseFloat(e.target.value) || 0 })}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="billing_day">Dia de Cobrança</Label>
+                  <Select
+                    value={formData.billing_day.toString()}
+                    onValueChange={(value) => setFormData({ ...formData, billing_day: parseInt(value) })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {Array.from({ length: 28 }, (_, i) => i + 1).map((day) => (
+                        <SelectItem key={day} value={day.toString()}>
+                          Dia {day}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label>Data de Início</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full justify-start text-left font-normal',
+                          !formData.start_date && 'text-muted-foreground'
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.start_date ? (
+                          format(formData.start_date, 'PPP', { locale: ptBR })
+                        ) : (
+                          'Selecionar data'
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={formData.start_date}
+                        onSelect={(date) => date && setFormData({ ...formData, start_date: date })}
+                        initialFocus
+                        locale={ptBR}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="flex items-center gap-3 pt-6">
+                  <Switch
+                    id="auto_renewal"
+                    checked={formData.auto_renewal}
+                    onCheckedChange={(checked) => setFormData({ ...formData, auto_renewal: checked })}
+                  />
+                  <Label htmlFor="auto_renewal" className="cursor-pointer">
+                    Renovação automática
+                  </Label>
+                </div>
+              </div>
             </div>
+          )}
+
+          {/* Término da Recorrência */}
+          <div className="space-y-3">
+            <Label>Término da Recorrência</Label>
+            
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant={formData.end_type === 'never' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFormData({ ...formData, end_type: 'never' })}
+              >
+                Nunca
+              </Button>
+              <Button
+                type="button"
+                variant={formData.end_type === 'date' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFormData({ ...formData, end_type: 'date' })}
+              >
+                Em uma data
+              </Button>
+              <Button
+                type="button"
+                variant={formData.end_type === 'count' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFormData({ ...formData, end_type: 'count' })}
+              >
+                Após X ocorrências
+              </Button>
+            </div>
+
+            {formData.end_type === 'date' && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full justify-start text-left font-normal',
+                      !formData.recurrence_end_date && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.recurrence_end_date ? (
+                      format(formData.recurrence_end_date, 'PPP', { locale: ptBR })
+                    ) : (
+                      'Selecionar data de término'
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.recurrence_end_date}
+                    onSelect={(date) => setFormData({ ...formData, recurrence_end_date: date })}
+                    initialFocus
+                    locale={ptBR}
+                  />
+                </PopoverContent>
+              </Popover>
+            )}
+
+            {formData.end_type === 'count' && (
+              <Input
+                type="number"
+                min="1"
+                placeholder="Número de ocorrências"
+                value={formData.recurrence_count || ''}
+                onChange={(e) => setFormData({ 
+                  ...formData, 
+                  recurrence_count: e.target.value ? parseInt(e.target.value) : undefined 
+                })}
+              />
+            )}
           </div>
 
           <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-4">

@@ -8,7 +8,7 @@ import { useRecurringSessions } from "@/hooks/useRecurringSessions"
 import { useQuery } from "@tanstack/react-query"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
-import { Repeat, Plus, Pencil, Trash2, Calendar, Clock, DollarSign } from "lucide-react"
+import { Repeat, Pencil, Trash2, Calendar, Clock, DollarSign, Pause, Play, CreditCard, CalendarDays, Info } from "lucide-react"
 import { ClientAvatar } from "@/components/ClientAvatar"
 import { formatCurrencyBR } from "@/utils/formatters"
 import { useToast } from "@/hooks/use-toast"
@@ -22,12 +22,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import { format } from "date-fns"
 import { ptBR } from "date-fns/locale"
 
@@ -36,13 +31,13 @@ const WEEKDAYS = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', '
 export default function SessoesRecorrentes() {
   const { user } = useAuth()
   const { toast } = useToast()
-  const { deleteRecurring, loading } = useRecurringSessions()
+  const { deleteRecurring, updateRecurring, loading } = useRecurringSessions()
   
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedRecurring, setSelectedRecurring] = useState<any>(null)
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null)
-  const [showClientSelector, setShowClientSelector] = useState(false)
-  const [selectedClientId, setSelectedClientId] = useState<string | null>(null)
+  const [pauseConfirmId, setPauseConfirmId] = useState<string | null>(null)
+  const [pauseAction, setPauseAction] = useState<'pause' | 'resume'>('pause')
 
   // Carregar sessões recorrentes
   const { data: recurringSessions = [], refetch } = useQuery({
@@ -56,6 +51,12 @@ export default function SessoesRecorrentes() {
             id,
             nome,
             avatar_url
+          ),
+          monthly_plans:monthly_plan_id (
+            id,
+            nome,
+            valor_mensal,
+            status
           )
         `)
         .eq('user_id', user!.id)
@@ -80,31 +81,17 @@ export default function SessoesRecorrentes() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [user, refetch])
 
-  // Carregar clientes
-  const { data: clients = [] } = useQuery({
-    queryKey: ['clients', user?.id],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, nome')
-        .eq('user_id', user!.id)
-        .order('nome')
-      
-      if (error) throw error
-      return data || []
-    },
-    enabled: !!user
-  })
-
-  // Contar instâncias geradas
+  // Contar instâncias geradas (futuras)
   const { data: instanceCounts = {} } = useQuery({
     queryKey: ['recurring-instances-count', user?.id],
     queryFn: async () => {
+      const today = new Date().toISOString().split('T')[0]
       const { data, error } = await supabase
         .from('sessions')
         .select('recurring_session_id')
         .eq('user_id', user!.id)
         .not('recurring_session_id', 'is', null)
+        .gte('data', today)
       
       if (error) throw error
       
@@ -131,28 +118,71 @@ export default function SessoesRecorrentes() {
     refetch()
   }
 
+  const handlePauseResume = async (id: string, action: 'pause' | 'resume') => {
+    try {
+      const newStatus = action === 'pause' ? 'pausada' : 'ativa'
+      
+      await updateRecurring(id, { status: newStatus }, false)
+      
+      // Se pausando, atualizar todas as sessões futuras para pausadas
+      if (action === 'pause') {
+        const today = new Date().toISOString().split('T')[0]
+        await supabase
+          .from('sessions')
+          .update({ status: 'pausada' })
+          .eq('recurring_session_id', id)
+          .gte('data', today)
+          .eq('status', 'agendada')
+        
+        // Se tem plano mensal, pausar também
+        const recurring = recurringSessions.find(r => r.id === id)
+        if (recurring?.monthly_plan_id) {
+          await supabase
+            .from('monthly_plans')
+            .update({ status: 'pausado' })
+            .eq('id', recurring.monthly_plan_id)
+        }
+      } else {
+        // Se retomando, reativar sessões que estavam pausadas
+        const today = new Date().toISOString().split('T')[0]
+        await supabase
+          .from('sessions')
+          .update({ status: 'agendada' })
+          .eq('recurring_session_id', id)
+          .gte('data', today)
+          .eq('status', 'pausada')
+        
+        // Se tem plano mensal, reativar também
+        const recurring = recurringSessions.find(r => r.id === id)
+        if (recurring?.monthly_plan_id) {
+          await supabase
+            .from('monthly_plans')
+            .update({ status: 'ativo' })
+            .eq('id', recurring.monthly_plan_id)
+        }
+      }
+      
+      toast({
+        title: action === 'pause' ? 'Recorrência pausada' : 'Recorrência retomada',
+        description: action === 'pause' 
+          ? 'Todas as sessões futuras foram pausadas.'
+          : 'As sessões futuras foram reativadas.',
+      })
+      
+      refetch()
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error.message,
+      })
+    }
+    setPauseConfirmId(null)
+  }
+
   const handleSave = () => {
     refetch()
     setSelectedRecurring(null)
-    setSelectedClientId(null)
-  }
-
-  const handleOpenNewRecurring = () => {
-    if (clients.length === 0) {
-      toast({
-        variant: 'destructive',
-        title: 'Nenhum cliente cadastrado',
-        description: 'Cadastre um cliente antes de criar uma recorrência.',
-      })
-      return
-    }
-    setShowClientSelector(true)
-  }
-
-  const handleSelectClient = (clientId: string) => {
-    setSelectedClientId(clientId)
-    setShowClientSelector(false)
-    setIsModalOpen(true)
   }
 
   const getRecurrenceDescription = (recurring: any) => {
@@ -185,11 +215,30 @@ export default function SessoesRecorrentes() {
         return <Badge variant="success">Ativa</Badge>
       case 'pausada':
         return <Badge variant="warning">Pausada</Badge>
+      case 'cancelada':
+        return <Badge variant="destructive">Cancelada</Badge>
       case 'concluida':
         return <Badge variant="outline">Concluída</Badge>
       default:
         return <Badge variant="outline">{status}</Badge>
     }
+  }
+
+  const getBillingTypeBadge = (recurring: any) => {
+    if (recurring.billing_type === 'monthly_plan') {
+      return (
+        <Badge variant="secondary" className="gap-1">
+          <CalendarDays className="h-3 w-3" />
+          Plano Mensal
+        </Badge>
+      )
+    }
+    return (
+      <Badge variant="outline" className="gap-1">
+        <CreditCard className="h-3 w-3" />
+        Por Sessão
+      </Badge>
+    )
   }
 
   return (
@@ -202,15 +251,18 @@ export default function SessoesRecorrentes() {
               <span className="break-words">Sessões Recorrentes</span>
             </h1>
             <p className="text-muted-foreground mt-2 text-sm sm:text-base">
-              Gerencie sessões que se repetem automaticamente
+              Gerencie suas regras de recorrência
             </p>
           </div>
-          
-          <Button onClick={handleOpenNewRecurring} size="sm" className="self-start sm:self-center">
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Recorrência
-          </Button>
         </div>
+
+        {/* Informativo sobre criação */}
+        <Alert>
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            Para criar uma nova sessão recorrente, utilize o modal de nova sessão na página de <strong>Sessões</strong> ou na <strong>Agenda</strong> e selecione a aba "Recorrente".
+          </AlertDescription>
+        </Alert>
 
         {recurringSessions.length === 0 ? (
           <Card>
@@ -218,12 +270,8 @@ export default function SessoesRecorrentes() {
               <Repeat className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">Nenhuma sessão recorrente</h3>
               <p className="text-muted-foreground mb-4">
-                Configure sessões que se repetem automaticamente
+                Crie sessões recorrentes através do modal de nova sessão na página de Sessões ou Agenda.
               </p>
-              <Button onClick={handleOpenNewRecurring}>
-                <Plus className="h-4 w-4 mr-2" />
-                Criar primeira recorrência
-              </Button>
             </CardContent>
           </Card>
         ) : (
@@ -243,6 +291,7 @@ export default function SessoesRecorrentes() {
                           {recurring.clients?.nome || 'Cliente não encontrado'}
                         </span>
                         {getStatusBadge(recurring.status)}
+                        {getBillingTypeBadge(recurring)}
                       </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-sm">
@@ -258,13 +307,17 @@ export default function SessoesRecorrentes() {
                         
                         <div className="flex items-center gap-2">
                           <DollarSign className="h-4 w-4 text-muted-foreground shrink-0" />
-                          <span>{formatCurrencyBR(recurring.valor || 0)}</span>
+                          {recurring.billing_type === 'monthly_plan' && recurring.monthly_plans ? (
+                            <span>{formatCurrencyBR(recurring.monthly_plans.valor_mensal || 0)}/mês</span>
+                          ) : (
+                            <span>{formatCurrencyBR(recurring.valor || 0)}/sessão</span>
+                          )}
                         </div>
                       </div>
 
                       <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                         <span>
-                          {instanceCounts[recurring.id] || 0} sessões geradas
+                          {instanceCounts[recurring.id] || 0} sessões futuras
                         </span>
                         {recurring.google_calendar_sync && (
                           <Badge variant="outline" className="text-xs">
@@ -275,17 +328,46 @@ export default function SessoesRecorrentes() {
                     </div>
 
                     <div className="flex gap-2 shrink-0 self-end sm:self-start">
-                                      <Button
-                                        variant="outline"
-                                        size="icon"
-                                        onClick={() => handleEdit(recurring)}
-                                      >
-                                        <Pencil className="h-4 w-4" />
+                      {/* Botão Pausar/Retomar */}
+                      {recurring.status === 'ativa' ? (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setPauseConfirmId(recurring.id)
+                            setPauseAction('pause')
+                          }}
+                          title="Pausar recorrência"
+                        >
+                          <Pause className="h-4 w-4" />
+                        </Button>
+                      ) : recurring.status === 'pausada' ? (
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => {
+                            setPauseConfirmId(recurring.id)
+                            setPauseAction('resume')
+                          }}
+                          title="Retomar recorrência"
+                        >
+                          <Play className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                      
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => handleEdit(recurring)}
+                        title="Editar recorrência"
+                      >
+                        <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => setDeleteConfirmId(recurring.id)}
+                        title="Excluir recorrência"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -297,45 +379,19 @@ export default function SessoesRecorrentes() {
           </div>
         )}
 
-        <Dialog open={showClientSelector} onOpenChange={setShowClientSelector}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Selecione o Cliente</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
-              {clients.map((client) => (
-                <Button
-                  key={client.id}
-                  variant="outline"
-                  className="w-full justify-start gap-2"
-                  onClick={() => handleSelectClient(client.id)}
-                >
-                  <ClientAvatar 
-                    avatarPath={undefined}
-                    clientName={client.nome}
-                    size="sm"
-                  />
-                  {client.nome}
-                </Button>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-
         <RecurringSessionModal
           open={isModalOpen}
           onOpenChange={(open) => {
             setIsModalOpen(open)
             if (!open) {
               setSelectedRecurring(null)
-              setSelectedClientId(null)
             }
           }}
           recurringSession={selectedRecurring}
-          clientId={selectedClientId || undefined}
           onSave={handleSave}
         />
 
+        {/* Diálogo de confirmação de exclusão */}
         <AlertDialog open={!!deleteConfirmId} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -343,6 +399,11 @@ export default function SessoesRecorrentes() {
               <AlertDialogDescription>
                 Isso irá excluir a configuração de recorrência e todas as sessões futuras associadas.
                 Sessões passadas serão mantidas.
+                {recurringSessions.find(r => r.id === deleteConfirmId)?.billing_type === 'monthly_plan' && (
+                  <span className="block mt-2 font-medium text-warning">
+                    ⚠️ O plano mensal associado também será encerrado e todas as cobranças futuras serão canceladas.
+                  </span>
+                )}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -352,6 +413,46 @@ export default function SessoesRecorrentes() {
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Diálogo de confirmação de pausar/retomar */}
+        <AlertDialog open={!!pauseConfirmId} onOpenChange={(open) => !open && setPauseConfirmId(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {pauseAction === 'pause' ? 'Pausar recorrência?' : 'Retomar recorrência?'}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {pauseAction === 'pause' ? (
+                  <>
+                    Todas as sessões futuras serão pausadas e nenhuma nova sessão será gerada enquanto a recorrência estiver pausada.
+                    {recurringSessions.find(r => r.id === pauseConfirmId)?.billing_type === 'monthly_plan' && (
+                      <span className="block mt-2 font-medium text-warning">
+                        ⚠️ O plano mensal associado também será pausado e nenhuma nova cobrança será gerada.
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    As sessões futuras serão reativadas e a recorrência voltará a gerar novas sessões normalmente.
+                    {recurringSessions.find(r => r.id === pauseConfirmId)?.billing_type === 'monthly_plan' && (
+                      <span className="block mt-2 font-medium text-primary">
+                        ✓ O plano mensal associado também será reativado.
+                      </span>
+                    )}
+                  </>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => pauseConfirmId && handlePauseResume(pauseConfirmId, pauseAction)}
+              >
+                {pauseAction === 'pause' ? 'Pausar' : 'Retomar'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
