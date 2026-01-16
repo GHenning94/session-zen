@@ -864,6 +864,18 @@ export const SessionModal = ({
                     </RadioGroup>
                   </div>
                 </div>
+
+                {/* Feedback visual — Primeira sessão */}
+                {formData.data && (
+                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                    <p className="text-sm font-medium text-primary">
+                      Primeira sessão será criada em:
+                    </p>
+                    <p className="text-sm font-semibold mt-0.5">
+                      {format(new Date(formData.data + 'T12:00:00'), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* BLOCO 4 — Forma de cobrança */}
