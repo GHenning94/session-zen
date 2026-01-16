@@ -1043,7 +1043,7 @@ const pastPayments = filteredPayments.filter(item => {
                                        )}
                                         {payment.type === 'package' && (
                                           <span className="text-xs text-muted-foreground">
-                                            • {payment.package_name} • {payment.package_sessions} sessões realizadas
+                                            • Pacote {payment.package_name} • {payment.package_sessions} sessões realizadas
                                           </span>
                                         )}
                                      </div>
@@ -1168,7 +1168,7 @@ const pastPayments = filteredPayments.filter(item => {
                                 )}
                                 {payment.type === 'package' && (
                                   <span className="text-xs text-muted-foreground">
-                                    • {payment.package_name} • {payment.package_sessions} sessões realizadas
+                                    • Pacote {payment.package_name} • {payment.package_sessions} sessões realizadas
                                   </span>
                                 )}
                               </div>
