@@ -737,6 +737,22 @@ export const SessionModal = ({
         onOpenChange={setShowUpgradeModal}
         feature={isClientLimitReached ? "Sessões por Paciente" : "Pacotes de Sessões"}
       />
+      
+      <RecurringSessionModal
+        open={showRecurringModal}
+        onOpenChange={(isOpen) => {
+          setShowRecurringModal(isOpen)
+          // Se fechou o modal de recorrência sem criar, volta para individual
+          if (!isOpen) {
+            setSessionType('individual')
+          }
+        }}
+        clientId={formData.client_id || undefined}
+        onSave={() => {
+          onSuccess?.()
+          onOpenChange(false)
+        }}
+      />
     </Dialog>
   )
 }
