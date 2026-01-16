@@ -22,6 +22,7 @@ import {
   Repeat,
   Filter,
   ChevronDown,
+  CalendarCheck,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
@@ -97,14 +98,15 @@ const [isLoading, setIsLoading] = useState(false)
           .order('data', { ascending: false })
           .order('horario', { ascending: false }),
         
-        // Carregar pagamentos com relacionamentos (campos otimizados)
+        // Carregar pagamentos com relacionamentos (campos otimizados) - inclui monthly_plan
         supabase
           .from('payments')
           .select(`
             id, valor, status, metodo_pagamento, data_vencimento, data_pagamento,
-            observacoes, created_at, package_id, session_id, client_id,
+            observacoes, created_at, package_id, session_id, client_id, monthly_plan_id, payment_type,
             packages:package_id (nome, total_sessoes, sessoes_consumidas, data_fim, data_inicio, metodo_pagamento),
-            sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type, recurring_sessions:recurring_session_id (metodo_pagamento))
+            sessions:session_id (data, horario, status, valor, metodo_pagamento, recurring_session_id, google_sync_type, recurring_sessions:recurring_session_id (metodo_pagamento)),
+            monthly_plans:monthly_plan_id (nome, valor_mensal, dia_cobranca, status, data_inicio, data_fim, renovacao_automatica)
           `)
           .eq('user_id', user.id)
           .order('created_at', { ascending: false }),
@@ -210,18 +212,22 @@ const [isLoading, setIsLoading] = useState(false)
   }
 
 const getSessionPayments = () => {
-  // Mapear diretamente da tabela payments (sessões + pacotes)
+  // Mapear diretamente da tabela payments (sessões + pacotes + planos mensais)
   return (payments || []).map((p: any) => {
     const isPackage = !!p.package_id
+    const isMonthlyPlan = !!p.monthly_plan_id || p.payment_type === 'monthly_plan'
     const client = clients.find(c => c.id === p.client_id)
     const effective = getPaymentEffectiveDate(p)
     const effDateStr = effective.toISOString().split('T')[0]
-    const time = isPackage ? '00:00:00' : (p.sessions?.horario || '00:00:00')
+    const time = isPackage || isMonthlyPlan ? '00:00:00' : (p.sessions?.horario || '00:00:00')
     
     // Para sessões recorrentes, buscar o método de pagamento da configuração de recorrência
     // PRIORIDADE CORRETA: recorrência > sessão > pagamento
     let method = 'A definir'
-    if (!isPackage && p.sessions) {
+    if (isMonthlyPlan) {
+      // Para planos mensais, usar o método do pagamento
+      method = p.metodo_pagamento || 'A definir'
+    } else if (!isPackage && p.sessions) {
       // 1. Se é sessão recorrente, PRIORIZAR o método da recorrência
       if (p.sessions.recurring_session_id) {
         // Tentar nested query primeiro
@@ -256,11 +262,23 @@ const getSessionPayments = () => {
       method = p.metodo_pagamento || 'A definir'
     }
 
+    // Determine payment type
+    let type = 'session'
+    if (isMonthlyPlan) {
+      type = 'monthly_plan'
+    } else if (isPackage) {
+      type = 'package'
+    }
+
     return {
       id: p.id,
       client: client?.nome || 'Cliente não encontrado',
       client_avatar: client?.avatar_url,
-      date: isPackage ? (p.packages?.data_inicio || effDateStr) : (p.sessions?.data || effDateStr),
+      date: isMonthlyPlan 
+        ? (p.monthly_plans?.data_inicio || effDateStr)
+        : isPackage 
+          ? (p.packages?.data_inicio || effDateStr) 
+          : (p.sessions?.data || effDateStr),
       time,
       value: p.valor || 0,
       status: p.status || 'pendente',
@@ -273,9 +291,13 @@ const getSessionPayments = () => {
       package_sessions: p.packages ? `${p.packages.sessoes_consumidas || 0}/${p.packages.total_sessoes || 0}` : undefined,
       package_data_inicio: p.packages?.data_inicio,
       package_data_fim: p.packages?.data_fim,
+      monthly_plan_id: p.monthly_plan_id,
+      monthly_plan_name: p.monthly_plans?.nome || 'Plano Mensal',
+      monthly_plan_status: p.monthly_plans?.status,
+      monthly_plan_renovacao: p.monthly_plans?.renovacao_automatica,
       recurring_session_id: p.sessions?.recurring_session_id,
       google_sync_type: p.sessions?.google_sync_type,
-      type: isPackage ? 'package' : 'session',
+      type,
       raw: p,
     }
   })
@@ -504,15 +526,17 @@ const filterByPeriod = (items: any[]) => {
     const normalizeMethod = (m: string) => m.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, '')
     const methodMatch = filterMethod === "todos" || normalizeMethod(payment.method || '') === normalizeMethod(filterMethod)
     
-    // Filtro por tipo de pagamento (individual/pacote/recorrente)
+    // Filtro por tipo de pagamento (individual/pacote/recorrente/plano mensal)
     let typeMatch = true
     if (filterPaymentType !== "todos") {
       if (filterPaymentType === "individual") {
-        typeMatch = !payment.package_id && !payment.recurring_session_id
+        typeMatch = !payment.package_id && !payment.recurring_session_id && !payment.monthly_plan_id
       } else if (filterPaymentType === "package") {
         typeMatch = !!payment.package_id
       } else if (filterPaymentType === "recurring") {
-        typeMatch = !!payment.recurring_session_id
+        typeMatch = !!payment.recurring_session_id && !payment.monthly_plan_id
+      } else if (filterPaymentType === "monthly_plan") {
+        typeMatch = !!payment.monthly_plan_id || payment.type === 'monthly_plan'
       }
     }
 
@@ -844,6 +868,7 @@ const pastPayments = filteredPayments.filter(item => {
                         <SelectItem value="individual">Individual</SelectItem>
                         <SelectItem value="package">Pacote</SelectItem>
                         <SelectItem value="recurring">Recorrente</SelectItem>
+                        <SelectItem value="monthly_plan">Plano Mensal</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -977,7 +1002,10 @@ const pastPayments = filteredPayments.filter(item => {
                                      {payment.type === 'package' && (
                                        <Package className="h-4 w-4 text-primary" />
                                      )}
-                                     {payment.recurring_session_id && (
+                                     {payment.type === 'monthly_plan' && (
+                                       <CalendarCheck className="h-4 w-4 text-primary" />
+                                     )}
+                                     {payment.recurring_session_id && payment.type !== 'monthly_plan' && (
                                        <Repeat className="h-4 w-4 text-primary" />
                                      )}
                                    </div>
