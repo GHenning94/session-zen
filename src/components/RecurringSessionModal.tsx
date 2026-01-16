@@ -249,19 +249,23 @@ export const RecurringSessionModal = ({
                 }
                 className="grid grid-cols-1 sm:grid-cols-2 gap-3"
               >
+              <Label 
+                  htmlFor="per_session" 
+                  className="cursor-pointer"
+                >
                 <Card className={cn(
                   "cursor-pointer transition-all",
                   formData.billing_type === 'per_session' && "border-primary ring-2 ring-primary/20"
                 )}>
-                  <CardContent className="p-4" onClick={() => setFormData({ ...formData, billing_type: 'per_session' })}>
+                  <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <RadioGroupItem value="per_session" id="per_session" className="mt-1" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
-                          <Label htmlFor="per_session" className="font-medium cursor-pointer">
+                          <span className="font-medium">
                             Cobrança por Sessão
-                          </Label>
+                          </span>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           Cada sessão gera um pagamento individual
@@ -270,20 +274,25 @@ export const RecurringSessionModal = ({
                     </div>
                   </CardContent>
                 </Card>
+              </Label>
 
+              <Label 
+                  htmlFor="monthly_plan" 
+                  className="cursor-pointer"
+                >
                 <Card className={cn(
                   "cursor-pointer transition-all",
                   formData.billing_type === 'monthly_plan' && "border-primary ring-2 ring-primary/20"
                 )}>
-                  <CardContent className="p-4" onClick={() => setFormData({ ...formData, billing_type: 'monthly_plan' })}>
+                  <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <RadioGroupItem value="monthly_plan" id="monthly_plan" className="mt-1" />
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
                           <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                          <Label htmlFor="monthly_plan" className="font-medium cursor-pointer">
+                          <span className="font-medium">
                             Plano Mensal
-                          </Label>
+                          </span>
                         </div>
                         <p className="text-sm text-muted-foreground mt-1">
                           Valor fixo mensal independente do número de sessões
@@ -292,6 +301,7 @@ export const RecurringSessionModal = ({
                     </div>
                   </CardContent>
                 </Card>
+              </Label>
               </RadioGroup>
             </div>
           )}
