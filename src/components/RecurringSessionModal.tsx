@@ -9,11 +9,14 @@ import { useState, useEffect } from 'react';
 import { useRecurringSessions, RecurringSession } from '@/hooks/useRecurringSessions';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon, Repeat, CreditCard, CalendarDays } from 'lucide-react';
+import { CalendarIcon, Repeat, CreditCard, CalendarDays, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RecurringSessionModalProps {
   open: boolean;
@@ -49,8 +52,32 @@ export const RecurringSessionModal = ({
   clientId,
   onSave 
 }: RecurringSessionModalProps) => {
+  const { user } = useAuth();
   const { createRecurring, updateRecurring, loading } = useRecurringSessions();
-  
+  const [selectedClientId, setSelectedClientId] = useState<string>(clientId || '');
+
+  // Fetch clients for the selector
+  const { data: clients = [] } = useQuery({
+    queryKey: ['clients-for-recurring', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, nome, ativo')
+        .eq('user_id', user.id)
+        .order('nome');
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user && open && !clientId
+  });
+
+  // Update selectedClientId when clientId prop changes
+  useEffect(() => {
+    if (clientId) {
+      setSelectedClientId(clientId);
+    }
+  }, [clientId]);
   const [formData, setFormData] = useState({
     recurrence_type: 'semanal' as 'diaria' | 'semanal' | 'quinzenal' | 'mensal',
     recurrence_interval: 1,
@@ -118,13 +145,15 @@ export const RecurringSessionModal = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!clientId && !recurringSession) {
+    const effectiveClientId = selectedClientId || clientId || recurringSession?.client_id;
+    
+    if (!effectiveClientId && !recurringSession) {
       return;
     }
 
     try {
       const data: any = {
-        client_id: clientId || recurringSession?.client_id || '',
+        client_id: effectiveClientId || '',
         recurrence_type: formData.recurrence_type,
         recurrence_interval: formData.recurrence_interval,
         dia_da_semana: formData.dia_da_semana,
@@ -177,6 +206,38 @@ export const RecurringSessionModal = ({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Seletor de Cliente - apenas na criação sem clientId pré-definido */}
+          {!recurringSession && !clientId && (
+            <div className="space-y-2">
+              <Label htmlFor="client">
+                <span className="flex items-center gap-2">
+                  <User className="h-4 w-4" />
+                  Cliente
+                </span>
+              </Label>
+              <Select
+                value={selectedClientId}
+                onValueChange={setSelectedClientId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione um cliente" />
+                </SelectTrigger>
+                <SelectContent>
+                  {clients.map((client: any) => (
+                    <SelectItem key={client.id} value={client.id}>
+                      <div className="flex items-center gap-2">
+                        <span>{client.nome}</span>
+                        {!client.ativo && (
+                          <span className="text-xs text-muted-foreground">(inativo)</span>
+                        )}
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
           {/* Tipo de Cobrança - apenas na criação */}
           {!recurringSession && (
             <div className="space-y-3">
@@ -514,7 +575,10 @@ export const RecurringSessionModal = ({
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={loading}>
+            <Button 
+              type="submit" 
+              disabled={loading || (!clientId && !selectedClientId && !recurringSession)}
+            >
               {loading ? 'Salvando...' : recurringSession ? 'Atualizar' : 'Criar Recorrência'}
             </Button>
           </div>
