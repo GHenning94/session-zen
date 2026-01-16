@@ -840,6 +840,69 @@ export type Database = {
         }
         Relationships: []
       }
+      monthly_plans: {
+        Row: {
+          client_id: string
+          created_at: string
+          data_fim: string | null
+          data_inicio: string
+          dia_cobranca: number
+          id: string
+          nome: string
+          recurring_session_id: string | null
+          renovacao_automatica: boolean
+          status: string
+          updated_at: string
+          user_id: string
+          valor_mensal: number
+        }
+        Insert: {
+          client_id: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio: string
+          dia_cobranca: number
+          id?: string
+          nome?: string
+          recurring_session_id?: string | null
+          renovacao_automatica?: boolean
+          status?: string
+          updated_at?: string
+          user_id: string
+          valor_mensal: number
+        }
+        Update: {
+          client_id?: string
+          created_at?: string
+          data_fim?: string | null
+          data_inicio?: string
+          dia_cobranca?: number
+          id?: string
+          nome?: string
+          recurring_session_id?: string | null
+          renovacao_automatica?: boolean
+          status?: string
+          updated_at?: string
+          user_id?: string
+          valor_mensal?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_plans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_plans_recurring_session_id_fkey"
+            columns: ["recurring_session_id"]
+            isOneToOne: false
+            referencedRelation: "recurring_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_settings: {
         Row: {
           created_at: string
@@ -973,8 +1036,10 @@ export type Database = {
           data_vencimento: string | null
           id: string
           metodo_pagamento: string | null
+          monthly_plan_id: string | null
           observacoes: string | null
           package_id: string | null
+          payment_type: string | null
           session_id: string | null
           status: string | null
           updated_at: string | null
@@ -988,8 +1053,10 @@ export type Database = {
           data_vencimento?: string | null
           id?: string
           metodo_pagamento?: string | null
+          monthly_plan_id?: string | null
           observacoes?: string | null
           package_id?: string | null
+          payment_type?: string | null
           session_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -1003,8 +1070,10 @@ export type Database = {
           data_vencimento?: string | null
           id?: string
           metodo_pagamento?: string | null
+          monthly_plan_id?: string | null
           observacoes?: string | null
           package_id?: string | null
+          payment_type?: string | null
           session_id?: string | null
           status?: string | null
           updated_at?: string | null
@@ -1017,6 +1086,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_monthly_plan_id_fkey"
+            columns: ["monthly_plan_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_plans"
             referencedColumns: ["id"]
           },
           {
@@ -1232,6 +1308,7 @@ export type Database = {
       }
       recurring_sessions: {
         Row: {
+          billing_type: string
           client_id: string
           created_at: string | null
           dia_da_semana: number | null
@@ -1239,6 +1316,7 @@ export type Database = {
           horario: string
           id: string
           metodo_pagamento: string | null
+          monthly_plan_id: string | null
           parent_session_id: string | null
           recurrence_count: number | null
           recurrence_end_date: string | null
@@ -1250,6 +1328,7 @@ export type Database = {
           valor: number | null
         }
         Insert: {
+          billing_type?: string
           client_id: string
           created_at?: string | null
           dia_da_semana?: number | null
@@ -1257,6 +1336,7 @@ export type Database = {
           horario: string
           id?: string
           metodo_pagamento?: string | null
+          monthly_plan_id?: string | null
           parent_session_id?: string | null
           recurrence_count?: number | null
           recurrence_end_date?: string | null
@@ -1268,6 +1348,7 @@ export type Database = {
           valor?: number | null
         }
         Update: {
+          billing_type?: string
           client_id?: string
           created_at?: string | null
           dia_da_semana?: number | null
@@ -1275,6 +1356,7 @@ export type Database = {
           horario?: string
           id?: string
           metodo_pagamento?: string | null
+          monthly_plan_id?: string | null
           parent_session_id?: string | null
           recurrence_count?: number | null
           recurrence_end_date?: string | null
@@ -1291,6 +1373,13 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "recurring_sessions_monthly_plan_id_fkey"
+            columns: ["monthly_plan_id"]
+            isOneToOne: false
+            referencedRelation: "monthly_plans"
             referencedColumns: ["id"]
           },
           {
@@ -1710,6 +1799,7 @@ export type Database = {
           recurring_session_id: string | null
           session_type: string | null
           status: string | null
+          unlinked_from_recurring: boolean | null
           updated_at: string | null
           user_id: string
           valor: number | null
@@ -1735,6 +1825,7 @@ export type Database = {
           recurring_session_id?: string | null
           session_type?: string | null
           status?: string | null
+          unlinked_from_recurring?: boolean | null
           updated_at?: string | null
           user_id: string
           valor?: number | null
@@ -1760,6 +1851,7 @@ export type Database = {
           recurring_session_id?: string | null
           session_type?: string | null
           status?: string | null
+          unlinked_from_recurring?: boolean | null
           updated_at?: string | null
           user_id?: string
           valor?: number | null

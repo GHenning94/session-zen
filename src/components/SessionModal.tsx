@@ -6,8 +6,9 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { RecurringSessionModal } from "@/components/RecurringSessionModal"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
@@ -46,6 +47,7 @@ export const SessionModal = ({
   const [isLoading, setIsLoading] = useState(false)
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [showRecurringModal, setShowRecurringModal] = useState(false)
   const [sessionType, setSessionType] = useState<'individual' | 'pacote' | 'recorrente'>('individual')
   
   // Check if user has access to packages feature
@@ -450,9 +452,14 @@ export const SessionModal = ({
                 setShowUpgradeModal(true)
                 return
               }
+              // Se selecionar recorrente, abrir modal específico
+              if (v === 'recorrente') {
+                setShowRecurringModal(true)
+                return
+              }
               setSessionType(v)
             }}>
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="individual">
                   <User className="h-4 w-4 mr-2" />
                   Individual
@@ -469,14 +476,16 @@ export const SessionModal = ({
                 >
                   <Package className="h-4 w-4" />
                   <span>Pacote</span>
-                  {!hasPackagesAccess ? (
+                  {!hasPackagesAccess && (
                     <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4 gap-0.5 ml-1">
                       <Lock className="w-2.5 h-2.5" />
                       Pro
                     </Badge>
-                  ) : (
-                    <NewFeatureBadge featureKey="packages" className="ml-1" />
                   )}
+                </TabsTrigger>
+                <TabsTrigger value="recorrente" className="flex items-center gap-2">
+                  <Repeat className="h-4 w-4" />
+                  <span>Recorrente</span>
                 </TabsTrigger>
               </TabsList>
             </Tabs>
