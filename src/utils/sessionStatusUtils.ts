@@ -81,6 +81,7 @@ export const getSessionStatusLabel = (status: string) => {
     case 'realizada': return 'Realizada'
     case 'agendada': return 'Agendada'
     case 'cancelada': return 'Cancelada'
+    case 'pausada': return 'Pausada'
     case 'falta':
     case 'faltou': return 'Falta'
     default: return status

@@ -71,6 +71,7 @@ export const SessionDetailsModal = ({
       case 'realizada': return 'Realizada'
       case 'agendada': return 'Agendada'
       case 'cancelada': return 'Cancelada'
+      case 'pausada': return 'Pausada'
       case 'faltou': return 'Falta'
       case 'falta': return 'Falta'
       default: return status
