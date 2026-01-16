@@ -866,16 +866,36 @@ export const SessionModal = ({
                 </div>
 
                 {/* Feedback visual — Primeira sessão */}
-                {formData.data && (
-                  <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
-                    <p className="text-sm font-medium text-primary">
-                      Primeira sessão será criada em:
-                    </p>
-                    <p className="text-sm font-semibold mt-0.5">
-                      {format(new Date(formData.data + 'T12:00:00'), "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                    </p>
-                  </div>
-                )}
+                {formData.data && (() => {
+                  const baseDate = new Date(formData.data + 'T12:00:00');
+                  let firstSessionDate = baseDate;
+                  
+                  // Para recorrência semanal, calcular a próxima ocorrência do dia da semana selecionado
+                  if (recurringData.recurrence_type === 'semanal' && recurringData.dia_da_semana !== undefined) {
+                    const targetDay = recurringData.dia_da_semana;
+                    const currentDay = baseDate.getDay();
+                    let daysToAdd = targetDay - currentDay;
+                    
+                    // Se o dia alvo já passou nesta semana, pular para a próxima
+                    if (daysToAdd < 0) {
+                      daysToAdd += 7;
+                    }
+                    
+                    firstSessionDate = new Date(baseDate);
+                    firstSessionDate.setDate(baseDate.getDate() + daysToAdd);
+                  }
+                  
+                  return (
+                    <div className="p-3 bg-primary/5 rounded-lg border border-primary/20">
+                      <p className="text-sm font-medium text-primary">
+                        Primeira sessão será criada em:
+                      </p>
+                      <p className="text-sm font-semibold mt-0.5">
+                        {format(firstSessionDate, "EEEE, dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      </p>
+                    </div>
+                  );
+                })()}
               </div>
 
               {/* BLOCO 4 — Forma de cobrança */}
