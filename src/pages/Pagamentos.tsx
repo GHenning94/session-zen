@@ -1041,11 +1041,11 @@ const pastPayments = filteredPayments.filter(item => {
                                            • {formatPaymentMethod(payment.method)}
                                          </span>
                                        )}
-                                       {payment.type === 'package' && (
-                                         <span className="text-xs text-muted-foreground">
-                                           • {payment.package_name} • {payment.package_sessions} sessões
-                                         </span>
-                                       )}
+                                        {payment.type === 'package' && (
+                                          <span className="text-xs text-muted-foreground">
+                                            • {payment.package_name} • {payment.package_sessions} sessões realizadas
+                                          </span>
+                                        )}
                                      </div>
                                      {/* Método de pagamento mobile - layout vertical */}
                                      {payment.method && payment.method !== 'A definir' && (
@@ -1168,7 +1168,7 @@ const pastPayments = filteredPayments.filter(item => {
                                 )}
                                 {payment.type === 'package' && (
                                   <span className="text-xs text-muted-foreground">
-                                    • {payment.package_name} • {payment.package_sessions} sessões
+                                    • {payment.package_name} • {payment.package_sessions} sessões realizadas
                                   </span>
                                 )}
                               </div>
