@@ -147,17 +147,20 @@ export const NotificationSettings = ({
       if (config.patient_reminder_1h) events.push('patient_reminder_1h')
       if (config.patient_confirmation) events.push('patient_confirmation')
 
-      // Verificar se já existe um registro
-      const { data: existing } = await supabase
+      // Buscar TODOS os registros existentes para este user/type (para limpar duplicatas)
+      const { data: existingRecords } = await supabase
         .from('notification_settings')
-        .select('id')
+        .select('id, updated_at')
         .eq('user_id', user.id)
         .eq('type', type)
-        .maybeSingle()
+        .order('updated_at', { ascending: false })
 
       let error
-      if (existing) {
-        // Atualizar registro existente
+      
+      if (existingRecords && existingRecords.length > 0) {
+        // Atualizar o registro mais recente
+        const mostRecentId = existingRecords[0].id
+        
         const result = await supabase
           .from('notification_settings')
           .update({
@@ -166,8 +169,18 @@ export const NotificationSettings = ({
             time: config.daily_reminder_time,
             updated_at: new Date().toISOString()
           })
-          .eq('id', existing.id)
+          .eq('id', mostRecentId)
         error = result.error
+        
+        // Deletar registros duplicados (todos exceto o mais recente)
+        if (!error && existingRecords.length > 1) {
+          const duplicateIds = existingRecords.slice(1).map(r => r.id)
+          console.log('[NotificationSettings] Removing duplicate records:', duplicateIds.length)
+          await supabase
+            .from('notification_settings')
+            .delete()
+            .in('id', duplicateIds)
+        }
       } else {
         // Inserir novo registro
         const result = await supabase
