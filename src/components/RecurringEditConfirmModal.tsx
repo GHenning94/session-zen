@@ -24,11 +24,11 @@ export const RecurringEditConfirmModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[420px] overflow-hidden">
+      <DialogContent className="w-[calc(100%-2rem)] max-w-md mx-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Repeat className="h-5 w-5 text-primary" />
-            Editar Sessão Recorrente
+            <Repeat className="h-5 w-5 text-primary shrink-0" />
+            <span>Editar Sessão Recorrente</span>
           </DialogTitle>
           <DialogDescription className="pt-2">
             {sessionDate && (
@@ -45,33 +45,33 @@ export const RecurringEditConfirmModal = ({
         </DialogHeader>
         
         <div className="flex flex-col gap-3 py-4">
-          <Button
-            variant="outline"
-            className="h-auto py-4 px-4 flex items-start gap-3 text-left hover:bg-accent justify-start"
+          <button
+            type="button"
+            className="w-full p-4 border border-border rounded-lg flex items-start gap-3 text-left hover:bg-accent transition-colors"
             onClick={() => handleChoice('this_only')}
           >
             <User className="h-5 w-5 mt-0.5 text-muted-foreground shrink-0" />
-            <div className="flex flex-col gap-1">
-              <span className="font-medium">Alterar apenas esta</span>
-              <span className="text-xs text-muted-foreground font-normal">
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="font-medium text-foreground">Alterar apenas esta</span>
+              <span className="text-xs text-muted-foreground">
                 A sessão será desvinculada da recorrência e se tornará uma sessão individual.
               </span>
             </div>
-          </Button>
+          </button>
           
-          <Button
-            variant="outline"
-            className="h-auto py-4 px-4 flex items-start gap-3 text-left hover:bg-accent justify-start"
+          <button
+            type="button"
+            className="w-full p-4 border border-border rounded-lg flex items-start gap-3 text-left hover:bg-accent transition-colors"
             onClick={() => handleChoice('all_future')}
           >
             <Repeat className="h-5 w-5 mt-0.5 text-primary shrink-0" />
-            <div className="flex flex-col gap-1">
-              <span className="font-medium">Alterar todas futuras</span>
-              <span className="text-xs text-muted-foreground font-normal">
+            <div className="flex flex-col gap-1 min-w-0">
+              <span className="font-medium text-foreground">Alterar todas futuras</span>
+              <span className="text-xs text-muted-foreground">
                 Aplica as alterações a esta sessão e todas as sessões futuras da série.
               </span>
             </div>
-          </Button>
+          </button>
         </div>
         
         <DialogFooter>
