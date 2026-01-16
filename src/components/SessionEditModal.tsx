@@ -9,9 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatTimeForDatabase } from "@/lib/utils"
-import { Package, Repeat, Info } from "lucide-react"
+import { Package, Repeat, Info, CalendarRange } from "lucide-react"
 import { useQuery } from "@tanstack/react-query"
 import { recalculateMultiplePackages } from "@/utils/packageUtils"
+import { RecurringEditConfirmModal, RecurringEditChoice } from "./RecurringEditConfirmModal"
+import { useRecurringSessions } from "@/hooks/useRecurringSessions"
 
 // Função para atualizar evento no Google Calendar
 const updateGoogleCalendarEvent = async (session: any, clientName: string): Promise<boolean> => {
@@ -81,6 +83,7 @@ export const SessionEditModal = ({
   onSessionUpdated 
 }: SessionEditModalProps) => {
   const { toast } = useToast()
+  const { unlinkSessionFromRecurring, updateAllFutureInstances } = useRecurringSessions()
   const [formData, setFormData] = useState({
     client_id: '',
     data: '',
@@ -92,6 +95,8 @@ export const SessionEditModal = ({
   })
   const [loading, setLoading] = useState(false)
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
+  const [showRecurringConfirm, setShowRecurringConfirm] = useState(false)
+  const [pendingFormData, setPendingFormData] = useState<typeof formData | null>(null)
 
   // Fetch package data for package sessions
   const { data: packageData } = useQuery({
@@ -165,11 +170,29 @@ export const SessionEditModal = ({
   // Verificar se a sessão é somente leitura (importada do Google)
   const isReadOnly = session?.google_sync_type === 'importado'
   
-  // Verificar se é uma sessão recorrente (edição limitada a status e anotações)
-  const isRecurringSession = !!session?.recurring_session_id
+  // Verificar se é uma sessão recorrente
+  const isRecurringSession = !!session?.recurring_session_id && !session?.unlinked_from_recurring
 
   // Check if session is from a package
   const isPackageSession = !!session?.package_id
+
+  // Fetch recurring session data for monthly plan check
+  const { data: recurringData } = useQuery({
+    queryKey: ['recurring-for-session', session?.recurring_session_id],
+    queryFn: async () => {
+      if (!session?.recurring_session_id) return null
+      const { data, error } = await supabase
+        .from('recurring_sessions')
+        .select('id, billing_type, monthly_plan_id, valor, metodo_pagamento')
+        .eq('id', session.recurring_session_id)
+        .single()
+      if (error) throw error
+      return data
+    },
+    enabled: !!session?.recurring_session_id && open
+  })
+
+  const isMonthlyPlanRecurring = recurringData?.billing_type === 'monthly_plan'
 
   // Fetch available packages for the selected client
   const { data: availablePackages = [] } = useQuery({
@@ -202,6 +225,195 @@ export const SessionEditModal = ({
   const handleSave = async () => {
     if (!session) return
 
+    // Se for sessão recorrente, mostrar modal de confirmação primeiro
+    if (isRecurringSession && !showRecurringConfirm) {
+      setPendingFormData(formData)
+      setShowRecurringConfirm(true)
+      return
+    }
+
+    await performSave(formData)
+  }
+
+  const handleRecurringEditChoice = async (choice: RecurringEditChoice) => {
+    if (!pendingFormData) return
+
+    if (choice === 'this_only') {
+      // Desvincular sessão e salvar como individual
+      await unlinkSessionFromRecurring(session.id)
+      await performSaveAsIndividual(pendingFormData)
+    } else {
+      // Atualizar todas as sessões futuras
+      await performSaveAllFuture(pendingFormData)
+    }
+    
+    setPendingFormData(null)
+  }
+
+  const performSaveAsIndividual = async (data: typeof formData) => {
+    setLoading(true)
+    try {
+      // Verificar se o cliente está inativo e reativá-lo se necessário
+      const selectedClient = clients.find(c => c.id === data.client_id)
+      if (selectedClient && !selectedClient.ativo) {
+        await supabase
+          .from('clients')
+          .update({ ativo: true })
+          .eq('id', data.client_id)
+      }
+
+      const valorNumerico = parseFloat(data.valor) || null
+
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          client_id: data.client_id,
+          data: data.data,
+          horario: formatTimeForDatabase(data.horario),
+          valor: valorNumerico,
+          metodo_pagamento: data.metodo_pagamento || null,
+          status: data.status,
+          anotacoes: data.anotacoes || null
+        })
+        .eq('id', session.id)
+
+      if (error) throw error
+
+      // Criar/atualizar pagamento
+      if (valorNumerico && valorNumerico > 0) {
+        const { data: existingPayment } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('session_id', session.id)
+          .maybeSingle()
+
+        if (existingPayment) {
+          await supabase
+            .from('payments')
+            .update({
+              valor: valorNumerico,
+              metodo_pagamento: data.metodo_pagamento || 'A definir'
+            })
+            .eq('session_id', session.id)
+        } else {
+          await supabase
+            .from('payments')
+            .insert([{
+              user_id: session.user_id,
+              session_id: session.id,
+              client_id: data.client_id,
+              valor: valorNumerico,
+              status: 'pendente',
+              data_vencimento: data.data,
+              metodo_pagamento: data.metodo_pagamento || 'A definir',
+              payment_type: 'session'
+            }])
+        }
+      }
+
+      toast({
+        title: "Sessão atualizada",
+        description: "A sessão foi desvinculada da recorrência e atualizada como sessão individual.",
+      })
+
+      onSessionUpdated()
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Erro ao atualizar sessão:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a sessão.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const performSaveAllFuture = async (data: typeof formData) => {
+    setLoading(true)
+    try {
+      // Atualizar todas as sessões futuras
+      const today = new Date().toISOString().split('T')[0]
+      const valorNumerico = parseFloat(data.valor) || null
+
+      const updateData: any = {
+        horario: formatTimeForDatabase(data.horario),
+        status: data.status,
+        anotacoes: data.anotacoes || null
+      }
+
+      // Só atualizar valor e método se não for plano mensal
+      if (!isMonthlyPlanRecurring) {
+        updateData.valor = valorNumerico
+        updateData.metodo_pagamento = data.metodo_pagamento || null
+      }
+
+      // Atualizar sessões futuras não modificadas
+      await supabase
+        .from('sessions')
+        .update(updateData)
+        .eq('recurring_session_id', session.recurring_session_id)
+        .eq('is_modified', false)
+        .gte('data', today)
+
+      // Atualizar a regra de recorrência também
+      const recurringUpdate: any = {
+        horario: formatTimeForDatabase(data.horario)
+      }
+      
+      if (!isMonthlyPlanRecurring) {
+        recurringUpdate.valor = valorNumerico
+        recurringUpdate.metodo_pagamento = data.metodo_pagamento || null
+      }
+
+      await supabase
+        .from('recurring_sessions')
+        .update(recurringUpdate)
+        .eq('id', session.recurring_session_id)
+
+      // Atualizar pagamentos pendentes das sessões futuras se não for plano mensal
+      if (!isMonthlyPlanRecurring && valorNumerico) {
+        const { data: updatedSessions } = await supabase
+          .from('sessions')
+          .select('id')
+          .eq('recurring_session_id', session.recurring_session_id)
+          .eq('is_modified', false)
+          .gte('data', today)
+
+        if (updatedSessions && updatedSessions.length > 0) {
+          const sessionIds = updatedSessions.map(s => s.id)
+          await supabase
+            .from('payments')
+            .update({
+              valor: valorNumerico,
+              metodo_pagamento: data.metodo_pagamento || 'A definir'
+            })
+            .in('session_id', sessionIds)
+            .eq('status', 'pendente')
+        }
+      }
+
+      toast({
+        title: "Série atualizada",
+        description: "Todas as sessões futuras foram atualizadas.",
+      })
+
+      onSessionUpdated()
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Erro ao atualizar série:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar as sessões.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const performSave = async (data: typeof formData) => {
     setLoading(true)
     try {
       // Se for importada (read-only), só atualiza valor e método de pagamento
@@ -252,28 +464,6 @@ export const SessionEditModal = ({
         toast({
           title: "Sessão atualizada",
           description: "Valor e método de pagamento atualizados com sucesso.",
-        })
-
-        onSessionUpdated()
-        onOpenChange(false)
-        return
-      }
-
-      // Se for sessão recorrente, só atualiza status e anotações
-      if (isRecurringSession) {
-        const { error } = await supabase
-          .from('sessions')
-          .update({
-            status: formData.status,
-            anotacoes: formData.anotacoes || null
-          })
-          .eq('id', session.id)
-
-        if (error) throw error
-
-        toast({
-          title: "Sessão atualizada",
-          description: "Status e anotações atualizados com sucesso.",
         })
 
         onSessionUpdated()
@@ -471,70 +661,173 @@ export const SessionEditModal = ({
     )
   }
 
-  // Modal para sessões recorrentes (edição limitada a status e anotações)
+  // Modal para sessões recorrentes - Agora com edição completa + modal de confirmação
   if (isRecurringSession) {
     return (
-      <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[450px]">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Repeat className="h-4 w-4" />
-              Editar Sessão Recorrente
-            </DialogTitle>
-          </DialogHeader>
-          
-          <Alert className="bg-muted/50">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Esta é uma sessão recorrente. Para editar cliente, data, horário, valor ou método de pagamento, acesse a página de <strong>Sessões Recorrentes</strong>.
-            </AlertDescription>
-          </Alert>
+      <>
+        <RecurringEditConfirmModal
+          open={showRecurringConfirm}
+          onOpenChange={setShowRecurringConfirm}
+          onConfirm={handleRecurringEditChoice}
+          sessionDate={session?.data}
+        />
+        
+        <Dialog open={open && !showRecurringConfirm} onOpenChange={onOpenChange}>
+          <DialogContent className="sm:max-w-[500px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Repeat className="h-4 w-4 text-primary" />
+                Editar Sessão Recorrente
+                {isMonthlyPlanRecurring && (
+                  <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                    Plano Mensal
+                  </span>
+                )}
+              </DialogTitle>
+            </DialogHeader>
+            
+            <Alert className="bg-accent/50 border-accent">
+              <CalendarRange className="h-4 w-4" />
+              <AlertDescription>
+                Esta sessão faz parte de uma série recorrente. Ao salvar, você escolherá se deseja alterar apenas esta ou todas as sessões futuras.
+              </AlertDescription>
+            </Alert>
 
-          <div className="space-y-4 mt-4">
-            <div>
-              <Label htmlFor="status">Status</Label>
-              <Select
-                value={formData.status}
-                onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione o status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="agendada">Agendada</SelectItem>
-                  <SelectItem value="realizada">Realizada</SelectItem>
-                  <SelectItem value="faltou">Falta</SelectItem>
-                  <SelectItem value="cancelada">Cancelada</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+            <div className="space-y-4 mt-2">
+              <div>
+                <Label htmlFor="client">Cliente</Label>
+                <Select
+                  value={formData.client_id}
+                  onValueChange={handleClientChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um cliente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clients.map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{client.nome}</span>
+                          {!client.ativo && (
+                            <span className="inline-flex items-center px-2 py-1 text-xs font-medium rounded-full bg-warning/10 text-warning">
+                              inativo
+                            </span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div>
-              <Label htmlFor="anotacoes">Anotações</Label>
-              <Textarea
-                id="anotacoes"
-                value={formData.anotacoes}
-                onChange={(e) => setFormData(prev => ({ ...prev, anotacoes: e.target.value }))}
-                placeholder="Observações sobre a sessão..."
-                rows={3}
-              />
-            </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="data">Data</Label>
+                  <Input
+                    id="data"
+                    type="date"
+                    value={formData.data}
+                    onChange={(e) => setFormData(prev => ({ ...prev, data: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="horario">Horário</Label>
+                  <Input
+                    id="horario"
+                    type="time"
+                    value={formData.horario}
+                    onChange={(e) => setFormData(prev => ({ ...prev, horario: e.target.value }))}
+                  />
+                </div>
+              </div>
 
-            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
-              <Button
-                variant="outline"
-                onClick={() => onOpenChange(false)}
-                disabled={loading}
-              >
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} disabled={loading}>
-                {loading ? 'Salvando...' : 'Salvar'}
-              </Button>
+              {/* Valor e método de pagamento - apenas se não for plano mensal */}
+              {isMonthlyPlanRecurring ? (
+                <Alert className="bg-muted/50">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription>
+                    Esta sessão está vinculada a um plano mensal. O valor é fixo mensal e não há cobrança por sessão.
+                  </AlertDescription>
+                </Alert>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="valor">Valor</Label>
+                    <Input
+                      id="valor"
+                      type="number"
+                      step="0.01"
+                      placeholder="Ex: 150.00"
+                      value={formData.valor}
+                      onChange={(e) => setFormData(prev => ({ ...prev, valor: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="metodo_pagamento">Método de Pagamento</Label>
+                    <Select
+                      value={formData.metodo_pagamento}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, metodo_pagamento: value }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um método" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pix">PIX</SelectItem>
+                        <SelectItem value="cartao">Cartão</SelectItem>
+                        <SelectItem value="boleto">Boleto</SelectItem>
+                        <SelectItem value="transferencia">Transferência</SelectItem>
+                        <SelectItem value="dinheiro">Dinheiro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <Label htmlFor="status">Status</Label>
+                <Select
+                  value={formData.status}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, status: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="agendada">Agendada</SelectItem>
+                    <SelectItem value="realizada">Realizada</SelectItem>
+                    <SelectItem value="faltou">Falta</SelectItem>
+                    <SelectItem value="cancelada">Cancelada</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="anotacoes">Anotações</Label>
+                <Textarea
+                  id="anotacoes"
+                  value={formData.anotacoes}
+                  onChange={(e) => setFormData(prev => ({ ...prev, anotacoes: e.target.value }))}
+                  placeholder="Observações sobre a sessão..."
+                  rows={3}
+                />
+              </div>
+
+              <div className="flex flex-col-reverse sm:flex-row gap-2 sm:justify-end pt-2">
+                <Button
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  disabled={loading}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={handleSave} disabled={loading}>
+                  {loading ? 'Salvando...' : 'Salvar'}
+                </Button>
+              </div>
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </>
     )
   }
 
