@@ -17,7 +17,9 @@ import {
   StickyNote,
   Package,
   Repeat,
-  PenLine
+  PenLine,
+  Pill,
+  Baby
 } from "lucide-react"
 import { formatCurrencyBR, formatTimeBR, formatDateBR } from "@/utils/formatters"
 import { TextPreview } from "./TextPreview"
@@ -98,8 +100,14 @@ export const SessionDetailsModal = ({
               <User className={`w-8 h-8 text-muted-foreground ${avatarUrl ? 'hidden' : ''}`} />
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-2xl">
+              <DialogTitle className="text-2xl flex items-center gap-2">
                 {session.clients?.nome || 'Cliente não encontrado'}
+                {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
+                  <Pill className="w-5 h-5 text-pink-500" />
+                )}
+                {session.clients?.eh_crianca_adolescente && (
+                  <Baby className="w-5 h-5 text-blue-500" />
+                )}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={getStatusColor(session.status)}>

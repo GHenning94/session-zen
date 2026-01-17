@@ -343,6 +343,8 @@ const getSessionPayments = () => {
       id: p.id,
       client: client?.nome || 'Cliente não encontrado',
       client_avatar: client?.avatar_url,
+      has_medications: client?.medicamentos && client.medicamentos.length > 0,
+      is_child: client?.eh_crianca_adolescente,
       date: isMonthlyPlan 
         ? (p.monthly_plans?.data_inicio || effDateStr)
         : isPackage 
