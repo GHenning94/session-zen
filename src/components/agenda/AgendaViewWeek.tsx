@@ -239,11 +239,19 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                           const sessionId = e.dataTransfer.getData('session-id')
                           
                           if (sessionId) {
-                            // For week view drag, open edit modal instead of directly moving
-                            // This respects recurring session rules
                             const session = sessions.find(s => s.id === sessionId)
                             if (session) {
-                              onEditSession(session)
+                              const newDate = format(day, 'yyyy-MM-dd')
+                              const newTime = timeSlot.timeString
+                              
+                              // Check if it's a recurring session (not package)
+                              if (session.recurring_session_id && !session.package_id) {
+                                // For recurring sessions, open edit modal to choose edit scope
+                                onEditSession(session)
+                              } else {
+                                // For individual or package sessions, move directly
+                                onDragSession?.(sessionId, newDate, newTime)
+                              }
                             }
                           }
                         }}
