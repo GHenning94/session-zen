@@ -130,7 +130,7 @@ const [isLoading, setIsLoading] = useState(false)
         // Carregar clientes (apenas campos necessários)
         supabase
           .from('clients')
-          .select('id, nome, avatar_url, user_id')
+          .select('id, nome, avatar_url, user_id, medicamentos, eh_crianca_adolescente')
           .eq('user_id', user.id),
         
         // Carregar perfil do profissional (apenas campos para recibo)
