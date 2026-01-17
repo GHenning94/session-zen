@@ -334,9 +334,10 @@ export const SessionEditModal = ({
   const performSaveAllFuture = async (data: typeof formData) => {
     setLoading(true)
     try {
-      // Atualizar todas as sessões futuras
-      const today = new Date().toISOString().split('T')[0]
       const valorNumerico = parseFloat(data.valor) || null
+
+      console.log('performSaveAllFuture - recurring_session_id:', session.recurring_session_id)
+      console.log('performSaveAllFuture - session.data:', session.data)
 
       // Buscar TODAS as sessões futuras da série (incluindo a atual)
       const { data: futureSessions, error: fetchError } = await supabase
@@ -344,6 +345,8 @@ export const SessionEditModal = ({
         .select('id, data')
         .eq('recurring_session_id', session.recurring_session_id)
         .gte('data', session.data) // A partir da data da sessão atual
+
+      console.log('performSaveAllFuture - sessões encontradas:', futureSessions?.length, futureSessions)
 
       if (fetchError) {
         console.error('Erro ao buscar sessões futuras:', fetchError)
