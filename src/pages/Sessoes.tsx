@@ -1040,8 +1040,8 @@ export default function Sessoes() {
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
-                <div className="grid grid-cols-2 md:grid-cols-5 lg:grid-cols-10 gap-3 md:gap-4">
-                  <div className="col-span-2 md:col-span-1">
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3 md:gap-4">
+                  <div className="col-span-2">
                     <Label htmlFor="search" className="text-xs">Buscar</Label>
                     <Input
                       id="search"
