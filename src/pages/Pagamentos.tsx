@@ -999,21 +999,21 @@ const pastPayments = filteredPayments.filter(item => {
                                      {payment.google_sync_type && (
                                        <GoogleSyncBadge syncType={payment.google_sync_type} />
                                      )}
-                                     {payment.type === 'package' && (
-                                       <Package className="h-4 w-4 text-primary" />
-                                     )}
-                                     {payment.type === 'monthly_plan' && (
-                                       <>
-                                         <Repeat className="h-4 w-4 text-primary" />
-                                         <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
-                                           <CalendarCheck className="h-3 w-3 mr-1" />
-                                           Plano mensal
-                                         </Badge>
-                                       </>
-                                     )}
-                                     {payment.recurring_session_id && payment.type !== 'monthly_plan' && payment.type !== 'package' && (
-                                       <Repeat className="h-4 w-4 text-primary" />
-                                     )}
+                                      {payment.type === 'package' && (
+                                        <Package className="h-4 w-4 text-primary" />
+                                      )}
+                                      {payment.type === 'monthly_plan' && (
+                                        <>
+                                          <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                            <CalendarCheck className="h-3 w-3 mr-1" />
+                                            Plano mensal
+                                          </Badge>
+                                          <Repeat className="h-4 w-4 text-primary" />
+                                        </>
+                                      )}
+                                      {payment.recurring_session_id && payment.type !== 'monthly_plan' && payment.type !== 'package' && (
+                                        <Repeat className="h-4 w-4 text-primary" />
+                                      )}
                                    </div>
                                    <div className="text-sm text-muted-foreground space-y-1">
                                      <div className="flex flex-wrap items-center gap-2 md:gap-4">
@@ -1138,11 +1138,11 @@ const pastPayments = filteredPayments.filter(item => {
                               )}
                               {payment.type === 'monthly_plan' && (
                                 <>
-                                  <Repeat className="h-4 w-4 text-primary" />
                                   <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
                                     <CalendarCheck className="h-3 w-3 mr-1" />
                                     Plano mensal
                                   </Badge>
+                                  <Repeat className="h-4 w-4 text-primary" />
                                 </>
                               )}
                               {payment.recurring_session_id && payment.type !== 'monthly_plan' && payment.type !== 'package' && (

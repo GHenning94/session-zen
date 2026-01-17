@@ -1173,13 +1173,13 @@ export default function Sessoes() {
                                       )}
                                       {session.recurring_session_id && !session.package_id && (
                                         <>
-                                          <Repeat className="h-4 w-4 text-primary" />
                                           {(session as any).recurring_sessions?.billing_type === 'monthly_plan' && (
                                             <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
                                               <CalendarDays className="h-3 w-3 mr-1" />
                                               Plano mensal
                                             </Badge>
                                           )}
+                                          <Repeat className="h-4 w-4 text-primary" />
                                         </>
                                       )}
                                       {sessionNotes.some(note => note.session_id === session.id) && (
@@ -1273,13 +1273,13 @@ export default function Sessoes() {
                                 )}
                                 {session.recurring_session_id && !session.package_id && (
                                   <>
-                                    <Repeat className="h-4 w-4 text-primary" />
                                     {(session as any).recurring_sessions?.billing_type === 'monthly_plan' && (
                                       <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
                                         <CalendarDays className="h-3 w-3 mr-1" />
                                         Plano mensal
                                       </Badge>
                                     )}
+                                    <Repeat className="h-4 w-4 text-primary" />
                                   </>
                                 )}
                                 {sessionNotes.some(note => note.session_id === session.id) && (

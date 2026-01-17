@@ -238,10 +238,13 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                           e.currentTarget.classList.remove('bg-primary/10')
                           const sessionId = e.dataTransfer.getData('session-id')
                           
-                          if (sessionId && onDragSession) {
-                            const newDate = format(day, 'yyyy-MM-dd')
-                            const newTime = timeSlot.timeString
-                            onDragSession(sessionId, newDate, newTime)
+                          if (sessionId) {
+                            // For week view drag, open edit modal instead of directly moving
+                            // This respects recurring session rules
+                            const session = sessions.find(s => s.id === sessionId)
+                            if (session) {
+                              onEditSession(session)
+                            }
                           }
                         }}
                       >
