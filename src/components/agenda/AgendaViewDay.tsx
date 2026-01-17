@@ -130,10 +130,13 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
 
   const handleDrop = (e: React.DragEvent, hour: number) => {
     e.preventDefault()
-    if (draggedSession && onDragSession) {
-      const newDate = format(currentDate, 'yyyy-MM-dd')
-      const newTime = `${String(hour).padStart(2, '0')}:00`
-      onDragSession(draggedSession, newDate, newTime)
+    if (draggedSession) {
+      // For day view drag, open edit modal instead of directly moving
+      // This respects recurring session rules
+      const session = sessions.find(s => s.id === draggedSession)
+      if (session) {
+        onEditSession(session)
+      }
       setDraggedSession(null)
     }
   }

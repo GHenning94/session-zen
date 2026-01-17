@@ -134,8 +134,9 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
     if (draggedSession) {
       const session = sessions.find(s => s.id === draggedSession)
       if (session) {
-        const newDate = format(targetDate, 'yyyy-MM-dd')
-        await onDragSession(draggedSession, newDate, session.horario)
+        // For month view drag, open edit modal instead of directly moving
+        // This respects recurring session rules
+        onEditSession(session)
       }
       setDraggedSession(null)
     }

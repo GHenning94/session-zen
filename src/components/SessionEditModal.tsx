@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { formatTimeForDatabase } from "@/lib/utils"
 import { Package, Repeat, Info, CalendarRange } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
 import { useQuery } from "@tanstack/react-query"
 import { recalculateMultiplePackages } from "@/utils/packageUtils"
 import { RecurringEditConfirmModal, RecurringEditChoice } from "./RecurringEditConfirmModal"
@@ -679,9 +680,10 @@ export const SessionEditModal = ({
                 <Repeat className="h-4 w-4 text-primary" />
                 Editar Sessão Recorrente
                 {isMonthlyPlanRecurring && (
-                  <span className="ml-2 text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">
-                    Plano Mensal
-                  </span>
+                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                    <CalendarRange className="h-3 w-3 mr-1" />
+                    Plano mensal
+                  </Badge>
                 )}
               </DialogTitle>
             </DialogHeader>
