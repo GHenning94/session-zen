@@ -1003,9 +1003,15 @@ const pastPayments = filteredPayments.filter(item => {
                                        <Package className="h-4 w-4 text-primary" />
                                      )}
                                      {payment.type === 'monthly_plan' && (
-                                       <CalendarCheck className="h-4 w-4 text-primary" />
+                                       <>
+                                         <Repeat className="h-4 w-4 text-primary" />
+                                         <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                           <CalendarCheck className="h-3 w-3 mr-1" />
+                                           Plano mensal
+                                         </Badge>
+                                       </>
                                      )}
-                                     {payment.recurring_session_id && payment.type !== 'monthly_plan' && (
+                                     {payment.recurring_session_id && payment.type !== 'monthly_plan' && payment.type !== 'package' && (
                                        <Repeat className="h-4 w-4 text-primary" />
                                      )}
                                    </div>
@@ -1130,7 +1136,16 @@ const pastPayments = filteredPayments.filter(item => {
                               {payment.type === 'package' && (
                                 <Package className="h-4 w-4 text-primary" />
                               )}
-                              {payment.recurring_session_id && (
+                              {payment.type === 'monthly_plan' && (
+                                <>
+                                  <Repeat className="h-4 w-4 text-primary" />
+                                  <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                    <CalendarCheck className="h-3 w-3 mr-1" />
+                                    Plano mensal
+                                  </Badge>
+                                </>
+                              )}
+                              {payment.recurring_session_id && payment.type !== 'monthly_plan' && payment.type !== 'package' && (
                                 <Repeat className="h-4 w-4 text-primary" />
                               )}
                             </div>

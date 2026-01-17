@@ -760,7 +760,7 @@ export const SessionModal = ({
                 <Label className="text-sm font-medium">Regra de recorrência</Label>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <Label className="text-xs text-muted-foreground">Frequência</Label>
+                    <Label className="text-xs text-muted-foreground">Frequência *</Label>
                     <Select
                       value={recurringData.recurrence_type}
                       onValueChange={(v: any) => setRecurringData({ ...recurringData, recurrence_type: v })}
@@ -776,7 +776,7 @@ export const SessionModal = ({
                   </div>
 
                   <div>
-                    <Label className="text-xs text-muted-foreground">Repetir a cada</Label>
+                    <Label className="text-xs text-muted-foreground">Repetir a cada *</Label>
                     <div className="flex items-center gap-2">
                       <Input
                         type="number"
@@ -796,7 +796,7 @@ export const SessionModal = ({
 
                   {recurringData.recurrence_type === 'semanal' && (
                     <div className="col-span-2">
-                      <Label className="text-xs text-muted-foreground">Dia da semana</Label>
+                      <Label className="text-xs text-muted-foreground">Dia da semana *</Label>
                       <Select
                         value={recurringData.dia_da_semana?.toString()}
                         onValueChange={(v) => setRecurringData({ ...recurringData, dia_da_semana: parseInt(v) })}
@@ -982,7 +982,7 @@ export const SessionModal = ({
                         />
                       </div>
                       <div>
-                        <Label>Dia de cobrança</Label>
+                        <Label>Dia de cobrança *</Label>
                         <Select
                           value={recurringData.billing_day.toString()}
                           onValueChange={(v) => setRecurringData({ ...recurringData, billing_day: parseInt(v) })}
@@ -996,7 +996,7 @@ export const SessionModal = ({
                         </Select>
                       </div>
                       <div>
-                        <Label>Início do plano</Label>
+                        <Label>Início do plano *</Label>
                         <Popover>
                           <PopoverTrigger asChild>
                             <Button variant="outline" className="w-full justify-start font-normal">

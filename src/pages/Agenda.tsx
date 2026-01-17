@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
 import { SessionModal } from "@/components/SessionModal"
+import { SessionEditModal } from "@/components/SessionEditModal"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { 
@@ -61,6 +62,7 @@ const Agenda = () => {
   const [currentView, setCurrentView] = useState<'day' | 'week' | 'month'>('month')
   const [isNewSessionOpen, setIsNewSessionOpen] = useState(false)
   const [editingSession, setEditingSession] = useState<any>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
   const [highlightedSessionId, setHighlightedSessionId] = useState<string | null>(null)
   const [searchParams, setSearchParams] = useSearchParams()
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
@@ -171,14 +173,9 @@ const Agenda = () => {
     // Clear highlight when session is clicked
     setHighlightedSessionId(null)
     setEditingSession(session)
-    setNewSession({
-      client_id: session.client_id,
-      data: session.data,
-      horario: session.horario,
-      valor: session.valor?.toString() || "",
-      anotacoes: session.anotacoes || ""
-    })
-    setIsNewSessionOpen(true)
+    
+    // Use SessionEditModal for all sessions (handles recurring logic internally)
+    setIsEditModalOpen(true)
   }
 
   const handleDragSession = async (sessionId: string, newDate: string, newTime?: string) => {
@@ -276,16 +273,33 @@ const Agenda = () => {
         <SessionModal
           open={isNewSessionOpen}
           onOpenChange={setIsNewSessionOpen}
-          session={editingSession}
+          session={null}
           selectedDate={selectedDate}
           prefilledTime={prefilledTime}
           onSuccess={() => {
             setIsNewSessionOpen(false)
-            setEditingSession(null)
             setPrefilledTime("")
-            refreshData() // Reload data to show the new session immediately
+            refreshData()
           }}
         />
+
+        {/* Session Edit Modal - handles recurring session rules */}
+        {editingSession && (
+          <SessionEditModal
+            session={editingSession}
+            clients={clients}
+            open={isEditModalOpen}
+            onOpenChange={(open) => {
+              setIsEditModalOpen(open)
+              if (!open) setEditingSession(null)
+            }}
+            onSessionUpdated={() => {
+              setIsEditModalOpen(false)
+              setEditingSession(null)
+              refreshData()
+            }}
+          />
+        )}
 
         {/* Navigation - Mobile optimized */}
         <div className="space-y-3">

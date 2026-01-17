@@ -2743,7 +2743,18 @@ const Dashboard = () => {
             {/* Upgrade de Plano */}
             <Card className="shadow-soft opacity-0 animate-scale-fade-in" style={{ animationDelay: '400ms' }}>
               <CardContent className="p-6">
-                <UpgradePlanCard currentPlan={currentPlan} currentBillingInterval={billingInterval} />
+                {isSubscriptionLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-10 w-full" />
+                    <div className="grid gap-4">
+                      <Skeleton className="h-32 w-full" />
+                      <Skeleton className="h-32 w-full" />
+                    </div>
+                  </div>
+                ) : (
+                  <UpgradePlanCard currentPlan={currentPlan} currentBillingInterval={billingInterval} />
+                )}
               </CardContent>
             </Card>
 
