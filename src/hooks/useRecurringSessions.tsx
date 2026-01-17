@@ -530,17 +530,30 @@ export const useRecurringSessions = () => {
       
       // Atualizar todas as sessões futuras não modificadas
       const today = new Date().toISOString().split('T')[0];
-      const { error } = await supabase
+      const { error: updateError, count } = await supabase
         .from('sessions')
         .update(formattedData)
         .eq('recurring_session_id', recurringId)
         .eq('is_modified', false)
         .gte('data', today);
 
-      if (error) throw error;
+      if (updateError) {
+        console.error('Erro ao atualizar sessões:', updateError);
+        throw updateError;
+      }
+
+      console.log(`Sessões atualizadas: ${count}`);
 
       // Atualizar a regra de recorrência também
-      await updateRecurring(recurringId, formattedData, false);
+      const { error: recurringError } = await supabase
+        .from('recurring_sessions')
+        .update(formattedData)
+        .eq('id', recurringId);
+
+      if (recurringError) {
+        console.error('Erro ao atualizar recorrência:', recurringError);
+        // Não throw aqui para não afetar o fluxo principal
+      }
 
       toast({
         title: 'Série atualizada',

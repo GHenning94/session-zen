@@ -107,6 +107,15 @@ const Agenda = () => {
     }
   }, [searchParams, setSearchParams, sessions])
 
+  // Listen for recurring session updates from other components
+  useEffect(() => {
+    const handleRecurringUpdate = () => {
+      refreshData()
+    }
+    window.addEventListener('recurringSessionUpdated', handleRecurringUpdate)
+    return () => window.removeEventListener('recurringSessionUpdated', handleRecurringUpdate)
+  }, [refreshData])
+
   const handleSaveSession = async () => {
     if (!newSession.client_id || !newSession.data || !newSession.horario) {
       toast({
@@ -266,6 +275,7 @@ const Agenda = () => {
       const hasOtherFutureSessions = otherFutureSessions.length > 0
       
       // Update each future session
+      let updateErrors = 0
       for (const futureSession of futureSessions) {
         // Use T12:00:00 to avoid timezone issues
         const futureOriginalDate = new Date(futureSession.data + 'T12:00:00')
@@ -277,10 +287,15 @@ const Agenda = () => {
           updateData.horario = newTime
         }
         
-        await supabase
+        const { error } = await supabase
           .from('sessions')
           .update(updateData)
           .eq('id', futureSession.id)
+
+        if (error) {
+          console.error('Erro ao atualizar sessão:', futureSession.id, error)
+          updateErrors++
+        }
       }
       
       // Always update the recurring_sessions template with the new day of week
@@ -291,13 +306,23 @@ const Agenda = () => {
         recurringUpdateData.horario = newTime
       }
       
-      await supabase
+      const { error: recurringError } = await supabase
         .from('recurring_sessions')
         .update(recurringUpdateData)
         .eq('id', session.recurring_session_id)
+
+      if (recurringError) {
+        console.error('Erro ao atualizar recorrência:', recurringError)
+      }
       
       // Mostrar mensagem apropriada
-      if (!hasOtherFutureSessions) {
+      if (updateErrors > 0) {
+        toast({
+          title: "Aviso",
+          description: `${futureSessions.length - updateErrors} de ${futureSessions.length} sessões foram atualizadas. Algumas falharam.`,
+          variant: "destructive"
+        })
+      } else if (!hasOtherFutureSessions) {
         toast({
           title: "Sessão movida",
           description: "Não existem sessões futuras para aplicar esta alteração. A alteração foi aplicada apenas a esta sessão.",

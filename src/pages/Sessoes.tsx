@@ -175,6 +175,15 @@ export default function Sessoes() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [user])
 
+  // Listen for recurring session updates from other components
+  useEffect(() => {
+    const handleRecurringUpdate = () => {
+      loadData()
+    }
+    window.addEventListener('recurringSessionUpdated', handleRecurringUpdate)
+    return () => window.removeEventListener('recurringSessionUpdated', handleRecurringUpdate)
+  }, [])
+
   const loadData = async () => {
     try {
       setLoading(true)

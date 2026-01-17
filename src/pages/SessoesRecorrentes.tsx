@@ -81,6 +81,15 @@ export default function SessoesRecorrentes() {
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
   }, [user, refetch])
 
+  // Listen for recurring session updates from other components
+  useEffect(() => {
+    const handleRecurringUpdate = () => {
+      refetch()
+    }
+    window.addEventListener('recurringSessionUpdated', handleRecurringUpdate)
+    return () => window.removeEventListener('recurringSessionUpdated', handleRecurringUpdate)
+  }, [refetch])
+
   // Contar instâncias geradas (futuras)
   const { data: instanceCounts = {} } = useQuery({
     queryKey: ['recurring-instances-count', user?.id],
