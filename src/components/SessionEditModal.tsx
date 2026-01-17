@@ -336,8 +336,14 @@ export const SessionEditModal = ({
     try {
       const valorNumerico = parseFloat(data.valor) || null
 
+      // Calcular diferença de dias entre a data original e a nova data
+      const originalDate = new Date(session.data + 'T12:00:00')
+      const targetDate = new Date(data.data + 'T12:00:00')
+      const dayDiff = Math.round((targetDate.getTime() - originalDate.getTime()) / (1000 * 60 * 60 * 24))
+      const dateChanged = dayDiff !== 0
+
       console.log('performSaveAllFuture - recurring_session_id:', session.recurring_session_id)
-      console.log('performSaveAllFuture - session.data:', session.data)
+      console.log('performSaveAllFuture - data original:', session.data, '-> nova data:', data.data, 'diff:', dayDiff)
 
       // Buscar TODAS as sessões futuras da série (incluindo a atual)
       const { data: futureSessions, error: fetchError } = await supabase
@@ -357,21 +363,30 @@ export const SessionEditModal = ({
       const otherFutureSessions = futureSessions?.filter(s => s.id !== session.id) || []
       const hasOtherFutureSessions = otherFutureSessions.length > 0
 
-      const updateData: any = {
-        horario: formatTimeForDatabase(data.horario),
-        status: data.status,
-        anotacoes: data.anotacoes || null
-      }
-
-      // Só atualizar valor e método se não for plano mensal
-      if (!isMonthlyPlanRecurring) {
-        updateData.valor = valorNumerico
-        updateData.metodo_pagamento = data.metodo_pagamento || null
-      }
-
       // Atualizar TODAS as sessões futuras (a partir da data da sessão atual)
       let updateErrors = 0
       for (const futureSession of futureSessions || []) {
+        const updateData: any = {
+          horario: formatTimeForDatabase(data.horario),
+          status: data.status,
+          anotacoes: data.anotacoes || null
+        }
+
+        // Se a data foi alterada, calcular nova data para esta sessão
+        if (dateChanged) {
+          const futureOriginalDate = new Date(futureSession.data + 'T12:00:00')
+          futureOriginalDate.setDate(futureOriginalDate.getDate() + dayDiff)
+          const futureNewDate = futureOriginalDate.toISOString().split('T')[0]
+          updateData.data = futureNewDate
+          console.log('Atualizando sessão', futureSession.id, 'de', futureSession.data, 'para', futureNewDate)
+        }
+
+        // Só atualizar valor e método se não for plano mensal
+        if (!isMonthlyPlanRecurring) {
+          updateData.valor = valorNumerico
+          updateData.metodo_pagamento = data.metodo_pagamento || null
+        }
+
         const { error } = await supabase
           .from('sessions')
           .update(updateData)
@@ -386,6 +401,11 @@ export const SessionEditModal = ({
       // Atualizar a regra de recorrência também
       const recurringUpdate: any = {
         horario: formatTimeForDatabase(data.horario)
+      }
+      
+      // Se a data foi alterada, atualizar o dia da semana na recorrência
+      if (dateChanged) {
+        recurringUpdate.dia_da_semana = targetDate.getDay()
       }
       
       if (!isMonthlyPlanRecurring) {
