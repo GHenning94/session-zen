@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Layout } from "@/components/Layout"
 import { SessionModal } from "@/components/SessionModal"
 import { SessionEditModal } from "@/components/SessionEditModal"
+import { RecurringEditConfirmModal, RecurringEditChoice } from "@/components/RecurringEditConfirmModal"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { 
@@ -67,6 +68,11 @@ const Agenda = () => {
   const [searchParams, setSearchParams] = useSearchParams()
   const [showReactivationMessage, setShowReactivationMessage] = useState(false)
   const [prefilledTime, setPrefilledTime] = useState<string>("")
+  
+  // States for recurring session drag/drop
+  const [showRecurringDragModal, setShowRecurringDragModal] = useState(false)
+  const [draggedRecurringSession, setDraggedRecurringSession] = useState<any>(null)
+  const [pendingDragData, setPendingDragData] = useState<{ newDate: string; newTime?: string } | null>(null)
 
   // Formulário para nova sessão
   const [newSession, setNewSession] = useState({
@@ -179,7 +185,120 @@ const Agenda = () => {
   }
 
   const handleDragSession = async (sessionId: string, newDate: string, newTime?: string) => {
+    // Find the session being dragged
+    const session = sessions.find(s => s.id === sessionId)
+    
+    if (session) {
+      // Check if it's a recurring session (not package)
+      if (session.recurring_session_id && !session.package_id) {
+        // Store the pending drag data and show the confirmation modal
+        setDraggedRecurringSession(session)
+        setPendingDragData({ newDate, newTime })
+        setShowRecurringDragModal(true)
+        return
+      }
+    }
+    
+    // For individual or package sessions, move directly
     await moveSession(sessionId, newDate, newTime)
+  }
+
+  const handleRecurringDragConfirm = async (choice: RecurringEditChoice) => {
+    if (!draggedRecurringSession || !pendingDragData) return
+    
+    const { newDate, newTime } = pendingDragData
+    const session = draggedRecurringSession
+    
+    if (choice === 'this_only') {
+      // Unlink from recurring and move just this session
+      const updateData: any = {
+        data: newDate,
+        recurring_session_id: null,
+        unlinked_from_recurring: true
+      }
+      if (newTime) {
+        updateData.horario = newTime
+      }
+      
+      const { error } = await supabase
+        .from('sessions')
+        .update(updateData)
+        .eq('id', session.id)
+      
+      if (error) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível mover a sessão.",
+          variant: "destructive"
+        })
+      } else {
+        toast({
+          title: "Sessão movida",
+          description: "A sessão foi desvinculada da série e movida.",
+        })
+        refreshData()
+      }
+    } else if (choice === 'all_future') {
+      // Calculate the difference and update all future sessions
+      const originalDate = new Date(session.data)
+      const targetDate = new Date(newDate)
+      const dayDiff = Math.round((targetDate.getTime() - originalDate.getTime()) / (1000 * 60 * 60 * 24))
+      
+      // Get all future sessions in this recurring series
+      const { data: futureSessions, error: fetchError } = await supabase
+        .from('sessions')
+        .select('id, data, horario')
+        .eq('recurring_session_id', session.recurring_session_id)
+        .gte('data', session.data)
+      
+      if (fetchError || !futureSessions) {
+        toast({
+          title: "Erro",
+          description: "Não foi possível buscar as sessões futuras.",
+          variant: "destructive"
+        })
+        return
+      }
+      
+      // Update each future session
+      for (const futureSession of futureSessions) {
+        const futureOriginalDate = new Date(futureSession.data)
+        futureOriginalDate.setDate(futureOriginalDate.getDate() + dayDiff)
+        const futureNewDate = futureOriginalDate.toISOString().split('T')[0]
+        
+        const updateData: any = { data: futureNewDate }
+        if (newTime) {
+          updateData.horario = newTime
+        }
+        
+        await supabase
+          .from('sessions')
+          .update(updateData)
+          .eq('id', futureSession.id)
+      }
+      
+      // Also update the recurring_sessions template if time changed
+      if (newTime) {
+        await supabase
+          .from('recurring_sessions')
+          .update({ 
+            horario: newTime,
+            dia_da_semana: targetDate.getDay()
+          })
+          .eq('id', session.recurring_session_id)
+      }
+      
+      toast({
+        title: "Sessões movidas",
+        description: `${futureSessions.length} sessão(ões) futura(s) foram atualizadas.`,
+      })
+      refreshData()
+    }
+    
+    // Reset states
+    setDraggedRecurringSession(null)
+    setPendingDragData(null)
+    setShowRecurringDragModal(false)
   }
 
   const handleCreateSession = (date: Date, time?: string) => {
@@ -300,6 +419,20 @@ const Agenda = () => {
             }}
           />
         )}
+
+        {/* Recurring Session Drag Confirmation Modal */}
+        <RecurringEditConfirmModal
+          open={showRecurringDragModal}
+          onOpenChange={(open) => {
+            setShowRecurringDragModal(open)
+            if (!open) {
+              setDraggedRecurringSession(null)
+              setPendingDragData(null)
+            }
+          }}
+          onConfirm={handleRecurringDragConfirm}
+          sessionDate={draggedRecurringSession?.data}
+        />
 
         {/* Navigation - Mobile optimized */}
         <div className="space-y-3">

@@ -130,21 +130,11 @@ export const AgendaViewDay: React.FC<AgendaViewDayProps> = ({
 
   const handleDrop = (e: React.DragEvent, hour: number) => {
     e.preventDefault()
-    if (draggedSession) {
-      const session = sessions.find(s => s.id === draggedSession)
-      if (session) {
-        const newDate = format(currentDate, 'yyyy-MM-dd')
-        const newTime = `${String(hour).padStart(2, '0')}:00`
-        
-        // Check if it's a recurring session (not package)
-        if (session.recurring_session_id && !session.package_id) {
-          // For recurring sessions, open edit modal to choose edit scope
-          onEditSession(session)
-        } else {
-          // For individual or package sessions, move directly
-          onDragSession?.(draggedSession, newDate, newTime)
-        }
-      }
+    if (draggedSession && onDragSession) {
+      const newDate = format(currentDate, 'yyyy-MM-dd')
+      const newTime = `${String(hour).padStart(2, '0')}:00`
+      // Pass to onDragSession - it will handle the recurring logic
+      onDragSession(draggedSession, newDate, newTime)
       setDraggedSession(null)
     }
   }

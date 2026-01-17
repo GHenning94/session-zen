@@ -135,15 +135,8 @@ const AgendaViewMonth: React.FC<AgendaViewMonthProps> = ({
       const session = sessions.find(s => s.id === draggedSession)
       if (session) {
         const newDate = format(targetDate, 'yyyy-MM-dd')
-        
-        // Check if it's a recurring session (not package)
-        if (session.recurring_session_id && !session.package_id) {
-          // For recurring sessions, open edit modal to choose edit scope
-          onEditSession(session)
-        } else {
-          // For individual or package sessions, move directly
-          await onDragSession(draggedSession, newDate, session.horario)
-        }
+        // Pass the session to onDragSession - it will handle the recurring logic
+        await onDragSession(draggedSession, newDate, session.horario)
       }
       setDraggedSession(null)
     }
