@@ -1001,14 +1001,20 @@ export default function Sessoes() {
                       placeholder="Cliente ou anotações..."
                       value={filters.search}
                       onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                      className="h-9 text-sm"
+                      className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.search !== '' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}
                     />
                   </div>
                   
                   <div>
                     <Label htmlFor="status-filter" className="text-xs">Status</Label>
                     <Select value={filters.status} onValueChange={(value) => setFilters(prev => ({ ...prev, status: value }))}>
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.status !== '' && filters.status !== 'all' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1024,7 +1030,10 @@ export default function Sessoes() {
                   <div>
                     <Label htmlFor="type-filter" className="text-xs">Tipo</Label>
                     <Select value={filters.sessionType} onValueChange={(value) => setFilters(prev => ({ ...prev, sessionType: value }))}>
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.sessionType !== '' && filters.sessionType !== 'all' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1040,7 +1049,10 @@ export default function Sessoes() {
                   <div>
                     <Label htmlFor="google-sync-filter" className="text-xs">Sincronia</Label>
                     <Select value={filters.googleSync} onValueChange={(value) => setFilters(prev => ({ ...prev, googleSync: value }))}>
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.googleSync !== '' && filters.googleSync !== 'all' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
                       <SelectContent>
@@ -1060,7 +1072,10 @@ export default function Sessoes() {
                       type="date"
                       value={filters.startDate}
                       onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                      className="h-9 text-sm"
+                      className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.startDate !== '' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}
                     />
                   </div>
                   
@@ -1071,7 +1086,10 @@ export default function Sessoes() {
                       type="date"
                       value={filters.endDate}
                       onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                      className="h-9 text-sm"
+                      className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.endDate !== '' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}
                     />
                   </div>
 

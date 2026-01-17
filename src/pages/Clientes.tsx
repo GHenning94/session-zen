@@ -725,7 +725,10 @@ const Clientes = () => {
                         placeholder="Nome, e-mail ou telefone..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="h-9 text-sm pl-9"
+                        className={cn(
+                          "h-9 text-sm pl-9 transition-all",
+                          searchTerm !== '' && "ring-2 ring-primary ring-offset-1 border-primary"
+                        )}
                       />
                     </div>
                   </div>
@@ -733,7 +736,10 @@ const Clientes = () => {
                   <div>
                     <Label htmlFor="status-filter" className="text-xs">Status</Label>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        statusFilter !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue placeholder="Todos" />
                       </SelectTrigger>
                       <SelectContent>
@@ -750,8 +756,8 @@ const Clientes = () => {
                       variant={birthdayFilter ? "default" : "outline"}
                       size="sm" 
                       className={cn(
-                        "w-full h-9 gap-2",
-                        birthdayFilter && "bg-pink-500 hover:bg-pink-600 text-white"
+                        "w-full h-9 gap-2 transition-all",
+                        birthdayFilter && "bg-pink-500 hover:bg-pink-600 text-white ring-2 ring-pink-500 ring-offset-1"
                       )}
                       onClick={() => {
                         setBirthdayFilter(!birthdayFilter)
