@@ -1515,6 +1515,36 @@ const Dashboard = () => {
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
+                                  {session.package_id && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Package className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Sessão de pacote</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {session.recurring_session_id && !session.recurring_sessions?.monthly_plan_id && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Sessão recorrente</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {session.recurring_sessions?.monthly_plan_id && (
+                                    <Tooltip>
+                                      <TooltipTrigger>
+                                        <CalendarDays className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
+                                      </TooltipTrigger>
+                                      <TooltipContent>
+                                        <p>Plano mensal</p>
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
                                 </TooltipProvider>
                               </div>
                              <p className="text-xs md:text-sm text-muted-foreground">
@@ -1546,16 +1576,6 @@ const Dashboard = () => {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Possui anotação</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                              {session.package_id && (
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <Package className="w-3 h-3 md:w-4 md:h-4 text-primary" />
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>Sessão de pacote</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
@@ -1674,8 +1694,8 @@ const Dashboard = () => {
                           <div>
                             <div className="flex items-center gap-1.5">
                               <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
-                              {payment.package_id && (
-                                <TooltipProvider>
+                              <TooltipProvider>
+                                {payment.package_id && (
                                   <Tooltip>
                                     <TooltipTrigger>
                                       <Package className="w-3.5 h-3.5 text-primary" />
@@ -1684,10 +1704,8 @@ const Dashboard = () => {
                                       <p>Pacote</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                </TooltipProvider>
-                              )}
-                              {payment.sessions?.recurring_session_id && (
-                                <TooltipProvider>
+                                )}
+                                {payment.sessions?.recurring_session_id && !payment.monthly_plan_id && !payment.sessions?.recurring_sessions?.monthly_plan_id && (
                                   <Tooltip>
                                     <TooltipTrigger>
                                       <Repeat className="w-3.5 h-3.5 text-primary" />
@@ -1696,8 +1714,18 @@ const Dashboard = () => {
                                       <p>Sessão Recorrente</p>
                                     </TooltipContent>
                                   </Tooltip>
-                                </TooltipProvider>
-                              )}
+                                )}
+                                {(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) && (
+                                  <Tooltip>
+                                    <TooltipTrigger>
+                                      <CalendarDays className="w-3.5 h-3.5 text-primary" />
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Plano mensal</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                )}
+                              </TooltipProvider>
                             </div>
                             <p className="text-xs text-muted-foreground">
                               {paymentDate ? formatDateBR(paymentDate) : 'Sem data'}
