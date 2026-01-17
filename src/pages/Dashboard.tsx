@@ -2701,7 +2701,7 @@ const Dashboard = () => {
                                   }}
                                   onMouseEnter={() => setHoveredCanalIndex(index)}
                                   onMouseLeave={() => setHoveredCanalIndex(null)}
-                                  onClick={() => navigate(`/pagamentos?method=${getMethodFilterValue(canal.canal)}`)}
+                                  onClick={() => navigate(`/pagamentos?method=${getMethodFilterValue(canal.canal)}&status=pago`)}
                                 >
                                   <div className="flex items-center gap-3">
                                     <div 
