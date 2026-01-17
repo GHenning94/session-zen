@@ -210,7 +210,7 @@ export const SessionModal = ({
           recurrence_type: 'semanal',
           recurrence_interval: 1,
           dia_da_semana: new Date().getDay(),
-          end_type: 'never',
+          end_type: 'date',
           recurrence_end_date: undefined,
           recurrence_count: undefined,
           billing_type: 'per_session',
@@ -812,27 +812,23 @@ export const SessionModal = ({
                   )}
 
                   <div className="col-span-2">
-                    <Label className="text-xs text-muted-foreground">Término</Label>
+                    <Label className="text-xs text-muted-foreground">Término *</Label>
                     <RadioGroup
                       value={recurringData.end_type}
                       onValueChange={(v: any) => setRecurringData({ ...recurringData, end_type: v })}
                       className="flex flex-wrap gap-3 mt-1"
                     >
                       <div className="flex items-center gap-1.5">
-                        <RadioGroupItem value="never" id="end-never" />
-                        <Label htmlFor="end-never" className="text-sm font-normal cursor-pointer">Nunca</Label>
-                      </div>
-                      <div className="flex items-center gap-1.5">
                         <RadioGroupItem value="date" id="end-date" />
                         <Label htmlFor="end-date" className="text-sm font-normal cursor-pointer">Em data</Label>
                         {recurringData.end_type === 'date' && (
                           <Popover>
                             <PopoverTrigger asChild>
-                              <Button variant="outline" size="sm" className="h-7 px-2">
-                                <CalendarIcon className="h-3 w-3 mr-1" />
+                              <Button variant="outline" size="default" className="h-9 px-3 min-w-[120px]">
+                                <CalendarIcon className="h-4 w-4 mr-2" />
                                 {recurringData.recurrence_end_date 
                                   ? format(recurringData.recurrence_end_date, "dd/MM/yy", { locale: ptBR })
-                                  : "Sel."
+                                  : "Selecionar"
                                 }
                               </Button>
                             </PopoverTrigger>
@@ -842,6 +838,7 @@ export const SessionModal = ({
                                 selected={recurringData.recurrence_end_date}
                                 onSelect={(d) => d && setRecurringData({ ...recurringData, recurrence_end_date: d })}
                                 locale={ptBR}
+                                className="pointer-events-auto"
                               />
                             </PopoverContent>
                           </Popover>
@@ -854,7 +851,7 @@ export const SessionModal = ({
                           <Input
                             type="number"
                             min="1"
-                            className="w-14 h-7"
+                            className="w-16 h-9"
                             value={recurringData.recurrence_count || ''}
                             onChange={(e) => setRecurringData({ ...recurringData, recurrence_count: parseInt(e.target.value) || undefined })}
                             placeholder="nº"

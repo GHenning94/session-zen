@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
-import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit2, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare, ChevronDown } from 'lucide-react'
+import { Clock, User, Calendar, FileText, Filter, StickyNote, MoreHorizontal, Edit2, X, Eye, CreditCard, AlertTriangle, Trash2, Plus, Package, Repeat, PenLine, CheckSquare, ChevronDown, CalendarDays } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { supabase } from '@/integrations/supabase/client'
@@ -785,7 +785,10 @@ export default function Sessoes() {
         } else if (filters.sessionType === "package") {
           matchesType = !!session.package_id
         } else if (filters.sessionType === "recurring") {
-          matchesType = !!session.recurring_session_id
+          matchesType = !!session.recurring_session_id && (session as any).session_type !== 'monthly_plan'
+        } else if (filters.sessionType === "monthly_plan") {
+          matchesType = (session as any).session_type === 'monthly_plan' || 
+            (session.recurring_session_id && (session as any).recurring_sessions?.billing_type === 'monthly_plan')
         }
       }
 
@@ -1018,6 +1021,7 @@ export default function Sessoes() {
                         <SelectItem value="individual">Individual</SelectItem>
                         <SelectItem value="package">Pacote</SelectItem>
                         <SelectItem value="recurring">Recorrente</SelectItem>
+                        <SelectItem value="monthly_plan">Plano mensal</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -1166,10 +1170,23 @@ export default function Sessoes() {
                                       </Badge>
                                       <GoogleSyncBadge syncType={session.google_sync_type} />
                                       {session.package_id && (
-                                        <Package className="h-4 w-4 text-primary" />
+                                        <Badge variant="outline" className="text-xs bg-primary/10">
+                                          <Package className="h-3 w-3 mr-1" />
+                                          Pacote
+                                        </Badge>
                                       )}
                                       {session.recurring_session_id && (
-                                        <Repeat className="h-4 w-4 text-primary" />
+                                        (session as any).recurring_sessions?.billing_type === 'monthly_plan' ? (
+                                          <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                            <CalendarDays className="h-3 w-3 mr-1" />
+                                            Plano mensal
+                                          </Badge>
+                                        ) : (
+                                          <Badge variant="outline" className="text-xs bg-primary/10">
+                                            <Repeat className="h-3 w-3 mr-1" />
+                                            Recorrente
+                                          </Badge>
+                                        )
                                       )}
                                       {sessionNotes.some(note => note.session_id === session.id) && (
                                         <PenLine className="h-4 w-4 text-primary" />
@@ -1258,10 +1275,23 @@ export default function Sessoes() {
                                 </Badge>
                                 <GoogleSyncBadge syncType={session.google_sync_type} />
                                 {session.package_id && (
-                                  <Package className="h-4 w-4 text-primary" />
+                                  <Badge variant="outline" className="text-xs bg-primary/10">
+                                    <Package className="h-3 w-3 mr-1" />
+                                    Pacote
+                                  </Badge>
                                 )}
                                 {session.recurring_session_id && (
-                                  <Repeat className="h-4 w-4 text-primary" />
+                                  (session as any).recurring_sessions?.billing_type === 'monthly_plan' ? (
+                                    <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                      <CalendarDays className="h-3 w-3 mr-1" />
+                                      Plano mensal
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="text-xs bg-primary/10">
+                                      <Repeat className="h-3 w-3 mr-1" />
+                                      Recorrente
+                                    </Badge>
+                                  )
                                 )}
                                 {sessionNotes.some(note => note.session_id === session.id) && (
                                   <PenLine className="h-4 w-4 text-primary" />

@@ -132,7 +132,7 @@ export const RecurringSessionModal = ({
         metodo_pagamento: 'A definir',
         recurrence_end_date: undefined,
         recurrence_count: undefined,
-        end_type: 'never',
+        end_type: 'date',
         billing_type: 'per_session',
         monthly_value: 0,
         billing_day: 1,
@@ -503,21 +503,14 @@ export const RecurringSessionModal = ({
 
           {/* Término da Recorrência */}
           <div className="space-y-3">
-            <Label>Término da Recorrência</Label>
+            <Label>Término da Recorrência *</Label>
             
             <div className="flex flex-wrap items-center gap-2">
               <Button
                 type="button"
-                variant={formData.end_type === 'never' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setFormData({ ...formData, end_type: 'never' })}
-              >
-                Nunca
-              </Button>
-              <Button
-                type="button"
                 variant={formData.end_type === 'date' ? 'default' : 'outline'}
-                size="sm"
+                size="default"
+                className="min-w-[140px]"
                 onClick={() => setFormData({ ...formData, end_type: 'date' })}
               >
                 Em uma data
@@ -525,7 +518,8 @@ export const RecurringSessionModal = ({
               <Button
                 type="button"
                 variant={formData.end_type === 'count' ? 'default' : 'outline'}
-                size="sm"
+                size="default"
+                className="min-w-[160px]"
                 onClick={() => setFormData({ ...formData, end_type: 'count' })}
               >
                 Após X ocorrências
