@@ -1515,26 +1515,6 @@ const Dashboard = () => {
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
-                                  {session.package_id && (
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Package className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Sessão de pacote</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                  {session.recurring_session_id && (
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>{session.recurring_sessions?.monthly_plan_id ? 'Plano mensal' : 'Sessão recorrente'}</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
                                 </TooltipProvider>
                               </div>
                              <p className="text-xs md:text-sm text-muted-foreground">
@@ -1566,6 +1546,26 @@ const Dashboard = () => {
                                   </TooltipTrigger>
                                   <TooltipContent>
                                     <p>Possui anotação</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {session.package_id && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Package className="w-3 h-3 md:w-4 md:h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Sessão de pacote</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {session.recurring_session_id && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{session.recurring_sessions?.monthly_plan_id ? 'Plano mensal' : 'Sessão recorrente'}</p>
                                   </TooltipContent>
                                 </Tooltip>
                               )}
