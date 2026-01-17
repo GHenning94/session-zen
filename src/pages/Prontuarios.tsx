@@ -646,7 +646,10 @@ export default function Prontuarios() {
                         placeholder="Nome, e-mail ou telefone..."
                         value={filters.search}
                         onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                        className="h-9 text-sm pl-9"
+                        className={cn(
+                          "h-9 text-sm pl-9 transition-all",
+                          filters.search !== '' && "ring-2 ring-primary ring-offset-1 border-primary"
+                        )}
                       />
                     </div>
                   </div>
@@ -657,7 +660,10 @@ export default function Prontuarios() {
                       value={filters.anamnese} 
                       onValueChange={(value: 'all' | 'realizada' | 'pendente') => setFilters(prev => ({ ...prev, anamnese: value }))}
                     >
-                      <SelectTrigger className="h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.anamnese !== 'all' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue placeholder="Todas" />
                       </SelectTrigger>
                       <SelectContent>

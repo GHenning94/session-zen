@@ -53,9 +53,11 @@ const Pagamentos = () => {
   // Read filters from URL params if present
   const methodFromUrl = searchParams.get('method')
   const statusFromUrl = searchParams.get('status')
+  const clienteFromUrl = searchParams.get('cliente')
+  const pagamentoFromUrl = searchParams.get('pagamento')
   const initialMethod = methodFromUrl || 'todos'
   const initialStatus = statusFromUrl || 'todos'
-  const hasUrlFilters = !!methodFromUrl || !!statusFromUrl
+  const hasUrlFilters = !!methodFromUrl || !!statusFromUrl || !!clienteFromUrl
   
   const [filterPeriod, setFilterPeriod] = useState("todos")
   const [filterStatus, setFilterStatus] = useState(initialStatus)
@@ -220,6 +222,7 @@ const [isLoading, setIsLoading] = useState(false)
   useEffect(() => {
     const methodParam = searchParams.get('method')
     const statusParam = searchParams.get('status')
+    const clienteParam = searchParams.get('cliente')
     let changed = false
     
     if (methodParam && methodParam !== filterMethod) {
@@ -230,6 +233,13 @@ const [isLoading, setIsLoading] = useState(false)
       setFilterStatus(statusParam)
       changed = true
     }
+    if (clienteParam) {
+      const client = clients.find(c => c.id === clienteParam)
+      if (client) {
+        setFilterName(client.nome)
+        changed = true
+      }
+    }
     
     if (changed) {
       setIsFiltersOpen(true)
@@ -237,9 +247,33 @@ const [isLoading, setIsLoading] = useState(false)
       const newParams = new URLSearchParams(searchParams)
       newParams.delete('method')
       newParams.delete('status')
+      newParams.delete('cliente')
       setSearchParams(newParams)
     }
-  }, [searchParams])
+  }, [searchParams, clients])
+
+  // Handle payment modal from URL params
+  useEffect(() => {
+    const pagamentoParam = searchParams.get('pagamento')
+    
+    if (pagamentoParam && payments && payments.length > 0 && clients.length > 0) {
+      // Get processed payments
+      const processedPayments = getSessionPayments()
+      
+      // Find the payment by id
+      const payment = processedPayments.find((p: any) => p.id === pagamentoParam)
+      
+      if (payment) {
+        setSelectedPayment(payment)
+        setDetailsModalOpen(true)
+      }
+      
+      // Clear the param from URL after opening modal
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('pagamento')
+      setSearchParams(newParams)
+    }
+  }, [searchParams, payments, clients])
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)

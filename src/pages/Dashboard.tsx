@@ -1477,7 +1477,7 @@ const Dashboard = () => {
                        "p-2 md:p-4 hover:shadow-md transition-all cursor-pointer relative",
                        needsAttention && "border-warning/30"
                      )}
-                     onClick={() => navigate('/sessoes')}
+                     onClick={() => navigate(`/sessoes?sessao=${session.id}`)}
                    >
                      {needsAttention && (
                        <div className="absolute top-2 left-2 md:top-3 md:left-3">
@@ -1678,7 +1678,8 @@ const Dashboard = () => {
                     return (
                       <div 
                         key={payment.id || index} 
-                        className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors"
+                        className="flex items-center justify-between p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/pagamentos?pagamento=${payment.id}`)}
                       >
                         <div className="flex items-center gap-2">
                           <div>
@@ -2829,7 +2830,7 @@ const Dashboard = () => {
               <CardContent className="flex-1 overflow-visible pt-2">
                 <div className="space-y-4">
                   {topClients.length > 0 ? topClients.map((client, index) => (
-                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer overflow-visible" onClick={() => navigate('/clientes')}>
+                    <div key={client.clientId} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors relative cursor-pointer overflow-visible" onClick={() => navigate(`/pagamentos?cliente=${client.clientId}`)}>
                       {/* Coroa dourada animada para o primeiro cliente */}
                       {index === 0 && (
                         <div className="absolute -top-3 -right-3 z-10">
