@@ -223,10 +223,40 @@ export const SessionEditModal = ({
   }, [session?.package_id])
 
 
+  // Verificar se apenas campos individuais (status/anotações) foram alterados
+  const onlyIndividualFieldsChanged = (): boolean => {
+    if (!session) return false
+    
+    const originalData = {
+      client_id: session.client_id || '',
+      data: session.data || '',
+      horario: session.horario ? session.horario.slice(0, 5) : '',
+      valor: session.valor?.toString() || '',
+      metodo_pagamento: session.metodo_pagamento || '',
+    }
+    
+    // Verificar se os campos "coletivos" mudaram
+    const clientChanged = formData.client_id !== originalData.client_id
+    const dateChanged = formData.data !== originalData.data
+    const timeChanged = formData.horario !== originalData.horario
+    const valueChanged = formData.valor !== originalData.valor
+    const paymentMethodChanged = formData.metodo_pagamento !== originalData.metodo_pagamento
+    
+    // Se nenhum campo coletivo mudou, então só mudou status/anotações (campos individuais)
+    return !clientChanged && !dateChanged && !timeChanged && !valueChanged && !paymentMethodChanged
+  }
+
   const handleSave = async () => {
     if (!session) return
 
-    // Se for sessão recorrente, mostrar modal de confirmação primeiro
+    // Se for sessão recorrente MAS apenas status/anotações foram alterados,
+    // salvar diretamente sem mostrar modal de confirmação (edição sempre individual)
+    if (isRecurringSession && onlyIndividualFieldsChanged()) {
+      await performSaveStatusAndNotes()
+      return
+    }
+
+    // Se for sessão recorrente e outros campos foram alterados, mostrar modal de confirmação
     if (isRecurringSession && !showRecurringConfirm) {
       setPendingFormData(formData)
       setShowRecurringConfirm(true)
@@ -234,6 +264,39 @@ export const SessionEditModal = ({
     }
 
     await performSave(formData)
+  }
+
+  // Função para salvar apenas status e anotações (sempre individual, sem desvincular)
+  const performSaveStatusAndNotes = async () => {
+    setLoading(true)
+    try {
+      const { error } = await supabase
+        .from('sessions')
+        .update({
+          status: formData.status,
+          anotacoes: formData.anotacoes || null
+        })
+        .eq('id', session.id)
+
+      if (error) throw error
+
+      toast({
+        title: "Sessão atualizada",
+        description: "Status e observações foram salvos com sucesso.",
+      })
+
+      onSessionUpdated()
+      onOpenChange(false)
+    } catch (error) {
+      console.error('Erro ao atualizar sessão:', error)
+      toast({
+        title: "Erro",
+        description: "Não foi possível atualizar a sessão.",
+        variant: "destructive",
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleRecurringEditChoice = async (choice: RecurringEditChoice) => {
