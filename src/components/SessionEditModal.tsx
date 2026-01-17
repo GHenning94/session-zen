@@ -338,6 +338,17 @@ export const SessionEditModal = ({
       const today = new Date().toISOString().split('T')[0]
       const valorNumerico = parseFloat(data.valor) || null
 
+      // Primeiro, verificar quantas sessões futuras existem (além da atual)
+      const { data: futureSessions } = await supabase
+        .from('sessions')
+        .select('id')
+        .eq('recurring_session_id', session.recurring_session_id)
+        .eq('is_modified', false)
+        .gte('data', today)
+        .neq('id', session.id)
+
+      const hasOtherFutureSessions = futureSessions && futureSessions.length > 0
+
       const updateData: any = {
         horario: formatTimeForDatabase(data.horario),
         status: data.status,
@@ -350,7 +361,7 @@ export const SessionEditModal = ({
         updateData.metodo_pagamento = data.metodo_pagamento || null
       }
 
-      // Atualizar sessões futuras não modificadas
+      // Atualizar sessões futuras não modificadas (incluindo a atual)
       await supabase
         .from('sessions')
         .update(updateData)
@@ -395,10 +406,18 @@ export const SessionEditModal = ({
         }
       }
 
-      toast({
-        title: "Série atualizada",
-        description: "Todas as sessões futuras foram atualizadas.",
-      })
+      // Mostrar mensagem apropriada
+      if (!hasOtherFutureSessions) {
+        toast({
+          title: "Sessão atualizada",
+          description: "Não existem sessões futuras para aplicar esta alteração. A alteração foi aplicada apenas a esta sessão.",
+        })
+      } else {
+        toast({
+          title: "Série atualizada",
+          description: "Todas as sessões futuras foram atualizadas.",
+        })
+      }
 
       onSessionUpdated()
       onOpenChange(false)
