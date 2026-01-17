@@ -49,13 +49,18 @@ const Pagamentos = () => {
   const { currentPlan, hasFeature } = useSubscription()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
+  
+  // Read method filter from URL params if present
+  const methodFromUrl = searchParams.get('method')
+  const initialMethod = methodFromUrl || 'todos'
+  
   const [filterPeriod, setFilterPeriod] = useState("todos")
   const [filterStatus, setFilterStatus] = useState("todos")
-  const [filterMethod, setFilterMethod] = useState("todos")
+  const [filterMethod, setFilterMethod] = useState(initialMethod)
   const [filterName, setFilterName] = useState("")
   const [filterPaymentType, setFilterPaymentType] = useState("todos")
   const [filterGoogleSync, setFilterGoogleSync] = useState("todos")
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false)
+  const [isFiltersOpen, setIsFiltersOpen] = useState(!!methodFromUrl) // Open filters if method from URL
 const [sessions, setSessions] = useState<any[]>([])
 const [clients, setClients] = useState<any[]>([])
 const [profiles, setProfiles] = useState<any[]>([])
@@ -201,10 +206,25 @@ const [isLoading, setIsLoading] = useState(false)
         setDetailsModalOpen(true)
       }
       
-      // Clear the URL parameters
-      setSearchParams({})
+      // Clear only the highlight param, keep method if set
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('highlight')
+      setSearchParams(newParams)
     }
   }, [searchParams, setSearchParams, payments, clients])
+
+  // Handle method filter from URL params
+  useEffect(() => {
+    const methodParam = searchParams.get('method')
+    if (methodParam && methodParam !== filterMethod) {
+      setFilterMethod(methodParam)
+      setIsFiltersOpen(true)
+      // Clear the method param from URL after applying
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('method')
+      setSearchParams(newParams)
+    }
+  }, [searchParams])
 
   const getClientName = (clientId: string) => {
     const client = clients.find(c => c.id === clientId)

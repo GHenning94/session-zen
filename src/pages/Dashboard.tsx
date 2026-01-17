@@ -2675,6 +2675,17 @@ const Dashboard = () => {
                               const percentage = total > 0 ? ((canal.valor / total) * 100).toFixed(1) : '0'
                               const isHovered = hoveredCanalIndex === index
                               
+                              // Mapear nome do canal para o valor do filtro usado na página de pagamentos
+                              const getMethodFilterValue = (canalName: string): string => {
+                                const lowerName = canalName.toLowerCase()
+                                if (lowerName.includes('cartão') || lowerName.includes('cartao')) return 'cartao'
+                                if (lowerName === 'pix') return 'pix'
+                                if (lowerName === 'boleto') return 'boleto'
+                                if (lowerName === 'dinheiro') return 'dinheiro'
+                                if (lowerName.includes('transferência') || lowerName.includes('transferencia')) return 'transferencia'
+                                return 'a definir'
+                              }
+                              
                               return (
                                 <div 
                                   key={canal.canal} 
@@ -2690,6 +2701,7 @@ const Dashboard = () => {
                                   }}
                                   onMouseEnter={() => setHoveredCanalIndex(index)}
                                   onMouseLeave={() => setHoveredCanalIndex(null)}
+                                  onClick={() => navigate(`/pagamentos?method=${getMethodFilterValue(canal.canal)}`)}
                                 >
                                   <div className="flex items-center gap-3">
                                     <div 
