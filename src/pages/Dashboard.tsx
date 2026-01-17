@@ -1688,7 +1688,7 @@ const Dashboard = () => {
                                 {payment.clients?.medicamentos && payment.clients.medicamentos.length > 0 && (
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Pill className="w-3.5 h-3.5 text-primary" />
+                                      <Pill className="w-3.5 h-3.5 text-pink-500" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Usa medicamentos</p>
@@ -1698,7 +1698,7 @@ const Dashboard = () => {
                                 {payment.clients?.eh_crianca_adolescente && (
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Baby className="w-3.5 h-3.5 text-primary" />
+                                      <Baby className="w-3.5 h-3.5 text-blue-500" />
                                     </TooltipTrigger>
                                     <TooltipContent>
                                       <p>Criança/Adolescente</p>
