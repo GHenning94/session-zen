@@ -238,21 +238,11 @@ export const AgendaViewWeek: React.FC<AgendaViewWeekProps> = ({
                           e.currentTarget.classList.remove('bg-primary/10')
                           const sessionId = e.dataTransfer.getData('session-id')
                           
-                          if (sessionId) {
-                            const session = sessions.find(s => s.id === sessionId)
-                            if (session) {
-                              const newDate = format(day, 'yyyy-MM-dd')
-                              const newTime = timeSlot.timeString
-                              
-                              // Check if it's a recurring session (not package)
-                              if (session.recurring_session_id && !session.package_id) {
-                                // For recurring sessions, open edit modal to choose edit scope
-                                onEditSession(session)
-                              } else {
-                                // For individual or package sessions, move directly
-                                onDragSession?.(sessionId, newDate, newTime)
-                              }
-                            }
+                          if (sessionId && onDragSession) {
+                            const newDate = format(day, 'yyyy-MM-dd')
+                            const newTime = timeSlot.timeString
+                            // Pass to onDragSession - it will handle the recurring logic
+                            onDragSession(sessionId, newDate, newTime)
                           }
                         }}
                       >
