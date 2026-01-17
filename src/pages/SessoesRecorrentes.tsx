@@ -189,7 +189,11 @@ export default function SessoesRecorrentes() {
     const parts = []
     
     if (recurring.recurrence_type === 'semanal') {
-      parts.push(`Toda ${WEEKDAYS[recurring.dia_da_semana || 1]}`)
+      const dayOfWeek = recurring.dia_da_semana || 1
+      // Sábado (6) e Domingo (0) são masculinos: "Todo"
+      // Os outros dias são femininos: "Toda"
+      const prefix = dayOfWeek === 0 || dayOfWeek === 6 ? 'Todo' : 'Toda'
+      parts.push(`${prefix} ${WEEKDAYS[dayOfWeek]}`)
     } else if (recurring.recurrence_type === 'quinzenal') {
       parts.push(`A cada 2 semanas`)
     } else if (recurring.recurrence_type === 'mensal') {
