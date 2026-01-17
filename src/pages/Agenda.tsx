@@ -260,6 +260,10 @@ const Agenda = () => {
         })
         return
       }
+
+      // Verificar se há outras sessões futuras além da atual
+      const otherFutureSessions = futureSessions.filter(s => s.id !== session.id)
+      const hasOtherFutureSessions = otherFutureSessions.length > 0
       
       // Update each future session
       for (const futureSession of futureSessions) {
@@ -292,10 +296,18 @@ const Agenda = () => {
         .update(recurringUpdateData)
         .eq('id', session.recurring_session_id)
       
-      toast({
-        title: "Sessões movidas",
-        description: `${futureSessions.length} sessão(ões) futura(s) foram atualizadas.`,
-      })
+      // Mostrar mensagem apropriada
+      if (!hasOtherFutureSessions) {
+        toast({
+          title: "Sessão movida",
+          description: "Não existem sessões futuras para aplicar esta alteração. A alteração foi aplicada apenas a esta sessão.",
+        })
+      } else {
+        toast({
+          title: "Sessões movidas",
+          description: `${futureSessions.length} sessão(ões) futura(s) foram atualizadas.`,
+        })
+      }
       refreshData()
     }
     
