@@ -557,6 +557,9 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
           n.id === notificationId ? { ...n, lida: true } : n
         )
       )
+      
+      // Recalculate unread count after marking as read
+      setUnreadCount(prev => Math.max(0, prev - 1))
 
       return true
     } catch (error) {
@@ -580,6 +583,9 @@ export const NotificationProvider = ({ children }: NotificationProviderProps) =>
       setNotifications(prev => 
         prev.map(n => ({ ...n, lida: true }))
       )
+      
+      // Reset unread count to 0
+      setUnreadCount(0)
 
       return true
     } catch (error) {
