@@ -277,16 +277,18 @@ const Agenda = () => {
           .eq('id', futureSession.id)
       }
       
-      // Also update the recurring_sessions template if time changed
-      if (newTime) {
-        await supabase
-          .from('recurring_sessions')
-          .update({ 
-            horario: newTime,
-            dia_da_semana: targetDate.getDay()
-          })
-          .eq('id', session.recurring_session_id)
+      // Always update the recurring_sessions template with the new day of week
+      const recurringUpdateData: any = { 
+        dia_da_semana: targetDate.getDay()
       }
+      if (newTime) {
+        recurringUpdateData.horario = newTime
+      }
+      
+      await supabase
+        .from('recurring_sessions')
+        .update(recurringUpdateData)
+        .eq('id', session.recurring_session_id)
       
       toast({
         title: "Sessões movidas",
