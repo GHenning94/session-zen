@@ -160,6 +160,22 @@ export default function Sessoes() {
     }
   }, [searchParams, sessions])
 
+  // Handle URL parameter for viewing session details modal
+  useEffect(() => {
+    const sessaoParam = searchParams.get('sessao')
+    if (sessaoParam && sessions.length > 0) {
+      const sessionToView = sessions.find(s => s.id === sessaoParam)
+      if (sessionToView) {
+        setSelectedSession(sessionToView)
+        setDetailsModalOpen(true)
+        // Clear the URL parameter
+        const newParams = new URLSearchParams(searchParams)
+        newParams.delete('sessao')
+        setSearchParams(newParams)
+      }
+    }
+  }, [searchParams, sessions])
+
   useEffect(() => {
     if (user) {
       loadData()
