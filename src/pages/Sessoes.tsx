@@ -131,7 +131,8 @@ export default function Sessoes() {
     endDate: '',
     search: '',
     sessionType: '',
-    googleSync: ''
+    googleSync: '',
+    timeframe: 'all', // 'all' | 'past' | 'future' | 'needs_attention'
   })
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
 
@@ -145,6 +146,7 @@ export default function Sessoes() {
     if (filters.search) count++
     if (filters.sessionType && filters.sessionType !== 'all') count++
     if (filters.googleSync && filters.googleSync !== 'all') count++
+    if (filters.timeframe && filters.timeframe !== 'all') count++
     return count
   }, [filters])
 
@@ -177,6 +179,19 @@ export default function Sessoes() {
       }
     }
   }, [searchParams, sessions])
+
+  // Handle URL parameter for filtering needs_attention sessions
+  useEffect(() => {
+    const filterParam = searchParams.get('filter')
+    if (filterParam === 'needs_attention') {
+      setFilters(prev => ({ ...prev, timeframe: 'needs_attention' }))
+      setIsFiltersOpen(true)
+      // Clear the URL parameter
+      const newParams = new URLSearchParams(searchParams)
+      newParams.delete('filter')
+      setSearchParams(newParams)
+    }
+  }, [searchParams])
 
   useEffect(() => {
     if (user) {
@@ -831,8 +846,22 @@ export default function Sessoes() {
           matchesGoogleSync = syncType === filters.googleSync
         }
       }
+
+      // Filtro por período (passadas/futuras/precisa atenção)
+      let matchesTimeframe = true
+      const now = new Date()
+      const sessionDateTime = new Date(`${session.data}T${session.horario}`)
       
-      return matchesStatus && matchesClient && matchesSearch && matchesDate && matchesType && matchesGoogleSync
+      if (filters.timeframe === 'past') {
+        matchesTimeframe = sessionDateTime < now
+      } else if (filters.timeframe === 'future') {
+        matchesTimeframe = sessionDateTime >= now
+      } else if (filters.timeframe === 'needs_attention') {
+        // Sessões passadas que ainda estão como "agendada" precisam de atenção
+        matchesTimeframe = session.status === 'agendada' && sessionDateTime < now
+      }
+      
+      return matchesStatus && matchesClient && matchesSearch && matchesDate && matchesType && matchesGoogleSync && matchesTimeframe
     })
     .sort((a, b) => {
       const now = new Date()
@@ -1082,6 +1111,24 @@ export default function Sessoes() {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  <div>
+                    <Label htmlFor="timeframe-filter" className="text-xs">Tempo</Label>
+                    <Select value={filters.timeframe} onValueChange={(value) => setFilters(prev => ({ ...prev, timeframe: value }))}>
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        filters.timeframe !== '' && filters.timeframe !== 'all' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
+                        <SelectValue placeholder="Todas" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas</SelectItem>
+                        <SelectItem value="future">Futuras</SelectItem>
+                        <SelectItem value="past">Passadas</SelectItem>
+                        <SelectItem value="needs_attention">Precisa Atenção</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                   
                   <div>
                     <Label htmlFor="start-date" className="text-xs">Início</Label>
@@ -1124,7 +1171,8 @@ export default function Sessoes() {
                         endDate: '',
                         search: '',
                         sessionType: '',
-                        googleSync: ''
+                        googleSync: '',
+                        timeframe: 'all'
                       })}
                       disabled={activeFiltersCount === 0}
                     >
