@@ -189,7 +189,7 @@ export default function Sessoes() {
             metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
             clients (nome, ativo, avatar_url),
             packages:package_id (nome, metodo_pagamento),
-            recurring_sessions:recurring_session_id (metodo_pagamento)
+            recurring_sessions:recurring_session_id (metodo_pagamento, billing_type)
           `)
           .order('data', { ascending: false })
           .order('horario', { ascending: false }),
@@ -785,10 +785,9 @@ export default function Sessoes() {
         } else if (filters.sessionType === "package") {
           matchesType = !!session.package_id
         } else if (filters.sessionType === "recurring") {
-          matchesType = !!session.recurring_session_id && (session as any).session_type !== 'monthly_plan'
+          matchesType = !!session.recurring_session_id && (session as any).recurring_sessions?.billing_type !== 'monthly_plan'
         } else if (filters.sessionType === "monthly_plan") {
-          matchesType = (session as any).session_type === 'monthly_plan' || 
-            (session.recurring_session_id && (session as any).recurring_sessions?.billing_type === 'monthly_plan')
+          matchesType = !!session.recurring_session_id && (session as any).recurring_sessions?.billing_type === 'monthly_plan'
         }
       }
 
@@ -1170,23 +1169,18 @@ export default function Sessoes() {
                                       </Badge>
                                       <GoogleSyncBadge syncType={session.google_sync_type} />
                                       {session.package_id && (
-                                        <Badge variant="outline" className="text-xs bg-primary/10">
-                                          <Package className="h-3 w-3 mr-1" />
-                                          Pacote
-                                        </Badge>
+                                        <Package className="h-4 w-4 text-primary" />
                                       )}
-                                      {session.recurring_session_id && (
-                                        (session as any).recurring_sessions?.billing_type === 'monthly_plan' ? (
-                                          <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
-                                            <CalendarDays className="h-3 w-3 mr-1" />
-                                            Plano mensal
-                                          </Badge>
-                                        ) : (
-                                          <Badge variant="outline" className="text-xs bg-primary/10">
-                                            <Repeat className="h-3 w-3 mr-1" />
-                                            Recorrente
-                                          </Badge>
-                                        )
+                                      {session.recurring_session_id && !session.package_id && (
+                                        <>
+                                          <Repeat className="h-4 w-4 text-primary" />
+                                          {(session as any).recurring_sessions?.billing_type === 'monthly_plan' && (
+                                            <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                              <CalendarDays className="h-3 w-3 mr-1" />
+                                              Plano mensal
+                                            </Badge>
+                                          )}
+                                        </>
                                       )}
                                       {sessionNotes.some(note => note.session_id === session.id) && (
                                         <PenLine className="h-4 w-4 text-primary" />
@@ -1275,23 +1269,18 @@ export default function Sessoes() {
                                 </Badge>
                                 <GoogleSyncBadge syncType={session.google_sync_type} />
                                 {session.package_id && (
-                                  <Badge variant="outline" className="text-xs bg-primary/10">
-                                    <Package className="h-3 w-3 mr-1" />
-                                    Pacote
-                                  </Badge>
+                                  <Package className="h-4 w-4 text-primary" />
                                 )}
-                                {session.recurring_session_id && (
-                                  (session as any).recurring_sessions?.billing_type === 'monthly_plan' ? (
-                                    <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
-                                      <CalendarDays className="h-3 w-3 mr-1" />
-                                      Plano mensal
-                                    </Badge>
-                                  ) : (
-                                    <Badge variant="outline" className="text-xs bg-primary/10">
-                                      <Repeat className="h-3 w-3 mr-1" />
-                                      Recorrente
-                                    </Badge>
-                                  )
+                                {session.recurring_session_id && !session.package_id && (
+                                  <>
+                                    <Repeat className="h-4 w-4 text-primary" />
+                                    {(session as any).recurring_sessions?.billing_type === 'monthly_plan' && (
+                                      <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                        <CalendarDays className="h-3 w-3 mr-1" />
+                                        Plano mensal
+                                      </Badge>
+                                    )}
+                                  </>
                                 )}
                                 {sessionNotes.some(note => note.session_id === session.id) && (
                                   <PenLine className="h-4 w-4 text-primary" />
