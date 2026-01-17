@@ -338,21 +338,21 @@ export const SessionEditModal = ({
       const today = new Date().toISOString().split('T')[0]
       const valorNumerico = parseFloat(data.valor) || null
 
-      // Primeiro, verificar quantas sessões futuras existem (além da atual)
+      // Buscar TODAS as sessões futuras da série (incluindo a atual)
       const { data: futureSessions, error: fetchError } = await supabase
         .from('sessions')
-        .select('id')
+        .select('id, data')
         .eq('recurring_session_id', session.recurring_session_id)
-        .eq('is_modified', false)
-        .gte('data', today)
-        .neq('id', session.id)
+        .gte('data', session.data) // A partir da data da sessão atual
 
       if (fetchError) {
         console.error('Erro ao buscar sessões futuras:', fetchError)
         throw fetchError
       }
 
-      const hasOtherFutureSessions = futureSessions && futureSessions.length > 0
+      // Verificar se há outras sessões futuras além da atual
+      const otherFutureSessions = futureSessions?.filter(s => s.id !== session.id) || []
+      const hasOtherFutureSessions = otherFutureSessions.length > 0
 
       const updateData: any = {
         horario: formatTimeForDatabase(data.horario),
@@ -366,17 +366,18 @@ export const SessionEditModal = ({
         updateData.metodo_pagamento = data.metodo_pagamento || null
       }
 
-      // Atualizar sessões futuras não modificadas (incluindo a atual)
-      const { error: updateError } = await supabase
-        .from('sessions')
-        .update(updateData)
-        .eq('recurring_session_id', session.recurring_session_id)
-        .eq('is_modified', false)
-        .gte('data', today)
+      // Atualizar TODAS as sessões futuras (a partir da data da sessão atual)
+      let updateErrors = 0
+      for (const futureSession of futureSessions || []) {
+        const { error } = await supabase
+          .from('sessions')
+          .update(updateData)
+          .eq('id', futureSession.id)
 
-      if (updateError) {
-        console.error('Erro ao atualizar sessões:', updateError)
-        throw updateError
+        if (error) {
+          console.error('Erro ao atualizar sessão:', futureSession.id, error)
+          updateErrors++
+        }
       }
 
       // Atualizar a regra de recorrência também
@@ -396,41 +397,33 @@ export const SessionEditModal = ({
 
       if (recurringError) {
         console.error('Erro ao atualizar recorrência:', recurringError)
-        throw recurringError
       }
 
       // Atualizar pagamentos pendentes das sessões futuras se não for plano mensal
-      if (!isMonthlyPlanRecurring && valorNumerico) {
-        const { data: updatedSessions, error: sessionsError } = await supabase
-          .from('sessions')
-          .select('id')
-          .eq('recurring_session_id', session.recurring_session_id)
-          .eq('is_modified', false)
-          .gte('data', today)
+      if (!isMonthlyPlanRecurring && valorNumerico && futureSessions && futureSessions.length > 0) {
+        const sessionIds = futureSessions.map(s => s.id)
+        const { error: paymentError } = await supabase
+          .from('payments')
+          .update({
+            valor: valorNumerico,
+            metodo_pagamento: data.metodo_pagamento || 'A definir'
+          })
+          .in('session_id', sessionIds)
+          .eq('status', 'pendente')
 
-        if (sessionsError) {
-          console.error('Erro ao buscar sessões para pagamentos:', sessionsError)
-        }
-
-        if (updatedSessions && updatedSessions.length > 0) {
-          const sessionIds = updatedSessions.map(s => s.id)
-          const { error: paymentError } = await supabase
-            .from('payments')
-            .update({
-              valor: valorNumerico,
-              metodo_pagamento: data.metodo_pagamento || 'A definir'
-            })
-            .in('session_id', sessionIds)
-            .eq('status', 'pendente')
-
-          if (paymentError) {
-            console.error('Erro ao atualizar pagamentos:', paymentError)
-          }
+        if (paymentError) {
+          console.error('Erro ao atualizar pagamentos:', paymentError)
         }
       }
 
       // Mostrar mensagem apropriada
-      if (!hasOtherFutureSessions) {
+      if (updateErrors > 0) {
+        toast({
+          title: "Aviso",
+          description: `${(futureSessions?.length || 0) - updateErrors} de ${futureSessions?.length || 0} sessões foram atualizadas.`,
+          variant: "destructive"
+        })
+      } else if (!hasOtherFutureSessions) {
         toast({
           title: "Sessão atualizada",
           description: "Não existem sessões futuras para aplicar esta alteração. A alteração foi aplicada apenas a esta sessão.",
@@ -438,7 +431,7 @@ export const SessionEditModal = ({
       } else {
         toast({
           title: "Série atualizada",
-          description: "Todas as sessões futuras foram atualizadas.",
+          description: `${futureSessions?.length || 0} sessão(ões) atualizada(s) com sucesso.`,
         })
       }
 
