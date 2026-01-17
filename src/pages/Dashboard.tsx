@@ -487,10 +487,10 @@ const Dashboard = () => {
         supabase.from('sessions').select('id, data, horario, status, valor, client_id, clients(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('data', today).order('horario'),
         supabase.from('clients').select('id', { count: 'exact', head: true }).eq('user_id', user?.id),
         supabase.from('payments').select('valor, status, data_pagamento, created_at, sessions:session_id(data)').eq('user_id', user?.id).eq('status', 'pago').gte('created_at', `${new Date().toISOString().slice(0, 7)}-01`).lt('created_at', new Date(new Date().getFullYear(), new Date().getMonth() + 1, 1).toISOString().slice(0, 10)),
-        // Buscar sessões futuras incluindo hoje
-        supabase.from('sessions').select('id, data, horario, status, valor, client_id, package_id, recurring_session_id, google_sync_type, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
-        // Buscar pagamentos recentes da tabela PAYMENTS (não sessions)
-        supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario, recurring_session_id)').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
+        // Buscar sessões futuras incluindo hoje (com informação de plano mensal)
+        supabase.from('sessions').select('id, data, horario, status, valor, client_id, package_id, recurring_session_id, google_sync_type, clients(id, nome, avatar_url, medicamentos, eh_crianca_adolescente), recurring_sessions:recurring_session_id(monthly_plan_id)').eq('user_id', user?.id).eq('status', 'agendada').gte('data', today).order('data').order('horario').limit(20),
+        // Buscar pagamentos recentes da tabela PAYMENTS (com informação de plano mensal)
+        supabase.from('payments').select('id, valor, status, metodo_pagamento, data_pagamento, data_vencimento, created_at, updated_at, session_id, package_id, monthly_plan_id, client_id, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente), sessions:session_id(data, horario, recurring_session_id, recurring_sessions:recurring_session_id(monthly_plan_id))').eq('user_id', user?.id).order('updated_at', { ascending: false }).limit(10),
         supabase.from('clients').select('id, nome, avatar_url, created_at, telefone, medicamentos, eh_crianca_adolescente').eq('user_id', user?.id).order('created_at', { ascending: false }).limit(5),
         // Buscar pagamentos pagos para cálculo de ticket médio por cliente
         supabase.from('payments').select('client_id, valor, status, clients:client_id(nome, avatar_url, medicamentos, eh_crianca_adolescente)').eq('user_id', user?.id).eq('status', 'pago').not('client_id', 'is', null),
@@ -1559,6 +1559,11 @@ const Dashboard = () => {
                                 </Tooltip>
                               )}
                             </TooltipProvider>
+                            {session.recurring_sessions?.monthly_plan_id && (
+                              <Badge variant="secondary" className="text-[10px] md:text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                Plano mensal
+                              </Badge>
+                            )}
                             <Badge
                               variant={
                                 session.status === 'realizada' ? 'success' :
@@ -1700,12 +1705,19 @@ const Dashboard = () => {
                         </div>
                         <div className="text-right">
                           <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
-                          <Badge 
-                            variant={getStatusColor(displayStatus)}
-                            className="text-xs"
-                          >
-                            {getStatusLabel(displayStatus)}
-                          </Badge>
+                          <div className="flex items-center justify-end gap-1 flex-wrap">
+                            {(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) && (
+                              <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                                Plano mensal
+                              </Badge>
+                            )}
+                            <Badge 
+                              variant={getStatusColor(displayStatus)}
+                              className="text-xs"
+                            >
+                              {getStatusLabel(displayStatus)}
+                            </Badge>
+                          </div>
                        </div>
                     </div>
                     )
