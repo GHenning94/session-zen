@@ -816,7 +816,7 @@ const Dashboard = () => {
           priority: 'medium' as const,
           title: 'Atualização de Status Necessária',
           message: `${sessionsNeedingAttention.length} ${sessionsNeedingAttention.length === 1 ? 'sessão precisa' : 'sessões precisam'} que o status seja atualizado`,
-          actionUrl: '/sessoes',
+          actionUrl: '/sessoes?filter=needs_attention',
           actionLabel: 'Ver',
           metadata: { count: sessionsNeedingAttention.length, sessionIds: sessionsNeedingAttention.map(s => s.id) }
         })
@@ -833,7 +833,7 @@ const Dashboard = () => {
           priority: 'high',
           title: 'Pagamentos Pendentes',
           message: `${overduePayments.length} ${overduePayments.length === 1 ? 'pagamento' : 'pagamentos'} ${overduePayments.length === 1 ? 'aguardando' : 'aguardando'} confirmação`,
-          actionUrl: '/pagamentos',
+          actionUrl: '/pagamentos?filter=overdue',
           actionLabel: 'Ver',
           metadata: {
             amount: totalAmount

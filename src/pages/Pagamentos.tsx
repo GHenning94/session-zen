@@ -65,6 +65,7 @@ const Pagamentos = () => {
   const [filterName, setFilterName] = useState("")
   const [filterPaymentType, setFilterPaymentType] = useState("todos")
   const [filterGoogleSync, setFilterGoogleSync] = useState("todos")
+  const [filterTimeframe, setFilterTimeframe] = useState("todos") // 'todos' | 'past' | 'future' | 'overdue'
   const [isFiltersOpen, setIsFiltersOpen] = useState(hasUrlFilters) // Open filters if URL params present
 const [sessions, setSessions] = useState<any[]>([])
 const [clients, setClients] = useState<any[]>([])
@@ -89,8 +90,9 @@ const [isLoading, setIsLoading] = useState(false)
     if (filterName !== '') count++
     if (filterPaymentType !== 'todos') count++
     if (filterGoogleSync !== 'todos') count++
+    if (filterTimeframe !== 'todos') count++
     return count
-  }, [filterPeriod, filterStatus, filterMethod, filterName, filterPaymentType, filterGoogleSync])
+  }, [filterPeriod, filterStatus, filterMethod, filterName, filterPaymentType, filterGoogleSync, filterTimeframe])
 
   // Carregar dados do Supabase
   const loadData = async () => {
@@ -223,6 +225,7 @@ const [isLoading, setIsLoading] = useState(false)
     const methodParam = searchParams.get('method')
     const statusParam = searchParams.get('status')
     const clienteParam = searchParams.get('cliente')
+    const filterParam = searchParams.get('filter')
     let changed = false
     
     if (methodParam && methodParam !== filterMethod) {
@@ -240,6 +243,10 @@ const [isLoading, setIsLoading] = useState(false)
         changed = true
       }
     }
+    if (filterParam === 'overdue') {
+      setFilterTimeframe('overdue')
+      changed = true
+    }
     
     if (changed) {
       setIsFiltersOpen(true)
@@ -248,6 +255,7 @@ const [isLoading, setIsLoading] = useState(false)
       newParams.delete('method')
       newParams.delete('status')
       newParams.delete('cliente')
+      newParams.delete('filter')
       setSearchParams(newParams)
     }
   }, [searchParams, clients])
@@ -621,8 +629,32 @@ const filterByPeriod = (items: any[]) => {
         googleSyncMatch = syncType === filterGoogleSync
       }
     }
+
+    // Filtro por período de tempo (passados/futuros/atrasados)
+    let timeframeMatch = true
+    if (filterTimeframe !== "todos") {
+      const nowTime = new Date()
+      let paymentDateTime: Date
+      
+      if (payment.type === 'session' && payment.date && payment.time) {
+        const [year, month, day] = payment.date.split('-').map(Number)
+        const [hours, minutes] = payment.time.split(':').map(Number)
+        paymentDateTime = new Date(year, month - 1, day, hours, minutes, 0)
+      } else {
+        paymentDateTime = getPaymentEffectiveDate(payment.raw)
+      }
+      
+      if (filterTimeframe === 'past') {
+        timeframeMatch = paymentDateTime < nowTime
+      } else if (filterTimeframe === 'future') {
+        timeframeMatch = paymentDateTime >= nowTime
+      } else if (filterTimeframe === 'overdue') {
+        // Pagamentos atrasados: passados e ainda pendentes
+        timeframeMatch = payment.status === 'pendente' && paymentDateTime < nowTime
+      }
+    }
     
-    return statusMatch && nameMatch && methodMatch && typeMatch && googleSyncMatch
+    return statusMatch && nameMatch && methodMatch && typeMatch && googleSyncMatch && timeframeMatch
   }).sort((a, b) => {
     const now = new Date()
     const dateTimeA = new Date(`${a.date}T${a.time}`)
@@ -960,6 +992,24 @@ const pastPayments = filteredPayments.filter(item => {
                   </div>
 
                   <div>
+                    <label className="text-xs md:text-sm font-medium mb-1 block">Tempo</label>
+                    <Select value={filterTimeframe} onValueChange={setFilterTimeframe}>
+                      <SelectTrigger className={cn(
+                        "w-full h-9 text-sm transition-all",
+                        filterTimeframe !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="future">Futuros</SelectItem>
+                        <SelectItem value="past">Passados</SelectItem>
+                        <SelectItem value="overdue">Atrasados</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
                     <label className="text-xs md:text-sm font-medium mb-1 block">Limpar</label>
                     <Button 
                       variant="outline" 
@@ -972,6 +1022,7 @@ const pastPayments = filteredPayments.filter(item => {
                         setFilterName('')
                         setFilterPaymentType('todos')
                         setFilterGoogleSync('todos')
+                        setFilterTimeframe('todos')
                       }}
                       disabled={activeFiltersCount === 0}
                     >
