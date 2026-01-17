@@ -7,7 +7,7 @@ export type RecurringEditChoice = 'this_only' | 'all_future'
 interface RecurringEditConfirmModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onConfirm: (choice: RecurringEditChoice) => void
+  onConfirm: (choice: RecurringEditChoice) => Promise<void>
   sessionDate?: string
 }
 
@@ -17,8 +17,8 @@ export const RecurringEditConfirmModal = ({
   onConfirm,
   sessionDate
 }: RecurringEditConfirmModalProps) => {
-  const handleChoice = (choice: RecurringEditChoice) => {
-    onConfirm(choice)
+  const handleChoice = async (choice: RecurringEditChoice) => {
+    await onConfirm(choice)
     onOpenChange(false)
   }
 
