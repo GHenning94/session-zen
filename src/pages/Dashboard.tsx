@@ -1525,23 +1525,13 @@ const Dashboard = () => {
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
-                                  {session.recurring_session_id && !session.recurring_sessions?.monthly_plan_id && (
+                                  {session.recurring_session_id && (
                                     <Tooltip>
                                       <TooltipTrigger>
                                         <Repeat className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
                                       </TooltipTrigger>
                                       <TooltipContent>
-                                        <p>Sessão recorrente</p>
-                                      </TooltipContent>
-                                    </Tooltip>
-                                  )}
-                                  {session.recurring_sessions?.monthly_plan_id && (
-                                    <Tooltip>
-                                      <TooltipTrigger>
-                                        <CalendarDays className="w-3 h-3 md:w-4 md:h-4 text-primary shrink-0" />
-                                      </TooltipTrigger>
-                                      <TooltipContent>
-                                        <p>Plano mensal</p>
+                                        <p>{session.recurring_sessions?.monthly_plan_id ? 'Plano mensal' : 'Sessão recorrente'}</p>
                                       </TooltipContent>
                                     </Tooltip>
                                   )}
@@ -1705,23 +1695,13 @@ const Dashboard = () => {
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
-                                {payment.sessions?.recurring_session_id && !payment.monthly_plan_id && !payment.sessions?.recurring_sessions?.monthly_plan_id && (
+                                {(payment.sessions?.recurring_session_id || payment.monthly_plan_id) && (
                                   <Tooltip>
                                     <TooltipTrigger>
                                       <Repeat className="w-3.5 h-3.5 text-primary" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Sessão Recorrente</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                )}
-                                {(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) && (
-                                  <Tooltip>
-                                    <TooltipTrigger>
-                                      <CalendarDays className="w-3.5 h-3.5 text-primary" />
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Plano mensal</p>
+                                      <p>{(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) ? 'Plano mensal' : 'Sessão Recorrente'}</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
