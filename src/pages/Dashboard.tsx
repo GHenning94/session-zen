@@ -2909,8 +2909,8 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto">
                 <div className="space-y-3">
-                  {recentClients.length > 0 ? recentClients.slice(0, 10).map((client, index) => (
-                    <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => navigate('/clientes')}>
+                  {recentClients.length > 0 ? recentClients.map((client, index) => (
+                    <div key={client.id || index} className="flex items-center gap-3 p-3 border border-border rounded-lg hover:bg-accent/50 transition-colors cursor-pointer" onClick={() => navigate(`/clientes?cliente=${client.id}`)}>
                     <ClientAvatar 
                       avatarPath={client.avatar_url}
                       clientName={client.nome}
