@@ -50,17 +50,20 @@ const Pagamentos = () => {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   
-  // Read method filter from URL params if present
+  // Read filters from URL params if present
   const methodFromUrl = searchParams.get('method')
+  const statusFromUrl = searchParams.get('status')
   const initialMethod = methodFromUrl || 'todos'
+  const initialStatus = statusFromUrl || 'todos'
+  const hasUrlFilters = !!methodFromUrl || !!statusFromUrl
   
   const [filterPeriod, setFilterPeriod] = useState("todos")
-  const [filterStatus, setFilterStatus] = useState("todos")
+  const [filterStatus, setFilterStatus] = useState(initialStatus)
   const [filterMethod, setFilterMethod] = useState(initialMethod)
   const [filterName, setFilterName] = useState("")
   const [filterPaymentType, setFilterPaymentType] = useState("todos")
   const [filterGoogleSync, setFilterGoogleSync] = useState("todos")
-  const [isFiltersOpen, setIsFiltersOpen] = useState(!!methodFromUrl) // Open filters if method from URL
+  const [isFiltersOpen, setIsFiltersOpen] = useState(hasUrlFilters) // Open filters if URL params present
 const [sessions, setSessions] = useState<any[]>([])
 const [clients, setClients] = useState<any[]>([])
 const [profiles, setProfiles] = useState<any[]>([])
@@ -213,15 +216,27 @@ const [isLoading, setIsLoading] = useState(false)
     }
   }, [searchParams, setSearchParams, payments, clients])
 
-  // Handle method filter from URL params
+  // Handle filters from URL params
   useEffect(() => {
     const methodParam = searchParams.get('method')
+    const statusParam = searchParams.get('status')
+    let changed = false
+    
     if (methodParam && methodParam !== filterMethod) {
       setFilterMethod(methodParam)
+      changed = true
+    }
+    if (statusParam && statusParam !== filterStatus) {
+      setFilterStatus(statusParam)
+      changed = true
+    }
+    
+    if (changed) {
       setIsFiltersOpen(true)
-      // Clear the method param from URL after applying
+      // Clear the params from URL after applying
       const newParams = new URLSearchParams(searchParams)
       newParams.delete('method')
+      newParams.delete('status')
       setSearchParams(newParams)
     }
   }, [searchParams])
@@ -823,7 +838,10 @@ const pastPayments = filteredPayments.filter(item => {
                         placeholder="Cliente..."
                         value={filterName}
                         onChange={(e) => setFilterName(e.target.value)}
-                        className="w-full pl-9 h-9 text-sm"
+                        className={cn(
+                          "w-full pl-9 h-9 text-sm transition-all",
+                          filterName !== '' && "ring-2 ring-primary ring-offset-1 border-primary"
+                        )}
                       />
                     </div>
                   </div>
@@ -831,7 +849,10 @@ const pastPayments = filteredPayments.filter(item => {
                   <div>
                     <label className="text-xs md:text-sm font-medium mb-1 block">Período</label>
                     <Select value={filterPeriod} onValueChange={setFilterPeriod}>
-                      <SelectTrigger className="w-full h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "w-full h-9 text-sm transition-all",
+                        filterPeriod !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -847,7 +868,10 @@ const pastPayments = filteredPayments.filter(item => {
                   <div>
                     <label className="text-xs md:text-sm font-medium mb-1 block">Status</label>
                     <Select value={filterStatus} onValueChange={setFilterStatus}>
-                      <SelectTrigger className="w-full h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "w-full h-9 text-sm transition-all",
+                        filterStatus !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -862,7 +886,10 @@ const pastPayments = filteredPayments.filter(item => {
                   <div>
                     <label className="text-xs md:text-sm font-medium mb-1 block">Canal</label>
                     <Select value={filterMethod} onValueChange={setFilterMethod}>
-                      <SelectTrigger className="w-full h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "w-full h-9 text-sm transition-all",
+                        filterMethod !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -880,7 +907,10 @@ const pastPayments = filteredPayments.filter(item => {
                   <div>
                     <label className="text-xs md:text-sm font-medium mb-1 block">Tipo</label>
                     <Select value={filterPaymentType} onValueChange={setFilterPaymentType}>
-                      <SelectTrigger className="w-full h-9 text-sm">
+                      <SelectTrigger className={cn(
+                        "w-full h-9 text-sm transition-all",
+                        filterPaymentType !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
