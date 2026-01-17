@@ -15,7 +15,9 @@ import {
   CheckCircle,
   User,
   Package,
-  Repeat
+  Repeat,
+  Pill,
+  Baby
 } from "lucide-react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useState, useEffect } from "react"
@@ -99,8 +101,14 @@ export const PaymentDetailsModal = ({
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <DialogTitle className="text-2xl">
+              <DialogTitle className="text-2xl flex items-center gap-2">
                 {payment.client}
+                {payment.has_medications && (
+                  <Pill className="w-5 h-5 text-pink-500" />
+                )}
+                {payment.is_child && (
+                  <Baby className="w-5 h-5 text-blue-500" />
+                )}
               </DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant={getStatusColor(payment.status)}>
