@@ -36,7 +36,8 @@ import {
   FileText,
   Cake,
   Lock,
-  Target
+  Target,
+  CalendarDays
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend, PolarAngleAxis } from 'recharts'
 import { Layout } from "@/components/Layout"
@@ -1560,7 +1561,8 @@ const Dashboard = () => {
                               )}
                             </TooltipProvider>
                             {session.recurring_sessions?.monthly_plan_id && (
-                              <Badge variant="secondary" className="text-[10px] md:text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                              <Badge variant="outline" className="text-[10px] md:text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                <CalendarDays className="h-3 w-3 mr-1" />
                                 Plano mensal
                               </Badge>
                             )}
@@ -1707,7 +1709,8 @@ const Dashboard = () => {
                           <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
                           <div className="flex items-center justify-end gap-1 flex-wrap">
                             {(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) && (
-                              <Badge variant="secondary" className="text-xs bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300">
+                              <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
+                                <CalendarDays className="h-3 w-3 mr-1" />
                                 Plano mensal
                               </Badge>
                             )}
