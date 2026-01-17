@@ -1685,23 +1685,23 @@ const Dashboard = () => {
                             <div className="flex items-center gap-1.5">
                               <p className="font-medium text-sm">{payment.clients?.nome || 'Cliente'}</p>
                               <TooltipProvider>
-                                {payment.package_id && (
+                                {payment.clients?.medicamentos && payment.clients.medicamentos.length > 0 && (
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Package className="w-3.5 h-3.5 text-primary" />
+                                      <Pill className="w-3.5 h-3.5 text-primary" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>Pacote</p>
+                                      <p>Usa medicamentos</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
-                                {(payment.sessions?.recurring_session_id || payment.monthly_plan_id) && (
+                                {payment.clients?.eh_crianca_adolescente && (
                                   <Tooltip>
                                     <TooltipTrigger>
-                                      <Repeat className="w-3.5 h-3.5 text-primary" />
+                                      <Baby className="w-3.5 h-3.5 text-primary" />
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                      <p>{(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) ? 'Plano mensal' : 'Sessão Recorrente'}</p>
+                                      <p>Criança/Adolescente</p>
                                     </TooltipContent>
                                   </Tooltip>
                                 )}
@@ -1716,6 +1716,28 @@ const Dashboard = () => {
                         <div className="text-right">
                           <p className="font-medium text-sm">{formatCurrencyBR(payment.valor)}</p>
                           <div className="flex items-center justify-end gap-1 flex-wrap">
+                            <TooltipProvider>
+                              {payment.package_id && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Package className="w-3.5 h-3.5 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>Pacote</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                              {(payment.sessions?.recurring_session_id || payment.monthly_plan_id) && (
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <Repeat className="w-3.5 h-3.5 text-primary" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) ? 'Plano mensal' : 'Sessão Recorrente'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </TooltipProvider>
                             {(payment.monthly_plan_id || payment.sessions?.recurring_sessions?.monthly_plan_id) && (
                               <Badge variant="outline" className="text-xs bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30">
                                 <CalendarDays className="h-3 w-3 mr-1" />
