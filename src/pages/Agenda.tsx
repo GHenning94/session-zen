@@ -240,8 +240,9 @@ const Agenda = () => {
       }
     } else if (choice === 'all_future') {
       // Calculate the difference and update all future sessions
-      const originalDate = new Date(session.data)
-      const targetDate = new Date(newDate)
+      // Use T12:00:00 to avoid timezone issues when parsing dates
+      const originalDate = new Date(session.data + 'T12:00:00')
+      const targetDate = new Date(newDate + 'T12:00:00')
       const dayDiff = Math.round((targetDate.getTime() - originalDate.getTime()) / (1000 * 60 * 60 * 24))
       
       // Get all future sessions in this recurring series
@@ -262,9 +263,10 @@ const Agenda = () => {
       
       // Update each future session
       for (const futureSession of futureSessions) {
-        const futureOriginalDate = new Date(futureSession.data)
+        // Use T12:00:00 to avoid timezone issues
+        const futureOriginalDate = new Date(futureSession.data + 'T12:00:00')
         futureOriginalDate.setDate(futureOriginalDate.getDate() + dayDiff)
-        const futureNewDate = futureOriginalDate.toISOString().split('T')[0]
+        const futureNewDate = format(futureOriginalDate, 'yyyy-MM-dd')
         
         const updateData: any = { data: futureNewDate }
         if (newTime) {
