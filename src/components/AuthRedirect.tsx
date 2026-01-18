@@ -86,6 +86,16 @@ const AuthRedirect = () => {
 
         const subscriptionPlan = profile.subscription_plan
 
+        // PRIORIDADE MÁXIMA: Verificar se há plano pendente para checkout
+        const pendingPlan = localStorage.getItem('pending_plan') || 
+                           sessionStorage.getItem('pending_plan_backup');
+        
+        if (pendingPlan && pendingPlan !== 'basico' && currentPath !== '/checkout-redirect') {
+          console.log('[AuthRedirect] 🛒 Plano pendente detectado:', pendingPlan, '- redirecionando para checkout');
+          navigate('/checkout-redirect', { replace: true });
+          return;
+        }
+
         // CASO 1: Utilizador NÃO TEM plano
         if (!subscriptionPlan || subscriptionPlan === '') {
           // Se não tem plano, DEVE estar na página /welcome

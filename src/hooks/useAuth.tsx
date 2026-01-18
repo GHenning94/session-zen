@@ -128,6 +128,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - processo de upgrade em andamento');
           return;
         }
+
+        // ✅ CORREÇÃO: Ignorar SIGNED_OUT durante verificação 2FA de ação sensível
+        const is2FAModalActive = sessionStorage.getItem('2FA_ACTION_MODAL_ACTIVE') === 'true';
+        if (event === 'SIGNED_OUT' && is2FAModalActive) {
+          console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - verificação 2FA em andamento');
+          return;
+        }
         
         // Logout completo
         if (event === 'SIGNED_OUT') {
