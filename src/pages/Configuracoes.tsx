@@ -31,6 +31,8 @@ import { UpdatePaymentMethodModal } from "@/components/UpdatePaymentMethodModal"
 import { SubscriptionInvoices } from "@/components/SubscriptionInvoices"
 import { SubscriptionInfo } from "@/components/SubscriptionInfo"
 import { TwoFactorSettings } from "@/components/TwoFactorSettings"
+import { TwoFactorActionModal } from "@/components/TwoFactorActionModal"
+import { use2FA } from "@/hooks/use2FA"
 import { useTheme } from "next-themes"
 import { useUserTheme } from "@/hooks/useUserTheme"
 import { Sun, Moon } from "lucide-react"
@@ -135,6 +137,7 @@ const Configuracoes = () => {
   const { toast } = useToast()
   const { user } = useAuth()
   const { hasAccessToFeature, currentPlan } = useSubscription()
+  const { has2FAConfigured, settings: twoFASettings } = use2FA()
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { applyBrandColor, saveBrandColor } = useColorTheme()
@@ -175,6 +178,10 @@ const Configuracoes = () => {
   const [savingBankDetails, setSavingBankDetails] = useState(false)
   const [showEmailSettingsModal, setShowEmailSettingsModal] = useState(false)
   const [showWhatsAppSettingsModal, setShowWhatsAppSettingsModal] = useState(false)
+  
+  // Estados para verificação 2FA em ações sensíveis
+  const [show2FAModal, setShow2FAModal] = useState(false)
+  const [pending2FAAction, setPending2FAAction] = useState<'password' | 'email' | 'delete' | null>(null)
   
   // Ler tab da URL
   useEffect(() => {
@@ -344,9 +351,29 @@ const Configuracoes = () => {
       return;
     }
 
-    // Armazenar a senha atual e mostrar dialog de confirmação
+    // Armazenar a senha pendente
     setPendingNewPassword(newPassword);
-    setShowPasswordChangeDialog(true);
+    
+    // Verificar se o usuário tem 2FA configurado
+    if (has2FAConfigured()) {
+      setPending2FAAction('password');
+      setShow2FAModal(true);
+    } else {
+      // Sem 2FA, continuar com o fluxo normal
+      setShowPasswordChangeDialog(true);
+    }
+  };
+
+  // Handler chamado após verificação 2FA bem-sucedida
+  const handle2FAVerified = () => {
+    if (pending2FAAction === 'password') {
+      setShowPasswordChangeDialog(true);
+    } else if (pending2FAAction === 'email') {
+      setShowEmailChangeDialog(true);
+    } else if (pending2FAAction === 'delete') {
+      setShowDeleteConfirm(true);
+    }
+    setPending2FAAction(null);
   };
 
   const confirmPasswordChange = async () => {
@@ -449,9 +476,17 @@ const Configuracoes = () => {
       return;
     }
 
-    // Mostrar dialog de confirmação
+    // Armazenar o email pendente
     setPendingNewEmail(newEmail);
-    setShowEmailChangeDialog(true);
+    
+    // Verificar se o usuário tem 2FA configurado
+    if (has2FAConfigured()) {
+      setPending2FAAction('email');
+      setShow2FAModal(true);
+    } else {
+      // Sem 2FA, continuar com o fluxo normal
+      setShowEmailChangeDialog(true);
+    }
   };
 
   const confirmEmailChange = async () => {
@@ -942,7 +977,20 @@ const Configuracoes = () => {
                 <CardDescription>Ações irreversíveis da conta</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button variant="destructive" size="sm" onClick={() => setShowDeleteConfirm(true)}>
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={() => {
+                    // Verificar se o usuário tem 2FA configurado
+                    if (has2FAConfigured()) {
+                      setPending2FAAction('delete');
+                      setShow2FAModal(true);
+                    } else {
+                      // Sem 2FA, continuar com o fluxo normal
+                      setShowDeleteConfirm(true);
+                    }
+                  }}
+                >
                   Deletar Conta Permanentemente
                 </Button>
               </CardContent>
@@ -1773,6 +1821,19 @@ const Configuracoes = () => {
         title="Notificações por WhatsApp"
         initialEnabled={settings.notificacao_whatsapp || false}
         onEnabledChange={(enabled) => handleSettingsChange('notificacao_whatsapp', enabled)}
+      />
+
+      {/* Modal de verificação 2FA para ações sensíveis */}
+      <TwoFactorActionModal
+        open={show2FAModal}
+        onOpenChange={setShow2FAModal}
+        onVerified={handle2FAVerified}
+        actionDescription={
+          pending2FAAction === 'password' ? 'alterar sua senha' :
+          pending2FAAction === 'email' ? 'alterar seu e-mail' :
+          pending2FAAction === 'delete' ? 'excluir sua conta' : ''
+        }
+        email={user?.email || ''}
       />
     </Layout>
   )
