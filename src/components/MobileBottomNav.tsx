@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom"
+import { NavLink, useLocation, useNavigate } from "react-router-dom"
 import { 
   LayoutDashboard, 
   Calendar, 
@@ -19,15 +19,28 @@ import {
   Crown,
   Gift,
   BookOpen,
-  Share2
+  Share2,
+  Lock
 } from "lucide-react"
 import { useState } from "react"
 import { cn } from "@/lib/utils"
 import { useTerminology } from "@/hooks/useTerminology"
-import { useSubscription } from "@/hooks/useSubscription"
+import { useSubscription, SubscriptionPlan } from "@/hooks/useSubscription"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
+import { UpgradeModal } from "@/components/UpgradeModal"
+
+// Plan requirements for each feature (matching sidebar)
+const MENU_ITEM_PLAN_REQUIREMENTS: Record<string, SubscriptionPlan> = {
+  '/pacotes': 'pro',
+  '/sessoes-recorrentes': 'pro',
+  '/relatorios': 'pro',
+  '/metas': 'pro',
+  '/pagina-publica': 'pro',
+  '/programa-indicacao': 'pro',
+  '/integracoes': 'premium',
+}
 
 // Main tabs for bottom navigation (most used features)
 const mainTabs = [
@@ -60,12 +73,22 @@ const comingSoonItems = [
   { title: "Redes Sociais" as const, url: "#", icon: Share2, disabled: true },
 ]
 
+// Plan hierarchy for comparison
+const PLAN_HIERARCHY: Record<SubscriptionPlan, number> = {
+  'basico': 0,
+  'pro': 1,
+  'premium': 2
+}
+
 export function MobileBottomNav() {
   const location = useLocation()
+  const navigate = useNavigate()
   const currentPath = location.pathname
   const { clientTermPlural } = useTerminology()
   const { currentPlan } = useSubscription()
   const [isMoreOpen, setIsMoreOpen] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [upgradeFeatureName, setUpgradeFeatureName] = useState('')
   
   const isPremium = currentPlan === 'premium'
   
@@ -76,6 +99,33 @@ export function MobileBottomNav() {
   
   const isActive = (path: string) => currentPath === path
   const isMoreActive = moreItems.some(item => isActive(item.url))
+  
+  // Check if a menu item is locked based on current plan
+  const isMenuItemLocked = (url: string): boolean => {
+    const requiredPlan = MENU_ITEM_PLAN_REQUIREMENTS[url]
+    if (!requiredPlan) return false
+    return PLAN_HIERARCHY[currentPlan] < PLAN_HIERARCHY[requiredPlan]
+  }
+  
+  // Get required plan for a menu item
+  const getRequiredPlan = (url: string): SubscriptionPlan | null => {
+    return MENU_ITEM_PLAN_REQUIREMENTS[url] || null
+  }
+  
+  // Handle menu item click
+  const handleMenuItemClick = (e: React.MouseEvent, item: typeof moreItems[0]) => {
+    const isLocked = isMenuItemLocked(item.url)
+    
+    if (isLocked) {
+      e.preventDefault()
+      e.stopPropagation()
+      setUpgradeFeatureName(item.title)
+      setShowUpgradeModal(true)
+    } else {
+      setIsMoreOpen(false)
+      navigate(item.url)
+    }
+  }
 
   return (
     <>
@@ -169,23 +219,44 @@ export function MobileBottomNav() {
                 <div className="grid grid-cols-3 gap-3 pb-4">
                   {moreItems.map((item) => {
                     const active = isActive(item.url)
+                    const isLocked = isMenuItemLocked(item.url)
+                    const requiredPlan = getRequiredPlan(item.url)
+                    const isPremiumFeature = requiredPlan === 'premium'
+                    
                     return (
-                      <NavLink
+                      <div
                         key={item.url}
-                        to={item.url}
-                        onClick={() => setIsMoreOpen(false)}
+                        onClick={(e) => handleMenuItemClick(e, item)}
                         className={cn(
-                          "flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-200",
-                          active 
-                            ? "bg-primary text-primary-foreground shadow-lg" 
-                            : "bg-muted/50 hover:bg-muted text-foreground"
+                          "flex flex-col items-center justify-center p-4 rounded-2xl transition-all duration-200 relative cursor-pointer",
+                          isLocked
+                            ? "bg-muted/30 text-muted-foreground"
+                            : active 
+                              ? "bg-primary text-primary-foreground shadow-lg" 
+                              : "bg-muted/50 hover:bg-muted text-foreground"
                         )}
                       >
-                        <item.icon className="w-6 h-6 mb-2" />
-                        <span className="text-xs font-medium text-center leading-tight">
+                        {/* Lock badge */}
+                        {isLocked && (
+                          <Badge 
+                            variant={isPremiumFeature ? 'warning' : 'secondary'}
+                            className="absolute -top-1 right-1 text-[8px] px-1.5 py-0.5 h-5 whitespace-nowrap gap-0.5 justify-center"
+                          >
+                            {!isPremiumFeature && <Lock className="w-2 h-2" />}
+                            {isPremiumFeature ? 'Premium' : 'Pro'}
+                          </Badge>
+                        )}
+                        <item.icon className={cn(
+                          "w-6 h-6 mb-2",
+                          isLocked && "opacity-50"
+                        )} />
+                        <span className={cn(
+                          "text-xs font-medium text-center leading-tight",
+                          isLocked && "opacity-50"
+                        )}>
                           {item.title}
                         </span>
-                      </NavLink>
+                      </div>
                     )
                   })}
                 </div>
@@ -199,7 +270,7 @@ export function MobileBottomNav() {
                         key={item.title}
                         className="flex flex-col items-center justify-center p-4 rounded-2xl bg-muted/30 text-muted-foreground opacity-50 cursor-not-allowed relative"
                       >
-                        <Badge className="absolute -top-1 right-1 text-[8px] px-1.5 py-0.5 bg-warning text-warning-foreground">
+                        <Badge className="absolute -top-1 right-1 text-[8px] px-1.5 py-0.5 h-5 bg-warning text-warning-foreground">
                           Em breve
                         </Badge>
                         <item.icon className="w-6 h-6 mb-2" />
@@ -218,6 +289,13 @@ export function MobileBottomNav() {
       
       {/* Bottom padding spacer to prevent content from being hidden behind the nav */}
       <div className="h-20" />
+      
+      {/* Upgrade Modal */}
+      <UpgradeModal 
+        open={showUpgradeModal} 
+        onOpenChange={setShowUpgradeModal}
+        feature={upgradeFeatureName}
+      />
     </>
   )
 }
