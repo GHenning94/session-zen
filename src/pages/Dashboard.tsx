@@ -690,17 +690,29 @@ const Dashboard = () => {
           return // Pular pagamentos fora do período
         }
 
-        // Priorizar: payment > sessão > sessão recorrente (mais específico primeiro)
-        let metodo = 
-          payment.metodo_pagamento || 
-          payment.sessions?.metodo_pagamento || 
-          payment.sessions?.recurring_sessions?.metodo_pagamento
+        // Helper para verificar se método é válido (não é "a definir" ou vazio)
+        const isValidMethod = (m: string | null | undefined): boolean => {
+          if (!m) return false
+          const normalized = m.toLowerCase().trim()
+          return normalized !== '' && normalized !== 'a definir' && normalized !== 'null' && normalized !== 'undefined' && normalized !== 'outros'
+        }
+        
+        // Priorizar: usar método mais específico que seja VÁLIDO
+        // Se payment.metodo_pagamento for "A definir", usar da sessão
+        let metodo = ''
+        if (isValidMethod(payment.metodo_pagamento)) {
+          metodo = payment.metodo_pagamento
+        } else if (isValidMethod(payment.sessions?.metodo_pagamento)) {
+          metodo = payment.sessions.metodo_pagamento
+        } else if (isValidMethod(payment.sessions?.recurring_sessions?.metodo_pagamento)) {
+          metodo = payment.sessions.recurring_sessions.metodo_pagamento
+        }
         
         // Normalizar para lowercase para evitar duplicatas (ex: "Transferência" vs "transferencia")
         metodo = metodo ? metodo.toLowerCase().trim() : ''
         
-        // Validar se é um valor inválido e normalizar para 'a definir'
-        if (!metodo || metodo === 'null' || metodo === 'undefined' || metodo === 'outros' || metodo === '') {
+        // Validar se ainda é um valor inválido e normalizar para 'a definir'
+        if (!metodo || metodo === 'null' || metodo === 'undefined' || metodo === 'outros' || metodo === '' || metodo === 'a definir') {
           metodo = 'a definir'
         }
         
@@ -1060,22 +1072,29 @@ const Dashboard = () => {
           return // Pular pagamentos fora do período
         }
 
-        // Priorizar: payment > sessão > sessão recorrente (mesma lógica do carregamento inicial)
-        let method = 
-          p.metodo_pagamento || 
-          p.sessions?.metodo_pagamento || 
-          p.sessions?.recurring_sessions?.metodo_pagamento
+        // Helper para verificar se método é válido (não é "a definir" ou vazio)
+        const isValidMethod = (m: string | null | undefined): boolean => {
+          if (!m) return false
+          const normalized = m.toLowerCase().trim()
+          return normalized !== '' && normalized !== 'a definir' && normalized !== 'null' && normalized !== 'undefined' && normalized !== 'outros'
+        }
+        
+        // Priorizar: usar método mais específico que seja VÁLIDO
+        // Se payment.metodo_pagamento for "A definir", usar da sessão
+        let method = ''
+        if (isValidMethod(p.metodo_pagamento)) {
+          method = p.metodo_pagamento
+        } else if (isValidMethod(p.sessions?.metodo_pagamento)) {
+          method = p.sessions.metodo_pagamento
+        } else if (isValidMethod(p.sessions?.recurring_sessions?.metodo_pagamento)) {
+          method = p.sessions.recurring_sessions.metodo_pagamento
+        }
         
         // Normalizar para lowercase
         method = method ? method.toLowerCase().trim() : ''
         
-        // Validar se é um valor inválido e normalizar para 'a definir'
-        if (!method || method === 'null' || method === 'undefined' || method === 'outros' || method === '') {
-          method = 'a definir'
-        }
-        
-        // Validar se é um valor inválido e normalizar para 'a definir'
-        if (!method || method === 'null' || method === 'undefined' || method === 'outros' || method === '') {
+        // Validar se ainda é um valor inválido e normalizar para 'a definir'
+        if (!method || method === 'null' || method === 'undefined' || method === 'outros' || method === '' || method === 'a definir') {
           method = 'a definir'
         }
         
