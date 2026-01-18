@@ -50,17 +50,54 @@ export const TwoFactorActionModal = ({
   const [requiresAuthenticator, setRequiresAuthenticator] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
 
+  // Preservar estado do modal durante mudanças de aba
+  useEffect(() => {
+    if (open) {
+      // Marcar que modal 2FA está ativo (para evitar que useAuth limpe estado)
+      sessionStorage.setItem('2FA_ACTION_MODAL_ACTIVE', 'true');
+    } else {
+      sessionStorage.removeItem('2FA_ACTION_MODAL_ACTIVE');
+    }
+    
+    return () => {
+      sessionStorage.removeItem('2FA_ACTION_MODAL_ACTIVE');
+    };
+  }, [open]);
+
+  // Restaurar estado de emailCodeSent do sessionStorage ao abrir modal
+  useEffect(() => {
+    if (open) {
+      const wasEmailCodeSent = sessionStorage.getItem('2FA_EMAIL_CODE_SENT') === 'true';
+      if (wasEmailCodeSent) {
+        setEmailCodeSent(true);
+        // Restaurar cooldown se ainda houver
+        const cooldownEndTime = sessionStorage.getItem('2FA_COOLDOWN_END');
+        if (cooldownEndTime) {
+          const remaining = Math.max(0, Math.floor((parseInt(cooldownEndTime) - Date.now()) / 1000));
+          if (remaining > 0) {
+            setResendCooldown(remaining);
+          }
+        }
+      }
+    }
+  }, [open]);
+
   // Carregar configurações de 2FA do usuário
   useEffect(() => {
     if (open) {
       loadTwoFactorSettings();
-      // Reset state when opening
+      // Reset apenas campos de código, não o estado de emailCodeSent
       setEmailCode('');
       setAuthenticatorCode('');
       setBackupCode('');
       setUseBackupCode(false);
-      setEmailCodeSent(false);
-      setResendCooldown(0);
+      
+      // Verificar se já enviou código anteriormente (para restaurar estado após mudar de aba)
+      const wasEmailCodeSent = sessionStorage.getItem('2FA_EMAIL_CODE_SENT') === 'true';
+      if (!wasEmailCodeSent) {
+        setEmailCodeSent(false);
+        setResendCooldown(0);
+      }
     }
   }, [open]);
 
@@ -97,6 +134,11 @@ export const TwoFactorActionModal = ({
       if (error) throw error;
       setEmailCodeSent(true);
       setResendCooldown(60);
+      
+      // Persistir estado no sessionStorage para restaurar ao voltar de outra aba
+      sessionStorage.setItem('2FA_EMAIL_CODE_SENT', 'true');
+      sessionStorage.setItem('2FA_COOLDOWN_END', String(Date.now() + 60000));
+      
       toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message || 'Falha ao enviar código', variant: 'destructive' });
@@ -105,11 +147,15 @@ export const TwoFactorActionModal = ({
     }
   };
 
-  // Countdown timer
+  // Countdown timer - também atualiza sessionStorage
   useEffect(() => {
     if (resendCooldown > 0) {
       const timer = setTimeout(() => {
-        setResendCooldown(resendCooldown - 1);
+        const newCooldown = resendCooldown - 1;
+        setResendCooldown(newCooldown);
+        if (newCooldown === 0) {
+          sessionStorage.removeItem('2FA_COOLDOWN_END');
+        }
       }, 1000);
       return () => clearTimeout(timer);
     }
@@ -125,27 +171,61 @@ export const TwoFactorActionModal = ({
         backupCode: useBackupCode ? backupCode : undefined,
       });
       
-      if (error) throw error;
+      // Tratar resposta da edge function
+      if (error) {
+        // Erro de edge function - mostrar mensagem amigável
+        console.error('Erro na verificação 2FA:', error);
+        toast({ 
+          title: 'Código incorreto', 
+          description: 'Verifique o código inserido e tente novamente.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
       
-      if (data.success) {
+      // Verificar se há erro no payload da resposta
+      if (data?.error) {
+        toast({ 
+          title: 'Código incorreto', 
+          description: 'Verifique o código inserido e tente novamente.', 
+          variant: 'destructive' 
+        });
+        return;
+      }
+      
+      if (data?.success) {
+        // Limpar estado do sessionStorage ao sucesso
+        sessionStorage.removeItem('2FA_EMAIL_CODE_SENT');
+        sessionStorage.removeItem('2FA_COOLDOWN_END');
+        sessionStorage.removeItem('2FA_ACTION_MODAL_ACTIVE');
+        
         toast({ title: 'Verificação bem-sucedida' });
         onOpenChange(false);
         onVerified();
       } else {
         toast({ 
-          title: 'Código(s) inválido(s)', 
-          description: data.error || 'Verifique os códigos inseridos e tente novamente', 
+          title: 'Código incorreto', 
+          description: 'Verifique o código inserido e tente novamente.', 
           variant: 'destructive' 
         });
       }
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive' });
+      console.error('Exceção na verificação 2FA:', error);
+      toast({ 
+        title: 'Código incorreto', 
+        description: 'Verifique o código inserido e tente novamente.', 
+        variant: 'destructive' 
+      });
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = () => {
+    // Limpar estado do sessionStorage ao cancelar
+    sessionStorage.removeItem('2FA_EMAIL_CODE_SENT');
+    sessionStorage.removeItem('2FA_COOLDOWN_END');
+    sessionStorage.removeItem('2FA_ACTION_MODAL_ACTIVE');
     onOpenChange(false);
   };
 
