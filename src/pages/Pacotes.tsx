@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Package as PackageIcon, Plus, Users, Calendar, DollarSign } from 'lucide-react';
+import { Package as PackageIcon, Plus, Calendar, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Package, usePackages } from '@/hooks/usePackages';
 import { PackageModal } from '@/components/PackageModal';
@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { formatPaymentMethod } from '@/utils/formatters';
 import { decryptSensitiveDataBatch } from '@/utils/encryptionMiddleware';
+import { ClientAvatar } from '@/components/ClientAvatar';
 
 export default function Pacotes() {
   const [isPackageModalOpen, setIsPackageModalOpen] = useState(false);
@@ -78,7 +79,8 @@ export default function Pacotes() {
           *,
           clients (
             id,
-            nome
+            nome,
+            avatar_url
           )
         `)
         .order('created_at', { ascending: false });
@@ -96,7 +98,8 @@ export default function Pacotes() {
           *,
           clients (
             id,
-            nome
+            nome,
+            avatar_url
           )
         `)
         .order('created_at', { ascending: false });
@@ -363,8 +366,11 @@ export default function Pacotes() {
                     <div className="space-y-1">
                       <CardTitle className="text-lg">{pkg.nome}</CardTitle>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Users className="h-4 w-4" />
-                        {pkg.clients?.nome}
+                        <ClientAvatar 
+                          clientName={pkg.clients?.nome || 'Cliente'} 
+                          avatarPath={pkg.clients?.avatar_url} 
+                          size="sm" 
+                        />
                       </div>
                     </div>
                     <Badge variant={config.variant}>{config.label}</Badge>
