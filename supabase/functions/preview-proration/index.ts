@@ -121,37 +121,68 @@ async function checkForActiveDiscounts(
     };
   }
 
-  // 5. Verificar invoices recentes para descontos aplicados
+  // 5. Verificar invoices recentes para descontos aplicados (IGNORANDO prorrata de upgrades anteriores)
   try {
     const invoices = await stripe.invoices.list({
       subscription: subscription.id,
-      limit: 1,
+      limit: 3, // Buscar mais invoices para análise
       status: 'paid'
     });
 
     if (invoices.data.length > 0) {
-      const lastInvoice = invoices.data[0];
-      
-      // Verificar se a invoice teve desconto
-      if (lastInvoice.discount || lastInvoice.total_discount_amounts?.length > 0) {
-        return {
-          hasDiscount: true,
-          discountType: 'invoice_discount',
-          discountDetails: 'Desconto aplicado na última fatura'
-        };
-      }
+      // Filtrar invoices de prorrata - estas NÃO devem bloquear nova prorrata
+      // Prorrata acontece quando: billing_reason === 'subscription_update' ou tem linha com proration === true
+      const regularInvoices = invoices.data.filter(inv => {
+        const isProrationInvoice = 
+          inv.billing_reason === 'subscription_update' ||
+          inv.lines?.data?.some(line => line.proration === true) ||
+          inv.metadata?.type === 'proration_upgrade';
+        
+        if (isProrationInvoice) {
+          console.log('[preview-proration] ℹ️ Ignorando invoice de prorrata:', inv.id);
+        }
+        
+        return !isProrationInvoice;
+      });
 
-      // Verificar se o valor pago foi menor que o esperado (indica promoção)
-      const currentPriceId = subscription.items.data[0].price.id;
-      const expectedPrice = PRICE_MAP[currentPriceId]?.price || 0;
+      // Usar a invoice mais recente que NÃO seja prorrata
+      const lastRegularInvoice = regularInvoices[0];
       
-      if (expectedPrice > 0 && lastInvoice.amount_paid < expectedPrice * 0.95) {
-        // Se pagou menos de 95% do valor esperado, considera desconto
-        return {
-          hasDiscount: true,
-          discountType: 'promotional',
-          discountDetails: 'Valor promocional detectado na última fatura'
-        };
+      if (lastRegularInvoice) {
+        // Verificar desconto aplicado (cupom, promoção real)
+        if (lastRegularInvoice.discount || lastRegularInvoice.total_discount_amounts?.length > 0) {
+          // Verificar se não é desconto de prorrata
+          const discountMetadata = lastRegularInvoice.discount?.coupon?.metadata;
+          const isProrationDiscount = discountMetadata?.type === 'proration_credit';
+          
+          if (!isProrationDiscount) {
+            return {
+              hasDiscount: true,
+              discountType: 'invoice_discount',
+              discountDetails: 'Desconto aplicado na última fatura'
+            };
+          }
+        }
+
+        // Verificar valor promocional - mas APENAS em invoices de assinatura regular (não upgrade)
+        // billing_reason 'subscription_cycle' ou 'subscription_create' indica cobrança regular
+        const isRegularBilling = 
+          lastRegularInvoice.billing_reason === 'subscription_cycle' || 
+          lastRegularInvoice.billing_reason === 'subscription_create';
+        
+        if (isRegularBilling) {
+          const currentPriceId = subscription.items.data[0].price.id;
+          const expectedPrice = PRICE_MAP[currentPriceId]?.price || 0;
+          
+          if (expectedPrice > 0 && lastRegularInvoice.amount_paid < expectedPrice * 0.95) {
+            // Se pagou menos de 95% do valor esperado, considera desconto
+            return {
+              hasDiscount: true,
+              discountType: 'promotional',
+              discountDetails: 'Valor promocional detectado na última fatura'
+            };
+          }
+        }
       }
     }
   } catch (e) {
