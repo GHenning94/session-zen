@@ -374,12 +374,11 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
           {/* Package Name and Client */}
           <div className="space-y-1">
             <span className="text-lg font-bold truncate block">{currentPackage?.nome}</span>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <ClientAvatar 
                 clientName={currentPackage?.clients?.nome || 'Cliente'} 
                 avatarPath={currentPackage?.clients?.avatar_url} 
                 size="sm" 
-                className="h-5 w-5"
               />
               <span className="truncate">{currentPackage?.clients?.nome || 'Cliente'}</span>
             </div>
