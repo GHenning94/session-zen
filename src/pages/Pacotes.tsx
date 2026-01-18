@@ -371,6 +371,7 @@ export default function Pacotes() {
                           avatarPath={pkg.clients?.avatar_url} 
                           size="sm" 
                         />
+                        <span>{pkg.clients?.nome}</span>
                       </div>
                     </div>
                     <Badge variant={config.variant}>{config.label}</Badge>
