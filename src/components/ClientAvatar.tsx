@@ -24,6 +24,13 @@ export const ClientAvatar = ({
     let isMounted = true
     
     const loadAvatar = async () => {
+      // Se não há avatarPath, não precisa carregar - mostrar fallback imediatamente
+      if (!avatarPath) {
+        setAvatarUrl(null)
+        setIsLoading(false)
+        return
+      }
+      
       setIsLoading(true)
       const url = await getCachedAvatar(avatarPath, size)
       if (isMounted) {
