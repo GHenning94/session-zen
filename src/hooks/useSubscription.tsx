@@ -20,6 +20,7 @@ export type Feature =
   | 'unlimited_clients'
   | 'unlimited_sessions'
   | 'packages'
+  | 'recurring_sessions'
 
 // Feature to minimum plan mapping
 const FEATURE_TO_PLAN: Record<Feature, SubscriptionPlan> = {
@@ -38,6 +39,7 @@ const FEATURE_TO_PLAN: Record<Feature, SubscriptionPlan> = {
   unlimited_clients: 'premium',
   unlimited_sessions: 'pro',
   packages: 'pro',
+  recurring_sessions: 'pro',
 }
 
 // Plan hierarchy for comparison

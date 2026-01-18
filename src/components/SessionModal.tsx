@@ -77,6 +77,7 @@ export const SessionModal = ({
   const [sessionType, setSessionType] = useState<'individual' | 'pacote' | 'recorrente'>('individual')
   
   const hasPackagesAccess = hasAccessToFeature('packages')
+  const hasRecurringAccess = hasAccessToFeature('recurring_sessions')
   
   // Dados básicos da sessão (Bloco 1)
   const [formData, setFormData] = useState({
@@ -580,6 +581,10 @@ export const SessionModal = ({
                       setShowUpgradeModal(true)
                       return
                     }
+                    if (v === 'recorrente' && !hasRecurringAccess) {
+                      setShowUpgradeModal(true)
+                      return
+                    }
                     setSessionType(v)
                   }}
                   className="flex flex-wrap gap-2"
@@ -606,6 +611,11 @@ export const SessionModal = ({
                         <RadioGroupItem value="recorrente" id="t-recorrente" />
                         <Repeat className="h-4 w-4 text-muted-foreground" />
                         <span className="text-sm font-medium">Recorrente</span>
+                        {!hasRecurringAccess && (
+                          <Badge variant="secondary" className="text-[9px] px-1 py-0 ml-auto">
+                            <Lock className="w-2.5 h-2.5" />
+                          </Badge>
+                        )}
                       </CardContent>
                     </Card>
                   </Label>
