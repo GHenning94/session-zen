@@ -191,26 +191,13 @@ export const SubscriptionInfo = () => {
               Fazer Upgrade
             </Button>
           ) : (
-            <>
-              <Button 
-                onClick={() => navigate('/upgrade')} 
-                variant="outline"
-                className="flex-1"
-              >
-                Alterar Plano
-              </Button>
-              {!isCancelled && subscription.stripeCustomerId && (
-                <Button 
-                  variant="ghost" 
-                  className="flex-1"
-                  onClick={() => {
-                    console.log('Abrir portal do cliente Stripe')
-                  }}
-                >
-                  Gerenciar
-                </Button>
-              )}
-            </>
+            <Button 
+              onClick={() => navigate('/upgrade')} 
+              variant="outline"
+              className="w-full"
+            >
+              Alterar Plano
+            </Button>
           )}
         </div>
 
