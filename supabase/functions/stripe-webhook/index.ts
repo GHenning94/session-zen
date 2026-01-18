@@ -434,14 +434,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     discountApplied,
   });
   
-  // Calcular data de próxima renovação
-  const currentDate = new Date();
-  const nextBillingDate = new Date(currentDate);
-  
-  if (billingInterval === 'yearly') {
-    nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
-  } else {
-    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+  // ✅ BUSCAR DATA REAL DO STRIPE: Obter a assinatura para pegar o current_period_end correto
+  let nextBillingDate: Date;
+  try {
+    const stripeSubscription = await stripe.subscriptions.retrieve(subscriptionId);
+    nextBillingDate = new Date(stripeSubscription.current_period_end * 1000);
+    console.log('[stripe-webhook] 📅 Using Stripe subscription period_end:', nextBillingDate.toISOString());
+  } catch (subError) {
+    // Fallback: calcular manualmente se não conseguir buscar do Stripe
+    console.log('[stripe-webhook] ⚠️ Could not fetch subscription, calculating date manually');
+    const currentDate = new Date();
+    nextBillingDate = new Date(currentDate);
+    
+    if (billingInterval === 'yearly') {
+      nextBillingDate.setFullYear(nextBillingDate.getFullYear() + 1);
+    } else {
+      nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    }
   }
 
   // Atualizar perfil com informações completas da assinatura
@@ -1063,6 +1072,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     subscription: subscription.id,
     status: subscription.status,
     cancel_at_period_end: subscription.cancel_at_period_end,
+    current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
   });
 
   const { data: profile } = await supabase
@@ -1089,9 +1099,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   let newPlanName = priceId && priceToPlans[priceId] ? priceToPlans[priceId] : profile.subscription_plan;
   const billingInterval = subscription.items.data[0]?.price.recurring?.interval || 'month';
 
+  // ✅ ATUALIZAÇÃO COMPLETA: Inclui data de renovação (próxima cobrança)
+  const nextBillingDate = new Date(subscription.current_period_end * 1000);
+  
   const updateData: any = {
     subscription_plan: isActive ? newPlanName : 'basico',
     billing_interval: isActive ? (billingInterval === 'year' ? 'yearly' : 'monthly') : null,
+    subscription_end_date: isActive ? nextBillingDate.toISOString() : null,
+    stripe_subscription_id: subscription.id,
   };
 
   // ✅ PERÍODO DE CARÊNCIA: Se cancelado, manter acesso até o fim do período
@@ -1115,7 +1130,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     return;
   }
 
-  console.log('[stripe-webhook] ✅ Subscription updated successfully - New plan:', newPlanName);
+  console.log('[stripe-webhook] ✅ Subscription updated successfully:', {
+    plan: newPlanName,
+    nextBilling: nextBillingDate.toISOString()
+  });
 
   // Notificar sobre cancelamento agendado
   if (subscription.cancel_at_period_end) {

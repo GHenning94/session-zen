@@ -32,7 +32,7 @@ export const SubscriptionInfo = () => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('subscription_plan')
+        .select('subscription_plan, billing_interval, subscription_end_date, subscription_cancel_at, stripe_customer_id, created_at')
         .eq('user_id', user.id)
         .single()
 
@@ -40,11 +40,11 @@ export const SubscriptionInfo = () => {
 
       setSubscription({
         plan: data.subscription_plan || 'basico',
-        billingInterval: null,
-        startDate: null,
-        endDate: null,
-        cancelAt: null,
-        stripeCustomerId: null
+        billingInterval: data.billing_interval,
+        startDate: data.created_at,
+        endDate: data.subscription_end_date,
+        cancelAt: data.subscription_cancel_at,
+        stripeCustomerId: data.stripe_customer_id
       })
     } catch (error) {
       console.error('Erro ao carregar assinatura:', error)

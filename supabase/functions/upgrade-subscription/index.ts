@@ -294,14 +294,37 @@ serve(async (req) => {
       }
     }
 
-    // Atualizar assinatura sem prorrata automática do Stripe
+    // ============================================
+    // CALCULAR BILLING_CYCLE_ANCHOR BASEADO NO DIA DO MÊS
+    // ============================================
+    // REGRA: A renovação sempre ocorre no mesmo dia do mês em que o upgrade foi realizado
+    // Se o dia não existir no mês seguinte (ex: 31), cai no último dia do mês
+    
+    const now = new Date();
+    const billingDay = now.getDate();
+    
+    console.log("[upgrade-subscription] 📅 Setting billing cycle anchor to day:", billingDay);
+
+    // Atualizar assinatura com novo billing_cycle_anchor
+    // Usamos billing_cycle_anchor: 'now' para iniciar novo ciclo imediatamente
     await stripe.subscriptions.update(subscription.id, {
       items: [{ id: subscriptionItemId, price: newPriceId }],
       proration_behavior: 'none',
       cancel_at_period_end: false,
+      billing_cycle_anchor: 'now', // Inicia novo ciclo imediatamente
     });
 
-    console.log("[upgrade-subscription] ✅ Subscription updated to new plan");
+    console.log("[upgrade-subscription] ✅ Subscription updated to new plan with new billing cycle");
+    
+    // Buscar a assinatura atualizada para obter as datas corretas
+    const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);
+    const newPeriodEnd = new Date(updatedSubscription.current_period_end * 1000);
+    
+    console.log("[upgrade-subscription] 📅 New billing cycle:", {
+      start: new Date(updatedSubscription.current_period_start * 1000).toISOString(),
+      end: newPeriodEnd.toISOString(),
+      billingDay
+    });
 
     // ============================================
     // COBRAR VALOR
@@ -368,8 +391,12 @@ serve(async (req) => {
     }
 
     // ============================================
-    // ATUALIZAR PERFIL
+    // ATUALIZAR PERFIL COM NOVA DATA DE RENOVAÇÃO
     // ============================================
+    
+    // Buscar assinatura atualizada para obter datas corretas
+    const finalSubscription = await stripe.subscriptions.retrieve(subscription.id);
+    const nextBillingDate = new Date(finalSubscription.current_period_end * 1000);
     
     await supabaseAdmin
       .from('profiles')
@@ -377,10 +404,12 @@ serve(async (req) => {
         subscription_plan: newPriceInfo.plan,
         billing_interval: newPriceInfo.interval === 'yearly' ? 'yearly' : 'monthly',
         subscription_cancel_at: null,
+        subscription_end_date: nextBillingDate.toISOString(),
+        stripe_subscription_id: subscription.id,
       })
       .eq('user_id', user.id);
 
-    console.log("[upgrade-subscription] ✅ Profile updated with new plan");
+    console.log("[upgrade-subscription] ✅ Profile updated with new plan and billing date:", nextBillingDate.toISOString());
 
     // ============================================
     // RESPOSTA
