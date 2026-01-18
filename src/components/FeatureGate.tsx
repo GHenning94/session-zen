@@ -21,6 +21,7 @@ export type Feature =
   | 'unlimited_clients'
   | 'unlimited_sessions'
   | 'packages'
+  | 'recurring_sessions'
 
 // Define which plan is required for each feature
 export const FEATURE_REQUIREMENTS: Record<Feature, SubscriptionPlan> = {
@@ -39,6 +40,7 @@ export const FEATURE_REQUIREMENTS: Record<Feature, SubscriptionPlan> = {
   unlimited_clients: 'premium',
   unlimited_sessions: 'pro',
   packages: 'pro',
+  recurring_sessions: 'pro',
 }
 
 // Feature descriptions for upgrade modal
@@ -102,6 +104,10 @@ export const FEATURE_INFO: Record<Feature, { name: string; benefit: string }> = 
   packages: {
     name: 'Pacotes de Sessões',
     benefit: 'Crie pacotes de sessões com preços especiais e controle o consumo de cada paciente.'
+  },
+  recurring_sessions: {
+    name: 'Sessões Recorrentes',
+    benefit: 'Configure sessões que se repetem automaticamente em intervalos regulares.'
   }
 }
 

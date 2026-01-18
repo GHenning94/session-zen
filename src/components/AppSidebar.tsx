@@ -83,6 +83,7 @@ const FEATURE_NAMES: Record<Feature, string> = {
   unlimited_clients: 'Pacientes Ilimitados',
   unlimited_sessions: 'Sessões Ilimitadas',
   packages: 'Pacotes de Sessões',
+  recurring_sessions: 'Sessões Recorrentes',
 }
 
 export function AppSidebar() {
