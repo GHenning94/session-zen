@@ -64,6 +64,9 @@ export const UpgradeWelcomeModal = ({
     if (open && !hasTriggeredRef.current) {
       hasTriggeredRef.current = true
       
+      // ✅ Marcar que o modal de upgrade está ativo para evitar logout acidental
+      sessionStorage.setItem('upgrade_modal_active', 'true')
+      
       // Pequeno delay para garantir que o modal está montado
       const timer = setTimeout(() => {
         // Explosão única de confetti (igual ao programa de indicação)
@@ -86,6 +89,9 @@ export const UpgradeWelcomeModal = ({
       // Reset quando o modal fecha
       hasTriggeredRef.current = false
       setShowContent(false)
+      // ✅ Limpar flag quando o modal fecha normalmente
+      sessionStorage.removeItem('upgrade_modal_active')
+      sessionStorage.removeItem('show_upgrade_welcome')
     }
   }, [open, plan.confettiColors])
 
