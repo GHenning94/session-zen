@@ -354,24 +354,18 @@ const Configuracoes = () => {
     // Armazenar a senha pendente
     setPendingNewPassword(newPassword);
     
-    // Verificar se o usuário tem 2FA configurado
-    if (has2FAConfigured()) {
-      setPending2FAAction('password');
-      setShow2FAModal(true);
-    } else {
-      // Sem 2FA, continuar com o fluxo normal
-      setShowPasswordChangeDialog(true);
-    }
+    // Primeiro mostrar o dialog de aviso/confirmação
+    setShowPasswordChangeDialog(true);
   };
 
-  // Handler chamado após verificação 2FA bem-sucedida
+  // Handler chamado após verificação 2FA bem-sucedida - executa a ação real
   const handle2FAVerified = () => {
     if (pending2FAAction === 'password') {
-      setShowPasswordChangeDialog(true);
+      confirmPasswordChange();
     } else if (pending2FAAction === 'email') {
-      setShowEmailChangeDialog(true);
+      confirmEmailChange();
     } else if (pending2FAAction === 'delete') {
-      setShowDeleteConfirm(true);
+      handleDeleteAccount();
     }
     setPending2FAAction(null);
   };
@@ -479,14 +473,8 @@ const Configuracoes = () => {
     // Armazenar o email pendente
     setPendingNewEmail(newEmail);
     
-    // Verificar se o usuário tem 2FA configurado
-    if (has2FAConfigured()) {
-      setPending2FAAction('email');
-      setShow2FAModal(true);
-    } else {
-      // Sem 2FA, continuar com o fluxo normal
-      setShowEmailChangeDialog(true);
-    }
+    // Primeiro mostrar o dialog de aviso/confirmação
+    setShowEmailChangeDialog(true);
   };
 
   const confirmEmailChange = async () => {
@@ -981,14 +969,8 @@ const Configuracoes = () => {
                   variant="destructive" 
                   size="sm" 
                   onClick={() => {
-                    // Verificar se o usuário tem 2FA configurado
-                    if (has2FAConfigured()) {
-                      setPending2FAAction('delete');
-                      setShow2FAModal(true);
-                    } else {
-                      // Sem 2FA, continuar com o fluxo normal
-                      setShowDeleteConfirm(true);
-                    }
+                    // Primeiro mostrar o dialog de aviso/confirmação
+                    setShowDeleteConfirm(true);
                   }}
                 >
                   Deletar Conta Permanentemente
@@ -1668,8 +1650,17 @@ const Configuracoes = () => {
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={handleDeleteAccount}
-              disabled={isDeletingAccount}
+              onClick={() => {
+                // Após confirmação do aviso, verificar se precisa de 2FA
+                if (has2FAConfigured()) {
+                  setShowDeleteConfirm(false);
+                  setPending2FAAction('delete');
+                  setShow2FAModal(true);
+                } else {
+                  handleDeleteAccount();
+                }
+              }}
+              disabled={isDeletingAccount || deleteConfirmText !== 'DELETAR' || !deleteAccountPassword}
               className="bg-destructive hover:bg-destructive/90"
             >
               {isDeletingAccount ? 'Deletando...' : 'Deletar Conta'}
@@ -1741,7 +1732,19 @@ const Configuracoes = () => {
               setEmailChangeCaptchaToken(null);
               emailCaptchaRef.current?.reset();
             }}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmEmailChange} disabled={isLoading || !emailChangePassword || !emailChangeCaptchaToken}>
+            <AlertDialogAction 
+              onClick={() => {
+                // Após confirmação do aviso, verificar se precisa de 2FA
+                if (has2FAConfigured()) {
+                  setShowEmailChangeDialog(false);
+                  setPending2FAAction('email');
+                  setShow2FAModal(true);
+                } else {
+                  confirmEmailChange();
+                }
+              }} 
+              disabled={isLoading || !emailChangePassword || !emailChangeCaptchaToken}
+            >
               {isLoading ? 'Processando...' : 'Continuar'}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1780,7 +1783,19 @@ const Configuracoes = () => {
               setPasswordChangeCaptchaToken(null);
               passwordCaptchaRef.current?.reset();
             }}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmPasswordChange} disabled={changingPassword || !passwordChangeCaptchaToken}>
+            <AlertDialogAction 
+              onClick={() => {
+                // Após confirmação do aviso, verificar se precisa de 2FA
+                if (has2FAConfigured()) {
+                  setShowPasswordChangeDialog(false);
+                  setPending2FAAction('password');
+                  setShow2FAModal(true);
+                } else {
+                  confirmPasswordChange();
+                }
+              }} 
+              disabled={changingPassword || !passwordChangeCaptchaToken}
+            >
               {changingPassword ? 'Processando...' : 'Confirmar e Deslogar'}
             </AlertDialogAction>
           </AlertDialogFooter>
