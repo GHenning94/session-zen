@@ -9,6 +9,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { NewFeatureBadge, dismissFeatureBadge } from '@/components/NewFeatureBadge'
+import { ClientAvatar } from '@/components/ClientAvatar'
 
 interface PackageWithSessions {
   id: string
@@ -21,6 +22,10 @@ interface PackageWithSessions {
   status: string
   client_id: string
   sessoes_criadas: number
+  clients?: {
+    nome: string
+    avatar_url?: string | null
+  }
 }
 
 interface PackageStats {
@@ -69,10 +74,16 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
     queryFn: async () => {
       if (!user?.id) return []
       
-      // Get active packages
+      // Get active packages with client info
       const { data: packagesData, error: packagesError } = await supabase
         .from('packages')
-        .select('*')
+        .select(`
+          *,
+          clients (
+            nome,
+            avatar_url
+          )
+        `)
         .eq('user_id', user.id)
         .eq('status', 'ativo')
         .order('created_at', { ascending: false })
@@ -360,10 +371,18 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
               : 'opacity-100 transform translate-x-0'
           }`}
         >
-          {/* Package Name */}
+          {/* Package Name and Client */}
           <div className="space-y-1">
             <span className="text-lg font-bold truncate block">{currentPackage?.nome}</span>
-            <p className="text-xs text-muted-foreground">Pacote ativo</p>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <ClientAvatar 
+                clientName={currentPackage?.clients?.nome || 'Cliente'} 
+                avatarPath={currentPackage?.clients?.avatar_url} 
+                size="sm" 
+                className="h-5 w-5"
+              />
+              <span className="truncate">{currentPackage?.clients?.nome || 'Cliente'}</span>
+            </div>
           </div>
 
           {/* Sessions Progress (consumidas) */}
