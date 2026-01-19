@@ -120,9 +120,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         }
         
         // ✅ CORREÇÃO: Ignorar SIGNED_OUT durante processo de upgrade de plano ou checkout
-        const isUpgradeActive = sessionStorage.getItem('stripe_checkout_active') === 'true' ||
+        // Verificar AMBOS localStorage e sessionStorage
+        const isUpgradeActive = localStorage.getItem('stripe_checkout_active') === 'true' ||
+                               sessionStorage.getItem('stripe_checkout_active') === 'true' ||
+                               localStorage.getItem('pending_tier_upgrade') ||
                                sessionStorage.getItem('pending_tier_upgrade') ||
+                               localStorage.getItem('pending_checkout_plan') ||
                                sessionStorage.getItem('pending_checkout_plan') ||
+                               localStorage.getItem('show_upgrade_welcome') ||
                                sessionStorage.getItem('show_upgrade_welcome') ||
                                sessionStorage.getItem('upgrade_modal_active') === 'true';
         
@@ -145,9 +150,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         if (event === 'SIGNED_OUT') {
           console.log('[useAuth] 🚪 Logout detectado - limpando estado completo');
           
-          // ✅ PRESERVAR plano pendente antes de limpar
-          const pendingPlan = localStorage.getItem('pending_plan');
-          const pendingBilling = localStorage.getItem('pending_billing');
+          // ✅ PRESERVAR dados críticos de checkout ANTES de limpar
+          const checkoutDataToPreserve = {
+            pending_plan: localStorage.getItem('pending_plan'),
+            pending_billing: localStorage.getItem('pending_billing'),
+            pending_checkout_plan: localStorage.getItem('pending_checkout_plan'),
+            pending_previous_plan: localStorage.getItem('pending_previous_plan'),
+            pending_tier_upgrade: localStorage.getItem('pending_tier_upgrade'),
+            show_upgrade_welcome: localStorage.getItem('show_upgrade_welcome'),
+            stripe_checkout_active: localStorage.getItem('stripe_checkout_active'),
+            payment_success_pending: localStorage.getItem('payment_success_pending'),
+          };
           
           // Limpar storage
           try {
@@ -157,14 +170,13 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             console.error('[useAuth] Erro ao limpar storage:', e);
           }
           
-          // ✅ RESTAURAR plano pendente após limpar
-          if (pendingPlan) {
-            console.log('[useAuth] 💾 Restaurando plano pendente após logout:', pendingPlan);
-            localStorage.setItem('pending_plan', pendingPlan);
-          }
-          if (pendingBilling) {
-            localStorage.setItem('pending_billing', pendingBilling);
-          }
+          // ✅ RESTAURAR dados críticos de checkout após limpar
+          Object.entries(checkoutDataToPreserve).forEach(([key, value]) => {
+            if (value) {
+              console.log(`[useAuth] 💾 Restaurando dado crítico após logout: ${key}`);
+              localStorage.setItem(key, value);
+            }
+          });
           
           setUser(null);
           setSession(null);

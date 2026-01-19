@@ -293,8 +293,13 @@ export default function Upgrade() {
       })
       if (error) throw error
       if (data?.url) {
-        // ✅ Marcar que está indo para checkout externo (Stripe)
+        // ✅ Marcar que está indo para checkout externo (Stripe) - em AMBOS os storages
+        localStorage.setItem('stripe_checkout_active', 'true')
         sessionStorage.setItem('stripe_checkout_active', 'true')
+        // ✅ Salvar plano anterior e alvo no localStorage
+        localStorage.setItem('pending_checkout_plan', plan.id)
+        localStorage.setItem('pending_previous_plan', currentPlan)
+        console.log('[Upgrade] 📝 Saved to localStorage - pending_checkout_plan:', plan.id, ', pending_previous_plan:', currentPlan)
         window.location.href = data.url
       }
     } catch (error: any) {
@@ -314,8 +319,8 @@ export default function Upgrade() {
     setUpgradeModal({ ...upgradeModal, open: false, prorationData: null, isLoadingProration: false })
     setLoading(true)
     
-    // ✅ Salvar plano anterior ANTES de iniciar o upgrade
-    sessionStorage.setItem('pending_previous_plan', currentPlan)
+    // ✅ Salvar plano anterior ANTES de iniciar o upgrade - usar localStorage
+    localStorage.setItem('pending_previous_plan', currentPlan)
     console.log('[Upgrade] 📝 Saved previous plan before upgrade:', currentPlan)
     
     try {
@@ -327,11 +332,12 @@ export default function Upgrade() {
       if (error) throw error
       
       if (data?.requiresPayment && data?.paymentUrl) {
-        // Guardar se é mudança de tier para o modal de boas vindas
+        // Guardar se é mudança de tier para o modal de boas vindas - usar localStorage
         if (isTierChange) {
-          sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
+          localStorage.setItem('pending_tier_upgrade', data.newPlan)
         }
-        // ✅ Marcar que está indo para checkout externo (Stripe)
+        // ✅ Marcar que está indo para checkout externo (Stripe) - em AMBOS os storages
+        localStorage.setItem('stripe_checkout_active', 'true')
         sessionStorage.setItem('stripe_checkout_active', 'true')
         // Se precisa pagar valor proporcional, redirecionar para checkout
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
@@ -393,9 +399,9 @@ export default function Upgrade() {
             localStorage.setItem(`last_known_plan_${user.id}`, data.newPlan)
           }
           
-          // ✅ Definir flag para o modal de boas-vindas ANTES de navegar
-          sessionStorage.setItem('show_upgrade_welcome', data.newPlan)
-          sessionStorage.removeItem('pending_previous_plan')
+          // ✅ Definir flag para o modal de boas-vindas ANTES de navegar - usar localStorage
+          localStorage.setItem('show_upgrade_welcome', data.newPlan)
+          localStorage.removeItem('pending_previous_plan')
         }
         // Navegar para o dashboard - o modal será aberto lá
         navigate('/dashboard')

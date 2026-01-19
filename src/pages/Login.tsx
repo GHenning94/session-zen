@@ -347,9 +347,12 @@ const Login = () => {
         }
         
         // ✅ Verificar se voltou de pagamento Stripe bem-sucedido (sessão tinha expirado)
-        const paymentSuccessReturn = sessionStorage.getItem('payment_success_pending')
+        // Verificar em localStorage (persistente) primeiro
+        const paymentSuccessReturn = localStorage.getItem('payment_success_pending') ||
+                                      sessionStorage.getItem('payment_success_pending')
         if (paymentSuccessReturn === 'true') {
           console.log('[Login] 💳 Retorno de pagamento bem-sucedido detectado, sincronizando plano...')
+          localStorage.removeItem('payment_success_pending')
           sessionStorage.removeItem('payment_success_pending')
           // Ir para dashboard com flag de sincronização
           navigate('/dashboard?payment=success')

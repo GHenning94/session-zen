@@ -182,15 +182,17 @@ const Dashboard = () => {
   }, [])
   
   // ✅ Verificar modal de boas-vindas - CRÍTICO: executa IMEDIATAMENTE no mount
-  // Usando useLayoutEffect-like behavior com execução síncrona no mount
+  // Verificar AMBOS localStorage e sessionStorage
   useEffect(() => {
-    // ✅ Verificar IMEDIATAMENTE - sem setTimeout
-    const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
+    // ✅ Verificar IMEDIATAMENTE - verificar AMBOS os storages
+    const showWelcome = localStorage.getItem('show_upgrade_welcome') || 
+                        sessionStorage.getItem('show_upgrade_welcome')
     console.log('[Dashboard] 🔍 Checking for upgrade welcome modal (immediate):', showWelcome)
     
     if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
       console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
-      // Remover IMEDIATAMENTE para evitar duplicação
+      // Remover de AMBOS os storages IMEDIATAMENTE para evitar duplicação
+      localStorage.removeItem('show_upgrade_welcome')
       sessionStorage.removeItem('show_upgrade_welcome')
       
       // Usar requestAnimationFrame para garantir que o DOM está pronto
@@ -205,9 +207,11 @@ const Dashboard = () => {
     
     // Também verificar quando a janela ganha foco (fallback)
     const handleFocus = () => {
-      const showWelcomeFocus = sessionStorage.getItem('show_upgrade_welcome')
+      const showWelcomeFocus = localStorage.getItem('show_upgrade_welcome') || 
+                               sessionStorage.getItem('show_upgrade_welcome')
       if (showWelcomeFocus && (showWelcomeFocus === 'pro' || showWelcomeFocus === 'premium')) {
         console.log('[Dashboard] 🎊 Opening upgrade welcome modal on focus:', showWelcomeFocus)
+        localStorage.removeItem('show_upgrade_welcome')
         sessionStorage.removeItem('show_upgrade_welcome')
         setUpgradeWelcomeModal({
           open: true,
@@ -238,12 +242,14 @@ const Dashboard = () => {
       // If this was an upgrade proration payment, store the plan for welcome modal immediately
       if (upgradePlanFromPayment) {
         console.log('[Dashboard] 🎯 Upgrade payment detected for plan:', upgradePlanFromPayment)
-        sessionStorage.setItem('pending_tier_upgrade', upgradePlanFromPayment)
+        // Usar localStorage para persistir
+        localStorage.setItem('pending_tier_upgrade', upgradePlanFromPayment)
       }
       handlePaymentSuccess()
     } else if (paymentStatus === 'cancelled') {
       // ✅ Usuário cancelou o checkout - apenas limpar flags, não sincronizar
       console.log('[Dashboard] ❌ Checkout cancelado pelo usuário, limpando flags...')
+      localStorage.removeItem('stripe_checkout_active')
       sessionStorage.removeItem('stripe_checkout_active')
       searchParams.delete('payment')
       setSearchParams(searchParams, { replace: true })
@@ -251,9 +257,11 @@ const Dashboard = () => {
     
     // ✅ Se voltou do checkout Stripe sem parâmetro de pagamento, apenas limpar o flag
     // NÃO sincronizar, pois isso pode alterar o plano indevidamente
-    const wasInStripeCheckout = sessionStorage.getItem('stripe_checkout_active') === 'true'
+    const wasInStripeCheckout = localStorage.getItem('stripe_checkout_active') === 'true' ||
+                                 sessionStorage.getItem('stripe_checkout_active') === 'true'
     if (wasInStripeCheckout && user && !paymentStatus) {
       console.log('[Dashboard] 🔄 Retorno de checkout Stripe sem pagamento, apenas limpando flag...')
+      localStorage.removeItem('stripe_checkout_active')
       sessionStorage.removeItem('stripe_checkout_active')
       // Não chamar handlePaymentSuccess() para não alterar o plano
     }
@@ -286,13 +294,17 @@ const Dashboard = () => {
     setIsLoading(true)
     setIsProcessingPayment(true)
     
-    // ✅ Limpar flag de checkout ativo imediatamente
+    // ✅ Limpar flag de checkout ativo imediatamente - de AMBOS os storages
+    localStorage.removeItem('stripe_checkout_active')
     sessionStorage.removeItem('stripe_checkout_active')
     
-    // ✅ Pegar o plano pendente e ANTERIOR de múltiplas fontes (prioridade)
-    const pendingCheckoutPlan = sessionStorage.getItem('pending_checkout_plan') // Do CheckoutRedirect
-    const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade') // De upgrade
-    const pendingPreviousPlan = sessionStorage.getItem('pending_previous_plan') // Plano anterior
+    // ✅ Pegar o plano pendente e ANTERIOR de múltiplas fontes (prioridade) - localStorage PRIMEIRO
+    const pendingCheckoutPlan = localStorage.getItem('pending_checkout_plan') || 
+                                 sessionStorage.getItem('pending_checkout_plan') // Do CheckoutRedirect
+    const pendingTierUpgrade = localStorage.getItem('pending_tier_upgrade') || 
+                                sessionStorage.getItem('pending_tier_upgrade') // De upgrade
+    const pendingPreviousPlan = localStorage.getItem('pending_previous_plan') ||
+                                 sessionStorage.getItem('pending_previous_plan') // Plano anterior
     const targetPlan = pendingCheckoutPlan || pendingTierUpgrade
     const previousPlan = pendingPreviousPlan || 'basico'
     
@@ -301,7 +313,7 @@ const Dashboard = () => {
     let attempts = 0
     const maxAttempts = 20 // Aumentar tentativas para dar mais tempo ao webhook
     
-    // ✅ FUNÇÃO PARA SALVAR FEATURES DESBLOQUEADAS ANTES DO RELOAD
+    // ✅ FUNÇÃO PARA SALVAR FEATURES DESBLOQUEADAS ANTES DO RELOAD - DEFINIDA PRIMEIRO
     const saveUnlockedFeaturesBeforeReload = (fromPlan: string, toPlan: string) => {
       if (!user?.id || fromPlan === toPlan) return
       
@@ -356,6 +368,16 @@ const Dashboard = () => {
       localStorage.setItem(`last_known_plan_${user.id}`, toPlan)
     }
     
+    // ✅ CRÍTICO: Salvar features desbloqueadas IMEDIATAMENTE antes de qualquer operação async
+    // Isso garante que as features são salvas mesmo se algo falhar depois
+    if (targetPlan && user?.id && previousPlan !== targetPlan) {
+      console.log('[Dashboard] 🎯 Saving unlocked features IMMEDIATELY before polling...')
+      saveUnlockedFeaturesBeforeReload(previousPlan, targetPlan)
+      // Também salvar show_upgrade_welcome no localStorage IMEDIATAMENTE
+      localStorage.setItem('show_upgrade_welcome', targetPlan)
+      console.log('[Dashboard] 🎊 Saved show_upgrade_welcome to localStorage:', targetPlan)
+    }
+    
     const syncAndCheckStatus = async (): Promise<boolean> => {
       try {
         attempts++
@@ -382,14 +404,18 @@ const Dashboard = () => {
           if (planForWelcome && (planForWelcome === 'pro' || planForWelcome === 'premium')) {
             console.log('[Dashboard] 🎉 Subscription confirmed, preparing welcome modal for:', planForWelcome)
             
-            // ✅ CRÍTICO: Salvar features desbloqueadas ANTES do reload
+            // ✅ CRÍTICO: Salvar features desbloqueadas ANTES do reload (redundante mas seguro)
             saveUnlockedFeaturesBeforeReload(previousPlan, planForWelcome)
             
-            // Limpar todos os pendentes
+            // Limpar todos os pendentes - de AMBOS os storages
+            localStorage.removeItem('pending_checkout_plan')
             sessionStorage.removeItem('pending_checkout_plan')
+            localStorage.removeItem('pending_tier_upgrade')
             sessionStorage.removeItem('pending_tier_upgrade')
+            localStorage.removeItem('pending_previous_plan')
             sessionStorage.removeItem('pending_previous_plan')
-            sessionStorage.setItem('show_upgrade_welcome', planForWelcome)
+            // ✅ show_upgrade_welcome já foi salvo no localStorage no início, mas garantir
+            localStorage.setItem('show_upgrade_welcome', planForWelcome)
           }
           
           // Clear URL params

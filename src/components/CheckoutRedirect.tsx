@@ -101,8 +101,9 @@ export const CheckoutRedirect = () => {
 
         console.log('[CheckoutRedirect] ✅ Redirecionando para checkout Stripe')
         
-        // ✅ Salvar plano selecionado para mostrar modal de boas-vindas após pagamento
-        sessionStorage.setItem('pending_checkout_plan', pendingPlan)
+        // ✅ CRÍTICO: Usar localStorage para dados que precisam sobreviver logout/sessão expirada
+        // Salvar plano selecionado para mostrar modal de boas-vindas após pagamento
+        localStorage.setItem('pending_checkout_plan', pendingPlan)
         
         // ✅ Salvar plano ANTERIOR para calcular features desbloqueadas
         // Buscar plano atual do perfil
@@ -113,8 +114,8 @@ export const CheckoutRedirect = () => {
           .single()
         
         const currentPlan = profile?.subscription_plan || 'basico'
-        sessionStorage.setItem('pending_previous_plan', currentPlan)
-        console.log('[CheckoutRedirect] 📝 Saved previous plan:', currentPlan)
+        localStorage.setItem('pending_previous_plan', currentPlan)
+        console.log('[CheckoutRedirect] 📝 Saved to localStorage - pending_checkout_plan:', pendingPlan, ', pending_previous_plan:', currentPlan)
         
         // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')
@@ -124,7 +125,8 @@ export const CheckoutRedirect = () => {
         sessionStorage.removeItem('pending_billing_backup')
         sessionStorage.removeItem('pending_referral')
         
-        // ✅ Marcar que está indo para checkout externo (Stripe)
+        // ✅ Marcar que está indo para checkout externo (Stripe) - em AMBOS os storages
+        localStorage.setItem('stripe_checkout_active', 'true')
         sessionStorage.setItem('stripe_checkout_active', 'true')
         
         // Redirecionar para checkout
