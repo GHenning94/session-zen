@@ -1678,10 +1678,10 @@ const Configuracoes = () => {
                   
                   <div 
                     className="flex items-center justify-between"
-                    onMouseEnter={() => {
-                      if (hasAccessToFeature('whatsapp_notifications')) {
+                    onClick={() => {
+                      if (hasAccessToFeature('whatsapp_notifications') && user?.id) {
                         const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                        dismissFeatureBadge('whatsapp_notifications')
+                        dismissFeatureBadge('whatsapp_notifications', user.id)
                       }
                     }}
                   >
@@ -1731,10 +1731,10 @@ const Configuracoes = () => {
                   <div className="border-t pt-4 mt-4">
                     <div 
                       className="flex items-center justify-between"
-                      onMouseEnter={() => {
-                        if (hasAccessToFeature('google_calendar')) {
+                      onClick={() => {
+                        if (hasAccessToFeature('google_calendar') && user?.id) {
                           const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                          dismissFeatureBadge('google_calendar')
+                          dismissFeatureBadge('google_calendar', user.id)
                         }
                       }}
                     >

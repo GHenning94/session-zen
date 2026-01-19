@@ -352,6 +352,7 @@ const Dashboard = () => {
         recurring_sessions_sidebar: 'pro', // Badge na sidebar (Sessões Recorrentes)
         reports_sidebar: 'pro', // Badge na sidebar (Relatórios)
         referral_program_sidebar: 'pro', // Badge na sidebar (Programa de Indicação)
+        google_calendar_sidebar: 'premium', // Badge na sidebar (Integrações)
       }
       
       const PLAN_HIERARCHY: Record<string, number> = {

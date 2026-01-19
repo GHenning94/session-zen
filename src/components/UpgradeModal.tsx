@@ -223,14 +223,78 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
       if (data?.requiresPayment && data?.paymentUrl) {
         // Store for welcome modal after payment
         sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
+        localStorage.setItem('pending_tier_upgrade', data.newPlan) // ✅ Também no localStorage
+        // ✅ Salvar plano anterior para calcular features desbloqueadas
+        localStorage.setItem('pending_previous_plan', currentPlan)
         // ✅ Marcar que está indo para checkout externo (Stripe)
         sessionStorage.setItem('stripe_checkout_active', 'true')
+        localStorage.setItem('stripe_checkout_active', 'true') // ✅ Também no localStorage
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
         window.location.href = data.paymentUrl
       } else {
         // Upgrade completed without additional payment
         toast.success(data?.message || 'Upgrade realizado com sucesso!')
+        // ✅ Salvar em AMBOS os storages para garantir que o modal apareça
+        localStorage.setItem('show_upgrade_welcome', data.newPlan)
         sessionStorage.setItem('show_upgrade_welcome', data.newPlan)
+        // ✅ Salvar features desbloqueadas antes de navegar
+        if (user?.id && currentPlan !== data.newPlan) {
+          const FEATURE_TO_PLAN: Record<string, string> = {
+            whatsapp_notifications: 'premium',
+            google_calendar: 'premium',
+            reports: 'pro',
+            advanced_reports: 'premium',
+            report_filters: 'premium',
+            referral_program: 'pro',
+            referral_history: 'premium',
+            goals: 'pro',
+            goals_sidebar: 'pro',
+            goals_dashboard_ticket: 'pro',
+            goals_dashboard_canal: 'pro',
+            goals_orbital: 'pro',
+            public_page: 'pro',
+            public_page_design: 'premium',
+            public_page_advanced: 'premium',
+            color_customization: 'premium',
+            dashboard_advanced_cards: 'pro',
+            unlimited_clients: 'premium',
+            unlimited_sessions: 'pro',
+            packages: 'pro',
+            packages_sidebar: 'pro',
+            recurring_sessions: 'pro',
+            recurring_sessions_sidebar: 'pro',
+            reports_sidebar: 'pro',
+            referral_program_sidebar: 'pro',
+            google_calendar_sidebar: 'premium', // Badge na sidebar (Integrações)
+          }
+          
+          const PLAN_HIERARCHY: Record<string, number> = {
+            basico: 0,
+            pro: 1,
+            premium: 2
+          }
+          
+          const fromLevel = PLAN_HIERARCHY[currentPlan] || 0
+          const toLevel = PLAN_HIERARCHY[data.newPlan] || 0
+          
+          const newlyUnlocked = Object.entries(FEATURE_TO_PLAN)
+            .filter(([_, requiredPlan]) => {
+              const requiredLevel = PLAN_HIERARCHY[requiredPlan] || 0
+              return requiredLevel > fromLevel && requiredLevel <= toLevel
+            })
+            .map(([feature]) => feature)
+          
+          if (newlyUnlocked.length > 0) {
+            const key = `recently_unlocked_features_${user.id}`
+            const existing = localStorage.getItem(key)
+            const current = existing ? JSON.parse(existing) as string[] : []
+            const updated = [...new Set([...current, ...newlyUnlocked])]
+            localStorage.setItem(key, JSON.stringify(updated))
+            console.log('[UpgradeModal] 🎯 Saved unlocked features:', updated)
+          }
+          
+          localStorage.setItem(`last_known_plan_${user.id}`, data.newPlan)
+        }
         onOpenChange(false)
         window.location.href = '/dashboard'
       }

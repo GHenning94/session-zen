@@ -143,6 +143,7 @@ export function AppSidebar() {
       '/metas': 'goals_sidebar',
       '/relatorios': 'reports_sidebar',
       '/programa-indicacao': 'referral_program_sidebar',
+      '/integracoes': 'google_calendar_sidebar', // Badge específico para Integrações na sidebar
     }
     
     return featureKeyMap[item.url] || (item.requiredFeature === 'goals' ? 'goals_sidebar' : item.requiredFeature)
@@ -224,7 +225,7 @@ export function AppSidebar() {
                           {item.requiredFeature && !isLocked && (() => {
                             const sidebarFeatureKey = getSidebarFeatureKey(item)
                             return sidebarFeatureKey ? (
-                              <NewFeatureBadge featureKey={sidebarFeatureKey} />
+                              <NewFeatureBadge featureKey={sidebarFeatureKey} externalDismissOnly={true} />
                             ) : null
                           })()}
                           
