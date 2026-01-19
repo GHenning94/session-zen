@@ -333,14 +333,15 @@ export default function Upgrade() {
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
         window.location.href = data.paymentUrl
       } else {
-        // Upgrade realizado com sucesso sem pagamento adicional
+        // Upgrade realizado com sucesso sem pagamento adicional (cobrado automaticamente)
         toast.success(data?.message || 'Upgrade realizado com sucesso!')
         // Só mostrar modal de boas vindas se for mudança de tier
-        if (isTierChange) {
-          navigate(`/dashboard?upgrade=success&plan=${data.newPlan}`)
-        } else {
-          navigate('/dashboard')
+        if (isTierChange && data?.newPlan) {
+          // ✅ Definir flag para o modal de boas-vindas ANTES de navegar
+          sessionStorage.setItem('show_upgrade_welcome', data.newPlan)
         }
+        // Navegar para o dashboard - o modal será aberto lá
+        navigate('/dashboard')
       }
     } catch (error: any) {
       console.error('Erro ao processar upgrade:', error)

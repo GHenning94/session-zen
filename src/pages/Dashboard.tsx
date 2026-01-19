@@ -175,8 +175,15 @@ const Dashboard = () => {
     // Ativar animações após mount
     const timer = setTimeout(() => setChartsAnimated(true), 100)
     
-    // ✅ Check for upgrade welcome modal - verificar IMEDIATAMENTE no mount
-    // Usar requestAnimationFrame para garantir que o DOM está pronto
+    return () => {
+      isActiveRef.current = false
+      clearTimeout(timer)
+    }
+  }, [])
+  
+  // ✅ Verificar modal de boas-vindas - separado do lifecycle para garantir execução
+  // Este useEffect é executado no mount E quando o componente recebe foco (após navegação)
+  useEffect(() => {
     const checkWelcomeModal = () => {
       const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
       console.log('[Dashboard] 🔍 Checking for upgrade welcome modal:', showWelcome)
@@ -184,22 +191,28 @@ const Dashboard = () => {
         console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
         // Remover IMEDIATAMENTE para evitar duplicação
         sessionStorage.removeItem('show_upgrade_welcome')
-        // Usar requestAnimationFrame para garantir que o DOM está pronto
-        requestAnimationFrame(() => {
+        // Usar setTimeout para garantir que o estado está pronto
+        setTimeout(() => {
           setUpgradeWelcomeModal({
             open: true,
             newPlan: showWelcome as 'pro' | 'premium'
           })
-        })
+        }, 100)
       }
     }
     
-    // Verificar imediatamente
+    // Verificar imediatamente no mount
     checkWelcomeModal()
     
+    // Também verificar quando a janela ganha foco (usuário voltou de outra aba/página)
+    const handleFocus = () => {
+      checkWelcomeModal()
+    }
+    
+    window.addEventListener('focus', handleFocus)
+    
     return () => {
-      isActiveRef.current = false
-      clearTimeout(timer)
+      window.removeEventListener('focus', handleFocus)
     }
   }, [])
 
@@ -238,7 +251,7 @@ const Dashboard = () => {
       // Não chamar handlePaymentSuccess() para não alterar o plano
     }
     
-    // Check if returning from direct upgrade (no payment required)
+    // Check if returning from direct upgrade (no payment required) - fluxo legado com query params
     const upgradeStatus = searchParams.get('upgrade')
     const upgradePlan = searchParams.get('plan')
     if (upgradeStatus === 'success' && upgradePlan && user) {
@@ -247,11 +260,14 @@ const Dashboard = () => {
       searchParams.delete('plan')
       setSearchParams(searchParams, { replace: true })
       
-      // Show upgrade welcome modal for tier changes
+      // ✅ Mostrar modal de boas-vindas diretamente (sem reload)
       if (upgradePlan === 'premium' || upgradePlan === 'pro') {
-        sessionStorage.setItem('show_upgrade_welcome', upgradePlan)
-        // Reload to trigger the modal
-        window.location.href = '/dashboard'
+        setTimeout(() => {
+          setUpgradeWelcomeModal({
+            open: true,
+            newPlan: upgradePlan as 'pro' | 'premium'
+          })
+        }, 200)
       }
     }
   }, [user, loadDashboardDataOptimized, searchParams])
