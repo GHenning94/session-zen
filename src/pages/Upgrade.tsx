@@ -358,7 +358,12 @@ export default function Upgrade() {
               report_filters: 'premium',
               referral_program: 'pro',
               referral_history: 'premium',
+              // Goals - variantes por localização
               goals: 'pro',
+              goals_sidebar: 'pro',
+              goals_dashboard_ticket: 'pro',
+              goals_dashboard_canal: 'pro',
+              goals_orbital: 'pro',
               public_page: 'pro',
               public_page_design: 'premium',
               public_page_advanced: 'premium',

@@ -325,13 +325,13 @@ export const BusinessOrbitalView = ({
       className="p-4"
       onMouseEnter={() => {
         if (showNewBadge) {
-          dismissFeatureBadge('goals')
+          dismissFeatureBadge('goals_orbital')
         }
       }}
     >
       <div className="flex items-center gap-2 mb-2">
         <h2 className="text-sm font-medium">Progresso de Metas</h2>
-        {showNewBadge && <NewFeatureBadge featureKey="goals" />}
+        {showNewBadge && <NewFeatureBadge featureKey="goals_orbital" />}
       </div>
       <RadialOrbitalTimeline timelineData={timelineData} />
     </Card>
