@@ -89,6 +89,7 @@ export function MobileBottomNav() {
   const [isMoreOpen, setIsMoreOpen] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [upgradeFeatureName, setUpgradeFeatureName] = useState('')
+  const [upgradeIsPremiumOnly, setUpgradeIsPremiumOnly] = useState(false)
   
   const isPremium = currentPlan === 'premium'
   
@@ -119,7 +120,9 @@ export function MobileBottomNav() {
     if (isLocked) {
       e.preventDefault()
       e.stopPropagation()
+      const requiredPlan = getRequiredPlan(item.url)
       setUpgradeFeatureName(item.title)
+      setUpgradeIsPremiumOnly(requiredPlan === 'premium')
       setShowUpgradeModal(true)
     } else {
       setIsMoreOpen(false)
@@ -295,6 +298,7 @@ export function MobileBottomNav() {
         open={showUpgradeModal} 
         onOpenChange={setShowUpgradeModal}
         feature={upgradeFeatureName}
+        premiumOnly={upgradeIsPremiumOnly}
       />
     </>
   )
