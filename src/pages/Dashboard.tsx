@@ -69,7 +69,11 @@ const Dashboard = () => {
   const [showGoalsUpgradeModal, setShowGoalsUpgradeModal] = useState(false)
   const { subscribe } = useGlobalRealtime()
   const [searchParams, setSearchParams] = useSearchParams()
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false)
+  // ✅ Inicializar isProcessingPayment a partir da URL para evitar flash do dashboard
+  const [isProcessingPayment, setIsProcessingPayment] = useState(() => {
+    const params = new URLSearchParams(window.location.search)
+    return params.get('payment') === 'success'
+  })
   const [dashboardData, setDashboardData] = useState({
     sessionsToday: 0,
     activeClients: 0,
@@ -171,24 +175,31 @@ const Dashboard = () => {
     // Ativar animações após mount
     const timer = setTimeout(() => setChartsAnimated(true), 100)
     
-    // Check for upgrade welcome modal - do this with a small delay to ensure DOM is ready
-    const welcomeTimer = setTimeout(() => {
+    // ✅ Check for upgrade welcome modal - verificar IMEDIATAMENTE no mount
+    // Usar requestAnimationFrame para garantir que o DOM está pronto
+    const checkWelcomeModal = () => {
       const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
       console.log('[Dashboard] 🔍 Checking for upgrade welcome modal:', showWelcome)
       if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
         console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
+        // Remover IMEDIATAMENTE para evitar duplicação
         sessionStorage.removeItem('show_upgrade_welcome')
-        setUpgradeWelcomeModal({
-          open: true,
-          newPlan: showWelcome as 'pro' | 'premium'
+        // Usar requestAnimationFrame para garantir que o DOM está pronto
+        requestAnimationFrame(() => {
+          setUpgradeWelcomeModal({
+            open: true,
+            newPlan: showWelcome as 'pro' | 'premium'
+          })
         })
       }
-    }, 500) // Small delay to ensure page is fully loaded
+    }
+    
+    // Verificar imediatamente
+    checkWelcomeModal()
     
     return () => {
       isActiveRef.current = false
       clearTimeout(timer)
-      clearTimeout(welcomeTimer)
     }
   }, [])
 
@@ -1278,6 +1289,25 @@ const Dashboard = () => {
 
   // Keep loading state while subscription data is still loading (prevents flash after upgrade)
   const isFullyLoaded = !isLoading && !isSubscriptionLoading && !isProcessingPayment
+
+  // ✅ Mostrar loading de tela cheia durante processamento de pagamento
+  // Isso evita o flash do dashboard com dados antigos
+  if (isProcessingPayment) {
+    return (
+      <Layout>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4 text-center p-8">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <h2 className="text-xl font-semibold">Ativando seu plano...</h2>
+            <p className="text-muted-foreground max-w-sm">
+              Aguarde enquanto processamos seu pagamento.
+              Isso pode levar alguns segundos.
+            </p>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
 
   return (
     <Layout>
