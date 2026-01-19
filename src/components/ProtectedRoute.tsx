@@ -46,7 +46,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
   }, [hasPendingCheckoutData, user]);
 
-  // ✅ Se voltando de checkout sem sessão, tentar recuperar sessão
+  // ✅ Se voltando de checkout sem sessão, tentar recuperar sessão de forma mais agressiva
   useEffect(() => {
     const checkAndRecoverSession = async () => {
       if (!user && hasPendingCheckoutData && !isCheckingSession) {
@@ -57,27 +57,61 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           console.log(`🔒 ProtectedRoute: Tentativa ${sessionCheckAttempts.current}/${maxAttempts} de recuperar sessão...`);
           
           try {
-            // Tentar obter sessão novamente
-            const { data: { session } } = await supabase.auth.getSession();
+            // ✅ Tentar múltiplas formas de recuperar a sessão
+            // 1. Tentar obter sessão atual
+            let { data: { session } } = await supabase.auth.getSession();
+            
+            // 2. Se não houver sessão, tentar refresh do token
+            if (!session) {
+              console.log('🔒 ProtectedRoute: Tentando refresh do token...');
+              const { data: { session: refreshedSession } } = await supabase.auth.refreshSession();
+              session = refreshedSession;
+            }
+            
+            // 3. Se ainda não houver sessão, tentar obter do localStorage
+            if (!session) {
+              console.log('🔒 ProtectedRoute: Tentando recuperar sessão do localStorage...');
+              // O Supabase armazena a sessão em localStorage, tentar forçar atualização
+              await supabase.auth.getUser();
+            }
             
             if (session?.user) {
               console.log('🔒 ProtectedRoute: Sessão recuperada com sucesso!');
               setForceShowLoading(false);
+              sessionCheckAttempts.current = 0; // Reset contador
               // A sessão foi recuperada, o useAuth vai atualizar o user
             } else {
               console.log('🔒 ProtectedRoute: Sessão ainda não disponível, aguardando...');
-              // ✅ Aumentar delay para dar mais tempo ao Supabase
-              await new Promise(resolve => setTimeout(resolve, 2000));
+              // ✅ Aumentar delay progressivamente para dar mais tempo ao Supabase
+              const delay = Math.min(2000 + (sessionCheckAttempts.current * 500), 5000);
+              await new Promise(resolve => setTimeout(resolve, delay));
             }
           } catch (error) {
             console.error('🔒 ProtectedRoute: Erro ao recuperar sessão:', error);
+            // Continuar tentando mesmo em caso de erro
+            await new Promise(resolve => setTimeout(resolve, 2000));
           }
           
           setIsCheckingSession(false);
         } else {
-          console.log('🔒 ProtectedRoute: Máximo de tentativas atingido, redirecionando para login...');
-          // ✅ Só limpar flags DEPOIS de esgotar todas tentativas
+          console.log('🔒 ProtectedRoute: Máximo de tentativas atingido. Verificando se há sessão válida antes de redirecionar...');
+          
+          // ✅ Última tentativa: verificar se há sessão válida antes de redirecionar
+          try {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+              console.log('🔒 ProtectedRoute: Sessão encontrada na última tentativa!');
+              sessionCheckAttempts.current = 0;
+              setForceShowLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.error('🔒 ProtectedRoute: Erro na última verificação:', error);
+          }
+          
+          // ✅ Só redirecionar para login se realmente não houver sessão
           // Manter payment_success_pending para o Login saber sincronizar depois
+          console.log('🔒 ProtectedRoute: Nenhuma sessão encontrada após todas tentativas. Redirecionando para login...');
           localStorage.setItem('payment_success_pending', 'true');
           localStorage.removeItem('stripe_checkout_active');
           sessionStorage.removeItem('stripe_checkout_active');
@@ -86,7 +120,25 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
       }
     };
 
+    // ✅ Executar imediatamente e também com intervalo para garantir recuperação
     checkAndRecoverSession();
+    
+    // ✅ Se ainda não há usuário após 1 segundo, tentar novamente
+    if (!user && hasPendingCheckoutData) {
+      const interval = setInterval(() => {
+        if (user) {
+          clearInterval(interval);
+          return;
+        }
+        if (sessionCheckAttempts.current < maxAttempts) {
+          checkAndRecoverSession();
+        } else {
+          clearInterval(interval);
+        }
+      }, 3000); // Tentar a cada 3 segundos
+      
+      return () => clearInterval(interval);
+    }
   }, [user, hasPendingCheckoutData, isCheckingSession]);
 
   // O app está carregando apenas se Auth estiver carregando
@@ -128,8 +180,9 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   // --- LÓGICA DE REDIRECIONAMENTO ---
 
-  // ✅ Se está voltando de checkout Stripe e ainda tentando recuperar sessão, mostrar loading dedicado
-  if (!user && hasPendingCheckoutData && sessionCheckAttempts.current < maxAttempts) {
+  // ✅ Se não há usuário mas há checkout pendente, continuar mostrando loading
+  // Isso evita redirecionar para login enquanto está tentando recuperar a sessão
+  if (!user && hasPendingCheckoutData) {
     console.log('🔒 ProtectedRoute: Retorno de checkout detectado, mostrando loading dedicado...');
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background gap-4">
@@ -143,8 +196,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     );
   }
 
-  // Se NÃO há usuário -> Redireciona para /login
-  if (!user) {
+  // Se NÃO há usuário -> Redireciona para /login (mas só se não estiver tentando recuperar sessão)
+  if (!user && !hasPendingCheckoutData && !isCheckingSession && !forceShowLoading) {
     console.log('🔒 ProtectedRoute: Sem usuário autenticado. Redirecionando para /login.');
     // ✅ Se estava voltando de pagamento bem-sucedido, marcar para sincronizar após login
     if (isPaymentReturn && searchParams.get('payment') === 'success') {

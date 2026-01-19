@@ -132,6 +132,22 @@ export function AppSidebar() {
     }
   }
 
+  // Helper function to get sidebar-specific featureKey for each menu item
+  const getSidebarFeatureKey = (item: typeof menuItems[0]): string | null => {
+    if (!item.requiredFeature) return null
+    
+    // Map each menu item to its specific sidebar featureKey
+    const featureKeyMap: Record<string, string> = {
+      '/sessoes-recorrentes': 'recurring_sessions_sidebar',
+      '/pacotes': 'packages_sidebar',
+      '/metas': 'goals_sidebar',
+      '/relatorios': 'reports_sidebar',
+      '/programa-indicacao': 'referral_program_sidebar',
+    }
+    
+    return featureKeyMap[item.url] || (item.requiredFeature === 'goals' ? 'goals_sidebar' : item.requiredFeature)
+  }
+
   const settingsItem = { title: "Configurações", url: "/configuracoes", icon: Settings }
 
   return (
@@ -185,12 +201,10 @@ export function AppSidebar() {
                       onClick={(e) => {
                         handleNavClick(e, item)
                         // Dismiss the new feature badge when clicking on the menu item (only if not locked)
-                        // ✅ Usar featureKey específico para sidebar (goals_sidebar)
+                        // ✅ Usar featureKey específico para cada página na sidebar
                         if (item.requiredFeature && !isLocked && !item.url.includes('#')) {
-                          const sidebarFeatureKey = item.requiredFeature === 'goals' 
-                            ? 'goals_sidebar' 
-                            : item.requiredFeature
-                          if (user?.id) {
+                          const sidebarFeatureKey = getSidebarFeatureKey(item)
+                          if (sidebarFeatureKey && user?.id) {
                             dismissFeatureBadge(sidebarFeatureKey, user.id)
                           }
                         }
@@ -206,12 +220,13 @@ export function AppSidebar() {
                       {!isCollapsed && (
                         <div className="flex items-center gap-1">
                           {/* New feature badge - shows when unlocked */}
-                          {/* ✅ Usar featureKey específico para sidebar (goals_sidebar) */}
-                          {item.requiredFeature && !isLocked && (
-                            <NewFeatureBadge 
-                              featureKey={item.requiredFeature === 'goals' ? 'goals_sidebar' : item.requiredFeature} 
-                            />
-                          )}
+                          {/* ✅ Usar featureKey específico para cada página na sidebar */}
+                          {item.requiredFeature && !isLocked && (() => {
+                            const sidebarFeatureKey = getSidebarFeatureKey(item)
+                            return sidebarFeatureKey ? (
+                              <NewFeatureBadge featureKey={sidebarFeatureKey} />
+                            ) : null
+                          })()}
                           
                           {/* Locked badge */}
                           {isLocked && (

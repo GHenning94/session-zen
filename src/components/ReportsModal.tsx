@@ -8,9 +8,10 @@ import { Calendar, FileText, Users, DollarSign, Download, Loader2, Crown, Lock }
 import { useReports } from '@/hooks/useReports'
 import { useSmartData } from '@/hooks/useSmartData'
 import { useSubscription } from '@/hooks/useSubscription'
+import { useAuth } from '@/hooks/useAuth'
 import { UpgradeModal } from './UpgradeModal'
 import { Badge } from '@/components/ui/badge'
-import { NewFeatureBadge } from './NewFeatureBadge'
+import { NewFeatureBadge, dismissFeatureBadge } from './NewFeatureBadge'
 import { cn } from '@/lib/utils'
 
 interface ReportsModalProps {
@@ -22,6 +23,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
   const { generateReport, generateCompleteReport, isGenerating } = useReports()
   const { data: clients } = useSmartData({ type: 'clients' })
   const { hasAccessToFeature, currentPlan } = useSubscription()
+  const { user } = useAuth()
   
   const [selectedReport, setSelectedReport] = useState('')
   const [selectedFormat, setSelectedFormat] = useState('')
@@ -140,7 +142,13 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                           : 'border-border hover:border-primary/50',
                         isLocked && 'opacity-60 cursor-pointer'
                       )}
-                      onClick={() => handleReportClick(report.id, report.requiresPremium)}
+                      onClick={() => {
+                        handleReportClick(report.id, report.requiresPremium)
+                        // Dismiss badge on click
+                        if (!isLocked && report.requiresPremium && isPremium && user?.id) {
+                          dismissFeatureBadge('advanced_reports', user.id)
+                        }
+                      }}
                     >
                       <div className="flex items-center gap-3">
                         <Icon className={cn("h-5 w-5", isLocked ? "text-muted-foreground" : "text-primary")} />
@@ -155,7 +163,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                             </Badge>
                           )}
                           {!isLocked && report.requiresPremium && isPremium && (
-                            <NewFeatureBadge featureKey="advanced_reports" />
+                            <NewFeatureBadge featureKey="advanced_reports" externalDismissOnly={true} />
                           )}
                         </div>
                       </div>
@@ -184,7 +192,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                     </Badge>
                   )}
                   {hasFilters && isPremium && (
-                    <NewFeatureBadge featureKey="report_filters" />
+                    <NewFeatureBadge featureKey="report_filters" externalDismissOnly={true} />
                   )}
                 </div>
                 
@@ -193,6 +201,12 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
                     "grid grid-cols-1 md:grid-cols-2 gap-4 relative",
                     !hasFilters && "opacity-50 pointer-events-none"
                   )}
+                  onClick={() => {
+                    // Dismiss badge on click
+                    if (hasFilters && isPremium && user?.id) {
+                      dismissFeatureBadge('report_filters', user.id)
+                    }
+                  }}
                 >
                   {!hasFilters && (
                     <div 

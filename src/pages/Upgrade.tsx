@@ -372,7 +372,11 @@ export default function Upgrade() {
               unlimited_clients: 'premium',
               unlimited_sessions: 'pro',
               packages: 'pro',
+              packages_sidebar: 'pro', // Badge na sidebar (Pacotes)
               recurring_sessions: 'pro',
+              recurring_sessions_sidebar: 'pro', // Badge na sidebar (Sessões Recorrentes)
+              reports_sidebar: 'pro', // Badge na sidebar (Relatórios)
+              referral_program_sidebar: 'pro', // Badge na sidebar (Programa de Indicação)
             }
             
             const PLAN_HIERARCHY: Record<string, number> = {
