@@ -104,6 +104,18 @@ export const CheckoutRedirect = () => {
         // ✅ Salvar plano selecionado para mostrar modal de boas-vindas após pagamento
         sessionStorage.setItem('pending_checkout_plan', pendingPlan)
         
+        // ✅ Salvar plano ANTERIOR para calcular features desbloqueadas
+        // Buscar plano atual do perfil
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('subscription_plan')
+          .eq('user_id', user.id)
+          .single()
+        
+        const currentPlan = profile?.subscription_plan || 'basico'
+        sessionStorage.setItem('pending_previous_plan', currentPlan)
+        console.log('[CheckoutRedirect] 📝 Saved previous plan:', currentPlan)
+        
         // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')
         localStorage.removeItem('pending_billing')
