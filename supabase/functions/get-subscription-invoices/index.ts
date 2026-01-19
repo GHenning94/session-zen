@@ -185,11 +185,17 @@ serve(async (req) => {
         return hasAmount && isValidStatus && isNotDraft;
       })
       .map(invoice => {
-        // Para faturas de upgrade (subscription_update), incluir detalhes de linha
-        // para mostrar créditos e débitos separadamente
+        // Para faturas de upgrade com metadata, usar os valores do metadata
+        // pois são os valores corretos calculados pela nossa lógica de prorrata
         let lineItems: { amount: number; description: string }[] = [];
         let creditAmount = 0;
         let chargeAmount = 0;
+        
+        // Verificar se é uma fatura de upgrade com metadata
+        const isProrationUpgrade = invoice.metadata?.type === 'proration_upgrade';
+        const metaCreditAmount = invoice.metadata?.credit_amount ? parseInt(invoice.metadata.credit_amount) : 0;
+        const metaFinalAmount = invoice.metadata?.final_amount ? parseInt(invoice.metadata.final_amount) : 0;
+        const metaNewPlanPrice = invoice.metadata?.new_plan_price ? parseInt(invoice.metadata.new_plan_price) : 0;
         
         if (invoice.lines?.data) {
           for (const line of invoice.lines.data) {
@@ -205,15 +211,36 @@ serve(async (req) => {
           }
         }
         
-        // O valor efetivamente cobrado é o amount_paid (após créditos aplicados)
-        // Para proration, o amount_paid já reflete o valor líquido cobrado no cartão
+        // Usar valores do metadata se disponíveis (mais precisos)
+        if (isProrationUpgrade && metaCreditAmount > 0) {
+          creditAmount = metaCreditAmount;
+        }
+        
+        // O valor efetivamente cobrado
+        // Para faturas de upgrade com metadata, usar o valor do metadata
+        let effectiveAmountPaid = invoice.amount_paid;
+        if (isProrationUpgrade && metaFinalAmount > 0) {
+          effectiveAmountPaid = metaFinalAmount;
+        }
         
         // Criar descrição clara para upgrades
         let description = invoice.description || invoice.lines?.data?.[0]?.description || null;
         
-        // Para subscription_update (upgrade), criar uma descrição melhor
-        if (invoice.billing_reason === 'subscription_update' && creditAmount > 0) {
-          // Extrair nome do plano da descrição das linhas
+        // Para faturas de upgrade com metadata, criar descrição melhor
+        if (isProrationUpgrade) {
+          const toPlanName = invoice.metadata?.to_plan_name || invoice.metadata?.to_plan || 'novo plano';
+          const displayPlanName = toPlanName
+            .replace('TherapyPro ', '')
+            .replace('Monthly', 'Mensal')
+            .replace('Yearly', 'Anual');
+          
+          if (metaCreditAmount > 0) {
+            description = `Upgrade para ${displayPlanName} - Crédito de R$ ${(metaCreditAmount / 100).toFixed(2).replace('.', ',')} aplicado`;
+          } else {
+            description = `Upgrade para ${displayPlanName}`;
+          }
+        } else if (invoice.billing_reason === 'subscription_update' && creditAmount > 0) {
+          // Fallback para faturas antigas sem metadata
           const planLine = invoice.lines?.data?.find(l => l.amount > 0);
           const planMatch = planLine?.description?.match(/(.+?)\s*\(at/i) || planLine?.description?.match(/remaining time on (.+)/i);
           let planName = planMatch ? planMatch[1].trim() : 'novo plano';
@@ -228,12 +255,12 @@ serve(async (req) => {
           description = `Upgrade para ${planName} - Crédito de R$ ${(creditAmount / 100).toFixed(2).replace('.', ',')} aplicado`;
         }
         
-        console.log(`[get-subscription-invoices] 📄 Formatted invoice ${invoice.number}: credit=${creditAmount}, charge=${chargeAmount}, amount_paid=${invoice.amount_paid}`);
+        console.log(`[get-subscription-invoices] 📄 Formatted invoice ${invoice.number}: isProration=${isProrationUpgrade}, metaFinal=${metaFinalAmount}, amountPaid=${invoice.amount_paid}, effectiveAmount=${effectiveAmountPaid}`);
         
         return {
           id: invoice.id,
           number: invoice.number,
-          amount_paid: invoice.amount_paid, // Valor efetivamente cobrado
+          amount_paid: effectiveAmountPaid, // Valor efetivamente cobrado (do metadata se disponível)
           amount_due: invoice.amount_due,
           total: invoice.total,
           credit_amount: creditAmount, // Crédito aplicado

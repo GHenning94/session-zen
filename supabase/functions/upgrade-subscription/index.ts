@@ -328,39 +328,35 @@ serve(async (req) => {
     }
 
     // ============================================
-    // CALCULAR BILLING_CYCLE_ANCHOR BASEADO NO DIA DO MÊS
+    // EXECUTAR UPGRADE NO STRIPE
     // ============================================
-    // REGRA: A renovação sempre ocorre no mesmo dia do mês em que o upgrade foi realizado
-    // Se o dia não existir no mês seguinte (ex: 31), cai no último dia do mês
     
-    const now = new Date();
-    const billingDay = now.getDate();
+    // IMPORTANTE: NÃO usar billing_cycle_anchor: 'now' pois isso gera uma cobrança automática
+    // do Stripe pelo valor cheio do novo plano. Ao invés disso:
+    // 1. Atualizamos o plano sem mudar o ciclo de cobrança
+    // 2. Usamos proration_behavior: 'none' para evitar cobranças automáticas do Stripe
+    // 3. Criamos nossa própria invoice manual com o valor calculado (diferença com crédito)
     
-    console.log("[upgrade-subscription] 📅 Setting billing cycle anchor to day:", billingDay);
-
-    // Atualizar assinatura com novo billing_cycle_anchor
-    // Usamos billing_cycle_anchor: 'now' para iniciar novo ciclo imediatamente
     await stripe.subscriptions.update(subscription.id, {
       items: [{ id: subscriptionItemId, price: newPriceId }],
-      proration_behavior: 'none',
+      proration_behavior: 'none', // Não deixar Stripe calcular prorrata automaticamente
       cancel_at_period_end: false,
-      billing_cycle_anchor: 'now', // Inicia novo ciclo imediatamente
+      // NÃO usar billing_cycle_anchor: 'now' - mantém o ciclo original
     });
 
-    console.log("[upgrade-subscription] ✅ Subscription updated to new plan with new billing cycle");
+    console.log("[upgrade-subscription] ✅ Subscription updated to new plan (keeping original billing cycle)");
     
-    // Buscar a assinatura atualizada para obter as datas corretas
+    // Buscar a assinatura atualizada
     const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);
-    const newPeriodEnd = new Date(updatedSubscription.current_period_end * 1000);
+    const periodEnd = new Date(updatedSubscription.current_period_end * 1000);
     
-    console.log("[upgrade-subscription] 📅 New billing cycle:", {
+    console.log("[upgrade-subscription] 📅 Billing cycle maintained:", {
       start: new Date(updatedSubscription.current_period_start * 1000).toISOString(),
-      end: newPeriodEnd.toISOString(),
-      billingDay
+      end: periodEnd.toISOString()
     });
 
     // ============================================
-    // COBRAR VALOR
+    // COBRAR VALOR DA DIFERENÇA
     // ============================================
     
     let paymentUrl: string | null = null;
@@ -370,14 +366,14 @@ serve(async (req) => {
 
     if (finalAmount > 0) {
       try {
-        // Criar invoice item com o valor calculado
+        // Criar invoice item com o valor calculado (diferença após crédito)
         const description = prorationApplied
           ? `Upgrade para ${newPriceInfo.displayName} - Crédito de ${formatBRL(creditAmount)} aplicado`
           : `Upgrade para ${newPriceInfo.displayName} - Sem crédito (desconto ativo no plano anterior)`;
 
         await stripe.invoiceItems.create({
           customer: customer.id,
-          amount: finalAmount,
+          amount: finalAmount, // Valor líquido: novo plano - crédito
           currency: 'brl',
           description,
         });
@@ -392,9 +388,12 @@ serve(async (req) => {
             type: 'proration_upgrade',
             from_plan: currentPriceInfo.plan,
             to_plan: newPriceInfo.plan,
+            from_plan_name: currentPriceInfo.displayName,
+            to_plan_name: newPriceInfo.displayName,
             proration_applied: prorationApplied ? 'true' : 'false',
             credit_amount: String(creditAmount),
             final_amount: String(finalAmount),
+            new_plan_price: String(newPlanPrice),
             had_discount: discountCheck.hasDiscount ? 'true' : 'false',
             discount_type: discountCheck.discountType || '',
           },
@@ -406,21 +405,26 @@ serve(async (req) => {
         console.log("[upgrade-subscription] 📄 Invoice created:", {
           id: finalizedInvoice.id,
           status: finalizedInvoice.status,
-          amount: finalizedInvoice.amount_due
+          amount: finalizedInvoice.amount_due,
+          creditApplied: creditAmount,
+          finalCharge: finalAmount
         });
 
         if (finalizedInvoice.status === 'paid') {
           invoicePaid = true;
+          console.log("[upgrade-subscription] ✅ Invoice paid automatically");
         } else if (finalizedInvoice.status === 'open') {
           paymentUrl = finalizedInvoice.hosted_invoice_url || null;
           requiresPayment = true;
+          console.log("[upgrade-subscription] ⏳ Invoice requires payment:", paymentUrl);
         }
       } catch (invoiceError) {
         console.error("[upgrade-subscription] ⚠️ Invoice creation failed:", invoiceError);
+        // Não falhar o upgrade se a invoice falhar - o plano já foi atualizado
       }
     } else {
       invoicePaid = true;
-      console.log("[upgrade-subscription] ✅ No payment required - credit covers upgrade");
+      console.log("[upgrade-subscription] ✅ No payment required - credit covers entire upgrade cost");
     }
 
     // ============================================
