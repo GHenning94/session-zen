@@ -182,6 +182,7 @@ const Configuracoes = () => {
   // Estados para verificação 2FA em ações sensíveis
   const [show2FAModal, setShow2FAModal] = useState(false)
   const [pending2FAAction, setPending2FAAction] = useState<'password' | 'email' | 'delete' | null>(null)
+  const [twoFAVerified, setTwoFAVerified] = useState(false) // Flag para indicar que 2FA foi verificado
   
   // Ler tab da URL
   useEffect(() => {
@@ -372,18 +373,20 @@ const Configuracoes = () => {
 
   // Handler chamado após verificação 2FA bem-sucedida - executa a ação real
   const handle2FAVerified = () => {
+    setTwoFAVerified(true); // Marcar que 2FA foi verificado para bypass de captcha
     if (pending2FAAction === 'password') {
-      confirmPasswordChange();
+      confirmPasswordChange(true);
     } else if (pending2FAAction === 'email') {
-      confirmEmailChange();
+      confirmEmailChange(true);
     } else if (pending2FAAction === 'delete') {
-      handleDeleteAccount();
+      handleDeleteAccount(true);
     }
     setPending2FAAction(null);
   };
 
-  const confirmPasswordChange = async () => {
-    if (!passwordChangeCaptchaToken) {
+  const confirmPasswordChange = async (bypassCaptcha = false) => {
+    // Se não passou por 2FA, requer captcha
+    if (!bypassCaptcha && !passwordChangeCaptchaToken) {
       toast({
         title: "Erro",
         description: "Por favor, complete a verificação de segurança",
@@ -399,7 +402,7 @@ const Configuracoes = () => {
         email: user?.email || '',
         password: currentPassword,
         options: {
-          captchaToken: passwordChangeCaptchaToken
+          captchaToken: bypassCaptcha ? undefined : passwordChangeCaptchaToken
         }
       });
 
@@ -537,20 +540,30 @@ const Configuracoes = () => {
     }
   };
 
-  const confirmEmailChange = async () => {
-    if (!pendingNewEmail || !emailChangePassword) {
-      toast({
-        title: "Erro",
-        description: "Digite sua senha para confirmar",
-        variant: "destructive"
-      });
-      return;
-    }
+  const confirmEmailChange = async (bypassCaptcha = false) => {
+    // Se passou por 2FA, não precisa da senha novamente
+    if (!bypassCaptcha) {
+      if (!pendingNewEmail || !emailChangePassword) {
+        toast({
+          title: "Erro",
+          description: "Digite sua senha para confirmar",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    if (!emailChangeCaptchaToken) {
+      if (!emailChangeCaptchaToken) {
+        toast({
+          title: "Erro",
+          description: "Por favor, complete a verificação de segurança",
+          variant: "destructive"
+        });
+        return;
+      }
+    } else if (!pendingNewEmail) {
       toast({
         title: "Erro",
-        description: "Por favor, complete a verificação de segurança",
+        description: "E-mail pendente não encontrado",
         variant: "destructive"
       });
       return;
@@ -560,12 +573,13 @@ const Configuracoes = () => {
     const oldEmail = user?.email || '';
     
     try {
-      // Chamar edge function para iniciar processo de mudança de email (com verificação de senha)
+      // Chamar edge function para iniciar processo de mudança de email
       const { data, error } = await supabase.functions.invoke('request-email-change', {
         body: {
           new_email: pendingNewEmail,
           user_name: settings.nome,
-          password: emailChangePassword
+          password: bypassCaptcha ? undefined : emailChangePassword,
+          skip_password_check: bypassCaptcha // Se passou por 2FA, pular verificação de senha
         }
       });
 
@@ -702,7 +716,7 @@ const Configuracoes = () => {
     }
   }
 
-  const handleDeleteAccount = async () => {
+  const handleDeleteAccount = async (bypassPasswordCheck = false) => {
     if (deleteConfirmText !== 'DELETAR') {
       toast({
         title: "Confirmação necessária",
@@ -712,7 +726,8 @@ const Configuracoes = () => {
       return
     }
 
-    if (!deleteAccountPassword) {
+    // Se passou por 2FA, não precisa da senha novamente
+    if (!bypassPasswordCheck && !deleteAccountPassword) {
       toast({
         title: "Senha necessária",
         description: "Digite sua senha para confirmar a exclusão",
@@ -726,7 +741,8 @@ const Configuracoes = () => {
     try {
       const { data, error } = await supabase.functions.invoke('delete-user-account', {
         body: {
-          password: deleteAccountPassword
+          password: bypassPasswordCheck ? undefined : deleteAccountPassword,
+          skip_password_check: bypassPasswordCheck // Se passou por 2FA, pular verificação de senha
         }
       })
       
