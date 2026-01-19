@@ -3,10 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Mail, Smartphone, Key, Loader2 } from 'lucide-react'; // Adicionado Loader2
+import { Mail, Smartphone, Key, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
-// Removido useNavigate
 
 interface TwoFactorVerificationProps {
   email: string;
@@ -16,18 +15,7 @@ interface TwoFactorVerificationProps {
   onCancel: () => void;
 }
 
-// Helper para chamadas AUTENTICADAS (para send-code e verify-code)
-const invokeAuthenticatedFunction = async (functionName: string, body: object) => {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) {
-    toast({ title: "Erro de Autenticação", description: "Sua sessão expirou.", variant: "destructive" });
-    throw new Error("Usuário não autenticado");
-  }
-  supabase.functions.setAuth(session.access_token);
-  return supabase.functions.invoke(functionName, { body });
-};
-
-// Helper para chamadas PÚBLICAS (para request-reset)
+// Helper para chamadas PÚBLICAS (sem autenticação - para fluxo de login)
 const invokePublicFunction = async (functionName: string, body: object) => {
   return supabase.functions.invoke(functionName, { body });
 };
@@ -47,17 +35,29 @@ export const TwoFactorVerification = ({
   const [loadingReset, setLoadingReset] = useState(false);
   const [emailCodeSent, setEmailCodeSent] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
-  // Removido navigate
 
+  // Usar versão PÚBLICA da função (aceita email no body, não requer JWT)
   const sendEmailCode = async () => {
-    const isResending = emailCodeSent; // Se já enviou antes, é reenvio
+    const isResending = emailCodeSent;
     
     try {
       setLoading(true);
-      const { data, error } = await invokeAuthenticatedFunction('twofa-send-email-code', { email });
-      if (error) throw error;
+      console.log('[TwoFactorVerification] Sending email code via public function for:', email);
+      
+      // Usar função pública que aceita email no body
+      const { data, error } = await invokePublicFunction('twofa-send-email-code-public', { email });
+      
+      if (error) {
+        console.error('[TwoFactorVerification] Error from twofa-send-email-code-public:', error);
+        throw error;
+      }
+      
+      if (data?.error) {
+        throw new Error(data.error);
+      }
+      
       setEmailCodeSent(true);
-      setResendCooldown(60); // 60 segundos de cooldown
+      setResendCooldown(60);
       
       // Limpar campo de código de email ao reenviar (código antigo foi invalidado)
       if (isResending) {
@@ -71,6 +71,7 @@ export const TwoFactorVerification = ({
         toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
       }
     } catch (error: any) {
+      console.error('[TwoFactorVerification] Failed to send email code:', error);
       toast({ title: 'Erro', description: error.message || 'Falha ao enviar código', variant: 'destructive' });
     } finally {
       setLoading(false);
@@ -87,24 +88,39 @@ export const TwoFactorVerification = ({
     }
   }, [resendCooldown]);
 
+  // Usar chamada PÚBLICA para verificar códigos (função aceita email no body)
   const handleVerify = async () => {
-     try {
+    try {
       setLoading(true);
-      const { data, error } = await invokeAuthenticatedFunction('twofa-verify-code', {
+      console.log('[TwoFactorVerification] Verifying codes via public function for:', email);
+      
+      const { data, error } = await invokePublicFunction('twofa-verify-code', {
         email,
         emailCode: requiresEmail && !useBackupCode ? emailCode : undefined,
         authenticatorCode: requiresAuthenticator && !useBackupCode ? authenticatorCode : undefined,
         backupCode: useBackupCode ? backupCode : undefined,
       });
-      if (error) throw error;
-      if (data.success) {
-        toast({ title: 'Verificação bem-sucedida', description: 'Você será redirecionado em instantes', });
+      
+      if (error) {
+        console.error('[TwoFactorVerification] Error from twofa-verify-code:', error);
+        throw error;
+      }
+      
+      console.log('[TwoFactorVerification] Verification response:', data);
+      
+      if (data?.success) {
+        toast({ title: 'Verificação bem-sucedida', description: 'Você será redirecionado em instantes' });
         onVerified();
       } else {
-        toast({ title: 'Código(s) inválido(s)', description: data.error || 'Verifique os códigos inseridos e tente novamente', variant: 'destructive', });
+        toast({ 
+          title: 'Código incorreto', 
+          description: data?.error || 'Verifique os códigos inseridos e tente novamente', 
+          variant: 'destructive' 
+        });
       }
     } catch (error: any) {
-      toast({ title: 'Erro', description: error.message, variant: 'destructive', });
+      console.error('[TwoFactorVerification] Verification failed:', error);
+      toast({ title: 'Erro', description: error.message || 'Erro ao verificar código', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -125,14 +141,14 @@ export const TwoFactorVerification = ({
           description: data.message || 'Um link para redefinir seu 2FA foi enviado.',
           duration: 10000,
         });
-        await supabase.auth.signOut(); // Desloga
-        onCancel(); // Limpa a UI e volta ao login
+        await supabase.auth.signOut();
+        onCancel();
       } else {
-         toast({
-           title: 'Erro ao solicitar redefinição',
-           description: data.error || 'Não foi possível iniciar a redefinição.',
-           variant: 'destructive',
-         });
+        toast({
+          title: 'Erro ao solicitar redefinição',
+          description: data.error || 'Não foi possível iniciar a redefinição.',
+          variant: 'destructive',
+        });
       }
 
     } catch (error: any) {
@@ -247,7 +263,7 @@ export const TwoFactorVerification = ({
           </Button>
           <Button
             variant="outline"
-            onClick={onCancel} // Chama a função onCancel (que desloga) do Login.tsx
+            onClick={onCancel}
             disabled={loadingReset}
             className="w-full"
           >
@@ -258,7 +274,7 @@ export const TwoFactorVerification = ({
           <Button
             variant="link"
             className="text-sm text-muted-foreground"
-            onClick={handleRequestReset} // Chama a nova função
+            onClick={handleRequestReset}
             disabled={loadingReset}
           >
             {loadingReset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
