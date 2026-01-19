@@ -72,6 +72,7 @@ const FEATURE_NAMES: Record<Feature, string> = {
   google_calendar: 'Integração com Google Agenda',
   reports: 'Relatórios',
   advanced_reports: 'Relatórios Avançados',
+  report_filters: 'Filtros de Relatórios',
   referral_program: 'Programa de Indicação',
   referral_history: 'Histórico de Transações',
   goals: 'Metas',
