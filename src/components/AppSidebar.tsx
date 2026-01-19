@@ -177,8 +177,12 @@ export function AppSidebar() {
                     )}
                     onMouseEnter={() => {
                       // Dismiss the new feature badge when hovering over the menu item
+                      // ✅ Usar featureKey específico para sidebar (goals_sidebar)
                       if (item.requiredFeature && !isLocked) {
-                        dismissFeatureBadge(item.requiredFeature)
+                        const sidebarFeatureKey = item.requiredFeature === 'goals' 
+                          ? 'goals_sidebar' 
+                          : item.requiredFeature
+                        dismissFeatureBadge(sidebarFeatureKey)
                       }
                     }}
                   >
@@ -198,8 +202,11 @@ export function AppSidebar() {
                       {!isCollapsed && (
                         <div className="flex items-center gap-1">
                           {/* New feature badge - shows when unlocked */}
+                          {/* ✅ Usar featureKey específico para sidebar (goals_sidebar) */}
                           {item.requiredFeature && !isLocked && (
-                            <NewFeatureBadge featureKey={item.requiredFeature} />
+                            <NewFeatureBadge 
+                              featureKey={item.requiredFeature === 'goals' ? 'goals_sidebar' : item.requiredFeature} 
+                            />
                           )}
                           
                           {/* Locked badge */}

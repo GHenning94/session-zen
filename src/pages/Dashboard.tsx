@@ -184,40 +184,45 @@ const Dashboard = () => {
   // ✅ Verificar modal de boas-vindas - CRÍTICO: executa IMEDIATAMENTE no mount
   // Verificar AMBOS localStorage e sessionStorage
   useEffect(() => {
-    // ✅ Verificar IMEDIATAMENTE - verificar AMBOS os storages
-    const showWelcome = localStorage.getItem('show_upgrade_welcome') || 
-                        sessionStorage.getItem('show_upgrade_welcome')
-    console.log('[Dashboard] 🔍 Checking for upgrade welcome modal (immediate):', showWelcome)
-    
-    if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
-      console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
-      // Remover de AMBOS os storages IMEDIATAMENTE para evitar duplicação
-      localStorage.removeItem('show_upgrade_welcome')
-      sessionStorage.removeItem('show_upgrade_welcome')
+    // ✅ Verificar com um pequeno delay para garantir que o localStorage foi populado
+    // Isso é necessário quando a página é carregada via window.location.href
+    const checkForUpgradeModal = () => {
+      const showWelcome = localStorage.getItem('show_upgrade_welcome') || 
+                          sessionStorage.getItem('show_upgrade_welcome')
+      console.log('[Dashboard] 🔍 Checking for upgrade welcome modal:', showWelcome)
       
-      // Usar requestAnimationFrame para garantir que o DOM está pronto
-      // mas ainda executar o mais rápido possível
-      requestAnimationFrame(() => {
-        setUpgradeWelcomeModal({
-          open: true,
-          newPlan: showWelcome as 'pro' | 'premium'
+      if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
+        console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
+        // Remover de AMBOS os storages IMEDIATAMENTE para evitar duplicação
+        localStorage.removeItem('show_upgrade_welcome')
+        sessionStorage.removeItem('show_upgrade_welcome')
+        
+        // Usar requestAnimationFrame para garantir que o DOM está pronto
+        requestAnimationFrame(() => {
+          setUpgradeWelcomeModal({
+            open: true,
+            newPlan: showWelcome as 'pro' | 'premium'
+          })
         })
-      })
+        return true // Modal encontrado
+      }
+      return false // Modal não encontrado
+    }
+    
+    // Verificar imediatamente
+    if (!checkForUpgradeModal()) {
+      // Se não encontrou, verificar novamente após um curto delay
+      // Isso cobre o caso de race conditions com localStorage
+      const timer = setTimeout(() => {
+        checkForUpgradeModal()
+      }, 100)
+      
+      return () => clearTimeout(timer)
     }
     
     // Também verificar quando a janela ganha foco (fallback)
     const handleFocus = () => {
-      const showWelcomeFocus = localStorage.getItem('show_upgrade_welcome') || 
-                               sessionStorage.getItem('show_upgrade_welcome')
-      if (showWelcomeFocus && (showWelcomeFocus === 'pro' || showWelcomeFocus === 'premium')) {
-        console.log('[Dashboard] 🎊 Opening upgrade welcome modal on focus:', showWelcomeFocus)
-        localStorage.removeItem('show_upgrade_welcome')
-        sessionStorage.removeItem('show_upgrade_welcome')
-        setUpgradeWelcomeModal({
-          open: true,
-          newPlan: showWelcomeFocus as 'pro' | 'premium'
-        })
-      }
+      checkForUpgradeModal()
     }
     
     window.addEventListener('focus', handleFocus)
@@ -318,6 +323,8 @@ const Dashboard = () => {
       if (!user?.id || fromPlan === toPlan) return
       
       // Mapeamento de features por plano
+      // ✅ IMPORTANTE: Usar featureKeys ESPECÍFICOS para cada localização
+      // Isso evita que o hover em um card dismiss a badge de outro lugar
       const FEATURE_TO_PLAN: Record<string, string> = {
         whatsapp_notifications: 'premium',
         google_calendar: 'premium',
@@ -326,7 +333,12 @@ const Dashboard = () => {
         report_filters: 'premium',
         referral_program: 'pro',
         referral_history: 'premium',
-        goals: 'pro',
+        // Goals - variantes por localização
+        goals: 'pro', // Base feature para checagem de acesso
+        goals_sidebar: 'pro', // Badge na sidebar (Metas)
+        goals_dashboard_ticket: 'pro', // Card de Ticket Médio
+        goals_dashboard_canal: 'pro', // Card de Receita por Canal
+        goals_orbital: 'pro', // Vista Orbital de Metas
         public_page: 'pro',
         public_page_design: 'premium',
         public_page_advanced: 'premium',
@@ -2508,7 +2520,7 @@ const Dashboard = () => {
                       className="shadow-soft overflow-hidden"
                       onMouseEnter={() => {
                         const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                        dismissFeatureBadge('goals')
+                        dismissFeatureBadge('goals_dashboard_ticket')
                       }}
                     >
                       <CardHeader className="pb-4">
@@ -2520,7 +2532,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Valor médio por sessão de cada {clientTerm.toLowerCase()}
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals" />
+                            <NewFeatureBadge featureKey="goals_dashboard_ticket" />
                           </div>
                         </div>
                       </CardHeader>
@@ -2653,7 +2665,7 @@ const Dashboard = () => {
                       className="shadow-soft min-h-[600px] overflow-visible"
                       onMouseEnter={() => {
                         const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                        dismissFeatureBadge('goals')
+                        dismissFeatureBadge('goals_dashboard_canal')
                       }}
                     >
                       <CardHeader className="pb-4">
@@ -2665,7 +2677,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Distribuição da receita por método de pagamento
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals" />
+                            <NewFeatureBadge featureKey="goals_dashboard_canal" />
                           </div>
                           {/* Botões de período */}
                           <div className="flex gap-1 flex-wrap shrink-0">

@@ -172,15 +172,23 @@ serve(async (req) => {
     // ✅ Filtrar faturas válidas
     // Incluir: paid (pagas), open (pendentes de pagamento)
     // Excluir: draft, void, uncollectible
-    // IMPORTANTE: Para proration, o valor pode estar em amount_paid ou total
+    // IMPORTANTE: Para faturas de upgrade, o amount_paid pode ser 0 inicialmente
+    // mas o total mostra o valor real da fatura
     const formattedInvoices = allInvoices
       .filter(invoice => {
-        // Verificar se tem algum valor (pode ser negativo para créditos)
-        const hasAmount = invoice.amount_due > 0 || invoice.amount_paid > 0 || Math.abs(invoice.total || 0) > 0;
+        // Verificar se tem algum valor - considerar total, amount_due E amount_paid
+        // Para faturas novas, amount_paid=0 mas total tem o valor correto
+        const effectiveAmount = Math.max(
+          invoice.amount_paid || 0,
+          invoice.amount_due || 0,
+          Math.abs(invoice.total || 0),
+          Math.abs(invoice.subtotal || 0)
+        );
+        const hasAmount = effectiveAmount > 0;
         const isValidStatus = invoice.status === 'paid' || invoice.status === 'open';
         const isNotDraft = !invoice.draft;
         
-        console.log(`[get-subscription-invoices] 🔍 Invoice ${invoice.number}: amount_due=${invoice.amount_due}, amount_paid=${invoice.amount_paid}, total=${invoice.total}, subtotal=${invoice.subtotal}, status=${invoice.status}, billing_reason=${invoice.billing_reason}`);
+        console.log(`[get-subscription-invoices] 🔍 Invoice ${invoice.number || invoice.id}: amount_due=${invoice.amount_due}, amount_paid=${invoice.amount_paid}, total=${invoice.total}, subtotal=${invoice.subtotal}, status=${invoice.status}, effectiveAmount=${effectiveAmount}, hasAmount=${hasAmount}`);
         
         return hasAmount && isValidStatus && isNotDraft;
       })
@@ -218,9 +226,20 @@ serve(async (req) => {
         
         // O valor efetivamente cobrado
         // Para faturas de upgrade com metadata, usar o valor do metadata
+        // Para faturas com amount_paid = 0 mas total > 0, usar o total
         let effectiveAmountPaid = invoice.amount_paid;
+        
+        // 1. Primeiro: usar metadata se disponível (mais preciso para upgrades)
         if (isProrationUpgrade && metaFinalAmount > 0) {
           effectiveAmountPaid = metaFinalAmount;
+        }
+        // 2. Fallback: se amount_paid é 0 mas a fatura está paga, usar total
+        else if (invoice.amount_paid === 0 && invoice.status === 'paid' && invoice.total > 0) {
+          effectiveAmountPaid = invoice.total;
+        }
+        // 3. Para faturas open, usar amount_due
+        else if (invoice.amount_paid === 0 && invoice.status === 'open' && invoice.amount_due > 0) {
+          effectiveAmountPaid = invoice.amount_due;
         }
         
         // ============================================
