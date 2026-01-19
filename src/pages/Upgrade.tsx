@@ -3,12 +3,14 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Check, ArrowLeft, Crown, Zap, Star, Loader2, AlertTriangle } from "lucide-react"
 import { useAuth } from "@/hooks/useAuth"
 import { useSubscription } from "@/hooks/useSubscription"
 import { supabase } from "@/integrations/supabase/client"
 import { DowngradeRetentionFlow } from "@/components/DowngradeRetentionFlow"
 import { toast } from "sonner"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -67,6 +69,7 @@ export default function Upgrade() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const selectedPlan = searchParams.get('plan')
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(false)
   const [upgradeModal, setUpgradeModal] = useState<{
     open: boolean
@@ -401,15 +404,22 @@ export default function Upgrade() {
           {/* Seletor de Ciclo de Cobrança */}
           <div className="flex items-center justify-center gap-3 mt-8">
             <span className={`text-sm ${billingCycle === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Mensal</span>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={billingCycle === 'annual'}
-              onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-              className="relative inline-flex h-6 w-11 min-w-[44px] shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform translate-x-0.5 data-[checked=true]:translate-x-[22px]" data-checked={billingCycle === 'annual'} style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
-            </button>
+            {isMobile ? (
+              <Switch
+                checked={billingCycle === 'annual'}
+                onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
+              />
+            ) : (
+              <button
+                type="button"
+                role="switch"
+                aria-checked={billingCycle === 'annual'}
+                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+                className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
+              </button>
+            )}
             <span className={`text-sm ${billingCycle === 'annual' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
             {billingCycle === 'annual' && (
               <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">
