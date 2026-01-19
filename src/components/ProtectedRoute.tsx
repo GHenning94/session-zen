@@ -16,7 +16,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const location = useLocation();
   const [isCheckingSession, setIsCheckingSession] = useState(false);
   const sessionCheckAttempts = useRef(0);
-  const maxAttempts = 5; // Aumentar tentativas
+  const maxAttempts = 15; // ✅ Aumentar tentativas para dar mais tempo à recuperação de sessão
+  const [forceShowLoading, setForceShowLoading] = useState(false);
 
   // ✅ Verificar se está voltando de checkout Stripe - verificar AMBOS os storages
   const searchParams = new URLSearchParams(location.search);
@@ -28,9 +29,22 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
                               sessionStorage.getItem('pending_checkout_plan') !== null;
   const hasPendingTierUpgrade = localStorage.getItem('pending_tier_upgrade') !== null ||
                                  sessionStorage.getItem('pending_tier_upgrade') !== null;
+  const hasPaymentSuccessPending = localStorage.getItem('payment_success_pending') === 'true';
 
   // ✅ Condição combinada para detectar checkout pendente
-  const hasPendingCheckoutData = isPaymentReturn || isStripeCheckoutActive || hasPendingCheckout || hasPendingTierUpgrade;
+  const hasPendingCheckoutData = isPaymentReturn || isStripeCheckoutActive || hasPendingCheckout || hasPendingTierUpgrade || hasPaymentSuccessPending;
+
+  // ✅ Se retornando de checkout, forçar estado de loading por tempo adequado
+  useEffect(() => {
+    if (hasPendingCheckoutData && !user) {
+      setForceShowLoading(true);
+      // Forçar loading por pelo menos 30 segundos enquanto tenta recuperar sessão
+      const timeout = setTimeout(() => {
+        setForceShowLoading(false);
+      }, 30000);
+      return () => clearTimeout(timeout);
+    }
+  }, [hasPendingCheckoutData, user]);
 
   // ✅ Se voltando de checkout sem sessão, tentar recuperar sessão
   useEffect(() => {
@@ -48,11 +62,12 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
             
             if (session?.user) {
               console.log('🔒 ProtectedRoute: Sessão recuperada com sucesso!');
+              setForceShowLoading(false);
               // A sessão foi recuperada, o useAuth vai atualizar o user
             } else {
               console.log('🔒 ProtectedRoute: Sessão ainda não disponível, aguardando...');
-              // Aguardar um pouco e o useEffect vai tentar novamente
-              await new Promise(resolve => setTimeout(resolve, 1500));
+              // ✅ Aumentar delay para dar mais tempo ao Supabase
+              await new Promise(resolve => setTimeout(resolve, 2000));
             }
           } catch (error) {
             console.error('🔒 ProtectedRoute: Erro ao recuperar sessão:', error);
@@ -60,14 +75,13 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           
           setIsCheckingSession(false);
         } else {
-          console.log('🔒 ProtectedRoute: Máximo de tentativas atingido, limpando flags...');
-          // Limpar flags de checkout para evitar loop infinito
+          console.log('🔒 ProtectedRoute: Máximo de tentativas atingido, redirecionando para login...');
+          // ✅ Só limpar flags DEPOIS de esgotar todas tentativas
+          // Manter payment_success_pending para o Login saber sincronizar depois
+          localStorage.setItem('payment_success_pending', 'true');
           localStorage.removeItem('stripe_checkout_active');
           sessionStorage.removeItem('stripe_checkout_active');
-          localStorage.removeItem('pending_checkout_plan');
-          sessionStorage.removeItem('pending_checkout_plan');
-          localStorage.removeItem('pending_tier_upgrade');
-          sessionStorage.removeItem('pending_tier_upgrade');
+          setForceShowLoading(false);
         }
       }
     };
@@ -79,7 +93,7 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   const isLoading = authLoading;
 
   // --- ESTADO DE CARREGAMENTO INICIAL ---
-  if (isLoading || isCheckingSession) {
+  if (isLoading || isCheckingSession || forceShowLoading) {
     // ✅ Se há checkout pendente, mostrar loading dedicado "Ativando seu plano"
     if (hasPendingCheckoutData) {
       console.log('🔒 ProtectedRoute: Carregando com checkout pendente, mostrando loading dedicado...');
@@ -88,7 +102,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
           <Loader2 className="h-12 w-12 animate-spin text-primary" />
           <div className="text-center">
             <h2 className="text-xl font-semibold">Ativando seu plano...</h2>
-            <p className="text-muted-foreground mt-1">Aguarde enquanto confirmamos seu pagamento</p>
+            <p className="text-muted-foreground mt-1">Aguarde enquanto processamos seu pagamento.</p>
+            <p className="text-muted-foreground text-sm mt-2">Isso pode levar alguns segundos.</p>
           </div>
         </div>
       );
@@ -121,7 +136,8 @@ const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
         <div className="text-center">
           <h2 className="text-xl font-semibold">Ativando seu plano...</h2>
-          <p className="text-muted-foreground mt-1">Aguarde enquanto confirmamos seu pagamento</p>
+          <p className="text-muted-foreground mt-1">Aguarde enquanto processamos seu pagamento.</p>
+          <p className="text-muted-foreground text-sm mt-2">Isso pode levar alguns segundos.</p>
         </div>
       </div>
     );

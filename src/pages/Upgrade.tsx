@@ -399,12 +399,19 @@ export default function Upgrade() {
             localStorage.setItem(`last_known_plan_${user.id}`, data.newPlan)
           }
           
-          // ✅ Definir flag para o modal de boas-vindas ANTES de navegar - usar localStorage
+          // ✅ CRÍTICO: Definir flag para o modal de boas-vindas ANTES de navegar - usar localStorage
+          // Garantir que o modal aparece mesmo em upgrades internos (dentro da plataforma)
           localStorage.setItem('show_upgrade_welcome', data.newPlan)
+          sessionStorage.setItem('show_upgrade_welcome', data.newPlan) // Redundância
+          console.log('[Upgrade] 🎊 Set show_upgrade_welcome to localStorage AND sessionStorage:', data.newPlan)
           localStorage.removeItem('pending_previous_plan')
         }
-        // Navegar para o dashboard - o modal será aberto lá
-        navigate('/dashboard')
+        
+        // ✅ IMPORTANTE: Usar window.location.href para garantir que o Dashboard recarrega
+        // e detecta o modal. navigate() pode causar problemas com o estado React.
+        console.log('[Upgrade] 🚀 Redirecting to dashboard with full page reload...')
+        window.location.href = '/dashboard'
+        return // Evitar que continue executando
       }
     } catch (error: any) {
       console.error('Erro ao processar upgrade:', error)

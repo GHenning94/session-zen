@@ -9,6 +9,12 @@ interface NewFeatureBadgeProps {
   className?: string
   /** Optional callback when badge is dismissed */
   onDismiss?: () => void
+  /** 
+   * If true, the badge will NOT dismiss on mouse enter of the badge itself.
+   * Use this when you want to dismiss via an external container's onMouseEnter.
+   * Default: false (badge dismisses when hovered directly)
+   */
+  externalDismissOnly?: boolean
 }
 
 // Custom event name for global dismissal synchronization
@@ -75,9 +81,16 @@ export const dismissFeatureBadge = (featureKey: string, userId?: string) => {
 /**
  * Badge that shows "Novo" for recently unlocked features.
  * Uses localStorage with user-specific keys so it persists per user.
- * Disappears permanently when user hovers over it or when dismissFeatureBadge is called.
+ * 
+ * By default, disappears when user hovers over the badge itself.
+ * Set externalDismissOnly=true to only dismiss via external container hover.
  */
-export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeatureBadgeProps) => {
+export const NewFeatureBadge = ({ 
+  featureKey, 
+  className, 
+  onDismiss,
+  externalDismissOnly = false 
+}: NewFeatureBadgeProps) => {
   const { user } = useAuth()
   const [isVisible, setIsVisible] = useState(false)
   const hasCheckedRef = useRef(false)
@@ -145,7 +158,7 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
 
   return (
     <Badge 
-      onMouseEnter={handleDismiss}
+      onMouseEnter={externalDismissOnly ? undefined : handleDismiss}
       onClick={(e) => {
         e.stopPropagation()
         handleDismiss()
