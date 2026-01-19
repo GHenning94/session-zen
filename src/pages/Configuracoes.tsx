@@ -1300,11 +1300,17 @@ const Configuracoes = () => {
                 </CardContent>
               </Card>
             ) : (
-            <Card className="shadow-soft">
+            <Card 
+              className="shadow-soft"
+              onMouseEnter={() => {
+                const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                dismissFeatureBadge('bank-details')
+              }}
+            >
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Building /> Dados Bancários
-                  <NewFeatureBadge featureKey="bank-details" />
+                  <NewFeatureBadge featureKey="bank-details" externalDismissOnly={true} />
                   {settings.bank_details_validated && (
                     <span className="flex items-center gap-1 text-sm font-normal text-green-600 bg-green-100 dark:bg-green-900/30 dark:text-green-400 px-2 py-1 rounded-full">
                       <CheckCircle2 className="w-4 h-4" />
@@ -1688,7 +1694,7 @@ const Configuracoes = () => {
                             Premium
                           </Badge>
                         ) : (
-                          <NewFeatureBadge featureKey="whatsapp_notifications" />
+                          <NewFeatureBadge featureKey="whatsapp_notifications" externalDismissOnly={true} />
                         )}
                       </Label>
                       <p className="text-sm text-muted-foreground">
@@ -1742,7 +1748,7 @@ const Configuracoes = () => {
                               Premium
                             </Badge>
                           ) : (
-                            <NewFeatureBadge featureKey="google_calendar" />
+                            <NewFeatureBadge featureKey="google_calendar" externalDismissOnly={true} />
                           )}
                         </Label>
                         <p className="text-sm text-muted-foreground">

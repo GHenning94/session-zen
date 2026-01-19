@@ -558,7 +558,7 @@ const Agenda = () => {
                     dismissFeatureBadge('google_calendar')
                   }}
                 >
-                  <NewFeatureBadge featureKey="google_calendar" />
+                  <NewFeatureBadge featureKey="google_calendar" externalDismissOnly={true} />
                   <Button
                     variant="outline"
                     size="sm"
@@ -672,8 +672,14 @@ const Agenda = () => {
                   </Button>
                 </div>
               ) : hasAccessToFeature('google_calendar') ? (
-                <div className="flex items-center gap-1.5 shrink-0 group/googlebtn">
-                  <NewFeatureBadge featureKey="google_calendar" className="group-hover/googlebtn:hidden" />
+                <div 
+                  className="flex items-center gap-1.5 shrink-0 group/googlebtn"
+                  onMouseEnter={() => {
+                    const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                    dismissFeatureBadge('google_calendar')
+                  }}
+                >
+                  <NewFeatureBadge featureKey="google_calendar" externalDismissOnly={true} />
                   <Button
                     variant="outline"
                     size="sm"

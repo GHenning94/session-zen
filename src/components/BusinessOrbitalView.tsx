@@ -331,7 +331,7 @@ export const BusinessOrbitalView = ({
     >
       <div className="flex items-center gap-2 mb-2">
         <h2 className="text-sm font-medium">Progresso de Metas</h2>
-        {showNewBadge && <NewFeatureBadge featureKey="goals_orbital" />}
+        {showNewBadge && <NewFeatureBadge featureKey="goals_orbital" externalDismissOnly={true} />}
       </div>
       <RadialOrbitalTimeline timelineData={timelineData} />
     </Card>

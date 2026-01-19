@@ -276,7 +276,7 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <div className="flex items-center gap-2">
             <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
-            {showNewBadge && <NewFeatureBadge featureKey="packages" />}
+            {showNewBadge && <NewFeatureBadge featureKey="packages" externalDismissOnly={true} />}
           </div>
           <Package className="h-4 w-4 text-primary" />
         </CardHeader>
@@ -367,7 +367,7 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="flex items-center gap-2">
           <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
-          {showNewBadge && <NewFeatureBadge featureKey="packages" />}
+          {showNewBadge && <NewFeatureBadge featureKey="packages" externalDismissOnly={true} />}
         </div>
         <Package className="h-4 w-4 text-primary" />
       </CardHeader>

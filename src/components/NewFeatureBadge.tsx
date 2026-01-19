@@ -159,12 +159,13 @@ export const NewFeatureBadge = ({
   return (
     <Badge 
       onMouseEnter={externalDismissOnly ? undefined : handleDismiss}
-      onClick={(e) => {
+      onClick={externalDismissOnly ? undefined : (e) => {
         e.stopPropagation()
         handleDismiss()
       }}
       className={cn(
-        "bg-primary text-primary-foreground text-[9px] px-1 py-0.5 h-5 whitespace-nowrap w-[52px] justify-center animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite] cursor-pointer",
+        "bg-primary text-primary-foreground text-[9px] px-1 py-0.5 h-5 whitespace-nowrap w-[52px] justify-center animate-[pulse_4s_cubic-bezier(0.4,0,0.6,1)_infinite]",
+        externalDismissOnly ? "cursor-default" : "cursor-pointer",
         className
       )}
     >

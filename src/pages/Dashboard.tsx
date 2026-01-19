@@ -2224,7 +2224,13 @@ const Dashboard = () => {
 
                 <ScrollAnimation animation="fade-up" delay={150} className="col-span-full">
                   {hasAccessToFeature('goals') ? (
-                    <Card className="shadow-soft overflow-hidden group/ticket">
+                    <Card 
+                      className="shadow-soft overflow-hidden group/ticket"
+                      onMouseEnter={() => {
+                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
+                        dismissFeatureBadge('goals')
+                      }}
+                    >
                       <CardHeader className="pb-4">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                           {/* Título e descrição */}
@@ -2234,7 +2240,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Evolução do valor médio por sessão
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals" className="group-hover/ticket:hidden" />
+                            <NewFeatureBadge featureKey="goals" externalDismissOnly={true} />
                           </div>
                           {/* Botões de período - abaixo no mobile, ao lado no desktop */}
                           <div className="flex gap-1 flex-wrap">
@@ -2532,7 +2538,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Valor médio por sessão de cada {clientTerm.toLowerCase()}
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals_dashboard_ticket" />
+                            <NewFeatureBadge featureKey="goals_dashboard_ticket" externalDismissOnly={true} />
                           </div>
                         </div>
                       </CardHeader>
@@ -2677,7 +2683,7 @@ const Dashboard = () => {
                             <CardDescription className="hidden sm:block">
                               | Distribuição da receita por método de pagamento
                             </CardDescription>
-                            <NewFeatureBadge featureKey="goals_dashboard_canal" />
+                            <NewFeatureBadge featureKey="goals_dashboard_canal" externalDismissOnly={true} />
                           </div>
                           {/* Botões de período */}
                           <div className="flex gap-1 flex-wrap shrink-0">
