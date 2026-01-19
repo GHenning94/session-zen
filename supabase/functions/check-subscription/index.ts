@@ -91,18 +91,32 @@ serve(async (req) => {
       subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
       
-      // Determine subscription tier from price
+      // Determine subscription tier from price ID
       const priceId = subscription.items.data[0].price.id;
       const price = await stripe.prices.retrieve(priceId);
-      const amount = price.unit_amount || 0;
       
       // Determine billing interval
       billingInterval = price.recurring?.interval === 'year' ? 'yearly' : 'monthly';
       
-      if (amount <= 2999) {
+      // ✅ Price IDs do Stripe TherapyPro (mais confiável que verificar valores)
+      const PRO_PRICES = [
+        'price_1SSMNgCP57sNVd3laEmlQOcb',  // pro mensal
+        'price_1SSMOdCP57sNVd3la4kMOinN',  // pro anual
+      ];
+      const PREMIUM_PRICES = [
+        'price_1SSMOBCP57sNVd3lqjfLY6Du',  // premium mensal
+        'price_1SSMP7CP57sNVd3lSf4oYINX',  // premium anual
+      ];
+      
+      if (PRO_PRICES.includes(priceId)) {
         subscriptionTier = "pro";
-      } else {
+      } else if (PREMIUM_PRICES.includes(priceId)) {
         subscriptionTier = "premium";
+      } else {
+        // Fallback: usar valor para determinar (mensal apenas)
+        const amount = price.unit_amount || 0;
+        subscriptionTier = amount <= 2999 ? "pro" : "premium";
+        logStep("Using fallback price detection", { priceId, amount });
       }
       logStep("Determined subscription tier", { priceId, amount, subscriptionTier, billingInterval });
 
