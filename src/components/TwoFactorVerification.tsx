@@ -50,13 +50,26 @@ export const TwoFactorVerification = ({
   // Removido navigate
 
   const sendEmailCode = async () => {
+    const isResending = emailCodeSent; // Se já enviou antes, é reenvio
+    
     try {
       setLoading(true);
       const { data, error } = await invokeAuthenticatedFunction('twofa-send-email-code', { email });
       if (error) throw error;
       setEmailCodeSent(true);
       setResendCooldown(60); // 60 segundos de cooldown
-      toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
+      
+      // Limpar campo de código de email ao reenviar (código antigo foi invalidado)
+      if (isResending) {
+        setEmailCode('');
+        toast({ 
+          title: 'Novo código enviado', 
+          description: 'O código anterior foi invalidado. Use apenas o novo código que chegará no seu e-mail.',
+          duration: 8000
+        });
+      } else {
+        toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
+      }
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message || 'Falha ao enviar código', variant: 'destructive' });
     } finally {

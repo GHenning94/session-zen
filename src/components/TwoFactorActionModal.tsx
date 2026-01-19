@@ -128,6 +128,8 @@ export const TwoFactorActionModal = ({
   };
 
   const sendEmailCode = async () => {
+    const isResending = emailCodeSent; // Se já enviou antes, é reenvio
+    
     try {
       setLoading(true);
       const { data, error } = await invokeAuthenticatedFunction('twofa-send-email-code', { email });
@@ -139,7 +141,17 @@ export const TwoFactorActionModal = ({
       sessionStorage.setItem('2FA_EMAIL_CODE_SENT', 'true');
       sessionStorage.setItem('2FA_COOLDOWN_END', String(Date.now() + 60000));
       
-      toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
+      // Limpar campo de código de email ao reenviar (código antigo foi invalidado)
+      if (isResending) {
+        setEmailCode('');
+        toast({ 
+          title: 'Novo código enviado', 
+          description: 'O código anterior foi invalidado. Use apenas o novo código que chegará no seu e-mail.',
+          duration: 8000
+        });
+      } else {
+        toast({ title: 'Código enviado', description: 'Verifique seu e-mail para o código de verificação' });
+      }
     } catch (error: any) {
       toast({ title: 'Erro', description: error.message || 'Falha ao enviar código', variant: 'destructive' });
     } finally {
