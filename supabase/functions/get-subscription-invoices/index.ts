@@ -180,25 +180,76 @@ serve(async (req) => {
         const isValidStatus = invoice.status === 'paid' || invoice.status === 'open';
         const isNotDraft = !invoice.draft;
         
+        console.log(`[get-subscription-invoices] 🔍 Invoice ${invoice.number}: amount_due=${invoice.amount_due}, amount_paid=${invoice.amount_paid}, total=${invoice.total}, subtotal=${invoice.subtotal}, status=${invoice.status}, billing_reason=${invoice.billing_reason}`);
+        
         return hasAmount && isValidStatus && isNotDraft;
       })
-      .map(invoice => ({
-        id: invoice.id,
-        number: invoice.number,
-        amount_paid: invoice.amount_paid,
-        amount_due: invoice.amount_due,
-        total: invoice.total,
-        currency: invoice.currency,
-        status: invoice.status,
-        created: invoice.created,
-        period_start: invoice.period_start,
-        period_end: invoice.period_end,
-        hosted_invoice_url: invoice.hosted_invoice_url,
-        invoice_pdf: invoice.invoice_pdf,
-        subscription_id: invoice.subscription,
-        billing_reason: invoice.billing_reason,
-        description: invoice.description || invoice.lines?.data?.[0]?.description || null
-      }));
+      .map(invoice => {
+        // Para faturas de upgrade (subscription_update), incluir detalhes de linha
+        // para mostrar créditos e débitos separadamente
+        let lineItems: { amount: number; description: string }[] = [];
+        let creditAmount = 0;
+        let chargeAmount = 0;
+        
+        if (invoice.lines?.data) {
+          for (const line of invoice.lines.data) {
+            lineItems.push({
+              amount: line.amount,
+              description: line.description || ''
+            });
+            if (line.amount < 0) {
+              creditAmount += Math.abs(line.amount);
+            } else {
+              chargeAmount += line.amount;
+            }
+          }
+        }
+        
+        // O valor efetivamente cobrado é o amount_paid (após créditos aplicados)
+        // Para proration, o amount_paid já reflete o valor líquido cobrado no cartão
+        
+        // Criar descrição clara para upgrades
+        let description = invoice.description || invoice.lines?.data?.[0]?.description || null;
+        
+        // Para subscription_update (upgrade), criar uma descrição melhor
+        if (invoice.billing_reason === 'subscription_update' && creditAmount > 0) {
+          // Extrair nome do plano da descrição das linhas
+          const planLine = invoice.lines?.data?.find(l => l.amount > 0);
+          const planMatch = planLine?.description?.match(/(.+?)\s*\(at/i) || planLine?.description?.match(/remaining time on (.+)/i);
+          let planName = planMatch ? planMatch[1].trim() : 'novo plano';
+          planName = planName
+            .replace('TherapyPro ', '')
+            .replace('Remaining time on ', '')
+            .replace('Monthly', 'Mensal')
+            .replace('Yearly', 'Anual')
+            .replace('Premium', 'Premium')
+            .replace('Profissional', 'Profissional');
+          
+          description = `Upgrade para ${planName} - Crédito de R$ ${(creditAmount / 100).toFixed(2).replace('.', ',')} aplicado`;
+        }
+        
+        console.log(`[get-subscription-invoices] 📄 Formatted invoice ${invoice.number}: credit=${creditAmount}, charge=${chargeAmount}, amount_paid=${invoice.amount_paid}`);
+        
+        return {
+          id: invoice.id,
+          number: invoice.number,
+          amount_paid: invoice.amount_paid, // Valor efetivamente cobrado
+          amount_due: invoice.amount_due,
+          total: invoice.total,
+          credit_amount: creditAmount, // Crédito aplicado
+          charge_amount: chargeAmount, // Valor bruto antes do crédito
+          currency: invoice.currency,
+          status: invoice.status,
+          created: invoice.created,
+          period_start: invoice.period_start,
+          period_end: invoice.period_end,
+          hosted_invoice_url: invoice.hosted_invoice_url,
+          invoice_pdf: invoice.invoice_pdf,
+          subscription_id: invoice.subscription,
+          billing_reason: invoice.billing_reason,
+          description: description
+        };
+      });
 
     console.log('[get-subscription-invoices] ✅ Filtered invoices count:', formattedInvoices.length);
 
