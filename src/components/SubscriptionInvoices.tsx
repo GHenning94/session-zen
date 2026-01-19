@@ -165,65 +165,10 @@ export const SubscriptionInvoices = () => {
     }).format(amount / 100)
   }
 
-  // Traduz descrições de faturas do Stripe para português claro
-  const translateInvoiceDescription = (description: string | null | undefined, amountPaid: number): string | null => {
-    if (!description) return null
-    
-    const desc = description.toLowerCase()
-    
-    // Proration - tempo não utilizado (crédito)
-    if (desc.includes('unused time')) {
-      if (amountPaid === 0) {
-        return 'Crédito pelo tempo não utilizado do plano anterior (aplicado automaticamente na próxima fatura)'
-      }
-      const planMatch = description.match(/on (.+)/i)
-      const planName = planMatch ? planMatch[1].replace(/\(at .+\)/i, '').trim() : 'plano anterior'
-      return `Crédito pelo tempo não utilizado: ${planName}`
-    }
-    
-    // Proration - tempo restante (cobrança proporcional)
-    if (desc.includes('remaining time') || desc.includes('prorated')) {
-      const planMatch = description.match(/on (.+)/i) || description.match(/for (.+)/i)
-      const planName = planMatch ? planMatch[1].replace(/\(at .+\)/i, '').trim() : 'novo plano'
-      return `Cobrança proporcional pelo upgrade: ${planName}`
-    }
-    
-    // Assinatura regular
-    if (desc.includes('subscription') || desc.includes('× therapypro')) {
-      // Extract plan name and clean it up
-      const planMatch = description.match(/(\d+)\s*×\s*(.+?)(?:\s*\(at|$)/i)
-      if (planMatch) {
-        const planName = planMatch[2].trim()
-          .replace('TherapyPro ', '')
-          .replace('Monthly', 'Mensal')
-          .replace('Yearly', 'Anual')
-          .replace('Annual', 'Anual')
-        return `Assinatura: ${planName}`
-      }
-      return 'Pagamento de assinatura'
-    }
-    
-    // Invoice item - formato "1 × Plan (at R$XX.XX / month)"
-    const itemMatch = description.match(/(\d+)\s*×\s*(.+?)\s*\(at/i)
-    if (itemMatch) {
-      const planName = itemMatch[2].trim()
-        .replace('TherapyPro ', '')
-        .replace('Monthly', 'Mensal')
-        .replace('Yearly', 'Anual')
-        .replace('Annual', 'Anual')
-        .replace('Profissional', 'Profissional')
-        .replace('Professional', 'Profissional')
-        .replace('Premium', 'Premium')
-        .replace('Basic', 'Básico')
-      return `Assinatura: ${planName}`
-    }
-    
-    // Fallback - return original with minor cleanup
+  // ✅ Descrições já vêm traduzidas do backend - esta função é apenas fallback
+  const formatDescription = (description: string | null | undefined): string => {
+    if (!description) return 'Pagamento de assinatura'
     return description
-      .replace('TherapyPro ', '')
-      .replace('Monthly', 'Mensal')
-      .replace('Yearly', 'Anual')
-      .replace('Subscription', 'Assinatura')
   }
 
   const getPlanDisplayName = (plan: string, interval?: string | null) => {
@@ -395,7 +340,7 @@ export const SubscriptionInvoices = () => {
                       <p>Data: {format(new Date(invoice.created * 1000), "dd/MM/yyyy", { locale: ptBR })}</p>
                       {invoice.description && (
                         <p className="text-xs text-muted-foreground">
-                          {invoice.description}
+                          {formatDescription(invoice.description)}
                         </p>
                       )}
                       <p className="font-semibold text-foreground mt-1">

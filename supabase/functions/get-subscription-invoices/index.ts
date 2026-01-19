@@ -223,16 +223,15 @@ serve(async (req) => {
           effectiveAmountPaid = metaFinalAmount;
         }
         
-        // Criar descrição clara para upgrades
-        let description = invoice.description || invoice.lines?.data?.[0]?.description || null;
+        // ============================================
+        // TRADUÇÃO DE DESCRIÇÃO PARA PORTUGUÊS
+        // ============================================
+        let description: string | null = null;
         
-        // Para faturas de upgrade com metadata, criar descrição melhor
+        // Para faturas de upgrade com metadata, criar descrição em português
         if (isProrationUpgrade) {
           const toPlanName = invoice.metadata?.to_plan_name || invoice.metadata?.to_plan || 'novo plano';
-          const displayPlanName = toPlanName
-            .replace('TherapyPro ', '')
-            .replace('Monthly', 'Mensal')
-            .replace('Yearly', 'Anual');
+          const displayPlanName = translatePlanName(toPlanName);
           
           if (metaCreditAmount > 0) {
             description = `Upgrade para ${displayPlanName} - Crédito de R$ ${(metaCreditAmount / 100).toFixed(2).replace('.', ',')} aplicado`;
@@ -244,18 +243,16 @@ serve(async (req) => {
           const planLine = invoice.lines?.data?.find(l => l.amount > 0);
           const planMatch = planLine?.description?.match(/(.+?)\s*\(at/i) || planLine?.description?.match(/remaining time on (.+)/i);
           let planName = planMatch ? planMatch[1].trim() : 'novo plano';
-          planName = planName
-            .replace('TherapyPro ', '')
-            .replace('Remaining time on ', '')
-            .replace('Monthly', 'Mensal')
-            .replace('Yearly', 'Anual')
-            .replace('Premium', 'Premium')
-            .replace('Profissional', 'Profissional');
+          planName = translatePlanName(planName);
           
           description = `Upgrade para ${planName} - Crédito de R$ ${(creditAmount / 100).toFixed(2).replace('.', ',')} aplicado`;
+        } else {
+          // ✅ TRADUZIR TODAS AS OUTRAS DESCRIÇÕES
+          const rawDescription = invoice.description || invoice.lines?.data?.[0]?.description || null;
+          description = translateInvoiceDescription(rawDescription, invoice.billing_reason || '');
         }
         
-        console.log(`[get-subscription-invoices] 📄 Formatted invoice ${invoice.number}: isProration=${isProrationUpgrade}, metaFinal=${metaFinalAmount}, amountPaid=${invoice.amount_paid}, effectiveAmount=${effectiveAmountPaid}`);
+        console.log(`[get-subscription-invoices] 📄 Formatted invoice ${invoice.number}: isProration=${isProrationUpgrade}, metaFinal=${metaFinalAmount}, amountPaid=${invoice.amount_paid}, effectiveAmount=${effectiveAmountPaid}, desc="${description}"`);
         
         return {
           id: invoice.id,
@@ -277,6 +274,80 @@ serve(async (req) => {
           description: description
         };
       });
+    
+    // ============================================
+    // FUNÇÕES DE TRADUÇÃO
+    // ============================================
+    
+    function translatePlanName(name: string): string {
+      return name
+        .replace('TherapyPro ', '')
+        .replace('Remaining time on ', '')
+        .replace('Monthly', 'Mensal')
+        .replace('Yearly', 'Anual')
+        .replace('Annual', 'Anual')
+        .replace('Premium', 'Premium')
+        .replace('Professional', 'Profissional')
+        .replace('Profissional Mensal', 'Profissional Mensal')
+        .replace('Profissional Anual', 'Profissional Anual')
+        .replace('Premium Mensal', 'Premium Mensal')
+        .replace('Premium Anual', 'Premium Anual');
+    }
+    
+    function translateInvoiceDescription(desc: string | null, billingReason: string): string | null {
+      if (!desc) {
+        // Sem descrição - criar baseado no billing_reason
+        if (billingReason === 'subscription_create') {
+          return 'Primeira assinatura';
+        } else if (billingReason === 'subscription_cycle') {
+          return 'Renovação de assinatura';
+        }
+        return 'Pagamento de assinatura';
+      }
+      
+      const descLower = desc.toLowerCase();
+      
+      // Padrão "1 × TherapyPro Premium (at R$ 49.90 / month)"
+      const itemMatch = desc.match(/(\d+)\s*×\s*(.+?)\s*\(at\s*R?\$?\s*([\d.,]+)\s*\/\s*(\w+)\)/i);
+      if (itemMatch) {
+        const planName = translatePlanName(itemMatch[2].trim());
+        const interval = itemMatch[4].toLowerCase() === 'month' ? 'Mensal' : 'Anual';
+        return `Assinatura: ${planName} ${interval}`;
+      }
+      
+      // Padrão simples "1 × Plan Name"
+      const simpleMatch = desc.match(/(\d+)\s*×\s*(.+?)$/i);
+      if (simpleMatch) {
+        const planName = translatePlanName(simpleMatch[2].trim());
+        return `Assinatura: ${planName}`;
+      }
+      
+      // Proration - tempo não utilizado
+      if (descLower.includes('unused time')) {
+        const planMatch = desc.match(/on (.+)/i);
+        const planName = planMatch ? translatePlanName(planMatch[1].replace(/\(at .+\)/i, '').trim()) : 'plano anterior';
+        return `Crédito: tempo não utilizado do ${planName}`;
+      }
+      
+      // Proration - tempo restante
+      if (descLower.includes('remaining time') || descLower.includes('prorated')) {
+        const planMatch = desc.match(/on (.+)/i) || desc.match(/for (.+)/i);
+        const planName = planMatch ? translatePlanName(planMatch[1].replace(/\(at .+\)/i, '').trim()) : 'novo plano';
+        return `Cobrança proporcional: ${planName}`;
+      }
+      
+      // Fallback - traduzir termos comuns
+      return desc
+        .replace('TherapyPro ', '')
+        .replace('Monthly', 'Mensal')
+        .replace('Yearly', 'Anual')
+        .replace('Annual', 'Anual')
+        .replace('Subscription', 'Assinatura')
+        .replace('subscription', 'assinatura')
+        .replace('at R$', 'por R$')
+        .replace('/ month', '/ mês')
+        .replace('/ year', '/ ano');
+    }
 
     console.log('[get-subscription-invoices] ✅ Filtered invoices count:', formattedInvoices.length);
 

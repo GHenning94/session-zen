@@ -181,32 +181,39 @@ const Dashboard = () => {
     }
   }, [])
   
-  // ✅ Verificar modal de boas-vindas - separado do lifecycle para garantir execução
-  // Este useEffect é executado no mount E quando o componente recebe foco (após navegação)
+  // ✅ Verificar modal de boas-vindas - CRÍTICO: executa IMEDIATAMENTE no mount
+  // Usando useLayoutEffect-like behavior com execução síncrona no mount
   useEffect(() => {
-    const checkWelcomeModal = () => {
-      const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
-      console.log('[Dashboard] 🔍 Checking for upgrade welcome modal:', showWelcome)
-      if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
-        console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
-        // Remover IMEDIATAMENTE para evitar duplicação
-        sessionStorage.removeItem('show_upgrade_welcome')
-        // Usar setTimeout para garantir que o estado está pronto
-        setTimeout(() => {
-          setUpgradeWelcomeModal({
-            open: true,
-            newPlan: showWelcome as 'pro' | 'premium'
-          })
-        }, 100)
-      }
+    // ✅ Verificar IMEDIATAMENTE - sem setTimeout
+    const showWelcome = sessionStorage.getItem('show_upgrade_welcome')
+    console.log('[Dashboard] 🔍 Checking for upgrade welcome modal (immediate):', showWelcome)
+    
+    if (showWelcome && (showWelcome === 'pro' || showWelcome === 'premium')) {
+      console.log('[Dashboard] 🎊 Opening upgrade welcome modal for:', showWelcome)
+      // Remover IMEDIATAMENTE para evitar duplicação
+      sessionStorage.removeItem('show_upgrade_welcome')
+      
+      // Usar requestAnimationFrame para garantir que o DOM está pronto
+      // mas ainda executar o mais rápido possível
+      requestAnimationFrame(() => {
+        setUpgradeWelcomeModal({
+          open: true,
+          newPlan: showWelcome as 'pro' | 'premium'
+        })
+      })
     }
     
-    // Verificar imediatamente no mount
-    checkWelcomeModal()
-    
-    // Também verificar quando a janela ganha foco (usuário voltou de outra aba/página)
+    // Também verificar quando a janela ganha foco (fallback)
     const handleFocus = () => {
-      checkWelcomeModal()
+      const showWelcomeFocus = sessionStorage.getItem('show_upgrade_welcome')
+      if (showWelcomeFocus && (showWelcomeFocus === 'pro' || showWelcomeFocus === 'premium')) {
+        console.log('[Dashboard] 🎊 Opening upgrade welcome modal on focus:', showWelcomeFocus)
+        sessionStorage.removeItem('show_upgrade_welcome')
+        setUpgradeWelcomeModal({
+          open: true,
+          newPlan: showWelcomeFocus as 'pro' | 'premium'
+        })
+      }
     }
     
     window.addEventListener('focus', handleFocus)
@@ -282,15 +289,72 @@ const Dashboard = () => {
     // ✅ Limpar flag de checkout ativo imediatamente
     sessionStorage.removeItem('stripe_checkout_active')
     
-    // ✅ Pegar o plano pendente de múltiplas fontes (prioridade)
+    // ✅ Pegar o plano pendente e ANTERIOR de múltiplas fontes (prioridade)
     const pendingCheckoutPlan = sessionStorage.getItem('pending_checkout_plan') // Do CheckoutRedirect
     const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade') // De upgrade
+    const pendingPreviousPlan = sessionStorage.getItem('pending_previous_plan') // Plano anterior
     const targetPlan = pendingCheckoutPlan || pendingTierUpgrade
+    const previousPlan = pendingPreviousPlan || 'basico'
     
-    console.log('[Dashboard] 📝 Target plan for welcome modal:', { pendingCheckoutPlan, pendingTierUpgrade, targetPlan })
+    console.log('[Dashboard] 📝 Target plan for welcome modal:', { pendingCheckoutPlan, pendingTierUpgrade, targetPlan, previousPlan })
     
     let attempts = 0
     const maxAttempts = 20 // Aumentar tentativas para dar mais tempo ao webhook
+    
+    // ✅ FUNÇÃO PARA SALVAR FEATURES DESBLOQUEADAS ANTES DO RELOAD
+    const saveUnlockedFeaturesBeforeReload = (fromPlan: string, toPlan: string) => {
+      if (!user?.id || fromPlan === toPlan) return
+      
+      // Mapeamento de features por plano
+      const FEATURE_TO_PLAN: Record<string, string> = {
+        whatsapp_notifications: 'premium',
+        google_calendar: 'premium',
+        reports: 'pro',
+        advanced_reports: 'premium',
+        report_filters: 'premium',
+        referral_program: 'pro',
+        referral_history: 'premium',
+        goals: 'pro',
+        public_page: 'pro',
+        public_page_design: 'premium',
+        public_page_advanced: 'premium',
+        color_customization: 'premium',
+        dashboard_advanced_cards: 'pro',
+        unlimited_clients: 'premium',
+        unlimited_sessions: 'pro',
+        packages: 'pro',
+        recurring_sessions: 'pro',
+      }
+      
+      const PLAN_HIERARCHY: Record<string, number> = {
+        basico: 0,
+        pro: 1,
+        premium: 2
+      }
+      
+      const fromLevel = PLAN_HIERARCHY[fromPlan] || 0
+      const toLevel = PLAN_HIERARCHY[toPlan] || 0
+      
+      // Calcular features desbloqueadas
+      const newlyUnlocked = Object.entries(FEATURE_TO_PLAN)
+        .filter(([_, requiredPlan]) => {
+          const requiredLevel = PLAN_HIERARCHY[requiredPlan] || 0
+          return requiredLevel > fromLevel && requiredLevel <= toLevel
+        })
+        .map(([feature]) => feature)
+      
+      if (newlyUnlocked.length > 0) {
+        const key = `recently_unlocked_features_${user.id}`
+        const existing = localStorage.getItem(key)
+        const current = existing ? JSON.parse(existing) as string[] : []
+        const updated = [...new Set([...current, ...newlyUnlocked])]
+        localStorage.setItem(key, JSON.stringify(updated))
+        console.log('[Dashboard] 🎯 Saved unlocked features BEFORE reload:', updated)
+      }
+      
+      // Atualizar last_known_plan para o novo plano
+      localStorage.setItem(`last_known_plan_${user.id}`, toPlan)
+    }
     
     const syncAndCheckStatus = async (): Promise<boolean> => {
       try {
@@ -317,9 +381,14 @@ const Dashboard = () => {
           
           if (planForWelcome && (planForWelcome === 'pro' || planForWelcome === 'premium')) {
             console.log('[Dashboard] 🎉 Subscription confirmed, preparing welcome modal for:', planForWelcome)
+            
+            // ✅ CRÍTICO: Salvar features desbloqueadas ANTES do reload
+            saveUnlockedFeaturesBeforeReload(previousPlan, planForWelcome)
+            
             // Limpar todos os pendentes
             sessionStorage.removeItem('pending_checkout_plan')
             sessionStorage.removeItem('pending_tier_upgrade')
+            sessionStorage.removeItem('pending_previous_plan')
             sessionStorage.setItem('show_upgrade_welcome', planForWelcome)
           }
           
@@ -358,10 +427,14 @@ const Dashboard = () => {
         // Max attempts reached - still try to show success
         console.log('[Dashboard] ⚠️ Max attempts reached, showing success anyway')
         
-        // Se havia pending plan, ainda mostrar o modal
+        // Se havia pending plan, ainda mostrar o modal e salvar features
         if (targetPlan && (targetPlan === 'pro' || targetPlan === 'premium')) {
+          // ✅ CRÍTICO: Salvar features desbloqueadas mesmo no fallback
+          saveUnlockedFeaturesBeforeReload(previousPlan, targetPlan)
+          
           sessionStorage.removeItem('pending_checkout_plan')
           sessionStorage.removeItem('pending_tier_upgrade')
+          sessionStorage.removeItem('pending_previous_plan')
           sessionStorage.setItem('show_upgrade_welcome', targetPlan)
         }
         

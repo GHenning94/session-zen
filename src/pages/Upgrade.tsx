@@ -314,6 +314,10 @@ export default function Upgrade() {
     setUpgradeModal({ ...upgradeModal, open: false, prorationData: null, isLoadingProration: false })
     setLoading(true)
     
+    // ✅ Salvar plano anterior ANTES de iniciar o upgrade
+    sessionStorage.setItem('pending_previous_plan', currentPlan)
+    console.log('[Upgrade] 📝 Saved previous plan before upgrade:', currentPlan)
+    
     try {
       // Usar a função de upgrade com proration para assinaturas existentes
       const { data, error } = await supabase.functions.invoke('upgrade-subscription', {
@@ -335,10 +339,63 @@ export default function Upgrade() {
       } else {
         // Upgrade realizado com sucesso sem pagamento adicional (cobrado automaticamente)
         toast.success(data?.message || 'Upgrade realizado com sucesso!')
+        
         // Só mostrar modal de boas vindas se for mudança de tier
         if (isTierChange && data?.newPlan) {
+          // ✅ Salvar features desbloqueadas ANTES de navegar
+          if (user?.id) {
+            const FEATURE_TO_PLAN: Record<string, string> = {
+              whatsapp_notifications: 'premium',
+              google_calendar: 'premium',
+              reports: 'pro',
+              advanced_reports: 'premium',
+              report_filters: 'premium',
+              referral_program: 'pro',
+              referral_history: 'premium',
+              goals: 'pro',
+              public_page: 'pro',
+              public_page_design: 'premium',
+              public_page_advanced: 'premium',
+              color_customization: 'premium',
+              dashboard_advanced_cards: 'pro',
+              unlimited_clients: 'premium',
+              unlimited_sessions: 'pro',
+              packages: 'pro',
+              recurring_sessions: 'pro',
+            }
+            
+            const PLAN_HIERARCHY: Record<string, number> = {
+              basico: 0,
+              pro: 1,
+              premium: 2
+            }
+            
+            const fromLevel = PLAN_HIERARCHY[currentPlan] || 0
+            const toLevel = PLAN_HIERARCHY[data.newPlan] || 0
+            
+            const newlyUnlocked = Object.entries(FEATURE_TO_PLAN)
+              .filter(([_, requiredPlan]) => {
+                const requiredLevel = PLAN_HIERARCHY[requiredPlan] || 0
+                return requiredLevel > fromLevel && requiredLevel <= toLevel
+              })
+              .map(([feature]) => feature)
+            
+            if (newlyUnlocked.length > 0) {
+              const key = `recently_unlocked_features_${user.id}`
+              const existing = localStorage.getItem(key)
+              const current = existing ? JSON.parse(existing) as string[] : []
+              const updated = [...new Set([...current, ...newlyUnlocked])]
+              localStorage.setItem(key, JSON.stringify(updated))
+              console.log('[Upgrade] 🎯 Saved unlocked features:', updated)
+            }
+            
+            // Atualizar last_known_plan para o novo plano
+            localStorage.setItem(`last_known_plan_${user.id}`, data.newPlan)
+          }
+          
           // ✅ Definir flag para o modal de boas-vindas ANTES de navegar
           sessionStorage.setItem('show_upgrade_welcome', data.newPlan)
+          sessionStorage.removeItem('pending_previous_plan')
         }
         // Navegar para o dashboard - o modal será aberto lá
         navigate('/dashboard')

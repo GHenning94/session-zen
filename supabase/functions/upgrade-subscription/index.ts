@@ -358,16 +358,24 @@ serve(async (req) => {
     // PASSO 2: Cancelar (void) qualquer invoice automática que o Stripe criou
     // Quando usamos billing_cycle_anchor: 'now', o Stripe pode criar uma invoice
     // com o valor cheio do novo plano - precisamos cancelá-la
+    
+    // ✅ Adicionar delay para dar tempo ao Stripe criar a invoice automática
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
     try {
       const recentInvoices = await stripe.invoices.list({
         customer: customer.id,
         subscription: subscription.id,
-        limit: 5,
-        created: { gte: Math.floor(Date.now() / 1000) - 60 }, // Últimos 60 segundos
+        limit: 10,
+        created: { gte: Math.floor(Date.now() / 1000) - 120 }, // Últimos 120 segundos (aumentado)
       });
+      
+      console.log("[upgrade-subscription] 🔍 Found recent invoices:", recentInvoices.data.length);
       
       for (const inv of recentInvoices.data) {
         // Cancelar invoices automáticas que foram criadas agora (não as nossas manuais)
+        console.log(`[upgrade-subscription] 🔍 Checking invoice ${inv.id}: status=${inv.status}, type=${inv.metadata?.type}, amount_due=${inv.amount_due}`);
+        
         if (inv.status === 'draft' || inv.status === 'open') {
           // Verificar se não é uma invoice nossa (não tem nosso metadata)
           if (!inv.metadata?.type || inv.metadata?.type !== 'proration_upgrade') {
@@ -375,12 +383,23 @@ serve(async (req) => {
               if (inv.status === 'draft') {
                 await stripe.invoices.del(inv.id);
                 console.log("[upgrade-subscription] 🗑️ Deleted draft invoice:", inv.id);
-              } else {
-                await stripe.invoices.voidInvoice(inv.id);
-                console.log("[upgrade-subscription] 🗑️ Voided automatic invoice:", inv.id);
+              } else if (inv.status === 'open') {
+                // ✅ Para invoices open, tentar void primeiro, se falhar tentar marcar como uncollectible
+                try {
+                  await stripe.invoices.voidInvoice(inv.id);
+                  console.log("[upgrade-subscription] 🗑️ Voided automatic invoice:", inv.id);
+                } catch (voidErr) {
+                  console.log("[upgrade-subscription] ⚠️ Could not void, trying to mark uncollectible:", inv.id, voidErr);
+                  try {
+                    await stripe.invoices.markUncollectible(inv.id);
+                    console.log("[upgrade-subscription] 🗑️ Marked invoice as uncollectible:", inv.id);
+                  } catch (uncollErr) {
+                    console.log("[upgrade-subscription] ⚠️ Could not mark uncollectible:", inv.id, uncollErr);
+                  }
+                }
               }
             } catch (voidErr) {
-              console.log("[upgrade-subscription] ⚠️ Could not void invoice:", inv.id, voidErr);
+              console.log("[upgrade-subscription] ⚠️ Could not process invoice:", inv.id, voidErr);
             }
           }
         }
