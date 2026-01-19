@@ -3,12 +3,14 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Check, Loader2, AlertTriangle, Star } from "lucide-react"
 import { useSubscription } from "@/hooks/useSubscription"
 import { useAuth } from "@/hooks/useAuth"
 import { supabase } from "@/integrations/supabase/client"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface UpgradeModalProps {
   open: boolean
@@ -57,6 +59,7 @@ const STRIPE_PRICES = {
 export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false }: UpgradeModalProps) => {
   const { currentPlan } = useSubscription()
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(false)
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly')
   const [prorationView, setProrationView] = useState<{
@@ -377,15 +380,22 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
         {/* Billing interval toggle - padronizado com Upgrade.tsx */}
         <div className="flex items-center justify-center gap-3 mb-6">
           <span className={`text-sm ${billingInterval === 'monthly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Mensal</span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={billingInterval === 'yearly'}
-            onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
-            className="relative inline-flex h-6 w-11 min-w-[44px] shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingInterval === 'yearly' ? 'translateX(22px)' : 'translateX(2px)' }} />
-          </button>
+          {isMobile ? (
+            <Switch
+              checked={billingInterval === 'yearly'}
+              onCheckedChange={(checked) => setBillingInterval(checked ? 'yearly' : 'monthly')}
+            />
+          ) : (
+            <button
+              type="button"
+              role="switch"
+              aria-checked={billingInterval === 'yearly'}
+              onClick={() => setBillingInterval(billingInterval === 'monthly' ? 'yearly' : 'monthly')}
+              className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingInterval === 'yearly' ? 'translateX(22px)' : 'translateX(2px)' }} />
+            </button>
+          )}
           <span className={`text-sm ${billingInterval === 'yearly' ? 'text-foreground font-medium' : 'text-muted-foreground'}`}>Anual</span>
           {billingInterval === 'yearly' && (
             <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">

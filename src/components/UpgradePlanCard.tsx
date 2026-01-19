@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
 import { Crown, Zap, Star, ArrowRight, Loader2, AlertTriangle } from "lucide-react"
 import { useNavigate } from "react-router-dom"
 import { useAuth } from "@/hooks/useAuth"
@@ -10,6 +11,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { DowngradeRetentionFlow } from "./DowngradeRetentionFlow"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface ProrationData {
   proratedAmount: number
@@ -95,6 +97,7 @@ const getPlanLevel = (planId: string): number => {
 export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: UpgradePlanCardProps) => {
   const navigate = useNavigate()
   const { user } = useAuth()
+  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(false)
   
   // Se o plano atual é anual (pro ou premium), força o ciclo para anual
@@ -411,15 +414,22 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
               <span className={`text-xs md:text-sm font-medium ${billingCycle === 'monthly' ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Mensal
               </span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={billingCycle === 'annual'}
-                onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
-                className="relative inline-flex h-6 w-11 min-w-[44px] shrink-0 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
-              </button>
+              {isMobile ? (
+                <Switch
+                  checked={billingCycle === 'annual'}
+                  onCheckedChange={(checked) => setBillingCycle(checked ? 'annual' : 'monthly')}
+                />
+              ) : (
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={billingCycle === 'annual'}
+                  onClick={() => setBillingCycle(billingCycle === 'monthly' ? 'annual' : 'monthly')}
+                  className="relative inline-flex h-6 w-11 cursor-pointer items-center rounded-full bg-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                  <span className="pointer-events-none block h-5 w-5 rounded-full bg-white shadow-lg ring-0 transition-transform" style={{ transform: billingCycle === 'annual' ? 'translateX(22px)' : 'translateX(2px)' }} />
+                </button>
+              )}
               <div className="flex items-center gap-1">
                 <span className={`text-xs md:text-sm font-medium ${billingCycle === 'annual' ? 'text-foreground' : 'text-muted-foreground'}`}>
                   Anual
