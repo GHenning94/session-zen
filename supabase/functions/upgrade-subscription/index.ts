@@ -331,32 +331,66 @@ serve(async (req) => {
     // EXECUTAR UPGRADE NO STRIPE
     // ============================================
     
-    // IMPORTANTE: NÃO usar billing_cycle_anchor: 'now' pois isso gera uma cobrança automática
-    // do Stripe pelo valor cheio do novo plano. Ao invés disso:
-    // 1. Atualizamos o plano sem mudar o ciclo de cobrança
-    // 2. Usamos proration_behavior: 'none' para evitar cobranças automáticas do Stripe
-    // 3. Criamos nossa própria invoice manual com o valor calculado (diferença com crédito)
+    // Estratégia para reiniciar ciclo SEM cobrança automática errada do Stripe:
+    // 1. Atualizar o plano com billing_cycle_anchor: 'now' para reiniciar o ciclo
+    // 2. O Stripe vai criar uma invoice automática - precisamos cancelá-la (void)
+    // 3. Criar nossa própria invoice manual com o valor correto (diferença com crédito)
     
+    // PASSO 1: Atualizar assinatura com novo ciclo
     await stripe.subscriptions.update(subscription.id, {
       items: [{ id: subscriptionItemId, price: newPriceId }],
-      proration_behavior: 'none', // Não deixar Stripe calcular prorrata automaticamente
+      proration_behavior: 'none', // Não queremos a prorrata automática do Stripe
       cancel_at_period_end: false,
-      // NÃO usar billing_cycle_anchor: 'now' - mantém o ciclo original
+      billing_cycle_anchor: 'now', // Reinicia o ciclo para o dia atual
     });
 
-    console.log("[upgrade-subscription] ✅ Subscription updated to new plan (keeping original billing cycle)");
+    console.log("[upgrade-subscription] ✅ Subscription updated with new billing cycle");
     
-    // Buscar a assinatura atualizada
+    // Buscar a assinatura atualizada para obter as novas datas
     const updatedSubscription = await stripe.subscriptions.retrieve(subscription.id);
-    const periodEnd = new Date(updatedSubscription.current_period_end * 1000);
+    const newPeriodEnd = new Date(updatedSubscription.current_period_end * 1000);
     
-    console.log("[upgrade-subscription] 📅 Billing cycle maintained:", {
+    console.log("[upgrade-subscription] 📅 New billing cycle:", {
       start: new Date(updatedSubscription.current_period_start * 1000).toISOString(),
-      end: periodEnd.toISOString()
+      end: newPeriodEnd.toISOString()
     });
+
+    // PASSO 2: Cancelar (void) qualquer invoice automática que o Stripe criou
+    // Quando usamos billing_cycle_anchor: 'now', o Stripe pode criar uma invoice
+    // com o valor cheio do novo plano - precisamos cancelá-la
+    try {
+      const recentInvoices = await stripe.invoices.list({
+        customer: customer.id,
+        subscription: subscription.id,
+        limit: 5,
+        created: { gte: Math.floor(Date.now() / 1000) - 60 }, // Últimos 60 segundos
+      });
+      
+      for (const inv of recentInvoices.data) {
+        // Cancelar invoices automáticas que foram criadas agora (não as nossas manuais)
+        if (inv.status === 'draft' || inv.status === 'open') {
+          // Verificar se não é uma invoice nossa (não tem nosso metadata)
+          if (!inv.metadata?.type || inv.metadata?.type !== 'proration_upgrade') {
+            try {
+              if (inv.status === 'draft') {
+                await stripe.invoices.del(inv.id);
+                console.log("[upgrade-subscription] 🗑️ Deleted draft invoice:", inv.id);
+              } else {
+                await stripe.invoices.voidInvoice(inv.id);
+                console.log("[upgrade-subscription] 🗑️ Voided automatic invoice:", inv.id);
+              }
+            } catch (voidErr) {
+              console.log("[upgrade-subscription] ⚠️ Could not void invoice:", inv.id, voidErr);
+            }
+          }
+        }
+      }
+    } catch (listErr) {
+      console.log("[upgrade-subscription] ⚠️ Could not list recent invoices:", listErr);
+    }
 
     // ============================================
-    // COBRAR VALOR DA DIFERENÇA
+    // PASSO 3: COBRAR VALOR CORRETO DA DIFERENÇA
     // ============================================
     
     let paymentUrl: string | null = null;
@@ -402,7 +436,7 @@ serve(async (req) => {
         const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
         invoiceId = finalizedInvoice.id;
 
-        console.log("[upgrade-subscription] 📄 Invoice created:", {
+        console.log("[upgrade-subscription] 📄 Invoice created with correct amount:", {
           id: finalizedInvoice.id,
           status: finalizedInvoice.status,
           amount: finalizedInvoice.amount_due,
