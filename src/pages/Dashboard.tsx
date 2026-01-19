@@ -252,8 +252,12 @@ const Dashboard = () => {
     setIsLoading(true)
     setIsProcessingPayment(true)
     
+    // Pegar o plano pendente antes de tudo
+    const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade')
+    console.log('[Dashboard] 📝 Pending tier upgrade:', pendingTierUpgrade)
+    
     let attempts = 0
-    const maxAttempts = 10
+    const maxAttempts = 15 // Aumentar tentativas
     
     const syncAndCheckStatus = async (): Promise<boolean> => {
       try {
@@ -263,7 +267,10 @@ const Dashboard = () => {
         
         if (error) {
           console.error('[Dashboard] check-subscription error:', error)
-          return false
+          // Não retornar false imediatamente - pode ser erro temporário
+          if (attempts < maxAttempts) {
+            return false // Continue polling
+          }
         }
         
         console.log('[Dashboard] check-subscription response:', data)
@@ -272,17 +279,14 @@ const Dashboard = () => {
         if (data?.subscription_tier && data.subscription_tier !== 'basico') {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
           
-          // Verificar se há um pending_tier_upgrade (indica mudança de tier)
-          const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade')
+          // Usar o plano do pending OU o plano retornado pela API
+          const planForWelcome = pendingTierUpgrade || data.subscription_tier
           
-          if (pendingTierUpgrade) {
-            console.log('[Dashboard] 🎉 Tier upgrade confirmed, preparing welcome modal for:', pendingTierUpgrade)
-            // É mudança de tier - mostrar animação
+          if (planForWelcome && (planForWelcome === 'pro' || planForWelcome === 'premium')) {
+            console.log('[Dashboard] 🎉 Tier upgrade confirmed, preparing welcome modal for:', planForWelcome)
             sessionStorage.removeItem('pending_tier_upgrade')
-            sessionStorage.setItem('show_upgrade_welcome', pendingTierUpgrade)
+            sessionStorage.setItem('show_upgrade_welcome', planForWelcome)
           }
-          // Se não há pending_tier_upgrade, pode ser apenas mudança de período
-          // Nesse caso, não mostramos a animação de boas-vindas
           
           // Clear URL params
           const newUrl = new URL(window.location.href)
@@ -291,7 +295,7 @@ const Dashboard = () => {
           window.history.replaceState({}, '', newUrl.pathname)
           
           // Small delay then reload to get fresh data with new plan
-          await new Promise(resolve => setTimeout(resolve, 1500))
+          await new Promise(resolve => setTimeout(resolve, 1000))
           window.location.href = '/dashboard'
           return true
         }
@@ -305,7 +309,7 @@ const Dashboard = () => {
     }
     
     // Initial delay to allow Stripe to process
-    await new Promise(resolve => setTimeout(resolve, 1500))
+    await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Poll with increasing intervals
     const poll = async () => {
@@ -316,18 +320,29 @@ const Dashboard = () => {
       }
       
       if (attempts >= maxAttempts) {
-        // Max attempts reached - give up gracefully
+        // Max attempts reached - still try to show success
+        console.log('[Dashboard] ⚠️ Max attempts reached, showing success anyway')
+        
+        // Se havia pending upgrade, ainda mostrar o modal
+        if (pendingTierUpgrade && (pendingTierUpgrade === 'pro' || pendingTierUpgrade === 'premium')) {
+          sessionStorage.removeItem('pending_tier_upgrade')
+          sessionStorage.setItem('show_upgrade_welcome', pendingTierUpgrade)
+        }
+        
         setIsLoading(false)
         setIsProcessingPayment(false)
         searchParams.delete('payment')
         setSearchParams(searchParams, { replace: true })
         toast.success('Plano atualizado! Carregando dados...')
-        loadDashboardDataOptimized(true)
+        
+        // Recarregar para pegar os dados atualizados
+        window.location.href = '/dashboard'
         return
       }
       
-      // Wait and try again
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      // Wait and try again (intervalos progressivos)
+      const waitTime = Math.min(2000 + (attempts * 500), 5000)
+      await new Promise(resolve => setTimeout(resolve, waitTime))
       await poll()
     }
     
