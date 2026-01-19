@@ -186,8 +186,20 @@ const Configuracoes = () => {
   // Ler tab da URL
   useEffect(() => {
     const tab = searchParams.get('tab')
-    if (tab && ['profile', 'security', 'preferences', 'platform-payments', 'bank-details', 'notifications'].includes(tab)) {
-      setActiveTab(tab)
+    if (tab) {
+      // Mapear aliases em português para os valores internos em inglês
+      const tabMap: Record<string, string> = {
+        'seguranca': 'security',
+        'perfil': 'profile',
+        'preferencias': 'preferences',
+        'pagamentos': 'platform-payments',
+        'dados-bancarios': 'bank-details',
+        'notificacoes': 'notifications'
+      }
+      const mappedTab = tabMap[tab] || tab
+      if (['profile', 'security', 'preferences', 'platform-payments', 'bank-details', 'notifications'].includes(mappedTab)) {
+        setActiveTab(mappedTab)
+      }
     }
   }, [searchParams])
 
