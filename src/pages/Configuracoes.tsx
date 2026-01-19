@@ -170,6 +170,9 @@ const Configuracoes = () => {
   const [pendingNewPassword, setPendingNewPassword] = useState('')
   const [emailChangePassword, setEmailChangePassword] = useState('')
   const [deleteAccountPassword, setDeleteAccountPassword] = useState('')
+  const [deleteAccountCaptchaToken, setDeleteAccountCaptchaToken] = useState<string | null>(null)
+  const deleteAccountCaptchaRef = useRef<TurnstileInstance>(null)
+  const [validatingDeletePassword, setValidatingDeletePassword] = useState(false)
   const [passwordChangeCaptchaToken, setPasswordChangeCaptchaToken] = useState<string | null>(null)
   const passwordCaptchaRef = useRef<TurnstileInstance>(null)
   const [emailChangeCaptchaToken, setEmailChangeCaptchaToken] = useState<string | null>(null)
@@ -758,42 +761,96 @@ const Configuracoes = () => {
     }
   }
 
-  const handleDeleteAccount = async (bypassPasswordCheck = false) => {
+  // ✅ Nova função para validar senha antes de 2FA para exclusão de conta
+  const validateDeletePasswordAndProceed = async () => {
     if (deleteConfirmText !== 'DELETAR') {
       toast({
         title: "Confirmação necessária",
         description: "Digite DELETAR para confirmar a exclusão da conta",
         variant: "destructive"
-      })
-      return
+      });
+      return;
     }
 
-    // Se passou por 2FA, não precisa da senha novamente
-    if (!bypassPasswordCheck && !deleteAccountPassword) {
+    if (!deleteAccountPassword) {
       toast({
         title: "Senha necessária",
         description: "Digite sua senha para confirmar a exclusão",
         variant: "destructive"
-      })
-      return
+      });
+      return;
     }
 
+    if (!deleteAccountCaptchaToken) {
+      toast({
+        title: "Erro",
+        description: "Por favor, complete a verificação de segurança",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setValidatingDeletePassword(true);
+    try {
+      // Validar senha atual com o captcha
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: deleteAccountPassword,
+        options: {
+          captchaToken: deleteAccountCaptchaToken
+        }
+      });
+
+      if (authError) {
+        // Resetar captcha para nova tentativa
+        setDeleteAccountCaptchaToken(null);
+        deleteAccountCaptchaRef.current?.reset();
+        
+        toast({
+          title: "Erro",
+          description: "Senha incorreta. Corrija e tente novamente.",
+          variant: "destructive"
+        });
+        setValidatingDeletePassword(false);
+        return;
+      }
+
+      // ✅ Senha validada! Agora verificar se precisa de 2FA
+      if (has2FAConfigured()) {
+        setShowDeleteConfirm(false);
+        setPending2FAAction('delete');
+        setShow2FAModal(true);
+      } else {
+        // Sem 2FA, prosseguir direto com a exclusão
+        await handleDeleteAccount(true); // true = bypass password check (já foi validado)
+      }
+    } catch (error: any) {
+      console.error('Erro ao validar senha:', error);
+      setDeleteAccountCaptchaToken(null);
+      deleteAccountCaptchaRef.current?.reset();
+      toast({
+        title: "Erro",
+        description: "Não foi possível validar a senha",
+        variant: "destructive"
+      });
+    } finally {
+      setValidatingDeletePassword(false);
+    }
+  };
+
+  const handleDeleteAccount = async (bypassPasswordCheck = false) => {
     setIsDeletingAccount(true)
     
     try {
       const { data, error } = await supabase.functions.invoke('delete-user-account', {
         body: {
-          password: bypassPasswordCheck ? undefined : deleteAccountPassword,
-          skip_password_check: bypassPasswordCheck // Se passou por 2FA, pular verificação de senha
+          skip_password_check: bypassPasswordCheck // Sempre pular verificação de senha na edge function (já validamos no frontend)
         }
       })
       
       if (error) throw error
 
       if (!data?.success) {
-        if (data?.errorType === 'INVALID_PASSWORD') {
-          throw new Error('Senha incorreta. Verifique sua senha e tente novamente.')
-        }
         throw new Error(data?.error || 'Não foi possível deletar a conta')
       }
 
@@ -821,6 +878,8 @@ const Configuracoes = () => {
       setShowDeleteConfirm(false)
       setDeleteConfirmText('')
       setDeleteAccountPassword('')
+      setDeleteAccountCaptchaToken(null)
+      deleteAccountCaptchaRef.current?.reset()
     }
   }
 
@@ -1737,7 +1796,13 @@ const Configuracoes = () => {
         </Tabs>
       </div>
 
-      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+      <AlertDialog open={showDeleteConfirm} onOpenChange={(open) => {
+        setShowDeleteConfirm(open);
+        if (!open) {
+          setDeleteAccountCaptchaToken(null);
+          deleteAccountCaptchaRef.current?.reset();
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Tem certeza absoluta?</AlertDialogTitle>
@@ -1764,30 +1829,32 @@ const Configuracoes = () => {
                 placeholder="DELETAR"
               />
             </div>
+            <div className="flex justify-center">
+              <Turnstile
+                ref={deleteAccountCaptchaRef}
+                siteKey="0x4AAAAAAB43UmamQYOA5yfH"
+                onSuccess={(token) => setDeleteAccountCaptchaToken(token)}
+                onExpire={() => setDeleteAccountCaptchaToken(null)}
+                onError={() => setDeleteAccountCaptchaToken(null)}
+              />
+            </div>
           </div>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => {
               setDeleteConfirmText('')
               setDeleteAccountPassword('')
+              setDeleteAccountCaptchaToken(null)
+              deleteAccountCaptchaRef.current?.reset()
             }}>
               Cancelar
             </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                // Após confirmação do aviso, verificar se precisa de 2FA
-                if (has2FAConfigured()) {
-                  setShowDeleteConfirm(false);
-                  setPending2FAAction('delete');
-                  setShow2FAModal(true);
-                } else {
-                  handleDeleteAccount();
-                }
-              }}
-              disabled={isDeletingAccount || deleteConfirmText !== 'DELETAR' || !deleteAccountPassword}
+            <Button
+              onClick={validateDeletePasswordAndProceed}
+              disabled={validatingDeletePassword || isDeletingAccount || deleteConfirmText !== 'DELETAR' || !deleteAccountPassword || !deleteAccountCaptchaToken}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeletingAccount ? 'Deletando...' : 'Deletar Conta'}
-            </AlertDialogAction>
+              {validatingDeletePassword ? 'Verificando...' : isDeletingAccount ? 'Deletando...' : 'Deletar Conta'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

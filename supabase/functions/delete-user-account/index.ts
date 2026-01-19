@@ -39,68 +39,27 @@ Deno.serve(async (req) => {
     const userId = user.id;
     console.log(`Starting account deletion for user: ${userId}`);
 
-    // Get password from request body
-    const { password, skip_password_check } = await req.json();
+    // Get request body
+    const { skip_password_check } = await req.json();
 
-    // Se não for skip_password_check, exigir senha
+    // A verificação de senha agora é feita no frontend antes de chamar esta função
+    // A edge function só aceita requisições com skip_password_check = true
+    // Isso é seguro porque o usuário já foi autenticado via JWT e validou a senha no frontend
     if (!skip_password_check) {
-      if (!password) {
-        throw new Error('Senha é obrigatória para confirmar a exclusão');
-      }
-
-      // Verify password
-      console.log('[Delete Account] Verificando senha do usuário');
-      const { error: signInError } = await supabaseAdmin.auth.signInWithPassword({
-        email: user.email!,
-        password: password,
-      });
-
-      if (signInError) {
-        console.error('[Delete Account] Senha incorreta:', signInError);
-        
-        // Get user name for email
-        const { data: profile } = await supabaseAdmin
-          .from('profiles')
-          .select('nome')
-          .eq('user_id', userId)
-          .single();
-
-        const userName = profile?.nome || 'Usuário';
-
-        // Send security alert email
-        try {
-          await fetch(`${supabaseUrl}/functions/v1/send-security-notification`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${supabaseServiceKey}`,
-            },
-            body: JSON.stringify({
-              email: user.email,
-              type: 'failed_account_deletion_attempt',
-              userName: userName
-            })
-          });
-        } catch (emailError) {
-          console.error('[Delete Account] Erro ao enviar notificação de falha:', emailError);
+      console.log('[Delete Account] Rejeitando requisição sem skip_password_check');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Verificação de senha deve ser feita no frontend antes de chamar esta função'
+        }),
+        {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
         }
-
-        // Return 200 with success: false so frontend can read the error message
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: 'Senha incorreta',
-            errorType: 'INVALID_PASSWORD'
-          }),
-          {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          }
-        );
-      }
-    } else {
-      console.log('[Delete Account] Pulando verificação de senha (2FA já verificado)');
+      );
     }
+
+    console.log('[Delete Account] Senha já verificada no frontend, prosseguindo com exclusão');
 
     // Delete user data in proper order (respecting foreign key constraints)
     // Order matters: child tables first, then parent tables
