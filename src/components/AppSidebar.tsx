@@ -39,6 +39,7 @@ import {
 import { PremiumBanner } from "@/components/PremiumBanner"
 import { useSubscription, Feature } from "@/hooks/useSubscription"
 import { useTerminology } from "@/hooks/useTerminology"
+import { useAuth } from "@/hooks/useAuth"
 import { Badge } from "@/components/ui/badge"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { NewFeatureBadge, dismissFeatureBadge } from "@/components/NewFeatureBadge"
@@ -90,6 +91,7 @@ const FEATURE_NAMES: Record<Feature, string> = {
 export function AppSidebar() {
   const { state, setOpen, open } = useSidebar()
   const location = useLocation()
+  const { user } = useAuth()
   const { currentPlan, isLoading, hasAccessToFeature, getRequiredPlanForFeature } = useSubscription()
   const { clientTermPlural } = useTerminology()
   const currentPath = location.pathname
@@ -175,22 +177,24 @@ export function AppSidebar() {
                         ? "opacity-60 hover:opacity-80" 
                         : getNavClasses({ isActive: isActive(item.url) })
                     )}
-                    onMouseEnter={() => {
-                      // Dismiss the new feature badge when hovering over the menu item
-                      // ✅ Usar featureKey específico para sidebar (goals_sidebar)
-                      if (item.requiredFeature && !isLocked) {
-                        const sidebarFeatureKey = item.requiredFeature === 'goals' 
-                          ? 'goals_sidebar' 
-                          : item.requiredFeature
-                        dismissFeatureBadge(sidebarFeatureKey)
-                      }
-                    }}
                   >
                     <NavLink 
                       to={isLocked ? "#" : item.url} 
                       end 
                       className="flex items-center justify-between w-full" 
-                      onClick={(e) => handleNavClick(e, item)}
+                      onClick={(e) => {
+                        handleNavClick(e, item)
+                        // Dismiss the new feature badge when clicking on the menu item (only if not locked)
+                        // ✅ Usar featureKey específico para sidebar (goals_sidebar)
+                        if (item.requiredFeature && !isLocked && !item.url.includes('#')) {
+                          const sidebarFeatureKey = item.requiredFeature === 'goals' 
+                            ? 'goals_sidebar' 
+                            : item.requiredFeature
+                          if (user?.id) {
+                            dismissFeatureBadge(sidebarFeatureKey, user.id)
+                          }
+                        }
+                      }}
                     >
                       <div className={`flex items-center ${isCollapsed ? 'w-full justify-center' : 'flex-1 overflow-hidden'}`}>
                         <item.icon className={cn(

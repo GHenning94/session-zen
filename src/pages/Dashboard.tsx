@@ -13,7 +13,7 @@ import { PulsingDot } from "@/components/ui/pulsing-dot"
 import { DashboardFooter } from "@/components/DashboardFooter"
 import { ScrollAnimation } from "@/hooks/useScrollAnimation"
 import { FeatureGate } from "@/components/FeatureGate"
-import { NewFeatureBadge } from "@/components/NewFeatureBadge"
+import { NewFeatureBadge, dismissFeatureBadge } from "@/components/NewFeatureBadge"
 
 import { UpgradeWelcomeModal } from "@/components/UpgradeWelcomeModal"
 import { 
@@ -2227,8 +2227,9 @@ const Dashboard = () => {
                     <Card 
                       className="shadow-soft overflow-hidden group/ticket"
                       onMouseEnter={() => {
-                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                        dismissFeatureBadge('goals')
+                        if (user?.id) {
+                          dismissFeatureBadge('goals', user.id)
+                        }
                       }}
                     >
                       <CardHeader className="pb-4">
@@ -2525,8 +2526,9 @@ const Dashboard = () => {
                     <Card 
                       className="shadow-soft overflow-hidden"
                       onMouseEnter={() => {
-                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                        dismissFeatureBadge('goals_dashboard_ticket')
+                        if (user?.id) {
+                          dismissFeatureBadge('goals_dashboard_ticket', user.id)
+                        }
                       }}
                     >
                       <CardHeader className="pb-4">
@@ -2670,8 +2672,9 @@ const Dashboard = () => {
                     <Card 
                       className="shadow-soft min-h-[600px] overflow-visible"
                       onMouseEnter={() => {
-                        const { dismissFeatureBadge } = require('@/components/NewFeatureBadge')
-                        dismissFeatureBadge('goals_dashboard_canal')
+                        if (user?.id) {
+                          dismissFeatureBadge('goals_dashboard_canal', user.id)
+                        }
                       }}
                     >
                       <CardHeader className="pb-4">
