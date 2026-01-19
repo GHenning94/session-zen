@@ -327,6 +327,7 @@ export const ReportsModal = ({ open, onOpenChange }: ReportsModalProps) => {
         open={showUpgradeModal} 
         onOpenChange={setShowUpgradeModal}
         feature="Relatórios Avançados"
+        premiumOnly={true}
       />
     </>
   )
