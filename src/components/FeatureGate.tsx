@@ -10,6 +10,7 @@ export type Feature =
   | 'google_calendar'
   | 'reports'
   | 'advanced_reports'
+  | 'report_filters'
   | 'referral_program'
   | 'referral_history'
   | 'goals'
@@ -29,6 +30,7 @@ export const FEATURE_REQUIREMENTS: Record<Feature, SubscriptionPlan> = {
   google_calendar: 'premium',
   reports: 'pro',
   advanced_reports: 'premium',
+  report_filters: 'premium',
   referral_program: 'pro',
   referral_history: 'premium',
   goals: 'pro',
@@ -60,6 +62,10 @@ export const FEATURE_INFO: Record<Feature, { name: string; benefit: string }> = 
   advanced_reports: {
     name: 'Relatórios Avançados',
     benefit: 'Exporte relatórios em PDF e Excel com filtros personalizados por período, cliente e status.'
+  },
+  report_filters: {
+    name: 'Filtros de Relatórios',
+    benefit: 'Filtre relatórios por data, cliente e status para análises mais precisas.'
   },
   referral_program: {
     name: 'Programa de Indicação',

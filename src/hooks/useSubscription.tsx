@@ -9,6 +9,7 @@ export type Feature =
   | 'google_calendar'
   | 'reports'
   | 'advanced_reports'
+  | 'report_filters'
   | 'referral_program'
   | 'referral_history'
   | 'goals'
@@ -28,6 +29,7 @@ const FEATURE_TO_PLAN: Record<Feature, SubscriptionPlan> = {
   google_calendar: 'premium',
   reports: 'pro',
   advanced_reports: 'premium',
+  report_filters: 'premium',
   referral_program: 'pro',
   referral_history: 'premium',
   goals: 'pro',
