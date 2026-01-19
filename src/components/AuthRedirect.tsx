@@ -15,9 +15,11 @@ const AuthRedirect = () => {
     const handleAuthRedirect = async () => {
       // Ignorar rotas públicas e rotas de agendamento/registro/admin
       const currentPath = location.pathname
+      const searchParams = new URLSearchParams(location.search)
       const isPublicRoute = PUBLIC_ROUTES.includes(currentPath) || 
                            currentPath.startsWith('/agendar/') || 
                            currentPath.startsWith('/register/') ||
+                           currentPath.startsWith('/convite/') ||
                            currentPath === '/admin' ||
                            currentPath.startsWith('/admin/')
       
@@ -28,6 +30,17 @@ const AuthRedirect = () => {
       }
 
       console.log('[AuthRedirect] 🚀 Iniciando redirecionamento de autenticação')
+
+      // ✅ Verificar se está voltando de checkout Stripe com pagamento bem-sucedido
+      // Neste caso, NÃO redirecionar - deixar o Dashboard processar
+      const isPaymentReturn = currentPath === '/dashboard' && searchParams.get('payment') === 'success'
+      const isStripeCheckoutReturn = sessionStorage.getItem('stripe_checkout_active') === 'true'
+      
+      if (isPaymentReturn || isStripeCheckoutReturn) {
+        console.log('[AuthRedirect] 💳 Retorno de checkout Stripe detectado, aguardando processamento...')
+        setIsProcessing(false)
+        return
+      }
 
       // Verificar se está em processo de confirmação de email
       const isConfirming = sessionStorage.getItem('IS_CONFIRMING_AUTH')

@@ -101,6 +101,9 @@ export const CheckoutRedirect = () => {
 
         console.log('[CheckoutRedirect] ✅ Redirecionando para checkout Stripe')
         
+        // ✅ Salvar plano selecionado para mostrar modal de boas-vindas após pagamento
+        sessionStorage.setItem('pending_checkout_plan', pendingPlan)
+        
         // ✅ Limpar localStorage E sessionStorage antes de redirecionar
         localStorage.removeItem('pending_plan')
         localStorage.removeItem('pending_billing')
