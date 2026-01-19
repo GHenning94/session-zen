@@ -1301,7 +1301,11 @@ const Dashboard = () => {
           stats.map((stat, index) => (
             <Card 
               key={index} 
-              className="shadow-soft hover:shadow-medium transition-shadow opacity-0 animate-fade-in-up"
+              className={cn(
+                "shadow-soft hover:shadow-medium transition-shadow opacity-0 animate-fade-in-up",
+                // Aniversariantes (last card) spans 2 columns on mobile only
+                index === stats.length - 1 && "col-span-2 md:col-span-1"
+              )}
               style={{ animationDelay: `${index * 75}ms` }}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 md:pb-2 p-3 md:p-6">
