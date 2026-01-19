@@ -175,6 +175,10 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
     
     setLoading(true);
     try {
+      // ✅ Salvar o plano pendente ANTES de ir para o Stripe
+      sessionStorage.setItem('pending_tier_upgrade', plan.id);
+      console.log('[UpgradeModal] 📝 Saved pending_tier_upgrade:', plan.id);
+      
       // SEMPRE usar Stripe para checkout de assinatura
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { 
@@ -187,11 +191,13 @@ export const UpgradeModal = ({ open, onOpenChange, feature, premiumOnly = false 
 
       if (data?.url) {
         // ✅ Marcar que está indo para checkout externo (Stripe)
-        sessionStorage.setItem('stripe_checkout_active', 'true')
+        sessionStorage.setItem('stripe_checkout_active', 'true');
         window.location.href = data.url;
       }
     } catch (err) {
       console.error('Erro ao processar pagamento:', err);
+      // Limpar pending se falhar
+      sessionStorage.removeItem('pending_tier_upgrade');
       toast.error('Erro ao processar pagamento. Tente novamente.');
     } finally {
       setLoading(false);

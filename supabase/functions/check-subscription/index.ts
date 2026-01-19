@@ -110,15 +110,16 @@ serve(async (req) => {
       
       if (PRO_PRICES.includes(priceId)) {
         subscriptionTier = "pro";
+        logStep("Determined subscription tier from known price", { priceId, subscriptionTier, billingInterval });
       } else if (PREMIUM_PRICES.includes(priceId)) {
         subscriptionTier = "premium";
+        logStep("Determined subscription tier from known price", { priceId, subscriptionTier, billingInterval });
       } else {
         // Fallback: usar valor para determinar (mensal apenas)
         const amount = price.unit_amount || 0;
         subscriptionTier = amount <= 2999 ? "pro" : "premium";
-        logStep("Using fallback price detection", { priceId, amount });
+        logStep("Using fallback price detection", { priceId, amount, subscriptionTier, billingInterval });
       }
-      logStep("Determined subscription tier", { priceId, amount, subscriptionTier, billingInterval });
 
       // ✅ CRITICAL: Update the database with subscription info
       // This ensures the subscription is saved even if webhook fails
