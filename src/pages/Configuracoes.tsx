@@ -461,6 +461,8 @@ const Configuracoes = () => {
     }
   };
 
+  const [checkingEmailExists, setCheckingEmailExists] = useState(false);
+
   const handleEmailChange = async () => {
     if (!newEmail) {
       toast({
@@ -482,11 +484,57 @@ const Configuracoes = () => {
       return;
     }
 
-    // Armazenar o email pendente
-    setPendingNewEmail(newEmail);
-    
-    // Primeiro mostrar o dialog de aviso/confirmação
-    setShowEmailChangeDialog(true);
+    // Verificar se é o mesmo email atual
+    if (newEmail.toLowerCase() === user?.email?.toLowerCase()) {
+      toast({
+        title: "Erro",
+        description: "O novo e-mail deve ser diferente do atual",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Verificar se o email já existe na plataforma
+    setCheckingEmailExists(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('check-email-exists', {
+        body: { email: newEmail }
+      });
+
+      if (error) {
+        console.error('Erro ao verificar email:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível verificar o e-mail. Tente novamente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      if (data?.exists) {
+        toast({
+          title: "E-mail já cadastrado",
+          description: "Este e-mail já está sendo utilizado por outra conta. Por favor, utilize um e-mail diferente.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // Email não existe, prosseguir com o fluxo normal
+      setPendingNewEmail(newEmail);
+      
+      // Mostrar o dialog de aviso/confirmação
+      setShowEmailChangeDialog(true);
+    } catch (error: any) {
+      console.error('Erro ao verificar email:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível verificar o e-mail. Tente novamente.",
+        variant: "destructive"
+      });
+    } finally {
+      setCheckingEmailExists(false);
+    }
   };
 
   const confirmEmailChange = async () => {
@@ -874,10 +922,15 @@ const Configuracoes = () => {
                 
                 <Button 
                   onClick={handleEmailChange} 
-                  disabled={isLoading || !newEmail}
+                  disabled={isLoading || !newEmail || checkingEmailExists}
                   size="sm"
                 >
-                  {isLoading ? (
+                  {checkingEmailExists ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Verificando...
+                    </>
+                  ) : isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Enviando...
