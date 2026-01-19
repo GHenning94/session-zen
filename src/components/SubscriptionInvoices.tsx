@@ -23,6 +23,10 @@ interface Invoice {
   id: string
   number: string | null
   amount_paid: number
+  amount_due?: number
+  total?: number
+  credit_amount?: number
+  charge_amount?: number
   currency: string
   status: string
   created: number
@@ -31,6 +35,7 @@ interface Invoice {
   hosted_invoice_url: string | null
   invoice_pdf: string | null
   subscription_id?: string
+  billing_reason?: string
   description?: string | null
 }
 
@@ -388,9 +393,9 @@ export const SubscriptionInvoices = () => {
                     </div>
                     <div className="text-sm text-muted-foreground ml-6 sm:ml-7">
                       <p>Data: {format(new Date(invoice.created * 1000), "dd/MM/yyyy", { locale: ptBR })}</p>
-                      {translateInvoiceDescription(invoice.description, invoice.amount_paid) && (
+                      {invoice.description && (
                         <p className="text-xs text-muted-foreground">
-                          {translateInvoiceDescription(invoice.description, invoice.amount_paid)}
+                          {invoice.description}
                         </p>
                       )}
                       <p className="font-semibold text-foreground mt-1">
