@@ -364,11 +364,40 @@ const Configuracoes = () => {
       return;
     }
 
-    // Armazenar a senha pendente
-    setPendingNewPassword(newPassword);
-    
-    // Primeiro mostrar o dialog de aviso/confirmação
-    setShowPasswordChangeDialog(true);
+    // ✅ VALIDAR SENHA ATUAL PRIMEIRO (antes do dialog e 2FA)
+    setChangingPassword(true);
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: currentPassword,
+      });
+
+      if (authError) {
+        toast({
+          title: "Erro",
+          description: "Senha atual incorreta",
+          variant: "destructive"
+        });
+        setChangingPassword(false);
+        return;
+      }
+
+      // Senha atual validada com sucesso - agora continuar com o fluxo
+      // Armazenar a senha pendente
+      setPendingNewPassword(newPassword);
+      
+      // Mostrar o dialog de aviso/confirmação
+      setShowPasswordChangeDialog(true);
+    } catch (error: any) {
+      console.error('Erro ao validar senha atual:', error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível validar a senha atual",
+        variant: "destructive"
+      });
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   // Handler chamado após verificação 2FA bem-sucedida - executa a ação real
@@ -397,25 +426,8 @@ const Configuracoes = () => {
 
     setChangingPassword(true);
     try {
-      // Primeiro, validar a senha atual tentando fazer reauthentication
-      const { error: authError } = await supabase.auth.signInWithPassword({
-        email: user?.email || '',
-        password: currentPassword,
-        options: {
-          captchaToken: bypassCaptcha ? undefined : passwordChangeCaptchaToken
-        }
-      });
-
-      if (authError) {
-        toast({
-          title: "Erro",
-          description: "Senha atual incorreta",
-          variant: "destructive"
-        });
-        return;
-      }
-
-      // Se a validação passou, atualizar a senha
+      // ✅ Senha atual já foi validada em handlePasswordChange
+      // Apenas atualizar para a nova senha
       const { error: updateError } = await supabase.auth.updateUser({
         password: pendingNewPassword
       });
