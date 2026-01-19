@@ -364,32 +364,62 @@ const Configuracoes = () => {
       return;
     }
 
-    // ✅ VALIDAR SENHA ATUAL PRIMEIRO (antes do dialog e 2FA)
+    // Armazenar a senha pendente
+    setPendingNewPassword(newPassword);
+    
+    // Mostrar o dialog de aviso/confirmação (captcha primeiro, depois valida senha)
+    setShowPasswordChangeDialog(true);
+  };
+
+  // ✅ Nova função para validar senha atual após captcha, antes do 2FA
+  const validateCurrentPasswordAndProceed = async () => {
+    if (!passwordChangeCaptchaToken) {
+      toast({
+        title: "Erro",
+        description: "Por favor, complete a verificação de segurança",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setChangingPassword(true);
     try {
+      // Validar senha atual com o captcha
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: user?.email || '',
         password: currentPassword,
+        options: {
+          captchaToken: passwordChangeCaptchaToken
+        }
       });
 
       if (authError) {
+        // Resetar captcha para nova tentativa
+        setPasswordChangeCaptchaToken(null);
+        passwordCaptchaRef.current?.reset();
+        
         toast({
           title: "Erro",
-          description: "Senha atual incorreta",
+          description: "Senha atual incorreta. Corrija e tente novamente.",
           variant: "destructive"
         });
         setChangingPassword(false);
         return;
       }
 
-      // Senha atual validada com sucesso - agora continuar com o fluxo
-      // Armazenar a senha pendente
-      setPendingNewPassword(newPassword);
-      
-      // Mostrar o dialog de aviso/confirmação
-      setShowPasswordChangeDialog(true);
+      // ✅ Senha validada! Agora verificar se precisa de 2FA
+      if (has2FAConfigured()) {
+        setShowPasswordChangeDialog(false);
+        setPending2FAAction('password');
+        setShow2FAModal(true);
+      } else {
+        // Sem 2FA, prosseguir direto com a mudança
+        await confirmPasswordChange(true); // true = bypass captcha (já foi validado)
+      }
     } catch (error: any) {
       console.error('Erro ao validar senha atual:', error);
+      setPasswordChangeCaptchaToken(null);
+      passwordCaptchaRef.current?.reset();
       toast({
         title: "Erro",
         description: "Não foi possível validar a senha atual",
@@ -1876,21 +1906,16 @@ const Configuracoes = () => {
               setPasswordChangeCaptchaToken(null);
               passwordCaptchaRef.current?.reset();
             }}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
+            <Button 
               onClick={() => {
-                // Após confirmação do aviso, verificar se precisa de 2FA
-                if (has2FAConfigured()) {
-                  setShowPasswordChangeDialog(false);
-                  setPending2FAAction('password');
-                  setShow2FAModal(true);
-                } else {
-                  confirmPasswordChange();
-                }
+                // ✅ Validar senha atual ANTES do 2FA
+                // Não fecha o dialog automaticamente - só fecha se a senha estiver correta
+                validateCurrentPasswordAndProceed();
               }} 
               disabled={changingPassword || !passwordChangeCaptchaToken}
             >
-              {changingPassword ? 'Processando...' : 'Confirmar e Deslogar'}
-            </AlertDialogAction>
+              {changingPassword ? 'Verificando...' : 'Confirmar e Deslogar'}
+            </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
