@@ -267,9 +267,17 @@ export const PackageStatusCard = ({ stats, showNewBadge = false }: PackageStatus
       <Card 
         className="hover:shadow-lg transition-all cursor-pointer border-l-4 border-l-primary h-full"
         onClick={() => navigate('/pacotes')}
+        onMouseEnter={() => {
+          if (showNewBadge) {
+            dismissFeatureBadge('packages')
+          }
+        }}
       >
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="text-sm font-medium">Pacotes de Sessões</CardTitle>
+            {showNewBadge && <NewFeatureBadge featureKey="packages" />}
+          </div>
           <Package className="h-4 w-4 text-primary" />
         </CardHeader>
         <CardContent className="flex flex-col min-h-[340px]">

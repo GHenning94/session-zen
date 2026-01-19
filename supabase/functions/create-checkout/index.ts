@@ -82,10 +82,10 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
-    // Verificar perfil do usuário
+    // Verificar perfil do usuário - incluindo stripe_customer_id
     const { data: profile } = await supabaseAdmin
       .from('profiles')
-      .select('professional_discount_used')
+      .select('professional_discount_used, stripe_customer_id')
       .eq('user_id', user.id)
       .single();
 
@@ -114,18 +114,49 @@ serve(async (req) => {
       shouldApplyDiscount
     });
 
-    // Buscar ou criar cliente Stripe
-    const { data: customers } = await stripe.customers.list({ email: user.email, limit: 1 });
+    // ✅ IMPORTANTE: Usar stripe_customer_id do perfil OU criar novo customer
+    // NÃO buscar por email para evitar reusar customer de conta antiga deletada
+    let customer: Stripe.Customer;
     
-    const customer = customers.length > 0 
-      ? customers[0] 
-      : await stripe.customers.create({ 
+    if (profile?.stripe_customer_id) {
+      // Já tem customer salvo no perfil - reusar
+      try {
+        customer = await stripe.customers.retrieve(profile.stripe_customer_id) as Stripe.Customer;
+        console.log("[create-checkout] 👤 Existing customer from profile:", customer.id);
+      } catch (customerError) {
+        // Customer não existe mais no Stripe - criar novo
+        console.log("[create-checkout] ⚠️ Saved customer not found, creating new...");
+        customer = await stripe.customers.create({ 
           email: user.email, 
-          metadata: { user_id: user.id },
+          metadata: { user_id: user.id, created_via: 'therapypro_checkout' },
           name: user.user_metadata?.nome || user.email
         });
-
-    console.log("[create-checkout] 👤 Customer:", customer.id);
+        
+        // Atualizar perfil com novo customer ID
+        await supabaseAdmin
+          .from('profiles')
+          .update({ stripe_customer_id: customer.id })
+          .eq('user_id', user.id);
+          
+        console.log("[create-checkout] 👤 New customer saved to profile:", customer.id);
+      }
+    } else {
+      // ✅ Sem customer no perfil - SEMPRE criar novo (nunca buscar por email)
+      // Isso evita que contas novas herdem histórico de contas antigas deletadas
+      customer = await stripe.customers.create({ 
+        email: user.email, 
+        metadata: { user_id: user.id, created_via: 'therapypro_checkout' },
+        name: user.user_metadata?.nome || user.email
+      });
+      
+      // Salvar novo customer ID no perfil
+      await supabaseAdmin
+        .from('profiles')
+        .update({ stripe_customer_id: customer.id })
+        .eq('user_id', user.id);
+        
+      console.log("[create-checkout] 👤 New customer created and saved:", customer.id);
+    }
 
     const origin = (typeof returnUrl === 'string' && returnUrl.length > 0) ? returnUrl : SITE_URL;
 

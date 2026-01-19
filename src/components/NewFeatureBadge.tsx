@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
 import { useAuth } from '@/hooks/useAuth'
@@ -80,9 +80,14 @@ export const dismissFeatureBadge = (featureKey: string, userId?: string) => {
 export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeatureBadgeProps) => {
   const { user } = useAuth()
   const [isVisible, setIsVisible] = useState(false)
+  const hasCheckedRef = useRef(false)
 
   useEffect(() => {
     if (!user?.id) return
+    
+    // ✅ IMPORTANTE: Só verificar UMA VEZ para evitar perda de estado ao mudar de aba
+    // Isso previne que badges desapareçam quando o usuário muda de aba e volta
+    if (hasCheckedRef.current && isVisible) return
     
     const unlockedKey = getUserKey('recently_unlocked_features', user.id)
     const dismissedKey = getUserKey('dismissed_feature_badges', user.id)
@@ -93,6 +98,7 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
       try {
         const dismissed = JSON.parse(dismissedFeatures) as string[]
         if (dismissed.includes(featureKey)) {
+          hasCheckedRef.current = true
           return // Don't show if already dismissed
         }
       } catch {
@@ -112,7 +118,9 @@ export const NewFeatureBadge = ({ featureKey, className, onDismiss }: NewFeature
         // Invalid JSON, ignore
       }
     }
-  }, [featureKey, user?.id])
+    
+    hasCheckedRef.current = true
+  }, [featureKey, user?.id, isVisible])
 
   // Listen for global dismiss events
   useEffect(() => {
