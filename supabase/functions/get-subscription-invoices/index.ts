@@ -125,57 +125,60 @@ serve(async (req) => {
     }
 
     console.log('[get-subscription-invoices] 📅 Subscription info:', subscriptionInfo);
+    console.log('[get-subscription-invoices] 🔗 Current subscription ID:', subscriptionId);
 
-    // ✅ IMPORTANTE: Buscar TODAS as faturas do cliente (histórico completo)
-    // Incluir paid + open (para faturas de proration pendentes)
-    const invoiceListParams: Stripe.InvoiceListParams = {
-      customer: customerId,
-      limit: 100, // Aumentar limite para pegar todo o histórico
-    };
-
-    const invoices = await stripe.invoices.list(invoiceListParams);
-
-    console.log('[get-subscription-invoices] 📃 Raw invoices count:', invoices.data.length);
+    // ✅ IMPORTANTE: Buscar faturas relevantes para esta conta
+    // 1. Faturas da assinatura atual (subscription_create, subscription_cycle, subscription_update)
+    // 2. Faturas manuais de upgrade (type: 'proration_upgrade' no metadata)
     
-    // Log ALL invoices for debug - mostrar tudo antes de filtrar
-    invoices.data.forEach(inv => {
-      console.log('[get-subscription-invoices] 📄 ALL Invoice:', {
-        id: inv.id,
-        number: inv.number,
-        status: inv.status,
-        amount_due: inv.amount_due,
-        amount_paid: inv.amount_paid,
-        billing_reason: inv.billing_reason,
-        total: inv.total,
-        subtotal: inv.subtotal,
-        created: new Date(inv.created * 1000).toISOString()
+    let allInvoices: Stripe.Invoice[] = [];
+    
+    // Buscar faturas da assinatura atual
+    if (subscriptionId) {
+      const subscriptionInvoices = await stripe.invoices.list({
+        customer: customerId,
+        subscription: subscriptionId,
+        limit: 50,
       });
+      allInvoices = [...subscriptionInvoices.data];
+      console.log('[get-subscription-invoices] 📋 Subscription invoices:', subscriptionInvoices.data.length);
+    }
+    
+    // Buscar faturas manuais recentes (para pegar proration upgrades)
+    // Filtrar por metadata.user_id para garantir que são da conta correta
+    const manualInvoices = await stripe.invoices.list({
+      customer: customerId,
+      limit: 20,
     });
+    
+    // Adicionar apenas faturas manuais de upgrade que pertencem ao usuário atual
+    // e que têm o metadata correto (type: proration_upgrade, user_id matches)
+    const userId = user.id;
+    const prorationInvoices = manualInvoices.data.filter(inv => {
+      const isProration = inv.metadata?.type === 'proration_upgrade';
+      const isCurrentUser = inv.metadata?.user_id === userId;
+      const notAlreadyIncluded = !allInvoices.some(existing => existing.id === inv.id);
+      return isProration && isCurrentUser && notAlreadyIncluded;
+    });
+    
+    allInvoices = [...allInvoices, ...prorationInvoices];
+    
+    // Ordenar por data (mais recentes primeiro)
+    allInvoices.sort((a, b) => b.created - a.created);
+
+    console.log('[get-subscription-invoices] 📃 Total invoices to process:', allInvoices.length);
+    console.log('[get-subscription-invoices] 📃 Proration invoices added:', prorationInvoices.length);
 
     // ✅ Filtrar faturas válidas
     // Incluir: paid (pagas), open (pendentes de pagamento)
     // Excluir: draft, void, uncollectible
     // IMPORTANTE: Para proration, o valor pode estar em amount_paid ou total
-    const formattedInvoices = invoices.data
+    const formattedInvoices = allInvoices
       .filter(invoice => {
         // Verificar se tem algum valor (pode ser negativo para créditos)
         const hasAmount = invoice.amount_due > 0 || invoice.amount_paid > 0 || Math.abs(invoice.total || 0) > 0;
         const isValidStatus = invoice.status === 'paid' || invoice.status === 'open';
         const isNotDraft = !invoice.draft;
-        
-        // Log para debug
-        console.log('[get-subscription-invoices] 🔍 Filtering invoice:', {
-          id: invoice.id,
-          number: invoice.number,
-          billing_reason: invoice.billing_reason,
-          amount_due: invoice.amount_due,
-          amount_paid: invoice.amount_paid,
-          total: invoice.total,
-          status: invoice.status,
-          hasAmount,
-          isValidStatus,
-          willInclude: hasAmount && isValidStatus && isNotDraft
-        });
         
         return hasAmount && isValidStatus && isNotDraft;
       })
@@ -193,7 +196,7 @@ serve(async (req) => {
         hosted_invoice_url: invoice.hosted_invoice_url,
         invoice_pdf: invoice.invoice_pdf,
         subscription_id: invoice.subscription,
-        billing_reason: invoice.billing_reason, // Adicionar billing_reason
+        billing_reason: invoice.billing_reason,
         description: invoice.description || invoice.lines?.data?.[0]?.description || null
       }));
 
