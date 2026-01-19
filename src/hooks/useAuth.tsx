@@ -119,13 +119,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           return;
         }
         
-        // ✅ CORREÇÃO: Ignorar SIGNED_OUT durante processo de upgrade de plano
+        // ✅ CORREÇÃO: Ignorar SIGNED_OUT durante processo de upgrade de plano ou checkout
         const isUpgradeActive = sessionStorage.getItem('stripe_checkout_active') === 'true' ||
                                sessionStorage.getItem('pending_tier_upgrade') ||
+                               sessionStorage.getItem('pending_checkout_plan') ||
                                sessionStorage.getItem('show_upgrade_welcome') ||
                                sessionStorage.getItem('upgrade_modal_active') === 'true';
-        if (event === 'SIGNED_OUT' && isUpgradeActive) {
-          console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - processo de upgrade em andamento');
+        
+        // Também verificar se está na página de retorno do checkout
+        const isPaymentReturn = window.location.search.includes('payment=success')
+        
+        if (event === 'SIGNED_OUT' && (isUpgradeActive || isPaymentReturn)) {
+          console.warn('[useAuth] ⚠️ SIGNED_OUT ignorado - processo de upgrade/checkout em andamento');
           return;
         }
 

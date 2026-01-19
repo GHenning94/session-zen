@@ -326,18 +326,33 @@ const Login = () => {
           return
         }
         
-        // ✅ Verificar se há plano pendente no localStorage ou backup no sessionStorage
+        // ✅ Verificar se há plano pendente no localStorage, sessionStorage ou pending_checkout_plan
         const pendingPlan = localStorage.getItem('pending_plan') || 
-                            sessionStorage.getItem('pending_plan_backup');
+                            sessionStorage.getItem('pending_plan_backup') ||
+                            sessionStorage.getItem('pending_checkout_plan');
         
         if (pendingPlan && pendingPlan !== 'basico') {
-          // Limpar backup do sessionStorage
+          // Mover o plano para localStorage para o CheckoutRedirect usar
+          localStorage.setItem('pending_plan', pendingPlan)
+          
+          // Limpar backups do sessionStorage
           sessionStorage.removeItem('pending_plan_backup');
           sessionStorage.removeItem('pending_billing_backup');
+          sessionStorage.removeItem('pending_checkout_plan');
           
           console.log('[Login] 🛒 Plano pendente detectado, redirecionando para checkout')
           toast.success('Redirecionando para checkout...')
           navigate('/checkout-redirect')
+          return
+        }
+        
+        // ✅ Verificar se voltou de pagamento Stripe bem-sucedido (sessão tinha expirado)
+        const paymentSuccessReturn = sessionStorage.getItem('payment_success_pending')
+        if (paymentSuccessReturn === 'true') {
+          console.log('[Login] 💳 Retorno de pagamento bem-sucedido detectado, sincronizando plano...')
+          sessionStorage.removeItem('payment_success_pending')
+          // Ir para dashboard com flag de sincronização
+          navigate('/dashboard?payment=success')
           return
         }
         
@@ -406,18 +421,32 @@ const Login = () => {
       console.warn('[Login] Erro ao aplicar tema após 2FA:', themeError)
     }
     
-    // ✅ Verificar se há plano pendente no localStorage ou backup
+    // ✅ Verificar se há plano pendente no localStorage, sessionStorage ou pending_checkout_plan
     const pendingPlan = localStorage.getItem('pending_plan') || 
-                        sessionStorage.getItem('pending_plan_backup');
+                        sessionStorage.getItem('pending_plan_backup') ||
+                        sessionStorage.getItem('pending_checkout_plan');
     
     if (pendingPlan && pendingPlan !== 'basico') {
-      // Limpar backup do sessionStorage
+      // Mover o plano para localStorage para o CheckoutRedirect usar
+      localStorage.setItem('pending_plan', pendingPlan)
+      
+      // Limpar backups do sessionStorage
       sessionStorage.removeItem('pending_plan_backup');
       sessionStorage.removeItem('pending_billing_backup');
+      sessionStorage.removeItem('pending_checkout_plan');
       
       console.log('[Login] 🛒 Plano pendente detectado após 2FA, redirecionando para checkout')
       toast.success('Redirecionando para checkout...')
       navigate('/checkout-redirect')
+      return
+    }
+    
+    // ✅ Verificar se voltou de pagamento Stripe bem-sucedido
+    const paymentSuccessReturn = sessionStorage.getItem('payment_success_pending')
+    if (paymentSuccessReturn === 'true') {
+      console.log('[Login] 💳 Retorno de pagamento bem-sucedido após 2FA, sincronizando plano...')
+      sessionStorage.removeItem('payment_success_pending')
+      navigate('/dashboard?payment=success')
       return
     }
     

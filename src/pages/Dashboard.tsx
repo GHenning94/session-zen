@@ -279,12 +279,18 @@ const Dashboard = () => {
     setIsLoading(true)
     setIsProcessingPayment(true)
     
-    // Pegar o plano pendente antes de tudo
-    const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade')
-    console.log('[Dashboard] 📝 Pending tier upgrade:', pendingTierUpgrade)
+    // ✅ Limpar flag de checkout ativo imediatamente
+    sessionStorage.removeItem('stripe_checkout_active')
+    
+    // ✅ Pegar o plano pendente de múltiplas fontes (prioridade)
+    const pendingCheckoutPlan = sessionStorage.getItem('pending_checkout_plan') // Do CheckoutRedirect
+    const pendingTierUpgrade = sessionStorage.getItem('pending_tier_upgrade') // De upgrade
+    const targetPlan = pendingCheckoutPlan || pendingTierUpgrade
+    
+    console.log('[Dashboard] 📝 Target plan for welcome modal:', { pendingCheckoutPlan, pendingTierUpgrade, targetPlan })
     
     let attempts = 0
-    const maxAttempts = 15 // Aumentar tentativas
+    const maxAttempts = 20 // Aumentar tentativas para dar mais tempo ao webhook
     
     const syncAndCheckStatus = async (): Promise<boolean> => {
       try {
@@ -307,10 +313,12 @@ const Dashboard = () => {
           console.log('[Dashboard] ✅ Subscription synced successfully:', data.subscription_tier)
           
           // Usar o plano do pending OU o plano retornado pela API
-          const planForWelcome = pendingTierUpgrade || data.subscription_tier
+          const planForWelcome = targetPlan || data.subscription_tier
           
           if (planForWelcome && (planForWelcome === 'pro' || planForWelcome === 'premium')) {
-            console.log('[Dashboard] 🎉 Tier upgrade confirmed, preparing welcome modal for:', planForWelcome)
+            console.log('[Dashboard] 🎉 Subscription confirmed, preparing welcome modal for:', planForWelcome)
+            // Limpar todos os pendentes
+            sessionStorage.removeItem('pending_checkout_plan')
             sessionStorage.removeItem('pending_tier_upgrade')
             sessionStorage.setItem('show_upgrade_welcome', planForWelcome)
           }
@@ -322,7 +330,7 @@ const Dashboard = () => {
           window.history.replaceState({}, '', newUrl.pathname)
           
           // Small delay then reload to get fresh data with new plan
-          await new Promise(resolve => setTimeout(resolve, 1000))
+          await new Promise(resolve => setTimeout(resolve, 500))
           window.location.href = '/dashboard'
           return true
         }
@@ -335,8 +343,8 @@ const Dashboard = () => {
       }
     }
     
-    // Initial delay to allow Stripe to process
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Initial delay to allow Stripe webhook to process
+    await new Promise(resolve => setTimeout(resolve, 2500))
     
     // Poll with increasing intervals
     const poll = async () => {
@@ -350,10 +358,11 @@ const Dashboard = () => {
         // Max attempts reached - still try to show success
         console.log('[Dashboard] ⚠️ Max attempts reached, showing success anyway')
         
-        // Se havia pending upgrade, ainda mostrar o modal
-        if (pendingTierUpgrade && (pendingTierUpgrade === 'pro' || pendingTierUpgrade === 'premium')) {
+        // Se havia pending plan, ainda mostrar o modal
+        if (targetPlan && (targetPlan === 'pro' || targetPlan === 'premium')) {
+          sessionStorage.removeItem('pending_checkout_plan')
           sessionStorage.removeItem('pending_tier_upgrade')
-          sessionStorage.setItem('show_upgrade_welcome', pendingTierUpgrade)
+          sessionStorage.setItem('show_upgrade_welcome', targetPlan)
         }
         
         setIsLoading(false)
@@ -368,7 +377,7 @@ const Dashboard = () => {
       }
       
       // Wait and try again (intervalos progressivos)
-      const waitTime = Math.min(2000 + (attempts * 500), 5000)
+      const waitTime = Math.min(1500 + (attempts * 300), 4000)
       await new Promise(resolve => setTimeout(resolve, waitTime))
       await poll()
     }
