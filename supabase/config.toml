@@ -67,8 +67,11 @@ verify_jwt = true
 [functions.twofa-send-email-code]
 verify_jwt = true
 
+[functions.twofa-send-email-code-public]
+verify_jwt = false
+
 [functions.twofa-verify-code]
-verify_jwt = true
+verify_jwt = false
 
 [functions.twofa-request-reset]
 verify_jwt = false
