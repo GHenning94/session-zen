@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { X, CreditCard, Shield, EyeOff, Repeat, GripHorizontal } from 'lucide-react';
+import { X, Shield, EyeOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { use2FA } from '@/hooks/use2FA';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,27 +92,8 @@ export const ActionableNotificationsBanner = () => {
 
     // Sessões individuais sem método de pagamento agora aparecem como notificação regular
     // no sistema de notificações (não mais no banner acionável)
-
-    // Check for recurring sessions without payment method
-    if (user && !hidden.includes('recurring-no-payment-method')) {
-      const { data: recurringSessions } = await supabase
-        .from('recurring_sessions')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('status', 'ativa')
-        .or('metodo_pagamento.eq.A definir,metodo_pagamento.is.null');
-
-      if (recurringSessions && recurringSessions.length > 0) {
-        actionableNotifications.push({
-          id: 'recurring-no-payment-method',
-          icon: <Repeat className="h-5 w-5" />,
-          message: `${recurringSessions.length} sessão(ões) recorrente(s) sem método de pagamento definido`,
-          action: 'Ver Recorrências',
-          route: '/sessoes-recorrentes',
-          count: recurringSessions.length,
-        });
-      }
-    }
+    
+    // Banner de sessões recorrentes removido conforme solicitado
 
     setNotifications(actionableNotifications);
   };

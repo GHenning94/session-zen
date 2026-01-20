@@ -75,6 +75,17 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     setNewClient({...newClient, phone: formatted})
   }
 
+  const handleCountryCodeChange = (newCountryCode: string) => {
+    // Quando o país muda, reformatar o telefone atual com o novo formato
+    if (newClient.phone) {
+      // Primeiro normalizar (remover formatação antiga) e depois formatar com novo país
+      const digitsOnly = normalizePhoneDigits(newClient.phone)
+      const reformatted = formatInternationalPhone(digitsOnly, newCountryCode)
+      setNewClient({...newClient, phone: reformatted})
+    }
+    setPhoneCountryCode(newCountryCode)
+  }
+
   const loadClients = async () => {
     if (!user) return
     
@@ -415,7 +426,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                     <div className="flex gap-2">
                       <Select 
                         value={phoneCountryCode}
-                        onValueChange={setPhoneCountryCode}
+                        onValueChange={handleCountryCodeChange}
                       >
                         <SelectTrigger className="w-[80px] sm:w-[100px]">
                           <SelectValue />
