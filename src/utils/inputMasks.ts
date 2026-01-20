@@ -1,3 +1,80 @@
+export interface PhoneCountryConfig {
+  /** Código do país em formato E.164, ex: +55, +1 */
+  code: string;
+  /** Rótulo exibido no dropdown, incluindo bandeira/nome */
+  label: string;
+  /** Exemplo exibido como placeholder */
+  example: string;
+}
+
+/** Lista de países inspirada em grandes plataformas (WhatsApp, Google, etc.) */
+export const PHONE_COUNTRIES: PhoneCountryConfig[] = [
+  { code: "+55", label: "🇧🇷 Brasil (+55)", example: "(11) 3456-7890 ou (11) 98765-4321" },
+  { code: "+351", label: "🇵🇹 Portugal (+351)", example: "912 345 678" },
+  { code: "+1", label: "🇺🇸 EUA / 🇨🇦 Canadá (+1)", example: "415 555 1234" },
+  { code: "+44", label: "🇬🇧 Reino Unido (+44)", example: "20 7123 4567" },
+  { code: "+34", label: "🇪🇸 Espanha (+34)", example: "612 34 56 78" },
+  { code: "+39", label: "🇮🇹 Itália (+39)", example: "312 345 6789" },
+  { code: "+33", label: "🇫🇷 França (+33)", example: "06 12 34 56 78" },
+  { code: "+49", label: "🇩🇪 Alemanha (+49)", example: "0151 23456789" },
+  { code: "+41", label: "🇨🇭 Suíça (+41)", example: "079 123 45 67" },
+  { code: "+972", label: "🇮🇱 Israel (+972)", example: "54 123 4567" },
+  { code: "+54", label: "🇦🇷 Argentina (+54)", example: "11 2345 6789" },
+  { code: "+56", label: "🇨🇱 Chile (+56)", example: "9 6123 4567" },
+  { code: "+57", label: "🇨🇴 Colômbia (+57)", example: "321 123 4567" },
+  { code: "+52", label: "🇲🇽 México (+52)", example: "55 1234 5678" },
+];
+
+export const DEFAULT_PHONE_COUNTRY = "+55";
+
+/** Placeholder padrão de acordo com o país selecionado */
+export const getPhonePlaceholder = (countryCode: string): string => {
+  const cfg = PHONE_COUNTRIES.find(c => c.code === countryCode);
+  if (cfg) return cfg.example;
+  return "+00 0000 000 000";
+};
+
+/** Formatação de telefone considerando país (sem incluir o código do país no campo) */
+export const formatInternationalPhone = (value: string, countryCode: string): string => {
+  const numbers = value.replace(/\D/g, "");
+
+  // Brasil: manter padrão com/sem dígito 9
+  if (countryCode === "+55") {
+    if (numbers.length === 0) return "";
+    if (numbers.length <= 2) return `(${numbers}`;
+    if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    if (numbers.length <= 10) {
+      // (DD) XXXX-XXXX
+      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`;
+    }
+    // (DD) 9XXXX-XXXX
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  }
+
+  // Para os demais países, não aplicar máscara rígida: apenas limpar caracteres estranhos
+  // e manter um único espaço entre blocos para não atrapalhar cópia/cola.
+  return value
+    .replace(/[^\d\s]/g, "")
+    .replace(/\s+/g, " ")
+    .trimStart();
+};
+
+/** Validação de telefone baseada em padrões amplamente usados (E.164 simplificado) */
+export const isValidInternationalPhone = (value: string, countryCode: string): boolean => {
+  const numbers = value.replace(/\D/g, "");
+
+  if (!numbers) return false;
+
+  // Brasil: aceitar DDD + 8 dígitos (fixo) OU DDD + 9 dígitos (celular)
+  if (countryCode === "+55") {
+    return numbers.length === 10 || numbers.length === 11;
+  }
+
+  // Demais países: regra genérica 6–15 dígitos (E.164)
+  return numbers.length >= 6 && numbers.length <= 15;
+};
+
+// Mantido por compatibilidade em pontos que ainda usam apenas formato brasileiro
 export const formatPhone = (value: string): string => {
   const cleaned = value.replace(/\D/g, '');
   if (cleaned.length <= 10) {

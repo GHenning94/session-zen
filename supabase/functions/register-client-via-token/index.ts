@@ -21,6 +21,7 @@ const clientRegistrationSchema = z.object({
     .trim()
     .min(1, { message: "Telefone é obrigatório" })
     .max(20, { message: "Telefone deve ter no máximo 20 caracteres" }),
+  telefone_codigo_pais: z.string().trim().max(10).optional().or(z.literal('')),
   
   cpf: z.string().trim().max(20).optional().or(z.literal('')),
   data_nascimento: z.string().optional().or(z.literal('')),

@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { User, Mail, Phone, Pill, Baby, Cake } from "lucide-react"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { PHONE_COUNTRIES } from "@/utils/inputMasks"
 
 interface ClientCardProps {
   client: any
@@ -37,6 +38,10 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge
 
   const showFallbackIcon = !avatarUrl || hasError || imageError
   const hasBirthday = showBirthdayBadge && isBirthdayThisMonth()
+
+  const phoneCountryLabel =
+    client.telefone_codigo_pais &&
+    PHONE_COUNTRIES.find(c => c.code === client.telefone_codigo_pais)?.label
 
   return (
     <div
@@ -100,7 +105,14 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge
               </div>
               <div className="flex items-center gap-1 md:gap-2">
                 <Phone className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
-                <span>{client.telefone}</span>
+                <div className="flex flex-col">
+                  <span>{client.telefone}</span>
+                  {phoneCountryLabel && (
+                    <span className="text-[10px] md:text-xs text-muted-foreground">
+                      {phoneCountryLabel}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

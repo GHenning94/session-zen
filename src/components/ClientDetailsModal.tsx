@@ -25,6 +25,7 @@ import {
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
+import { PHONE_COUNTRIES } from "@/utils/inputMasks"
 
 interface ClientDetailsModalProps {
   open: boolean
@@ -49,6 +50,10 @@ export const ClientDetailsModal = ({
 
   const { avatarUrl } = useAvatarUrl(client?.avatar_url)
   const hasMedications = client.medicamentos && client.medicamentos.length > 0
+
+  const phoneCountryLabel =
+    client.telefone_codigo_pais &&
+    PHONE_COUNTRIES.find(c => c.code === client.telefone_codigo_pais)?.label
 
   // Check if client has birthday this month
   const isBirthdayThisMonth = () => {
@@ -160,9 +165,16 @@ export const ClientDetailsModal = ({
                   </div>
                 )}
                 {client.telefone && (
-                  <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-muted-foreground" />
-                    <span>{client.telefone}</span>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-3">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      <span>{client.telefone}</span>
+                    </div>
+                    {phoneCountryLabel && (
+                      <p className="text-xs text-muted-foreground pl-7">
+                        {phoneCountryLabel}
+                      </p>
+                    )}
                   </div>
                 )}
                 {client.endereco && (

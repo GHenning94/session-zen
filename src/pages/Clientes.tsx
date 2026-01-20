@@ -877,7 +877,11 @@ const Clientes = () => {
                               setShowUpgradeModal(true)
                               return
                             }
-                            const whatsappUrl = `https://wa.me/55${phone}`
+                            const rawNumbers = String(phone || '').replace(/\D/g, '')
+                            if (!rawNumbers) return
+                            const countryCode = client.telefone_codigo_pais || '+55'
+                            const countryDigits = countryCode.replace(/\D/g, '')
+                            const whatsappUrl = `https://wa.me/${countryDigits}${rawNumbers}`
                             window.open(whatsappUrl, '_blank')
                           }}
                         />

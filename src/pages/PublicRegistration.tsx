@@ -12,12 +12,20 @@ import { useToast } from "@/hooks/use-toast"
 import { supabase } from "@/integrations/supabase/client"
 import { Loader2, User, CheckCircle, Stethoscope, Plus, Trash2 } from "lucide-react"
 import { PublicAvatarUpload } from "@/components/PublicAvatarUpload"
+import {
+  PHONE_COUNTRIES,
+  DEFAULT_PHONE_COUNTRY,
+  formatInternationalPhone,
+  isValidInternationalPhone,
+  getPhonePlaceholder
+} from "@/utils/inputMasks"
 import "./PublicRegistration.styles.css"
 
 interface ClientData {
   nome: string;
   email: string;
   telefone: string;
+  telefone_codigo_pais?: string;
   data_nascimento: string;
   genero: string;
   endereco: string;
@@ -52,6 +60,7 @@ const PublicRegistration = () => {
   const [isSuccess, setIsSuccess] = useState(false)
   const [isCompleteForm, setIsCompleteForm] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
+  const [phoneCountryCode, setPhoneCountryCode] = useState<string>(DEFAULT_PHONE_COUNTRY)
 
   // Store and restore user's theme - only change for this page visit
   useEffect(() => {
@@ -106,14 +115,8 @@ const PublicRegistration = () => {
     }
   }, [setTheme])
 
-  // Função para formatar telefone durante digitação
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '')
-    if (numbers.length === 0) return ''
-    else if (numbers.length <= 2) return `(${numbers}`
-    else if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
-    else if (numbers.length <= 10) return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6)}`
-    else return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+  const handleMainPhoneChange = (value: string) => {
+    handleInputChange('telefone', formatInternationalPhone(value, phoneCountryCode))
   }
 
   const [formData, setFormData] = useState<ClientData>({
@@ -222,13 +225,23 @@ const PublicRegistration = () => {
       return
     }
 
+    if (!isValidInternationalPhone(formData.telefone, phoneCountryCode)) {
+      toast({
+        title: "Telefone inválido",
+        description: "Digite um telefone válido de acordo com o país selecionado.",
+        variant: "destructive"
+      })
+      return
+    }
+
     try {
       setIsSubmitting(true)
 
       // Sanitizar payload: enviar apenas campos preenchidos
       const sanitizedData: Partial<ClientData> = {
         nome: formData.nome.trim(),
-        telefone: formData.telefone.trim()
+        telefone: formData.telefone.trim(),
+        telefone_codigo_pais: phoneCountryCode
       }
 
       // Adicionar campos opcionais apenas se preenchidos
@@ -439,14 +452,31 @@ const PublicRegistration = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="telefone" className="text-gray-900">Telefone *</Label>
-                  <Input
-                    id="telefone"
-                    value={formData.telefone}
-                    onChange={(e) => handleInputChange('telefone', formatPhone(e.target.value))}
-                    required
-                    placeholder="(00) 00000-0000"
-                    className="bg-white text-gray-900"
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={phoneCountryCode}
+                      onValueChange={setPhoneCountryCode}
+                    >
+                      <SelectTrigger className="w-[110px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {PHONE_COUNTRIES.map(country => (
+                          <SelectItem key={country.code} value={country.code}>
+                            {country.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="telefone"
+                      value={formData.telefone}
+                      onChange={(e) => handleMainPhoneChange(e.target.value)}
+                      required
+                      placeholder={getPhonePlaceholder(phoneCountryCode)}
+                      className="bg-white text-gray-900 flex-1"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -642,8 +672,8 @@ const PublicRegistration = () => {
                           <Input
                             id="telefone_pai"
                             value={formData.telefone_pai}
-                            onChange={(e) => handleInputChange('telefone_pai', formatPhone(e.target.value))}
-                            placeholder="(00) 00000-0000"
+                            onChange={(e) => handleInputChange('telefone_pai', formatInternationalPhone(e.target.value, phoneCountryCode))}
+                            placeholder={getPhonePlaceholder(phoneCountryCode)}
                           />
                         </div>
                       </div>
@@ -662,8 +692,8 @@ const PublicRegistration = () => {
                           <Input
                             id="telefone_mae"
                             value={formData.telefone_mae}
-                            onChange={(e) => handleInputChange('telefone_mae', formatPhone(e.target.value))}
-                            placeholder="(00) 00000-0000"
+                            onChange={(e) => handleInputChange('telefone_mae', formatInternationalPhone(e.target.value, phoneCountryCode))}
+                            placeholder={getPhonePlaceholder(phoneCountryCode)}
                           />
                         </div>
                       </div>
@@ -696,8 +726,8 @@ const PublicRegistration = () => {
                           <Input
                             id="contato_emergencia_1_telefone"
                             value={formData.contato_emergencia_1_telefone}
-                            onChange={(e) => handleInputChange('contato_emergencia_1_telefone', formatPhone(e.target.value))}
-                            placeholder="(00) 00000-0000"
+                            onChange={(e) => handleInputChange('contato_emergencia_1_telefone', formatInternationalPhone(e.target.value, phoneCountryCode))}
+                            placeholder={getPhonePlaceholder(phoneCountryCode)}
                           />
                         </div>
                       </div>
@@ -716,8 +746,8 @@ const PublicRegistration = () => {
                           <Input
                             id="contato_emergencia_2_telefone"
                             value={formData.contato_emergencia_2_telefone}
-                            onChange={(e) => handleInputChange('contato_emergencia_2_telefone', formatPhone(e.target.value))}
-                            placeholder="(00) 00000-0000"
+                            onChange={(e) => handleInputChange('contato_emergencia_2_telefone', formatInternationalPhone(e.target.value, phoneCountryCode))}
+                            placeholder={getPhonePlaceholder(phoneCountryCode)}
                           />
                         </div>
                       </div>
@@ -742,8 +772,8 @@ const PublicRegistration = () => {
                       <Input
                         id="contato_emergencia_1_telefone_child"
                         value={formData.contato_emergencia_1_telefone}
-                        onChange={(e) => handleInputChange('contato_emergencia_1_telefone', formatPhone(e.target.value))}
-                        placeholder="(00) 00000-0000"
+                        onChange={(e) => handleInputChange('contato_emergencia_1_telefone', formatInternationalPhone(e.target.value, phoneCountryCode))}
+                        placeholder={getPhonePlaceholder(phoneCountryCode)}
                         className="bg-white text-gray-900"
                       />
                     </div>
@@ -764,8 +794,8 @@ const PublicRegistration = () => {
                       <Input
                         id="contato_emergencia_2_telefone_child"
                         value={formData.contato_emergencia_2_telefone}
-                        onChange={(e) => handleInputChange('contato_emergencia_2_telefone', formatPhone(e.target.value))}
-                        placeholder="(00) 00000-0000"
+                        onChange={(e) => handleInputChange('contato_emergencia_2_telefone', formatInternationalPhone(e.target.value, phoneCountryCode))}
+                        placeholder={getPhonePlaceholder(phoneCountryCode)}
                         className="bg-white text-gray-900"
                       />
                     </div>
