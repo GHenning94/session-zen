@@ -246,12 +246,11 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     setIsLoading(true)
     
     try {
-      const clientData = {
+      const clientData: any = {
         user_id: user.id,
         nome: newClient.name,
         email: newClient.email || null,
         telefone: normalizePhoneDigits(newClient.phone),
-        telefone_codigo_pais: phoneCountryCode,
         avatar_url: newClient.avatarUrl || null,
         cpf: newClient.cpf || null,
         data_nascimento: newClient.dataNascimento || null,
@@ -272,7 +271,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         telefone_mae: newClient.telefoneMae ? normalizePhoneDigits(newClient.telefoneMae) : null,
         eh_crianca_adolescente: newClient.ehCriancaAdolescente,
         emergencia_igual_pais: newClient.emergenciaIgualPais,
-        dados_clinicos: newClient.notes ? `Observações: ${newClient.notes}` : null
+        dados_clinicos: newClient.notes ? `Observações: ${newClient.notes}` : null,
+        telefone_codigo_pais: phoneCountryCode
       }
 
       // Encrypt sensitive fields before saving
@@ -285,11 +285,32 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           .update(encryptedClientData)
           .eq('id', editingClient.id)
         error = result.error
+        
+        // Se o erro for porque a coluna telefone_codigo_pais não existe, tentar novamente sem ela
+        if (error && error.message && error.message.includes('telefone_codigo_pais')) {
+          console.warn('Coluna telefone_codigo_pais não encontrada. Tentando salvar sem ela. Execute a migration 20260120123000_add_cliente_phone_country_code.sql')
+          const { telefone_codigo_pais, ...dataWithoutCountryCode } = encryptedClientData
+          const retryResult = await supabase
+            .from('clients')
+            .update(dataWithoutCountryCode)
+            .eq('id', editingClient.id)
+          error = retryResult.error
+        }
       } else {
         const result = await supabase
           .from('clients')
           .insert([encryptedClientData])
         error = result.error
+        
+        // Se o erro for porque a coluna telefone_codigo_pais não existe, tentar novamente sem ela
+        if (error && error.message && error.message.includes('telefone_codigo_pais')) {
+          console.warn('Coluna telefone_codigo_pais não encontrada. Tentando salvar sem ela. Execute a migration 20260120123000_add_cliente_phone_country_code.sql')
+          const { telefone_codigo_pais, ...dataWithoutCountryCode } = encryptedClientData
+          const retryResult = await supabase
+            .from('clients')
+            .insert([dataWithoutCountryCode])
+          error = retryResult.error
+        }
       }
 
       if (error) throw error
