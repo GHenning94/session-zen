@@ -17,7 +17,8 @@ import {
   DEFAULT_PHONE_COUNTRY,
   formatInternationalPhone,
   isValidInternationalPhone,
-  getPhonePlaceholder
+  getPhonePlaceholder,
+  normalizePhoneDigits
 } from "@/utils/inputMasks"
 import "./PublicRegistration.styles.css"
 
@@ -240,7 +241,7 @@ const PublicRegistration = () => {
       // Sanitizar payload: enviar apenas campos preenchidos
       const sanitizedData: Partial<ClientData> = {
         nome: formData.nome.trim(),
-        telefone: formData.telefone.trim(),
+        telefone: normalizePhoneDigits(formData.telefone),
         telefone_codigo_pais: phoneCountryCode
       }
 
@@ -256,14 +257,14 @@ const PublicRegistration = () => {
       if (formData.tratamento?.trim()) sanitizedData.tratamento = formData.tratamento.trim()
       if (formData.eh_crianca_adolescente !== undefined) sanitizedData.eh_crianca_adolescente = formData.eh_crianca_adolescente
       if (formData.nome_pai?.trim()) sanitizedData.nome_pai = formData.nome_pai.trim()
-      if (formData.telefone_pai?.trim()) sanitizedData.telefone_pai = formData.telefone_pai.trim()
+      if (formData.telefone_pai?.trim()) sanitizedData.telefone_pai = normalizePhoneDigits(formData.telefone_pai)
       if (formData.nome_mae?.trim()) sanitizedData.nome_mae = formData.nome_mae.trim()
-      if (formData.telefone_mae?.trim()) sanitizedData.telefone_mae = formData.telefone_mae.trim()
+      if (formData.telefone_mae?.trim()) sanitizedData.telefone_mae = normalizePhoneDigits(formData.telefone_mae)
       if (formData.medicamentos && formData.medicamentos.length > 0) sanitizedData.medicamentos = formData.medicamentos
       if (formData.contato_emergencia_1_nome?.trim()) sanitizedData.contato_emergencia_1_nome = formData.contato_emergencia_1_nome.trim()
-      if (formData.contato_emergencia_1_telefone?.trim()) sanitizedData.contato_emergencia_1_telefone = formData.contato_emergencia_1_telefone.trim()
+      if (formData.contato_emergencia_1_telefone?.trim()) sanitizedData.contato_emergencia_1_telefone = normalizePhoneDigits(formData.contato_emergencia_1_telefone)
       if (formData.contato_emergencia_2_nome?.trim()) sanitizedData.contato_emergencia_2_nome = formData.contato_emergencia_2_nome.trim()
-      if (formData.contato_emergencia_2_telefone?.trim()) sanitizedData.contato_emergencia_2_telefone = formData.contato_emergencia_2_telefone.trim()
+      if (formData.contato_emergencia_2_telefone?.trim()) sanitizedData.contato_emergencia_2_telefone = normalizePhoneDigits(formData.contato_emergencia_2_telefone)
       if (formData.pais?.trim()) sanitizedData.pais = formData.pais.trim()
       if (formData.emergencia_igual_pais !== undefined) sanitizedData.emergencia_igual_pais = formData.emergencia_igual_pais
 

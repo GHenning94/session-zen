@@ -25,7 +25,7 @@ import {
 import { format, parseISO } from "date-fns"
 import { ptBR } from "date-fns/locale"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
-import { PHONE_COUNTRIES } from "@/utils/inputMasks"
+import { formatInternationalPhone, PHONE_COUNTRIES, DEFAULT_PHONE_COUNTRY } from "@/utils/inputMasks"
 
 interface ClientDetailsModalProps {
   open: boolean
@@ -50,6 +50,13 @@ export const ClientDetailsModal = ({
 
   const { avatarUrl } = useAvatarUrl(client?.avatar_url)
   const hasMedications = client.medicamentos && client.medicamentos.length > 0
+  
+  // Formatar telefones para exibição
+  const countryCode = client.telefone_codigo_pais || DEFAULT_PHONE_COUNTRY
+  const formatPhoneForDisplay = (phone: string | null) => {
+    if (!phone) return ""
+    return formatInternationalPhone(phone, countryCode)
+  }
 
   const phoneCountryLabel =
     client.telefone_codigo_pais &&
@@ -168,7 +175,7 @@ export const ClientDetailsModal = ({
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
                       <Phone className="w-4 h-4 text-muted-foreground" />
-                      <span>{client.telefone}</span>
+                      <span>{formatPhoneForDisplay(client.telefone)}</span>
                     </div>
                     {phoneCountryLabel && (
                       <p className="text-xs text-muted-foreground pl-7">
@@ -210,7 +217,7 @@ export const ClientDetailsModal = ({
                             <label className="text-sm text-muted-foreground">Pai</label>
                             <p className="font-medium">{client.nome_pai}</p>
                             {client.telefone_pai && (
-                              <p className="text-sm text-muted-foreground">{client.telefone_pai}</p>
+                              <p className="text-sm text-muted-foreground">{formatPhoneForDisplay(client.telefone_pai)}</p>
                             )}
                           </div>
                         )}
@@ -219,7 +226,7 @@ export const ClientDetailsModal = ({
                             <label className="text-sm text-muted-foreground">Mãe</label>
                             <p className="font-medium">{client.nome_mae}</p>
                             {client.telefone_mae && (
-                              <p className="text-sm text-muted-foreground">{client.telefone_mae}</p>
+                              <p className="text-sm text-muted-foreground">{formatPhoneForDisplay(client.telefone_mae)}</p>
                             )}
                           </div>
                         )}
@@ -231,7 +238,7 @@ export const ClientDetailsModal = ({
                             <label className="text-sm text-muted-foreground">Contato 1</label>
                             <p className="font-medium">{client.contato_emergencia_1_nome}</p>
                             {client.contato_emergencia_1_telefone && (
-                              <p className="text-sm text-muted-foreground">{client.contato_emergencia_1_telefone}</p>
+                              <p className="text-sm text-muted-foreground">{formatPhoneForDisplay(client.contato_emergencia_1_telefone)}</p>
                             )}
                           </div>
                         )}
@@ -240,7 +247,7 @@ export const ClientDetailsModal = ({
                             <label className="text-sm text-muted-foreground">Contato 2</label>
                             <p className="font-medium">{client.contato_emergencia_2_nome}</p>
                             {client.contato_emergencia_2_telefone && (
-                              <p className="text-sm text-muted-foreground">{client.contato_emergencia_2_telefone}</p>
+                              <p className="text-sm text-muted-foreground">{formatPhoneForDisplay(client.contato_emergencia_2_telefone)}</p>
                             )}
                           </div>
                         )}

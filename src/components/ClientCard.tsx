@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { User, Mail, Phone, Pill, Baby, Cake } from "lucide-react"
 import { useAvatarUrl } from "@/hooks/useAvatarUrl"
-import { PHONE_COUNTRIES } from "@/utils/inputMasks"
+import { formatInternationalPhone, PHONE_COUNTRIES, DEFAULT_PHONE_COUNTRY } from "@/utils/inputMasks"
 
 interface ClientCardProps {
   client: any
@@ -38,6 +38,10 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge
 
   const showFallbackIcon = !avatarUrl || hasError || imageError
   const hasBirthday = showBirthdayBadge && isBirthdayThisMonth()
+
+  // Formatar telefone para exibição
+  const countryCode = client.telefone_codigo_pais || DEFAULT_PHONE_COUNTRY
+  const formattedPhone = client.telefone ? formatInternationalPhone(client.telefone, countryCode) : ""
 
   const phoneCountryLabel =
     client.telefone_codigo_pais &&
@@ -106,7 +110,7 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge
               <div className="flex items-center gap-1 md:gap-2">
                 <Phone className="w-3 h-3 md:w-4 md:h-4 shrink-0" />
                 <div className="flex flex-col">
-                  <span>{client.telefone}</span>
+                  <span>{formattedPhone}</span>
                   {phoneCountryLabel && (
                     <span className="text-[10px] md:text-xs text-muted-foreground">
                       {phoneCountryLabel}
@@ -128,8 +132,11 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge
               className="w-9 h-9 md:w-10 md:h-10 rounded-full bg-success hover:bg-success/90 text-success-foreground p-0 min-h-0 min-w-0"
               onClick={(e) => {
                 e.stopPropagation()
-                const phone = client.telefone.replace(/\D/g, '')
-                onWhatsAppClick(phone)
+                // O telefone já está salvo apenas com dígitos, mas garantimos limpeza
+                const phone = (client.telefone || '').replace(/\D/g, '')
+                if (phone) {
+                  onWhatsAppClick(phone)
+                }
               }}
               title="Enviar mensagem no WhatsApp"
             >

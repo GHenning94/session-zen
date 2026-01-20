@@ -190,9 +190,14 @@ export const formatInternationalPhone = (value: string, countryCode: string): st
   return groupDigits(generic, [3, 3, 3, 3, 3]);
 };
 
+/** Normaliza telefone removendo formatação, retornando apenas dígitos */
+export const normalizePhoneDigits = (value: string): string => {
+  return value.replace(/\D/g, "");
+};
+
 /** Validação de telefone baseada em padrões amplamente usados (E.164 simplificado) */
 export const isValidInternationalPhone = (value: string, countryCode: string): boolean => {
-  const numbers = value.replace(/\D/g, "");
+  const numbers = normalizePhoneDigits(value);
 
   if (!numbers) return false;
 

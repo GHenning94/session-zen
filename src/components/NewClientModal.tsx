@@ -20,7 +20,8 @@ import {
   DEFAULT_PHONE_COUNTRY,
   formatInternationalPhone,
   isValidInternationalPhone,
-  getPhonePlaceholder
+  getPhonePlaceholder,
+  normalizePhoneDigits
 } from "@/utils/inputMasks"
 
 interface NewClientModalProps {
@@ -93,10 +94,19 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
       
       // If editing client, populate form
       if (editingClient) {
+        const savedCountryCode = editingClient.telefone_codigo_pais || DEFAULT_PHONE_COUNTRY
+        setPhoneCountryCode(savedCountryCode)
+        
+        // Formatar telefones salvos (apenas dígitos) para exibição
+        const formatPhoneForDisplay = (phone: string | null) => {
+          if (!phone) return ""
+          return formatInternationalPhone(phone, savedCountryCode)
+        }
+        
         setNewClient({
           name: editingClient.nome || "",
           email: editingClient.email || "",
-          phone: editingClient.telefone || "",
+          phone: formatPhoneForDisplay(editingClient.telefone),
           profession: editingClient.profissao || "",
           age: "",
           notes: editingClient.dados_clinicos || "",
@@ -110,13 +120,13 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           tratamento: editingClient.tratamento || "",
           medicamentos: Array.isArray(editingClient.medicamentos) ? editingClient.medicamentos : [],
           contatoEmergencia1Nome: editingClient.contato_emergencia_1_nome || "",
-          contatoEmergencia1Telefone: editingClient.contato_emergencia_1_telefone || "",
+          contatoEmergencia1Telefone: formatPhoneForDisplay(editingClient.contato_emergencia_1_telefone),
           contatoEmergencia2Nome: editingClient.contato_emergencia_2_nome || "",
-          contatoEmergencia2Telefone: editingClient.contato_emergencia_2_telefone || "",
+          contatoEmergencia2Telefone: formatPhoneForDisplay(editingClient.contato_emergencia_2_telefone),
           nomePai: editingClient.nome_pai || "",
-          telefonePai: editingClient.telefone_pai || "",
+          telefonePai: formatPhoneForDisplay(editingClient.telefone_pai),
           nomeMae: editingClient.nome_mae || "",
-          telefoneMae: editingClient.telefone_mae || "",
+          telefoneMae: formatPhoneForDisplay(editingClient.telefone_mae),
           ehCriancaAdolescente: editingClient.eh_crianca_adolescente || false,
           emergenciaIgualPais: editingClient.emergencia_igual_pais || false
         })
@@ -229,7 +239,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         user_id: user.id,
         nome: newClient.name,
         email: newClient.email || null,
-        telefone: newClient.phone,
+        telefone: normalizePhoneDigits(newClient.phone),
         telefone_codigo_pais: phoneCountryCode,
         avatar_url: newClient.avatarUrl || null,
         cpf: newClient.cpf || null,
@@ -242,13 +252,13 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         tratamento: newClient.tratamento || null,
         medicamentos: (Array.isArray(newClient.medicamentos) && newClient.medicamentos.length > 0) ? newClient.medicamentos : null,
         contato_emergencia_1_nome: newClient.contatoEmergencia1Nome || null,
-        contato_emergencia_1_telefone: newClient.contatoEmergencia1Telefone || null,
+        contato_emergencia_1_telefone: newClient.contatoEmergencia1Telefone ? normalizePhoneDigits(newClient.contatoEmergencia1Telefone) : null,
         contato_emergencia_2_nome: newClient.contatoEmergencia2Nome || null,
-        contato_emergencia_2_telefone: newClient.contatoEmergencia2Telefone || null,
+        contato_emergencia_2_telefone: newClient.contatoEmergencia2Telefone ? normalizePhoneDigits(newClient.contatoEmergencia2Telefone) : null,
         nome_pai: newClient.nomePai || null,
-        telefone_pai: newClient.telefonePai || null,
+        telefone_pai: newClient.telefonePai ? normalizePhoneDigits(newClient.telefonePai) : null,
         nome_mae: newClient.nomeMae || null,
-        telefone_mae: newClient.telefoneMae || null,
+        telefone_mae: newClient.telefoneMae ? normalizePhoneDigits(newClient.telefoneMae) : null,
         eh_crianca_adolescente: newClient.ehCriancaAdolescente,
         emergencia_igual_pais: newClient.emergenciaIgualPais,
         dados_clinicos: newClient.notes ? `Observações: ${newClient.notes}` : null
