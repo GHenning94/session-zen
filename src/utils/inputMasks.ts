@@ -27,6 +27,131 @@ export const PHONE_COUNTRIES: PhoneCountryConfig[] = [
 
 export const DEFAULT_PHONE_COUNTRY = "+55";
 
+// Regras detalhadas de comprimento e formatação por país (somente número nacional, sem código do país)
+interface CountryPhoneRule {
+  minDigits: number;
+  maxDigits: number;
+  format: (digits: string) => string;
+}
+
+const groupDigits = (digits: string, groups: number[]): string => {
+  const parts: string[] = [];
+  let index = 0;
+  for (const size of groups) {
+    if (index >= digits.length) break;
+    const end = Math.min(index + size, digits.length);
+    parts.push(digits.slice(index, end));
+    index = end;
+  }
+  return parts.join(" ");
+};
+
+const COUNTRY_PHONE_RULES: Record<string, CountryPhoneRule> = {
+  "+351": {
+    // Portugal: 9 dígitos (ex.: 912 345 678 ou 212 345 678)
+    minDigits: 9,
+    maxDigits: 9,
+    format: (d) => groupDigits(d, [3, 3, 3]),
+  },
+  "+1": {
+    // EUA / Canadá: 10 dígitos (ex.: (415) 555-1234)
+    minDigits: 10,
+    maxDigits: 10,
+    format: (d) => {
+      if (d.length === 0) return "";
+      if (d.length <= 3) return `(${d}`;
+      if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+      return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+    },
+  },
+  "+44": {
+    // Reino Unido: 10–11 dígitos (varia por região)
+    minDigits: 10,
+    maxDigits: 11,
+    format: (d) => {
+      // Ex.: 20 7123 4567, 161 234 5678
+      if (d.length <= 4) return d;
+      if (d.length <= 7) return groupDigits(d, [4, d.length - 4]);
+      return groupDigits(d, [2, 4, d.length - 6]);
+    },
+  },
+  "+34": {
+    // Espanha: 9 dígitos (ex.: 612 34 56 78)
+    minDigits: 9,
+    maxDigits: 9,
+    format: (d) => groupDigits(d, [3, 2, 2, 2]),
+  },
+  "+39": {
+    // Itália: geralmente 9–10 dígitos
+    minDigits: 9,
+    maxDigits: 10,
+    format: (d) => {
+      if (d.length <= 3) return d;
+      if (d.length <= 6) return groupDigits(d, [3, d.length - 3]);
+      return groupDigits(d, [3, 3, d.length - 6]);
+    },
+  },
+  "+33": {
+    // França: 9–10 dígitos (ex.: 06 12 34 56 78)
+    minDigits: 9,
+    maxDigits: 10,
+    format: (d) => {
+      if (d.length <= 2) return d;
+      return groupDigits(d, [2, 2, 2, 2, d.length - 8]);
+    },
+  },
+  "+49": {
+    // Alemanha: comprimento variável (7–13 dígitos)
+    minDigits: 7,
+    maxDigits: 13,
+    format: (d) => {
+      if (d.length <= 3) return d;
+      if (d.length <= 7) return groupDigits(d, [3, d.length - 3]);
+      return groupDigits(d, [3, 3, d.length - 6]);
+    },
+  },
+  "+41": {
+    // Suíça: 9 dígitos (ex.: 079 123 45 67)
+    minDigits: 9,
+    maxDigits: 9,
+    format: (d) => groupDigits(d, [3, 3, 2, 2]),
+  },
+  "+972": {
+    // Israel: 8–9 dígitos
+    minDigits: 8,
+    maxDigits: 9,
+    format: (d) => {
+      if (d.length <= 2) return d;
+      if (d.length <= 5) return groupDigits(d, [2, d.length - 2]);
+      return groupDigits(d, [2, 3, d.length - 5]);
+    },
+  },
+  "+54": {
+    // Argentina: 10 dígitos (ex.: 11 2345 6789)
+    minDigits: 10,
+    maxDigits: 10,
+    format: (d) => groupDigits(d, [2, 4, 4]),
+  },
+  "+56": {
+    // Chile: 9 dígitos (ex.: 9 6123 4567)
+    minDigits: 9,
+    maxDigits: 9,
+    format: (d) => groupDigits(d, [1, 4, 4]),
+  },
+  "+57": {
+    // Colômbia: 10 dígitos
+    minDigits: 10,
+    maxDigits: 10,
+    format: (d) => groupDigits(d, [3, 3, 4]),
+  },
+  "+52": {
+    // México: 10 dígitos
+    minDigits: 10,
+    maxDigits: 10,
+    format: (d) => groupDigits(d, [2, 4, 4]),
+  },
+};
+
 /** Placeholder padrão de acordo com o país selecionado */
 export const getPhonePlaceholder = (countryCode: string): string => {
   const cfg = PHONE_COUNTRIES.find(c => c.code === countryCode);
@@ -36,10 +161,11 @@ export const getPhonePlaceholder = (countryCode: string): string => {
 
 /** Formatação de telefone considerando país (sem incluir o código do país no campo) */
 export const formatInternationalPhone = (value: string, countryCode: string): string => {
-  const numbers = value.replace(/\D/g, "");
+  const digits = value.replace(/\D/g, "");
 
   // Brasil: manter padrão com/sem dígito 9
   if (countryCode === "+55") {
+    const numbers = digits.slice(0, 11);
     if (numbers.length === 0) return "";
     if (numbers.length <= 2) return `(${numbers}`;
     if (numbers.length <= 6) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
@@ -51,12 +177,17 @@ export const formatInternationalPhone = (value: string, countryCode: string): st
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
   }
 
-  // Para os demais países, não aplicar máscara rígida: apenas limpar caracteres estranhos
-  // e manter um único espaço entre blocos para não atrapalhar cópia/cola.
-  return value
-    .replace(/[^\d\s]/g, "")
-    .replace(/\s+/g, " ")
-    .trimStart();
+  const rule = COUNTRY_PHONE_RULES[countryCode];
+  if (rule) {
+    const limited = digits.slice(0, rule.maxDigits);
+    if (!limited) return "";
+    return rule.format(limited);
+  }
+
+  // Fallback genérico (país não configurado): apenas agrupar em blocos de 3–3–3...
+  const generic = digits.slice(0, 15);
+  if (!generic) return "";
+  return groupDigits(generic, [3, 3, 3, 3, 3]);
 };
 
 /** Validação de telefone baseada em padrões amplamente usados (E.164 simplificado) */
@@ -70,7 +201,12 @@ export const isValidInternationalPhone = (value: string, countryCode: string): b
     return numbers.length === 10 || numbers.length === 11;
   }
 
-  // Demais países: regra genérica 6–15 dígitos (E.164)
+  const rule = COUNTRY_PHONE_RULES[countryCode];
+  if (rule) {
+    return numbers.length >= rule.minDigits && numbers.length <= rule.maxDigits;
+  }
+
+  // Demais países (não configurados): regra genérica 6–15 dígitos (E.164)
   return numbers.length >= 6 && numbers.length <= 15;
 };
 
