@@ -32,6 +32,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
   const [isLoading, setIsLoading] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [isQuickRegistration, setIsQuickRegistration] = useState(true)
+  const [phoneCountryCode, setPhoneCountryCode] = useState("+55")
   const [newClient, setNewClient] = useState({
     name: "",
     email: "",
@@ -61,29 +62,69 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
   })
   const [currentMedicamento, setCurrentMedicamento] = useState("")
 
-  // Phone formatting function
+  // Phone formatting function (Brasil + formato genérico para outros países)
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, '')
     
-    if (numbers.length === 0) {
-      return ''
-    } else if (numbers.length <= 2) {
-      return `(${numbers}`
-    } else if (numbers.length <= 7) {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
-    } else {
-      return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+    // Formato brasileiro padrão
+    if (phoneCountryCode === "+55") {
+      if (numbers.length === 0) {
+        return ''
+      } else if (numbers.length <= 2) {
+        return `(${numbers}`
+      } else if (numbers.length <= 7) {
+        return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`
+      } else if (numbers.length <= 10) {
+        // (DD) XXXX-XXXX
+        return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 6)}-${numbers.slice(6, 10)}`
+      } else {
+        // (DD) 9XXXX-XXXX
+        return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`
+      }
     }
+
+    // Para outros países, não aplicar máscara rígida;
+    // apenas deixar o usuário digitar livremente (mantendo apenas um espaço entre blocos)
+    return value.replace(/\s+/g, ' ')
   }
 
   const isValidPhone = (phone: string) => {
     const numbers = phone.replace(/\D/g, '')
-    return numbers.length === 11
+
+    // Brasil: 11 dígitos (DDD + 9 dígitos)
+    if (phoneCountryCode === "+55") {
+      // Aceitar DDD + 8 dígitos (fixo) OU DDD + 9 dígitos (celular com 9)
+      return numbers.length === 10 || numbers.length === 11
+    }
+
+    // Outros países: aceitar entre 6 e 15 dígitos (padrão internacional)
+    return numbers.length >= 6 && numbers.length <= 15
   }
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const formatted = formatPhone(e.target.value)
     setNewClient({...newClient, phone: formatted})
+  }
+
+  const getPhonePlaceholder = () => {
+    switch (phoneCountryCode) {
+      case "+55":
+        return "(11) 3456-7890 ou (11) 98765-4321"
+      case "+351":
+        return "912 345 678"
+      case "+1":
+        return "+1 415 555 1234"
+      case "+44":
+        return "+44 20 7123 4567"
+      case "+33":
+        return "06 12 34 56 78"
+      case "+49":
+        return "0151 23456789"
+      case "+34":
+        return "612 34 56 78"
+      default:
+        return "+00 0000 000 000"
+    }
   }
 
   const loadClients = async () => {
@@ -219,7 +260,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     if (!isValidPhone(newClient.phone)) {
       toast({
         title: "Erro",
-        description: "Digite um telefone válido no formato (11) 98919-6789",
+        description: "Digite um telefone válido de acordo com o país selecionado",
         variant: "destructive",
       })
       return
@@ -414,20 +455,32 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                   <div className="grid gap-2">
                     <Label htmlFor="phone">Telefone *</Label>
                     <div className="flex gap-2">
-                      <Select defaultValue="+55">
+                      <Select 
+                        value={phoneCountryCode}
+                        onValueChange={setPhoneCountryCode}
+                      >
                         <SelectTrigger className="w-[80px] sm:w-[100px]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="+55">🇧🇷 +55</SelectItem>
+                          <SelectItem value="+55">🇧🇷 +55 Brasil</SelectItem>
+                          <SelectItem value="+351">🇵🇹 +351 Portugal</SelectItem>
+                          <SelectItem value="+1">🇺🇸 +1 EUA/Canadá</SelectItem>
+                          <SelectItem value="+44">🇬🇧 +44 Reino Unido</SelectItem>
+                          <SelectItem value="+33">🇫🇷 +33 França</SelectItem>
+                          <SelectItem value="+49">🇩🇪 +49 Alemanha</SelectItem>
+                          <SelectItem value="+34">🇪🇸 +34 Espanha</SelectItem>
+                          <SelectItem value="+39">🇮🇹 +39 Itália</SelectItem>
+                          <SelectItem value="+41">🇨🇭 +41 Suíça</SelectItem>
+                          <SelectItem value="+972">🇮🇱 +972 Israel</SelectItem>
                         </SelectContent>
                       </Select>
                       <Input 
                         id="phone" 
-                        placeholder="(11) 98765-4321"
+                        placeholder={getPhonePlaceholder()}
                         value={newClient.phone}
                         onChange={handlePhoneChange}
-                        maxLength={15}
+                        maxLength={25}
                         disabled={!canAddMore}
                         className="flex-1"
                       />
