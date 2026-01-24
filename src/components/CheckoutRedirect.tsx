@@ -19,6 +19,34 @@ export const CheckoutRedirect = () => {
   useEffect(() => {
     const processCheckout = async () => {
       try {
+        // ✅ Verificar se o usuário voltou do Stripe (pode estar na URL com payment=success)
+        const urlParams = new URLSearchParams(window.location.search)
+        const paymentStatus = urlParams.get('payment')
+        
+        if (paymentStatus === 'success') {
+          console.log('[CheckoutRedirect] ✅ Retorno de pagamento bem-sucedido, redirecionando para dashboard')
+          // Limpar flags de checkout
+          localStorage.removeItem('stripe_checkout_active')
+          sessionStorage.removeItem('stripe_checkout_active')
+          // Redirecionar para dashboard que vai processar o pagamento
+          navigate('/dashboard?payment=success', { replace: true })
+          return
+        }
+        
+        if (paymentStatus === 'cancelled') {
+          console.log('[CheckoutRedirect] ❌ Checkout cancelado pelo usuário')
+          // Limpar flags
+          localStorage.removeItem('stripe_checkout_active')
+          sessionStorage.removeItem('stripe_checkout_active')
+          localStorage.removeItem('pending_plan')
+          localStorage.removeItem('pending_billing')
+          sessionStorage.removeItem('pending_plan_backup')
+          sessionStorage.removeItem('pending_billing_backup')
+          // Redirecionar para dashboard
+          navigate('/dashboard?payment=cancelled', { replace: true })
+          return
+        }
+        
         // ✅ Verificar se há plano pendente (localStorage ou backup no sessionStorage)
         // Verificar múltiplas fontes para garantir que o plano não seja perdido
         const pendingPlan = localStorage.getItem('pending_plan') || 
@@ -43,6 +71,7 @@ export const CheckoutRedirect = () => {
           sessionStorage.removeItem('pending_billing_backup');
           sessionStorage.removeItem('pending_checkout_plan');
           
+          setIsProcessing(false)
           navigate('/dashboard', { replace: true })
           return
         }
@@ -61,6 +90,7 @@ export const CheckoutRedirect = () => {
         
         if (!user) {
           console.error('[CheckoutRedirect] Usuário não autenticado')
+          setIsProcessing(false)
           navigate('/login', { replace: true })
           return
         }
@@ -86,6 +116,7 @@ export const CheckoutRedirect = () => {
           toast.error('Plano selecionado inválido')
           localStorage.removeItem('pending_plan')
           localStorage.removeItem('pending_billing')
+          setIsProcessing(false)
           navigate('/dashboard', { replace: true })
           return
         }
@@ -146,6 +177,14 @@ export const CheckoutRedirect = () => {
         localStorage.setItem('stripe_checkout_active', 'true')
         sessionStorage.setItem('stripe_checkout_active', 'true')
         
+        // ✅ IMPORTANTE: Salvar o plano para o modal de boas-vindas ANTES de redirecionar
+        // O webhook do Stripe vai processar o pagamento e atualizar o plano
+        // Mas precisamos do plano para mostrar o modal de boas-vindas
+        localStorage.setItem('pending_checkout_plan', pendingPlan)
+        sessionStorage.setItem('pending_checkout_plan', pendingPlan)
+        
+        console.log('[CheckoutRedirect] 🚀 Redirecionando para Stripe checkout...')
+        
         // Redirecionar para checkout
         window.location.href = checkoutUrl
       } catch (error: any) {
@@ -157,17 +196,29 @@ export const CheckoutRedirect = () => {
         localStorage.removeItem('pending_billing')
         sessionStorage.removeItem('pending_plan_backup')
         sessionStorage.removeItem('pending_billing_backup')
+        localStorage.removeItem('stripe_checkout_active')
+        sessionStorage.removeItem('stripe_checkout_active')
         
+        setIsProcessing(false)
         navigate('/dashboard', { replace: true })
+      } finally {
+        // ✅ Garantir que o loading sempre termina
+        setIsProcessing(false)
       }
     }
 
     processCheckout()
   }, [navigate])
 
-  return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <LoadingState text="Preparando checkout..." />
-    </div>
-  )
+  // ✅ Se ainda estiver processando, mostrar loading
+  if (isProcessing) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <LoadingState text="Preparando checkout..." />
+      </div>
+    )
+  }
+
+  // ✅ Se não estiver processando, não renderizar nada (já redirecionou)
+  return null
 }

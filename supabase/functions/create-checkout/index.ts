@@ -176,7 +176,8 @@ serve(async (req) => {
       customer: customer.id,
       line_items: [{ price: priceId, quantity: 1 }],
       mode: "subscription",
-      success_url: `${origin}/dashboard?payment=success`,
+      // ✅ Incluir plano na URL de sucesso para facilitar o processamento
+      success_url: `${origin}/dashboard?payment=success&upgrade_plan=${priceInfo.plan}`,
       cancel_url: `${origin}/dashboard?payment=cancelled`,
       metadata: sessionMetadata,
       locale: 'pt-BR',

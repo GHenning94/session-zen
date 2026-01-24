@@ -197,13 +197,14 @@ const Dashboard = () => {
         localStorage.removeItem('show_upgrade_welcome')
         sessionStorage.removeItem('show_upgrade_welcome')
         
-        // Usar requestAnimationFrame para garantir que o DOM está pronto
-        requestAnimationFrame(() => {
+        // ✅ Aguardar um pouco para garantir que o dashboard carregou completamente
+        // Isso evita que o modal apareça antes dos dados estarem prontos
+        setTimeout(() => {
           setUpgradeWelcomeModal({
             open: true,
             newPlan: showWelcome as 'pro' | 'premium'
           })
-        })
+        }, 300)
         return true // Modal encontrado
       }
       return false // Modal não encontrado
@@ -244,11 +245,14 @@ const Dashboard = () => {
     const upgradePlanFromPayment = searchParams.get('upgrade_plan')
     
     if (paymentStatus === 'success' && user) {
-      // If this was an upgrade proration payment, store the plan for welcome modal immediately
-      if (upgradePlanFromPayment) {
-        console.log('[Dashboard] 🎯 Upgrade payment detected for plan:', upgradePlanFromPayment)
-        // Usar localStorage para persistir
-        localStorage.setItem('pending_tier_upgrade', upgradePlanFromPayment)
+      // ✅ Se há plano na URL, salvar imediatamente para o modal de boas-vindas
+      if (upgradePlanFromPayment && (upgradePlanFromPayment === 'pro' || upgradePlanFromPayment === 'premium')) {
+        console.log('[Dashboard] 🎯 Payment success detected for plan:', upgradePlanFromPayment)
+        // Salvar em múltiplas fontes para garantir
+        localStorage.setItem('pending_checkout_plan', upgradePlanFromPayment)
+        sessionStorage.setItem('pending_checkout_plan', upgradePlanFromPayment)
+        localStorage.setItem('show_upgrade_welcome', upgradePlanFromPayment)
+        sessionStorage.setItem('show_upgrade_welcome', upgradePlanFromPayment)
       }
       handlePaymentSuccess()
     } else if (paymentStatus === 'cancelled') {
@@ -316,7 +320,7 @@ const Dashboard = () => {
     console.log('[Dashboard] 📝 Target plan for welcome modal:', { pendingCheckoutPlan, pendingTierUpgrade, targetPlan, previousPlan })
     
     let attempts = 0
-    const maxAttempts = 20 // Aumentar tentativas para dar mais tempo ao webhook
+    const maxAttempts = 10 // Reduzir tentativas - webhook geralmente processa em 2-5 segundos
     
     // ✅ FUNÇÃO PARA SALVAR FEATURES DESBLOQUEADAS ANTES DO RELOAD - DEFINIDA PRIMEIRO
     const saveUnlockedFeaturesBeforeReload = (fromPlan: string, toPlan: string) => {
@@ -431,8 +435,12 @@ const Dashboard = () => {
             sessionStorage.removeItem('pending_tier_upgrade')
             localStorage.removeItem('pending_previous_plan')
             sessionStorage.removeItem('pending_previous_plan')
-            // ✅ show_upgrade_welcome já foi salvo no localStorage no início, mas garantir
+            
+            // ✅ CRÍTICO: Garantir que show_upgrade_welcome está salvo em AMBOS os storages
+            // Isso garante que o modal será mostrado após o reload
             localStorage.setItem('show_upgrade_welcome', planForWelcome)
+            sessionStorage.setItem('show_upgrade_welcome', planForWelcome)
+            console.log('[Dashboard] 🎊 Saved show_upgrade_welcome to both storages:', planForWelcome)
           }
           
           // Clear URL params
@@ -455,8 +463,8 @@ const Dashboard = () => {
       }
     }
     
-    // Initial delay to allow Stripe webhook to process
-    await new Promise(resolve => setTimeout(resolve, 2500))
+    // Initial delay to allow Stripe webhook to process (reduzido para resposta mais rápida)
+    await new Promise(resolve => setTimeout(resolve, 2000))
     
     // Poll with increasing intervals
     const poll = async () => {
@@ -467,33 +475,42 @@ const Dashboard = () => {
       }
       
       if (attempts >= maxAttempts) {
-        // Max attempts reached - still try to show success
-        console.log('[Dashboard] ⚠️ Max attempts reached, showing success anyway')
+        // Max attempts reached - ainda tentar mostrar sucesso
+        console.log('[Dashboard] ⚠️ Max attempts reached, mostrando sucesso mesmo assim')
         
-        // Se havia pending plan, ainda mostrar o modal e salvar features
+        // ✅ CRÍTICO: Se havia pending plan, garantir que o modal será mostrado
         if (targetPlan && (targetPlan === 'pro' || targetPlan === 'premium')) {
-          // ✅ CRÍTICO: Salvar features desbloqueadas mesmo no fallback
+          // Salvar features desbloqueadas
           saveUnlockedFeaturesBeforeReload(previousPlan, targetPlan)
           
-          sessionStorage.removeItem('pending_checkout_plan')
-          sessionStorage.removeItem('pending_tier_upgrade')
-          sessionStorage.removeItem('pending_previous_plan')
+          // ✅ Garantir que show_upgrade_welcome está salvo em AMBOS os storages
+          localStorage.setItem('show_upgrade_welcome', targetPlan)
           sessionStorage.setItem('show_upgrade_welcome', targetPlan)
+          
+          console.log('[Dashboard] 🎊 Modal de boas-vindas será mostrado após reload para:', targetPlan)
         }
+        
+        // Limpar pendentes
+        localStorage.removeItem('pending_checkout_plan')
+        sessionStorage.removeItem('pending_checkout_plan')
+        localStorage.removeItem('pending_tier_upgrade')
+        sessionStorage.removeItem('pending_tier_upgrade')
+        localStorage.removeItem('pending_previous_plan')
+        sessionStorage.removeItem('pending_previous_plan')
         
         setIsLoading(false)
         setIsProcessingPayment(false)
         searchParams.delete('payment')
         setSearchParams(searchParams, { replace: true })
-        toast.success('Plano atualizado! Carregando dados...')
+        toast.success('Plano ativado! Carregando dados...')
         
-        // Recarregar para pegar os dados atualizados
+        // Recarregar para pegar os dados atualizados e mostrar modal
         window.location.href = '/dashboard'
         return
       }
       
-      // Wait and try again (intervalos progressivos)
-      const waitTime = Math.min(1500 + (attempts * 300), 4000)
+      // Wait and try again (intervalos mais rápidos)
+      const waitTime = Math.min(1000 + (attempts * 200), 3000)
       await new Promise(resolve => setTimeout(resolve, waitTime))
       await poll()
     }
