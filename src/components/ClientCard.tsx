@@ -85,6 +85,16 @@ export const ClientCard = ({ client, onClick, onWhatsAppClick, showBirthdayBadge
               >
                 {client.ativo !== false ? "Ativo" : "Inativo"}
               </Badge>
+              {client.tipo_atendimento && (
+                <Badge 
+                  variant="outline"
+                  className="shrink-0"
+                >
+                  {client.tipo_atendimento === 'individual' ? 'Individual' : 
+                   client.tipo_atendimento === 'casal' ? 'Casal' : 
+                   client.tipo_atendimento === 'familia' ? 'Família' : client.tipo_atendimento}
+                </Badge>
+              )}
               {hasBirthday && (
                 <Badge 
                   variant="outline"

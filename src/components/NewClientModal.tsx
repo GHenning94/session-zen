@@ -66,7 +66,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     nomeMae: "",
     telefoneMae: "",
     ehCriancaAdolescente: false,
-    emergenciaIgualPais: false
+    emergenciaIgualPais: false,
+    tipoAtendimento: ""
   })
   const [currentMedicamento, setCurrentMedicamento] = useState("")
 
@@ -139,7 +140,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
           nomeMae: editingClient.nome_mae || "",
           telefoneMae: formatPhoneForDisplay(editingClient.telefone_mae),
           ehCriancaAdolescente: editingClient.eh_crianca_adolescente || false,
-          emergenciaIgualPais: editingClient.emergencia_igual_pais || false
+          emergenciaIgualPais: editingClient.emergencia_igual_pais || false,
+          tipoAtendimento: editingClient.tipo_atendimento || ""
         })
         setCurrentMedicamento("")
       } else {
@@ -195,7 +197,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
       nomeMae: "",
       telefoneMae: "",
       ehCriancaAdolescente: false,
-      emergenciaIgualPais: false
+      emergenciaIgualPais: false,
+      tipoAtendimento: ""
     })
     setCurrentMedicamento("")
     setIsQuickRegistration(true)
@@ -272,7 +275,8 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
         eh_crianca_adolescente: newClient.ehCriancaAdolescente,
         emergencia_igual_pais: newClient.emergenciaIgualPais,
         dados_clinicos: newClient.notes ? `Observações: ${newClient.notes}` : null,
-        telefone_codigo_pais: phoneCountryCode
+        telefone_codigo_pais: phoneCountryCode,
+        tipo_atendimento: newClient.tipoAtendimento || null
       }
 
       // Encrypt sensitive fields before saving
@@ -440,6 +444,24 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                       onChange={(e) => setNewClient({...newClient, name: e.target.value})}
                       disabled={!canAddMore}
                     />
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="tipo-atendimento">Tipo de Atendimento</Label>
+                    <Select 
+                      value={newClient.tipoAtendimento}
+                      onValueChange={(value) => setNewClient({...newClient, tipoAtendimento: value})}
+                      disabled={!canAddMore}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione o tipo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="casal">Casal</SelectItem>
+                        <SelectItem value="familia">Família</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="grid gap-2">

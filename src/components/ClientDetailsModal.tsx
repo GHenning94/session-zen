@@ -101,6 +101,13 @@ export const ClientDetailsModal = ({
                 >
                   {client.ativo !== false ? "Ativo" : "Inativo"}
                 </Badge>
+                {client.tipo_atendimento && (
+                  <Badge variant="outline">
+                    {client.tipo_atendimento === 'individual' ? 'Individual' : 
+                     client.tipo_atendimento === 'casal' ? 'Casal' : 
+                     client.tipo_atendimento === 'familia' ? 'Família' : client.tipo_atendimento}
+                  </Badge>
+                )}
                 {isBirthdayThisMonth() && (
                   <Badge className="bg-pink-500/10 text-pink-600 hover:bg-pink-500/20 flex items-center gap-1">
                     <Cake className="w-3 h-3" />

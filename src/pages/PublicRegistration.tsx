@@ -47,6 +47,7 @@ interface ClientData {
   pais: string;
   emergencia_igual_pais: boolean;
   avatar_url: string;
+  tipo_atendimento?: string;
 }
 
 const PublicRegistration = () => {
@@ -144,6 +145,7 @@ const PublicRegistration = () => {
     pais: "",
     emergencia_igual_pais: false,
     avatar_url: "",
+    tipo_atendimento: "",
   })
 
   useEffect(() => {
@@ -255,6 +257,7 @@ const PublicRegistration = () => {
       if (formData.genero?.trim()) sanitizedData.genero = formData.genero.trim()
       if (formData.plano_saude?.trim()) sanitizedData.plano_saude = formData.plano_saude.trim()
       if (formData.tratamento?.trim()) sanitizedData.tratamento = formData.tratamento.trim()
+      if (formData.tipo_atendimento?.trim()) sanitizedData.tipo_atendimento = formData.tipo_atendimento.trim()
       if (formData.eh_crianca_adolescente !== undefined) sanitizedData.eh_crianca_adolescente = formData.eh_crianca_adolescente
       if (formData.nome_pai?.trim()) sanitizedData.nome_pai = formData.nome_pai.trim()
       if (formData.telefone_pai?.trim()) sanitizedData.telefone_pai = normalizePhoneDigits(formData.telefone_pai)
@@ -479,6 +482,24 @@ const PublicRegistration = () => {
                     />
                   </div>
                 </div>
+              </div>
+
+              {/* Tipo de Atendimento - SEMPRE VISÍVEL */}
+              <div className="grid gap-2">
+                <Label htmlFor="tipo_atendimento" className="text-gray-900">Tipo de Atendimento</Label>
+                <Select 
+                  value={formData.tipo_atendimento || ""}
+                  onValueChange={(value) => handleInputChange('tipo_atendimento', value)}
+                >
+                  <SelectTrigger className="bg-white text-gray-900">
+                    <SelectValue placeholder="Selecione o tipo" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="individual">Individual</SelectItem>
+                    <SelectItem value="casal">Casal</SelectItem>
+                    <SelectItem value="familia">Família</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* CAMPOS COMPLETOS - Email e Data Nascimento */}

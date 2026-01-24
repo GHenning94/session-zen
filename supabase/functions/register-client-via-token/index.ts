@@ -36,6 +36,7 @@ const clientRegistrationSchema = z.object({
   
   tratamento: z.string().trim().max(1000).optional().or(z.literal('')),
   pais: z.string().trim().max(100).optional().or(z.literal('')),
+  tipo_atendimento: z.string().trim().max(20).optional().or(z.literal('')),
   eh_crianca_adolescente: z.boolean().optional(),
   emergencia_igual_pais: z.boolean().optional(),
   

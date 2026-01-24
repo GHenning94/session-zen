@@ -290,6 +290,7 @@ export type Database = {
           telefone: string | null
           telefone_mae: string | null
           telefone_pai: string | null
+          tipo_atendimento: string | null
           tratamento: string | null
           updated_at: string | null
           user_id: string
@@ -323,6 +324,7 @@ export type Database = {
           telefone?: string | null
           telefone_mae?: string | null
           telefone_pai?: string | null
+          tipo_atendimento?: string | null
           tratamento?: string | null
           updated_at?: string | null
           user_id: string
@@ -356,6 +358,7 @@ export type Database = {
           telefone?: string | null
           telefone_mae?: string | null
           telefone_pai?: string | null
+          tipo_atendimento?: string | null
           tratamento?: string | null
           updated_at?: string | null
           user_id?: string
