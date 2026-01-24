@@ -3150,8 +3150,15 @@ const Dashboard = () => {
                       size="md"
                     />
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <p className="font-medium truncate">{client.nome}</p>
+                          {client.tipo_atendimento && (
+                            <Badge className="bg-primary text-primary-foreground text-[10px] px-1.5 py-0.5 shrink-0">
+                              {client.tipo_atendimento === 'individual' ? 'Individual' : 
+                               client.tipo_atendimento === 'casal' ? 'Casal' : 
+                               client.tipo_atendimento === 'familia' ? 'Família' : client.tipo_atendimento}
+                            </Badge>
+                          )}
                           <TooltipProvider>
                             {client.medicamentos && client.medicamentos.length > 0 && (
                               <Tooltip>
