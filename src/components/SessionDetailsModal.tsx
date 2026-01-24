@@ -100,8 +100,15 @@ export const SessionDetailsModal = ({
               <User className={`w-8 h-8 text-muted-foreground ${avatarUrl ? 'hidden' : ''}`} />
             </div>
             <div className="flex-1">
-              <DialogTitle className="text-2xl flex items-center gap-2">
+              <DialogTitle className="text-2xl flex items-center gap-2 flex-wrap">
                 {session.clients?.nome || 'Cliente não encontrado'}
+                {session.clients?.tipo_atendimento && (
+                  <Badge className="bg-primary text-primary-foreground">
+                    {session.clients.tipo_atendimento === 'individual' ? 'Individual' : 
+                     session.clients.tipo_atendimento === 'casal' ? 'Casal' : 
+                     session.clients.tipo_atendimento === 'familia' ? 'Família' : session.clients.tipo_atendimento}
+                  </Badge>
+                )}
                 {session.clients?.medicamentos && session.clients.medicamentos.length > 0 && (
                   <Pill className="w-5 h-5 text-pink-500" />
                 )}

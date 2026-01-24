@@ -232,7 +232,7 @@ export default function Sessoes() {
             id, data, horario, status, valor, anotacoes, client_id, package_id, recurring_session_id,
             metodo_pagamento, session_type, google_event_id, google_sync_type, created_at, updated_at,
             unlinked_from_recurring, user_id,
-            clients (nome, ativo, avatar_url, medicamentos, eh_crianca_adolescente),
+            clients (nome, ativo, avatar_url, medicamentos, eh_crianca_adolescente, tipo_atendimento),
             packages:package_id (nome, metodo_pagamento),
             recurring_sessions:recurring_session_id (metodo_pagamento, billing_type)
           `)

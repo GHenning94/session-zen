@@ -102,7 +102,7 @@ export const ClientDetailsModal = ({
                   {client.ativo !== false ? "Ativo" : "Inativo"}
                 </Badge>
                 {client.tipo_atendimento && (
-                  <Badge variant="outline">
+                  <Badge className="bg-primary text-primary-foreground">
                     {client.tipo_atendimento === 'individual' ? 'Individual' : 
                      client.tipo_atendimento === 'casal' ? 'Casal' : 
                      client.tipo_atendimento === 'familia' ? 'Família' : client.tipo_atendimento}
@@ -115,10 +115,10 @@ export const ClientDetailsModal = ({
                   </Badge>
                 )}
                 {hasMedications && (
-                  <Badge variant="outline" className="flex items-center gap-1">
-                    <Pill className="w-3 h-3" />
-                    Medicamentos
-                  </Badge>
+                  <Pill className="w-5 h-5 text-pink-500" />
+                )}
+                {client.eh_crianca_adolescente && (
+                  <Baby className="w-5 h-5 text-blue-500" />
                 )}
               </div>
             </div>

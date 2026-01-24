@@ -57,6 +57,10 @@ export const PaymentDetailsModal = ({
   
   if (!payment) return null
 
+  // Suportar tanto payment.client (string) quanto payment.clients (objeto)
+  const clientName = typeof payment.client === 'string' ? payment.client : payment.clients?.nome || 'Cliente'
+  const clientTipoAtendimento = payment.client_tipo_atendimento || payment.clients?.tipo_atendimento
+
   const isPackagePayment = payment.type === 'package' || payment.package_id || payment.package_name
 
   const getStatusColor = (status: string) => {
@@ -95,14 +99,21 @@ export const PaymentDetailsModal = ({
         <DialogHeader>
           <div className="flex items-center gap-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src={avatarUrl || undefined} alt={payment.client} />
+              <AvatarImage src={avatarUrl || undefined} alt={clientName} />
               <AvatarFallback>
                 <User className="w-8 h-8" />
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <DialogTitle className="text-2xl flex items-center gap-2">
-                {payment.client}
+              <DialogTitle className="text-2xl flex items-center gap-2 flex-wrap">
+                {clientName}
+                {clientTipoAtendimento && (
+                  <Badge className="bg-primary text-primary-foreground">
+                    {clientTipoAtendimento === 'individual' ? 'Individual' : 
+                     clientTipoAtendimento === 'casal' ? 'Casal' : 
+                     clientTipoAtendimento === 'familia' ? 'Família' : clientTipoAtendimento}
+                  </Badge>
+                )}
                 {payment.has_medications && (
                   <Pill className="w-5 h-5 text-pink-500" />
                 )}

@@ -132,7 +132,7 @@ const [isLoading, setIsLoading] = useState(false)
         // Carregar clientes (apenas campos necessários)
         supabase
           .from('clients')
-          .select('id, nome, avatar_url, user_id, medicamentos, eh_crianca_adolescente')
+          .select('id, nome, avatar_url, user_id, medicamentos, eh_crianca_adolescente, tipo_atendimento')
           .eq('user_id', user.id),
         
         // Carregar perfil do profissional (apenas campos para recibo)
@@ -351,6 +351,7 @@ const getSessionPayments = () => {
       id: p.id,
       client: client?.nome || 'Cliente não encontrado',
       client_avatar: client?.avatar_url,
+      client_tipo_atendimento: client?.tipo_atendimento,
       has_medications: client?.medicamentos && client.medicamentos.length > 0,
       is_child: client?.eh_crianca_adolescente,
       date: isMonthlyPlan 
