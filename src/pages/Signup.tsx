@@ -41,7 +41,30 @@ const Signup = () => {
   const [referralUser, setReferralUser] = useState<any>(null)
   
   // Capturar plano selecionado da URL (ex: /signup?plan=premium)
-  const selectedPlan = searchParams.get('plan')
+  // Também verificar localStorage caso venha do Login (que já salvou)
+  const urlPlan = searchParams.get('plan')
+  const storedPlan = localStorage.getItem('pending_plan')
+  const selectedPlan = urlPlan || storedPlan
+  
+  // ✅ Garantir que o plano seja salvo no localStorage assim que detectado
+  useEffect(() => {
+    if (selectedPlan && selectedPlan !== 'basico') {
+      console.log('[Signup] 💾 Plano detectado, salvando no localStorage:', selectedPlan)
+      localStorage.setItem('pending_plan', selectedPlan)
+      
+      // Também salvar billing cycle se disponível
+      const billing = searchParams.get('billing') || localStorage.getItem('pending_billing') || 'monthly'
+      if (billing) {
+        localStorage.setItem('pending_billing', billing)
+      }
+      
+      // Backup no sessionStorage também
+      sessionStorage.setItem('pending_plan_backup', selectedPlan)
+      if (billing) {
+        sessionStorage.setItem('pending_billing_backup', billing)
+      }
+    }
+  }, [selectedPlan, searchParams])
 
   // Force light theme on this page
   useLayoutEffect(() => {
@@ -190,10 +213,18 @@ const Signup = () => {
       if (error || data?.error) throw new Error(data?.error || error?.message)
 
       if (data.user) {
-        // Se há plano selecionado, salvar no localStorage
+        // ✅ GARANTIR que o plano seja salvo (mesmo que já tenha sido salvo no useEffect)
+        // Isso garante que o plano não seja perdido mesmo se houver algum problema
         if (selectedPlan && selectedPlan !== 'basico') {
-          console.log('[Signup] 💾 Salvando plano no localStorage:', selectedPlan)
+          console.log('[Signup] 💾 Confirmando plano no localStorage após cadastro:', selectedPlan)
           localStorage.setItem('pending_plan', selectedPlan)
+          
+          // Backup no sessionStorage também
+          sessionStorage.setItem('pending_plan_backup', selectedPlan)
+          
+          const billing = searchParams.get('billing') || localStorage.getItem('pending_billing') || 'monthly'
+          localStorage.setItem('pending_billing', billing)
+          sessionStorage.setItem('pending_billing_backup', billing)
         }
 
         // Se há referral, salvar na sessão para processar após escolha do plano

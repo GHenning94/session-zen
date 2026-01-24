@@ -20,24 +20,41 @@ export const CheckoutRedirect = () => {
     const processCheckout = async () => {
       try {
         // ✅ Verificar se há plano pendente (localStorage ou backup no sessionStorage)
+        // Verificar múltiplas fontes para garantir que o plano não seja perdido
         const pendingPlan = localStorage.getItem('pending_plan') || 
-                            sessionStorage.getItem('pending_plan_backup');
+                            sessionStorage.getItem('pending_plan_backup') ||
+                            sessionStorage.getItem('pending_checkout_plan');
         const pendingBilling = localStorage.getItem('pending_billing') || 
                                sessionStorage.getItem('pending_billing_backup') || 
                                'monthly';
         
+        console.log('[CheckoutRedirect] 🔍 Verificando plano pendente:', { 
+          pendingPlan, 
+          pendingBilling,
+          localStorage: localStorage.getItem('pending_plan'),
+          sessionStorage: sessionStorage.getItem('pending_plan_backup')
+        });
+        
         if (!pendingPlan || pendingPlan === 'basico') {
-          console.log('[CheckoutRedirect] Sem plano pendente ou plano gratuito, redirecionando para dashboard')
+          console.log('[CheckoutRedirect] ⚠️ Sem plano pendente ou plano gratuito, redirecionando para dashboard')
           
           // Limpar backups
           sessionStorage.removeItem('pending_plan_backup');
           sessionStorage.removeItem('pending_billing_backup');
+          sessionStorage.removeItem('pending_checkout_plan');
           
           navigate('/dashboard', { replace: true })
           return
         }
 
-        console.log('[CheckoutRedirect] Plano pendente detectado:', { pendingPlan, pendingBilling })
+        // ✅ Garantir que o plano está no localStorage (pode ter sido perdido)
+        if (!localStorage.getItem('pending_plan')) {
+          console.log('[CheckoutRedirect] 💾 Restaurando plano pendente no localStorage')
+          localStorage.setItem('pending_plan', pendingPlan)
+          localStorage.setItem('pending_billing', pendingBilling)
+        }
+
+        console.log('[CheckoutRedirect] ✅ Plano pendente confirmado:', { pendingPlan, pendingBilling })
 
         // Buscar usuário autenticado
         const { data: { user } } = await supabase.auth.getUser()

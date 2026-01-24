@@ -326,23 +326,36 @@ const Login = () => {
           return
         }
         
-        // ✅ Verificar se há plano pendente no localStorage, sessionStorage ou pending_checkout_plan
+        // ✅ PRIORIDADE MÁXIMA: Verificar se há plano pendente para checkout
+        // Isso deve ser verificado ANTES de qualquer outro redirecionamento
         const pendingPlan = localStorage.getItem('pending_plan') || 
                             sessionStorage.getItem('pending_plan_backup') ||
                             sessionStorage.getItem('pending_checkout_plan');
         
+        console.log('[Login] 🔍 Verificando plano pendente após login:', { 
+          pendingPlan, 
+          localStorage: localStorage.getItem('pending_plan'),
+          sessionStorage: sessionStorage.getItem('pending_plan_backup')
+        });
+        
         if (pendingPlan && pendingPlan !== 'basico') {
-          // Mover o plano para localStorage para o CheckoutRedirect usar
+          // Garantir que o plano está no localStorage (pode ter sido perdido)
           localStorage.setItem('pending_plan', pendingPlan)
           
-          // Limpar backups do sessionStorage
+          // Garantir que billing cycle também está salvo
+          const billing = localStorage.getItem('pending_billing') || 
+                         sessionStorage.getItem('pending_billing_backup') || 
+                         'monthly'
+          localStorage.setItem('pending_billing', billing)
+          
+          // Limpar backups do sessionStorage (já salvos no localStorage)
           sessionStorage.removeItem('pending_plan_backup');
           sessionStorage.removeItem('pending_billing_backup');
           sessionStorage.removeItem('pending_checkout_plan');
           
-          console.log('[Login] 🛒 Plano pendente detectado, redirecionando para checkout')
+          console.log('[Login] 🛒 Plano pendente detectado:', pendingPlan, '- redirecionando para checkout')
           toast.success('Redirecionando para checkout...')
-          navigate('/checkout-redirect')
+          navigate('/checkout-redirect', { replace: true })
           return
         }
         
@@ -424,23 +437,35 @@ const Login = () => {
       console.warn('[Login] Erro ao aplicar tema após 2FA:', themeError)
     }
     
-    // ✅ Verificar se há plano pendente no localStorage, sessionStorage ou pending_checkout_plan
+    // ✅ PRIORIDADE MÁXIMA: Verificar se há plano pendente para checkout após 2FA
     const pendingPlan = localStorage.getItem('pending_plan') || 
                         sessionStorage.getItem('pending_plan_backup') ||
                         sessionStorage.getItem('pending_checkout_plan');
     
+    console.log('[Login] 🔍 Verificando plano pendente após 2FA:', { 
+      pendingPlan, 
+      localStorage: localStorage.getItem('pending_plan'),
+      sessionStorage: sessionStorage.getItem('pending_plan_backup')
+    });
+    
     if (pendingPlan && pendingPlan !== 'basico') {
-      // Mover o plano para localStorage para o CheckoutRedirect usar
+      // Garantir que o plano está no localStorage (pode ter sido perdido)
       localStorage.setItem('pending_plan', pendingPlan)
       
-      // Limpar backups do sessionStorage
+      // Garantir que billing cycle também está salvo
+      const billing = localStorage.getItem('pending_billing') || 
+                     sessionStorage.getItem('pending_billing_backup') || 
+                     'monthly'
+      localStorage.setItem('pending_billing', billing)
+      
+      // Limpar backups do sessionStorage (já salvos no localStorage)
       sessionStorage.removeItem('pending_plan_backup');
       sessionStorage.removeItem('pending_billing_backup');
       sessionStorage.removeItem('pending_checkout_plan');
       
-      console.log('[Login] 🛒 Plano pendente detectado após 2FA, redirecionando para checkout')
+      console.log('[Login] 🛒 Plano pendente detectado após 2FA:', pendingPlan, '- redirecionando para checkout')
       toast.success('Redirecionando para checkout...')
-      navigate('/checkout-redirect')
+      navigate('/checkout-redirect', { replace: true })
       return
     }
     

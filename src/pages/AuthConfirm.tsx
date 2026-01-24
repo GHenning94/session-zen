@@ -139,28 +139,41 @@ const AuthConfirm = () => {
 
         console.log(`[AuthConfirm] ✅ E-mail ${isEmailChange ? 'alterado' : 'confirmado'}!`);
         
-        // Preservar plano pendente antes do logout
-        const pendingPlan = localStorage.getItem('pending_plan');
-        const pendingBilling = localStorage.getItem('pending_billing');
+        // ✅ CRÍTICO: Preservar plano pendente antes do logout
+        // Verificar múltiplas fontes para garantir que o plano não seja perdido
+        const pendingPlan = localStorage.getItem('pending_plan') || 
+                           sessionStorage.getItem('pending_plan_backup') ||
+                           sessionStorage.getItem('pending_checkout_plan');
+        const pendingBilling = localStorage.getItem('pending_billing') || 
+                               sessionStorage.getItem('pending_billing_backup') || 
+                               'monthly';
         
-        // ✅ USAR sessionStorage como backup (não é afetado por localStorage.clear)
-        if (pendingPlan) {
+        console.log('[AuthConfirm] 💾 Preservando plano pendente antes do logout:', { 
+          pendingPlan, 
+          pendingBilling,
+          localStorage: localStorage.getItem('pending_plan'),
+          sessionStorage: sessionStorage.getItem('pending_plan_backup')
+        });
+        
+        // ✅ USAR sessionStorage como backup (não é afetado por localStorage.clear ou signOut)
+        if (pendingPlan && pendingPlan !== 'basico') {
           sessionStorage.setItem('pending_plan_backup', pendingPlan);
-        }
-        if (pendingBilling) {
           sessionStorage.setItem('pending_billing_backup', pendingBilling);
+          console.log('[AuthConfirm] ✅ Backup criado no sessionStorage');
         }
         
         console.log('[AuthConfirm] 🚪 Fazendo logout para forçar novo login...');
         await supabase.auth.signOut();
         
-        // Restaurar plano após logout (já que signOut pode limpar localStorage)
-        if (pendingPlan) {
-          console.log('[AuthConfirm] 💾 Restaurando plano pendente:', pendingPlan);
+        // ✅ Restaurar plano após logout (já que signOut pode limpar localStorage)
+        if (pendingPlan && pendingPlan !== 'basico') {
+          console.log('[AuthConfirm] 💾 Restaurando plano pendente após logout:', pendingPlan);
           localStorage.setItem('pending_plan', pendingPlan);
-          if (pendingBilling) {
-            localStorage.setItem('pending_billing', pendingBilling);
-          }
+          localStorage.setItem('pending_billing', pendingBilling);
+          
+          // Garantir que o backup também está atualizado
+          sessionStorage.setItem('pending_plan_backup', pendingPlan);
+          sessionStorage.setItem('pending_billing_backup', pendingBilling);
         }
         
         toast.success('E-mail confirmado com sucesso! Faça login para continuar.');
