@@ -108,7 +108,7 @@ export const PaymentDetailsModal = ({
               <DialogTitle className="text-2xl flex items-center gap-2 flex-wrap">
                 {clientName}
                 {clientTipoAtendimento && (
-                  <Badge className="bg-primary text-primary-foreground">
+                  <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5">
                     {clientTipoAtendimento === 'individual' ? 'Individual' : 
                      clientTipoAtendimento === 'casal' ? 'Casal' : 
                      clientTipoAtendimento === 'familia' ? 'Família' : clientTipoAtendimento}

@@ -60,6 +60,7 @@ const Clientes = () => {
   const [isLoading, setIsLoading] = useState(false)
   const [statusFilter, setStatusFilter] = useState<string>("todos")
   const [birthdayFilter, setBirthdayFilter] = useState<boolean>(false)
+  const [tipoAtendimentoFilter, setTipoAtendimentoFilter] = useState<string>("todos")
   const [deleteConfirmClient, setDeleteConfirmClient] = useState<any>(null)
   const [isFiltersOpen, setIsFiltersOpen] = useState(false)
   
@@ -74,8 +75,9 @@ const Clientes = () => {
     if (statusFilter && statusFilter !== 'todos') count++
     if (searchTerm) count++
     if (birthdayFilter) count++
+    if (tipoAtendimentoFilter && tipoAtendimentoFilter !== 'todos') count++
     return count
-  }, [statusFilter, searchTerm, birthdayFilter])
+  }, [statusFilter, searchTerm, birthdayFilter, tipoAtendimentoFilter])
 
   // Check URL params for filter on mount
   useEffect(() => {
@@ -588,7 +590,10 @@ const Clientes = () => {
       
       const matchesBirthday = !birthdayFilter || isBirthdayThisMonth(client.data_nascimento)
       
-      return matchesSearch && matchesStatus && matchesBirthday
+      const matchesTipoAtendimento = tipoAtendimentoFilter === "todos" || 
+        client.tipo_atendimento === tipoAtendimentoFilter
+      
+      return matchesSearch && matchesStatus && matchesBirthday && matchesTipoAtendimento
     })
     .sort((a, b) => {
       return new Date(b.created_at || b.view_accessed_at).getTime() - new Date(a.created_at || a.view_accessed_at).getTime()
@@ -715,7 +720,7 @@ const Clientes = () => {
                 </button>
               </CollapsibleTrigger>
               <CollapsibleContent className="pt-4 animate-in slide-in-from-top-2 duration-200">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3 md:gap-4">
                   <div>
                     <Label htmlFor="search" className="text-xs">Buscar</Label>
                     <div className="relative">
@@ -746,6 +751,24 @@ const Clientes = () => {
                         <SelectItem value="todos">Todos</SelectItem>
                         <SelectItem value="ativo">Ativos</SelectItem>
                         <SelectItem value="inativo">Inativos</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="tipo-atendimento-filter" className="text-xs">Tipo de Atendimento</Label>
+                    <Select value={tipoAtendimentoFilter} onValueChange={setTipoAtendimentoFilter}>
+                      <SelectTrigger className={cn(
+                        "h-9 text-sm transition-all",
+                        tipoAtendimentoFilter !== 'todos' && "ring-2 ring-primary ring-offset-1 border-primary"
+                      )}>
+                        <SelectValue placeholder="Todos" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="casal">Casal</SelectItem>
+                        <SelectItem value="familia">Família</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -783,6 +806,7 @@ const Clientes = () => {
                         setSearchTerm('')
                         setStatusFilter('todos')
                         setBirthdayFilter(false)
+                        setTipoAtendimentoFilter('todos')
                         searchParams.delete('filter')
                         setSearchParams(searchParams, { replace: true })
                       }}

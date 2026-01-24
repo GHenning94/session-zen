@@ -103,7 +103,7 @@ export const SessionDetailsModal = ({
               <DialogTitle className="text-2xl flex items-center gap-2 flex-wrap">
                 {session.clients?.nome || 'Cliente não encontrado'}
                 {session.clients?.tipo_atendimento && (
-                  <Badge className="bg-primary text-primary-foreground">
+                  <Badge className="bg-primary text-primary-foreground text-xs px-2 py-0.5">
                     {session.clients.tipo_atendimento === 'individual' ? 'Individual' : 
                      session.clients.tipo_atendimento === 'casal' ? 'Casal' : 
                      session.clients.tipo_atendimento === 'familia' ? 'Família' : session.clients.tipo_atendimento}
