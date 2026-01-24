@@ -545,13 +545,51 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice, eventId: s
                       (invoice.lines?.data?.some(line => line.proration === true));
   
   const hasProrationItems = invoice.lines?.data?.some(line => line.proration === true);
+  const isManualUpgrade = invoice.metadata?.type === 'proration_upgrade';
+  const isAutoUpgrade = invoice.billing_reason === 'subscription_update' && 
+                       !isManualUpgrade && 
+                       hasProrationItems;
 
   console.log('[stripe-webhook] 💰 Payment succeeded for invoice:', invoiceId, {
     Amount: amountInCents,
     billing_reason: invoice.billing_reason,
     isProration,
-    hasProrationItems
+    hasProrationItems,
+    isManualUpgrade,
+    isAutoUpgrade
   });
+
+  // ✅ FILTRAR INVOICES AUTOMÁTICAS DE UPGRADE
+  // Se é uma invoice automática de upgrade, verificar se existe uma manual no mesmo período
+  if (isAutoUpgrade && subscriptionId) {
+    try {
+      // Buscar invoices manuais criadas no mesmo período (dentro de 5 minutos)
+      const manualInvoices = await stripe.invoices.list({
+        customer: customerId,
+        subscription: subscriptionId,
+        limit: 10,
+        created: { 
+          gte: invoice.created - 300, // 5 minutos antes
+          lte: invoice.created + 300  // 5 minutos depois
+        },
+      });
+      
+      const hasManualForPeriod = manualInvoices.data.some(inv => 
+        inv.metadata?.type === 'proration_upgrade' &&
+        inv.period_start === invoice.period_start &&
+        inv.period_end === invoice.period_end &&
+        inv.id !== invoice.id
+      );
+      
+      if (hasManualForPeriod) {
+        console.log('[stripe-webhook] 🚫 Ignoring auto upgrade invoice (manual exists):', invoiceId);
+        return; // Ignorar invoice automática se já existe manual
+      }
+    } catch (e) {
+      console.error('[stripe-webhook] ⚠️ Error checking for manual invoices:', e);
+      // Continuar processamento se houver erro na verificação
+    }
+  }
 
   // Verificar se invoice tem desconto de indicação aplicado (downgrade)
   const hasReferralDiscount = invoice.discount?.coupon?.metadata?.type === 'referral_discount_downgrade' ||

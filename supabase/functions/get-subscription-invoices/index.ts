@@ -169,12 +169,55 @@ serve(async (req) => {
     console.log('[get-subscription-invoices] 📃 Total invoices to process:', allInvoices.length);
     console.log('[get-subscription-invoices] 📃 Proration invoices added:', prorationInvoices.length);
 
+    // ============================================
+    // FILTRAR INVOICES DUPLICADAS DE UPGRADE
+    // ============================================
+    // Se houver uma invoice manual de upgrade (type: proration_upgrade) e uma automática
+    // criada no mesmo período (mesmo billing_reason: subscription_update), mostrar apenas a manual
+    const filteredInvoices: Stripe.Invoice[] = [];
+    const seenUpgradePeriods = new Set<string>();
+    
+    for (const invoice of allInvoices) {
+      const isManualUpgrade = invoice.metadata?.type === 'proration_upgrade';
+      const isAutoUpgrade = invoice.billing_reason === 'subscription_update' && 
+                           !invoice.metadata?.type && 
+                           invoice.lines?.data?.some(line => line.proration === true);
+      
+      // Se é upgrade automático, verificar se já temos uma manual no mesmo período
+      if (isAutoUpgrade) {
+        const periodKey = `${invoice.period_start}_${invoice.period_end}`;
+        
+        // Verificar se já existe uma invoice manual para este período
+        const hasManualForPeriod = allInvoices.some(inv => 
+          inv.metadata?.type === 'proration_upgrade' &&
+          inv.period_start === invoice.period_start &&
+          inv.period_end === invoice.period_end &&
+          Math.abs(inv.created - invoice.created) < 300 // Criadas dentro de 5 minutos
+        );
+        
+        if (hasManualForPeriod) {
+          console.log(`[get-subscription-invoices] 🚫 Filtering duplicate auto upgrade invoice ${invoice.id} (manual exists for same period)`);
+          continue; // Ignorar invoice automática se já temos manual
+        }
+      }
+      
+      // Se é upgrade manual, marcar o período
+      if (isManualUpgrade) {
+        const periodKey = `${invoice.period_start}_${invoice.period_end}`;
+        seenUpgradePeriods.add(periodKey);
+      }
+      
+      filteredInvoices.push(invoice);
+    }
+    
+    console.log('[get-subscription-invoices] 📃 After deduplication:', filteredInvoices.length);
+
     // ✅ Filtrar faturas válidas
     // Incluir: paid (pagas), open (pendentes de pagamento)
     // Excluir: draft, void, uncollectible
     // IMPORTANTE: Para faturas de upgrade, o amount_paid pode ser 0 inicialmente
     // mas o total mostra o valor real da fatura
-    const formattedInvoices = allInvoices
+    const formattedInvoices = filteredInvoices
       .filter(invoice => {
         // Verificar se tem algum valor - considerar total, amount_due E amount_paid
         // Para faturas novas, amount_paid=0 mas total tem o valor correto

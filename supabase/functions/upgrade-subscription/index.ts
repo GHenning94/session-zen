@@ -328,18 +328,17 @@ serve(async (req) => {
     }
 
     // ============================================
-    // EXECUTAR UPGRADE NO STRIPE
+    // ESTRATÉGIA MELHORADA: Criar invoice manual PRIMEIRO
     // ============================================
-    
-    // ✅ NOVA ESTRATÉGIA: Evitar cobrança automática do Stripe
     // 
-    // PROBLEMA ANTERIOR: billing_cycle_anchor: 'now' cria e COBRA automaticamente
-    // uma invoice do valor cheio ANTES de conseguirmos cancelá-la.
+    // PROBLEMA: Quando atualizamos a subscription, o Stripe cria automaticamente
+    // uma invoice com prorrata calculada pelo Stripe (que pode ser diferente).
     //
-    // NOVA ABORDAGEM:
-    // 1. Atualizar assinatura SEM reiniciar ciclo (mantém próxima cobrança no fim do período)
-    // 2. Criar invoice manual com o valor correto (diferença com crédito)
-    // 3. Após pagamento, ajustar as datas do ciclo de cobrança
+    // SOLUÇÃO:
+    // 1. Criar invoice manual PRIMEIRO com o valor correto calculado
+    // 2. Atualizar subscription SEM reiniciar billing cycle (evita invoice automática)
+    // 3. Reiniciar billing cycle DEPOIS, mas com proration_behavior: 'none'
+    // 4. Filtrar invoices duplicadas no histórico
     
     // Cancelar schedule existente
     if (subscription.schedule) {
@@ -351,138 +350,8 @@ serve(async (req) => {
       }
     }
 
-    // PASSO 1: Atualizar assinatura SEM billing_cycle_anchor para evitar cobrança automática
-    // Usamos proration_behavior: 'none' para não criar itens de prorrata automáticos
-    const updatedSub = await stripe.subscriptions.update(subscription.id, {
-      items: [{ id: subscriptionItemId, price: newPriceId }],
-      proration_behavior: 'none',
-      cancel_at_period_end: false,
-      // ✅ NÃO usar billing_cycle_anchor: 'now' - isso causa cobrança automática
-    });
-
-    console.log("[upgrade-subscription] ✅ Subscription updated to new plan (without cycle reset)");
-    
-    // PASSO 2: Agora reiniciar o ciclo de cobrança manualmente
-    // Primeiro, buscar todas as invoices pendentes e cancelá-las
-    try {
-      const pendingInvoices = await stripe.invoices.list({
-        customer: customer.id,
-        subscription: subscription.id,
-        status: 'draft',
-        limit: 10,
-      });
-      
-      for (const inv of pendingInvoices.data) {
-        try {
-          await stripe.invoices.del(inv.id);
-          console.log("[upgrade-subscription] 🗑️ Deleted draft invoice:", inv.id);
-        } catch (e) {
-          console.log("[upgrade-subscription] ⚠️ Could not delete draft:", inv.id);
-        }
-      }
-      
-      // Também buscar invoices open
-      const openInvoices = await stripe.invoices.list({
-        customer: customer.id,
-        subscription: subscription.id,
-        status: 'open',
-        limit: 5,
-        created: { gte: Math.floor(Date.now() / 1000) - 300 }, // Últimos 5 minutos
-      });
-      
-      for (const inv of openInvoices.data) {
-        // Só cancelar se não for nossa invoice manual
-        if (inv.metadata?.type !== 'proration_upgrade') {
-          try {
-            await stripe.invoices.voidInvoice(inv.id);
-            console.log("[upgrade-subscription] 🗑️ Voided open invoice:", inv.id);
-          } catch (e) {
-            console.log("[upgrade-subscription] ⚠️ Could not void:", inv.id);
-          }
-        }
-      }
-    } catch (e) {
-      console.log("[upgrade-subscription] ⚠️ Error cleaning up invoices:", e);
-    }
-
-    // PASSO 3: Reiniciar o ciclo de cobrança AGORA
-    // Isso vai criar uma invoice mas com payment_behavior pendente
-    const subWithNewCycle = await stripe.subscriptions.update(subscription.id, {
-      billing_cycle_anchor: 'now',
-      proration_behavior: 'none',
-      // ✅ CRÍTICO: Desativar cobrança automática temporariamente
-      payment_behavior: 'default_incomplete',
-    });
-    
-    console.log("[upgrade-subscription] 📅 New billing cycle set:", {
-      start: new Date(subWithNewCycle.current_period_start * 1000).toISOString(),
-      end: new Date(subWithNewCycle.current_period_end * 1000).toISOString()
-    });
-
-    // Aguardar um pouco para o Stripe criar a invoice
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    // PASSO 4: Cancelar a invoice automática que o Stripe criou
-    try {
-      const autoInvoices = await stripe.invoices.list({
-        customer: customer.id,
-        subscription: subscription.id,
-        limit: 5,
-        created: { gte: Math.floor(Date.now() / 1000) - 60 },
-      });
-      
-      console.log("[upgrade-subscription] 🔍 Found auto invoices:", autoInvoices.data.length);
-      
-      for (const inv of autoInvoices.data) {
-        console.log(`[upgrade-subscription] 🔍 Checking auto invoice ${inv.id}: status=${inv.status}, amount=${inv.amount_due}`);
-        
-        // Ignorar nossas invoices manuais
-        if (inv.metadata?.type === 'proration_upgrade') continue;
-        
-        if (inv.status === 'draft') {
-          await stripe.invoices.del(inv.id);
-          console.log("[upgrade-subscription] 🗑️ Deleted auto draft invoice:", inv.id);
-        } else if (inv.status === 'open') {
-          await stripe.invoices.voidInvoice(inv.id);
-          console.log("[upgrade-subscription] 🗑️ Voided auto open invoice:", inv.id);
-        } else if (inv.status === 'paid') {
-          // ✅ Se já foi paga, precisamos criar um reembolso parcial
-          // e ajustar com nossa lógica de crédito
-          console.log("[upgrade-subscription] ⚠️ Auto invoice already paid:", inv.id, "amount:", inv.amount_paid);
-          
-          // Calcular o excesso cobrado
-          const excessAmount = inv.amount_paid - finalAmount;
-          
-          if (excessAmount > 0 && finalAmount > 0) {
-            // Criar reembolso do excesso
-            try {
-              await stripe.refunds.create({
-                payment_intent: inv.payment_intent as string,
-                amount: excessAmount,
-                reason: 'requested_by_customer',
-                metadata: {
-                  reason: 'proration_adjustment',
-                  original_amount: String(inv.amount_paid),
-                  correct_amount: String(finalAmount),
-                  credit_applied: String(creditAmount),
-                }
-              });
-              console.log("[upgrade-subscription] 💰 Refunded excess amount:", excessAmount / 100);
-              
-              // Marcar que já cobramos (não precisa criar nova invoice)
-              finalAmount = 0;
-            } catch (refundErr) {
-              console.log("[upgrade-subscription] ⚠️ Could not refund excess:", refundErr);
-            }
-          }
-        }
-      }
-    } catch (e) {
-      console.log("[upgrade-subscription] ⚠️ Error handling auto invoices:", e);
-    }
-
     // ============================================
-    // PASSO 5: COBRAR VALOR CORRETO DA DIFERENÇA
+    // PASSO 1: CRIAR INVOICE MANUAL PRIMEIRO
     // ============================================
     
     let paymentUrl: string | null = null;
@@ -504,10 +373,10 @@ serve(async (req) => {
           description,
         });
 
-        // Criar e finalizar invoice
+        // Criar invoice manual ANTES de atualizar a subscription
         const invoice = await stripe.invoices.create({
           customer: customer.id,
-          auto_advance: true,
+          auto_advance: false, // ✅ NÃO finalizar automaticamente - vamos fazer isso depois
           collection_method: 'charge_automatically',
           metadata: {
             user_id: user.id,
@@ -525,10 +394,173 @@ serve(async (req) => {
           },
         });
 
-        const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id);
-        invoiceId = finalizedInvoice.id;
+        invoiceId = invoice.id;
+        console.log("[upgrade-subscription] 📄 Manual invoice created (draft):", invoice.id);
 
-        console.log("[upgrade-subscription] 📄 Manual invoice created:", {
+      } catch (invoiceError) {
+        console.error("[upgrade-subscription] ⚠️ Invoice creation failed:", invoiceError);
+        throw new Error("Não foi possível criar a fatura. Tente novamente.");
+      }
+    }
+
+    // ============================================
+    // PASSO 2: ATUALIZAR SUBSCRIPTION SEM REINICIAR CICLO
+    // ============================================
+    
+    // Atualizar assinatura SEM billing_cycle_anchor para evitar invoice automática
+    const updatedSub = await stripe.subscriptions.update(subscription.id, {
+      items: [{ id: subscriptionItemId, price: newPriceId }],
+      proration_behavior: 'none', // ✅ CRÍTICO: Não criar prorrata automática
+      cancel_at_period_end: false,
+      // ✅ NÃO usar billing_cycle_anchor: 'now' aqui - isso cria invoice automática
+    });
+
+    console.log("[upgrade-subscription] ✅ Subscription updated to new plan (without cycle reset)");
+
+    // Aguardar um pouco para garantir que o Stripe processou a atualização
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    // ============================================
+    // PASSO 3: LIMPAR INVOICES AUTOMÁTICAS (se houver)
+    // ============================================
+    
+    try {
+      // Buscar invoices criadas recentemente (últimos 2 minutos)
+      const recentInvoices = await stripe.invoices.list({
+        customer: customer.id,
+        subscription: subscription.id,
+        limit: 10,
+        created: { gte: Math.floor(Date.now() / 1000) - 120 },
+      });
+      
+      for (const inv of recentInvoices.data) {
+        // Ignorar nossa invoice manual
+        if (inv.id === invoiceId || inv.metadata?.type === 'proration_upgrade') {
+          continue;
+        }
+        
+        console.log(`[upgrade-subscription] 🔍 Found auto invoice ${inv.id}: status=${inv.status}, amount=${inv.amount_due}`);
+        
+        if (inv.status === 'draft') {
+          await stripe.invoices.del(inv.id);
+          console.log("[upgrade-subscription] 🗑️ Deleted auto draft invoice:", inv.id);
+        } else if (inv.status === 'open') {
+          await stripe.invoices.voidInvoice(inv.id);
+          console.log("[upgrade-subscription] 🗑️ Voided auto open invoice:", inv.id);
+        } else if (inv.status === 'paid') {
+          // Se já foi paga, criar reembolso do excesso
+          const excessAmount = inv.amount_paid - finalAmount;
+          if (excessAmount > 0 && finalAmount > 0) {
+            try {
+              await stripe.refunds.create({
+                payment_intent: inv.payment_intent as string,
+                amount: excessAmount,
+                reason: 'requested_by_customer',
+                metadata: {
+                  reason: 'proration_adjustment',
+                  original_amount: String(inv.amount_paid),
+                  correct_amount: String(finalAmount),
+                  credit_applied: String(creditAmount),
+                }
+              });
+              console.log("[upgrade-subscription] 💰 Refunded excess amount:", excessAmount / 100);
+              // Marcar que já cobramos (não precisa finalizar nossa invoice manual)
+              finalAmount = 0;
+              invoiceId = null; // Não processar nossa invoice manual
+            } catch (refundErr) {
+              console.log("[upgrade-subscription] ⚠️ Could not refund excess:", refundErr);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.log("[upgrade-subscription] ⚠️ Error cleaning up auto invoices:", e);
+    }
+
+    // ============================================
+    // PASSO 4: REINICIAR BILLING CYCLE
+    // ============================================
+    // 
+    // IMPORTANTE: O billing_cycle_anchor: 'now' reinicia o ciclo de cobrança
+    // a partir do dia do upgrade. O Stripe automaticamente mantém o mesmo dia do mês
+    // para renovações futuras (ex: upgrade no dia 24 → próxima cobrança dia 24 do mês seguinte).
+    //
+    // Para planos mensais: próxima cobrança será no mesmo dia do mês seguinte
+    //   - Exemplo: upgrade em 24/01 → próxima cobrança em 24/02
+    //   - Se o mês seguinte não tiver esse dia (ex: 31/01 → 28/02 ou 29/02), 
+    //     o Stripe usa o último dia do mês automaticamente
+    //
+    // Para planos anuais: próxima cobrança será no mesmo dia do ano seguinte
+    //   - Exemplo: upgrade em 24/01/2025 → próxima cobrança em 24/01/2026
+    //
+    // Usamos proration_behavior: 'none' para evitar que o Stripe crie uma invoice
+    // automática de prorrata, já que criamos a invoice manual anteriormente.
+    //
+    // ✅ O Stripe garante que o valor correto do novo plano será cobrado na próxima renovação
+    //    porque a subscription já foi atualizada com o novo price_id.
+    
+    const subWithNewCycle = await stripe.subscriptions.update(subscription.id, {
+      billing_cycle_anchor: 'now', // ✅ Stripe automaticamente mantém o mesmo dia do mês
+      proration_behavior: 'none', // ✅ CRÍTICO: Não criar prorrata automática
+    });
+    
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const nextBillingDate = new Date(subWithNewCycle.current_period_end * 1000);
+    
+    console.log("[upgrade-subscription] 📅 New billing cycle set:", {
+      upgradeDate: now.toISOString(),
+      upgradeDayOfMonth: dayOfMonth,
+      period_start: new Date(subWithNewCycle.current_period_start * 1000).toISOString(),
+      period_end: nextBillingDate.toISOString(),
+      nextBillingDayOfMonth: nextBillingDate.getDate(),
+      interval: newPriceInfo.interval,
+      // ✅ Verificar se o dia do mês foi mantido (ou ajustado para último dia se necessário)
+      sameDayOfMonth: nextBillingDate.getDate() === dayOfMonth || 
+                      (dayOfMonth > 28 && nextBillingDate.getDate() === new Date(nextBillingDate.getFullYear(), nextBillingDate.getMonth() + 1, 0).getDate())
+    });
+
+    // Aguardar para garantir que o Stripe processou a atualização do ciclo
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Limpar qualquer invoice automática criada pelo billing_cycle_anchor
+    try {
+      const cycleInvoices = await stripe.invoices.list({
+        customer: customer.id,
+        subscription: subscription.id,
+        limit: 5,
+        created: { gte: Math.floor(Date.now() / 1000) - 60 },
+      });
+      
+      for (const inv of cycleInvoices.data) {
+        // Ignorar nossa invoice manual
+        if (inv.id === invoiceId || inv.metadata?.type === 'proration_upgrade') {
+          continue;
+        }
+        
+        if (inv.status === 'draft') {
+          await stripe.invoices.del(inv.id);
+          console.log("[upgrade-subscription] 🗑️ Deleted cycle draft invoice:", inv.id);
+        } else if (inv.status === 'open') {
+          await stripe.invoices.voidInvoice(inv.id);
+          console.log("[upgrade-subscription] 🗑️ Voided cycle open invoice:", inv.id);
+        }
+      }
+    } catch (e) {
+      console.log("[upgrade-subscription] ⚠️ Error cleaning cycle invoices:", e);
+    }
+
+    // ============================================
+    // PASSO 5: FINALIZAR E COBRAR INVOICE MANUAL
+    // ============================================
+    
+    
+    if (invoiceId && finalAmount > 0) {
+      try {
+        // Finalizar a invoice manual que criamos
+        const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoiceId);
+
+        console.log("[upgrade-subscription] 📄 Manual invoice finalized:", {
           id: finalizedInvoice.id,
           status: finalizedInvoice.status,
           amount: finalizedInvoice.amount_due,
@@ -545,21 +577,36 @@ serve(async (req) => {
           console.log("[upgrade-subscription] ⏳ Invoice requires payment:", paymentUrl);
         }
       } catch (invoiceError) {
-        console.error("[upgrade-subscription] ⚠️ Invoice creation failed:", invoiceError);
+        console.error("[upgrade-subscription] ⚠️ Invoice finalization failed:", invoiceError);
         // Não falhar o upgrade se a invoice falhar - o plano já foi atualizado
       }
-    } else {
+    } else if (finalAmount === 0) {
       invoicePaid = true;
-      console.log("[upgrade-subscription] ✅ No payment required - credit covers entire upgrade cost or already charged");
+      console.log("[upgrade-subscription] ✅ No payment required - credit covers entire upgrade cost or already charged via auto invoice");
     }
 
     // ============================================
     // ATUALIZAR PERFIL COM NOVA DATA DE RENOVAÇÃO
     // ============================================
+    //
+    // IMPORTANTE: A data de renovação (subscription_end_date) deve ser atualizada
+    // para refletir o novo ciclo de cobrança que começa a partir do dia do upgrade.
+    // 
+    // Exemplo:
+    // - Upgrade feito em 15/01/2025 (plano mensal)
+    // - Próxima renovação: 15/02/2025 (30 dias a partir do upgrade)
+    // - Não deve ser a data da última cobrança + 30 dias
     
-    // Buscar assinatura atualizada para obter datas corretas
+    // Buscar assinatura atualizada para obter as datas corretas do novo ciclo
     const finalSubscription = await stripe.subscriptions.retrieve(subscription.id);
-    const nextBillingDate = new Date(finalSubscription.current_period_end * 1000);
+    const newBillingStart = new Date(finalSubscription.current_period_start * 1000);
+    const newBillingEnd = new Date(finalSubscription.current_period_end * 1000);
+    
+    console.log("[upgrade-subscription] 📅 Final subscription dates:", {
+      period_start: newBillingStart.toISOString(),
+      period_end: newBillingEnd.toISOString(),
+      days_in_cycle: Math.ceil((newBillingEnd.getTime() - newBillingStart.getTime()) / (1000 * 60 * 60 * 24))
+    });
     
     await supabaseAdmin
       .from('profiles')
@@ -567,12 +614,17 @@ serve(async (req) => {
         subscription_plan: newPriceInfo.plan,
         billing_interval: newPriceInfo.interval === 'yearly' ? 'yearly' : 'monthly',
         subscription_cancel_at: null,
-        subscription_end_date: nextBillingDate.toISOString(),
+        subscription_end_date: newBillingEnd.toISOString(), // ✅ Data de renovação = fim do novo ciclo
         stripe_subscription_id: subscription.id,
       })
       .eq('user_id', user.id);
 
-    console.log("[upgrade-subscription] ✅ Profile updated with new plan and billing date:", nextBillingDate.toISOString());
+    console.log("[upgrade-subscription] ✅ Profile updated with new plan and billing date:", {
+      plan: newPriceInfo.plan,
+      interval: newPriceInfo.interval,
+      nextBillingDate: newBillingEnd.toISOString(),
+      billingStart: newBillingStart.toISOString()
+    });
 
     // ============================================
     // RESPOSTA
