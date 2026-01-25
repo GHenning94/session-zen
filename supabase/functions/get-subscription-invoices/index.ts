@@ -244,9 +244,23 @@ serve(async (req) => {
         
         // Verificar se é uma fatura de upgrade com metadata
         const isProrationUpgrade = invoice.metadata?.type === 'proration_upgrade';
-        const metaCreditAmount = invoice.metadata?.credit_amount ? parseInt(invoice.metadata.credit_amount) : 0;
-        const metaFinalAmount = invoice.metadata?.final_amount ? parseInt(invoice.metadata.final_amount) : 0;
-        const metaNewPlanPrice = invoice.metadata?.new_plan_price ? parseInt(invoice.metadata.new_plan_price) : 0;
+        const metaCreditAmount = invoice.metadata?.credit_amount ? parseInt(invoice.metadata.credit_amount, 10) : 0;
+        const metaFinalAmount = invoice.metadata?.final_amount ? parseInt(invoice.metadata.final_amount, 10) : 0;
+        const metaNewPlanPrice = invoice.metadata?.new_plan_price ? parseInt(invoice.metadata.new_plan_price, 10) : 0;
+        
+        // ✅ Log para debug
+        if (isProrationUpgrade) {
+          console.log(`[get-subscription-invoices] 🔍 Proration upgrade detected:`, {
+            invoiceId: invoice.id,
+            metadata: invoice.metadata,
+            metaCreditAmount,
+            metaFinalAmount,
+            metaNewPlanPrice,
+            invoiceAmountPaid: invoice.amount_paid,
+            invoiceTotal: invoice.total,
+            invoiceAmountDue: invoice.amount_due
+          });
+        }
         
         if (invoice.lines?.data) {
           for (const line of invoice.lines.data) {
@@ -273,8 +287,22 @@ serve(async (req) => {
         let effectiveAmountPaid = invoice.amount_paid;
         
         // 1. Primeiro: usar metadata se disponível (mais preciso para upgrades)
-        if (isProrationUpgrade && metaFinalAmount > 0) {
-          effectiveAmountPaid = metaFinalAmount;
+        // ✅ CRÍTICO: Para upgrades com prorrata, SEMPRE usar metaFinalAmount se disponível
+        // Isso garante que o valor exibido é o valor correto calculado pela nossa lógica
+        // O Stripe pode atualizar amount_paid para o valor total da invoice após o pagamento,
+        // mas nosso metadata contém o valor correto da prorrata
+        if (isProrationUpgrade) {
+          if (metaFinalAmount > 0) {
+            effectiveAmountPaid = metaFinalAmount;
+            console.log(`[get-subscription-invoices] ✅ Using metadata final_amount for proration upgrade: ${metaFinalAmount} (instead of amount_paid: ${invoice.amount_paid})`);
+          } else {
+            // Se metadata não tem final_amount, mas tem credit_amount, calcular
+            // effectiveAmountPaid = new_plan_price - credit_amount
+            if (metaNewPlanPrice > 0 && metaCreditAmount > 0) {
+              effectiveAmountPaid = metaNewPlanPrice - metaCreditAmount;
+              console.log(`[get-subscription-invoices] ✅ Calculated effectiveAmount from metadata: ${metaNewPlanPrice} - ${metaCreditAmount} = ${effectiveAmountPaid}`);
+            }
+          }
         }
         // 2. Fallback: se amount_paid é 0 mas a fatura está paga, usar total
         else if (invoice.amount_paid === 0 && invoice.status === 'paid' && invoice.total > 0) {

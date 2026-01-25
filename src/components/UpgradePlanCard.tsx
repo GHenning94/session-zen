@@ -256,9 +256,75 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
 
       if (error) throw error
 
+      // ✅ CRÍTICO: Salvar features desbloqueadas ANTES de redirecionar
+      if (data?.newPlan && user?.id && data?.isTierChange) {
+        const currentPlan = prorationModal.data?.currentPlan || 'basico'
+        const newPlan = data.newPlan
+        
+        // Mapeamento de features por plano (mesmo do Dashboard)
+        const FEATURE_TO_PLAN: Record<string, string> = {
+          whatsapp_notifications: 'premium',
+          google_calendar: 'premium',
+          reports: 'pro',
+          advanced_reports: 'premium',
+          report_filters: 'premium',
+          referral_program: 'pro',
+          referral_history: 'premium',
+          goals: 'pro',
+          goals_sidebar: 'pro',
+          goals_dashboard_ticket: 'pro',
+          goals_dashboard_canal: 'pro',
+          goals_orbital: 'pro',
+          public_page: 'pro',
+          public_page_design: 'premium',
+          public_page_advanced: 'premium',
+          color_customization: 'premium',
+          dashboard_advanced_cards: 'pro',
+          unlimited_clients: 'premium',
+          unlimited_sessions: 'pro',
+          packages: 'pro',
+          packages_sidebar: 'pro',
+          recurring_sessions: 'pro',
+          recurring_sessions_sidebar: 'pro',
+          reports_sidebar: 'pro',
+          referral_program_sidebar: 'pro',
+          google_calendar_sidebar: 'premium',
+        }
+        
+        const PLAN_HIERARCHY: Record<string, number> = {
+          basico: 0,
+          pro: 1,
+          premium: 2
+        }
+        
+        const fromLevel = PLAN_HIERARCHY[currentPlan] || 0
+        const toLevel = PLAN_HIERARCHY[newPlan] || 0
+        
+        const newlyUnlocked = Object.entries(FEATURE_TO_PLAN)
+          .filter(([_, requiredPlan]) => {
+            const requiredLevel = PLAN_HIERARCHY[requiredPlan] || 0
+            return requiredLevel > fromLevel && requiredLevel <= toLevel
+          })
+          .map(([feature]) => feature)
+        
+        if (newlyUnlocked.length > 0) {
+          const key = `recently_unlocked_features_${user.id}`
+          const existing = localStorage.getItem(key)
+          const current = existing ? JSON.parse(existing) as string[] : []
+          const updated = [...new Set([...current, ...newlyUnlocked])]
+          localStorage.setItem(key, JSON.stringify(updated))
+          console.log('[UpgradePlanCard] 🎯 Saved unlocked features:', updated)
+        }
+        
+        // Salvar plano anterior para o Dashboard
+        localStorage.setItem('pending_previous_plan', currentPlan)
+        localStorage.setItem(`last_known_plan_${user.id}`, newPlan)
+      }
+
       if (data?.requiresPayment && data?.paymentUrl) {
         // Store for welcome modal after payment
         sessionStorage.setItem('pending_tier_upgrade', data.newPlan)
+        localStorage.setItem('pending_tier_upgrade', data.newPlan)
         // ✅ Marcar que está indo para checkout externo (Stripe)
         sessionStorage.setItem('stripe_checkout_active', 'true')
         toast.info(`Você será redirecionado para pagar o valor proporcional de ${data.proratedAmountFormatted}`)
@@ -266,6 +332,7 @@ export const UpgradePlanCard = ({ currentPlan, currentBillingInterval }: Upgrade
       } else {
         // Upgrade completed without additional payment
         toast.success(data?.message || 'Upgrade realizado com sucesso!')
+        localStorage.setItem('show_upgrade_welcome', data.newPlan)
         sessionStorage.setItem('show_upgrade_welcome', data.newPlan)
         setProrationModal({ open: false, targetPlan: null, data: null, isLoading: false, error: null })
         window.location.href = '/dashboard'
