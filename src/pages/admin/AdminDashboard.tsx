@@ -77,6 +77,8 @@ const PLAN_COLORS = {
   premium: '#8b5cf6'
 }
 
+const MONTH_NAMES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+
 const AdminDashboard = () => {
   const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(true)
@@ -161,6 +163,19 @@ const AdminDashboard = () => {
       maximumFractionDigits: 0
     }).format(value)
   }
+
+  // Garantir que os gráficos tenham dados para renderizar (evitar painéis em branco)
+  const emptyMonths = (() => {
+    const now = new Date()
+    return Array.from({ length: 6 }, (_, i) => {
+      const d = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+      return MONTH_NAMES[d.getMonth()]
+    })
+  })()
+  const mrrChartData = stats.mrrHistory?.length ? stats.mrrHistory : emptyMonths.map(m => ({ month: m, value: 0 }))
+  const userGrowthData = stats.userGrowth?.length ? stats.userGrowth : emptyMonths.map(m => ({ month: m, value: 0 }))
+  const planDistData = stats.planDistribution?.length ? stats.planDistribution : [{ name: 'Nenhum', value: 1, color: '#94a3b8' }]
+  const revenueByPlanData = stats.revenueByPlan?.length ? stats.revenueByPlan : [{ plan: 'Nenhum', value: 0 }]
 
   const quickActions = [
     { title: "Receita & Assinaturas", icon: DollarSign, path: "/admin/revenue", color: "text-green-600" },
@@ -310,7 +325,7 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stats.mrrHistory}>
+                  <AreaChart data={mrrChartData}>
                     <defs>
                       <linearGradient id="colorMrr" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#22c55e" stopOpacity={0.3}/>
@@ -319,7 +334,7 @@ const AdminDashboard = () => {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis tickFormatter={(v) => `R$${v/1000}k`} className="text-xs" />
+                    <YAxis tickFormatter={(v) => (v >= 1000 ? `R$ ${(v/1000).toFixed(1)}k` : formatCurrency(v))} className="text-xs" />
                     <Tooltip 
                       formatter={(value: number) => [formatCurrency(value), 'MRR']}
                       contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
@@ -343,10 +358,10 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.userGrowth}>
+                  <BarChart data={userGrowthData}>
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                     <XAxis dataKey="month" className="text-xs" />
-                    <YAxis className="text-xs" />
+                    <YAxis className="text-xs" allowDecimals={false} />
                     <Tooltip 
                       formatter={(value: number) => [value, 'Novos usuários']}
                       contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
@@ -374,7 +389,7 @@ const AdminDashboard = () => {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={stats.planDistribution}
+                      data={planDistData}
                       cx="50%"
                       cy="50%"
                       innerRadius={60}
@@ -384,7 +399,7 @@ const AdminDashboard = () => {
                       nameKey="name"
                       label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
                     >
-                      {stats.planDistribution.map((entry, index) => (
+                      {planDistData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
                     </Pie>
@@ -409,16 +424,16 @@ const AdminDashboard = () => {
             <CardContent>
               <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={stats.revenueByPlan} layout="vertical">
+                  <BarChart data={revenueByPlanData} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                    <XAxis type="number" tickFormatter={(v) => `R$${v/1000}k`} className="text-xs" />
+                    <XAxis type="number" tickFormatter={(v) => (v >= 1000 ? `R$ ${(v/1000).toFixed(1)}k` : formatCurrency(v))} className="text-xs" />
                     <YAxis dataKey="plan" type="category" className="text-xs" width={80} />
                     <Tooltip 
                       formatter={(value: number) => [formatCurrency(value), 'Receita']}
                       contentStyle={{ backgroundColor: 'hsl(var(--background))', borderColor: 'hsl(var(--border))' }}
                     />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                      {stats.revenueByPlan.map((entry, index) => (
+                      {revenueByPlanData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PLAN_COLORS[entry.plan.toLowerCase() as keyof typeof PLAN_COLORS] || '#94a3b8'} />
                       ))}
                     </Bar>
