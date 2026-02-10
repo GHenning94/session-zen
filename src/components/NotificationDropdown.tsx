@@ -68,6 +68,15 @@ const NotificationDropdown = () => {
     return match ? match[1] : null
   }
 
+  // Texto do botão conforme o destino do redirect ou o título da notificação
+  const getRedirectButtonLabel = (conteudo: string, titulo?: string): string => {
+    const redirect = extractRedirect(conteudo)
+    if (!redirect) return 'Ir para Pacotes'
+    if (redirect.includes('bank-details') || redirect.includes('financeiro')) return 'Ir para Dados Bancários'
+    if (redirect.includes('programa-indicacao') || (titulo && /reingressar.*programa/i.test(titulo))) return 'Ir para o Programa de Indicação'
+    return 'Ir para Pacotes'
+  }
+
   // Extrair PACKAGE_EDIT do conteúdo da notificação
   const extractPackageEditId = (conteudo: string): string | null => {
     const match = conteudo.match(/\[PACKAGE_EDIT:([^\]]+)\]/)
@@ -422,9 +431,7 @@ const NotificationDropdown = () => {
                         className="w-full"
                         onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
                       >
-                        {extractRedirect(selectedNotification.conteudo)?.includes('bank-details') || extractRedirect(selectedNotification.conteudo)?.includes('financeiro')
-                          ? 'Ir para Dados Bancários' 
-                          : 'Ir para Pacotes'}
+                        {getRedirectButtonLabel(selectedNotification.conteudo, selectedNotification.titulo)}
                       </Button>
                     )}
                     {extractPackageEditId(selectedNotification.conteudo) && (
@@ -528,9 +535,7 @@ const NotificationDropdown = () => {
                   <Button 
                     onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
                   >
-                    {extractRedirect(selectedNotification.conteudo)?.includes('bank-details') || extractRedirect(selectedNotification.conteudo)?.includes('financeiro')
-                      ? 'Ir para Dados Bancários' 
-                      : 'Ir para Pacotes'}
+                    {getRedirectButtonLabel(selectedNotification.conteudo, selectedNotification.titulo)}
                   </Button>
                 )}
                 {extractPackageEditId(selectedNotification.conteudo) && (
@@ -663,9 +668,7 @@ const NotificationDropdown = () => {
                           size="sm"
                           onClick={() => handleRedirect(extractRedirect(selectedNotification.conteudo)!)}
                         >
-                          {extractRedirect(selectedNotification.conteudo)?.includes('bank-details') || extractRedirect(selectedNotification.conteudo)?.includes('financeiro')
-                            ? 'Ir para Dados Bancários' 
-                            : 'Ir para Pacotes'}
+                          {getRedirectButtonLabel(selectedNotification.conteudo, selectedNotification.titulo)}
                         </Button>
                       )}
                       {extractPackageEditId(selectedNotification.conteudo) && (

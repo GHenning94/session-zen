@@ -10,6 +10,7 @@ import { useInstantTheme } from "@/hooks/useInstantTheme"
 import { useColorTheme } from "@/hooks/useColorTheme"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useBirthdayNotifications } from "@/hooks/useBirthdayNotifications"
+import { useReferralReentryNotification } from "@/hooks/useReferralReentryNotification"
 
 interface LayoutProps {
   children: React.ReactNode
@@ -30,6 +31,8 @@ export function Layout({ children }: LayoutProps) {
   
   // Check for client birthdays and create notifications
   useBirthdayNotifications()
+  // Verificar se a carência do programa de indicação expirou e criar notificação ao entrar na plataforma
+  useReferralReentryNotification()
   
   // Show loading state while authenticating
   if (loading) {
