@@ -513,6 +513,7 @@ const LandingPage = () => {
 
   const faqItems = [
     { question: "O TherapyPro é seguro para os dados dos meus pacientes?", answer: "Sim. A segurança é nossa prioridade máxima. Utilizamos criptografia de ponta para proteger todos os dados e seguimos as melhores práticas de segurança, em conformidade com as normas de proteção de dados." },
+    { question: "O TherapyPro tem acesso aos dados dos pacientes?", answer: "Não. O TherapyPro não armazena e não tem acesso aos dados sensíveis dos pacientes. Todas as informações são criptografadas e permanecem sob seu controle, em total conformidade com a privacidade e a ética profissional." },
     { question: "Posso testar a plataforma antes de assinar?", answer: "Com certeza! Oferecemos um plano Básico totalmente gratuito, ideal para você começar e conhecer as principais funcionalidades. Você pode fazer o upgrade para um plano superior a qualquer momento." },
     { question: "Como funciona o suporte ao cliente?", answer: "Oferecemos suporte humano e personalizado. Nos planos Profissional e Premium, você tem acesso a suporte prioritário por e-mail e chat para garantir que qualquer dúvida seja resolvida rapidamente." },
     { question: "A plataforma se integra com outras ferramentas?", answer: "Sim. O TherapyPro oferece integração com o Google Calendar para sincronização de agenda e, no plano Premium, integração com o WhatsApp para envio de lembretes automáticos de consulta." }
@@ -861,9 +862,6 @@ const LandingPage = () => {
                     </Card>
                   </div>
                 ))}
-              </div>
-              <div className="text-center mt-12">
-                <Button variant="outline" className="text-base px-8 py-3 h-auto">Comparar planos</Button>
               </div>
             </AnimateOnScroll>
           </section>
