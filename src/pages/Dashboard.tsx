@@ -518,18 +518,13 @@ const Dashboard = () => {
     await poll()
   }
 
-  // Sempre recarregar quando o Dashboard é montado (volta de outra página)
+  // Limpar caches legados ao montar; o carregamento inicial é feito apenas pelo useEffect que depende de [user]
   useEffect(() => {
     if (user && isActiveRef.current) {
-      console.log('🔄 Dashboard montado, forçando atualização e limpando caches legados...')
-      // Limpar caches legados de localStorage
       const keysToRemove = ['canal_1', 'canal_3', 'canal_6', 'canal_12', 'canal_1_time', 'canal_3_time', 'canal_6_time', 'canal_12_time']
       keysToRemove.forEach(key => localStorage.removeItem(key))
-      
-      invalidateCache(['upcomingSessions', 'recentPayments', 'dashboardStats', 'charts'])
-      loadDashboardDataOptimized(true)
     }
-  }, [])
+  }, [user])
 
   // Optimized event listeners with debouncing
   useEffect(() => {
@@ -1445,8 +1440,9 @@ const Dashboard = () => {
     }
   ]
 
-  // Keep loading state while subscription data is still loading (prevents flash after upgrade)
-  const isFullyLoaded = !isLoading && !isSubscriptionLoading && !isProcessingPayment
+  // Mostrar dados assim que o dashboard terminar de carregar (não bloquear na subscription).
+  // Isso garante que, em qualquer dispositivo, as informações apareçam imediatamente após o login.
+  const isFullyLoaded = !isLoading && !isProcessingPayment
 
   // ✅ Mostrar loading de tela cheia durante processamento de pagamento
   // Isso evita o flash do dashboard com dados antigos
