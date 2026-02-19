@@ -461,7 +461,7 @@ const PublicRegistration = () => {
                       value={phoneCountryCode}
                       onValueChange={setPhoneCountryCode}
                     >
-                      <SelectTrigger className="w-[110px]">
+                      <SelectTrigger className="w-[200px] sm:w-[220px] shrink-0 bg-white text-gray-900">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -478,7 +478,7 @@ const PublicRegistration = () => {
                       onChange={(e) => handleMainPhoneChange(e.target.value)}
                       required
                       placeholder={getPhonePlaceholder(phoneCountryCode)}
-                      className="bg-white text-gray-900 flex-1"
+                      className="bg-white text-gray-900 flex-1 min-w-0"
                     />
                   </div>
                 </div>

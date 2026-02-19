@@ -471,7 +471,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                         value={phoneCountryCode}
                         onValueChange={handleCountryCodeChange}
                       >
-                        <SelectTrigger className="w-[80px] sm:w-[100px]">
+                        <SelectTrigger className="w-[200px] sm:w-[220px] shrink-0">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -489,7 +489,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
                         onChange={handlePhoneChange}
                         maxLength={25}
                         disabled={!canAddMore}
-                        className="flex-1"
+                        className="flex-1 min-w-0"
                       />
                     </div>
                   </div>
