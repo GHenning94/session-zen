@@ -286,8 +286,8 @@ export type Database = {
           pais: string | null
           plano_saude: string | null
           profissao: string | null
-          telefone_codigo_pais: string | null
           telefone: string | null
+          telefone_codigo_pais: string | null
           telefone_mae: string | null
           telefone_pai: string | null
           tipo_atendimento: string | null
@@ -320,8 +320,8 @@ export type Database = {
           pais?: string | null
           plano_saude?: string | null
           profissao?: string | null
-          telefone_codigo_pais?: string | null
           telefone?: string | null
+          telefone_codigo_pais?: string | null
           telefone_mae?: string | null
           telefone_pai?: string | null
           tipo_atendimento?: string | null
@@ -354,8 +354,8 @@ export type Database = {
           pais?: string | null
           plano_saude?: string | null
           profissao?: string | null
-          telefone_codigo_pais?: string | null
           telefone?: string | null
+          telefone_codigo_pais?: string | null
           telefone_mae?: string | null
           telefone_pai?: string | null
           tipo_atendimento?: string | null
