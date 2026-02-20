@@ -20,6 +20,7 @@ import Login from "@/pages/Login";
 import Signup from "@/pages/Signup";
 import Welcome from "@/pages/Welcome";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { ProtectedLayoutContent } from "@/components/ProtectedLayout";
 import AuthRedirect from "@/components/AuthRedirect";
 import { BackNavigationGuard } from "@/components/BackNavigationGuard";
 import ErrorBoundary from "@/components/ErrorBoundary";
@@ -159,106 +160,6 @@ const App = () => (
           <Route path="/auth-callback" element={<AuthCallback />} />
                   <Route path="/reset-password" element={<ResetPassword />} />
                   <Route path="/email-change-confirmation" element={<EmailChangeConfirmation />} />
-                  <Route path="/dashboard" element={
-                    <ProtectedRoute>
-                      <Dashboard />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/agenda" element={
-                    <ProtectedRoute>
-                      <Agenda />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/clientes" element={
-                    <ProtectedRoute>
-                      <Clientes />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/pagamentos" element={
-                    <ProtectedRoute>
-                      <Pagamentos />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/relatorios" element={
-                    <ProtectedRoute>
-                      <Relatorios />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/sessoes" element={
-                    <ProtectedRoute>
-                      <Sessoes />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/pacotes" element={
-                    <ProtectedRoute>
-                      <Pacotes />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/sessoes-recorrentes" element={
-                    <ProtectedRoute>
-                      <SessoesRecorrentes />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/configuracoes" element={
-                    <ProtectedRoute>
-                      <Configuracoes />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/upgrade" element={
-                    <ProtectedRoute>
-                      <Upgrade />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/eventos" element={
-                    <ProtectedRoute>
-                      <Eventos />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/prontuarios" element={
-                    <ProtectedRoute>
-                      <Prontuarios />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/metas" element={
-                    <ProtectedRoute>
-                      <Metas />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/estudos" element={
-                    <ProtectedRoute>
-                      <Estudos />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/redes-sociais" element={
-                    <ProtectedRoute>
-                      <RedesSociais />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/programa-indicacao" element={
-                    <ProtectedRoute>
-                      <ProgramaIndicacao />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/pagina-publica" element={
-                    <ProtectedRoute>
-                      <PaginaPublica />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/integracoes" element={
-                    <ProtectedRoute>
-                      <Integracoes />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/suporte" element={
-                    <ProtectedRoute>
-                      <Suporte />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/documentacao" element={
-                    <ProtectedRoute>
-                      <Documentacao />
-                    </ProtectedRoute>
-                  } />
                   <Route path="/agendar/:userId" element={
                     <Suspense fallback={<PageLoading />}>
                       <BookingPage />
@@ -385,6 +286,13 @@ const App = () => (
                   <Route path="/admin/referrals" element={<AdminProtectedRoute><AdminReferrals /></AdminProtectedRoute>} />
                   <Route path="/admin/health" element={<AdminProtectedRoute><AdminHealth /></AdminProtectedRoute>} />
                   <Route path="/admin/subscriptions" element={<AdminProtectedRoute><AdminSubscriptions /></AdminProtectedRoute>} />
+                  
+                  {/* Layout persistente: /dashboard, /clientes, etc. - sidebar e avatar não recarregam ao trocar de página */}
+                  <Route path="*" element={
+                    <ProtectedRoute>
+                      <ProtectedLayoutContent />
+                    </ProtectedRoute>
+                  } />
                   
                   {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                   <Route path="*" element={

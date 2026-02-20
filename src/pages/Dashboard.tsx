@@ -40,7 +40,6 @@ import {
   CalendarDays
 } from "lucide-react"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip as RechartsTooltip, LineChart, Line, PieChart, Pie, Cell, ReferenceLine, RadialBarChart, RadialBar, Legend, PolarAngleAxis } from 'recharts'
-import { Layout } from "@/components/Layout"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { supabase } from "@/integrations/supabase/client"
 import { useAuth } from "@/hooks/useAuth"
@@ -1448,8 +1447,7 @@ const Dashboard = () => {
   // Isso evita o flash do dashboard com dados antigos
   if (isProcessingPayment) {
     return (
-      <Layout>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
           <div className="flex flex-col items-center gap-4 text-center p-8">
             <Loader2 className="h-12 w-12 animate-spin text-primary" />
             <h2 className="text-xl font-semibold">Ativando seu plano...</h2>
@@ -1459,13 +1457,12 @@ const Dashboard = () => {
             </p>
           </div>
         </div>
-      </Layout>
     )
   }
 
   return (
-    <Layout>
-      <div className="space-y-4 md:space-y-8 pb-0">
+    <>
+    <div className="space-y-4 md:space-y-8 pb-0">
         {/* Header - Mobile optimized */}
         <div className="flex items-center justify-between">
           <div>
@@ -3250,7 +3247,7 @@ const Dashboard = () => {
         onOpenChange={setShowGoalsUpgradeModal}
         feature="Metas e Progresso"
       />
-    </Layout>
+    </>
   )
 }
 

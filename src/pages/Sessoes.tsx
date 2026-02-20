@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
-import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -917,7 +916,6 @@ export default function Sessoes() {
 
   if (loading) {
     return (
-      <Layout>
         <div className="p-6 space-y-4">
           <Skeleton className="h-8 w-48" />
           <div className="space-y-2">
@@ -926,13 +924,11 @@ export default function Sessoes() {
             <Skeleton className="h-24 w-full" />
           </div>
         </div>
-      </Layout>
     )
   }
 
   return (
-    <Layout>
-      <div className="md:p-6">
+    <div className="md:p-6">
         {/* Header - Mobile optimized, buttons on same line as title on desktop */}
         <div className="flex flex-col gap-3 mb-4 md:mb-6 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-1">
@@ -1662,6 +1658,5 @@ export default function Sessoes() {
           clients={clients}
         />
       </div>
-    </Layout>
   )
 }

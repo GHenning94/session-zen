@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Layout } from "@/components/Layout"
 import { Badge } from "@/components/ui/badge"
 import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Lock, Crown } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -926,10 +925,10 @@ const Configuracoes = () => {
     }
   }
 
-  if (isLoading) return <Layout><p className="p-4">Carregando configurações...</p></Layout>;
+  if (isLoading) return <p className="p-4">Carregando configurações...</p>;
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Configurações</h1>
@@ -2102,7 +2101,7 @@ const Configuracoes = () => {
         }
         email={user?.email || ''}
       />
-    </Layout>
+    </>
   )
 }
 

@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -236,7 +235,7 @@ export default function Metas() {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="space-y-4 md:space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
@@ -258,14 +257,14 @@ export default function Metas() {
             ))}
           </div>
         </div>
-      </Layout>
+      </>
     );
   }
 
   // Feature Gate - block entire page for basic plan
   if (!hasAccessToFeature('goals')) {
     return (
-      <Layout>
+      <>
         <div className="space-y-4 md:space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
@@ -298,12 +297,12 @@ export default function Metas() {
             </Card>
           </FeatureGate>
         </div>
-      </Layout>
+      </>
     )
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Metas</h1>
@@ -606,6 +605,6 @@ export default function Metas() {
           </DialogContent>
         </Dialog>
       </div>
-    </Layout>
+    </>
   );
 }

@@ -1,5 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -290,7 +289,7 @@ export default function Prontuarios() {
 
   if (loading) {
     return (
-      <Layout>
+      <>
         <div className="p-6 space-y-4">
           <Skeleton className="h-8 w-48" />
           <div className="space-y-2">
@@ -298,7 +297,7 @@ export default function Prontuarios() {
             <Skeleton className="h-32 w-full" />
           </div>
         </div>
-      </Layout>
+      </>
     )
   }
 
@@ -308,7 +307,7 @@ export default function Prontuarios() {
     const clientEvolucoes = getClientEvolucoes(selectedClient.id)
 
     return (
-      <Layout>
+      <>
         <div className="space-y-4 md:space-y-6">
           {/* Header com informações do cliente */}
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -602,13 +601,13 @@ export default function Prontuarios() {
           open={evolucaoReadOnlyModalOpen}
           onOpenChange={setEvolucaoReadOnlyModalOpen}
         />
-      </Layout>
+      </>
     )
   }
 
   // Lista de clientes
   return (
-    <Layout>
+    <>
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">
@@ -785,6 +784,6 @@ export default function Prontuarios() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Layout>
+    </>
   )
 }

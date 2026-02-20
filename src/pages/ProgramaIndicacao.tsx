@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Layout } from "@/components/Layout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -601,18 +600,18 @@ const ProgramaIndicacao = () => {
 
   if (isLoading) {
     return (
-      <Layout>
+      <>
         <div className="flex items-center justify-center h-64">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
         </div>
-      </Layout>
+      </>
     );
   }
 
   // Feature Gate - block entire page for basic plan
   if (!hasAccessToFeature('referral_program')) {
     return (
-      <Layout>
+      <>
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <Gift className="w-8 h-8 text-primary" />
@@ -646,13 +645,13 @@ const ProgramaIndicacao = () => {
             </Card>
           </FeatureGate>
         </div>
-      </Layout>
+      </>
     )
   }
 
   if (!isEnrolled) {
     return (
-      <Layout>
+      <>
         <div className="space-y-6">
           <div className="flex items-center gap-3">
             <Gift className="w-8 h-8 text-primary" />
@@ -906,12 +905,12 @@ const ProgramaIndicacao = () => {
             </CardContent>
           </Card>
         </div>
-      </Layout>
+      </>
     );
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1447,7 +1446,7 @@ const ProgramaIndicacao = () => {
           </Button>
         </div>
       </div>
-    </Layout>
+    </>
   );
 };
 

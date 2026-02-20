@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react"
-import { Layout } from "@/components/Layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -255,7 +254,7 @@ export default function SessoesRecorrentes() {
   }
 
   return (
-    <Layout>
+    <>
       <div className="container mx-auto py-4 sm:py-8 px-4 space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -471,6 +470,6 @@ export default function SessoesRecorrentes() {
           </AlertDialogContent>
         </AlertDialog>
       </div>
-    </Layout>
+    </>
   )
 }

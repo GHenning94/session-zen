@@ -6,7 +6,6 @@ import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Layout } from "@/components/Layout"
 import { Clock, CreditCard, Share2, Save, Lock, Crown } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
@@ -132,7 +131,7 @@ const PaginaPublica = () => {
     return `${hour}:${minute}`;
   });
 
-  if (isLoading) return <Layout><p className="p-4">Carregando configurações...</p></Layout>;
+  if (isLoading) return <p className="p-4">Carregando configurações...</p>;
 
   const diasSemana = [
     { key: 'segunda', label: 'Segunda' }, { key: 'terca', label: 'Terça' }, { key: 'quarta', label: 'Quarta' },
@@ -143,7 +142,6 @@ const PaginaPublica = () => {
   // Feature Gate - block entire page for basic plan
   if (!hasAccessToFeature('public_page')) {
     return (
-      <Layout>
         <div className="space-y-6">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Página Pública</h1>
@@ -174,12 +172,10 @@ const PaginaPublica = () => {
             </Card>
           </FeatureGate>
         </div>
-      </Layout>
     )
   }
 
   return (
-    <Layout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Página Pública</h1>
@@ -387,7 +383,6 @@ const PaginaPublica = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
   )
 }
 

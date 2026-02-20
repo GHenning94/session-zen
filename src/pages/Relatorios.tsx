@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Layout } from '@/components/Layout'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FileText, Users, Calendar, DollarSign, Download, BarChart3, Lock } from 'lucide-react'
@@ -84,8 +83,7 @@ export default function Relatorios() {
   // Feature Gate - block entire page for basic plan
   if (!hasAccessToFeature('reports')) {
     return (
-      <Layout>
-        <div className="space-y-4 md:space-y-6">
+      <div className="space-y-4 md:space-y-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
             <p className="text-sm text-muted-foreground">
@@ -117,12 +115,11 @@ export default function Relatorios() {
             </Card>
           </FeatureGate>
         </div>
-      </Layout>
     )
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-4 md:space-y-6">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold">Relatórios</h1>
@@ -217,6 +214,6 @@ export default function Relatorios() {
         open={showReportsModal} 
         onOpenChange={setShowReportsModal}
       />
-    </Layout>
+    </>
   )
 }

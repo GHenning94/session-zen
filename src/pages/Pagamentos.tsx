@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Layout } from "@/components/Layout"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { 
   DollarSign, 
@@ -816,7 +815,6 @@ const pastPayments = filteredPayments.filter(item => {
   }
 
   return (
-    <Layout>
       <div className="space-y-4 md:space-y-6">
         {/* Header - Mobile optimized */}
         <div>
@@ -1363,7 +1361,6 @@ const pastPayments = filteredPayments.filter(item => {
           onUpdatePaymentStatus={handleUpdatePaymentStatus}
         />
       </div>
-    </Layout>
   )
 }
 

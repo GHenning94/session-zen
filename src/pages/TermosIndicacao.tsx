@@ -1,4 +1,3 @@
-import { Layout } from "@/components/Layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft, FileText, CheckCircle } from "lucide-react"
@@ -8,7 +7,7 @@ const TermosIndicacao = () => {
   const navigate = useNavigate()
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         <Button 
           variant="ghost" 
@@ -266,7 +265,7 @@ const TermosIndicacao = () => {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </>
   )
 }
 

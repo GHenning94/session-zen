@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Layout } from "@/components/Layout"
 import { 
   Search, 
   Plus, 
@@ -607,8 +606,7 @@ const Clientes = () => {
   const canAddMore = canAddClient(activeClients.length)
 
   return (
-    <Layout>
-      <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6">
         {/* Header */}
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -1006,7 +1004,6 @@ const Clientes = () => {
           feature="Pacientes Ilimitados"
         />
       </div>
-    </Layout>
   )
  }
 

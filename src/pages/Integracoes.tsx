@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Layout } from "@/components/Layout"
 import { Calendar, HardDrive, Cloud, Trello, Settings } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
@@ -96,10 +95,9 @@ const Integracoes = () => {
     }
   };
 
-  if (isLoading) return <Layout><p className="p-4">Carregando integrações...</p></Layout>;
+  if (isLoading) return <p className="p-4">Carregando integrações...</p>;
 
   return (
-    <Layout>
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">Integrações</h1>
@@ -227,7 +225,6 @@ const Integracoes = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </Layout>
   )
 }
 

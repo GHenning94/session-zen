@@ -1,4 +1,3 @@
-import { Layout } from "@/components/Layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
@@ -361,7 +360,7 @@ export default function Documentacao() {
   const navigate = useNavigate()
 
   return (
-    <Layout>
+    <>
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center gap-4">
@@ -451,6 +450,6 @@ export default function Documentacao() {
           </CardContent>
         </Card>
       </div>
-    </Layout>
+    </>
   )
 }

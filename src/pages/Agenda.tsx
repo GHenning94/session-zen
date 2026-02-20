@@ -9,7 +9,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Layout } from "@/components/Layout"
 import { SessionModal } from "@/components/SessionModal"
 import { SessionEditModal } from "@/components/SessionEditModal"
 import { RecurringEditConfirmModal, RecurringEditChoice } from "@/components/RecurringEditConfirmModal"
@@ -409,8 +408,8 @@ const Agenda = () => {
   }, [sessions, timeSlots.length])
 
   return (
-    <Layout>
-      <div className="space-y-4 md:space-y-6">
+    <>
+    <div className="space-y-4 md:space-y-6">
         {/* Header - Mobile optimized */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -819,7 +818,7 @@ const Agenda = () => {
         feature="Integração Google Calendar"
         premiumOnly
       />
-    </Layout>
+    </>
   )
 }
 

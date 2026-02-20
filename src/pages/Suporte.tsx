@@ -1,6 +1,5 @@
 import { useState } from "react"
 import { useNavigate } from "react-router-dom"
-import { Layout } from "@/components/Layout"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
@@ -247,7 +246,7 @@ export default function Suporte() {
   }
 
   return (
-    <Layout>
+    <>
       <div className="space-y-8">
         {/* Header */}
         <div className="text-center space-y-4">
@@ -604,6 +603,6 @@ export default function Suporte() {
           </form>
         </DialogContent>
       </Dialog>
-    </Layout>
+    </>
   )
 }
