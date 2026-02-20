@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +38,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
   const { planLimits, canAddClient } = useSubscription()
   const { clientTerm, clientTermPlural } = useTerminology()
   const [isLoading, setIsLoading] = useState(false)
+  const saveTimedOutRef = useRef(false)
   const [clients, setClients] = useState<any[]>([])
   const [isQuickRegistration, setIsQuickRegistration] = useState(true)
   const [phoneCountryCode, setPhoneCountryCode] = useState<string>(DEFAULT_PHONE_COUNTRY)
@@ -247,6 +248,17 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
     }
 
     setIsLoading(true)
+    saveTimedOutRef.current = false
+    const timeoutId = setTimeout(() => {
+      if (saveTimedOutRef.current) return
+      saveTimedOutRef.current = true
+      setIsLoading(false)
+      toast({
+        title: "Operação demorada",
+        description: editingClient ? "A atualização está demorando. Verifique sua conexão e tente novamente." : "O cadastro está demorando. Verifique sua conexão e tente novamente.",
+        variant: "destructive",
+      })
+    }, 25000)
     
     try {
       const clientData: any = {
@@ -281,6 +293,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
 
       // Encrypt sensitive fields before saving
       const encryptedClientData = await encryptSensitiveData('clients', clientData) as typeof clientData;
+      if (saveTimedOutRef.current) return
 
       let error
       if (editingClient) {
@@ -318,6 +331,7 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
       }
 
       if (error) throw error
+      if (saveTimedOutRef.current) return
 
       toast({
         title: editingClient ? "Cliente atualizado" : "Cliente cadastrado",
@@ -336,13 +350,16 @@ export const NewClientModal = ({ open, onOpenChange, onClientAdded, editingClien
       window.dispatchEvent(new CustomEvent('clientAdded'))
       
     } catch (error: any) {
+      if (saveTimedOutRef.current) return
       console.error('Erro ao salvar cliente:', error)
       toast({
         title: "Erro",
-        description: "Falha ao cadastrar cliente. Tente novamente.",
+        description: editingClient ? "Falha ao atualizar cliente. Tente novamente." : "Falha ao cadastrar cliente. Tente novamente.",
         variant: "destructive",
       })
     } finally {
+      clearTimeout(timeoutId)
+      saveTimedOutRef.current = true
       setIsLoading(false)
     }
   }

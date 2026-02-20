@@ -442,8 +442,8 @@ const PublicRegistration = () => {
                 </div>
               </div>
 
-              {/* SEMPRE VISÍVEL EM AMBOS OS MODOS - Nome e Telefone */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* SEMPRE VISÍVEL - Nome em uma linha, Telefone (país + número) na linha abaixo */}
+              <div className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="nome" className="text-gray-900">Nome Completo *</Label>
                   <Input
