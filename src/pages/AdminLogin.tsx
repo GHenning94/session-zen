@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Shield, Loader2, AlertTriangle } from "lucide-react"
+import { Shield, Loader2, AlertTriangle, Eye, EyeOff } from "lucide-react"
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
 
@@ -31,6 +31,7 @@ const AdminLogin = () => {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [lockoutMessage, setLockoutMessage] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const turnstileRef = useRef<any>(null)
   const formRef = useRef<HTMLFormElement>(null)
 
@@ -159,16 +160,26 @@ const AdminLogin = () => {
 
             <div className="space-y-2">
               <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="h-11"
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                  className="h-11 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                  aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="flex justify-center py-2">

@@ -15,7 +15,7 @@ import { supabase } from "@/integrations/supabase/client"
 import { useToast } from "@/hooks/use-toast"
 import { useNavigate, useSearchParams } from "react-router-dom"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
-import { ArrowLeft, UserPlus } from "lucide-react"
+import { ArrowLeft, UserPlus, Eye, EyeOff } from "lucide-react"
 
 const PREDEFINED_PROFESSIONS = [
   "Psicólogo(a)",
@@ -39,6 +39,7 @@ const Signup = () => {
   const [searchParams] = useSearchParams()
   const [referralId, setReferralId] = useState<string | null>(null)
   const [referralUser, setReferralUser] = useState<any>(null)
+  const [showPassword, setShowPassword] = useState(false)
   
   // Capturar plano selecionado da URL (ex: /signup?plan=premium)
   // Também verificar localStorage caso venha do Login (que já salvou)
@@ -449,15 +450,26 @@ const Signup = () => {
 
               <div className="space-y-2">
                 <Label htmlFor="password" style={{ color: '#1a1a1a' }}>Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  placeholder="Sua senha"
-                  style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Sua senha"
+                    style={{ backgroundColor: '#f9fafb', borderColor: '#e5e7eb', color: '#1a1a1a' }}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                    aria-label={showPassword ? "Esconder senha" : "Mostrar senha"}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
                 {password && <PasswordRequirements password={password} />}
               </div>
 

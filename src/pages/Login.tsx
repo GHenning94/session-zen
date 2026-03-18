@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Stethoscope, Heart, Check, X, Loader2 } from "lucide-react"
+import { Stethoscope, Heart, Check, X, Loader2, Eye, EyeOff } from "lucide-react"
 import "./Login.styles.css"
 
 const TURNSTILE_SITE_KEY = '0x4AAAAAAB43UmamQYOA5yfH'
@@ -72,6 +72,9 @@ const Login = () => {
 
   const [searchParams] = useSearchParams()
   const defaultTab = searchParams.get('tab') === 'register' ? 'register' : 'login'
+  const [showLoginPassword, setShowLoginPassword] = useState(false)
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false)
+  const [showRegisterConfirmPassword, setShowRegisterConfirmPassword] = useState(false)
 
   // Capturar plano da URL e salvar no localStorage
   useEffect(() => {
@@ -738,13 +741,24 @@ const Login = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="login-password">Senha</Label>
-                  <Input
-                    id="login-password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="login-password"
+                      type={showLoginPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowLoginPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showLoginPassword ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-center">
@@ -827,14 +841,25 @@ const Login = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="register-password">Senha</Label>
-                  <Input
-                    id="register-password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    onFocus={() => setShowPasswordRequirements(true)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="register-password"
+                      type={showRegisterPassword ? "text" : "password"}
+                      value={formData.password}
+                      onChange={(e) => handleInputChange('password', e.target.value)}
+                      onFocus={() => setShowPasswordRequirements(true)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showRegisterPassword ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {showRegisterPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                   {showPasswordRequirements && (
                     <ul className="text-xs space-y-1 mt-2">
                       {passwordRequirements.map((req, idx) => {
@@ -851,13 +876,24 @@ const Login = () => {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="register-confirm-password">Confirmar Senha</Label>
-                  <Input
-                    id="register-confirm-password"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="register-confirm-password"
+                      type={showRegisterConfirmPassword ? "text" : "password"}
+                      value={formData.confirmPassword}
+                      onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowRegisterConfirmPassword((prev) => !prev)}
+                      className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground hover:text-foreground"
+                      aria-label={showRegisterConfirmPassword ? "Esconder senha" : "Mostrar senha"}
+                    >
+                      {showRegisterConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="flex justify-center">
