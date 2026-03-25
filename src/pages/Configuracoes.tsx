@@ -271,23 +271,12 @@ const Configuracoes = () => {
 
       let { data, error } = await supabase
         .from('profiles')
-        .select(profileSelectWithCountry)
+        .select(profileSelectWithoutCountry)
         .eq('user_id', user.id)
         .single();
 
-      const isMissingColumnError = error?.message && (error.message.includes('telefone_codigo_pais') || /column.*does not exist/i.test(error.message));
-      if (error && isMissingColumnError) {
-        const fallback = await supabase
-          .from('profiles')
-          .select(profileSelectWithoutCountry)
-          .eq('user_id', user.id)
-          .single();
-        profileData = fallback.data;
-        profileError = fallback.error;
-      } else {
-        profileData = data;
-        profileError = error;
-      }
+      profileData = data as Record<string, unknown> | null;
+      profileError = error;
 
       if (profileError) throw profileError;
 
