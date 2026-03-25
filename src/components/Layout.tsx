@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useLayoutEffect, useRef, useState } from "react"
 import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
@@ -20,8 +20,8 @@ function SidebarDockHoverStrip() {
   if (!enabled || open) return null
   return (
     <div
-      className="fixed left-0 top-0 z-[100] w-3 h-svh"
-      onMouseEnter={() => setOpen(true)}
+      className="fixed left-0 top-0 z-[100] w-4 h-svh bg-transparent"
+      onPointerEnter={() => setOpen(true)}
       aria-hidden
     />
   )
@@ -36,8 +36,9 @@ export function Layout({ children }: LayoutProps) {
   const isMobile = useIsMobile()
   const { enabled: sidebarAutoHide } = useSidebarAutoHide()
   const [dockOpen, setDockOpen] = useState(false)
+  const mainColumnRef = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (sidebarAutoHide) setDockOpen(false)
   }, [sidebarAutoHide])
   
@@ -89,7 +90,15 @@ export function Layout({ children }: LayoutProps) {
         <SidebarDockHoverStrip />
         <AppSidebar />
         
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden py-3">
+        <div
+          ref={mainColumnRef}
+          className="flex-1 flex flex-col min-w-0 h-full overflow-hidden py-3"
+          onPointerDown={(e) => {
+            if (!sidebarAutoHide || !dockOpen) return
+            if (!mainColumnRef.current?.contains(e.target as Node)) return
+            setDockOpen(false)
+          }}
+        >
           {/* Header transparente */}
           <header className="h-16 bg-transparent flex items-center justify-between px-4 md:px-8 flex-shrink-0">
             <div className="flex items-center gap-4">

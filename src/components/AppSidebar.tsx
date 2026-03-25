@@ -178,8 +178,8 @@ export function AppSidebar() {
       <Sidebar
         className="border-none m-3 rounded-2xl shadow-medium overflow-hidden flex flex-col max-h-[calc(100vh-24px)]"
         collapsible={dockAutoHide ? "offcanvas" : "icon"}
-        onMouseEnter={dockAutoHide ? onSidebarPointerEnter : undefined}
-        onMouseLeave={dockAutoHide ? onSidebarPointerLeave : undefined}
+        onPointerEnter={dockAutoHide ? onSidebarPointerEnter : undefined}
+        onPointerLeave={dockAutoHide ? onSidebarPointerLeave : undefined}
         style={{
           // @ts-ignore
           '--sidebar-width': '16rem',
