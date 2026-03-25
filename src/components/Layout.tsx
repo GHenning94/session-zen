@@ -1,4 +1,5 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
+import { useEffect, useState } from "react"
+import { SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/AppSidebar"
 import NotificationDropdown from "@/components/NotificationDropdown"
 import { ProfileDropdown } from "@/components/ProfileDropdown"
@@ -11,6 +12,20 @@ import { useColorTheme } from "@/hooks/useColorTheme"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { useBirthdayNotifications } from "@/hooks/useBirthdayNotifications"
 import { useReferralReentryNotification } from "@/hooks/useReferralReentryNotification"
+import { useSidebarAutoHide } from "@/hooks/useSidebarAutoHide"
+
+function SidebarDockHoverStrip() {
+  const { open, setOpen } = useSidebar()
+  const { enabled } = useSidebarAutoHide()
+  if (!enabled || open) return null
+  return (
+    <div
+      className="fixed left-0 top-0 z-[100] w-3 h-svh"
+      onMouseEnter={() => setOpen(true)}
+      aria-hidden
+    />
+  )
+}
 
 interface LayoutProps {
   children: React.ReactNode
@@ -19,6 +34,12 @@ interface LayoutProps {
 export function Layout({ children }: LayoutProps) {
   const { user, loading } = useAuth()
   const isMobile = useIsMobile()
+  const { enabled: sidebarAutoHide } = useSidebarAutoHide()
+  const [dockOpen, setDockOpen] = useState(false)
+
+  useEffect(() => {
+    if (sidebarAutoHide) setDockOpen(false)
+  }, [sidebarAutoHide])
   
   // Apply cached theme instantly to prevent flicker
   useInstantTheme(user?.id)
@@ -58,8 +79,14 @@ export function Layout({ children }: LayoutProps) {
   
   // Desktop layout with sidebar
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      key={sidebarAutoHide ? "sidebar-auto-hide" : "sidebar-standard"}
+      {...(sidebarAutoHide
+        ? { open: dockOpen, onOpenChange: setDockOpen }
+        : {})}
+    >
       <div className="app-layout-container flex w-full h-screen bg-background overflow-hidden">
+        <SidebarDockHoverStrip />
         <AppSidebar />
         
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden py-3">

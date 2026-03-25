@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Lock, Crown } from "lucide-react"
+import { User, Bell, CreditCard, Save, Building, Trash2, Shield, Palette, Loader2, RefreshCw, CheckCircle2, XCircle, AlertCircle, Lock, Crown, PanelLeft } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { PasswordRequirements } from "@/components/PasswordRequirements"
 import {
@@ -52,6 +52,7 @@ import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile'
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { NewFeatureBadge } from "@/components/NewFeatureBadge"
 import { NotificationSettings } from "@/components/notifications/NotificationSettings"
+import { useSidebarAutoHide } from "@/hooks/useSidebarAutoHide"
 
 type AllSettings = Record<string, any>;
 
@@ -128,6 +129,28 @@ const ThemeSelector = () => {
           Escuro
         </Button>
       </div>
+    </div>
+  )
+}
+
+const SidebarAutoHidePreference = () => {
+  const { enabled, setEnabled } = useSidebarAutoHide()
+  return (
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="space-y-1.5">
+        <div className="flex items-center gap-2">
+          <PanelLeft className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <Label>Ocultar menu lateral automaticamente</Label>
+        </div>
+        <p className="text-sm text-muted-foreground">
+          O menu aparece ao encostar o cursor na borda esquerda da tela (estilo Dock do macOS) e some ao sair. Disponível apenas na versão para computador.
+        </p>
+      </div>
+      <Switch
+        checked={enabled}
+        onCheckedChange={setEnabled}
+        className="shrink-0"
+      />
     </div>
   )
 }
@@ -1266,6 +1289,8 @@ const Configuracoes = () => {
                     </Button>
                   </div>
                 </div>
+
+                <SidebarAutoHidePreference />
               </CardContent>
             </Card>
           </TabsContent>

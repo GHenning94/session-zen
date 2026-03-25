@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useRef, useCallback, useEffect } from "react"
 import { 
   Calendar, 
   Users, 
@@ -44,6 +44,7 @@ import { Badge } from "@/components/ui/badge"
 import { UpgradeModal } from "@/components/UpgradeModal"
 import { NewFeatureBadge, dismissFeatureBadge } from "@/components/NewFeatureBadge"
 import { cn } from "@/lib/utils"
+import { useSidebarAutoHide } from "@/hooks/useSidebarAutoHide"
 
 // Menu items - TODOS os títulos são strings literais fixas para evitar textos incorretos
 // Apenas clientTermPlural pode ser dinâmico, mas é validado para ser apenas "Pacientes" ou "Clientes"
@@ -89,7 +90,28 @@ const FEATURE_NAMES: Record<Feature, string> = {
 }
 
 export function AppSidebar() {
-  const { state, setOpen, open } = useSidebar()
+  const { state, setOpen } = useSidebar()
+  const { enabled: dockAutoHide } = useSidebarAutoHide()
+  const leaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const clearDockLeaveTimer = useCallback(() => {
+    if (leaveTimerRef.current) {
+      clearTimeout(leaveTimerRef.current)
+      leaveTimerRef.current = null
+    }
+  }, [])
+
+  const onSidebarPointerEnter = useCallback(() => {
+    clearDockLeaveTimer()
+  }, [clearDockLeaveTimer])
+
+  const onSidebarPointerLeave = useCallback(() => {
+    if (!dockAutoHide) return
+    clearDockLeaveTimer()
+    leaveTimerRef.current = setTimeout(() => setOpen(false), 400)
+  }, [dockAutoHide, clearDockLeaveTimer, setOpen])
+
+  useEffect(() => () => clearDockLeaveTimer(), [clearDockLeaveTimer])
   const location = useLocation()
   const { user } = useAuth()
   const { currentPlan, isLoading, hasAccessToFeature, getRequiredPlanForFeature } = useSubscription()
@@ -155,7 +177,9 @@ export function AppSidebar() {
     <>
       <Sidebar
         className="border-none m-3 rounded-2xl shadow-medium overflow-hidden flex flex-col max-h-[calc(100vh-24px)]"
-        collapsible="icon"
+        collapsible={dockAutoHide ? "offcanvas" : "icon"}
+        onMouseEnter={dockAutoHide ? onSidebarPointerEnter : undefined}
+        onMouseLeave={dockAutoHide ? onSidebarPointerLeave : undefined}
         style={{
           // @ts-ignore
           '--sidebar-width': '16rem',
